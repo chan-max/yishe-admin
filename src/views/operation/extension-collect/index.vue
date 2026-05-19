@@ -90,18 +90,6 @@
                 @checkbox-change="checkboxChange"
                 @checkbox-all="checkboxAllChange"
               >
-                <template #coverImageSlot="{ row }">
-                  <el-image
-                    v-if="getCoverImage(row)"
-                    :src="getCoverImage(row)"
-                    :preview-src-list="[getCoverImage(row)]"
-                    fit="cover"
-                    style="width: 60px; height: 60px; border-radius: 4px"
-                    preview-teleported
-                  />
-                  <div v-else class="no-image">无图</div>
-                </template>
-
                 <template #titleSlot="{ row }">
                   <div class="collect-title">
                     <el-link
@@ -111,12 +99,12 @@
                       type="primary"
                       :underline="false"
                     >
-                      {{ row.sourceTitle || row.data?.title || "-" }}
+                      {{ row.sourceTitle || "-" }}
                     </el-link>
-                    <span v-else>{{ row.sourceTitle || row.data?.title || "-" }}</span>
+                    <span v-else>{{ row.sourceTitle || "-" }}</span>
                   </div>
-                  <div v-if="row.data?.price" class="collect-price">
-                    {{ row.data.currency || "" }} {{ row.data.price }}
+                  <div v-if="row.aiAnalysis" class="collect-preview">
+                    {{ getPreviewText(row.aiAnalysis) }}
                   </div>
                 </template>
 
@@ -126,30 +114,10 @@
                   </el-tag>
                 </template>
 
-                <template #platformSlot="{ row }">
-                  <el-tag v-if="row.data?.platform" type="info" size="small">
-                    {{ row.data.platform }}
-                  </el-tag>
-                  <span v-else>-</span>
-                </template>
-
-                <template #aiAnalyzedSlot="{ row }">
+                <template #aiStatusSlot="{ row }">
                   <el-tag :type="row.aiAnalysis ? 'success' : 'info'" size="small">
                     {{ row.aiAnalysis ? "已分析" : "未分析" }}
                   </el-tag>
-                </template>
-
-                <template #tagsSlot="{ row }">
-                  <div v-if="row.userTags && row.userTags.length" class="tag-list">
-                    <el-tag
-                      v-for="tag in row.userTags.slice(0, 3)"
-                      :key="tag"
-                      size="small"
-                      class="tag-item"
-                      >{{ tag }}</el-tag
-                    >
-                  </div>
-                  <span v-else>-</span>
                 </template>
 
                 <template #createdAtSlot="{ row }">
@@ -212,366 +180,122 @@
       :destroy-on-close="true"
     >
       <div v-if="currentRecord" class="detail-fullscreen">
-        <!-- 顶部信息栏 -->
+        <!-- 顶部信息 -->
         <div class="detail-header">
-          <div class="detail-header__info">
-            <el-tag :type="getTypeTagType(currentRecord.collectType)" size="large">
-              {{ getTypeLabel(currentRecord.collectType) }}
-            </el-tag>
-            <span class="detail-header__title">{{
-              currentRecord.sourceTitle || currentRecord.data?.title || "无标题"
-            }}</span>
-          </div>
-          <div class="detail-header__meta">
-            <span>ID: {{ currentRecord.id }}</span>
-            <span>平台: {{ currentRecord.data?.platform || "-" }}</span>
-            <span>时间: {{ formatTimestamp(currentRecord.createdAt) }}</span>
-            <span
-              >上传者:
-              {{ currentRecord.uploader?.account || currentRecord.uploader?.name || "-" }}</span
-            >
-          </div>
-          <div v-if="currentRecord.sourceUrl" class="detail-header__link">
-            <el-link :href="currentRecord.sourceUrl" target="_blank" type="primary">
-              {{ currentRecord.sourceUrl }}
-            </el-link>
-          </div>
+          <el-tag :type="getTypeTagType(currentRecord.collectType)" size="large">
+            {{ getTypeLabel(currentRecord.collectType) }}
+          </el-tag>
+          <span class="detail-header__title">{{ currentRecord.sourceTitle || "无标题" }}</span>
         </div>
-
-        <el-divider />
-
-        <!-- 内容区域 - 根据类型动态渲染 -->
-        <div class="detail-body">
-          <!-- 商品类型 -->
-          <template v-if="currentRecord.collectType === 'product'">
-            <div class="detail-columns">
-              <!-- 左侧：图片 -->
-              <div class="detail-col detail-col--images">
-                <h4>商品图片</h4>
-                <div class="image-grid">
-                  <el-image
-                    v-for="(img, idx) in currentRecord.data?.images || []"
-                    :key="idx"
-                    :src="img"
-                    :preview-src-list="currentRecord.data.images"
-                    :initial-index="idx"
-                    fit="cover"
-                    class="image-grid__item"
-                    preview-teleported
-                  />
-                </div>
-              </div>
-
-              <!-- 右侧：基本信息 -->
-              <div class="detail-col detail-col--info">
-                <h4>基本信息</h4>
-                <el-descriptions :column="1" border>
-                  <el-descriptions-item label="标题">{{
-                    currentRecord.data?.title || "-"
-                  }}</el-descriptions-item>
-                  <el-descriptions-item label="价格">
-                    <span class="price-highlight"
-                      >{{ currentRecord.data?.currency || "" }}
-                      {{ currentRecord.data?.price || "-" }}</span
-                    >
-                  </el-descriptions-item>
-                  <el-descriptions-item label="品牌">{{
-                    currentRecord.data?.brand || "-"
-                  }}</el-descriptions-item>
-                  <el-descriptions-item v-if="currentRecord.data?.rating" label="评分">
-                    {{ currentRecord.data.rating.value }}/{{ currentRecord.data.rating.max }}
-                  </el-descriptions-item>
-                  <el-descriptions-item v-if="currentRecord.data?.reviewCount" label="评论数">
-                    {{ currentRecord.data.reviewCount.count }}
-                  </el-descriptions-item>
-                  <el-descriptions-item v-if="currentRecord.data?.seller" label="卖家">
-                    {{ currentRecord.data.seller.name || "-" }}
-                  </el-descriptions-item>
-                  <el-descriptions-item v-if="currentRecord.data?.category?.length" label="分类">
-                    {{ currentRecord.data.category.join(" > ") }}
-                  </el-descriptions-item>
-                </el-descriptions>
-
-                <!-- 规格参数 -->
-                <template
-                  v-if="
-                    currentRecord.data?.specifications &&
-                    Object.keys(currentRecord.data.specifications).length
-                  "
-                >
-                  <h4 style="margin-top: 20px">规格参数</h4>
-                  <el-table
-                    :data="
-                      Object.entries(currentRecord.data.specifications).map(([k, v]) => ({
-                        key: k,
-                        value: v,
-                      }))
-                    "
-                    size="small"
-                    border
-                  >
-                    <el-table-column prop="key" label="参数" width="180" />
-                    <el-table-column prop="value" label="值" />
-                  </el-table>
-                </template>
-
-                <!-- 描述 -->
-                <template v-if="currentRecord.data?.description">
-                  <h4 style="margin-top: 20px">商品描述</h4>
-                  <div class="description-content">{{ currentRecord.data.description }}</div>
-                </template>
-              </div>
-            </div>
-          </template>
-
-          <!-- 文章类型 -->
-          <template v-else-if="currentRecord.collectType === 'article'">
-            <el-descriptions :column="2" border>
-              <el-descriptions-item label="标题" :span="2">{{
-                currentRecord.data?.title || "-"
-              }}</el-descriptions-item>
-              <el-descriptions-item label="作者">{{
-                currentRecord.data?.author || "-"
-              }}</el-descriptions-item>
-              <el-descriptions-item label="发布时间">{{
-                currentRecord.data?.publishDate || "-"
-              }}</el-descriptions-item>
-              <el-descriptions-item label="字数">{{
-                currentRecord.data?.wordCount || "-"
-              }}</el-descriptions-item>
-              <el-descriptions-item v-if="currentRecord.data?.tags?.length" label="标签">
-                <el-tag
-                  v-for="tag in currentRecord.data.tags"
-                  :key="tag"
-                  size="small"
-                  class="tag-item"
-                  >{{ tag }}</el-tag
-                >
-              </el-descriptions-item>
-            </el-descriptions>
-            <h4 style="margin-top: 20px">正文内容</h4>
-            <div class="article-content">{{ currentRecord.data?.content || "无内容" }}</div>
-          </template>
-
-          <!-- 网页类型 -->
-          <template v-else-if="currentRecord.collectType === 'web_page'">
-            <el-descriptions :column="2" border>
-              <el-descriptions-item label="标题" :span="2">{{
-                currentRecord.data?.title || "-"
-              }}</el-descriptions-item>
-              <el-descriptions-item label="描述" :span="2">{{
-                currentRecord.data?.description || "-"
-              }}</el-descriptions-item>
-              <el-descriptions-item label="类型">{{
-                currentRecord.data?.ogType || "-"
-              }}</el-descriptions-item>
-              <el-descriptions-item label="网站">{{
-                currentRecord.data?.siteName || "-"
-              }}</el-descriptions-item>
-            </el-descriptions>
-            <template v-if="currentRecord.data?.content">
-              <h4 style="margin-top: 20px">页面内容</h4>
-              <div class="article-content">{{ currentRecord.data.content }}</div>
-            </template>
-          </template>
-
-          <!-- 趋势词类型 -->
-          <template v-else-if="currentRecord.collectType === 'trend'">
-            <el-descriptions :column="2" border>
-              <el-descriptions-item label="来源" :span="2">{{
-                currentRecord.data?.source || "-"
-              }}</el-descriptions-item>
-              <el-descriptions-item label="时间范围">{{
-                currentRecord.data?.timeRange || "-"
-              }}</el-descriptions-item>
-            </el-descriptions>
-            <template v-if="currentRecord.data?.keywords?.length">
-              <h4 style="margin-top: 20px">关键词列表</h4>
-              <div class="keyword-cloud">
-                <el-tag
-                  v-for="(kw, idx) in currentRecord.data.keywords"
-                  :key="idx"
-                  size="large"
-                  class="keyword-tag"
-                >
-                  {{ typeof kw === "string" ? kw : kw.word || kw.keyword || JSON.stringify(kw) }}
-                </el-tag>
-              </div>
-            </template>
-            <template v-if="currentRecord.data?.trends">
-              <h4 style="margin-top: 20px">趋势数据</h4>
-              <el-input
-                type="textarea"
-                :model-value="JSON.stringify(currentRecord.data.trends, null, 2)"
-                :rows="10"
-                readonly
-              />
-            </template>
-          </template>
-
-          <!-- 图片批量类型 -->
-          <template v-else-if="currentRecord.collectType === 'image_batch'">
-            <el-descriptions :column="2" border>
-              <el-descriptions-item label="页面标题" :span="2">{{
-                currentRecord.data?.pageTitle || "-"
-              }}</el-descriptions-item>
-              <el-descriptions-item label="图片数量">{{
-                currentRecord.data?.images?.length || 0
-              }}</el-descriptions-item>
-            </el-descriptions>
-            <h4 style="margin-top: 20px">图片列表</h4>
-            <div class="image-grid">
-              <el-image
-                v-for="(img, idx) in currentRecord.data?.images || []"
-                :key="idx"
-                :src="typeof img === 'string' ? img : img.url"
-                :preview-src-list="
-                  (currentRecord.data?.images || []).map((i) => (typeof i === 'string' ? i : i.url))
-                "
-                :initial-index="idx"
-                fit="cover"
-                class="image-grid__item"
-                preview-teleported
-              />
-            </div>
-          </template>
-
-          <!-- 文本片段类型 -->
-          <template v-else-if="currentRecord.collectType === 'text_snippet'">
-            <h4>选中的文本</h4>
-            <div class="text-snippet">{{ currentRecord.data?.selectedText || "-" }}</div>
-            <template v-if="currentRecord.data?.surroundingText">
-              <h4 style="margin-top: 20px">上下文</h4>
-              <div class="article-content">{{ currentRecord.data.surroundingText }}</div>
-            </template>
-          </template>
-
-          <!-- 其他未知类型 - 通用 JSON 展示 -->
-          <template v-else>
-            <h4>采集数据</h4>
-            <el-input
-              type="textarea"
-              :model-value="JSON.stringify(currentRecord.data, null, 2)"
-              :rows="15"
-              readonly
-            />
-          </template>
-        </div>
-
-        <el-divider />
-
-        <!-- AI 分析结果 -->
-        <div v-if="currentRecord.aiAnalysis" class="detail-section">
-          <h3>AI 分析结果</h3>
-          <div class="ai-analysis">
-            <div v-if="currentRecord.aiAnalysis.summary" class="analysis-item">
-              <strong>总结：</strong>{{ currentRecord.aiAnalysis.summary }}
-            </div>
-            <div v-if="currentRecord.aiAnalysis.sellingPoints?.length" class="analysis-item">
-              <strong>卖点：</strong>
-              <ul>
-                <li v-for="(point, idx) in currentRecord.aiAnalysis.sellingPoints" :key="idx">
-                  {{ point }}
-                </li>
-              </ul>
-            </div>
-            <div v-if="currentRecord.aiAnalysis.targetAudience" class="analysis-item">
-              <strong>目标人群：</strong>{{ currentRecord.aiAnalysis.targetAudience }}
-            </div>
-            <div v-if="currentRecord.aiAnalysis.priceAnalysis" class="analysis-item">
-              <strong>价格分析：</strong>{{ currentRecord.aiAnalysis.priceAnalysis }}
-            </div>
-            <div
-              v-if="currentRecord.aiAnalysis.competitiveAdvantages?.length"
-              class="analysis-item"
-            >
-              <strong>竞争优势：</strong>
-              <ul>
-                <li v-for="(adv, idx) in currentRecord.aiAnalysis.competitiveAdvantages" :key="idx">
-                  {{ adv }}
-                </li>
-              </ul>
-            </div>
-            <div v-if="currentRecord.aiAnalysis.potentialIssues?.length" class="analysis-item">
-              <strong>潜在问题：</strong>
-              <ul>
-                <li v-for="(issue, idx) in currentRecord.aiAnalysis.potentialIssues" :key="idx">
-                  {{ issue }}
-                </li>
-              </ul>
-            </div>
-            <div v-if="currentRecord.aiAnalysis.suggestedKeywords?.length" class="analysis-item">
-              <strong>建议关键词：</strong>
-              <el-tag
-                v-for="kw in currentRecord.aiAnalysis.suggestedKeywords"
-                :key="kw"
-                size="small"
-                class="tag-item"
-                >{{ kw }}</el-tag
-              >
-            </div>
-            <div v-if="currentRecord.aiAnalysis.categorySuggestion" class="analysis-item">
-              <strong>建议分类：</strong>{{ currentRecord.aiAnalysis.categorySuggestion }}
-            </div>
-            <div v-if="currentRecord.aiAnalysis.podElements?.length" class="analysis-item">
-              <strong>POD 元素：</strong>
-              <el-tag
-                v-for="elem in currentRecord.aiAnalysis.podElements"
-                :key="elem"
-                size="small"
-                type="warning"
-                class="tag-item"
-                >{{ elem }}</el-tag
-              >
-            </div>
-            <div v-if="currentRecord.aiAnalysis.qualityScore" class="analysis-item">
-              <strong>质量评分：</strong>{{ currentRecord.aiAnalysis.qualityScore }}/10
-            </div>
-            <div v-if="currentRecord.aiAnalysis.marketPotential" class="analysis-item">
-              <strong>市场潜力：</strong>
-              <el-tag
-                :type="
-                  currentRecord.aiAnalysis.marketPotential === 'high'
-                    ? 'success'
-                    : currentRecord.aiAnalysis.marketPotential === 'medium'
-                      ? 'warning'
-                      : 'info'
-                "
-                size="small"
-              >
-                {{ currentRecord.aiAnalysis.marketPotential }}
+        
+        <!-- 基本信息 -->
+        <div class="detail-info-list">
+          <div class="info-item">
+            <span class="info-label">ID</span>
+            <span class="info-value">{{ currentRecord.id }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">采集类型</span>
+            <span class="info-value">
+              <el-tag :type="getTypeTagType(currentRecord.collectType)" size="small">
+                {{ getTypeLabel(currentRecord.collectType) }}
               </el-tag>
-            </div>
+            </span>
           </div>
-          <div class="ai-meta">
-            <span>模型：{{ currentRecord.aiAnalysis.model || "-" }}</span>
-            <span>提供商：{{ currentRecord.aiAnalysis.provider || "-" }}</span>
+          <div class="info-item">
+            <span class="info-label">来源标题</span>
+            <span class="info-value">{{ currentRecord.sourceTitle || "-" }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">平台</span>
+            <span class="info-value">{{ currentRecord.data?.platform || "-" }}</span>
+          </div>
+          <div class="info-item" v-if="currentRecord.sourceUrl">
+            <span class="info-label">来源链接</span>
+            <span class="info-value">
+              <el-link :href="currentRecord.sourceUrl" target="_blank" type="primary">
+                {{ currentRecord.sourceUrl }}
+              </el-link>
+            </span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">上传者</span>
+            <span class="info-value">
+              {{ currentRecord.uploader?.account || currentRecord.uploader?.name || "-" }}
+            </span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">创建时间</span>
+            <span class="info-value">{{ formatTimestamp(currentRecord.createdAt) }}</span>
+          </div>
+          <div class="info-item" v-if="currentRecord.userTags?.length">
+            <span class="info-label">用户标签</span>
+            <span class="info-value">
+              <el-tag
+                v-for="tag in currentRecord.userTags"
+                :key="tag"
+                size="small"
+                style="margin-right: 4px"
+              >
+                {{ tag }}
+              </el-tag>
+            </span>
+          </div>
+          <div class="info-item" v-if="currentRecord.userNotes">
+            <span class="info-label">用户备注</span>
+            <span class="info-value">{{ currentRecord.userNotes }}</span>
           </div>
         </div>
 
-        <!-- 用户备注 -->
-        <div v-if="currentRecord.userNotes" class="detail-section">
-          <h3>用户备注</h3>
-          <p>{{ currentRecord.userNotes }}</p>
+        <el-divider />
+
+        <!-- AI 分析报告 -->
+        <div class="section-title">AI 分析报告</div>
+        <div
+          v-if="currentRecord.aiAnalysis"
+          class="markdown-body"
+          v-html="renderAiAnalysis(currentRecord.aiAnalysis)"
+        ></div>
+        <div v-else class="no-ai-data">
+          <el-empty description="暂无 AI 分析数据" />
         </div>
 
-        <!-- 原始 JSON（调试用） -->
-        <div class="detail-section">
-          <h3>
-            原始数据
-            <el-button size="small" link @click="showRawJson = !showRawJson">
-              {{ showRawJson ? "收起" : "展开" }}
-            </el-button>
-          </h3>
+        <el-divider />
+
+        <!-- 采集数据详情 -->
+        <div class="section-title">采集数据详情</div>
+        <div v-if="currentRecord.data" class="data-detail">
+          <div class="detail-info-list">
+            <template v-for="(value, key) in currentRecord.data" :key="key">
+              <div class="info-item" v-if="value !== null && value !== undefined">
+                <span class="info-label">{{ formatLabel(key) }}</span>
+                <span class="info-value">
+                  <template v-if="isImageUrl(value)">
+                    <el-image :src="value" style="max-width: 100px; max-height: 100px" fit="contain" />
+                  </template>
+                  <template v-else-if="typeof value === 'object'">
+                    <pre class="json-preview">{{ JSON.stringify(value, null, 2) }}</pre>
+                  </template>
+                  <template v-else>
+                    {{ formatValue(value) }}
+                  </template>
+                </span>
+              </div>
+            </template>
+          </div>
+        </div>
+        <div v-else class="no-ai-data">
+          <el-empty description="无采集数据" />
+        </div>
+
+        <!-- 原始 JSON（可折叠） -->
+        <el-divider />
+        <div class="raw-section">
+          <el-button size="small" link @click="showRawJson = !showRawJson">
+            {{ showRawJson ? "收起原始 JSON" : "查看原始 JSON" }}
+          </el-button>
           <el-collapse-transition>
-            <el-input
-              v-show="showRawJson"
-              type="textarea"
-              :model-value="JSON.stringify(currentRecord.data, null, 2)"
-              :rows="10"
-              readonly
-              style="font-family: monospace"
-            />
+            <pre v-show="showRawJson" class="json-preview full-json">{{ JSON.stringify(currentRecord, null, 2) }}</pre>
           </el-collapse-transition>
         </div>
       </div>
@@ -583,6 +307,7 @@
 import { ref, reactive, onMounted, watchEffect } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Search, Delete, View } from "@element-plus/icons-vue";
+import { marked } from "marked";
 import { ExtensionCollectApi } from "@/api/operation/extensionCollect";
 import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
@@ -607,12 +332,9 @@ const gridOptions = ref({
   columns: [
     { type: "checkbox", width: 50, ellipsis: true, reserve: true },
     { title: "ID", field: "id", width: 70 },
-    { title: "封面", field: "coverImage", width: 80, slots: { default: "coverImageSlot" } },
-    { title: "标题/价格", field: "sourceTitle", minWidth: 250, slots: { default: "titleSlot" } },
+    { title: "标题", field: "sourceTitle", minWidth: 300, slots: { default: "titleSlot" } },
     { title: "类型", field: "collectType", width: 90, slots: { default: "collectTypeSlot" } },
-    { title: "平台", field: "platform", width: 90, slots: { default: "platformSlot" } },
-    { title: "AI分析", field: "aiAnalysis", width: 80, slots: { default: "aiAnalyzedSlot" } },
-    { title: "标签", field: "userTags", width: 150, slots: { default: "tagsSlot" } },
+    { title: "AI状态", field: "aiAnalysis", width: 80, slots: { default: "aiStatusSlot" } },
     {
       title: "上传者",
       field: "uploader",
@@ -638,8 +360,128 @@ const detailVisible = ref(false);
 const currentRecord = ref<any>(null);
 const showRawJson = ref(false);
 
-function getCoverImage(row: any) {
-  return row.data?.coverImage || row.data?.images?.[0] || null;
+function renderMarkdown(text: any): string {
+  if (!text) return "";
+  const content = typeof text === 'string' ? text : JSON.stringify(text);
+  return marked(content, { breaks: true }) as string;
+}
+
+// 渲染 AI 分析结果（支持对象、数组和字符串）
+function renderAiAnalysis(aiAnalysis: any): string {
+  if (!aiAnalysis) return "";
+  
+  // 如果是数组，取第一个元素处理
+  if (Array.isArray(aiAnalysis)) {
+    if (aiAnalysis.length === 0) return "";
+    return renderAiAnalysis(aiAnalysis[0]);
+  }
+  
+  // 如果是字符串，直接渲染 Markdown
+  if (typeof aiAnalysis === 'string') {
+    return marked(aiAnalysis, { breaks: true }) as string;
+  }
+  
+  // 如果是对象，提取内容字段
+  if (typeof aiAnalysis === 'object') {
+    // 检测是否是逐字符拆分的数据（键是 "0", "1", "2", ...）
+    const keys = Object.keys(aiAnalysis);
+    const isCharArray = keys.length > 0 && keys.every((k, i) => k === String(i));
+    if (isCharArray) {
+      // 将字符数组转换为字符串
+      const str = keys.map(k => aiAnalysis[k]).join('');
+      return marked(str, { breaks: true }) as string;
+    }
+    
+    // 优先级：markdown > content > analysis > message > raw
+    const content = aiAnalysis.markdown || aiAnalysis.content || aiAnalysis.analysis || aiAnalysis.message || aiAnalysis.raw;
+    if (content && typeof content === 'string') {
+      return marked(content, { breaks: true }) as string;
+    }
+    
+    // 如果有 error 字段，显示错误信息
+    if (aiAnalysis.error) {
+      return marked(`**分析失败**: ${aiAnalysis.error}`, { breaks: true }) as string;
+    }
+    
+    // 否则格式化展示整个对象
+    const formatted = Object.entries(aiAnalysis)
+      .filter(([_, v]) => v !== null && v !== undefined)
+      .map(([k, v]) => {
+        const label = formatLabel(k);
+        const value = typeof v === 'object' ? JSON.stringify(v, null, 2) : String(v);
+        return `**${label}**: ${value}`;
+      })
+      .join('\n\n');
+    return marked(formatted, { breaks: true }) as string;
+  }
+  
+  return "";
+}
+
+// 格式化字段标签
+function formatLabel(key: string): string {
+  const labelMap: Record<string, string> = {
+    id: 'ID',
+    title: '标题',
+    name: '名称',
+    description: '描述',
+    price: '价格',
+    rating: '评分',
+    reviews: '评论数',
+    imageUrl: '图片',
+    platform: '平台',
+    category: '分类',
+    brand: '品牌',
+    url: '链接',
+    keywords: '关键词',
+    analysis: '分析结果',
+    summary: '摘要',
+    score: '评分',
+    strengths: '优点',
+    weaknesses: '不足',
+    suggestions: '建议',
+    keyInfo: '关键信息',
+    features: '特点',
+    scenarios: '适用场景',
+    evaluation: '评价',
+    content: '内容',
+    markdown: 'Markdown',
+    text: '文本',
+    body: '正文',
+    images: '图片列表',
+    raw: '原始内容',
+  };
+  return labelMap[key] || key;
+}
+
+// 格式化值
+function formatValue(value: any): string {
+  if (value === null || value === undefined) return '-';
+  if (typeof value === 'boolean') return value ? '是' : '否';
+  if (typeof value === 'number') return value.toLocaleString();
+  return String(value);
+}
+
+// 判断是否是图片 URL
+function isImageUrl(value: any): boolean {
+  if (typeof value !== 'string') return false;
+  return /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(value) || value.startsWith('data:image/');
+}
+
+function getPreviewText(aiAnalysis: any): string {
+  if (!aiAnalysis) return "";
+  // 如果是对象，转为 JSON 字符串
+  const text = typeof aiAnalysis === 'string' ? aiAnalysis : JSON.stringify(aiAnalysis);
+  // 取前100个字符作为预览，去掉 Markdown 标记
+  return (
+    text
+      .replace(/#{1,6}\s/g, "")
+      .replace(/\*{1,2}(.*?)\*{1,2}/g, "$1")
+      .replace(/\[(.*?)\]\(.*?\)/g, "$1")
+      .replace(/\n/g, " ")
+      .substring(0, 100)
+      .trim() + "..."
+  );
 }
 
 async function getList() {
@@ -783,45 +625,21 @@ onMounted(getList);
   line-height: 1.5;
 }
 
-.collect-price {
-  font-weight: 600;
-  font-size: 13px;
-  margin-top: 4px;
-}
-
-.no-image {
-  width: 60px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--el-fill-color-lighter);
-  color: var(--el-text-color-placeholder);
+.collect-preview {
   font-size: 12px;
-  border-radius: 4px;
+  color: var(--el-text-color-secondary);
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.tag-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.tag-item {
-  margin-right: 4px;
-  margin-bottom: 2px;
-}
-
-/* 全屏详情样式 */
+/* 全屏详情 */
 .detail-fullscreen {
   padding: 0 24px 24px;
 }
 
 .detail-header {
-  margin-bottom: 16px;
-}
-
-.detail-header__info {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -833,138 +651,197 @@ onMounted(getList);
   font-weight: 600;
 }
 
-.detail-header__meta {
+.detail-meta {
   display: flex;
   gap: 20px;
   color: var(--el-text-color-secondary);
   font-size: 14px;
-  margin-bottom: 8px;
-}
-
-.detail-header__link {
-  font-size: 13px;
-}
-
-.detail-body {
-  margin: 20px 0;
-}
-
-.detail-columns {
-  display: flex;
-  gap: 24px;
-}
-
-.detail-col {
-  flex: 1;
-}
-
-.detail-col--images {
-  flex: 0 0 400px;
-}
-
-.detail-col--info {
-  flex: 1;
-  min-width: 0;
-}
-
-.detail-columns h4 {
-  margin-bottom: 12px;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.image-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 12px;
-}
-
-.image-grid__item {
-  width: 120px;
-  height: 120px;
-  border-radius: 8px;
-}
-
-.price-highlight {
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.description-content,
-.article-content {
-  border-radius: 8px;
-  padding: 16px;
-  line-height: 1.8;
-  white-space: pre-wrap;
-  max-height: 300px;
-  overflow-y: auto;
-  background: var(--el-fill-color-light);
-}
-
-.article-content {
-  max-height: 500px;
-}
-
-.text-snippet {
-  border-left: 4px solid var(--el-color-warning);
-  border-radius: 4px;
-  padding: 16px;
-  font-size: 16px;
-  line-height: 1.8;
-  background: var(--el-fill-color-lighter);
-}
-
-.keyword-cloud {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.keyword-tag {
-  font-size: 14px;
-}
-
-.detail-section {
-  margin-top: 24px;
-}
-
-.detail-section h3 {
-  margin-bottom: 16px;
-  font-size: 16px;
-  font-weight: 600;
-  border-bottom: 1px solid var(--el-border-color-light);
-  padding-bottom: 8px;
-  display: flex;
   align-items: center;
-  gap: 8px;
 }
 
-.ai-analysis {
-  border-radius: 8px;
-  padding: 20px;
-  background: var(--el-fill-color-light);
+.no-ai-data {
+  padding: 40px 0;
 }
 
-.analysis-item {
-  margin-bottom: 16px;
+.raw-section {
+  margin-top: 16px;
+}
+
+/* Markdown 样式 */
+.markdown-body {
   font-size: 14px;
   line-height: 1.8;
 }
 
-.analysis-item ul {
-  margin: 4px 0 0 20px;
-  padding: 0;
+.markdown-body :deep(h1) {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 24px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--el-border-color-light);
 }
 
-.analysis-item li {
+.markdown-body :deep(h2) {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 20px 0 12px;
+}
+
+.markdown-body :deep(h3) {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 16px 0 8px;
+}
+
+.markdown-body :deep(p) {
+  margin: 8px 0;
+}
+
+.markdown-body :deep(ul),
+.markdown-body :deep(ol) {
+  margin: 8px 0;
+  padding-left: 24px;
+}
+
+.markdown-body :deep(li) {
   margin: 4px 0;
 }
 
-.ai-meta {
-  margin-top: 16px;
-  font-size: 13px;
+.markdown-body :deep(table) {
+  border-collapse: collapse;
+  margin: 12px 0;
+  width: 100%;
+}
+
+.markdown-body :deep(th),
+.markdown-body :deep(td) {
+  border: 1px solid var(--el-border-color);
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.markdown-body :deep(th) {
+  background: var(--el-fill-color-light);
+  font-weight: 600;
+}
+
+.markdown-body :deep(blockquote) {
+  margin: 12px 0;
+  padding: 8px 16px;
+  border-left: 4px solid var(--el-color-primary);
+  background: var(--el-fill-color-lighter);
+}
+
+.markdown-body :deep(code) {
+  background: var(--el-fill-color-light);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.markdown-body :deep(pre) {
+  background: var(--el-fill-color-light);
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.markdown-body :deep(pre code) {
+  background: none;
+  padding: 0;
+}
+
+.markdown-body :deep(img) {
+  max-width: 100%;
+  border-radius: 8px;
+  margin: 8px 0;
+}
+
+.markdown-body :deep(hr) {
+  margin: 16px 0;
+  border: none;
+  border-top: 1px solid var(--el-border-color-light);
+}
+
+.markdown-body :deep(strong) {
+  font-weight: 600;
+}
+
+/* 新增样式 */
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--el-text-color-primary);
+}
+
+.data-detail {
+  margin-top: 12px;
+}
+
+.data-detail :deep(.el-descriptions) {
+  margin-bottom: 16px;
+}
+
+.data-detail :deep(.el-descriptions__label) {
+  font-weight: 500;
   color: var(--el-text-color-secondary);
+}
+
+.data-detail :deep(.el-descriptions__content) {
+  word-break: break-all;
+}
+
+.data-detail :deep(.el-image) {
+  border-radius: 4px;
+  border: 1px solid var(--el-border-color-lighter);
+}
+
+.data-detail :deep(.el-textarea__inner) {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* 信息列表样式 */
+.detail-info-list {
+  margin-top: 16px;
+}
+
+.info-item {
   display: flex;
-  gap: 20px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  width: 100px;
+  flex-shrink: 0;
+  font-weight: 500;
+  color: var(--el-text-color-secondary);
+}
+
+.info-value {
+  flex: 1;
+  word-break: break-all;
+}
+
+.json-preview {
+  background: var(--el-fill-color-light);
+  padding: 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-x: auto;
+  margin: 0;
+}
+
+.full-json {
+  margin-top: 12px;
+  max-height: 400px;
+  overflow-y: auto;
 }
 </style>

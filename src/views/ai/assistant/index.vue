@@ -1,15 +1,11 @@
 <template>
   <div class="ai-assistant-page">
-    <AiAssistantSurface />
+    <AiAssistant />
   </div>
 </template>
 
 <script setup lang="ts">
-import { defineAsyncComponent } from "vue";
-
-const AiAssistantSurface = defineAsyncComponent(
-  () => import("@/components/AiAssistant/AiAssistantSurface.vue"),
-);
+import AiAssistant from "@/components/AiAssistant/index.vue";
 
 defineOptions({
   name: "AiAssistantPage",

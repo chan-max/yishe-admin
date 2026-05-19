@@ -1,7 +1,6 @@
 import request from "@/config/axios";
-import { fetchEventSource } from "@microsoft/fetch-event-source";
-import { getAccessToken } from "@/utils/auth";
 import { config } from "@/config/axios/config";
+import { getAccessToken } from "@/utils/auth";
 
 export interface AiAssistantPageContext {
   routePath?: string;
@@ -16,13 +15,13 @@ export interface AiAssistantPersona {
   key: string;
   name: string;
   description: string;
-  isDefault: boolean;
+  isDefault?: boolean;
 }
 
 export interface AiAssistantConversation {
   id: number;
   title: string;
-  messageCount: number;
+  messageCount?: number;
   lastMessageAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -40,17 +39,17 @@ export interface AiAssistantToolSchemaProperty {
   items?: Record<string, any>;
 }
 
+export interface AiAssistantToolInputSchema {
+  type?: string;
+  required?: string[];
+  properties?: Record<string, AiAssistantToolSchemaProperty>;
+}
+
 export interface AiAssistantToolExampleCase {
   title: string;
   prompt: string;
   description?: string;
   input?: Record<string, any>;
-}
-
-export interface AiAssistantToolInputSchema {
-  type?: string;
-  required?: string[];
-  properties?: Record<string, AiAssistantToolSchemaProperty>;
 }
 
 export interface AiAssistantToolDefinition {
@@ -79,6 +78,12 @@ export interface AiAssistantCapabilityGroup {
   tools: AiAssistantToolDefinition[];
 }
 
+export interface AiAssistantCapabilityCatalog {
+  total: number;
+  summary: string;
+  groups: AiAssistantCapabilityGroup[];
+}
+
 export interface AiAssistantAttachment {
   kind: "image" | "file";
   name: string;
@@ -94,37 +99,20 @@ export interface AiAssistantUploadTarget {
   url: string;
 }
 
-export interface AiAssistantCapabilityCatalog {
-  total: number;
-  summary: string;
-  groups: AiAssistantCapabilityGroup[];
-}
-
 export interface AiAssistantMessage {
   id: number;
   conversationId: number | null;
   role: "user" | "assistant" | "tool";
   content: string;
   attachments: AiAssistantAttachment[];
-  routePath: string | null;
-  routeTitle: string | null;
-  pageContext: AiAssistantPageContext | null;
+  routePath?: string | null;
+  routeTitle?: string | null;
+  pageContext?: AiAssistantPageContext | null;
   toolKey: string | null;
   toolLabel: string | null;
-  toolInput: Record<string, any> | null;
+  toolInput?: Record<string, any> | null;
   toolResult: Record<string, any> | null;
-  runTrace?: {
-    status?: string;
-    startedAt?: string;
-    finishedAt?: string;
-    events?: Array<{
-      event: string;
-      label: string;
-      time: string;
-      summary: string;
-      payload?: Record<string, any> | null;
-    }>;
-  } | null;
+  runTrace?: Record<string, any> | null;
   createdAt: string;
 }
 
@@ -152,7 +140,7 @@ export interface AiAssistantRunEventItem {
   time: string;
   summary: string;
   payload?: Record<string, any> | null;
-  messageId?: number;
+  messageId?: number | null;
   conversationId?: number | null;
 }
 
@@ -183,6 +171,73 @@ export interface AiAssistantRunListResult {
   items: AiAssistantRun[];
 }
 
+type StreamHandlers = {
+  signal?: AbortSignal;
+  onEvent: (event: AiAssistantChatStreamEvent) => void;
+  onError?: (error: any) => void;
+  onDone?: () => void;
+  onClose?: () => void;
+};
+
+function authHeaders() {
+  const token = getAccessToken();
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token || ""}`,
+  };
+}
+
+async function postSse(
+  url: string,
+  body: Record<string, any>,
+  handlers: StreamHandlers,
+) {
+  const { fetchEventSource } = await import("@microsoft/fetch-event-source");
+  await fetchEventSource(`${config.base_url}${url}`, {
+    method: "POST",
+    headers: authHeaders(),
+    openWhenHidden: true,
+    signal: handlers.signal,
+    body: JSON.stringify(body),
+    onmessage(event) {
+      let parsed: any = {};
+      try {
+        parsed = event.data ? JSON.parse(event.data) : {};
+      } catch {
+        parsed = {};
+      }
+      handlers.onEvent({
+        event: event.event || "message",
+        data: parsed,
+      });
+    },
+    onerror(error) {
+      handlers.onError?.(error);
+      throw error;
+    },
+    onclose() {
+      handlers.onDone?.();
+      handlers.onClose?.();
+    },
+  });
+}
+
+function normalizeMessageParams(
+  arg?: number | { limit?: number; conversationId?: number },
+  conversationId?: number | null,
+) {
+  if (typeof arg === "object" && arg !== null) {
+    return {
+      limit: arg.limit,
+      conversationId: arg.conversationId,
+    };
+  }
+  return {
+    limit: typeof arg === "number" ? arg : undefined,
+    conversationId: conversationId || undefined,
+  };
+}
+
 export const AiAssistantApi = {
   getConversations: async () => {
     return request.get<AiAssistantConversation[]>({
@@ -196,54 +251,56 @@ export const AiAssistantApi = {
     });
   },
 
-  createConversation: async (title?: string, personaKey?: string) => {
+  createConversation: async (
+    arg?: string | { title?: string; personaKey?: string },
+    personaKey?: string,
+  ) => {
+    const data =
+      typeof arg === "object" && arg !== null
+        ? arg
+        : { title: arg, personaKey };
     return request.post<AiAssistantConversation>({
       url: "/ai-assistant/conversations",
-      data: {
-        title,
-        personaKey,
-      },
+      data,
     });
   },
 
   updateConversationPersona: async (conversationId: number, personaKey: string) => {
     return request.patch<AiAssistantConversation>({
       url: `/ai-assistant/conversations/${conversationId}/persona`,
-      data: {
-        personaKey,
-      },
+      data: { personaKey },
     });
   },
 
-  deleteConversation: async (conversationId: number) => {
+  deleteConversation: async (id: number | string) => {
     return request.delete({
-      url: `/ai-assistant/conversations/${conversationId}`,
+      url: `/ai-assistant/conversations/${id}`,
     });
   },
 
-  getMessages: async (limit = 80, conversationId?: number | null) => {
+  getMessages: async (
+    arg?: number | { limit?: number; conversationId?: number },
+    conversationId?: number | null,
+  ) => {
     return request.get<AiAssistantMessage[]>({
       url: "/ai-assistant/messages",
-      params: {
-        limit,
-        conversationId: conversationId || undefined,
-      },
+      params: normalizeMessageParams(arg, conversationId),
     });
   },
 
-  clearMessages: async (conversationId?: number | null) => {
+  clearMessages: async (
+    arg?: number | null | { conversationId?: number | null },
+  ) => {
+    const conversationId =
+      typeof arg === "object" && arg !== null ? arg.conversationId : arg;
     return request.delete({
       url: "/ai-assistant/messages",
-      params: {
-        conversationId: conversationId || undefined,
-      },
+      params: { conversationId: conversationId || undefined },
     });
   },
 
   getTools: async () => {
-    return request.get<{
-      tools: AiAssistantToolDefinition[];
-    }>({
+    return request.get<{ tools: AiAssistantToolDefinition[] }>({
       url: "/ai-assistant/tools",
     });
   },
@@ -257,82 +314,54 @@ export const AiAssistantApi = {
   createAttachmentUploadTarget: async (filename: string) => {
     return request.post<AiAssistantUploadTarget>({
       url: "/ai-assistant/attachments/upload-target",
-      data: {
-        filename,
-      },
+      data: { filename },
     });
   },
 
   chat: async (
-    message: string,
+    arg:
+      | string
+      | {
+          message: string;
+          conversationId?: number;
+          attachments?: AiAssistantAttachment[];
+          pageContext?: AiAssistantPageContext;
+        },
     attachments?: AiAssistantAttachment[],
     pageContext?: AiAssistantPageContext,
     conversationId?: number | null,
   ) => {
+    const data =
+      typeof arg === "object"
+        ? arg
+        : {
+            message: arg,
+            attachments,
+            pageContext,
+            conversationId: conversationId || undefined,
+          };
     return request.post<AiAssistantChatResult>({
       url: "/ai-assistant/chat",
-      data: {
-        message,
-        attachments,
-        pageContext,
-        conversationId: conversationId || undefined,
-      },
+      data,
     });
   },
 
-  chatStream: async (
-    message: string,
-    attachments: AiAssistantAttachment[] | undefined,
-    pageContext: AiAssistantPageContext | undefined,
-    conversationId: number | null | undefined,
-    options: {
-      enableThinking?: boolean;
-      thinkingBudget?: number;
-      includeUsage?: boolean;
-      signal: AbortSignal;
-      onEvent: (event: AiAssistantChatStreamEvent) => void;
-      onError?: (error: any) => void;
-      onClose?: () => void;
-    },
-  ) => {
-    const token = getAccessToken();
-    return fetchEventSource(`${config.base_url}/ai-assistant/runs/stream`, {
-      method: "post",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      openWhenHidden: true,
-      signal: options.signal,
-      body: JSON.stringify({
-        message,
-        attachments,
-        pageContext,
-        conversationId: conversationId || undefined,
-        enableThinking: options.enableThinking,
-        thinkingBudget: options.thinkingBudget,
-        includeUsage: options.includeUsage !== false,
-      }),
-      onmessage(event) {
-        let parsed: any = {};
-        try {
-          parsed = event.data ? JSON.parse(event.data) : {};
-        } catch {
-          parsed = {};
-        }
-        options.onEvent({
-          event: event.event || "message",
-          data: parsed,
-        });
-      },
-      onerror(error) {
-        options.onError?.(error);
-        throw error;
-      },
-      onclose() {
-        options.onClose?.();
-      },
-    });
+  chatStream: async (...args: any[]) => {
+    const first = args[0];
+    const isObjectCall = first && typeof first === "object" && !Array.isArray(first);
+    const body = isObjectCall
+      ? first
+      : {
+          message: args[0],
+          attachments: args[1],
+          pageContext: args[2],
+          conversationId: args[3] || undefined,
+          enableThinking: args[4]?.enableThinking,
+          thinkingBudget: args[4]?.thinkingBudget,
+          includeUsage: args[4]?.includeUsage !== false,
+        };
+    const handlers: StreamHandlers = isObjectCall ? args[1] : args[4];
+    return postSse("/ai-assistant/runs/stream", body, handlers);
   },
 
   continueRunStream: async (
@@ -341,55 +370,39 @@ export const AiAssistantApi = {
     attachments: AiAssistantAttachment[] | undefined,
     pageContext: AiAssistantPageContext | undefined,
     conversationId: number | null | undefined,
-    options: {
+    handlers: StreamHandlers & {
       enableThinking?: boolean;
       thinkingBudget?: number;
       includeUsage?: boolean;
-      signal: AbortSignal;
-      onEvent: (event: AiAssistantChatStreamEvent) => void;
-      onError?: (error: any) => void;
-      onClose?: () => void;
     },
   ) => {
-    const token = getAccessToken();
-    return fetchEventSource(`${config.base_url}/ai-assistant/runs/${runId}/input-stream`, {
-      method: "post",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      openWhenHidden: true,
-      signal: options.signal,
-      body: JSON.stringify({
+    return postSse(
+      `/ai-assistant/runs/${runId}/input-stream`,
+      {
         runId,
         message,
         attachments,
         pageContext,
         conversationId: conversationId || undefined,
-        enableThinking: options.enableThinking,
-        thinkingBudget: options.thinkingBudget,
-        includeUsage: options.includeUsage !== false,
-      }),
-      onmessage(event) {
-        let parsed: any = {};
-        try {
-          parsed = event.data ? JSON.parse(event.data) : {};
-        } catch {
-          parsed = {};
-        }
-        options.onEvent({
-          event: event.event || "message",
-          data: parsed,
-        });
+        enableThinking: handlers.enableThinking,
+        thinkingBudget: handlers.thinkingBudget,
+        includeUsage: handlers.includeUsage !== false,
       },
-      onerror(error) {
-        options.onError?.(error);
-        throw error;
-      },
-      onclose() {
-        options.onClose?.();
-      },
-    });
+      handlers,
+    );
+  },
+
+  resumeRunStream: async (
+    runId: string,
+    data: {
+      conversationId?: number;
+      confirmed?: boolean;
+      input?: Record<string, any>;
+      reason?: string;
+    },
+    handlers: StreamHandlers,
+  ) => {
+    return postSse(`/ai-assistant/runs/${runId}/resume-stream`, data, handlers);
   },
 
   executeTool: async (
