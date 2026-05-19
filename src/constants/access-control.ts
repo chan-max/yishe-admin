@@ -65,9 +65,7 @@ export const MENU_ACCESS_GROUPS: MenuAccessGroup[] = [
   },
   {
     label: "设计工具",
-    options: [
-      { key: "design-tool.connection", label: "连接管理" },
-    ],
+    options: [{ key: "design-tool.connection", label: "连接管理" }],
   },
   {
     label: "AI创作",
@@ -187,6 +185,7 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   EcomSelectionSupplyMatchTaskPage: "operation.ecom-platform-collect",
   EcomSelectionSupplyMatchRunPage: "operation.ecom-platform-collect",
   EcomSelectionSupplyMatchItemPage: "operation.ecom-platform-collect",
+  ExtensionCollectIndex: "operation.ecom-platform-collect",
   OperationEcomPlatformCollect: "operation.ecom-platform-collect",
   OperationLinkNavigation: "operation.link-navigation",
   ShopIndex: "operation.shop",

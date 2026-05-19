@@ -673,6 +673,16 @@ const remainingRouter: AppRouteRecordRaw[] = [
           order: 10,
         },
       },
+      {
+        path: "extension-collect",
+        component: () => import("@/views/operation/extension-collect/index.vue"),
+        name: "ExtensionCollectIndex",
+        meta: {
+          title: "插件采集",
+          noCache: true,
+          order: 11,
+        },
+      },
     ],
   },
   {
