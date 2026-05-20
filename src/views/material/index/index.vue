@@ -226,6 +226,29 @@
               </el-col>
 
               <el-col
+                class="list-page-search-form__col--narrow"
+                :xs="24"
+                :sm="12"
+                :md="8"
+                :lg="3"
+                :xl="3"
+              >
+                <el-form-item label="无缝">
+                  <el-select
+                    v-model="queryParams.seamless"
+                    size="small"
+                    placeholder="无缝"
+                    clearable
+                    @change="getList"
+                  >
+                    <el-option label="全部" value="" />
+                    <el-option label="是" :value="true" />
+                    <el-option label="否" :value="false" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+
+              <el-col
                 class="list-page-search-form__col--wide"
                 :xs="24"
                 :sm="12"
@@ -569,6 +592,13 @@
             </el-form-item>
             <el-form-item label="抠图素材">
               <el-select v-model="queryParams.isCutout" placeholder="请选择类型">
+                <el-option label="全部" value="" />
+                <el-option label="是" :value="true" />
+                <el-option label="否" :value="false" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="无缝贴图">
+              <el-select v-model="queryParams.seamless" placeholder="请选择类型">
                 <el-option label="全部" value="" />
                 <el-option label="是" :value="true" />
                 <el-option label="否" :value="false" />
@@ -1974,6 +2004,12 @@
                   </el-tag>
                 </template>
 
+                <template #seamlessSlot="{ row }">
+                  <el-tag :type="row.seamless ? 'success' : 'info'" size="small">
+                    {{ row.seamless ? "是" : "否" }}
+                  </el-tag>
+                </template>
+
                 <template #fileSizeSlot="{ row }">
                   <span v-if="row.fileSize" class="table-cell-text table-time-cell">
                     {{ formatFileSize(row.fileSize) }}
@@ -2579,6 +2615,16 @@
                 <el-form-item label="抠图素材">
                   <el-switch
                     v-model="editForm.isCutout"
+                    size="small"
+                    active-text="是"
+                    inactive-text="否"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :lg="6">
+                <el-form-item label="无缝贴图">
+                  <el-switch
+                    v-model="editForm.seamless"
                     size="small"
                     active-text="是"
                     inactive-text="否"
@@ -3492,9 +3538,10 @@ const queryParams = reactive({
   id: "", // 新增ID精确查询参数
   phash: "", // phash值或直接输入图片地址
   phashMode: "range", // range | exact
-  isCustom: "" as boolean | string, // 空字符串表示“全部”，请求时转为 null
+  isCustom: "" as boolean | string, // 空字符串表示"全部"，请求时转为 null
   isInfringement: "" as boolean | string,
   isCutout: "" as boolean | string,
+  seamless: "" as boolean | string,
   sizeShape: [] as string[], // 尺寸形状：landscape(横图) | portrait(竖图) | square(正方图) | ultra-wide | wide | slightly-wide | slightly-long | long | ultra-long（支持多选）
   random: false, // 是否随机
   folderId: FOLDER_FILTER.ALL as string | null | undefined, // 文件夹ID
@@ -3738,10 +3785,28 @@ const gridOptions = computed(() => {
       slots: { default: "isCutoutSlot" },
     },
     {
+      title: "无缝",
+      field: "seamless",
+      width: 100,
+      slots: { default: "seamlessSlot" },
+    },
+    {
       title: "文件夹",
       field: "folder",
       width: 180,
       slots: { default: "folderSlot" },
+    },
+    {
+      title: "描述（中/英）",
+      field: "description",
+      minWidth: 280,
+      slots: { default: "descriptionBilingualSlot" },
+    },
+    {
+      title: "关键词（中/英）",
+      field: "keywords",
+      minWidth: 220,
+      slots: { default: "keywordsBilingualSlot" },
     },
   ];
 
@@ -3869,6 +3934,7 @@ const editForm = ref({
   isTexture: false,
   isInfringement: false,
   isCutout: false,
+  seamless: false,
   originUrl: "",
   source: "",
   folderId: null, // 文件夹ID
@@ -4347,6 +4413,7 @@ async function getList() {
     isCustom: queryParams.isCustom === "" ? null : queryParams.isCustom,
     isInfringement: queryParams.isInfringement === "" ? null : queryParams.isInfringement,
     isCutout: queryParams.isCutout === "" ? null : queryParams.isCutout,
+    seamless: queryParams.seamless === "" ? null : queryParams.seamless,
     suffix: Array.isArray(queryParams.suffix)
       ? queryParams.suffix
       : queryParams.suffix
