@@ -141,133 +141,13 @@
         </div>
       </el-scrollbar>
 
-      <section v-if="pendingInteraction" class="interaction-panel">
-        <div class="interaction-main">
-          <span class="interaction-badge">{{ interactionTag }}</span>
-          <div>
-            <div class="interaction-title">{{ pendingInteraction.label || "需要用户参与" }}</div>
-            <div class="interaction-tip">{{ interactionHintText }}</div>
-            <pre>{{ pendingInteraction.question }}</pre>
-          </div>
-        </div>
-
-        <template v-if="pendingInteraction.type === 'choice'">
-          <div class="choice-list">
-            <button
-              v-for="option in normalizedOptions"
-              :key="option.value"
-              class="choice-option"
-              :class="{ active: isOptionSelected(option.value) }"
-              type="button"
-              @click="togglePendingChoice(option.value)"
-            >
-              <span class="choice-indicator" />
-              <span class="choice-copy">
-                <span>{{ option.label }}</span>
-                <small v-if="option.description">{{ option.description }}</small>
-              </span>
-            </button>
-          </div>
-        </template>
-
-        <template v-else-if="pendingInteraction.type === 'form'">
-          <el-form label-position="top" class="interaction-form">
-            <el-form-item
-              v-for="field in normalizedFields"
-              :key="field.name"
-              :label="field.label"
-              :required="field.required"
-            >
-              <el-switch
-                v-if="field.type === 'boolean'"
-                v-model="pendingForm[field.name]"
-              />
-              <el-select
-                v-else-if="field.type === 'select'"
-                v-model="pendingForm[field.name]"
-                :placeholder="field.placeholder || '请选择'"
-                filterable
-              >
-                <el-option
-                  v-for="option in normalizeOptions(field.options)"
-                  :key="option.value"
-                  :label="option.label"
-                  :value="option.value"
-                />
-              </el-select>
-              <el-date-picker
-                v-else-if="field.type === 'date' || field.type === 'datetime'"
-                v-model="pendingForm[field.name]"
-                :type="field.type === 'datetime' ? 'datetime' : 'date'"
-                :placeholder="field.placeholder || '请选择时间'"
-                value-format="YYYY-MM-DD HH:mm:ss"
-              />
-              <el-input-number
-                v-else-if="field.type === 'number'"
-                v-model="pendingForm[field.name]"
-                controls-position="right"
-              />
-              <el-input
-                v-else
-                v-model="pendingForm[field.name]"
-                :type="field.type === 'textarea' ? 'textarea' : 'text'"
-                :rows="field.type === 'textarea' ? 3 : undefined"
-                :placeholder="field.placeholder || '请输入'"
-              />
-            </el-form-item>
-          </el-form>
-        </template>
-
-        <template v-else-if="pendingInteraction.type === 'feedback'">
-          <div class="feedback-actions">
-            <button
-              v-for="option in normalizedOptions"
-              :key="option.value"
-              class="feedback-option"
-              :class="{ active: pendingChoice === option.value }"
-              type="button"
-              @click="pendingChoice = option.value"
-            >
-              {{ option.label }}
-            </button>
-          </div>
-          <el-input
-            v-model="pendingTextInput"
-            type="textarea"
-            :rows="2"
-            placeholder="可选：补充反馈"
-          />
-        </template>
-
-        <template v-else-if="pendingInteraction.type !== 'confirm'">
-          <el-input
-            v-model="pendingTextInput"
-            type="textarea"
-            :rows="2"
-            :placeholder="pendingInteraction.placeholder || '请输入'"
-          />
-        </template>
-
-        <el-input
-          v-if="pendingInteraction.type === 'confirm'"
-          v-model="pendingReason"
-          size="small"
-          placeholder="可选：给这次确认补充一句备注"
+      <section v-if="pendingInteraction" class="interaction-wrapper">
+        <InteractionRenderer
+          :payload="pendingInteraction"
+          :loading="loading"
+          @submit="handleInteractionSubmit"
+          @reject="handleInteractionReject"
         />
-        <div class="interaction-actions">
-          <el-button size="small" text @click="handleRejectInteraction">
-            {{ interactionRejectText }}
-          </el-button>
-          <el-button
-            size="small"
-            type="primary"
-            :disabled="!canSubmitInteraction"
-            :loading="loading"
-            @click="handleSubmitInteraction"
-          >
-            {{ interactionPrimaryText }}
-          </el-button>
-        </div>
       </section>
 
       <footer class="input-area">
@@ -309,42 +189,12 @@ import {
   type AiAssistantMessage,
 } from "@/api/aiAssistant";
 import MarkdownView from "@/components/MarkdownView/index.vue";
-
-interface PendingInteraction {
-  type: string;
-  runId: string;
-  question: string;
-  tool?: string;
-  toolName?: string;
-  label?: string;
-  input?: Record<string, any>;
-  options?: Array<string | Record<string, any>>;
-  multiple?: boolean;
-  fields?: Array<Record<string, any>>;
-  placeholder?: string;
-  defaultValue?: any;
-  riskLevel?: string;
-}
+import InteractionRenderer from "./interactions/InteractionRenderer.vue";
+import type { InteractionPayload, InteractionSubmitResult } from "./interactions/types";
 
 interface StreamContext {
   fullReply: string;
   assistantMsg: AiAssistantMessage | null;
-}
-
-interface InteractionOption {
-  label: string;
-  value: string;
-  description?: string;
-}
-
-interface InteractionField {
-  name: string;
-  label: string;
-  type: string;
-  required: boolean;
-  placeholder?: string;
-  defaultValue?: any;
-  options?: Array<string | Record<string, any>>;
 }
 
 const route = useRoute();
@@ -352,15 +202,10 @@ const messageListRef = ref<HTMLElement>();
 const messageScrollbarRef = ref<ScrollbarInstance>();
 const inputRef = ref<{ focus?: () => void }>();
 const inputMessage = ref("");
-const pendingReason = ref("");
-const pendingTextInput = ref("");
-const pendingChoice = ref("");
-const pendingChoiceList = ref<string[]>([]);
-const pendingForm = ref<Record<string, any>>({});
 const loading = ref(false);
 const runtimeStatus = ref("idle");
 const currentRunId = ref("");
-const pendingInteraction = ref<PendingInteraction | null>(null);
+const pendingInteraction = ref<InteractionPayload | null>(null);
 const messages = ref<AiAssistantMessage[]>([]);
 const conversations = ref<AiAssistantConversation[]>([]);
 const currentConversationId = ref<number | null>(null);
@@ -421,84 +266,23 @@ const promptTextMap: Record<string, string> = {
   confirm: "如果你需要我确认、选择或补充参数，请直接暂停并向我提问。",
 };
 
-const interactionTag = computed(() => {
-  switch (pendingInteraction.value?.type) {
-    case "choice":
-      return "请选择";
-    case "form":
-      return "请填写";
-    case "feedback":
-      return "请反馈";
-    case "input":
-    case "clarify":
-      return "请补充";
-    default:
-      return "需要确认";
-  }
-});
-
-const interactionHintText = computed(() => {
-  switch (pendingInteraction.value?.type) {
-    case "choice":
-      return pendingInteraction.value.multiple ? "可多选，选择完成后提交。" : "请选择一个选项后继续。";
-    case "form":
-      return "补齐必要信息后，助手会继续执行。";
-    case "feedback":
-      return "选择一个反馈，也可以补充说明。";
-    case "confirm":
-      return "确认后继续执行，取消会终止这一步。";
-    default:
-      return "补充信息后，助手会接着处理。";
-  }
-});
-
-const interactionPrimaryText = computed(() => {
-  switch (pendingInteraction.value?.type) {
-    case "confirm":
-      return "确认继续";
-    case "choice":
-      return "提交选择";
-    case "form":
-      return "提交信息";
-    case "feedback":
-      return "提交反馈";
-    default:
-      return "继续处理";
-  }
-});
-
-const interactionRejectText = computed(() =>
-  pendingInteraction.value?.type === "confirm" ? "取消" : "跳过",
-);
-
-const normalizedOptions = computed(() =>
-  normalizeOptions(pendingInteraction.value?.options),
-);
-
-const normalizedFields = computed<InteractionField[]>(() =>
-  (pendingInteraction.value?.fields || [])
-    .map((field, index) => normalizeField(field, index))
-    .filter(Boolean) as InteractionField[],
-);
-
-const canSubmitInteraction = computed(() => {
+// 交互处理 — 由 InteractionRenderer 统一管理
+function handleInteractionSubmit(result: InteractionSubmitResult) {
   const pending = pendingInteraction.value;
-  if (!pending || loading.value) return false;
-  if (pending.type === "choice") {
-    return pending.multiple ? pendingChoiceList.value.length > 0 : Boolean(pendingChoice.value);
-  }
-  if (pending.type === "form") {
-    return normalizedFields.value.every((field) => {
-      if (!field.required) return true;
-      const value = pendingForm.value[field.name];
-      return value !== undefined && value !== null && String(value).trim() !== "";
-    });
-  }
-  if (pending.type === "input" || pending.type === "clarify") {
-    return Boolean(pendingTextInput.value.trim());
-  }
-  return true;
-});
+  if (!pending?.runId || loading.value) return;
+  pendingInteraction.value = null;
+  resumeInteraction(result.confirmed, result.input, result.reason || "");
+}
+
+function handleInteractionReject(result: InteractionSubmitResult) {
+  const pending = pendingInteraction.value;
+  if (!pending?.runId || loading.value) return;
+  pendingInteraction.value = null;
+  resumeInteraction(false, {
+    ...(pending.input || {}),
+    action: "reject",
+  }, result.reason || "用户跳过或取消本次交互");
+}
 
 async function loadConversations() {
   try {
@@ -525,7 +309,6 @@ async function selectConversation(id: number) {
   if (currentConversationId.value === id) return;
   currentConversationId.value = id;
   pendingInteraction.value = null;
-  resetInteractionDrafts();
   await loadMessages();
 }
 
@@ -536,7 +319,6 @@ async function handleCreateConversation() {
     currentConversationId.value = result.id;
     messages.value = [];
     pendingInteraction.value = null;
-    resetInteractionDrafts();
     nextTick(() => inputRef.value?.focus?.());
   } catch (error) {
     ElMessage.error("创建会话失败");
@@ -599,16 +381,15 @@ async function handleSend() {
 }
 
 async function resumeInteraction(confirmed: boolean, resumeInput: Record<string, any>, reason: string) {
-  const pending = pendingInteraction.value;
-  if (!pending?.runId || loading.value) return;
+  const runId = currentRunId.value;
+  if (!runId || loading.value) return;
 
-  pendingInteraction.value = null;
   loading.value = true;
   runtimeStatus.value = "thinking";
 
   await consumeStream((handlers) =>
     AiAssistantApi.resumeRunStream(
-      pending.runId,
+      runId,
       {
         conversationId: currentConversationId.value || undefined,
         confirmed,
@@ -617,32 +398,6 @@ async function resumeInteraction(confirmed: boolean, resumeInput: Record<string,
       },
       handlers,
     ),
-  );
-  resetInteractionDrafts();
-}
-
-async function handleSubmitInteraction() {
-  const pending = pendingInteraction.value;
-  if (!pending) return;
-  const resumeInput = buildResumeInput(pending);
-  if (!validateInteractionInput(pending, resumeInput)) return;
-  await resumeInteraction(
-    true,
-    resumeInput,
-    pendingReason.value || resolveInteractionReason(pending, true),
-  );
-}
-
-async function handleRejectInteraction() {
-  const pending = pendingInteraction.value;
-  if (!pending) return;
-  await resumeInteraction(
-    false,
-    {
-      ...normalizePlainObject(pending.input),
-      action: "reject",
-    },
-    pendingReason.value || resolveInteractionReason(pending, false),
   );
 }
 
@@ -785,8 +540,12 @@ function applyInterrupt(payload: any) {
     placeholder: interrupt.placeholder || "",
     defaultValue: interrupt.defaultValue,
     riskLevel: interrupt.riskLevel,
-  };
-  initializeInteractionDrafts(pendingInteraction.value);
+    // 新增交互类型字段
+    preview: interrupt.preview,
+    plan: interrupt.plan,
+    compare: interrupt.compare,
+    steps: interrupt.steps,
+  } as InteractionPayload;
 
   const alreadyInserted = [...messages.value].reverse().some((msg) => {
     const traceInterrupt = msg.runTrace?.interrupt;
@@ -809,202 +568,9 @@ function applyInterrupt(payload: any) {
 
 function normalizeInteractionType(type: string) {
   const normalized = String(type || "").trim();
-  if (["confirm", "input", "choice", "form", "feedback", "clarify"].includes(normalized)) {
-    return normalized;
-  }
+  const valid = ["confirm", "input", "choice", "form", "feedback", "clarify", "impact_preview", "plan_edit", "compare", "step_form"];
+  if (valid.includes(normalized)) return normalized;
   return "input";
-}
-
-function initializeInteractionDrafts(interaction: PendingInteraction) {
-  resetInteractionDrafts(false);
-  pendingTextInput.value = String(interaction.defaultValue ?? "");
-  const options = normalizeOptions(interaction.options);
-  if (interaction.type === "feedback") {
-    pendingChoice.value = String(options[0]?.value || "");
-  }
-  if (interaction.type === "form") {
-    const nextForm: Record<string, any> = {};
-    for (const field of interaction.fields || []) {
-      const normalized = normalizeField(field, 0);
-      if (!normalized) continue;
-      nextForm[normalized.name] =
-        normalized.defaultValue !== undefined
-          ? normalized.defaultValue
-          : normalized.type === "boolean"
-            ? false
-            : undefined;
-    }
-    pendingForm.value = nextForm;
-  }
-}
-
-function isOptionSelected(value: string) {
-  return pendingInteraction.value?.multiple
-    ? pendingChoiceList.value.includes(value)
-    : pendingChoice.value === value;
-}
-
-function togglePendingChoice(value: string) {
-  if (pendingInteraction.value?.multiple) {
-    pendingChoiceList.value = pendingChoiceList.value.includes(value)
-      ? pendingChoiceList.value.filter((item) => item !== value)
-      : [...pendingChoiceList.value, value];
-    return;
-  }
-  pendingChoice.value = value;
-}
-
-function resetInteractionDrafts(clearReason = true) {
-  pendingTextInput.value = "";
-  pendingChoice.value = "";
-  pendingChoiceList.value = [];
-  pendingForm.value = {};
-  if (clearReason) pendingReason.value = "";
-}
-
-function buildResumeInput(interaction: PendingInteraction) {
-  const base = normalizePlainObject(interaction.input);
-  switch (interaction.type) {
-    case "confirm":
-      return {
-        ...base,
-        action: "confirm",
-        note: pendingReason.value || "",
-      };
-    case "choice": {
-      const selected = interaction.multiple
-        ? pendingChoiceList.value
-        : pendingChoice.value;
-      return {
-        ...base,
-        action: "answer",
-        selected,
-        value: selected,
-      };
-    }
-    case "form":
-      return {
-        ...base,
-        action: "answer",
-        fields: { ...pendingForm.value },
-        ...pendingForm.value,
-      };
-    case "feedback":
-      return {
-        ...base,
-        action: "feedback",
-        selected: pendingChoice.value,
-        feedback: pendingTextInput.value.trim(),
-      };
-    default:
-      return {
-        ...base,
-        action: "answer",
-        value: pendingTextInput.value.trim(),
-        text: pendingTextInput.value.trim(),
-      };
-  }
-}
-
-function validateInteractionInput(
-  interaction: PendingInteraction,
-  input: Record<string, any>,
-) {
-  if (interaction.type === "choice") {
-    const hasValue = interaction.multiple
-      ? Array.isArray(input.selected) && input.selected.length > 0
-      : Boolean(input.selected);
-    if (!hasValue) {
-      ElMessage.warning("请选择一个选项");
-      return false;
-    }
-  }
-  if (interaction.type === "form") {
-    for (const field of normalizedFields.value) {
-      const value = pendingForm.value[field.name];
-      if (
-        field.required &&
-        (value === undefined || value === null || String(value).trim() === "")
-      ) {
-        ElMessage.warning(`请填写${field.label}`);
-        return false;
-      }
-    }
-  }
-  if (
-    (interaction.type === "input" || interaction.type === "clarify") &&
-    !String(input.value || "").trim()
-  ) {
-    ElMessage.warning("请先输入内容");
-    return false;
-  }
-  return true;
-}
-
-function resolveInteractionReason(interaction: PendingInteraction, confirmed: boolean) {
-  if (!confirmed) return "用户跳过或取消本次交互";
-  switch (interaction.type) {
-    case "confirm":
-      return "用户确认继续执行";
-    case "choice":
-      return "用户已完成选择";
-    case "form":
-      return "用户已提交表单";
-    case "feedback":
-      return "用户已提交反馈";
-    default:
-      return "用户已补充信息";
-  }
-}
-
-function normalizePlainObject(value: unknown): Record<string, any> {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, any>)
-    : {};
-}
-
-function normalizeOptions(rawOptions?: Array<string | Record<string, any>>): InteractionOption[] {
-  const options = Array.isArray(rawOptions) ? rawOptions : [];
-  return options
-    .map((option, index) => {
-      if (typeof option === "string") {
-        const value = option.trim();
-        return value ? { label: value, value } : null;
-      }
-      if (!option || typeof option !== "object") return null;
-      const label = String(option.label || option.title || option.name || option.value || `选项 ${index + 1}`);
-      const value = String(option.value ?? option.id ?? option.key ?? label);
-      return {
-        label,
-        value,
-        description: String(option.description || option.summary || "").trim(),
-      };
-    })
-    .filter(Boolean) as InteractionOption[];
-}
-
-function normalizeField(field: Record<string, any>, index: number): InteractionField | null {
-  if (!field || typeof field !== "object") return null;
-  const name = String(field.name || field.key || `field_${index + 1}`).trim();
-  if (!name) return null;
-  const type = normalizeFieldType(field.type);
-  return {
-    name,
-    label: String(field.label || field.title || name).trim(),
-    type,
-    required: field.required === true,
-    placeholder: String(field.placeholder || "").trim(),
-    defaultValue: field.defaultValue,
-    options: Array.isArray(field.options) ? field.options : [],
-  };
-}
-
-function normalizeFieldType(type: unknown) {
-  const normalized = String(type || "").trim().toLowerCase();
-  if (["text", "textarea", "number", "boolean", "select", "date", "datetime"].includes(normalized)) {
-    return normalized;
-  }
-  return "text";
 }
 
 function upsertToolMessage(
@@ -1173,13 +739,13 @@ onMounted(async () => {
 }
 
 .sidebar-header {
-  min-height: 54px;
-  padding: 10px 12px 8px 14px;
+  min-height: 48px;
+  padding: 8px 12px 6px 14px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .sidebar-title {
@@ -1187,7 +753,8 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: var(--el-text-color-primary);
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
 }
 
 .sidebar-actions,
@@ -1204,17 +771,17 @@ onMounted(async () => {
 }
 
 .conversation-list :deep(.el-scrollbar__view) {
-  padding: 6px 8px 12px;
+  padding: 6px 12px 12px;
 }
 
 .conversation-item {
   width: 100%;
-  padding: 10px 10px;
+  padding: 10px 12px;
   border: 0;
   border-radius: 6px;
   cursor: pointer;
-  margin-bottom: 4px;
-  color: var(--el-text-color-primary);
+  margin-bottom: 6px;
+  color: var(--el-text-color-regular);
   background: transparent;
   text-align: left;
   transition:
@@ -1225,7 +792,7 @@ onMounted(async () => {
 
 .conversation-item:hover {
   background: transparent;
-  color: var(--el-color-primary);
+  color: var(--el-text-color-primary);
 }
 
 .conversation-item.active {
@@ -1235,10 +802,10 @@ onMounted(async () => {
 
 .conversation-title {
   display: block;
-  font-size: 13px;
-  line-height: 18px;
-  margin-bottom: 6px;
-  font-weight: 500;
+  font-size: 12px;
+  line-height: 16px;
+  margin-bottom: 4px;
+  font-weight: 400;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1249,15 +816,15 @@ onMounted(async () => {
   justify-content: space-between;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
+  font-size: 11px;
+  color: var(--el-text-color-placeholder);
 }
 
 .delete-btn {
   opacity: 0;
-  width: 22px;
-  height: 22px;
-  color: var(--el-text-color-secondary);
+  width: 20px;
+  height: 20px;
+  color: var(--el-text-color-placeholder);
   transition:
     opacity 0.2s,
     color 0.2s;
@@ -1572,8 +1139,11 @@ onMounted(async () => {
   color: var(--el-text-color-secondary);
 }
 
-.interaction-panel {
+.interaction-wrapper {
   margin: 0 18px 12px;
+}
+
+.interaction-wrapper :deep(.interaction-panel) {
   padding: 12px 14px;
   display: grid;
   gap: 12px;
@@ -1581,17 +1151,13 @@ onMounted(async () => {
   background: transparent;
 }
 
-.interaction-main {
+.interaction-wrapper :deep(.interaction-main) {
   display: flex;
   gap: 11px;
   align-items: flex-start;
 }
 
-.interaction-main > div {
-  min-width: 0;
-}
-
-.interaction-badge {
+.interaction-wrapper :deep(.interaction-badge) {
   display: inline-flex;
   align-items: center;
   min-height: 24px;
@@ -1605,137 +1171,32 @@ onMounted(async () => {
   flex: 0 0 auto;
 }
 
-.interaction-title {
+.interaction-wrapper :deep(.interaction-title) {
   font-size: 13px;
   line-height: 18px;
   font-weight: 650;
   margin-bottom: 2px;
 }
 
-.interaction-tip {
+.interaction-wrapper :deep(.interaction-tip) {
   margin-bottom: 6px;
   color: var(--ai-warning-text);
   font-size: 12px;
   line-height: 18px;
 }
 
-.interaction-panel pre {
-  margin: 0;
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-family: inherit;
-  color: var(--el-text-color-regular);
-  font-size: 12px;
-  line-height: 1.55;
-}
-
-.choice-list,
-.interaction-form,
-.feedback-actions {
-  display: grid;
+.interaction-wrapper :deep(.interaction-actions) {
+  display: flex;
+  justify-content: flex-end;
   gap: 8px;
 }
 
-.choice-option {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: flex-start;
-  gap: 8px;
-  width: 100%;
-  min-height: 38px;
-  padding: 8px 10px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--el-text-color-primary);
-  text-align: left;
-  cursor: pointer;
-  transition:
-    background-color 0.16s ease,
-    color 0.16s ease;
-}
-
-.choice-option:hover,
-.choice-option.active {
-  background: transparent;
-  color: var(--el-color-primary);
-}
-
-.choice-indicator {
-  width: 14px;
-  height: 14px;
-  margin-top: 2px;
-  border-radius: 50%;
-  background: var(--el-border-color);
-}
-
-.choice-option.active .choice-indicator {
-  background: var(--el-color-primary);
-}
-
-.choice-copy {
-  display: grid;
-  gap: 1px;
-  min-width: 0;
-  font-size: 12px;
-  line-height: 18px;
-}
-
-.choice-copy small {
-  display: block;
-  color: var(--el-text-color-secondary);
-  line-height: 1.4;
-}
-
-.interaction-form :deep(.el-form-item) {
-  margin-bottom: 8px;
-}
-
-.interaction-form :deep(.el-form-item__label) {
-  margin-bottom: 3px;
-  font-size: 12px;
-  color: var(--el-text-color-regular);
-}
-
-.interaction-form :deep(.el-select),
-.interaction-form :deep(.el-date-editor),
-.interaction-form :deep(.el-input-number) {
-  width: 100%;
-}
-
-.interaction-panel :deep(.el-input__wrapper),
-.interaction-panel :deep(.el-textarea__inner) {
+.interaction-wrapper :deep(.el-input__wrapper),
+.interaction-wrapper :deep(.el-textarea__inner) {
   border-radius: 6px;
   border: 0;
   box-shadow: none;
   background: transparent;
-}
-
-.feedback-actions {
-  grid-template-columns: repeat(auto-fit, minmax(76px, max-content));
-}
-
-.feedback-option {
-  min-height: 30px;
-  padding: 0 10px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--el-text-color-regular);
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.feedback-option:hover,
-.feedback-option.active {
-  background: transparent;
-  color: var(--el-color-primary);
-}
-
-.interaction-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
 }
 
 .input-area {
