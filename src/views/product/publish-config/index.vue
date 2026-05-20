@@ -993,6 +993,54 @@ const submitForm = async () => {
   }
 };
 
+const handleCopy = async (row: any) => {
+  dialogTitle.value = "复制任务配置";
+  form.id = undefined;
+  form.name = `${row.name} - 副本`;
+  form.taskType = row.taskType || derivePublishTaskTypeByPlatform(row.platform);
+  form.description = row.description;
+  form.isActive = row.isActive;
+
+  const configData = row.configData || {};
+  titleConfigForm.mode =
+    configData.titleConfig?.mode === "fixed" || configData.titleConfig?.fixedTitle ? "fixed" : "ai";
+  titleConfigForm.fixedTitle = configData.titleConfig?.fixedTitle || "";
+  titleConfigForm.templateContent = configData.titleTemplate || "";
+  titleConfigForm.maxLength =
+    typeof configData.titleConfig?.maxLength === "number"
+      ? configData.titleConfig.maxLength
+      : undefined;
+  titleConfigForm.style = configData.titleConfig?.style || "";
+  titleConfigForm.tone = configData.titleConfig?.tone || "";
+  titleConfigForm.includeEmoji =
+    typeof configData.titleConfig?.includeEmoji === "boolean"
+      ? configData.titleConfig.includeEmoji
+      : null;
+  titleConfigForm.requiredKeywords = Array.isArray(configData.titleConfig?.requiredKeywords)
+    ? configData.titleConfig.requiredKeywords
+    : Array.isArray(configData.titleConfig?.keywords)
+      ? configData.titleConfig.keywords
+      : [];
+  titleConfigForm.avoidWords = Array.isArray(configData.titleConfig?.avoidWords)
+    ? configData.titleConfig.avoidWords
+    : [];
+
+  // 加载任务类型配置数据
+  currentPlatformConfig.value = getTaskTypeConfig(form.taskType);
+  platformConfigData.value = normalizePublishConfigData(
+    form.taskType,
+    formatTaskTypeConfigForEdit(form.taskType, configData),
+  );
+  temuTemplateInspectorVisible.value = false;
+  resetTemplateBindingState();
+  await hydrateTemplateBinding(configData?.templateBinding?.psdTemplateId);
+  templateBindingConfigText.value = formatTemplateBindingConfig(
+    configData?.templateBinding?.psdTemplateConfig ??
+      selectedTemplateBinding.value?.psdTemplateConfig,
+  );
+  dialogVisible.value = true;
+};
+
 const handleDelete = (row: any) => {
   if (!userStore.user?.isAdmin) {
     return ElMessage.warning("无权限：仅管理员可执行删除操作");
@@ -1073,6 +1121,7 @@ onMounted(() => {
                     <template #dropdown>
                       <el-dropdown-menu class="operation-menu-compact">
                         <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
+                        <el-dropdown-item @click="handleCopy(row)">复制</el-dropdown-item>
                         <template v-if="userStore.user?.isAdmin">
                           <el-dropdown-item
                             divided
