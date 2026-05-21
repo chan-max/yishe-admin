@@ -1,6 +1,10 @@
 <template>
   <section class="temu-workspace">
-    <div v-if="floatingBatchProgressItems.length" class="temu-workspace__floating-progress" :class="{ 'is-collapsed': floatingProgressCollapsed }">
+    <div
+      v-if="floatingBatchProgressItems.length"
+      class="temu-workspace__floating-progress"
+      :class="{ 'is-collapsed': floatingProgressCollapsed }"
+    >
       <div class="temu-workspace__floating-progress-head">
         <strong>{{ floatingProgressTitle }}</strong>
         <div class="temu-workspace__floating-progress-actions">
@@ -8,7 +12,11 @@
           <el-button text size="small" type="danger" @click="clearFloatingBatchProgress">
             清理
           </el-button>
-          <el-button text size="small" @click="floatingProgressCollapsed = !floatingProgressCollapsed">
+          <el-button
+            text
+            size="small"
+            @click="floatingProgressCollapsed = !floatingProgressCollapsed"
+          >
             {{ floatingProgressCollapsed ? "展开" : "折叠" }}
           </el-button>
         </div>
@@ -19,15 +27,13 @@
           :key="item.key"
           class="temu-workspace__floating-progress-item"
         >
-          <div class="temu-workspace__floating-progress-head temu-workspace__floating-progress-head--sub">
+          <div
+            class="temu-workspace__floating-progress-head temu-workspace__floating-progress-head--sub"
+          >
             <strong>{{ item.title }}</strong>
             <span>{{ item.progressText }}</span>
           </div>
-          <el-progress
-            :percentage="item.percent"
-            :stroke-width="8"
-            :show-text="false"
-          />
+          <el-progress :percentage="item.percent" :stroke-width="8" :show-text="false" />
           <div class="temu-workspace__floating-progress-meta">
             <span v-if="item.rowText">{{ item.rowText }}</span>
             <span v-if="item.stage">{{ item.stage }}</span>
@@ -35,7 +41,9 @@
           <div class="temu-workspace__price-review-batch-stats">
             <el-tag size="small" effect="plain" type="success">成功 {{ item.successCount }}</el-tag>
             <el-tag size="small" effect="plain" type="danger">失败 {{ item.failedCount }}</el-tag>
-            <el-tag size="small" effect="plain" type="warning">剩余 {{ item.remainingCount }}</el-tag>
+            <el-tag size="small" effect="plain" type="warning"
+              >剩余 {{ item.remainingCount }}</el-tag
+            >
           </div>
         </div>
       </template>
@@ -394,7 +402,9 @@
               </template>
 
               <template #taskRunOperationSlot="{ row }">
-                <el-button text size="small" @click.stop="openTaskRunDetail(row.id)">详情</el-button>
+                <el-button text size="small" @click.stop="openTaskRunDetail(row.id)"
+                  >详情</el-button
+                >
                 <el-button
                   text
                   size="small"
@@ -477,7 +487,12 @@
               </div>
 
               <div class="temu-workspace__task-tools">
-                <el-popover placement="bottom-end" width="560" trigger="click" popper-class="temu-task-json-popover">
+                <el-popover
+                  placement="bottom-end"
+                  width="560"
+                  trigger="click"
+                  popper-class="temu-task-json-popover"
+                >
                   <template #reference>
                     <el-button text size="small">请求参数</el-button>
                   </template>
@@ -487,11 +502,17 @@
                       复制
                     </el-button>
                   </div>
-                  <pre class="temu-workspace__json temu-workspace__json--compact temu-task-json-popover__content">{{
-                    taskRunParamsText
-                  }}</pre>
+                  <pre
+                    class="temu-workspace__json temu-workspace__json--compact temu-task-json-popover__content"
+                    >{{ taskRunParamsText }}</pre
+                  >
                 </el-popover>
-                <el-popover placement="bottom-end" width="560" trigger="click" popper-class="temu-task-json-popover">
+                <el-popover
+                  placement="bottom-end"
+                  width="560"
+                  trigger="click"
+                  popper-class="temu-task-json-popover"
+                >
                   <template #reference>
                     <el-button text size="small">任务结果</el-button>
                   </template>
@@ -501,11 +522,17 @@
                       复制
                     </el-button>
                   </div>
-                  <pre class="temu-workspace__json temu-workspace__json--compact temu-task-json-popover__content">{{
-                    taskRunResultText
-                  }}</pre>
+                  <pre
+                    class="temu-workspace__json temu-workspace__json--compact temu-task-json-popover__content"
+                    >{{ taskRunResultText }}</pre
+                  >
                 </el-popover>
-                <el-popover placement="bottom-end" width="520" trigger="click" popper-class="temu-task-log-popover">
+                <el-popover
+                  placement="bottom-end"
+                  width="520"
+                  trigger="click"
+                  popper-class="temu-task-log-popover"
+                >
                   <template #reference>
                     <el-button text size="small">执行日志</el-button>
                   </template>
@@ -515,15 +542,24 @@
                       复制
                     </el-button>
                   </div>
-                  <div v-if="taskRunLogEntries.length" class="temu-task-log-list temu-task-log-list--popover">
+                  <div
+                    v-if="taskRunLogEntries.length"
+                    class="temu-task-log-list temu-task-log-list--popover"
+                  >
                     <div
                       v-for="(entry, index) in taskRunLogEntries"
                       :key="`${activeTaskRunDetail.id}-${index}-${entry.time}`"
                       class="temu-task-log-item"
                     >
                       <div class="temu-task-log-item__head">
-                        <span class="temu-task-log-item__time">{{ formatDateTime(entry.time) }}</span>
-                        <el-tag size="small" effect="plain" :type="resolveTaskRunLogTagType(entry.level)">
+                        <span class="temu-task-log-item__time">{{
+                          formatDateTime(entry.time)
+                        }}</span>
+                        <el-tag
+                          size="small"
+                          effect="plain"
+                          :type="resolveTaskRunLogTagType(entry.level)"
+                        >
                           {{ resolveTaskRunLogLabel(entry.level) }}
                         </el-tag>
                       </div>
@@ -565,7 +601,9 @@
             <div class="temu-workspace__section-title temu-workspace__price-review-list-head">
               <div class="temu-workspace__section-title-main">
                 <span>任务结果列表</span>
-                <el-tag size="small" effect="plain">{{ taskRunPriceReviewPreviewRows.length }}</el-tag>
+                <el-tag size="small" effect="plain">{{
+                  taskRunPriceReviewPreviewRows.length
+                }}</el-tag>
                 <el-tag
                   v-if="taskRunPriceReviewTotalCount !== taskRunPriceReviewPreviewRows.length"
                   size="small"
@@ -574,10 +612,20 @@
                 >
                   全部 {{ taskRunPriceReviewTotalCount }}
                 </el-tag>
-                <el-tag v-if="selectedPriceReviewRows.length" size="small" effect="plain" type="success">
+                <el-tag
+                  v-if="selectedPriceReviewRows.length"
+                  size="small"
+                  effect="plain"
+                  type="success"
+                >
                   已选 {{ selectedPriceReviewRows.length }}
                 </el-tag>
-                <el-tag v-if="priceReviewBatchSubmitting" size="small" effect="plain" type="warning">
+                <el-tag
+                  v-if="priceReviewBatchSubmitting"
+                  size="small"
+                  effect="plain"
+                  type="warning"
+                >
                   {{ priceReviewBatchProgressText }}
                 </el-tag>
               </div>
@@ -637,13 +685,36 @@
                     controls-position="right"
                     placeholder="最大价差"
                   />
+                  <el-input-number
+                    v-model="priceReviewCurrentPriceMin"
+                    class="temu-workspace__price-review-filter-number"
+                    size="small"
+                    :precision="2"
+                    :step="1"
+                    controls-position="right"
+                    placeholder="最低当前价"
+                  />
+                  <el-input-number
+                    v-model="priceReviewCurrentPriceMax"
+                    class="temu-workspace__price-review-filter-number"
+                    size="small"
+                    :precision="2"
+                    :step="1"
+                    controls-position="right"
+                    placeholder="最高当前价"
+                  />
                   <el-button size="small" text @click="resetPriceReviewFilters">重置</el-button>
                 </div>
-                <div v-if="isPriceReviewBatchAvailable" class="temu-workspace__price-review-batch-actions">
+                <div
+                  v-if="isPriceReviewBatchAvailable"
+                  class="temu-workspace__price-review-batch-actions"
+                >
                   <el-button
                     size="small"
                     type="primary"
-                    :disabled="!selectedSubmittablePriceReviewRows.length || priceReviewBatchSubmitting"
+                    :disabled="
+                      !selectedSubmittablePriceReviewRows.length || priceReviewBatchSubmitting
+                    "
                     :loading="priceReviewBatchSubmittingMode === 'confirm'"
                     @click="submitSelectedPriceReviewRows('confirm')"
                   >
@@ -652,7 +723,9 @@
                   <el-button
                     size="small"
                     type="warning"
-                    :disabled="!selectedRepriceablePriceReviewRows.length || priceReviewBatchSubmitting"
+                    :disabled="
+                      !selectedRepriceablePriceReviewRows.length || priceReviewBatchSubmitting
+                    "
                     :loading="priceReviewBatchSubmittingMode === 'reprice'"
                     @click="submitSelectedPriceReviewRows('reprice')"
                   >
@@ -661,7 +734,9 @@
                   <el-button
                     size="small"
                     type="danger"
-                    :disabled="!selectedAbandonablePriceReviewRows.length || priceReviewBatchSubmitting"
+                    :disabled="
+                      !selectedAbandonablePriceReviewRows.length || priceReviewBatchSubmitting
+                    "
                     :loading="priceReviewBatchSubmittingMode === 'abandon'"
                     @click="submitSelectedPriceReviewRows('abandon')"
                   >
@@ -761,11 +836,7 @@
                 </template>
 
                 <template #priceReviewValiditySlot="{ row }">
-                  <el-tag
-                    size="small"
-                    effect="plain"
-                    :type="row.invalid ? 'info' : 'success'"
-                  >
+                  <el-tag size="small" effect="plain" :type="row.invalid ? 'info' : 'success'">
                     {{ row.invalid ? row.invalidReason : "可操作" }}
                   </el-tag>
                 </template>
@@ -816,7 +887,12 @@
               <div class="temu-workspace__section-title-main">
                 <span>JIT 待处理列表</span>
                 <el-tag size="small" effect="plain">{{ taskRunJitRows.length }}</el-tag>
-                <el-tag v-if="taskRunJitTotalCount !== taskRunJitRows.length" size="small" effect="plain" type="warning">
+                <el-tag
+                  v-if="taskRunJitTotalCount !== taskRunJitRows.length"
+                  size="small"
+                  effect="plain"
+                  type="warning"
+                >
                   全部 {{ taskRunJitTotalCount }}
                 </el-tag>
                 <el-tag v-if="selectedJitRows.length" size="small" effect="plain" type="success">
@@ -907,9 +983,15 @@
                 </template>
                 <template #jitIdentitySlot="{ row }">
                   <div class="temu-workspace__price-review-identity">
-                    <div><span>SPU</span><strong>{{ row.spuId }}</strong></div>
-                    <div><span>SKC</span><strong>{{ row.skcId }}</strong></div>
-                    <div><span>SKC货号</span><strong>{{ row.skcExtCode }}</strong></div>
+                    <div>
+                      <span>SPU</span><strong>{{ row.spuId }}</strong>
+                    </div>
+                    <div>
+                      <span>SKC</span><strong>{{ row.skcId }}</strong>
+                    </div>
+                    <div>
+                      <span>SKC货号</span><strong>{{ row.skcExtCode }}</strong>
+                    </div>
                   </div>
                 </template>
                 <template #jitStatusSlot="{ row }">
@@ -938,7 +1020,13 @@
                     <el-tag
                       size="small"
                       effect="plain"
-                      :type="row.stockMaintained ? 'success' : row.stockSubmitStatus === '失败' ? 'danger' : 'info'"
+                      :type="
+                        row.stockMaintained
+                          ? 'success'
+                          : row.stockSubmitStatus === '失败'
+                            ? 'danger'
+                            : 'info'
+                      "
                     >
                       {{ row.stockStatusText }}
                     </el-tag>
@@ -952,7 +1040,9 @@
                     </el-tag>
                     <small v-if="row.stockSubmitStatus !== '-'">
                       {{ row.stockSubmitMessage }}
-                      <template v-if="row.stockFinalNum !== null"> / 目标 {{ row.stockFinalNum }}</template>
+                      <template v-if="row.stockFinalNum !== null">
+                        / 目标 {{ row.stockFinalNum }}</template
+                      >
                     </small>
                   </div>
                 </template>
@@ -1000,10 +1090,20 @@
                 >
                   全部 {{ taskRunRealPictureTotalCount }}
                 </el-tag>
-                <el-tag v-if="selectedRealPictureRows.length" size="small" effect="plain" type="success">
+                <el-tag
+                  v-if="selectedRealPictureRows.length"
+                  size="small"
+                  effect="plain"
+                  type="success"
+                >
                   已选 {{ selectedRealPictureRows.length }}
                 </el-tag>
-                <el-tag v-if="realPictureBatchSubmitting" size="small" effect="plain" type="warning">
+                <el-tag
+                  v-if="realPictureBatchSubmitting"
+                  size="small"
+                  effect="plain"
+                  type="warning"
+                >
                   {{ realPictureBatchProgressText }}
                 </el-tag>
               </div>
@@ -1040,10 +1140,18 @@
                 </template>
                 <template #realPictureIdentitySlot="{ row }">
                   <div class="temu-workspace__price-review-identity">
-                    <div><span>SPU</span><strong>{{ row.spuId }}</strong></div>
-                    <div><span>goodsId</span><strong>{{ row.goodsId }}</strong></div>
-                    <div><span>SKU</span><strong>{{ row.skuSummary }}</strong></div>
-                    <div><span>同图</span><strong>{{ row.isSameSku }}</strong></div>
+                    <div>
+                      <span>SPU</span><strong>{{ row.spuId }}</strong>
+                    </div>
+                    <div>
+                      <span>goodsId</span><strong>{{ row.goodsId }}</strong>
+                    </div>
+                    <div>
+                      <span>SKU</span><strong>{{ row.skuSummary }}</strong>
+                    </div>
+                    <div>
+                      <span>同图</span><strong>{{ row.isSameSku }}</strong>
+                    </div>
                   </div>
                 </template>
                 <template #realPictureRulesSlot="{ row }">
@@ -1089,7 +1197,9 @@
             <div class="temu-workspace__section-title temu-workspace__price-review-list-head">
               <div class="temu-workspace__section-title-main">
                 <span>合规信息列表</span>
-                <el-tag size="small" effect="plain">{{ visibleTaskRunComplianceRows.length }}</el-tag>
+                <el-tag size="small" effect="plain">{{
+                  visibleTaskRunComplianceRows.length
+                }}</el-tag>
                 <el-tag
                   v-if="taskRunComplianceTotalCount !== visibleTaskRunComplianceRows.length"
                   size="small"
@@ -1106,7 +1216,12 @@
                 >
                   已过滤无关数据 {{ taskRunComplianceFilteredCount }} 条
                 </el-tag>
-                <el-tag v-if="selectedComplianceRows.length" size="small" effect="plain" type="success">
+                <el-tag
+                  v-if="selectedComplianceRows.length"
+                  size="small"
+                  effect="plain"
+                  type="success"
+                >
                   已选 {{ selectedComplianceRows.length }}
                 </el-tag>
                 <el-tag v-if="complianceBatchSubmitting" size="small" effect="plain" type="warning">
@@ -1138,10 +1253,18 @@
               >
                 <template #complianceIdentitySlot="{ row }">
                   <div class="temu-workspace__price-review-identity">
-                    <div><span>SPU</span><strong>{{ row.spuId }}</strong></div>
-                    <div><span>类目</span><strong>{{ row.categoryName }}</strong></div>
-                    <div><span>类目ID</span><strong>{{ row.categoryId }}</strong></div>
-                    <div><span>goodsId</span><strong>{{ row.goodsId }}</strong></div>
+                    <div>
+                      <span>SPU</span><strong>{{ row.spuId }}</strong>
+                    </div>
+                    <div>
+                      <span>类目</span><strong>{{ row.categoryName }}</strong>
+                    </div>
+                    <div>
+                      <span>类目ID</span><strong>{{ row.categoryId }}</strong>
+                    </div>
+                    <div>
+                      <span>goodsId</span><strong>{{ row.goodsId }}</strong>
+                    </div>
                   </div>
                 </template>
                 <template #complianceStatusSlot="{ row }">
@@ -1152,11 +1275,7 @@
                       class="temu-workspace__compliance-status-item"
                     >
                       <span class="temu-workspace__compliance-status-name">{{ task.name }}</span>
-                      <el-tag
-                        size="small"
-                        effect="plain"
-                        :type="task.tagType"
-                      >
+                      <el-tag size="small" effect="plain" :type="task.tagType">
                         {{ task.statusText }}
                       </el-tag>
                       <small>{{ task.requiredText }}</small>
@@ -1197,7 +1316,12 @@
                 >
                   全部 {{ taskRunConfirmationTotalCount }}
                 </el-tag>
-                <el-tag v-if="unconfirmedConfirmationRows.length" size="small" effect="plain" type="info">
+                <el-tag
+                  v-if="unconfirmedConfirmationRows.length"
+                  size="small"
+                  effect="plain"
+                  type="info"
+                >
                   未确认 {{ unconfirmedConfirmationRows.length }}
                 </el-tag>
               </div>
@@ -1235,18 +1359,19 @@
                 </template>
                 <template #confirmationIdentitySlot="{ row }">
                   <div class="temu-workspace__price-review-identity">
-                    <div><span>SPU</span><strong>{{ row.spuId }}</strong></div>
-                    <div><span>SKC</span><strong>{{ row.skcId }}</strong></div>
-                    <div><span>货号</span><strong>{{ row.extCode }}</strong></div>
+                    <div>
+                      <span>SPU</span><strong>{{ row.spuId }}</strong>
+                    </div>
+                    <div>
+                      <span>SKC</span><strong>{{ row.skcId }}</strong>
+                    </div>
+                    <div>
+                      <span>货号</span><strong>{{ row.extCode }}</strong>
+                    </div>
                   </div>
                 </template>
                 <template #confirmationStatusSlot="{ row }">
-                  <el-tag
-                    v-if="row.confirmed"
-                    size="small"
-                    effect="plain"
-                    type="success"
-                  >
+                  <el-tag v-if="row.confirmed" size="small" effect="plain" type="success">
                     已确认
                   </el-tag>
                   <el-tag
@@ -1257,9 +1382,7 @@
                   >
                     确认失败
                   </el-tag>
-                  <el-tag v-else size="small" effect="plain" type="info">
-                    待确认
-                  </el-tag>
+                  <el-tag v-else size="small" effect="plain" type="info"> 待确认 </el-tag>
                 </template>
                 <template #confirmationOperationSlot="{ row }">
                   <div class="temu-workspace__row-actions temu-workspace__row-actions--right">
@@ -1278,7 +1401,6 @@
               </vxe-grid>
             </div>
           </div>
-
         </div>
 
         <div v-else class="temu-workspace__unsupported">正在加载记录详情...</div>
@@ -1326,7 +1448,10 @@
         </vxe-grid>
       </div>
       <template #footer>
-        <el-button :disabled="priceReviewBatchSubmittingMode === 'reprice'" @click="priceReviewBatchRepriceVisible = false">
+        <el-button
+          :disabled="priceReviewBatchSubmittingMode === 'reprice'"
+          @click="priceReviewBatchRepriceVisible = false"
+        >
           取消
         </el-button>
         <el-button
@@ -1370,7 +1495,9 @@
           <el-button
             text
             type="danger"
-            :disabled="realPictureBatchSubmitting || realPictureUploadForm.positionItems.length <= 1"
+            :disabled="
+              realPictureBatchSubmitting || realPictureUploadForm.positionItems.length <= 1
+            "
             @click="removeRealPicturePositionItem(index)"
           >
             删除
@@ -1386,7 +1513,9 @@
         </el-button>
       </el-form>
       <template #footer>
-        <el-button :disabled="realPictureBatchSubmitting" @click="realPictureUploadVisible = false">取消</el-button>
+        <el-button :disabled="realPictureBatchSubmitting" @click="realPictureUploadVisible = false"
+          >取消</el-button
+        >
         <el-button
           type="primary"
           :loading="realPictureBatchSubmitting"
@@ -1406,16 +1535,21 @@
       destroy-on-close
       class="temu-workspace__compliance-dialog"
     >
-      <div
-        v-loading="complianceEditorLoading"
-        class="temu-workspace__compliance-dialog-body"
-      >
+      <div v-loading="complianceEditorLoading" class="temu-workspace__compliance-dialog-body">
         <div v-if="activeComplianceRow" class="temu-workspace__compliance-dialog-head">
           <div class="temu-workspace__price-review-identity">
-            <div><span>SPU</span><strong>{{ activeComplianceRow.spuId }}</strong></div>
-            <div><span>类目</span><strong>{{ activeComplianceRow.categoryName }}</strong></div>
-            <div><span>类目ID</span><strong>{{ activeComplianceRow.categoryId }}</strong></div>
-            <div><span>goodsId</span><strong>{{ activeComplianceRow.goodsId }}</strong></div>
+            <div>
+              <span>SPU</span><strong>{{ activeComplianceRow.spuId }}</strong>
+            </div>
+            <div>
+              <span>类目</span><strong>{{ activeComplianceRow.categoryName }}</strong>
+            </div>
+            <div>
+              <span>类目ID</span><strong>{{ activeComplianceRow.categoryId }}</strong>
+            </div>
+            <div>
+              <span>goodsId</span><strong>{{ activeComplianceRow.goodsId }}</strong>
+            </div>
           </div>
           <el-tag size="small" effect="plain">{{ activeComplianceRow.typeText }}</el-tag>
         </div>
@@ -1430,7 +1564,9 @@
               @click="selectedComplianceTaskKey = task.key"
             >
               <span>{{ task.name }}</span>
-              <el-tag size="small" effect="plain" :type="task.tagType">{{ task.statusText }}</el-tag>
+              <el-tag size="small" effect="plain" :type="task.tagType">{{
+                task.statusText
+              }}</el-tag>
               <small>{{ task.requiredText }}</small>
             </button>
           </div>
@@ -1443,10 +1579,7 @@
                   {{ selectedComplianceTask.statusText }}
                 </el-tag>
               </div>
-              <el-form
-                label-position="top"
-                class="temu-workspace__compliance-form"
-              >
+              <el-form label-position="top" class="temu-workspace__compliance-form">
                 <el-form-item
                   v-for="field in selectedComplianceFields"
                   :key="field.key"
@@ -1487,7 +1620,9 @@
         </div>
       </div>
       <template #footer>
-        <el-button :disabled="complianceBatchSubmitting" @click="complianceEditorVisible = false">关闭</el-button>
+        <el-button :disabled="complianceBatchSubmitting" @click="complianceEditorVisible = false"
+          >关闭</el-button
+        >
         <el-button
           type="primary"
           :loading="complianceSubmitting || complianceBatchSubmitting"
@@ -1536,6 +1671,7 @@ import {
   type TemuTaskRunSummary,
 } from "@/api/external/toolkit/temu";
 import { commonGridOptions } from "@/common/table";
+import { useTemuBatchProgressStoreWithOut } from "@/store/modules/temuBatchProgress";
 import {
   ACTION_PRESETS,
   REGION_LABELS,
@@ -1812,7 +1948,10 @@ const deletingTaskRunId = ref<number | null>(null);
 const batchDeletingTaskRuns = ref(false);
 const taskRunPollingBusy = ref(false);
 const taskRunDetailRequestSeq = ref(0);
-const floatingProgressCollapsed = useLocalStorage("temu-workspace:floating-progress-collapsed", false);
+const floatingProgressCollapsed = useLocalStorage(
+  "temu-workspace:floating-progress-collapsed",
+  false,
+);
 const persistedFloatingBatchProgressItems = ref<TemuBatchProgressItem[]>([]);
 const batchProgressSyncing = ref(false);
 const batchAbortToken = ref(0);
@@ -1835,7 +1974,14 @@ const realPictureUploadForm = useLocalStorage("temu-workspace:real-picture-uploa
 });
 const createRealPicturePositionItem = (position?: number, imageUrlsText = "") => ({
   id: `position-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-  position: position || Math.max(1, ...asArray<Record<string, any>>(realPictureUploadForm.value.positionItems).map((item) => Number(item.position) || 0)) + 1,
+  position:
+    position ||
+    Math.max(
+      1,
+      ...asArray<Record<string, any>>(realPictureUploadForm.value.positionItems).map(
+        (item) => Number(item.position) || 0,
+      ),
+    ) + 1,
   imageUrlsText,
 });
 const realPictureBatchSubmitting = ref(false);
@@ -1877,6 +2023,8 @@ const priceReviewStatusFilter = ref<PriceReviewStatusFilter>("all");
 const priceReviewSortMode = ref<PriceReviewSortMode>("default");
 const priceReviewAmountFilterMin = ref<number | undefined>();
 const priceReviewAmountFilterMax = ref<number | undefined>();
+const priceReviewCurrentPriceMin = ref<number | undefined>();
+const priceReviewCurrentPriceMax = ref<number | undefined>();
 const priceReviewBatchSubmitting = ref(false);
 const priceReviewBatchSubmittingMode = ref<"" | "confirm" | "abandon" | "reprice">("");
 const priceReviewBatchCurrentStage = ref("");
@@ -1902,7 +2050,10 @@ const complianceBatchPreparing = ref(false);
 const complianceBatchSubmitting = ref(false);
 const complianceBatchRows = ref<CompliancePreviewRow[]>([]);
 const selectedComplianceRowKeys = ref<string[]>([]);
-const complianceIgnoreUselessInfo = useLocalStorage("temu-workspace:compliance-ignore-useless-info", true);
+const complianceIgnoreUselessInfo = useLocalStorage(
+  "temu-workspace:compliance-ignore-useless-info",
+  true,
+);
 const complianceBatchFinishedCount = ref(0);
 const complianceBatchTotalCount = ref(0);
 const complianceBatchSuccessCount = ref(0);
@@ -2769,7 +2920,9 @@ const collectImageUrls = (value: any): string[] => {
       return;
     }
     if (typeof current === "object") {
-      ["image", "imageUrl", "image_url", "url", "thumbUrl", "thumb_url"].forEach((key) => visit(current[key]));
+      ["image", "imageUrl", "image_url", "url", "thumbUrl", "thumb_url"].forEach((key) =>
+        visit(current[key]),
+      );
     }
   };
   visit(value);
@@ -2837,33 +2990,42 @@ const buildRealPicturePositionImageSummary = (item: Record<string, any>, labelIm
     counts[position] = (counts[position] || 0) + 1;
   });
 
-  const positionDetail = asArray<Record<string, any>>(item?.positionDetail || item?.position_detail);
+  const positionDetail = asArray<Record<string, any>>(
+    item?.positionDetail || item?.position_detail,
+  );
   positionDetail.forEach((detail) => {
     const position = firstDisplayValue(detail?.position);
     if (!position || counts[position]) {
       return;
     }
-    const photoList = asArray<Record<string, any>>(detail?.skuPhotoInfoList || detail?.sku_photo_info_list);
+    const photoList = asArray<Record<string, any>>(
+      detail?.skuPhotoInfoList || detail?.sku_photo_info_list,
+    );
     counts[position] = photoList.reduce((sum, photo) => {
       const imageList = asArray(photo?.imageList || photo?.image_list);
       return Math.max(sum, imageList.length);
     }, 0);
   });
 
-  return ["1", "2"]
-    .map((position) => `位置${position}:${counts[position] || 0}`)
-    .join(" / ");
+  return ["1", "2"].map((position) => `位置${position}:${counts[position] || 0}`).join(" / ");
 };
 const buildRealPictureRuleStatusSummary = (ruleList: any[]) => {
   if (!ruleList.length) {
     return "-";
   }
-  const failedRules = ruleList.filter((rule: any) => Number(rule?.ruleStatus ?? rule?.rule_status) !== 2);
+  const failedRules = ruleList.filter(
+    (rule: any) => Number(rule?.ruleStatus ?? rule?.rule_status) !== 2,
+  );
   const source = failedRules.length ? failedRules : ruleList;
   return source
     .slice(0, 3)
     .map((rule: any) => {
-      const name = firstDisplayValue(rule?.ruleName, rule?.rule_name, rule?.checkType, rule?.check_type);
+      const name = firstDisplayValue(
+        rule?.ruleName,
+        rule?.rule_name,
+        rule?.checkType,
+        rule?.check_type,
+      );
       const statusText = firstDisplayValue(
         rule?.ruleStatusToast,
         rule?.rule_status_toast,
@@ -2888,9 +3050,7 @@ const toFiniteNumberOrNull = (value: any) => {
 };
 const extractSkuProperties = (sku: Record<string, any>) => {
   const propertyList = Array.isArray(sku?.productPropertyList) ? sku.productPropertyList : [];
-  const values = propertyList
-    .map((item: any) => String(item?.value || "").trim())
-    .filter(Boolean);
+  const values = propertyList.map((item: any) => String(item?.value || "").trim()).filter(Boolean);
   return values.length ? values.join(" / ") : "-";
 };
 const resolvePriceReviewImageUrl = (
@@ -2907,7 +3067,9 @@ const resolvePriceReviewCategoryName = (item: Record<string, any>) => {
   const fullCategoryName = Array.isArray(item?.fullCategoryName)
     ? item.fullCategoryName.map((name: any) => String(name || "").trim()).filter(Boolean)
     : [];
-  return toDisplayText(fullCategoryName.length ? fullCategoryName.join(" / ") : item?.leafCategoryName);
+  return toDisplayText(
+    fullCategoryName.length ? fullCategoryName.join(" / ") : item?.leafCategoryName,
+  );
 };
 const buildPriceReviewSubmitMessage = (mark?: PriceReviewSubmitMark) => {
   if (!mark) {
@@ -2931,7 +3093,8 @@ const resolvePriceReviewCompletedLabel = (mark?: PriceReviewSubmitMark) => {
   }
   return "已不核价";
 };
-const isCompletedPriceReviewMark = (mark?: PriceReviewSubmitMark) => !!(mark?.status === "success" && mark.markInvalid);
+const isCompletedPriceReviewMark = (mark?: PriceReviewSubmitMark) =>
+  !!(mark?.status === "success" && mark.markInvalid);
 const isPriceReviewSkuInvalid = (sku: Record<string, any>) => {
   return sku?.priceReviewStatus !== 1;
 };
@@ -2944,7 +3107,9 @@ const buildPriceReviewPreviewRows = (
   }
 
   const result = asPlainObject(response?.result);
-  const persistedMarks = asPlainObject((response as any)?.__priceReviewMarks || result.__priceReviewMarks);
+  const persistedMarks = asPlainObject(
+    (response as any)?.__priceReviewMarks || result.__priceReviewMarks,
+  );
   const items = Array.isArray(result.items) ? result.items : [];
   const rows: PriceReviewPreviewRow[] = [];
 
@@ -2977,18 +3142,17 @@ const buildPriceReviewPreviewRows = (
               : null;
           const priceDecision = resolvePriceDecision(computedPriceChangeRatio);
           const rowKey = [
-              review?.priceOrderId,
-              spuId,
-              skcId,
-              skuId,
-              itemIndex,
-              skcIndex,
-              reviewIndex,
-              skuIndex,
-            ].join("-");
+            review?.priceOrderId,
+            spuId,
+            skcId,
+            skuId,
+            itemIndex,
+            skcIndex,
+            reviewIndex,
+            skuIndex,
+          ].join("-");
           const submitMark =
-            priceReviewSubmitMarks[rowKey] ||
-            (persistedMarks[rowKey] as PriceReviewSubmitMark);
+            priceReviewSubmitMarks[rowKey] || (persistedMarks[rowKey] as PriceReviewSubmitMark);
           const processed = isCompletedPriceReviewMark(submitMark);
           const invalid = isPriceReviewSkuInvalid(sku) || processed;
           const completedLabel = resolvePriceReviewCompletedLabel(submitMark);
@@ -3022,7 +3186,7 @@ const buildPriceReviewPreviewRows = (
             times: toDisplayText(review?.times),
             processed,
             invalid,
-            invalidReason: invalid ? (completedLabel || "已作废") : "",
+            invalidReason: invalid ? completedLabel || "已作废" : "",
             submitStatus: submitMark
               ? submitMark.status === "success"
                 ? completedLabel || "成功"
@@ -3047,7 +3211,9 @@ const buildRealPicturePreviewRows = (
 
   const result = asPlainObject(response?.result);
   const items = Array.isArray(result.items) ? result.items : [];
-  const persistedMarks = asPlainObject((response as any)?.__realPictureUploadMarks || result.__realPictureUploadMarks);
+  const persistedMarks = asPlainObject(
+    (response as any)?.__realPictureUploadMarks || result.__realPictureUploadMarks,
+  );
   return items.map((item: any, index: number) => {
     const skuInfo = Array.isArray(item?.skuInfo)
       ? item.skuInfo
@@ -3074,7 +3240,13 @@ const buildRealPicturePreviewRows = (
     ]);
     const ruleSummary = ruleList
       .map((rule: any) =>
-        firstDisplayValue(rule?.checkTypeName, rule?.check_type_name, rule?.ruleName, rule?.rule_name, rule?.checkType),
+        firstDisplayValue(
+          rule?.checkTypeName,
+          rule?.check_type_name,
+          rule?.ruleName,
+          rule?.rule_name,
+          rule?.checkType,
+        ),
       )
       .filter(Boolean)
       .slice(0, 3)
@@ -3086,7 +3258,9 @@ const buildRealPicturePreviewRows = (
       .join(" / ");
     const rowKey = firstDisplayValue(item?.spuId, item?.spu_id, index);
     const persistedMark = asPlainObject(item?.realPictureUploadMark || persistedMarks[rowKey]);
-    const mark = (realPictureSubmitMarks[rowKey] || persistedMark) as RealPictureSubmitMark | undefined;
+    const mark = (realPictureSubmitMarks[rowKey] || persistedMark) as
+      | RealPictureSubmitMark
+      | undefined;
     const rawSkuIdList = toNumberList(
       skuInfo.map((sku: any) => firstDisplayValue(sku?.skuId, sku?.sku_id)),
     );
@@ -3111,11 +3285,14 @@ const buildRealPicturePreviewRows = (
       isSameSku: Number(item?.isSameSku || item?.is_same_sku || 0) === 1 ? "是" : "否",
       ruleSummary: toDisplayText(ruleSummary),
       statusSummary: `标签图 ${labelImageList.length} / 规则 ${ruleList.length}`,
-      productName: toDisplayText(item?.productName || item?.product_name || item?.goodsName || item?.goods_name),
+      productName: toDisplayText(
+        item?.productName || item?.product_name || item?.goodsName || item?.goods_name,
+      ),
       submitStatus: mark?.status === "success" ? "已上传" : "未知",
-      submitMessage: mark?.status === "success"
-        ? `${mark.message || "上传成功"}${mark.time ? ` ${mark.time}` : ""}`
-        : "-",
+      submitMessage:
+        mark?.status === "success"
+          ? `${mark.message || "上传成功"}${mark.time ? ` ${mark.time}` : ""}`
+          : "-",
       platformStatusText: uploadStatus.text,
       platformStatusTone: uploadStatus.tone,
       editStatusText,
@@ -3129,7 +3306,9 @@ const resolveJitCategoryName = (item: Record<string, any>) => {
   const fullCategoryName = Array.isArray(item?.fullCategoryName)
     ? item.fullCategoryName.map((name: any) => String(name || "").trim()).filter(Boolean)
     : [];
-  return toDisplayText(fullCategoryName.length ? fullCategoryName.join(" / ") : item?.leafCategoryName);
+  return toDisplayText(
+    fullCategoryName.length ? fullCategoryName.join(" / ") : item?.leafCategoryName,
+  );
 };
 const resolveJitImageUrl = (skc: Record<string, any>, item: Record<string, any>) => {
   const skuList = Array.isArray(skc?.skuList) ? skc.skuList : [];
@@ -3153,7 +3332,9 @@ const buildJitPreviewRows = (
   const result = asPlainObject(response?.result);
   const items = Array.isArray(result.items) ? result.items : [];
   const persistedMarks = asPlainObject((response as any)?.__jitMarks || result.__jitMarks);
-  const persistedStockMarks = asPlainObject((response as any)?.__jitStockMarks || result.__jitStockMarks);
+  const persistedStockMarks = asPlainObject(
+    (response as any)?.__jitStockMarks || result.__jitStockMarks,
+  );
   const rows: JitPreviewRow[] = [];
   const seen = new Set<string>();
 
@@ -3175,7 +3356,9 @@ const buildJitPreviewRows = (
       const persistedMark = persistedMarks[rowKey] as JitSubmitMark | undefined;
       const mark = (jitSubmitMarks[rowKey] || persistedMark) as JitSubmitMark | undefined;
       const persistedStockMark = persistedStockMarks[rowKey] as JitSubmitMark | undefined;
-      const stockMark = (jitStockSubmitMarks[rowKey] || persistedStockMark) as JitSubmitMark | undefined;
+      const stockMark = (jitStockSubmitMarks[rowKey] || persistedStockMark) as
+        | JitSubmitMark
+        | undefined;
       const applyJitStatus = toFiniteNumberOrNull(skc?.applyJitStatus);
       const jitOpened = Number(applyJitStatus) === 3 || !!persistedMark?.markOpened;
       const stockMaintained = !!stockMark?.stockMaintained;
@@ -3193,7 +3376,9 @@ const buildJitPreviewRows = (
         stockStatusText: stockMaintained ? "已维护库存" : "未维护库存",
         stockSubmitStatus: stockMark ? (stockMark.status === "success" ? "成功" : "失败") : "-",
         stockSubmitMessage: stockMark?.message || "-",
-        stockFinalNum: Number.isFinite(Number(stockMark?.finalNum)) ? Number(stockMark?.finalNum) : null,
+        stockFinalNum: Number.isFinite(Number(stockMark?.finalNum))
+          ? Number(stockMark?.finalNum)
+          : null,
         skcExtCode: toDisplayText(skc?.extCode),
         productName,
         categoryName,
@@ -3234,7 +3419,9 @@ const buildConfirmationPreviewRows = (
     const categoryName = toDisplayText(
       fullCategoryName.length ? fullCategoryName : leafCategoryName,
     );
-    const carouselImageUrlList = Array.isArray(item?.carouselImageUrlList) ? item.carouselImageUrlList : [];
+    const carouselImageUrlList = Array.isArray(item?.carouselImageUrlList)
+      ? item.carouselImageUrlList
+      : [];
     const imageUrl = carouselImageUrlList.length ? String(carouselImageUrlList[0]).trim() : "";
     const createTime = toDisplayText(item?.createTime);
     const skcList = Array.isArray(item?.skcList) ? item.skcList : [];
@@ -3249,9 +3436,10 @@ const buildConfirmationPreviewRows = (
         return;
       }
       seen.add(rowKey);
-      const skcImageUrl = Array.isArray(skc?.previewImgUrlList) && skc.previewImgUrlList.length
-        ? String(skc.previewImgUrlList[0]).trim()
-        : "";
+      const skcImageUrl =
+        Array.isArray(skc?.previewImgUrlList) && skc.previewImgUrlList.length
+          ? String(skc.previewImgUrlList[0]).trim()
+          : "";
       const goodsSkuIdList = Array.isArray(skc?.productSkuIdList)
         ? skc.productSkuIdList.map(Number).filter(Boolean)
         : [];
@@ -3296,26 +3484,42 @@ const buildCompliancePreviewRows = (
 
   const result = asPlainObject(response?.result);
   const items = Array.isArray(result.items) ? result.items : [];
-  return items.map((item: any, index: number) => {
-    const row = asPlainObject(item);
-    const taskGroups = buildComplianceTaskStatusGroups(row);
-    const actionableTaskGroups = taskGroups.filter(isActionableComplianceTaskGroup);
-    const actionablePendingCount = actionableTaskGroups.length;
-    return {
-      rowKey: firstDisplayValue(row?.id, row?.orderId, row?.order_id, row?.spuId, row?.spu_id, index),
-      spuId: toDisplayText(row?.spuId || row?.spu_id || row?.productId || row?.product_id),
-      goodsId: toDisplayText(row?.goodsId || row?.goods_id),
-      categoryId: toDisplayText(row?.catId || row?.cat_id),
-      categoryName: toDisplayText(row?.catName || row?.cat_name),
-      statusText: `${actionablePendingCount} 个待处理`,
-      typeText: `${taskGroups.length} 个合规项`,
-      productName: toDisplayText(row?.spuName || row?.spu_name || row?.productName || row?.product_name || row?.goodsName || row?.goods_name),
-      taskGroups,
-      actionableTaskGroups,
-      actionablePendingCount,
-      raw: row,
-    };
-  }).filter((row) => row.actionablePendingCount > 0);
+  return items
+    .map((item: any, index: number) => {
+      const row = asPlainObject(item);
+      const taskGroups = buildComplianceTaskStatusGroups(row);
+      const actionableTaskGroups = taskGroups.filter(isActionableComplianceTaskGroup);
+      const actionablePendingCount = actionableTaskGroups.length;
+      return {
+        rowKey: firstDisplayValue(
+          row?.id,
+          row?.orderId,
+          row?.order_id,
+          row?.spuId,
+          row?.spu_id,
+          index,
+        ),
+        spuId: toDisplayText(row?.spuId || row?.spu_id || row?.productId || row?.product_id),
+        goodsId: toDisplayText(row?.goodsId || row?.goods_id),
+        categoryId: toDisplayText(row?.catId || row?.cat_id),
+        categoryName: toDisplayText(row?.catName || row?.cat_name),
+        statusText: `${actionablePendingCount} 个待处理`,
+        typeText: `${taskGroups.length} 个合规项`,
+        productName: toDisplayText(
+          row?.spuName ||
+            row?.spu_name ||
+            row?.productName ||
+            row?.product_name ||
+            row?.goodsName ||
+            row?.goods_name,
+        ),
+        taskGroups,
+        actionableTaskGroups,
+        actionablePendingCount,
+        raw: row,
+      };
+    })
+    .filter((row) => row.actionablePendingCount > 0);
 };
 const getComplianceTaskStatusText = (status: number | null) => {
   if (status === 2) {
@@ -3338,7 +3542,9 @@ const getComplianceTaskStatusText = (status: number | null) => {
   }
   return status === null ? "未知" : `状态 ${status}`;
 };
-const getComplianceTaskStatusTagType = (status: number | null): ComplianceTaskStatusGroup["tagType"] => {
+const getComplianceTaskStatusTagType = (
+  status: number | null,
+): ComplianceTaskStatusGroup["tagType"] => {
   if (status === 2) {
     return "warning";
   }
@@ -3375,14 +3581,22 @@ const buildComplianceTaskStatusGroups = (row: Record<string, any>): ComplianceTa
       : Array.isArray(taskRow?.wait_task_dtolist)
         ? taskRow.wait_task_dtolist
         : [];
-    const needUploadCount = childTasks.filter((child: any) => isActionableComplianceStatus(Number(child?.status))).length;
+    const needUploadCount = childTasks.filter((child: any) =>
+      isActionableComplianceStatus(Number(child?.status)),
+    ).length;
     const requiredCount = childTasks.filter((child: any) => !child?.is_not_required).length;
     const children = childTasks.map((child: any, childIndex: number) => {
       const childRow = asPlainObject(child);
       const childStatusValue = Number(childRow?.status);
       const childStatus = Number.isFinite(childStatusValue) ? childStatusValue : null;
       return {
-        key: firstDisplayValue(childRow?.taskId, childRow?.task_id, childRow?.taskType, childRow?.task_type, childIndex),
+        key: firstDisplayValue(
+          childRow?.taskId,
+          childRow?.task_id,
+          childRow?.taskType,
+          childRow?.task_type,
+          childIndex,
+        ),
         name: toDisplayText(childRow?.taskName || childRow?.task_name),
         taskType: toDisplayText(childRow?.taskType || childRow?.task_type),
         status: childStatus,
@@ -3394,8 +3608,16 @@ const buildComplianceTaskStatusGroups = (row: Record<string, any>): ComplianceTa
     });
 
     return {
-      key: firstDisplayValue(taskRow?.showName, taskRow?.show_name, taskRow?.taskId, taskRow?.task_id, index),
-      name: toDisplayText(taskRow?.showName || taskRow?.show_name || taskRow?.taskName || taskRow?.task_name),
+      key: firstDisplayValue(
+        taskRow?.showName,
+        taskRow?.show_name,
+        taskRow?.taskId,
+        taskRow?.task_id,
+        index,
+      ),
+      name: toDisplayText(
+        taskRow?.showName || taskRow?.show_name || taskRow?.taskName || taskRow?.task_name,
+      ),
       status,
       statusText: getComplianceTaskStatusText(status),
       requiredText: childTasks.length
@@ -3436,8 +3658,7 @@ const isUselessComplianceTaskGroup = (task: ComplianceTaskStatusGroup) =>
 const isActionableComplianceTaskGroup = (task: ComplianceTaskStatusGroup) =>
   isActionableComplianceStatus(task.status) ||
   task.children.some((child) => isActionableComplianceStatus(child.status));
-const isActionableComplianceRow = (row: CompliancePreviewRow) =>
-  row.actionablePendingCount > 0;
+const isActionableComplianceRow = (row: CompliancePreviewRow) => row.actionablePendingCount > 0;
 const HARDCODED_COMPLIANCE_PROPERTY_VALUES: Record<string, Array<string | number>> = {
   "1000000001": [1000100066],
   "1000100091": [1000131288],
@@ -3458,8 +3679,10 @@ const HARDCODED_COMPLIANCE_TASK_DEFAULT_VALUES: Record<number, Array<string | nu
   181: [1000295043],
 };
 const HARDCODED_SECONDARY_COMPLIANCE_TASKS = new Set([121, 181, 186]);
-const isComplianceProductIdentifierField = (taskType: number | string, propertyId: number | string) =>
-  Number(taskType) === 61 || String(propertyId) === "1100100115";
+const isComplianceProductIdentifierField = (
+  taskType: number | string,
+  propertyId: number | string,
+) => Number(taskType) === 61 || String(propertyId) === "1100100115";
 const DEFAULT_COMPLIANCE_PRODUCT_IDENTIFIER = "1sdesign";
 const getComplianceOptionLabel = (option: Record<string, any>) =>
   toDisplayText(
@@ -3480,10 +3703,16 @@ const getComplianceOptionLabel = (option: Record<string, any>) =>
   );
 const getComplianceRepresentativeLabel = (rep: Record<string, any>) => {
   const address = asPlainObject(rep?.rep_address_info || rep?.repAddressInfo);
-  return [rep?.rep_name || rep?.repName, address?.region_name || address?.regionName, rep?.rep_mail || rep?.repMail]
-    .map((item) => toDisplayText(item))
-    .filter((item) => item && item !== "-")
-    .join(" / ") || toDisplayText(rep?.rep_id || rep?.repId);
+  return (
+    [
+      rep?.rep_name || rep?.repName,
+      address?.region_name || address?.regionName,
+      rep?.rep_mail || rep?.repMail,
+    ]
+      .map((item) => toDisplayText(item))
+      .filter((item) => item && item !== "-")
+      .join(" / ") || toDisplayText(rep?.rep_id || rep?.repId)
+  );
 };
 const getComplianceOptionValue = (option: Record<string, any>) =>
   firstDisplayValue(
@@ -3500,7 +3729,9 @@ const getComplianceOptionValue = (option: Record<string, any>) =>
     option?.value,
   );
 const complianceSelectableDetailList = computed(() => {
-  const payload = asPlainObject(complianceDetailResponse.value?.raw || complianceDetailResponse.value?.result);
+  const payload = asPlainObject(
+    complianceDetailResponse.value?.raw || complianceDetailResponse.value?.result,
+  );
   const result = asPlainObject(payload.result || payload);
   return asArray<Record<string, any>>(result.template_list || result.templateList);
 });
@@ -3550,7 +3781,11 @@ const buildComplianceSelectableField = (
           label: getComplianceRepresentativeLabel(rep),
           value: firstDisplayValue(rep?.rep_id, rep?.repId),
         })),
-        defaultValue: firstDisplayValue(repList.find((rep) => rep?.default_select || rep?.defaultSelect)?.rep_id, repList[0]?.rep_id, repList[0]?.repId),
+        defaultValue: firstDisplayValue(
+          repList.find((rep) => rep?.default_select || rep?.defaultSelect)?.rep_id,
+          repList[0]?.rep_id,
+          repList[0]?.repId,
+        ),
         raw: task,
       },
     ];
@@ -3561,10 +3796,9 @@ const buildComplianceSelectableField = (
   const inputText = asPlainObject(task?.input_text || task?.inputText);
   const propertyEntries = Object.entries(properties);
   const templatePropertyIds = getTemplatePropertyIdsByTaskType(taskType);
-  const propertyIds = Array.from(new Set([
-    ...propertyEntries.map(([propertyId]) => propertyId),
-    ...templatePropertyIds,
-  ]));
+  const propertyIds = Array.from(
+    new Set([...propertyEntries.map(([propertyId]) => propertyId), ...templatePropertyIds]),
+  );
 
   propertyIds.forEach((propertyId) => {
     if (Object.prototype.hasOwnProperty.call(inputText, propertyId)) {
@@ -3593,7 +3827,9 @@ const buildComplianceSelectableField = (
 
   Object.entries(inputText).forEach(([propertyId, input]) => {
     const inputObject = asPlainObject(input);
-    const names = asArray<Record<string, any>>(inputObject.multi_line_inputs || inputObject.multiLineInputs)
+    const names = asArray<Record<string, any>>(
+      inputObject.multi_line_inputs || inputObject.multiLineInputs,
+    )
       .map((item) => firstDisplayValue(item?.name, item?.value))
       .filter((value) => value !== "-");
     fields.push({
@@ -3640,7 +3876,9 @@ const buildComplianceEditorField = (
 
   return {
     key: `${taskType}:${propertyId}`,
-    label: toDisplayText(property?.property_name || property?.propertyName || property?.name || propertyId),
+    label: toDisplayText(
+      property?.property_name || property?.propertyName || property?.name || propertyId,
+    ),
     propertyId,
     taskType,
     controlType: "select",
@@ -3708,19 +3946,24 @@ const taskRunParamsText = computed(() => jsonText(activeTaskRunDetail.value?.par
 const taskRunResultText = computed(() => jsonText(activeTaskRunDetail.value?.result ?? null));
 const taskRunLogsText = computed(() => jsonText(taskRunLogEntries.value));
 const isPriceReviewTaskRunResult = computed(
-  () => String(activeTaskRunDetail.value?.result?.action || "").trim() === "goods.price-review.list",
+  () =>
+    String(activeTaskRunDetail.value?.result?.action || "").trim() === "goods.price-review.list",
 );
 const isRealPictureTaskRunResult = computed(
-  () => String(activeTaskRunDetail.value?.result?.action || "").trim() === "goods.real-picture.list",
+  () =>
+    String(activeTaskRunDetail.value?.result?.action || "").trim() === "goods.real-picture.list",
 );
 const isJitListTaskRunResult = computed(() =>
-  ["jit.list", "jit.list-all"].includes(String(activeTaskRunDetail.value?.result?.action || "").trim()),
+  ["jit.list", "jit.list-all"].includes(
+    String(activeTaskRunDetail.value?.result?.action || "").trim(),
+  ),
 );
 const isComplianceTaskRunResult = computed(
   () => String(activeTaskRunDetail.value?.result?.action || "").trim() === "compliance.page-query",
 );
 const isConfirmationTaskRunResult = computed(
-  () => String(activeTaskRunDetail.value?.result?.action || "").trim() === "goods.confirmation.list",
+  () =>
+    String(activeTaskRunDetail.value?.result?.action || "").trim() === "goods.confirmation.list",
 );
 const taskRunPriceReviewRawRows = computed(() =>
   buildPriceReviewPreviewRows(activeTaskRunDetail.value?.result as Record<string, any> | null),
@@ -3773,6 +4016,26 @@ const matchPriceReviewAmountFilter = (row: PriceReviewPreviewRow) => {
   }
   return true;
 };
+const matchPriceReviewCurrentPriceFilter = (row: PriceReviewPreviewRow) => {
+  const minPrice = Number(priceReviewCurrentPriceMin.value);
+  const maxPrice = Number(priceReviewCurrentPriceMax.value);
+  if (!Number.isFinite(minPrice) && !Number.isFinite(maxPrice)) {
+    return true;
+  }
+
+  const price = row.rawCurrentPrice;
+  if (price === null || !Number.isFinite(price)) {
+    return false;
+  }
+
+  if (Number.isFinite(minPrice) && price < minPrice * 100) {
+    return false;
+  }
+  if (Number.isFinite(maxPrice) && price > maxPrice * 100) {
+    return false;
+  }
+  return true;
+};
 const getPriceReviewSortValue = (row: PriceReviewPreviewRow, mode: PriceReviewSortMode) => {
   if (mode === "difference-desc" || mode === "difference-asc") {
     const value = Number(row.priceDifferenceValue);
@@ -3816,6 +4079,9 @@ const taskRunPriceReviewPreviewRows = computed(() => {
     if (!matchPriceReviewAmountFilter(row)) {
       return false;
     }
+    if (!matchPriceReviewCurrentPriceFilter(row)) {
+      return false;
+    }
     if (priceReviewStatusFilter.value === "pending" && row.processed) {
       return false;
     }
@@ -3835,8 +4101,8 @@ const taskRunRealPictureTotalCount = computed(() => {
 });
 const selectedRealPictureRows = computed(() => {
   const selectedKeys = new Set(selectedRealPictureRowKeys.value);
-  return taskRunRealPictureRows.value.filter((row) =>
-    selectedKeys.has(row.rowKey) && isSelectableRealPictureRow(row),
+  return taskRunRealPictureRows.value.filter(
+    (row) => selectedKeys.has(row.rowKey) && isSelectableRealPictureRow(row),
   );
 });
 const taskRunJitRawRows = computed(() =>
@@ -3869,9 +4135,13 @@ const taskRunJitTotalCount = computed(() => {
 });
 const selectedJitRows = computed(() => {
   const selectedKeys = new Set(selectedJitRowKeys.value);
-  return taskRunJitRows.value.filter((row) => selectedKeys.has(row.rowKey) && isSelectableJitRow(row));
+  return taskRunJitRows.value.filter(
+    (row) => selectedKeys.has(row.rowKey) && isSelectableJitRow(row),
+  );
 });
-const selectedOpenableJitRows = computed(() => selectedJitRows.value.filter((row) => isOpenableJitRow(row)));
+const selectedOpenableJitRows = computed(() =>
+  selectedJitRows.value.filter((row) => isOpenableJitRow(row)),
+);
 const selectedStockMaintainableJitRows = computed(() =>
   selectedJitRows.value.filter((row) => isStockMaintainableJitRow(row)),
 );
@@ -3887,7 +4157,9 @@ const unconfirmedConfirmationRows = computed(() =>
 );
 const selectedConfirmationRows = computed(() => {
   const selectedKeys = new Set(selectedConfirmationRowKeys.value);
-  return taskRunConfirmationRows.value.filter((row) => selectedKeys.has(row.rowKey) && !row.confirmed);
+  return taskRunConfirmationRows.value.filter(
+    (row) => selectedKeys.has(row.rowKey) && !row.confirmed,
+  );
 });
 const confirmationBatchProgressText = computed(() => {
   if (!confirmationBatchSubmitting.value || confirmationBatchTotalCount.value <= 0) {
@@ -3899,7 +4171,10 @@ const confirmationBatchProgressPercent = computed(() => {
   if (confirmationBatchTotalCount.value <= 0) {
     return 0;
   }
-  return Math.min(100, Math.round((confirmationBatchFinishedCount.value / confirmationBatchTotalCount.value) * 100));
+  return Math.min(
+    100,
+    Math.round((confirmationBatchFinishedCount.value / confirmationBatchTotalCount.value) * 100),
+  );
 });
 const confirmationBatchRemainingCount = computed(() =>
   Math.max(0, confirmationBatchTotalCount.value - confirmationBatchFinishedCount.value),
@@ -3935,8 +4210,8 @@ const taskRunComplianceFilteredCount = computed(() =>
 );
 const selectedComplianceRows = computed(() => {
   const selectedKeys = new Set(selectedComplianceRowKeys.value);
-  return visibleTaskRunComplianceRows.value.filter((row) =>
-    selectedKeys.has(row.rowKey) && isActionableComplianceRow(row),
+  return visibleTaskRunComplianceRows.value.filter(
+    (row) => selectedKeys.has(row.rowKey) && isActionableComplianceRow(row),
   );
 });
 const complianceBatchProgressText = computed(() => {
@@ -3952,7 +4227,10 @@ const complianceBatchProgressPercent = computed(() => {
   if (complianceBatchTotalCount.value <= 0) {
     return 0;
   }
-  return Math.min(100, Math.round((complianceBatchFinishedCount.value / complianceBatchTotalCount.value) * 100));
+  return Math.min(
+    100,
+    Math.round((complianceBatchFinishedCount.value / complianceBatchTotalCount.value) * 100),
+  );
 });
 const realPictureBatchProgressText = computed(() => {
   if (!realPictureBatchSubmitting.value || realPictureBatchTotalCount.value <= 0) {
@@ -3967,7 +4245,10 @@ const realPictureBatchProgressPercent = computed(() => {
   if (realPictureBatchTotalCount.value <= 0) {
     return 0;
   }
-  return Math.min(100, Math.round((realPictureBatchFinishedCount.value / realPictureBatchTotalCount.value) * 100));
+  return Math.min(
+    100,
+    Math.round((realPictureBatchFinishedCount.value / realPictureBatchTotalCount.value) * 100),
+  );
 });
 const jitBatchProgressText = computed(() => {
   if (!jitBatchSubmitting.value || jitBatchTotalCount.value <= 0) {
@@ -3989,30 +4270,41 @@ const visibleComplianceEditorTaskGroups = computed(() =>
   complianceEditorTaskGroups.value.filter((task) => {
     const taskTypes = [
       Number(task.raw?.task_type || task.raw?.taskType),
-      ...task.children.map((child) => Number(child.raw?.task_type || child.raw?.taskType || child.taskType)),
+      ...task.children.map((child) =>
+        Number(child.raw?.task_type || child.raw?.taskType || child.taskType),
+      ),
     ].filter((taskType) => Number.isFinite(taskType));
     return !taskTypes.some((taskType) => isIgnoredComplianceTask(taskType, task.name));
   }),
 );
-const selectedComplianceTask = computed(() =>
-  visibleComplianceEditorTaskGroups.value.find((task) => task.key === selectedComplianceTaskKey.value) ||
-  visibleComplianceEditorTaskGroups.value[0] ||
-  null,
+const selectedComplianceTask = computed(
+  () =>
+    visibleComplianceEditorTaskGroups.value.find(
+      (task) => task.key === selectedComplianceTaskKey.value,
+    ) ||
+    visibleComplianceEditorTaskGroups.value[0] ||
+    null,
 );
 const complianceTemplateSummary = computed(() => {
-  const payload = asPlainObject(complianceTemplateResponse.value?.raw || complianceTemplateResponse.value?.result);
+  const payload = asPlainObject(
+    complianceTemplateResponse.value?.raw || complianceTemplateResponse.value?.result,
+  );
   const result = asPlainObject(payload.result || payload);
   const templateList = asArray(result.template_list);
   return templateList.length ? `${templateList.length} 个模板项` : "-";
 });
 const complianceDetailSummary = computed(() => {
-  const payload = asPlainObject(complianceDetailResponse.value?.raw || complianceDetailResponse.value?.result);
+  const payload = asPlainObject(
+    complianceDetailResponse.value?.raw || complianceDetailResponse.value?.result,
+  );
   const result = asPlainObject(payload.result || payload);
   const templateList = asArray(result.template_list);
   return templateList.length ? `${templateList.length} 个已有值项` : "-";
 });
 const complianceTemplateList = computed(() => {
-  const payload = asPlainObject(complianceTemplateResponse.value?.raw || complianceTemplateResponse.value?.result);
+  const payload = asPlainObject(
+    complianceTemplateResponse.value?.raw || complianceTemplateResponse.value?.result,
+  );
   const result = asPlainObject(payload.result || payload);
   return asArray<Record<string, any>>(result.template_list);
 });
@@ -4020,10 +4312,13 @@ const findComplianceTemplateProperty = (taskType: number | string, propertyId: s
   const template = complianceTemplateList.value.find(
     (item) => Number(item?.task_type || item?.taskType) === Number(taskType),
   );
-  return asArray<Record<string, any>>(template?.template_property_dtolist || template?.templatePropertyDtoList)
-    .find((property) =>
-      String(firstDisplayValue(property?.property_id, property?.propertyId, property?.id)) === String(propertyId),
-    );
+  return asArray<Record<string, any>>(
+    template?.template_property_dtolist || template?.templatePropertyDtoList,
+  ).find(
+    (property) =>
+      String(firstDisplayValue(property?.property_id, property?.propertyId, property?.id)) ===
+      String(propertyId),
+  );
 };
 const buildComplianceValueOptions = (
   taskType: number,
@@ -4042,9 +4337,13 @@ const buildComplianceValueOptions = (
 };
 const getKoreaDisclosureTaskTypes = () => {
   const row = activeComplianceRow.value?.raw || {};
-  const showList = asArray<Record<string, any>>(row.wait_task_show_dtolist || row.waitTaskShowDtoList);
+  const showList = asArray<Record<string, any>>(
+    row.wait_task_show_dtolist || row.waitTaskShowDtoList,
+  );
   const koreaGroup = showList.find((task) =>
-    String(task?.show_name || task?.showName || task?.task_name || task?.taskName || "").includes("韩国公示信息"),
+    String(task?.show_name || task?.showName || task?.task_name || task?.taskName || "").includes(
+      "韩国公示信息",
+    ),
   );
   return new Set(
     asArray<Record<string, any>>(koreaGroup?.wait_task_dtolist || koreaGroup?.waitTaskDtoList)
@@ -4073,7 +4372,9 @@ const getTemplatePropertyIdsByTaskType = (taskType: number) => {
   const template = complianceTemplateList.value.find(
     (item) => Number(item?.task_type || item?.taskType) === Number(taskType),
   );
-  return asArray<Record<string, any>>(template?.template_property_dtolist || template?.templatePropertyDtoList)
+  return asArray<Record<string, any>>(
+    template?.template_property_dtolist || template?.templatePropertyDtoList,
+  )
     .map((property) => firstDisplayValue(property?.property_id, property?.propertyId, property?.id))
     .filter((propertyId) => propertyId !== "-");
 };
@@ -4089,7 +4390,9 @@ const mergeComplianceFields = (fields: ComplianceEditorField[]) => {
 const selectedComplianceFields = computed<ComplianceEditorField[]>(() => {
   const taskTypes = new Set<number>(
     [
-      Number(selectedComplianceTask.value?.raw?.task_type || selectedComplianceTask.value?.raw?.taskType),
+      Number(
+        selectedComplianceTask.value?.raw?.task_type || selectedComplianceTask.value?.raw?.taskType,
+      ),
       ...(selectedComplianceTask.value?.children || []).map((child) =>
         Number(child.raw?.task_type || child.raw?.taskType || child.taskType),
       ),
@@ -4104,9 +4407,16 @@ const selectedComplianceFields = computed<ComplianceEditorField[]>(() => {
   );
   const templateFields = templates.flatMap((template) => {
     const taskType = Number(template?.task_type || template?.taskType);
-    return asArray<Record<string, any>>(template?.template_property_dtolist || template?.templatePropertyDtoList)
+    return asArray<Record<string, any>>(
+      template?.template_property_dtolist || template?.templatePropertyDtoList,
+    )
       .map((property, index) => {
-        const propertyId = firstDisplayValue(property?.property_id, property?.propertyId, property?.id, index);
+        const propertyId = firstDisplayValue(
+          property?.property_id,
+          property?.propertyId,
+          property?.id,
+          index,
+        );
         if (isComplianceProductIdentifierField(taskType, propertyId)) {
           return buildComplianceEditorField(property, String(taskType), index);
         }
@@ -4148,13 +4458,19 @@ const selectedPriceReviewRows = computed(() => {
   return taskRunPriceReviewPreviewRows.value.filter((row) => selectedKeys.has(row.rowKey));
 });
 const selectedSubmittablePriceReviewRows = computed(() =>
-  selectedPriceReviewRows.value.filter((row) => canSubmitPriceReviewRow(row) && isSelectablePriceReviewRow(row)),
+  selectedPriceReviewRows.value.filter(
+    (row) => canSubmitPriceReviewRow(row) && isSelectablePriceReviewRow(row),
+  ),
 );
 const selectedRepriceablePriceReviewRows = computed(() =>
-  selectedPriceReviewRows.value.filter((row) => canRepricePriceReviewRow(row) && isSelectablePriceReviewRow(row)),
+  selectedPriceReviewRows.value.filter(
+    (row) => canRepricePriceReviewRow(row) && isSelectablePriceReviewRow(row),
+  ),
 );
 const selectedAbandonablePriceReviewRows = computed(() =>
-  selectedPriceReviewRows.value.filter((row) => !!row.rawPriceOrderId && isSelectablePriceReviewRow(row)),
+  selectedPriceReviewRows.value.filter(
+    (row) => !!row.rawPriceOrderId && isSelectablePriceReviewRow(row),
+  ),
 );
 const isPriceReviewBatchAvailable = computed(() =>
   taskRunPriceReviewPreviewRows.value.some((row) => isSelectablePriceReviewRow(row)),
@@ -4184,12 +4500,12 @@ const priceReviewBatchProgressPercent = computed(() => {
   if (priceReviewBatchTotalCount.value <= 0) {
     return 0;
   }
-  return Math.min(100, Math.round((priceReviewBatchFinishedCount.value / priceReviewBatchTotalCount.value) * 100));
+  return Math.min(
+    100,
+    Math.round((priceReviewBatchFinishedCount.value / priceReviewBatchTotalCount.value) * 100),
+  );
 });
-const resetPriceReviewBatchProgress = (
-  mode: "confirm" | "abandon" | "reprice",
-  total: number,
-) => {
+const resetPriceReviewBatchProgress = (mode: "confirm" | "abandon" | "reprice", total: number) => {
   priceReviewBatchSubmitting.value = true;
   priceReviewBatchSubmittingMode.value = mode;
   priceReviewBatchCurrentStage.value = "";
@@ -4290,12 +4606,20 @@ const floatingProgressSummary = computed(() => {
   return `成功 ${totalSuccess} / 失败 ${totalFailed} / 剩余 ${totalRemaining}`;
 });
 let batchProgressSyncTimer: number | null = null;
+let batchProgressSyncLastAt = 0;
 const syncFloatingBatchProgressToServer = () => {
-  if (!liveFloatingBatchProgressItems.value.length || batchProgressSyncTimer !== null) {
+  if (!liveFloatingBatchProgressItems.value.length) {
     return;
   }
+  const now = Date.now();
+  if (batchProgressSyncTimer !== null) {
+    return;
+  }
+  const elapsed = now - batchProgressSyncLastAt;
+  const delay = elapsed < 1000 ? 1000 - elapsed : 0;
   batchProgressSyncTimer = window.setTimeout(async () => {
     batchProgressSyncTimer = null;
+    batchProgressSyncLastAt = Date.now();
     batchProgressSyncing.value = true;
     try {
       const response = await updateTemuBatchProgress({
@@ -4308,7 +4632,7 @@ const syncFloatingBatchProgressToServer = () => {
     } finally {
       batchProgressSyncing.value = false;
     }
-  }, 250);
+  }, delay);
 };
 const loadFloatingBatchProgressFromServer = async () => {
   try {
@@ -4316,6 +4640,26 @@ const loadFloatingBatchProgressFromServer = async () => {
     persistedFloatingBatchProgressItems.value = response?.items || [];
   } catch (error) {
     console.warn("获取批量进度失败", error);
+  }
+};
+let batchProgressPollTimer: number | null = null;
+const startBatchProgressPolling = () => {
+  if (batchProgressPollTimer !== null) return;
+  batchProgressPollTimer = window.setInterval(async () => {
+    if (liveFloatingBatchProgressItems.value.length) {
+      stopBatchProgressPolling();
+      return;
+    }
+    await loadFloatingBatchProgressFromServer();
+    if (!persistedFloatingBatchProgressItems.value.length) {
+      stopBatchProgressPolling();
+    }
+  }, 2000);
+};
+const stopBatchProgressPolling = () => {
+  if (batchProgressPollTimer !== null) {
+    window.clearInterval(batchProgressPollTimer);
+    batchProgressPollTimer = null;
   }
 };
 const stopLiveBatchProgress = () => {
@@ -4333,6 +4677,7 @@ const stopLiveBatchProgress = () => {
 const clearFloatingBatchProgress = async () => {
   batchAbortToken.value += 1;
   stopLiveBatchProgress();
+  stopBatchProgressPolling();
   persistedFloatingBatchProgressItems.value = [];
   try {
     await clearTemuBatchProgress(props.profileId);
@@ -4342,6 +4687,7 @@ const clearFloatingBatchProgress = async () => {
   }
 };
 const clearFloatingBatchProgressSilently = async () => {
+  stopBatchProgressPolling();
   persistedFloatingBatchProgressItems.value = [];
   try {
     await clearTemuBatchProgress(props.profileId);
@@ -4422,7 +4768,12 @@ const canRunSelectedAction = computed(() => {
     return false;
   }
 
-  return !!(props.clientId && props.profileId && hasUsableSession.value && selectedAction.value.endpoint);
+  return !!(
+    props.clientId &&
+    props.profileId &&
+    hasUsableSession.value &&
+    selectedAction.value.endpoint
+  );
 });
 const runButtonLabel = computed(() => {
   if (!props.clientId) {
@@ -4598,7 +4949,7 @@ const unwrapTemuApiPayload = <T = any,>(value: any): T => {
   return current as T;
 };
 
-const normalizeTemuActionResponse = <TResult = Record<string, any>>(
+const normalizeTemuActionResponse = <TResult = Record<string, any>,>(
   value: any,
 ): TemuActionResponse<TResult> => {
   const unwrapped = unwrapTemuApiPayload<any>(value);
@@ -4901,6 +5252,8 @@ const resetPriceReviewFilters = () => {
   priceReviewSortMode.value = "default";
   priceReviewAmountFilterMin.value = undefined;
   priceReviewAmountFilterMax.value = undefined;
+  priceReviewCurrentPriceMin.value = undefined;
+  priceReviewCurrentPriceMax.value = undefined;
 };
 
 const parsePriceYuanToCent = (value: any) => {
@@ -4910,14 +5263,17 @@ const parsePriceYuanToCent = (value: any) => {
   }
   return Math.round(numericValue * 100);
 };
-const formatPriceCentToYuanNumber = (value: number | null) => Math.max(0, Number(value || 0) - 1) / 100;
+const formatPriceCentToYuanNumber = (value: number | null) =>
+  Math.max(0, Number(value || 0) - 1) / 100;
 
 const canSubmitPriceReviewRow = (row?: PriceReviewPreviewRow | null) =>
   !!(row?.rawPriceOrderId && row.rawSkuId && row.rawSuggestPrice !== null);
 const canRepricePriceReviewRow = (row?: PriceReviewPreviewRow | null) =>
   !!(row?.rawPriceOrderId && row.rawSkuId && row.rawCurrentPrice !== null);
-const isSelectablePriceReviewRow = (row?: PriceReviewPreviewRow | null) => !!row && !row.invalid && !row.processed;
-const isOpenableJitRow = (row?: JitPreviewRow | null) => !!(row?.rawSkcId && row.rawSpuId && !row.jitOpened);
+const isSelectablePriceReviewRow = (row?: PriceReviewPreviewRow | null) =>
+  !!row && !row.invalid && !row.processed;
+const isOpenableJitRow = (row?: JitPreviewRow | null) =>
+  !!(row?.rawSkcId && row.rawSpuId && !row.jitOpened);
 const isStockMaintainableJitRow = (row?: JitPreviewRow | null) =>
   !!(row?.rawSkcId && row.rawSpuId && row.jitOpened && !row.stockMaintained);
 const isSelectableJitRow = (row?: JitPreviewRow | null) =>
@@ -4955,12 +5311,17 @@ const buildClientTaskPayload = (payload: Record<string, any>) => ({
   clientId: props.clientId,
 });
 
-const runTemuClientAction = <TResult = Record<string, any>>(
+const runTemuClientAction = <TResult = Record<string, any>,>(
   actionKey: string,
   payload: Record<string, any>,
   timeoutMs?: number,
 ) => {
-  const region = String(payload?.region || activeTaskRunDetail.value?.region || activeActionResult.value?.region || "global");
+  const region = String(
+    payload?.region ||
+      activeTaskRunDetail.value?.region ||
+      activeActionResult.value?.region ||
+      "global",
+  );
   return executeTemuClientAction<TResult>({
     clientId: String(props.clientId || ""),
     actionKey,
@@ -4998,10 +5359,14 @@ const setJitBatchCurrent = (stage: string, row?: JitPreviewRow | null) => {
   jitBatchCurrentRowText.value = row ? `SPU ${row.spuId} / SKC ${row.skcId}` : "";
 };
 
-const buildJitStockSuccessMark = (response: TemuActionResponse | null | undefined, finalNum: number): JitSubmitMark => ({
+const buildJitStockSuccessMark = (
+  response: TemuActionResponse | null | undefined,
+  finalNum: number,
+): JitSubmitMark => ({
   status: response?.success ? "success" : "failed",
   action: "stock",
-  message: String(response?.message || "").trim() || (response?.success ? "库存维护成功" : "库存维护失败"),
+  message:
+    String(response?.message || "").trim() || (response?.success ? "库存维护成功" : "库存维护失败"),
   time: formatDateTime(new Date()),
   stockMaintained: !!response?.success,
   finalNum,
@@ -5016,7 +5381,11 @@ const buildJitStockErrorMark = (error: any, finalNum: number): JitSubmitMark => 
   finalNum,
 });
 
-const persistJitStockMark = async (row: JitPreviewRow, mark: JitSubmitMark, ownerRunId?: number) => {
+const persistJitStockMark = async (
+  row: JitPreviewRow,
+  mark: JitSubmitMark,
+  ownerRunId?: number,
+) => {
   const runId = Number(ownerRunId || activeTaskRunDetail.value?.id || 0);
   if (!runId) {
     return;
@@ -5105,7 +5474,9 @@ const submitJitStockRows = async (inputRows: JitPreviewRow[], batchMode = false)
   if (!requireTemuClientContext()) {
     return { successCount: 0, failedCount: 0 };
   }
-  const rows = (Array.isArray(inputRows) ? inputRows : []).filter((row) => isStockMaintainableJitRow(row));
+  const rows = (Array.isArray(inputRows) ? inputRows : []).filter((row) =>
+    isStockMaintainableJitRow(row),
+  );
   if (!rows.length) {
     ElMessage.warning("请先选择已开通且未维护库存的记录");
     return { successCount: 0, failedCount: 0 };
@@ -5129,8 +5500,8 @@ const submitJitStockRows = async (inputRows: JitPreviewRow[], batchMode = false)
   }> = [];
 
   try {
-    for (const row of rows) {
-      if (batchMode && shouldAbortBatch(batchToken)) {
+    for (const [index, row] of rows.entries()) {
+      if (shouldAbortBatch(batchToken)) {
         break;
       }
       if (batchMode) {
@@ -5192,6 +5563,9 @@ const submitJitStockRows = async (inputRows: JitPreviewRow[], batchMode = false)
           jitBatchFinishedCount.value += 1;
           jitBatchSuccessCount.value = successCount;
           jitBatchFailedCount.value = failedCount;
+          if (index % 5 === 4 || index === rows.length - 1) {
+            syncFloatingBatchProgressToServer();
+          }
         }
       }
     }
@@ -5219,6 +5593,7 @@ const submitJitStockRows = async (inputRows: JitPreviewRow[], batchMode = false)
       jitBatchCurrentStage.value = "";
       jitBatchCurrentRowText.value = "";
       jitBatchSubmitting.value = false;
+      syncFloatingBatchProgressToServer();
       void clearFloatingBatchProgressSilently();
     }
   }
@@ -5244,7 +5619,9 @@ const submitJitRows = async (inputRows: JitPreviewRow[], batchMode = false) => {
   const ownerRunId = Number(activeTaskRunDetail.value?.id || 0);
 
   try {
-    const response = normalizeTemuActionResponse(await runTemuClientAction("jit.open", buildJitOpenPayload(rows)));
+    const response = normalizeTemuActionResponse(
+      await runTemuClientAction("jit.open", buildJitOpenPayload(rows)),
+    );
     if (batchMode && shouldAbortBatch(batchToken)) {
       return;
     }
@@ -5281,7 +5658,12 @@ const submitJitRows = async (inputRows: JitPreviewRow[], batchMode = false) => {
       jitSubmitMarks[row.rowKey] = {
         status: success ? "success" : "failed",
         action: "open",
-        message: String(failedItem?.msg || failedItem?.message || response?.message || (success ? "开通成功" : "开通失败")),
+        message: String(
+          failedItem?.msg ||
+            failedItem?.message ||
+            response?.message ||
+            (success ? "开通成功" : "开通失败"),
+        ),
         time: formatDateTime(new Date()),
         markOpened: success,
       };
@@ -5325,6 +5707,7 @@ const submitJitRows = async (inputRows: JitPreviewRow[], batchMode = false) => {
       jitBatchFinishedCount.value = rows.length;
       jitBatchSuccessCount.value = successCount;
       jitBatchFailedCount.value = failedCount;
+      syncFloatingBatchProgressToServer();
       selectedJitRowKeys.value = selectedJitRowKeys.value.filter((rowKey) => {
         const mark = jitSubmitMarks[rowKey];
         return mark?.status !== "success";
@@ -5333,7 +5716,9 @@ const submitJitRows = async (inputRows: JitPreviewRow[], batchMode = false) => {
       ElMessage.success(`JIT 开通完成：成功 ${successCount} 个，失败 ${failedCount} 个`);
     } else {
       failedCount
-        ? ElMessage.error(rows[0] ? jitSubmitMarks[rows[0].rowKey]?.message || "JIT 开通失败" : "JIT 开通失败")
+        ? ElMessage.error(
+            rows[0] ? jitSubmitMarks[rows[0].rowKey]?.message || "JIT 开通失败" : "JIT 开通失败",
+          )
         : ElMessage.success("JIT 开通完成");
     }
   } catch (error: any) {
@@ -5375,11 +5760,14 @@ const submitJitRows = async (inputRows: JitPreviewRow[], batchMode = false) => {
     if (batchMode) {
       jitBatchFinishedCount.value = rows.length;
       jitBatchFailedCount.value = rows.length;
+      syncFloatingBatchProgressToServer();
       if (failedBatchMarks.length) {
         try {
           await persistJitMarksBatch(ownerRunId, failedBatchMarks);
         } catch (persistError: any) {
-          ElMessage.warning(extractRequestErrorMessage(persistError, "JIT 开通失败状态批量持久化失败"));
+          ElMessage.warning(
+            extractRequestErrorMessage(persistError, "JIT 开通失败状态批量持久化失败"),
+          );
         }
       }
     }
@@ -5390,13 +5778,15 @@ const submitJitRows = async (inputRows: JitPreviewRow[], batchMode = false) => {
     jitBatchCurrentRowText.value = "";
     jitBatchSubmitting.value = false;
     if (batchMode) {
+      syncFloatingBatchProgressToServer();
       void clearFloatingBatchProgressSilently();
     }
   }
 };
 
 const submitSelectedJitRows = () => submitJitRows(selectedJitRows.value, true);
-const submitSelectedJitStockRows = () => submitJitStockRows(selectedStockMaintainableJitRows.value, true);
+const submitSelectedJitStockRows = () =>
+  submitJitStockRows(selectedStockMaintainableJitRows.value, true);
 
 const submitSelectedJitOpenAndStockRows = async () => {
   if (!requireTemuClientContext()) {
@@ -5430,7 +5820,9 @@ const submitSelectedJitOpenAndStockRows = async () => {
 
     if (openRows.length) {
       setJitBatchCurrent("批量开通请求中");
-      const response = normalizeTemuActionResponse(await runTemuClientAction("jit.open", buildJitOpenPayload(openRows)));
+      const response = normalizeTemuActionResponse(
+        await runTemuClientAction("jit.open", buildJitOpenPayload(openRows)),
+      );
       const failedItems = asArray<Record<string, any>>(response?.result?.failedSkcList);
       const failedSkcIds = new Set(
         failedItems
@@ -5438,7 +5830,7 @@ const submitSelectedJitOpenAndStockRows = async () => {
           .filter((item) => Number.isFinite(item) && item > 0),
       );
 
-      for (const row of openRows) {
+      for (const [index, row] of openRows.entries()) {
         if (shouldAbortBatch(batchToken)) {
           break;
         }
@@ -5459,7 +5851,12 @@ const submitSelectedJitOpenAndStockRows = async () => {
         const nextMark: JitSubmitMark = {
           status: success ? "success" : "failed",
           action: "open",
-          message: String(failedItem?.msg || failedItem?.message || response?.message || (success ? "开通成功" : "开通失败")),
+          message: String(
+            failedItem?.msg ||
+              failedItem?.message ||
+              response?.message ||
+              (success ? "开通成功" : "开通失败"),
+          ),
           time: formatDateTime(new Date()),
           markOpened: success,
         };
@@ -5481,6 +5878,9 @@ const submitSelectedJitOpenAndStockRows = async () => {
           jitBatchFinishedCount.value += 1;
           jitBatchFailedCount.value = openFailedCount + skippedStockCount;
         }
+        if (index % 5 === 4 || index === openRows.length - 1) {
+          syncFloatingBatchProgressToServer();
+        }
       }
     }
 
@@ -5488,7 +5888,7 @@ const submitSelectedJitOpenAndStockRows = async () => {
     let stockSuccessCount = 0;
     let stockFailedCount = 0;
     const finalNum = Math.max(0, Number(jitStockFinalNum.value || 0) || 0);
-    for (const row of stockRows) {
+    for (const [stockIndex, row] of stockRows.entries()) {
       if (shouldAbortBatch(batchToken)) {
         break;
       }
@@ -5530,6 +5930,9 @@ const submitSelectedJitOpenAndStockRows = async () => {
         jitBatchFinishedCount.value += 1;
         jitBatchSuccessCount.value = openSuccessCount + stockSuccessCount;
         jitBatchFailedCount.value = openFailedCount + skippedStockCount + stockFailedCount;
+        if (stockIndex % 5 === 4 || stockIndex === stockRows.length - 1) {
+          syncFloatingBatchProgressToServer();
+        }
       }
     }
 
@@ -5544,7 +5947,10 @@ const submitSelectedJitOpenAndStockRows = async () => {
     selectedJitRowKeys.value = selectedJitRowKeys.value.filter((rowKey) => {
       const openMark = jitSubmitMarks[rowKey];
       const stockMark = jitStockSubmitMarks[rowKey];
-      return !(stockMark?.stockMaintained || (openMark?.markOpened && !stockRows.some((row) => row.rowKey === rowKey)));
+      return !(
+        stockMark?.stockMaintained ||
+        (openMark?.markOpened && !stockRows.some((row) => row.rowKey === rowKey))
+      );
     });
     jitPreviewGridRef.value?.clearCheckboxRow?.();
     ElMessage.success(
@@ -5556,6 +5962,7 @@ const submitSelectedJitOpenAndStockRows = async () => {
     jitBatchCurrentStage.value = "";
     jitBatchCurrentRowText.value = "";
     jitBatchSubmitting.value = false;
+    syncFloatingBatchProgressToServer();
     void clearFloatingBatchProgressSilently();
   }
 };
@@ -5596,7 +6003,9 @@ const submitConfirmationRows = async (rows: ConfirmationPreviewRow[], batchMode 
     try {
       const response = await runTemuClientAction("goods.confirmation.confirm", {
         profileId: props.profileId,
-        region: String(activeTaskRunDetail.value?.region || activeActionResult.value?.region || "global"),
+        region: String(
+          activeTaskRunDetail.value?.region || activeActionResult.value?.region || "global",
+        ),
         goodsId: row.rawGoodsId,
         siteVersion: row.siteVersion,
         priceConfirmKeyStr: "1",
@@ -5626,11 +6035,17 @@ const submitConfirmationRows = async (rows: ConfirmationPreviewRow[], batchMode 
         time: formatDateTime(new Date()),
       };
     }
+    if (batchMode) {
+      if (i % 5 === 4 || i === validRows.length - 1) {
+        syncFloatingBatchProgressToServer();
+      }
+    }
   }
   if (batchMode) {
     confirmationBatchFinishedCount.value = validRows.length;
     confirmationBatchSuccessCount.value = successCount;
     confirmationBatchFailedCount.value = failedCount;
+    syncFloatingBatchProgressToServer();
   }
   confirmationSubmittingKey.value = "";
   confirmationBatchSubmitting.value = false;
@@ -5711,9 +6126,13 @@ const removeRealPicturePositionItem = (index: number) => {
 
 const buildRealPicturePositionImageUrlsFromForm = () => {
   ensureRealPicturePositionItems();
-  const allImageUrls = Array.from(new Set(
-    realPictureUploadForm.value.positionItems.flatMap((item: any) => parseImageUrlText(item.imageUrlsText)),
-  ));
+  const allImageUrls = Array.from(
+    new Set(
+      realPictureUploadForm.value.positionItems.flatMap((item: any) =>
+        parseImageUrlText(item.imageUrlsText),
+      ),
+    ),
+  );
   if (!allImageUrls.length) {
     return {};
   }
@@ -5727,7 +6146,9 @@ const openRealPictureUploader = (rows: RealPicturePreviewRow[]) => {
   if (!requireTemuClientContext()) {
     return;
   }
-  const usableRows = (Array.isArray(rows) ? rows : []).filter((row) => isSelectableRealPictureRow(row));
+  const usableRows = (Array.isArray(rows) ? rows : []).filter((row) =>
+    isSelectableRealPictureRow(row),
+  );
   if (!usableRows.length) {
     ElMessage.warning("请先从实拍图列表选择可上传的记录");
     return;
@@ -5775,7 +6196,8 @@ const submitRealPictureRowWithoutConfirm = async (
     );
     const nextMark: RealPictureSubmitMark = {
       status: response?.success ? "success" : "failed",
-      message: String(response?.message || "").trim() || (response?.success ? "上传成功" : "上传失败"),
+      message:
+        String(response?.message || "").trim() || (response?.success ? "上传成功" : "上传失败"),
       time: formatDateTime(new Date()),
     };
     realPictureSubmitMarks[row.rowKey] = nextMark;
@@ -5787,7 +6209,9 @@ const submitRealPictureRowWithoutConfirm = async (
     }
     return {
       success: !!response?.success,
-      uploadedPositionImageUrls: response?.success ? extractUploadedRealPicturePositionMap(response) : null,
+      uploadedPositionImageUrls: response?.success
+        ? extractUploadedRealPicturePositionMap(response)
+        : null,
     };
   } catch (error: any) {
     const nextMark: RealPictureSubmitMark = {
@@ -5863,7 +6287,7 @@ const submitRealPictureUploadRows = async () => {
     goodsId?: number;
   }> = [];
 
-  for (const row of rows) {
+  for (const [index, row] of rows.entries()) {
     if (shouldAbortBatch(batchToken)) {
       break;
     }
@@ -5891,6 +6315,9 @@ const submitRealPictureUploadRows = async () => {
       realPictureBatchFailedCount.value += 1;
     }
     realPictureBatchFinishedCount.value += 1;
+    if (index % 5 === 4 || index === rows.length - 1) {
+      syncFloatingBatchProgressToServer();
+    }
   }
 
   if (ownerRunId && batchMarks.length) {
@@ -5906,6 +6333,7 @@ const submitRealPictureUploadRows = async () => {
   }
 
   realPictureBatchSubmitting.value = false;
+  syncFloatingBatchProgressToServer();
   void clearFloatingBatchProgressSilently();
   realPictureUploadVisible.value = false;
   selectedRealPictureRowKeys.value = selectedRealPictureRowKeys.value.filter((rowKey) => {
@@ -5913,7 +6341,9 @@ const submitRealPictureUploadRows = async () => {
     return mark?.status !== "success";
   });
   realPicturePreviewGridRef.value?.clearCheckboxRow?.();
-  ElMessage.success(`实拍图上传完成：成功 ${successCount} 条，失败 ${rows.length - successCount} 条`);
+  ElMessage.success(
+    `实拍图上传完成：成功 ${successCount} 条，失败 ${rows.length - successCount} 条`,
+  );
 };
 
 const onRealPictureSelectionChange = ({ records }: { records: RealPicturePreviewRow[] }) => {
@@ -5930,7 +6360,9 @@ const buildSinglePriceReviewPayload = (
 ) => {
   const basePayload = {
     profileId: props.profileId,
-    region: String(activeTaskRunDetail.value?.region || activeActionResult.value?.region || "global"),
+    region: String(
+      activeTaskRunDetail.value?.region || activeActionResult.value?.region || "global",
+    ),
     priceOrderId: row.rawPriceOrderId,
     traceId: `price-review-${Date.now()}-${row.rowKey}`,
     rowTrace: {
@@ -5968,10 +6400,12 @@ const buildComplianceDetailPayload = (row: CompliancePreviewRow) => ({
   wait_task_list: asArray(row.raw?.wait_task_dtolist || row.raw?.waitTaskDtoList),
 });
 const getComplianceDetailResult = () => {
-  const payload = asPlainObject(complianceDetailResponse.value?.raw || complianceDetailResponse.value?.result);
+  const payload = asPlainObject(
+    complianceDetailResponse.value?.raw || complianceDetailResponse.value?.result,
+  );
   return asPlainObject(payload.result || payload);
 };
-const clonePlainObject = <T = any>(value: T): T => {
+const clonePlainObject = <T = any,>(value: T): T => {
   try {
     return JSON.parse(JSON.stringify(value ?? null));
   } catch {
@@ -5980,36 +6414,50 @@ const clonePlainObject = <T = any>(value: T): T => {
 };
 const OFFICIAL_SIMPLE_COMPLIANCE_TASK_TYPES = new Set([4, 33, 42, 49]);
 const getComplianceQueryTaskList = () =>
-  asArray<Record<string, any>>(activeComplianceRow.value?.raw?.wait_task_dtolist || activeComplianceRow.value?.raw?.waitTaskDtoList);
+  asArray<Record<string, any>>(
+    activeComplianceRow.value?.raw?.wait_task_dtolist ||
+      activeComplianceRow.value?.raw?.waitTaskDtoList,
+  );
 const resolveComplianceTaskIdMap = () =>
-  getComplianceQueryTaskList().reduce((result, task) => {
-    const taskType = Number(task?.task_type || task?.taskType);
-    const taskId = task?.task_id || task?.taskId;
-    if (Number.isFinite(taskType) && taskId !== undefined && taskId !== null) {
-      result[taskType] = taskId;
-    }
-    return result;
-  }, {} as Record<number, any>);
+  getComplianceQueryTaskList().reduce(
+    (result, task) => {
+      const taskType = Number(task?.task_type || task?.taskType);
+      const taskId = task?.task_id || task?.taskId;
+      if (Number.isFinite(taskType) && taskId !== undefined && taskId !== null) {
+        result[taskType] = taskId;
+      }
+      return result;
+    },
+    {} as Record<number, any>,
+  );
 const resolveComplianceQueryTaskMap = () =>
-  getComplianceQueryTaskList().reduce((result, task) => {
-    const taskType = Number(task?.task_type || task?.taskType);
-    if (Number.isFinite(taskType)) {
-      result[taskType] = asPlainObject(task);
-    }
-    return result;
-  }, {} as Record<number, Record<string, any>>);
+  getComplianceQueryTaskList().reduce(
+    (result, task) => {
+      const taskType = Number(task?.task_type || task?.taskType);
+      if (Number.isFinite(taskType)) {
+        result[taskType] = asPlainObject(task);
+      }
+      return result;
+    },
+    {} as Record<number, Record<string, any>>,
+  );
 const resolveComplianceFieldSelectionMap = () =>
-  selectedComplianceFields.value.reduce((result, field) => {
-    result[field.key] = complianceEditorForm[field.key];
-    return result;
-  }, {} as Record<string, any>);
+  selectedComplianceFields.value.reduce(
+    (result, field) => {
+      result[field.key] = complianceEditorForm[field.key];
+      return result;
+    },
+    {} as Record<string, any>,
+  );
 const findComplianceTemplateByTaskType = (taskType: number) =>
-  complianceTemplateList.value.find((template) =>
-    Number(template?.task_type || template?.taskType) === Number(taskType),
+  complianceTemplateList.value.find(
+    (template) => Number(template?.task_type || template?.taskType) === Number(taskType),
   );
 const getFirstTemplatePropertyId = (taskType: number) => {
   const template = findComplianceTemplateByTaskType(taskType);
-  const property = asArray<Record<string, any>>(template?.template_property_dtolist || template?.templatePropertyDtoList)[0];
+  const property = asArray<Record<string, any>>(
+    template?.template_property_dtolist || template?.templatePropertyDtoList,
+  )[0];
   return firstDisplayValue(property?.property_id, property?.propertyId, property?.id);
 };
 const normalizeComplianceSubmitTask = (
@@ -6022,19 +6470,25 @@ const normalizeComplianceSubmitTask = (
   if (OFFICIAL_SIMPLE_COMPLIANCE_TASK_TYPES.has(taskType)) {
     const propertyId = getFirstTemplatePropertyId(taskType);
     const selectedKey = `${taskType}:${propertyId}`;
-    const selectedValue = selectionMap[selectedKey] ?? resolveComplianceHardcodedValues(taskType, propertyId)[0];
+    const selectedValue =
+      selectionMap[selectedKey] ?? resolveComplianceHardcodedValues(taskType, propertyId)[0];
     return {
       task_id: task.task_id || task.taskId,
       task_status: task.task_status ?? task.taskStatus ?? task.status ?? 2,
       task_type: taskType,
-      template_id: task.template_id || task.templateId || findComplianceTemplateByTaskType(taskType)?.template_id,
-      properties: propertyId && propertyId !== "-"
-        ? {
-            [propertyId]: selectedValue === undefined || selectedValue === null || selectedValue === ""
-              ? []
-              : [selectedValue],
-          }
-        : {},
+      template_id:
+        task.template_id ||
+        task.templateId ||
+        findComplianceTemplateByTaskType(taskType)?.template_id,
+      properties:
+        propertyId && propertyId !== "-"
+          ? {
+              [propertyId]:
+                selectedValue === undefined || selectedValue === null || selectedValue === ""
+                  ? []
+                  : [selectedValue],
+            }
+          : {},
       images: {},
       input_text: {},
     };
@@ -6047,7 +6501,10 @@ const normalizeComplianceSubmitTask = (
       task_id: task.task_id || task.taskId,
       task_status: task.task_status ?? task.taskStatus ?? task.status ?? 2,
       task_type: taskType,
-      template_id: task.template_id || task.templateId || findComplianceTemplateByTaskType(taskType)?.template_id,
+      template_id:
+        task.template_id ||
+        task.templateId ||
+        findComplianceTemplateByTaskType(taskType)?.template_id,
       properties: {},
       images: {},
       input_text: {
@@ -6066,9 +6523,10 @@ const normalizeComplianceSubmitTask = (
     const repSelectionKey = `${taskType}:rep_detail`;
     const selectedRepId = selectionMap[repSelectionKey];
     const repList = asArray<Record<string, any>>(task.rep_detail_list || task.repDetailList);
-    const selectedRep = repList.find((rep) =>
-      String(firstDisplayValue(rep?.rep_id, rep?.repId)) === String(selectedRepId),
-    ) || repList[0];
+    const selectedRep =
+      repList.find(
+        (rep) => String(firstDisplayValue(rep?.rep_id, rep?.repId)) === String(selectedRepId),
+      ) || repList[0];
     return {
       task_id: task.task_id || task.taskId,
       task_type: taskType,
@@ -6112,8 +6570,8 @@ const applyComplianceEditorSelections = (
 
     if (propertyId === "rep_detail") {
       const repList = asArray<Record<string, any>>(task?.rep_detail_list || task?.repDetailList);
-      const selectedRep = repList.find((rep) =>
-        String(firstDisplayValue(rep?.rep_id, rep?.repId)) === String(selectedValue),
+      const selectedRep = repList.find(
+        (rep) => String(firstDisplayValue(rep?.rep_id, rep?.repId)) === String(selectedValue),
       );
       task.rep_detail_list = selectedRep ? [selectedRep] : [];
       return;
@@ -6134,9 +6592,10 @@ const applyComplianceEditorSelections = (
       return;
     }
 
-    propertySelections[propertyId] = selectedValue === undefined || selectedValue === null || selectedValue === ""
-      ? []
-      : [selectedValue];
+    propertySelections[propertyId] =
+      selectedValue === undefined || selectedValue === null || selectedValue === ""
+        ? []
+        : [selectedValue];
   });
 
   if (Object.keys(propertySelections).length) {
@@ -6217,7 +6676,9 @@ const buildComplianceSubmitPayloadWithSelection = (selectionMap: Record<string, 
   }
 
   const detailResult = getComplianceDetailResult();
-  const detailTasks = asArray<Record<string, any>>(detailResult.template_list || detailResult.templateList);
+  const detailTasks = asArray<Record<string, any>>(
+    detailResult.template_list || detailResult.templateList,
+  );
   const taskIdMap = resolveComplianceTaskIdMap();
   const queryTaskMap = resolveComplianceQueryTaskMap();
 
@@ -6242,7 +6703,9 @@ const buildComplianceSubmitPayloadWithSelection = (selectionMap: Record<string, 
     cat_id: Number(row.raw?.cat_id || row.raw?.catId || 0),
     spu_id: Number(row.raw?.spu_id || row.raw?.spuId || 0),
     goods_id: Number(row.raw?.goods_id || row.raw?.goodsId || 0),
-    group_sku_by_same_info: Boolean(detailResult.group_sku_by_same_info || detailResult.groupSkuBySameInfo),
+    group_sku_by_same_info: Boolean(
+      detailResult.group_sku_by_same_info || detailResult.groupSkuBySameInfo,
+    ),
     template_edit_request_list: templateEditRequestList,
   };
 };
@@ -6256,7 +6719,9 @@ const fetchComplianceResponsesForRow = async (row: CompliancePreviewRow) => {
 
   const basePayload = {
     profileId: props.profileId,
-    region: String(activeTaskRunDetail.value?.region || activeActionResult.value?.region || "global"),
+    region: String(
+      activeTaskRunDetail.value?.region || activeActionResult.value?.region || "global",
+    ),
     payload,
   };
   const detailResponse = await runTemuClientAction("compliance.detail", {
@@ -6278,7 +6743,9 @@ const loadComplianceEditorForRow = async (row: CompliancePreviewRow) => {
   const firstVisibleTask = row.taskGroups.find((task) => {
     const taskTypes = [
       Number(task.raw?.task_type || task.raw?.taskType),
-      ...task.children.map((child) => Number(child.raw?.task_type || child.raw?.taskType || child.taskType)),
+      ...task.children.map((child) =>
+        Number(child.raw?.task_type || child.raw?.taskType || child.taskType),
+      ),
     ].filter((taskType) => Number.isFinite(taskType));
     return !taskTypes.some((taskType) => isIgnoredComplianceTask(taskType, task.name));
   });
@@ -6337,7 +6804,9 @@ const submitComplianceEditor = async () => {
   try {
     const response = await runTemuClientAction("compliance.submit", {
       profileId: props.profileId,
-      region: String(activeTaskRunDetail.value?.region || activeActionResult.value?.region || "global"),
+      region: String(
+        activeTaskRunDetail.value?.region || activeActionResult.value?.region || "global",
+      ),
       payload,
     });
 
@@ -6386,8 +6855,9 @@ const openComplianceBatchEditor = async () => {
 };
 
 const submitComplianceBatchRows = async () => {
-  const rows = (complianceBatchRows.value.length ? complianceBatchRows.value : selectedComplianceRows.value)
-    .filter((row) => isActionableComplianceRow(row));
+  const rows = (
+    complianceBatchRows.value.length ? complianceBatchRows.value : selectedComplianceRows.value
+  ).filter((row) => isActionableComplianceRow(row));
   if (!rows.length) {
     ElMessage.warning("没有可批量处理的合规记录");
     return;
@@ -6402,7 +6872,7 @@ const submitComplianceBatchRows = async () => {
   const batchToken = batchAbortToken.value;
   const ownerRunId = Number(activeTaskRunId.value || 0);
 
-  for (const row of rows) {
+  for (const [i, row] of rows.entries()) {
     if (shouldAbortBatch(batchToken)) {
       break;
     }
@@ -6415,7 +6885,9 @@ const submitComplianceBatchRows = async () => {
       const payload = buildComplianceSubmitPayloadWithSelection(selectionSnapshot);
       const response = await runTemuClientAction("compliance.submit", {
         profileId: props.profileId,
-        region: String(activeTaskRunDetail.value?.region || activeActionResult.value?.region || "global"),
+        region: String(
+          activeTaskRunDetail.value?.region || activeActionResult.value?.region || "global",
+        ),
         payload,
       });
       if (!response?.success) {
@@ -6426,12 +6898,16 @@ const submitComplianceBatchRows = async () => {
       complianceBatchFailedCount.value += 1;
     } finally {
       complianceBatchFinishedCount.value += 1;
+      if (i % 5 === 4 || i === rows.length - 1) {
+        syncFloatingBatchProgressToServer();
+      }
     }
   }
 
   const successCount = complianceBatchSuccessCount.value;
   const failedCount = complianceBatchFailedCount.value;
   complianceBatchSubmitting.value = false;
+  syncFloatingBatchProgressToServer();
   void clearFloatingBatchProgressSilently();
   complianceBatchMode.value = false;
   complianceEditorVisible.value = false;
@@ -6440,10 +6916,7 @@ const submitComplianceBatchRows = async () => {
   ElMessage.success(`批量处理完成：成功 ${successCount} 条，失败 ${failedCount} 条`);
 };
 
-const submitPriceReviewRow = async (
-  row: PriceReviewPreviewRow,
-  mode: "confirm" | "abandon",
-) => {
+const submitPriceReviewRow = async (row: PriceReviewPreviewRow, mode: "confirm" | "abandon") => {
   if (!requireTemuClientContext()) {
     return;
   }
@@ -6465,15 +6938,11 @@ const submitPriceReviewRow = async (
 
   const actionText = mode === "confirm" ? "确认核价" : "不核价";
   try {
-    await ElMessageBox.confirm(
-      `确认对 SKU ${row.skuId} 执行${actionText}吗？`,
-      actionText,
-      {
-        type: mode === "confirm" ? "warning" : "error",
-        confirmButtonText: actionText,
-        cancelButtonText: "取消",
-      },
-    );
+    await ElMessageBox.confirm(`确认对 SKU ${row.skuId} 执行${actionText}吗？`, actionText, {
+      type: mode === "confirm" ? "warning" : "error",
+      confirmButtonText: actionText,
+      cancelButtonText: "取消",
+    });
     await submitPriceReviewRowWithoutConfirm(row, mode, { showToast: true });
   } catch (error: any) {
     if (error !== "cancel") {
@@ -6505,19 +6974,15 @@ const submitRepricePriceReviewRow = async (row: PriceReviewPreviewRow) => {
 
   const defaultPriceCent = Math.max(0, Number(row.rawCurrentPrice || 0) - 1);
   try {
-    const { value } = await ElMessageBox.prompt(
-      `请输入 SKU ${row.skuId} 的重新报价`,
-      "重新报价",
-      {
-        inputValue: (defaultPriceCent / 100).toFixed(2),
-        inputPlaceholder: "请输入价格，单位：元",
-        inputPattern: /^\d+(\.\d{1,2})?$/,
-        inputErrorMessage: "请输入合法价格，最多两位小数",
-        confirmButtonText: "提交重新报价",
-        cancelButtonText: "取消",
-        type: "warning",
-      },
-    );
+    const { value } = await ElMessageBox.prompt(`请输入 SKU ${row.skuId} 的重新报价`, "重新报价", {
+      inputValue: (defaultPriceCent / 100).toFixed(2),
+      inputPlaceholder: "请输入价格，单位：元",
+      inputPattern: /^\d+(\.\d{1,2})?$/,
+      inputErrorMessage: "请输入合法价格，最多两位小数",
+      confirmButtonText: "提交重新报价",
+      cancelButtonText: "取消",
+      type: "warning",
+    });
     const priceCent = parsePriceYuanToCent(value);
     if (priceCent === null) {
       ElMessage.warning("请输入合法价格");
@@ -6562,7 +7027,10 @@ const submitPriceReviewRowWithoutConfirm = async (
       runTemuClientAction(
         "goods.modify-price",
         payload,
-        Math.max(10_000, Math.min(options.timeoutMs || PRICE_REVIEW_ROW_TIMEOUT_MS, PRICE_REVIEW_ROW_TIMEOUT_MS)),
+        Math.max(
+          10_000,
+          Math.min(options.timeoutMs || PRICE_REVIEW_ROW_TIMEOUT_MS, PRICE_REVIEW_ROW_TIMEOUT_MS),
+        ),
       ),
       {
         row,
@@ -6578,10 +7046,12 @@ const submitPriceReviewRowWithoutConfirm = async (
     const nextMark: PriceReviewSubmitMark = {
       status: response?.success ? "success" : "failed",
       action: mode,
-      message: String(response?.message || "").trim() || (response?.success ? "提交成功" : "提交失败"),
+      message:
+        String(response?.message || "").trim() || (response?.success ? "提交成功" : "提交失败"),
       time: formatDateTime(new Date()),
       markInvalid: !!response?.success,
-      completedLabel: mode === "confirm" ? "已核价" : mode === "reprice" ? "已重新报价" : "已不核价",
+      completedLabel:
+        mode === "confirm" ? "已核价" : mode === "reprice" ? "已重新报价" : "已不核价",
     };
     priceReviewSubmitMarks[row.rowKey] = nextMark;
 
@@ -6741,6 +7211,9 @@ const submitSelectedPriceReviewRows = async (mode: "confirm" | "abandon" | "repr
         priceReviewBatchFailedCount.value += 1;
       }
       priceReviewBatchFinishedCount.value += 1;
+      if (index % 5 === 4 || index === rows.length - 1) {
+        syncFloatingBatchProgressToServer();
+      }
     }
 
     if (ownerRunId && batchMarks.length) {
@@ -6755,12 +7228,15 @@ const submitSelectedPriceReviewRows = async (mode: "confirm" | "abandon" | "repr
       const mark = priceReviewSubmitMarks[rowKey];
       return !(mark?.status === "success" && mark.markInvalid);
     });
-    ElMessage.success(`${actionText}完成：成功 ${successCount} 条，失败 ${rows.length - successCount} 条`);
+    ElMessage.success(
+      `${actionText}完成：成功 ${successCount} 条，失败 ${rows.length - successCount} 条`,
+    );
   } finally {
     priceReviewBatchCurrentStage.value = "";
     priceReviewBatchCurrentRowText.value = "";
     priceReviewBatchSubmitting.value = false;
     priceReviewBatchSubmittingMode.value = "";
+    syncFloatingBatchProgressToServer();
     void clearFloatingBatchProgressSilently();
   }
 };
@@ -6828,6 +7304,9 @@ const confirmBatchRepriceRows = async () => {
         priceReviewBatchFailedCount.value += 1;
       }
       priceReviewBatchFinishedCount.value += 1;
+      if (index % 5 === 4 || index === rows.length - 1) {
+        syncFloatingBatchProgressToServer();
+      }
     }
 
     if (ownerRunId && batchMarks.length) {
@@ -6842,12 +7321,15 @@ const confirmBatchRepriceRows = async () => {
       const mark = priceReviewSubmitMarks[rowKey];
       return !(mark?.status === "success" && mark.markInvalid);
     });
-    ElMessage.success(`批量重新报价完成：成功 ${successCount} 条，失败 ${rows.length - successCount} 条`);
+    ElMessage.success(
+      `批量重新报价完成：成功 ${successCount} 条，失败 ${rows.length - successCount} 条`,
+    );
   } finally {
     priceReviewBatchCurrentStage.value = "";
     priceReviewBatchCurrentRowText.value = "";
     priceReviewBatchSubmitting.value = false;
     priceReviewBatchSubmittingMode.value = "";
+    syncFloatingBatchProgressToServer();
     void clearFloatingBatchProgressSilently();
   }
 };
@@ -7008,14 +7490,18 @@ const runAction = async () => {
   if (isToolAction(action)) {
     emit("run-tool", {
       featureKey: action.featureKey || action.key,
-      payload: buildClientTaskPayload(selectedActionPreset.value.buildPayload(parsed, props.profileId)),
+      payload: buildClientTaskPayload(
+        selectedActionPreset.value.buildPayload(parsed, props.profileId),
+      ),
     });
     return;
   }
 
   runningActionKey.value = String(action.key || "").trim();
   try {
-    const payload = buildClientTaskPayload(selectedActionPreset.value.buildPayload(parsed, props.profileId));
+    const payload = buildClientTaskPayload(
+      selectedActionPreset.value.buildPayload(parsed, props.profileId),
+    );
     state.lastResult = null;
     const detail = await createTemuTaskRun({
       actionKey: action.key,
@@ -7297,7 +7783,9 @@ watch(activeTaskRunId, () => {
 });
 
 watch(taskRunPriceReviewPreviewRows, (rows) => {
-  const selectableKeys = new Set(rows.filter((row) => isSelectablePriceReviewRow(row)).map((row) => row.rowKey));
+  const selectableKeys = new Set(
+    rows.filter((row) => isSelectablePriceReviewRow(row)).map((row) => row.rowKey),
+  );
   selectedPriceReviewRowKeys.value = selectedPriceReviewRowKeys.value.filter((rowKey) =>
     selectableKeys.has(rowKey),
   );
@@ -7305,13 +7793,19 @@ watch(taskRunPriceReviewPreviewRows, (rows) => {
 });
 
 watch(taskRunJitRows, (rows) => {
-  const selectableKeys = new Set(rows.filter((row) => isSelectableJitRow(row)).map((row) => row.rowKey));
-  selectedJitRowKeys.value = selectedJitRowKeys.value.filter((rowKey) => selectableKeys.has(rowKey));
+  const selectableKeys = new Set(
+    rows.filter((row) => isSelectableJitRow(row)).map((row) => row.rowKey),
+  );
+  selectedJitRowKeys.value = selectedJitRowKeys.value.filter((rowKey) =>
+    selectableKeys.has(rowKey),
+  );
   jitPreviewGridRef.value?.clearCheckboxRow?.();
 });
 
 watch(taskRunRealPictureRows, (rows) => {
-  const selectableKeys = new Set(rows.filter((row) => isSelectableRealPictureRow(row)).map((row) => row.rowKey));
+  const selectableKeys = new Set(
+    rows.filter((row) => isSelectableRealPictureRow(row)).map((row) => row.rowKey),
+  );
   selectedRealPictureRowKeys.value = selectedRealPictureRowKeys.value.filter((rowKey) =>
     selectableKeys.has(rowKey),
   );
@@ -7353,7 +7847,8 @@ watch(
 );
 
 watch(
-  () => `${taskRunActionKeyFilter.value}|${selectedAction.value?.key || ""}|${onlyCurrentActionRuns.value}`,
+  () =>
+    `${taskRunActionKeyFilter.value}|${selectedAction.value?.key || ""}|${onlyCurrentActionRuns.value}`,
   () => {
     if (onlyCurrentActionRuns.value && selectedActionKey.value && !selectedAction.value) {
       return;
@@ -7406,8 +7901,13 @@ watch(
 
 watch(
   liveFloatingBatchProgressItems,
-  () => {
+  (liveItems) => {
     syncFloatingBatchProgressToServer();
+    if (!liveItems.length && persistedFloatingBatchProgressItems.value.length) {
+      startBatchProgressPolling();
+    } else if (liveItems.length) {
+      stopBatchProgressPolling();
+    }
   },
   { deep: true },
 );
@@ -7449,7 +7949,11 @@ const beforeunloadHandler = (event: BeforeUnloadEvent) => {
 onMounted(() => {
   window.addEventListener("beforeunload", beforeunloadHandler);
   void loadCatalog();
-  void loadFloatingBatchProgressFromServer();
+  void loadFloatingBatchProgressFromServer().then(() => {
+    if (persistedFloatingBatchProgressItems.value.length) {
+      startBatchProgressPolling();
+    }
+  });
   void loadTaskRuns({ silent: true }).then(() => {
     ensureTaskRunPolling();
   });
@@ -7457,9 +7961,16 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener("beforeunload", beforeunloadHandler);
+  stopBatchProgressPolling();
   if (batchProgressSyncTimer !== null) {
     window.clearTimeout(batchProgressSyncTimer);
     batchProgressSyncTimer = null;
+  }
+  if (liveFloatingBatchProgressItems.value.length) {
+    void updateTemuBatchProgress({
+      profileId: props.profileId,
+      items: liveFloatingBatchProgressItems.value,
+    }).catch(() => {});
   }
   stopTaskRunPolling();
 });
