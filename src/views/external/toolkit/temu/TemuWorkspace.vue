@@ -7429,7 +7429,25 @@ watch([taskRunDetailVisible, taskRunDetailLoading], ([visible, loading]) => {
   activeTaskRunDetail.value = null;
 });
 
+const isAnyBatchRunning = computed(
+  () =>
+    priceReviewBatchSubmitting.value ||
+    jitBatchSubmitting.value ||
+    realPictureBatchSubmitting.value ||
+    complianceBatchSubmitting.value ||
+    confirmationBatchSubmitting.value,
+);
+
+const beforeunloadHandler = (event: BeforeUnloadEvent) => {
+  if (isAnyBatchRunning.value) {
+    event.preventDefault();
+    event.returnValue = "批量任务正在执行，刷新或关闭将导致任务中断";
+    return event.returnValue;
+  }
+};
+
 onMounted(() => {
+  window.addEventListener("beforeunload", beforeunloadHandler);
   void loadCatalog();
   void loadFloatingBatchProgressFromServer();
   void loadTaskRuns({ silent: true }).then(() => {
@@ -7438,6 +7456,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  window.removeEventListener("beforeunload", beforeunloadHandler);
   if (batchProgressSyncTimer !== null) {
     window.clearTimeout(batchProgressSyncTimer);
     batchProgressSyncTimer = null;
