@@ -7101,7 +7101,7 @@ const fetchAllPriceReviewRows = async () => {
     return;
   }
 
-  const pageSize = Math.min(1000, Math.max(1, Number(parsed.pageSize || 1000) || 1000));
+  const pageSize = 100;
   const payload = {
     ...selectedActionPreset.value.buildPayload(parsed, props.profileId),
     clientId: props.clientId,
@@ -7199,7 +7199,7 @@ const fetchAllJitRows = async () => {
     return;
   }
 
-  const pageSize = Math.min(1000, Math.max(1, Number(parsed.pageSize || 1000) || 1000));
+  const pageSize = 100;
   const payload = {
     ...selectedActionPreset.value.buildPayload(parsed, props.profileId),
     clientId: props.clientId,
