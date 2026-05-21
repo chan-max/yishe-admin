@@ -2340,13 +2340,13 @@ const jitPreviewGridOptions = ref<VxeGridProps<JitPreviewRow>>({
     {
       title: "JIT 状态",
       field: "jitStatusText",
-      width: 150,
+      minWidth: 200,
       slots: { default: "jitStatusSlot" },
     },
     {
       title: "库存状态",
       field: "stockStatusText",
-      minWidth: 220,
+      minWidth: 280,
       slots: { default: "jitStockStatusSlot" },
     },
     {
@@ -8419,11 +8419,9 @@ onBeforeUnmount(() => {
 }
 
 .temu-workspace__submit-status small {
-  overflow: hidden;
   color: var(--el-text-color-secondary);
   font-size: 11px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  word-break: break-all;
 }
 
 .temu-workspace__task-panel {
