@@ -5,6 +5,15 @@
 @use "element-plus/theme-chalk/dark/css-vars.css";
 @use "./list-page-common.css";
 
+// 确保右下角通知提示始终在最顶层
+.el-message,
+.el-message__icon,
+.el-message__content,
+.el-notification,
+.el-notification__group {
+  z-index: 99999 !important;
+}
+
 .reset-margin [class*="el-icon"] + span {
   margin-left: 2px !important;
 }
