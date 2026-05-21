@@ -7432,6 +7432,9 @@ watch([taskRunDetailVisible, taskRunDetailLoading], ([visible, loading]) => {
 onMounted(() => {
   void loadCatalog();
   void loadFloatingBatchProgressFromServer();
+  void loadTaskRuns({ silent: true }).then(() => {
+    ensureTaskRunPolling();
+  });
 });
 
 onBeforeUnmount(() => {
@@ -8399,7 +8402,7 @@ onBeforeUnmount(() => {
   position: fixed;
   right: 24px;
   bottom: 24px;
-  z-index: 2200;
+  z-index: 22000;
   display: flex;
   flex-direction: column;
   gap: 8px;
