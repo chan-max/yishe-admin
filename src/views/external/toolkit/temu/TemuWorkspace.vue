@@ -5659,7 +5659,8 @@ const submitJitRows = async (inputRows: JitPreviewRow[], batchMode = false) => {
         status: success ? "success" : "failed",
         action: "open",
         message: String(
-          failedItem?.msg ||
+          failedItem?.errorMsg ||
+            failedItem?.msg ||
             failedItem?.message ||
             response?.message ||
             (success ? "开通成功" : "开通失败"),
