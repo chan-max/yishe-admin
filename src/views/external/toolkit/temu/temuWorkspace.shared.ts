@@ -233,8 +233,7 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
       { key: "pageNum", label: "页码", type: "number", defaultValue: 1 },
       createPageSizeField(1000),
     ],
-    note:
-      "获取待核价商品列表；默认每页 1000 条，筛选条件固定为 priceReviewStatusList=[0,1,2,3]、removeStatus=0、secondarySelectStatusList=[7]、supplierTodoTypeList=[1]。",
+    note: "获取待核价商品列表；默认每页 1000 条，筛选条件固定为 priceReviewStatusList=[0,1,2,3]、removeStatus=0、secondarySelectStatusList=[7]、supplierTodoTypeList=[1]。",
     buildPayload: buildProfileRegionPayload,
   },
   "goods.confirmation.list": {
@@ -243,8 +242,7 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
       { key: "pageNum", label: "页码", type: "number", defaultValue: 1 },
       createPageSizeField(100),
     ],
-    note:
-      "获取商品确认列表；默认每页 100 条，筛选条件固定为 removeStatus=0、supplierTodoTypeList=[6]。",
+    note: "获取商品确认列表；默认每页 100 条，筛选条件固定为 removeStatus=0、supplierTodoTypeList=[6]。",
     buildPayload: (parsed, profileId) => ({
       ...buildProfileRegionPayload(parsed, profileId),
       removeStatus: 0,
@@ -423,9 +421,27 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
       { key: "pageNum", label: "页码", type: "number", defaultValue: 1 },
       createPageSizeField(1000),
       { key: "spuIdList", label: "SPU ID 列表", type: "array-number" },
-      { key: "startDate", label: "开始日期", type: "text", placeholder: "YYYYMMDD", defaultValue: getDefaultJitStartDate() },
-      { key: "endDate", label: "结束日期", type: "text", placeholder: "YYYYMMDD", defaultValue: getDefaultJitEndDate() },
-      { key: "timeType", label: "时间类型", type: "number", defaultValue: 2, hint: "2=更新时间，按前台默认查询参数对齐。" },
+      {
+        key: "startDate",
+        label: "开始日期",
+        type: "text",
+        placeholder: "YYYYMMDD",
+        defaultValue: getDefaultJitStartDate(),
+      },
+      {
+        key: "endDate",
+        label: "结束日期",
+        type: "text",
+        placeholder: "YYYYMMDD",
+        defaultValue: getDefaultJitEndDate(),
+      },
+      {
+        key: "timeType",
+        label: "时间类型",
+        type: "number",
+        defaultValue: 2,
+        hint: "2=更新时间，按前台默认查询参数对齐。",
+      },
     ],
     buildPayload: buildProfileRegionPayload,
   },
@@ -434,9 +450,27 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
       createRegionField(),
       createPageSizeField(1000),
       { key: "spuIdList", label: "SPU ID 列表", type: "array-number" },
-      { key: "startDate", label: "开始日期", type: "text", placeholder: "YYYYMMDD", defaultValue: getDefaultJitStartDate() },
-      { key: "endDate", label: "结束日期", type: "text", placeholder: "YYYYMMDD", defaultValue: getDefaultJitEndDate() },
-      { key: "timeType", label: "时间类型", type: "number", defaultValue: 2, hint: "2=更新时间，按前台默认查询参数对齐。" },
+      {
+        key: "startDate",
+        label: "开始日期",
+        type: "text",
+        placeholder: "YYYYMMDD",
+        defaultValue: getDefaultJitStartDate(),
+      },
+      {
+        key: "endDate",
+        label: "结束日期",
+        type: "text",
+        placeholder: "YYYYMMDD",
+        defaultValue: getDefaultJitEndDate(),
+      },
+      {
+        key: "timeType",
+        label: "时间类型",
+        type: "number",
+        defaultValue: 2,
+        hint: "2=更新时间，按前台默认查询参数对齐。",
+      },
     ],
     buildPayload: buildProfileRegionPayload,
   },
@@ -466,9 +500,27 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
       },
       createPageSizeField(10),
       { key: "spuIdList", label: "SPU ID 列表", type: "array-number" },
-      { key: "startDate", label: "开始日期", type: "text", placeholder: "YYYYMMDD", defaultValue: getDefaultJitStartDate() },
-      { key: "endDate", label: "结束日期", type: "text", placeholder: "YYYYMMDD", defaultValue: getDefaultJitEndDate() },
-      { key: "timeType", label: "时间类型", type: "number", defaultValue: 2, hint: "2=更新时间，按前台默认查询参数对齐。" },
+      {
+        key: "startDate",
+        label: "开始日期",
+        type: "text",
+        placeholder: "YYYYMMDD",
+        defaultValue: getDefaultJitStartDate(),
+      },
+      {
+        key: "endDate",
+        label: "结束日期",
+        type: "text",
+        placeholder: "YYYYMMDD",
+        defaultValue: getDefaultJitEndDate(),
+      },
+      {
+        key: "timeType",
+        label: "时间类型",
+        type: "number",
+        defaultValue: 2,
+        hint: "2=更新时间，按前台默认查询参数对齐。",
+      },
       { key: "finalNum", label: "目标库存", type: "number", defaultValue: 500 },
     ],
     buildPayload: buildProfileRegionPayload,
@@ -565,6 +617,7 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
         defaultValue: [1],
         options: [
           { label: "未传图", value: 1 },
+          { label: "途中标签有异常", value: 4 },
         ],
         hint: "默认选择未传图；清空后传空数组，普通分页和一键获取全部都会使用当前选择。",
       },
@@ -592,9 +645,10 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
       checkTypeStatusList: Array.isArray(parsed.checkTypeStatusList)
         ? parsed.checkTypeStatusList
         : [],
-      goodsStatusList: Array.isArray(parsed.goodsStatusList) && parsed.goodsStatusList.length
-        ? parsed.goodsStatusList
-        : [1, 2],
+      goodsStatusList:
+        Array.isArray(parsed.goodsStatusList) && parsed.goodsStatusList.length
+          ? parsed.goodsStatusList
+          : [1, 2],
     }),
   },
   "goods.real-picture.submit": {
