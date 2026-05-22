@@ -191,19 +191,19 @@ export class ClientControlService {
       const response = await WebsocketApi.togglePsAutomationAutoDispatch(clientId, enabled);
       if (response.success) {
         if (!silent) {
-          ElMessage.success(enabled ? "已开启节点自动调度" : "已关闭节点自动调度");
+          ElMessage.success(enabled ? "已开启该客户端自动接单" : "已关闭该客户端自动接单");
         }
         return true;
       }
 
       if (!silent) {
-        ElMessage.error(response.message || "节点自动调度更新失败");
+        ElMessage.error(response.message || "客户端自动接单更新失败");
       }
       return false;
     } catch (error: any) {
-      console.error("[ClientControlService] 设置节点自动调度失败:", error);
+      console.error("[ClientControlService] 设置客户端自动接单失败:", error);
       if (!silent) {
-        ElMessage.error(error?.message || "设置节点自动调度失败");
+        ElMessage.error(error?.message || "设置客户端自动接单失败");
       }
       return false;
     }
@@ -222,22 +222,36 @@ export class ClientControlService {
     }
   }
 
+  private static async getRawPsAutomationUserSetting(): Promise<Record<string, any>> {
+    try {
+      const response: any = await getUserSetting({ key: "psAutomation" });
+      const data = response?.data || response || {};
+      return data && typeof data === "object" && !Array.isArray(data) ? data : {};
+    } catch (error: any) {
+      console.error("[ClientControlService] 获取用户自动制作设置失败:", error);
+      return {};
+    }
+  }
+
   static async setPsAutomationUserAutoScheduling(
     enabled: boolean,
     silent: boolean = false,
-    target?: { clientId?: string | null },
+    target?: { clientId?: string | null; machineCode?: string | null },
   ): Promise<{ success: boolean; dispatched?: boolean; reason?: string; message?: string }> {
     try {
+      const currentSetting = await this.getRawPsAutomationUserSetting();
       const clientId = String(target?.clientId || "").trim();
+      const machineCode = String(target?.machineCode || "").trim();
+      const nextClientId =
+        enabled ? clientId : String(currentSetting.autoDispatchClientId || "").trim();
+      const nextMachineCode =
+        enabled ? machineCode : String(currentSetting.autoDispatchMachineCode || "").trim();
       await updateUserSetting({
         key: "psAutomation",
         data: {
           autoSchedulingEnabled: enabled,
-          ...(enabled
-            ? {
-                autoDispatchClientId: clientId,
-              }
-            : {}),
+          autoDispatchClientId: nextClientId || undefined,
+          autoDispatchMachineCode: nextMachineCode || undefined,
         },
       });
 
@@ -248,16 +262,12 @@ export class ClientControlService {
       triggerResult = getResponseData(await WebsocketApi.triggerPsdSetAutoDispatch());
 
       const resultMessage = !enabled
-        ? "已关闭服务端自动调度"
-        : triggerResult?.message || "已开启服务端自动调度";
+        ? "已关闭自动制作"
+        : triggerResult?.message || "已开启自动制作，目标客户端会主动领取待制作套图";
 
       if (!silent) {
         if (!enabled) {
-          ElMessage.success("已关闭服务端自动调度");
-        } else if (triggerResult?.reason === "dispatched") {
-          ElMessage.success(
-            triggerResult.message || "已开启服务端自动调度，并已自动分配待处理套图",
-          );
+          ElMessage.success("已关闭自动制作");
         } else if (
           triggerResult?.reason === "no-pending" ||
           triggerResult?.reason === "no-client" ||
@@ -282,12 +292,12 @@ export class ClientControlService {
     } catch (error: any) {
       console.error("[ClientControlService] 设置用户调度开关失败:", error);
       if (!silent) {
-        ElMessage.error(error?.message || "设置服务端自动调度失败");
+        ElMessage.error(error?.message || "设置自动制作失败");
       }
       return {
         success: false,
         dispatched: false,
-        message: error?.message || "设置服务端自动调度失败",
+        message: error?.message || "设置自动制作失败",
       };
     }
   }
@@ -338,7 +348,12 @@ export class ClientControlService {
         if (!silent) {
           ElMessage.success(data.message || "文件下载成功");
         }
-        return { success: true, message: data.message, filePath: data.filePath, fileSize: data.fileSize };
+        return {
+          success: true,
+          message: data.message,
+          filePath: data.filePath,
+          fileSize: data.fileSize,
+        };
       }
 
       if (!silent) {
@@ -363,8 +378,14 @@ export class ClientControlService {
   static async checkFileDownloaded(
     clientId: string,
     url: string,
-    silent: boolean = false,
-  ): Promise<{ success: boolean; found: boolean; message: string; filePath?: string; fileSize?: number }> {
+    _silent: boolean = false,
+  ): Promise<{
+    success: boolean;
+    found: boolean;
+    message: string;
+    filePath?: string;
+    fileSize?: number;
+  }> {
     try {
       const myClients = await this.getMyClients();
       const targetClient = myClients.find((client) => client.id === clientId);
@@ -377,12 +398,13 @@ export class ClientControlService {
       const data = response?.data?.data || response?.data || response || {};
 
       if (data.success) {
+        const resultData = data.data || {};
         return {
           success: true,
-          found: !!data.data?.found,
+          found: !!resultData.found,
           message: data.message,
-          filePath: data.data?.entry?.filePath,
-          fileSize: data.data?.entry?.fileSize,
+          filePath: resultData.filePath || resultData.entry?.filePath,
+          fileSize: resultData.fileSize || resultData.entry?.fileSize,
         };
       }
 

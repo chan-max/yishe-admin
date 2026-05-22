@@ -4,7 +4,7 @@ import { triggerPublishTaskAutoDispatch } from "@/api/system/websocket";
 export interface PublishTaskAutoDispatchSetting {
   autoSchedulingEnabled: boolean;
   autoDispatchClientId: string;
-  autoDispatchProfileId: string;
+  autoDispatchMachineCode: string;
   autoDispatchFilter: PublishTaskAutoDispatchFilter;
 }
 
@@ -37,7 +37,7 @@ const normalizePublishTaskAutoDispatchFilter = (value?: any): PublishTaskAutoDis
 const normalizePublishTaskAutoDispatchSetting = (value?: any): PublishTaskAutoDispatchSetting => ({
   autoSchedulingEnabled: !!value?.autoSchedulingEnabled,
   autoDispatchClientId: String(value?.autoDispatchClientId || "").trim(),
-  autoDispatchProfileId: String(value?.autoDispatchProfileId || "").trim(),
+  autoDispatchMachineCode: String(value?.autoDispatchMachineCode || "").trim(),
   autoDispatchFilter: normalizePublishTaskAutoDispatchFilter(value?.autoDispatchFilter),
 });
 
@@ -53,13 +53,13 @@ export const loadPublishTaskAutoDispatchSetting = async () => {
 
 export const enablePublishTaskAutoDispatch = async (target: {
   clientId: string;
-  profileId: string;
+  machineCode?: string | null;
   filter?: Partial<PublishTaskAutoDispatchFilter>;
 }) => {
   const nextSetting = normalizePublishTaskAutoDispatchSetting({
     autoSchedulingEnabled: true,
     autoDispatchClientId: target.clientId,
-    autoDispatchProfileId: target.profileId,
+    autoDispatchMachineCode: target.machineCode,
     autoDispatchFilter: target.filter,
   });
 
@@ -68,7 +68,7 @@ export const enablePublishTaskAutoDispatch = async (target: {
     data: {
       autoSchedulingEnabled: true,
       autoDispatchClientId: nextSetting.autoDispatchClientId,
-      autoDispatchProfileId: nextSetting.autoDispatchProfileId,
+      autoDispatchMachineCode: nextSetting.autoDispatchMachineCode || undefined,
       autoDispatchFilter: nextSetting.autoDispatchFilter,
     },
   });
@@ -77,7 +77,7 @@ export const enablePublishTaskAutoDispatch = async (target: {
     success: true,
     dispatched: false,
     reason: "trigger-scheduled",
-    message: "已保存自动执行设置并开启，后台将立即尝试执行",
+    message: "已保存自动执行设置并开启，目标客户端会主动领取待执行任务",
   };
   void triggerPublishTaskAutoDispatch().catch(() => undefined);
 
@@ -89,13 +89,13 @@ export const enablePublishTaskAutoDispatch = async (target: {
 
 export const disablePublishTaskAutoDispatch = async (currentSetting?: {
   clientId?: string | null;
-  profileId?: string | null;
+  machineCode?: string | null;
   filter?: Partial<PublishTaskAutoDispatchFilter> | null;
 }) => {
   const nextSetting = normalizePublishTaskAutoDispatchSetting({
     autoSchedulingEnabled: false,
     autoDispatchClientId: currentSetting?.clientId,
-    autoDispatchProfileId: currentSetting?.profileId,
+    autoDispatchMachineCode: currentSetting?.machineCode,
     autoDispatchFilter: currentSetting?.filter,
   });
 
@@ -104,7 +104,7 @@ export const disablePublishTaskAutoDispatch = async (currentSetting?: {
     data: {
       autoSchedulingEnabled: false,
       autoDispatchClientId: nextSetting.autoDispatchClientId || undefined,
-      autoDispatchProfileId: nextSetting.autoDispatchProfileId || undefined,
+      autoDispatchMachineCode: nextSetting.autoDispatchMachineCode || undefined,
       autoDispatchFilter: nextSetting.autoDispatchFilter,
     },
   });

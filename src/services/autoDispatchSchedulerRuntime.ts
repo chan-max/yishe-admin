@@ -14,7 +14,8 @@ const formatRuntimeTime = (value?: string | null) => {
 const schedulerStageLabels: Record<string, string> = {
   "timeout-scan": "扫描超时任务",
   "load-online-users": "读取在线客户端用户",
-  "load-auto-users": "读取自动调度用户",
+  "load-auto-users": "读取自动制作用户",
+  "client-pull-mode": "等待客户端领取",
 };
 
 const formatSchedulerStage = (value?: string | null) => {
@@ -30,10 +31,10 @@ const formatSchedulerStage = (value?: string | null) => {
       "clients-requeue": "释放离线锁",
       "clients-recover": "恢复客户端状态",
       "clients-filter": "过滤可用客户端",
-      pending: "读取待调度套图",
-      send: "发送任务",
+      pending: "读取待制作套图",
+      send: "通知客户端",
     };
-    return `调度用户 ${userId || ""}${step ? ` ${stepLabels[step] || step}` : ""}`.trim();
+    return `自动制作用户 ${userId || ""}${step ? ` ${stepLabels[step] || step}` : ""}`.trim();
   }
   return stage;
 };
@@ -57,7 +58,7 @@ export const resolveAutoDispatchSchedulerIndicator = (
   runtime?: AutoDispatchSchedulerRuntime | null,
 ): { text: string; tone: AutoDispatchSchedulerTone } => {
   if (!runtime) {
-    return { text: "调度器状态未知", tone: "info" };
+    return { text: "客户端领取状态未知", tone: "info" };
   }
 
   if ((runtime.dbCooldownRemainingMs || 0) > 0) {
@@ -65,28 +66,28 @@ export const resolveAutoDispatchSchedulerIndicator = (
   }
 
   if ((runtime.schedulerCooldownRemainingMs || 0) > 0) {
-    return { text: "调度超时重试中", tone: "warning" };
+    return { text: "检测超时重试中", tone: "warning" };
   }
 
   if (runtime.online) {
     return {
       text: runtime.running
         ? `检测中${formatSchedulerStage(runtime.currentCycleStage) ? `：${formatSchedulerStage(runtime.currentCycleStage)}` : ""}`
-        : "调度器在线",
+        : "等待客户端领取",
       tone: runtime.running ? "warning" : "success",
     };
   }
 
   if (runtime.lastError) {
     const message = String(runtime.lastError || "").trim();
-    return { text: message ? `调度器异常：${message}` : "调度器异常", tone: "danger" };
+    return { text: message ? `客户端领取异常：${message}` : "客户端领取异常", tone: "danger" };
   }
 
   if (!runtime.timerActive) {
-    return { text: "调度器未启动", tone: "info" };
+    return { text: "领取检测未启动", tone: "info" };
   }
 
-  return { text: "调度器离线", tone: "warning" };
+  return { text: "领取检测离线", tone: "warning" };
 };
 
 export const resolveAutoDispatchSchedulerMeta = (
@@ -104,7 +105,7 @@ export const resolveAutoDispatchSchedulerMeta = (
   }
 
   if ((runtime.schedulerCooldownRemainingMs || 0) > 0) {
-    parts.push(`调度 ${Math.ceil((runtime.schedulerCooldownRemainingMs || 0) / 1000)} 秒后重试`);
+    parts.push(`检测 ${Math.ceil((runtime.schedulerCooldownRemainingMs || 0) / 1000)} 秒后重试`);
   }
 
   const stageText = formatSchedulerStage(runtime.currentCycleStage);

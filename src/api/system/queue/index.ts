@@ -149,26 +149,30 @@ export const createTaskBatch = (data: {
 
 // 获取任务列表（根据状态分页查询）
 export const getTaskList = (params: {
-  queue?: string; // 队列名称（可选，不传则查询所有队列）
+  queue?: string;
   status?: "pending" | "waiting" | "processing" | "completed" | "failed";
-  type?: string; // 任务类型（可选，不传则查询所有类型）
-  id?: string; // 任务ID（可选，不传则查询所有ID）
+  type?: string;
+  types?: string[];
+  id?: string;
   sortField?: "createdAt" | "updatedAt" | "processedAt";
   sortOrder?: "ASC" | "DESC";
   includeTotal?: boolean;
   limit?: number;
   offset?: number;
 }) => {
-  // 如果 queue 为空字符串，不传该参数
   const queryParams: any = { ...params };
   if (!queryParams.queue || !queryParams.queue.trim()) {
     delete queryParams.queue;
   }
-  // 如果 type 为空字符串，不传该参数
-  if (!queryParams.type || !queryParams.type.trim()) {
+  if (Array.isArray(queryParams.types) && queryParams.types.length > 0) {
+    queryParams.types = queryParams.types.join(",");
     delete queryParams.type;
+  } else {
+    delete queryParams.types;
+    if (!queryParams.type || !queryParams.type.trim()) {
+      delete queryParams.type;
+    }
   }
-  // 如果 id 为空字符串，不传该参数
   if (!queryParams.id || !queryParams.id.trim()) {
     delete queryParams.id;
   }

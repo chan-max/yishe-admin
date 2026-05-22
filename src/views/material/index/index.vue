@@ -8333,6 +8333,7 @@ h1 {
   grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
   gap: 10px;
   min-height: 0;
+  max-height: 400px;
   overflow: auto;
   padding-right: 2px;
   align-content: start;
@@ -8980,6 +8981,7 @@ h1 {
 .psd-set-materials .thumbs {
   flex: 1;
   min-height: 0;
+  max-height: 400px;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
