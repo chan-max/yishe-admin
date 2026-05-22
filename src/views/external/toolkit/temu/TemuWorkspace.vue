@@ -1326,6 +1326,16 @@
                 </el-tag>
               </div>
               <div class="temu-workspace__section-title-actions">
+                <el-select
+                  v-model="confirmationSiteVersion"
+                  size="small"
+                  style="width: 110px"
+                  placeholder="siteVersion"
+                >
+                  <el-option label="10001" :value="10001" />
+                  <el-option label="10002" :value="10002" />
+                  <el-option label="10003" :value="10003" />
+                </el-select>
                 <el-button
                   size="small"
                   type="primary"
@@ -1371,18 +1381,21 @@
                   </div>
                 </template>
                 <template #confirmationStatusSlot="{ row }">
-                  <el-tag v-if="row.confirmed" size="small" effect="plain" type="success">
-                    已确认
-                  </el-tag>
-                  <el-tag
-                    v-else-if="row.submitStatus === '失败'"
-                    size="small"
-                    effect="plain"
-                    type="danger"
-                  >
-                    确认失败
-                  </el-tag>
-                  <el-tag v-else size="small" effect="plain" type="info"> 待确认 </el-tag>
+                  <div class="temu-workspace__submit-status">
+                    <el-tag v-if="row.confirmed" size="small" effect="plain" type="success">
+                      已确认
+                    </el-tag>
+                    <el-tag
+                      v-else-if="row.submitStatus === '失败'"
+                      size="small"
+                      effect="plain"
+                      type="danger"
+                    >
+                      确认失败
+                    </el-tag>
+                    <el-tag v-else size="small" effect="plain" type="info"> 待确认 </el-tag>
+                    <small v-if="row.submitMessage">{{ row.submitMessage }}</small>
+                  </div>
                 </template>
                 <template #confirmationOperationSlot="{ row }">
                   <div class="temu-workspace__row-actions temu-workspace__row-actions--right">
@@ -2016,6 +2029,7 @@ const confirmationBatchFinishedCount = ref(0);
 const confirmationBatchTotalCount = ref(0);
 const confirmationBatchSuccessCount = ref(0);
 const confirmationBatchFailedCount = ref(0);
+const confirmationSiteVersion = useLocalStorage("temu-workspace:confirmation-site-version", 10003);
 const selectedConfirmationRowKeys = ref<string[]>([]);
 const confirmationPreviewGridRef = ref<VxeGridInstance<ConfirmationPreviewRow>>();
 const priceReviewRiskFilter = ref<PriceReviewRiskFilter>("all");
@@ -2419,7 +2433,7 @@ const confirmationPreviewGridOptions = ref<VxeGridProps<ConfirmationPreviewRow>>
     {
       title: "确认状态",
       field: "submitStatus",
-      width: 120,
+      minWidth: 200,
       align: "center",
       slots: { default: "confirmationStatusSlot" },
     },
@@ -3412,7 +3426,7 @@ const buildConfirmationPreviewRows = (
   items.forEach((item: any, itemIndex: number) => {
     const spuId = Number(item?.productId || item?.spuId || 0);
     const rawGoodsId = Number(item?.goodsId || spuId || 0);
-    const siteVersion = Number(item?.siteVersion || 10002);
+    const siteVersion = Number(item?.siteVersion || confirmationSiteVersion.value || 10003);
     const productName = toDisplayText(item?.productName);
     const fullCategoryName = String(item?.fullCategoryName || "").trim();
     const leafCategoryName = String(item?.leafCategoryName || "").trim();
@@ -6008,7 +6022,7 @@ const submitConfirmationRows = async (rows: ConfirmationPreviewRow[], batchMode 
           activeTaskRunDetail.value?.region || activeActionResult.value?.region || "global",
         ),
         goodsId: row.rawGoodsId,
-        siteVersion: row.siteVersion,
+        siteVersion: confirmationSiteVersion.value,
         priceConfirmKeyStr: "1",
         goodsSkuIdList: row.goodsSkuIdList.length ? row.goodsSkuIdList : [row.rawSkcId],
       });
@@ -6017,6 +6031,10 @@ const submitConfirmationRows = async (rows: ConfirmationPreviewRow[], batchMode 
         successCount += 1;
       } else {
         failedCount += 1;
+      }
+      if (batchMode) {
+        confirmationBatchSuccessCount.value = successCount;
+        confirmationBatchFailedCount.value = failedCount;
       }
       confirmationSubmitMarks[row.rowKey] = {
         status: success ? "success" : "failed",
@@ -6027,14 +6045,22 @@ const submitConfirmationRows = async (rows: ConfirmationPreviewRow[], batchMode 
         row.confirmed = true;
         row.submitStatus = "成功";
         row.submitMessage = confirmationSubmitMarks[row.rowKey].message;
+      } else {
+        row.submitStatus = "失败";
+        row.submitMessage = confirmationSubmitMarks[row.rowKey].message;
       }
     } catch (error: any) {
       failedCount += 1;
+      if (batchMode) {
+        confirmationBatchFailedCount.value = failedCount;
+      }
       confirmationSubmitMarks[row.rowKey] = {
         status: "failed",
         message: String(error?.message || "确认失败"),
         time: formatDateTime(new Date()),
       };
+      row.submitStatus = "失败";
+      row.submitMessage = confirmationSubmitMarks[row.rowKey].message;
     }
     if (batchMode) {
       if (i % 5 === 4 || i === validRows.length - 1) {

@@ -17,7 +17,8 @@ export type ClientPluginKey =
   | "ps-automation"
   | "google-art"
   | "image-processing"
-  | "video-template";
+  | "video-template"
+  | "file-download";
 export type ClientPluginSummary = "available" | "offline";
 type ClientNodeRefreshOptions = { summary?: boolean };
 
@@ -27,6 +28,7 @@ const CLIENT_NODE_SUMMARY_CACHE_TTL_MS = 2 * 60_000;
 const SERVICE_ALIAS_MAP: Partial<Record<ClientPluginKey, string[]>> = {
   "browser-automation": ["uploader", "browser"],
   "ps-automation": ["photoshop"],
+  "file-download": ["file-download"],
 };
 
 const resolveConnectionViews = (response: unknown): WebsocketConnectionVO[] => {
@@ -181,6 +183,9 @@ export const getClientServiceRuntime = (
   if (pluginKey === "image-processing") {
     return services["image-processing"] || null;
   }
+  if (pluginKey === "file-download") {
+    return services["file-download"] || null;
+  }
   return services["google-art"] || services.googleArt || null;
 };
 
@@ -229,6 +234,7 @@ export const useClientNodeStore = defineStore("client-node", () => {
       "google-art": "offline",
       "image-processing": "offline",
       "video-template": "offline",
+      "file-download": "offline",
     };
 
     (
@@ -238,6 +244,7 @@ export const useClientNodeStore = defineStore("client-node", () => {
         "google-art",
         "image-processing",
         "video-template",
+        "file-download",
       ] as ClientPluginKey[]
     ).forEach(
       (pluginKey) => {

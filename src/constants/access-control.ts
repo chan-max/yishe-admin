@@ -61,6 +61,7 @@ export const MENU_ACCESS_GROUPS: MenuAccessGroup[] = [
       { key: "external.browser-plugin", label: "浏览器插件" },
       { key: "external.ps-automation", label: "PS 自动化" },
       { key: "external.google-art", label: "Google Art" },
+      { key: "client.management", label: "客户端管理" },
     ],
   },
   {
@@ -163,6 +164,7 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   DesignToolConnection: "design-tool.connection",
   ExternalPsAutomation: "external.ps-automation",
   ExternalGoogleArt: "external.google-art",
+  ClientManagement: "client.management",
   AiAssistant: "ai.assistant",
   AiTti: "ai.tti",
   AiTts: "ai.tts",

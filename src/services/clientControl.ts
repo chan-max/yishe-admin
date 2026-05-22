@@ -1,6 +1,7 @@
 import * as WebsocketApi from "@/api/system/websocket";
 import type { WebsocketConnectionVO } from "@/api/system/websocket";
 import { getUserSetting, updateUserSetting } from "@/api/user";
+import { downloadFileToClient, checkFileDownloadedOnClient } from "@/api/external/fileDownload";
 import { ElMessage } from "element-plus";
 
 function getResponseData<T = any>(response: any): T {
@@ -308,5 +309,87 @@ export class ClientControlService {
   static async getMyClientCount(): Promise<number> {
     const myClients = await this.getMyClients();
     return myClients.length;
+  }
+
+  /**
+   * 下载文件到指定客户端的工作目录
+   * @param clientId 客户端连接 ID
+   * @param url 文件 URL
+   * @param silent 是否静默执行
+   * @returns 下载结果
+   */
+  static async downloadFileToClient(
+    clientId: string,
+    url: string,
+    silent: boolean = false,
+  ): Promise<{ success: boolean; message: string; filePath?: string; fileSize?: number }> {
+    try {
+      const myClients = await this.getMyClients();
+      const targetClient = myClients.find((client) => client.id === clientId);
+
+      if (!targetClient) {
+        return { success: false, message: "客户端不存在或不属于当前用户" };
+      }
+
+      const response: any = await downloadFileToClient(clientId, url);
+      const data = response?.data?.data || response?.data || response || {};
+
+      if (data.success) {
+        if (!silent) {
+          ElMessage.success(data.message || "文件下载成功");
+        }
+        return { success: true, message: data.message, filePath: data.filePath, fileSize: data.fileSize };
+      }
+
+      if (!silent) {
+        ElMessage.error(data.message || "文件下载失败");
+      }
+      return { success: false, message: data.message || "下载失败" };
+    } catch (error: any) {
+      console.error("[ClientControlService] 下载文件到客户端失败:", error);
+      if (!silent) {
+        ElMessage.error(error?.message || "下载文件到客户端失败");
+      }
+      return { success: false, message: error?.message || "下载失败" };
+    }
+  }
+
+  /**
+   * 根据 URL 查询客户端本地文件路径
+   * @param clientId 客户端连接 ID
+   * @param url 文件 URL
+   * @returns 查询结果
+   */
+  static async checkFileDownloaded(
+    clientId: string,
+    url: string,
+    silent: boolean = false,
+  ): Promise<{ success: boolean; found: boolean; message: string; filePath?: string; fileSize?: number }> {
+    try {
+      const myClients = await this.getMyClients();
+      const targetClient = myClients.find((client) => client.id === clientId);
+
+      if (!targetClient) {
+        return { success: false, found: false, message: "客户端不存在" };
+      }
+
+      const response: any = await checkFileDownloadedOnClient(clientId, url);
+      const data = response?.data?.data || response?.data || response || {};
+
+      if (data.success) {
+        return {
+          success: true,
+          found: !!data.data?.found,
+          message: data.message,
+          filePath: data.data?.entry?.filePath,
+          fileSize: data.data?.entry?.fileSize,
+        };
+      }
+
+      return { success: false, found: false, message: data.message || "查询失败" };
+    } catch (error: any) {
+      console.error("[ClientControlService] 查询文件路径失败:", error);
+      return { success: false, found: false, message: error?.message || "查询失败" };
+    }
   }
 }

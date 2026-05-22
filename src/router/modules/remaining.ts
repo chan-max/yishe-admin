@@ -374,6 +374,14 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: "Google Art",
         },
       },
+      {
+        path: "client-management",
+        component: () => import("@/views/external/client-management/index.vue"),
+        name: "ClientManagement",
+        meta: {
+          title: "客户端管理",
+        },
+      },
     ],
   },
   {
