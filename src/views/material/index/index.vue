@@ -8193,6 +8193,7 @@ h1 {
 
 .material-publish-config-dialog {
   :deep(.el-dialog) {
+    width: 1100px;
     height: 100vh;
     margin: 0;
     display: flex;
@@ -8259,7 +8260,7 @@ h1 {
 
 .material-publish-config-dialog__body {
   display: grid;
-  grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+  grid-template-columns: 520px minmax(0, 1fr);
   gap: 12px;
   height: 100%;
   min-height: calc(100vh - 144px);
@@ -8276,7 +8277,7 @@ h1 {
   border-radius: 16px;
   background: linear-gradient(180deg, var(--el-bg-color), var(--el-fill-color-extra-light));
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
-  overflow: hidden;
+  overflow: auto;
 }
 
 .material-publish-config-dialog__section-head {
@@ -8329,12 +8330,14 @@ h1 {
 }
 
 .material-publish-config-dialog__material-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
-  gap: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
   min-height: 0;
-  max-height: 400px;
-  overflow: auto;
+  flex: 1 1 auto;
+  max-height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding-right: 2px;
   align-content: start;
 }
@@ -8343,6 +8346,8 @@ h1 {
   position: relative;
   display: flex;
   flex-direction: column;
+  width: 140px;
+  flex-shrink: 0;
   padding: 0;
   border-radius: 12px;
   background: var(--el-bg-color);
@@ -8367,7 +8372,7 @@ h1 {
 
 .material-publish-config-dialog__material-preview {
   width: 100%;
-  aspect-ratio: 1;
+  height: 120px;
   overflow: hidden;
   border-radius: 0;
   background: var(--el-fill-color-lighter);
@@ -8536,10 +8541,6 @@ h1 {
 
   .material-publish-config-dialog__footer-actions {
     justify-content: flex-end;
-  }
-
-  .material-publish-config-dialog__material-list {
-    max-height: 42vh;
   }
 }
 
@@ -8981,7 +8982,7 @@ h1 {
 .psd-set-materials .thumbs {
   flex: 1;
   min-height: 0;
-  max-height: 400px;
+  max-height: 100vh;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
