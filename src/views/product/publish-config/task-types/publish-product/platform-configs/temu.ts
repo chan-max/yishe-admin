@@ -38,11 +38,11 @@ export const temuPlatformConfig: PlatformConfig = {
         '请输入 Temu 新建商品使用的 productTemplate，支持 JSON 或 JS 对象字面量，例如：{\n  productName: \"示例商品\",\n  productPropertyReqs: []\n}',
       rows: 24,
       span: 24,
-      tooltip: 'Temu 平台专属配置。支持 JSON 和合法 JS 对象字面量；图片字段建议通过下方“图片索引绑定”声明，由客户端发布时按规则回填。'
+      tooltip: 'Temu 平台专属配置。支持 JSON 和合法 JS 对象字面量；图片字段建议通过下方“套图图片序号绑定”声明，由客户端发布时按规则回填。'
     },
     {
       key: 'templateImageBindings',
-      label: '图片索引绑定',
+      label: '套图图片序号绑定',
       type: 'textarea',
       rows: 10,
       span: 24,
@@ -52,14 +52,15 @@ export const temuPlatformConfig: PlatformConfig = {
           materialImgUrl: 1,
           'productSkcReqs[].productSkuReqs[].thumbUrl': [1, 2, 3, 4],
           'productSkcReqs[].previewImgUrls': [1, 2, 3, 4],
+          'goodsLayerDecorationReqs[].contentList[].imageUrl': [1, 2, 3, 4],
         },
         null,
         2
       ),
       placeholder:
-        '{\n  "carouselImageUrls": [1, 2, 3],\n  "materialImgUrl": 1,\n  "productSkcReqs[].productSkuReqs[].thumbUrl": [1, 2, 3, 4],\n  "productSkcReqs[].previewImgUrls": [1, 2]\n}',
+        '{\n  "carouselImageUrls": [1, 2, 3],\n  "materialImgUrl": 1,\n  "productSkcReqs[].productSkuReqs[].thumbUrl": [1, 2, 3, 4],\n  "productSkcReqs[].previewImgUrls": [1, 2],\n  "goodsLayerDecorationReqs[].contentList[].imageUrl": [1, 2, 3, 4]\n}',
       tooltip:
-        '声明 productTemplate 中图片字段如何使用上传后的图片序号，从 1 开始：1 表示第 1 张图。支持的键：carouselImageUrls、materialImgUrl、productSkcReqs[].productSkuReqs[].thumbUrl、productSkcReqs[].previewImgUrls。'
+        '声明 productTemplate 中图片字段如何使用套图原图序号，从 1 开始：1 表示套图第 1 张图。支持的键：carouselImageUrls、materialImgUrl、productSkcReqs[].productSkuReqs[].thumbUrl、productSkcReqs[].previewImgUrls、goodsLayerDecorationReqs[].contentList[].imageUrl。'
     }
   ]
 }
