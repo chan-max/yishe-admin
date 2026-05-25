@@ -10,6 +10,7 @@ export interface TemuCatalogAction {
   method: "GET" | "POST";
   regionHints: TemuRegionKey[];
   status: "available" | "planned";
+  filters?: TemuCatalogActionFilter[];
 }
 
 export interface TemuCatalogGroup {
@@ -17,6 +18,21 @@ export interface TemuCatalogGroup {
   label: string;
   description: string;
   actions: TemuCatalogAction[];
+}
+
+export interface TemuCatalogActionFilterOption {
+  label: string;
+  value: string | number;
+  payloadValue?: any;
+}
+
+export interface TemuCatalogActionFilter {
+  key: string;
+  label: string;
+  type: "single-select" | "multi-select";
+  requestField: string;
+  valueType?: "number" | "number-array" | "string" | "string-array";
+  options: TemuCatalogActionFilterOption[];
 }
 
 export interface TemuCatalogPayload {

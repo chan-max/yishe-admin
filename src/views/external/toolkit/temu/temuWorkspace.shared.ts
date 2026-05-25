@@ -360,6 +360,15 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
       createPageSizeField(10),
       { key: "type", label: "查询类型", type: "number", defaultValue: 2 },
       {
+        key: "rapidScreenTypeList",
+        label: "快速筛选",
+        type: "select",
+        options: [
+          { label: "gpsr 不合规", value: 1 },
+          { label: "不符合土耳其新规", value: 2 },
+        ],
+      },
+      {
         key: "goodsStatusList",
         label: "商品状态列表",
         type: "select",
@@ -388,7 +397,16 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
         ],
       },
     ],
-    buildPayload: buildProfileRegionPayload,
+    buildPayload: (parsed, profileId) => {
+      const payload: Record<string, any> = buildProfileRegionPayload(parsed, profileId);
+      const rapidScreenType = Number(parsed.rapidScreenTypeList);
+      if (rapidScreenType === 1 || rapidScreenType === 2) {
+        payload.rapidScreenTypeList = [rapidScreenType];
+      } else {
+        delete payload.rapidScreenTypeList;
+      }
+      return payload;
+    },
   },
   "compliance.detail": {
     fields: [
