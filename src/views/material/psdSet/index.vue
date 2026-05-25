@@ -412,6 +412,9 @@
                       <DocumentCopy />
                     </el-icon>
                   </div>
+                  <div v-if="sticker.code" class="detail-sticker-code">
+                    Code: {{ sticker.code }}
+                  </div>
                   <div class="detail-sticker-name">{{ sticker.name || "未命名贴纸" }}</div>
                   <div class="detail-sticker-desc">{{ sticker.description || "-" }}</div>
                   <div class="detail-sticker-keywords">{{ sticker.keywords || "-" }}</div>
@@ -4226,7 +4229,8 @@ getList();
 
 .detail-sticker-name,
 .detail-sticker-desc,
-.detail-sticker-keywords {
+.detail-sticker-keywords,
+.detail-sticker-code {
   word-break: break-word;
 }
 
@@ -4238,10 +4242,17 @@ getList();
 
 .detail-sticker-desc,
 .detail-sticker-keywords,
-.detail-sticker-path {
+.detail-sticker-path,
+.detail-sticker-code {
   font-size: 12px;
   line-height: 1.45;
   color: var(--el-text-color-secondary);
+}
+
+.detail-sticker-code {
+  font-weight: 600;
+  font-family: "Courier New", Consolas, monospace;
+  color: var(--el-color-primary);
 }
 
 .detail-sticker-id {
