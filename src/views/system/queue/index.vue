@@ -269,26 +269,6 @@
                     </div>
                   </template>
 
-                  <template #dataDefaultSlot="{ row }">
-                    <el-button type="primary" link size="small" @click="handleViewData(row)">
-                      查看数据
-                    </el-button>
-                  </template>
-
-                  <template #runtimeLogsDefaultSlot="{ row }">
-                    <div class="queue-runtime-log-cell">
-                      <el-button
-                        type="primary"
-                        link
-                        size="small"
-                        class="queue-runtime-log-cell__trigger"
-                        @click="handleViewRuntimeLogs(row)"
-                      >
-                        查看日志
-                      </el-button>
-                    </div>
-                  </template>
-
                   <template #operationDefaultSlot="{ row }">
                     <div class="queue-operation-cell">
                       <el-dropdown
@@ -306,9 +286,14 @@
                         </el-button>
                         <template #dropdown>
                           <el-dropdown-menu class="operation-menu-compact">
+                            <el-dropdown-item :command="'viewData'">查看数据</el-dropdown-item>
+                            <el-dropdown-item :command="'viewRuntimeLogs'">
+                              查看日志
+                            </el-dropdown-item>
                             <el-dropdown-item
                               v-if="isPublishTaskRow(row)"
                               :command="'startExecution'"
+                              divided
                               :disabled="!canStartPublishExecution(row)"
                             >
                               开始执行
@@ -1194,22 +1179,6 @@ const gridOptions = ref({
       minWidth: 280,
       showOverflow: true,
       formatter: ({ row }) => resolveQueueTaskStatusMessage(row),
-    },
-    {
-      title: "任务数据",
-      field: "data",
-      minWidth: 110,
-      slots: {
-        default: "dataDefaultSlot",
-      },
-    },
-    {
-      title: "运行日志",
-      field: "runtimeLogs",
-      width: 130,
-      slots: {
-        default: "runtimeLogsDefaultSlot",
-      },
     },
     {
       title: "创建时间",
@@ -3572,6 +3541,12 @@ async function handleResetPublishTask(row: QueueMessage) {
 
 async function handleOperationCommand(command: string, row: QueueMessage) {
   switch (command) {
+    case "viewData":
+      await handleViewData(row);
+      break;
+    case "viewRuntimeLogs":
+      await handleViewRuntimeLogs(row);
+      break;
     case "startExecution":
       openPublishDispatchDialog(row);
       break;
