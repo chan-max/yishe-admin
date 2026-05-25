@@ -1764,53 +1764,38 @@
                 </template>
                 <template #previewDefaultSlot="{ row }">
                   <div
-                    class="table-preview-stack"
-                    :class="{ 'table-preview-stack--custom': isCustomMaterial(row) }"
+                    class="material-compact-preview"
+                    :class="{ 'material-compact-preview--custom': isCustomMaterial(row) }"
                   >
-                    <span v-if="isCustomMaterial(row)" class="preview-custom-corner">可定制</span>
-                    <div class="preview-image-wrapper">
+                    <span v-if="isCustomMaterial(row)" class="material-compact-preview__corner">
+                      定制
+                    </span>
+                    <div class="material-compact-preview__image-wrap">
                       <img
-                        v-if="row._imageLoaded"
+                        v-if="row.url && !row._imageError"
                         :key="`preview-${row.id}-${row.url}`"
-                        :src="getFastPreviewImageUrl(row.url, { width: 200 })"
+                        :src="getFastPreviewImageUrl(row.url, { width: 160 })"
                         :alt="row.name || '素材图片'"
-                        class="preview-image"
+                        class="material-compact-preview__image"
                         loading="lazy"
+                        decoding="async"
+                        @error="row._imageError = true"
                         @click="openImagePreview(row.url, row.name)"
                       />
-                      <img
-                        v-else
-                        :key="`preview-loading-${row.id}-${row.url}`"
-                        :src="
-                          getPreviewImageUrl(row.url, { width: 200, quality: 80, format: 'webp' })
-                        "
-                        :alt="row.name || '素材图片'"
-                        class="preview-image preview-image-loading"
-                        loading="lazy"
-                        @load="(e) => handleImageLoad(row, e)"
-                        @error="() => handleImageError(row)"
-                        @click="openImagePreview(row.url, row.name)"
-                      />
-                      <div v-if="!row._imageLoaded" class="preview-loading">加载中...</div>
+                      <div v-else class="material-compact-preview__empty">无图</div>
                     </div>
-                    <div class="table-meta-stack">
-                      <template v-if="row.resolutionWidth && row.resolutionHeight">
-                        <div class="table-meta-line">
-                          {{ row.resolutionWidth }} × {{ row.resolutionHeight }}
-                        </div>
-                        <div v-if="row.aspectRatio" class="table-meta-line">
-                          宽高比：{{ Number(row.aspectRatio).toFixed(2) }}
-                        </div>
-                        <div v-if="row.shapeLabel" class="table-meta-line">
-                          类型：{{ row.shapeLabel }}
-                        </div>
-                      </template>
-                      <template v-else>
-                        <span class="table-cell-empty">-</span>
-                      </template>
-                      <div v-if="row.suffix" class="table-meta-line">
-                        格式：{{ row.suffix.toUpperCase() }}
-                      </div>
+                  </div>
+                </template>
+
+                <template #compactNameSlot="{ row }">
+                  <div class="material-compact-name">
+                    <div class="material-compact-name__title">
+                      {{ row.name || row.code || `素材 ${row.id}` }}
+                    </div>
+                    <div class="material-compact-name__meta">
+                      <span v-if="row.code">{{ row.code }}</span>
+                      <span v-if="row.code && row.id">/</span>
+                      <span v-if="row.id">#{{ row.id }}</span>
                     </div>
                   </div>
                 </template>
@@ -2120,12 +2105,24 @@
 
                 <template #operationDefaultSlot="{ row }">
                   <div class="flex items-center gap-1">
-                    <el-dropdown class="operation-dropdown" placement="bottom-end">
-                      <el-button type="primary" link size="small" class="operation-trigger-button"
+                    <el-dropdown
+                      :ref="(el) => setOperationDropdownRef(row.id, el)"
+                      class="operation-dropdown"
+                      popper-class="operation-dropdown-popper"
+                      placement="bottom-end"
+                      trigger="click"
+                      @visible-change="(visible) => handleOperationDropdownVisibleChange(visible, row)"
+                    >
+                      <el-button
+                        type="primary"
+                        link
+                        size="small"
+                        class="operation-trigger-button"
+                        :loading="operationCommandLoadingId === String(row.id)"
                         >操作</el-button
                       >
                       <template #dropdown>
-                        <div class="op-menu">
+                        <div class="op-menu" @click.stop>
                           <!-- 内容相关（仅管理员） -->
                           <div
                             class="op-menu-item has-submenu"
@@ -2144,25 +2141,25 @@
                             >
                               <div
                                 class="op-submenu-item"
-                                @click="() => handleOperationCommand('ai-generate', row)"
+                                @click.stop="handleOperationCommand('ai-generate', row)"
                               >
                                 AI自动生成内容
                               </div>
                               <div
                                 class="op-submenu-item"
-                                @click="() => handleOperationCommand('generate-image-info', row)"
+                                @click.stop="handleOperationCommand('generate-image-info', row)"
                               >
                                 生成图片信息
                               </div>
                               <div
                                 class="op-submenu-item"
-                                @click="() => handleOperationCommand('story-script', row)"
+                                @click.stop="handleOperationCommand('story-script', row)"
                               >
                                 生成故事脚本
                               </div>
                               <div
                                 class="op-submenu-item"
-                                @click="() => handleOperationCommand('view-meta', row)"
+                                @click.stop="handleOperationCommand('view-meta', row)"
                               >
                                 查看元数据
                               </div>
@@ -2187,13 +2184,13 @@
                             >
                               <div
                                 class="op-submenu-item"
-                                @click="() => handleOperationCommand('create-ps-set', row)"
+                                @click.stop="handleOperationCommand('create-ps-set', row)"
                               >
                                 制作PS套图
                               </div>
                               <div
                                 class="op-submenu-item"
-                                @click="() => handleOperationCommand('view-ps-sets', row)"
+                                @click.stop="handleOperationCommand('view-ps-sets', row)"
                               >
                                 查看该素材套图
                               </div>
@@ -2218,47 +2215,47 @@
                             >
                               <div
                                 class="op-submenu-item"
-                                @click="() => handleOperationCommand('download', row)"
+                                @click.stop="handleOperationCommand('download', row)"
                               >
                                 下载
                               </div>
                               <div
                                 v-if="isAdmin"
                                 class="op-submenu-item"
-                                @click="() => handleOperationCommand('copy', row)"
+                                @click.stop="handleOperationCommand('copy', row)"
                               >
                                 复制
                               </div>
                               <div
                                 class="op-submenu-item"
-                                @click="() => handleOperationCommand('copy-origin-url', row)"
+                                @click.stop="handleOperationCommand('copy-origin-url', row)"
                               >
                                 复制原始链接
                               </div>
                               <div
                                 v-if="!similarSearchDisabled"
                                 class="op-submenu-item"
-                                @click="() => handleOperationCommand('find-similar', row)"
+                                @click.stop="handleOperationCommand('find-similar', row)"
                               >
                                 找相似图
                               </div>
                               <div
                                 class="op-submenu-item"
-                                @click="() => handleOperationCommand('view-publish-usage', row)"
+                                @click.stop="handleOperationCommand('view-publish-usage', row)"
                               >
                                 查看发布绑定
                               </div>
                               <div
                                 v-if="isAdmin && (row.suffix || '').toLowerCase() === 'png'"
                                 class="op-submenu-item"
-                                @click="() => handleOperationCommand('trim-png', row)"
+                                @click.stop="handleOperationCommand('trim-png', row)"
                               >
                                 生成无空白PNG
                               </div>
                               <div
                                 v-if="isAdmin && (row.suffix || '').toLowerCase() === 'svg'"
                                 class="op-submenu-item"
-                                @click="() => handleOperationCommand('svg-to-png', row)"
+                                @click.stop="handleOperationCommand('svg-to-png', row)"
                               >
                                 SVG转PNG
                               </div>
@@ -2283,13 +2280,13 @@
                             >
                               <div
                                 class="op-submenu-item"
-                                @click="() => handleOperationCommand('copy-to-user', row)"
+                                @click.stop="handleOperationCommand('copy-to-user', row)"
                               >
                                 分享给用户
                               </div>
                               <div
                                 class="op-submenu-item"
-                                @click="() => handleOperationCommand('move-to-user', row)"
+                                @click.stop="handleOperationCommand('move-to-user', row)"
                               >
                                 转移给用户
                               </div>
@@ -2314,30 +2311,36 @@
                             >
                               <div
                                 class="op-submenu-item"
-                                @click="() => handleOperationCommand('image-process', row)"
+                                @click.stop="handleOperationCommand('image-process', row)"
                               >
                                 图片处理
                               </div>
                               <div
                                 class="op-submenu-item"
-                                @click="() => handleOperationCommand('image-split', row)"
+                                @click.stop="handleOperationCommand('image-split', row)"
                               >
                                 图片裂变
                               </div>
                               <div
                                 class="op-submenu-item"
-                                @click="() => handleOperationCommand('video-production', row)"
+                                @click.stop="handleOperationCommand('video-production', row)"
                               >
                                 视频制作
                               </div>
                             </div>
                           </div>
 
+                          <div class="op-divider"></div>
+                          <div class="op-menu-item" @click.stop="handleOperationCommand('view-detail', row)">
+                            <span class="op-menu-arrow-placeholder"></span>
+                            <span class="op-menu-label">查看详情</span>
+                          </div>
+
                           <div v-if="isAdmin" class="op-divider"></div>
                           <div
                             v-if="isAdmin"
                             class="op-menu-item"
-                            @click="() => handleOperationCommand('edit', row)"
+                            @click.stop="handleOperationCommand('edit', row)"
                           >
                             <span class="op-menu-arrow-placeholder"></span>
                             <span class="op-menu-label">编辑</span>
@@ -2345,7 +2348,7 @@
                           <div
                             v-if="isAdmin"
                             class="op-menu-item danger"
-                            @click="() => handleOperationCommand('delete', row)"
+                            @click.stop="handleOperationCommand('delete', row)"
                           >
                             <span class="op-menu-arrow-placeholder"></span>
                             <span class="op-menu-label">删除</span>
@@ -2746,6 +2749,273 @@
           <el-button size="small" type="primary" :loading="editLoading" @click="submitEdit"
             >保存</el-button
           >
+        </div>
+      </template>
+    </el-dialog>
+
+    <el-dialog
+      v-model="detailDialogVisible"
+      title="素材详情"
+      fullscreen
+      :destroy-on-close="true"
+      class="material-detail-dialog"
+    >
+      <div v-loading="detailDialogLoading" class="material-detail-body">
+        <el-empty
+          v-if="!stickerDetailCurrent && !detailDialogLoading"
+          description="暂无素材详情"
+        />
+        <template v-else-if="stickerDetailCurrent">
+          <section class="material-detail-hero">
+            <div class="material-detail-preview">
+              <el-image
+                v-if="stickerDetailCurrent.url"
+                :src="stickerDetailCurrent.url"
+                fit="contain"
+                :preview-src-list="[stickerDetailCurrent.url]"
+                :preview-teleported="true"
+              >
+                <template #error>
+                  <div class="material-detail-preview__empty">图片加载失败</div>
+                </template>
+              </el-image>
+              <div v-else class="material-detail-preview__empty">暂无图片</div>
+            </div>
+            <div class="material-detail-summary">
+              <div class="material-detail-title">
+                {{ stickerDetailCurrent.name || stickerDetailCurrent.code || stickerDetailCurrent.id || "未命名素材" }}
+              </div>
+              <div class="material-detail-subtitle">
+                {{ stickerDetailCurrent.nameEn || stickerDetailCurrent.description || "无英文名称或描述" }}
+              </div>
+              <div class="material-detail-tags">
+                <el-tag v-if="stickerDetailCurrent.code" size="small" effect="plain">
+                  {{ stickerDetailCurrent.code }}
+                </el-tag>
+                <el-tag v-if="stickerDetailCurrent.suffix" size="small" type="info" effect="plain">
+                  {{ stickerDetailCurrent.suffix }}
+                </el-tag>
+                <el-tag
+                  v-if="stickerDetailCurrent.isInfringement"
+                  size="small"
+                  type="danger"
+                  effect="plain"
+                >
+                  侵权
+                </el-tag>
+                <el-tag v-if="stickerDetailCurrent.isCutout" size="small" type="success" effect="plain">
+                  抠图
+                </el-tag>
+                <el-tag v-if="stickerDetailCurrent.seamless" size="small" type="warning" effect="plain">
+                  无缝
+                </el-tag>
+              </div>
+              <div class="material-detail-actions">
+                <el-button
+                  size="small"
+                  :disabled="!stickerDetailCurrent.url"
+                  @click="handleCopyText(stickerDetailCurrent.url || '', '图片链接')"
+                >
+                  复制图片链接
+                </el-button>
+                <el-button
+                  size="small"
+                  :disabled="!stickerDetailCurrent.phash"
+                  @click="handleCopyText(stickerDetailCurrent.phash || '', '感知哈希')"
+                >
+                  复制感知哈希
+                </el-button>
+                <el-button
+                  size="small"
+                  :disabled="!stickerDetailCurrent.originUrl"
+                  @click="handleCopyText(stickerDetailCurrent.originUrl || '', '原始地址')"
+                >
+                  复制原始地址
+                </el-button>
+              </div>
+            </div>
+          </section>
+
+          <section class="material-detail-section">
+            <div class="material-detail-section__title">基础信息</div>
+            <div class="material-detail-grid">
+              <div class="material-detail-field">
+                <span class="material-detail-label">ID</span>
+                <span class="material-detail-value">{{ formatDetailValue(stickerDetailCurrent.id) }}</span>
+              </div>
+              <div class="material-detail-field">
+                <span class="material-detail-label">素材编码</span>
+                <span class="material-detail-value">{{ formatDetailValue(stickerDetailCurrent.code) }}</span>
+              </div>
+              <div class="material-detail-field">
+                <span class="material-detail-label">文件后缀</span>
+                <span class="material-detail-value">{{ formatDetailValue(stickerDetailCurrent.suffix) }}</span>
+              </div>
+              <div class="material-detail-field">
+                <span class="material-detail-label">分组</span>
+                <span class="material-detail-value">{{ formatDetailValue(stickerDetailCurrent.group) }}</span>
+              </div>
+              <div class="material-detail-field">
+                <span class="material-detail-label">上传者</span>
+                <span class="material-detail-value">{{ getDetailUploaderLabel(stickerDetailCurrent) }}</span>
+              </div>
+              <div class="material-detail-field">
+                <span class="material-detail-label">归属用户ID</span>
+                <span class="material-detail-value">{{ formatDetailValue(stickerDetailCurrent.userId) }}</span>
+              </div>
+              <div class="material-detail-field">
+                <span class="material-detail-label">文件夹ID</span>
+                <span class="material-detail-value">{{ formatDetailValue(stickerDetailCurrent.folderId) }}</span>
+              </div>
+              <div class="material-detail-field">
+                <span class="material-detail-label">文件夹路径</span>
+                <span class="material-detail-value">{{ formatDetailValue(stickerDetailCurrent.folder || stickerDetailCurrent.folderEntity?.path) }}</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="material-detail-section">
+            <div class="material-detail-section__title">文案信息</div>
+            <div class="material-detail-grid">
+              <div class="material-detail-field">
+                <span class="material-detail-label">名称</span>
+                <span class="material-detail-value">{{ formatDetailValue(stickerDetailCurrent.name) }}</span>
+              </div>
+              <div class="material-detail-field">
+                <span class="material-detail-label">英文名称</span>
+                <span class="material-detail-value">{{ formatDetailValue(stickerDetailCurrent.nameEn) }}</span>
+              </div>
+              <div class="material-detail-field material-detail-field--wide">
+                <span class="material-detail-label">描述</span>
+                <span class="material-detail-value material-detail-value--multiline">{{ formatDetailValue(stickerDetailCurrent.description) }}</span>
+              </div>
+              <div class="material-detail-field material-detail-field--wide">
+                <span class="material-detail-label">英文描述</span>
+                <span class="material-detail-value material-detail-value--multiline">{{ formatDetailValue(stickerDetailCurrent.descriptionEn) }}</span>
+              </div>
+              <div class="material-detail-field material-detail-field--wide">
+                <span class="material-detail-label">关键词</span>
+                <span class="material-detail-value material-detail-value--multiline">{{ formatDetailValue(stickerDetailCurrent.keywords) }}</span>
+              </div>
+              <div class="material-detail-field material-detail-field--wide">
+                <span class="material-detail-label">英文关键词</span>
+                <span class="material-detail-value material-detail-value--multiline">{{ formatDetailValue(stickerDetailCurrent.keywordsEn) }}</span>
+              </div>
+              <div class="material-detail-field material-detail-field--wide">
+                <span class="material-detail-label">适用场景</span>
+                <span class="material-detail-value material-detail-value--multiline">{{ formatDetailValue(stickerDetailCurrent.suitableFor) }}</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="material-detail-section">
+            <div class="material-detail-section__title">图片信息</div>
+            <div class="material-detail-grid">
+              <div class="material-detail-field">
+                <span class="material-detail-label">图片尺寸</span>
+                <span class="material-detail-value">
+                  {{
+                    stickerDetailCurrent.width && stickerDetailCurrent.height
+                      ? `${stickerDetailCurrent.width} × ${stickerDetailCurrent.height}`
+                      : "-"
+                  }}
+                </span>
+              </div>
+              <div class="material-detail-field">
+                <span class="material-detail-label">宽高比</span>
+                <span class="material-detail-value">{{ formatAspectRatio(stickerDetailCurrent.aspectRatio) }}</span>
+              </div>
+              <div class="material-detail-field">
+                <span class="material-detail-label">文件大小</span>
+                <span class="material-detail-value">{{ formatDetailFileSize(stickerDetailCurrent.fileSize) }}</span>
+              </div>
+              <div class="material-detail-field">
+                <span class="material-detail-label">色系</span>
+                <span class="material-detail-value">
+                  <span v-if="stickerDetailCurrent.colorPalette" class="material-detail-palette">
+                    <span
+                      v-for="color in stickerDetailCurrent.colorPalette.split(',').slice(0, 12)"
+                      :key="color"
+                      class="material-detail-swatch"
+                      :style="{ backgroundColor: color.trim() }"
+                      :title="color.trim()"
+                    />
+                  </span>
+                  <span v-else>-</span>
+                </span>
+              </div>
+              <div class="material-detail-field material-detail-field--wide">
+                <span class="material-detail-label">图片链接</span>
+                <span class="material-detail-value material-detail-value--break">{{ formatDetailValue(stickerDetailCurrent.url) }}</span>
+              </div>
+              <div class="material-detail-field material-detail-field--wide">
+                <span class="material-detail-label">原始地址</span>
+                <span class="material-detail-value material-detail-value--break">{{ formatDetailValue(stickerDetailCurrent.originUrl) }}</span>
+              </div>
+              <div class="material-detail-field material-detail-field--wide">
+                <span class="material-detail-label">来源</span>
+                <span class="material-detail-value material-detail-value--break">{{ formatDetailValue(stickerDetailCurrent.source) }}</span>
+              </div>
+              <div class="material-detail-field material-detail-field--wide">
+                <span class="material-detail-label">感知哈希</span>
+                <span class="material-detail-value material-detail-value--break">{{ formatDetailValue(stickerDetailCurrent.phash) }}</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="material-detail-section">
+            <div class="material-detail-section__title">状态与时间</div>
+            <div class="material-detail-grid">
+              <div class="material-detail-field">
+                <span class="material-detail-label">公开</span>
+                <span class="material-detail-value">{{ formatBooleanDetail(stickerDetailCurrent.isPublic) }}</span>
+              </div>
+              <div class="material-detail-field">
+                <span class="material-detail-label">材质</span>
+                <span class="material-detail-value">{{ formatBooleanDetail(stickerDetailCurrent.isTexture) }}</span>
+              </div>
+              <div class="material-detail-field">
+                <span class="material-detail-label">自定义贴纸</span>
+                <span class="material-detail-value">{{ formatBooleanDetail(stickerDetailCurrent.isCustom) }}</span>
+              </div>
+              <div class="material-detail-field">
+                <span class="material-detail-label">侵权</span>
+                <span class="material-detail-value">{{ formatBooleanDetail(stickerDetailCurrent.isInfringement) }}</span>
+              </div>
+              <div class="material-detail-field">
+                <span class="material-detail-label">抠图</span>
+                <span class="material-detail-value">{{ formatBooleanDetail(stickerDetailCurrent.isCutout) }}</span>
+              </div>
+              <div class="material-detail-field">
+                <span class="material-detail-label">无缝贴图</span>
+                <span class="material-detail-value">{{ formatBooleanDetail(stickerDetailCurrent.seamless) }}</span>
+              </div>
+              <div class="material-detail-field">
+                <span class="material-detail-label">创建时间</span>
+                <span class="material-detail-value">{{ formatDetailDate(stickerDetailCurrent.createTime) }}</span>
+              </div>
+              <div class="material-detail-field">
+                <span class="material-detail-label">修改时间</span>
+                <span class="material-detail-value">{{ formatDetailDate(stickerDetailCurrent.updateTime) }}</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="material-detail-section">
+            <div class="material-detail-section__title">元数据</div>
+            <vue-json-pretty v-if="parsedDetailMetaData" :data="parsedDetailMetaData" />
+            <pre v-else class="material-detail-raw">{{ formatDetailValue(stickerDetailCurrent.meta, "暂无元数据") }}</pre>
+          </section>
+
+          <section class="material-detail-section">
+            <div class="material-detail-section__title">完整详情 JSON</div>
+            <vue-json-pretty :data="stickerDetailJsonData" />
+          </section>
+        </template>
+      </div>
+      <template #footer>
+        <div class="edit-dialog-footer">
+          <el-button size="small" @click="detailDialogVisible = false">关闭</el-button>
         </div>
       </template>
     </el-dialog>
@@ -3385,7 +3655,7 @@ const FOLDER_CATEGORY = "sticker";
 
 // 判断是否为管理员
 const isAdmin = computed(() => userStore.user?.isAdmin ?? false);
-const similarSearchDisabled = true;
+const similarSearchDisabled = false;
 const SIMILAR_SEARCH_DISABLED_MESSAGE = "相似匹配功能暂时禁用";
 
 type StickerUserTransferAction = "copy" | "move";
@@ -3715,11 +3985,12 @@ function formatFileSize(bytes: number): string {
 }
 
 const gridOptions = computed(() => {
+  const showSimilarityColumn = Boolean(String(queryParams.phash || "").trim());
   const baseColumns = [
     {
       title: "",
       field: "dragHandle",
-      width: 40,
+      width: 34,
       showOverflow: false,
       align: "center" as const,
       slots: {
@@ -3730,114 +4001,75 @@ const gridOptions = computed(() => {
       type: "checkbox" as const,
       field: "checkbox",
       title: "",
-      width: 50,
+      width: 42,
       ellipsis: true,
       reserve: true,
-      minWidth: 50,
+      minWidth: 42,
       className: "" as any,
     },
     {
-      title: "图片预览",
+      title: "预览图",
       field: "url",
-      width: 120,
+      width: 128,
       slots: { default: "previewDefaultSlot" },
     },
-
     {
-      title: "名称（中/英）",
+      title: "素材",
       field: "name",
-      minWidth: 280,
+      minWidth: 220,
       className: "font-bold",
-      slots: { default: "nameBilingualSlot" },
+      slots: { default: "compactNameSlot" },
     },
-    { title: "后缀", field: "suffix", width: 80 }, // 新增后缀列
     {
-      title: "文件尺寸",
+      title: "格式",
+      field: "suffix",
+      width: 76,
+      formatter: ({ cellValue }: any) => (cellValue ? String(cellValue).toUpperCase() : "-"),
+    },
+    {
+      title: "尺寸",
+      field: "resolution",
+      width: 128,
+      formatter: ({ row }: any) =>
+        row?.resolutionWidth && row?.resolutionHeight
+          ? `${row.resolutionWidth} × ${row.resolutionHeight}`
+          : "-",
+    },
+    {
+      title: "文件大小",
       field: "fileSize",
-      width: 120,
-      slots: { default: "fileSizeSlot" },
-    }, // 新增文件尺寸列
-    { title: "ID", field: "id", width: 80, ellipsis: true },
-    { title: "编码", field: "code", width: 120, ellipsis: true },
-    {
-      title: "相似度",
-      field: "similarity",
-      width: 80,
-      slots: { default: "similaritySlot" },
-    }, // 新增相似度列
-    {
-      title: "上传者",
-      field: "uploader",
-      width: 140,
-      formatter: ({ row }) =>
-        row?.uploader?.account || row?.uploader?.name || row?.uploaderAccount || row?.userId || "-",
-    },
-    {
-      title: "侵权状态",
-      field: "isInfringement",
-      width: 100,
-      slots: { default: "isInfringementSlot" },
+      width: 96,
+      formatter: ({ cellValue }: any) => (cellValue ? formatFileSize(cellValue) : "-"),
     },
     {
       title: "抠图",
       field: "isCutout",
-      width: 100,
-      slots: { default: "isCutoutSlot" },
-    },
-    {
-      title: "无缝",
-      field: "seamless",
-      width: 100,
-      slots: { default: "seamlessSlot" },
+      width: 72,
+      formatter: ({ cellValue }: any) => (cellValue ? "是" : "否"),
     },
     {
       title: "文件夹",
       field: "folder",
-      width: 180,
-      slots: { default: "folderSlot" },
-    },
-    {
-      title: "描述（中/英）",
-      field: "description",
-      minWidth: 280,
-      slots: { default: "descriptionBilingualSlot" },
-    },
-    {
-      title: "关键词（中/英）",
-      field: "keywords",
-      minWidth: 220,
-      slots: { default: "keywordsBilingualSlot" },
-    },
-  ];
-
-  // 只有管理员显示的字段
-  const adminOnlyColumns = [
-    {
-      title: "自定义贴纸",
-      field: "isCustom",
-      width: 100,
-      slots: { default: "isCustomSlot" },
+      minWidth: 140,
+      formatter: ({ cellValue }: any) => cellValue || "根目录",
     },
     {
       title: "创建时间",
       field: "createTime",
       width: 150,
       className: "table-time-cell",
-      ellipsis: true,
-      formatter: (e) => {
-        return formatTimestamp(e.cellValue);
-      },
+      formatter: ({ cellValue }: any) => (cellValue ? formatTimestamp(cellValue) : "-"),
     },
-    {
-      title: "修改时间",
-      field: "updateTime",
-      width: 150,
-      className: "table-time-cell",
-      ellipsis: true,
-      formatter: (e) => {
-        return formatTimestamp(e.cellValue);
-      },
-    },
+    ...(showSimilarityColumn
+      ? [
+          {
+            title: "相似度",
+            field: "similarity",
+            width: 80,
+            slots: { default: "similaritySlot" },
+          },
+        ]
+      : []),
   ];
 
   const operationColumn = buildOperationColumn("operationDefaultSlot");
@@ -3851,7 +4083,7 @@ const gridOptions = computed(() => {
     checkboxConfig: {
       reserve: true,
     },
-    columns: [...baseColumns, ...(isAdmin.value ? adminOnlyColumns : []), operationColumn],
+    columns: [...baseColumns, operationColumn],
   };
 });
 
@@ -3859,6 +4091,9 @@ const dataSource = ref([]);
 const stickerDetailCache = new Map<string, any>();
 const selectedMaterialCache = reactive<Record<string, any>>({});
 const loading = ref(false);
+const activeOperationRowId = ref("");
+const operationCommandLoadingId = ref("");
+const operationDropdownRefs = new Map<string, any>();
 const open = ref(false);
 const title = ref("");
 const ids = ref<string[]>([]);
@@ -3949,6 +4184,64 @@ const editForm = ref({
 });
 const editLoading = ref(false);
 const generatingCode = ref(false);
+const detailDialogVisible = ref(false);
+const detailDialogLoading = ref(false);
+const stickerDetailCurrent = ref<any>(null);
+const parsedDetailMetaData = computed(() => {
+  const meta = stickerDetailCurrent.value?.meta;
+  if (!meta) return null;
+  if (typeof meta === "object") return meta;
+  if (typeof meta !== "string") return null;
+  const trimmed = meta.trim();
+  if (!trimmed) return null;
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return null;
+  }
+});
+const stickerDetailJsonData = computed(() => stickerDetailCurrent.value || {});
+
+function formatDetailValue(value: any, fallback = "-") {
+  if (value === undefined || value === null || value === "") return fallback;
+  if (typeof value === "object") {
+    try {
+      return JSON.stringify(value, null, 2);
+    } catch {
+      return String(value);
+    }
+  }
+  return String(value);
+}
+
+function formatBooleanDetail(value: any) {
+  if (value === undefined || value === null || value === "") return "-";
+  return value === true || value === "true" || value === 1 || value === "1" ? "是" : "否";
+}
+
+function formatAspectRatio(value: any) {
+  const ratio = Number(value);
+  return Number.isFinite(ratio) && ratio > 0 ? ratio.toFixed(4) : "-";
+}
+
+function formatDetailFileSize(value: any) {
+  const size = Number(value);
+  return Number.isFinite(size) && size > 0 ? formatFileSize(size) : "-";
+}
+
+function formatDetailDate(value: any) {
+  return value ? formatTimestamp(value) : "-";
+}
+
+function getDetailUploaderLabel(detail: any) {
+  return (
+    detail?.uploader?.account ||
+    detail?.uploader?.name ||
+    detail?.uploaderAccount ||
+    detail?.userId ||
+    "-"
+  );
+}
 
 // 其他缺少的变量
 const currentUploadInfo = ref({
@@ -4397,33 +4690,43 @@ async function getList() {
   if (similarSearchDisabled) {
     queryParams.phash = "";
   }
-  // 清理旧的超时定时器
-  imageLoadTimeouts.forEach((timeout) => {
-    clearTimeout(timeout);
-  });
-  imageLoadTimeouts.clear();
   // 立即清空旧数据，确保旧图片被销毁
   dataSource.value = [];
 
   // 构建查询参数，确保 suffix 和 sizeShape 数组格式正确传递；空字符串转为 null 以兼容后端
+  const phash = String(queryParams.phash || "").trim();
+  const searchPrompt = String(queryParams.searchPrompt || "").trim();
+  const searchText = String(queryParams.searchText || "").trim();
+  const suffixList = Array.isArray(queryParams.suffix)
+    ? queryParams.suffix
+    : queryParams.suffix
+      ? [queryParams.suffix]
+      : [];
+  const sizeShapeList = Array.isArray(queryParams.sizeShape)
+    ? queryParams.sizeShape
+    : queryParams.sizeShape
+      ? [queryParams.sizeShape]
+      : [];
   const params = {
     ...queryParams,
-    listMode: "summary",
+    listMode: "compact",
+    includeRelations: false,
+    keyword: undefined,
+    searchPrompt: searchPrompt || undefined,
+    searchText: searchText || undefined,
+    searchMode: searchText ? queryParams.searchMode : undefined,
+    id: String(queryParams.id || "").trim() || undefined,
+    phash: phash || undefined,
+    phashMode: phash ? queryParams.phashMode : undefined,
+    startTime: queryParams.startTime || undefined,
+    endTime: queryParams.endTime || undefined,
     folderId: getStickerFolderFilterForQuery(queryParams.folderId),
     isCustom: queryParams.isCustom === "" ? null : queryParams.isCustom,
     isInfringement: queryParams.isInfringement === "" ? null : queryParams.isInfringement,
     isCutout: queryParams.isCutout === "" ? null : queryParams.isCutout,
     seamless: queryParams.seamless === "" ? null : queryParams.seamless,
-    suffix: Array.isArray(queryParams.suffix)
-      ? queryParams.suffix
-      : queryParams.suffix
-        ? [queryParams.suffix]
-        : [],
-    sizeShape: Array.isArray(queryParams.sizeShape)
-      ? queryParams.sizeShape
-      : queryParams.sizeShape
-        ? [queryParams.sizeShape]
-        : [],
+    suffix: suffixList.length ? suffixList : undefined,
+    sizeShape: sizeShapeList.length ? sizeShapeList : undefined,
     publishUsageConfigId: queryParams.publishUsageConfigId.length
       ? queryParams.publishUsageConfigId
       : undefined,
@@ -4452,15 +4755,11 @@ async function getList() {
       resolutionHeight: height ?? item.resolutionHeight,
       aspectRatio,
       shapeLabel,
-      _imageLoaded: false, // 重置图片加载状态，确保分页切换时显示加载提示
+      _imageError: false,
     };
   });
   total.value = res.total;
 
-  // 为每个图片设置加载超时，防止一直显示加载中
-  dataSource.value.forEach((item) => {
-    setupImageLoadTimeout(item);
-  });
   cacheSelectedMaterialRows(dataSource.value.filter((item) => ids.value.includes(String(item.id))));
 
   // 列表渲染完成后挂载拖拽
@@ -4501,71 +4800,9 @@ async function fetchStickerDetail(rowOrId: any) {
   return merged;
 }
 
-// 图片加载超时处理映射
-const imageLoadTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
-
-// 设置图片加载超时
-function setupImageLoadTimeout(row: any) {
-  const timeoutKey = `image-${row.id}-${row.url}`;
-
-  // 清除之前的超时（如果存在）
-  if (imageLoadTimeouts.has(timeoutKey)) {
-    clearTimeout(imageLoadTimeouts.get(timeoutKey));
-  }
-
-  // 设置5秒超时，如果图片还没加载完成，强制标记为已加载
-  const timeout = setTimeout(() => {
-    if (!row._imageLoaded) {
-      row._imageLoaded = true;
-      imageLoadTimeouts.delete(timeoutKey);
-    }
-  }, 5000);
-
-  imageLoadTimeouts.set(timeoutKey, timeout);
-}
-
-// 处理图片加载成功
-function handleImageLoad(row: any, event: Event) {
-  const timeoutKey = `image-${row.id}-${row.url}`;
-
-  // 清除超时定时器
-  if (imageLoadTimeouts.has(timeoutKey)) {
-    clearTimeout(imageLoadTimeouts.get(timeoutKey));
-    imageLoadTimeouts.delete(timeoutKey);
-  }
-
-  // 检查图片是否真的加载完成（可能因为缓存等原因已经加载）
-  const img = event.target as HTMLImageElement;
-  if (img.complete && img.naturalHeight !== 0) {
-    row._imageLoaded = true;
-  } else {
-    // 如果图片还没完全加载，等待一下
-    setTimeout(() => {
-      row._imageLoaded = true;
-    }, 100);
-  }
-}
-
-// 处理图片加载失败
-function handleImageError(row: any) {
-  const timeoutKey = `image-${row.id}-${row.url}`;
-
-  // 清除超时定时器
-  if (imageLoadTimeouts.has(timeoutKey)) {
-    clearTimeout(imageLoadTimeouts.get(timeoutKey));
-    imageLoadTimeouts.delete(timeoutKey);
-  }
-
-  // 即使加载失败，也标记为已加载，避免一直显示加载中
-  row._imageLoaded = true;
-}
-
-// 组件卸载时清理所有超时定时器
 onUnmounted(() => {
-  imageLoadTimeouts.forEach((timeout) => {
-    clearTimeout(timeout);
-  });
-  imageLoadTimeouts.clear();
+  hideAllOperationSubmenus();
+  operationDropdownRefs.clear();
   resetAfterDrop();
 });
 
@@ -4831,7 +5068,7 @@ function handleMultiDownload() {
   }
 }
 
-function handleDelete(row?) {
+async function handleDelete(row?) {
   let delIds: any = null;
   if (row) {
     delIds = [row.id];
@@ -4842,19 +5079,24 @@ function handleDelete(row?) {
     }
   }
 
-  ElMessageBox.confirm("确认删除该数据吗", "删除提示", {
-    confirmButtonText: "确认",
-    cancelButtonText: "取消",
-    type: "error",
-  })
-    .then(async () => {
-      delIds = delIds.map((id) => String(id));
-      await deleteAssetLibrary({ ids: delIds });
-      ElNotification.success("删除成功");
-      resetCheckStatus(ids);
-      getList();
-    })
-    .catch(() => {});
+  try {
+    await ElMessageBox.confirm("确认删除该数据吗", "删除提示", {
+      confirmButtonText: "确认",
+      cancelButtonText: "取消",
+      type: "error",
+    });
+    delIds = delIds.map((id) => String(id));
+    await deleteAssetLibrary({ ids: delIds });
+    ElNotification.success("删除成功");
+    resetCheckStatus(ids);
+    await getList();
+  } catch (error: any) {
+    if (error === "cancel" || error === "close" || error?.action === "cancel" || error?.action === "close") {
+      return;
+    }
+    console.error("删除失败:", error);
+    ElMessage.error(error?.message || "删除失败");
+  }
 }
 function checkboxChange(e) {
   const records = Array.isArray(e.records) ? e.records : [];
@@ -6216,6 +6458,20 @@ function applyPreset(preset) {
   handleWidthChange(preset.width);
 }
 
+async function handleViewDetail(row: any) {
+  detailDialogVisible.value = true;
+  detailDialogLoading.value = true;
+  stickerDetailCurrent.value = null;
+  try {
+    stickerDetailCurrent.value = await fetchStickerDetail(row);
+  } catch (error: any) {
+    detailDialogVisible.value = false;
+    ElMessage.error(error?.message || "获取素材详情失败");
+  } finally {
+    detailDialogLoading.value = false;
+  }
+}
+
 async function handleEdit(row) {
   let detail = row;
   try {
@@ -6462,69 +6718,112 @@ function openImageProcessingWorkbench(row: any, taskType: "process" | "variation
 
 // 处理dropdown操作命令
 async function handleOperationCommand(command: string, row: any) {
-  switch (command) {
-    case "edit":
-      await handleEdit(row);
-      break;
-    case "download":
-      handleDownload(row);
-      break;
-    case "ai-generate":
-      onAiTableAutoGenerate(row);
-      break;
-    case "generate-image-info":
-      handleGenerateImageInfo(row);
-      break;
-    case "find-similar":
-      await handleFindSimilar(row);
-      break;
-    case "view-publish-usage":
-      await handleViewPublishUsageRecords(row);
-      break;
-    case "view-meta":
-      await handleShowMetaDetail(row);
-      break;
-    case "trim-png":
-      handleTrimPng(row);
-      break;
-    case "svg-to-png":
-      handleSvgToPng(row);
-      break;
-    case "copy":
-      handleCopy(row);
-      break;
-    case "copy-origin-url":
-      handleCopyText(row?.url || "", "图片链接");
-      break;
-    case "copy-to-user":
-      openStickerUserTransferDialog("copy", row);
-      break;
-    case "move-to-user":
-      openStickerUserTransferDialog("move", row);
-      break;
-    case "create-ps-set":
-      openPsdSetDialog(row);
-      break;
-    case "view-ps-sets":
-      relatedPsdSetDialogRef.value?.open(row);
-      break;
-    case "image-process":
-      openImageProcessingWorkbench(row, "process");
-      break;
-    case "image-split":
-      openImageProcessingWorkbench(row, "variations");
-      break;
-    case "video-production":
-      ElMessage.info("视频制作功能开发中...");
-      break;
-    case "story-script":
-      openStoryScriptDialog(row);
-      break;
-    case "delete":
-      handleDelete(row);
-      break;
-    default:
-      console.warn("未知的操作命令:", command);
+  const rowId = String(row?.id || "");
+  closeOperationDropdown(rowId);
+  if (rowId) {
+    operationCommandLoadingId.value = rowId;
+  }
+  try {
+    switch (command) {
+      case "view-detail":
+        await handleViewDetail(row);
+        break;
+      case "edit":
+        await handleEdit(row);
+        break;
+      case "download":
+        await handleDownload(row);
+        break;
+      case "ai-generate":
+        await onAiTableAutoGenerate(row);
+        break;
+      case "generate-image-info":
+        await handleGenerateImageInfo(row);
+        break;
+      case "find-similar":
+        await handleFindSimilar(row);
+        break;
+      case "view-publish-usage":
+        await handleViewPublishUsageRecords(row);
+        break;
+      case "view-meta":
+        await handleShowMetaDetail(row);
+        break;
+      case "trim-png":
+        await handleTrimPng(row);
+        break;
+      case "svg-to-png":
+        await handleSvgToPng(row);
+        break;
+      case "copy":
+        await handleCopy(row);
+        break;
+      case "copy-origin-url":
+        await handleCopyText(row?.url || "", "图片链接");
+        break;
+      case "copy-to-user":
+        openStickerUserTransferDialog("copy", row);
+        break;
+      case "move-to-user":
+        openStickerUserTransferDialog("move", row);
+        break;
+      case "create-ps-set":
+        openPsdSetDialog(row);
+        break;
+      case "view-ps-sets":
+        relatedPsdSetDialogRef.value?.open(row);
+        break;
+      case "image-process":
+        openImageProcessingWorkbench(row, "process");
+        break;
+      case "image-split":
+        openImageProcessingWorkbench(row, "variations");
+        break;
+      case "video-production":
+        ElMessage.info("视频制作功能开发中...");
+        break;
+      case "story-script":
+        await openStoryScriptDialog(row);
+        break;
+      case "delete":
+        await handleDelete(row);
+        break;
+      default:
+        console.warn("未知的操作命令:", command);
+    }
+  } catch (error: any) {
+    console.error("[material] 操作执行失败:", command, error);
+    ElMessage.error(error?.message || "操作失败，请稍后重试");
+  } finally {
+    if (operationCommandLoadingId.value === rowId) {
+      operationCommandLoadingId.value = "";
+    }
+  }
+}
+
+function handleOperationDropdownVisibleChange(visible: boolean, row: any) {
+  const rowId = String(row?.id || "");
+  hideAllOperationSubmenus();
+  if (visible) {
+    const previousRowId = activeOperationRowId.value;
+    if (previousRowId && previousRowId !== rowId) {
+      operationDropdownRefs.get(previousRowId)?.handleClose?.();
+    }
+    activeOperationRowId.value = rowId;
+    return;
+  }
+  if (!rowId || activeOperationRowId.value === rowId) {
+    activeOperationRowId.value = "";
+  }
+}
+
+function setOperationDropdownRef(rowId: any, el: any) {
+  const key = String(rowId || "");
+  if (!key) return;
+  if (el) {
+    operationDropdownRefs.set(key, el);
+  } else {
+    operationDropdownRefs.delete(key);
   }
 }
 
@@ -6667,6 +6966,34 @@ async function fetchImageFromUrl(url) {
   }
 }
 
+let submenuHideTimer: ReturnType<typeof setTimeout> | null = null;
+
+function hideAllOperationSubmenus() {
+  if (submenuHideTimer) {
+    clearTimeout(submenuHideTimer);
+    submenuHideTimer = null;
+  }
+
+  const allSubmenus = document.querySelectorAll(".op-submenu") as NodeListOf<HTMLElement>;
+  allSubmenus.forEach((submenu) => {
+    submenu.style.opacity = "0";
+    submenu.style.visibility = "hidden";
+    submenu.style.pointerEvents = "none";
+    submenu.style.transform = "";
+  });
+}
+
+function closeOperationDropdown(rowId?: string) {
+  const targetRowId = rowId || activeOperationRowId.value;
+  if (targetRowId) {
+    operationDropdownRefs.get(targetRowId)?.handleClose?.();
+  }
+  if (!rowId || activeOperationRowId.value === rowId) {
+    activeOperationRowId.value = "";
+  }
+  hideAllOperationSubmenus();
+}
+
 // 处理子菜单显示和定位
 function handleSubmenuEnter(event: MouseEvent) {
   const menuItem = event.currentTarget as HTMLElement;
@@ -6751,8 +7078,6 @@ function handleSubmenuEnter(event: MouseEvent) {
   // 确保位置设置生效，强制重排
   void submenu.offsetWidth;
 }
-
-let submenuHideTimer: ReturnType<typeof setTimeout> | null = null;
 
 function handleSubmenuLeave(event: MouseEvent) {
   const menuItem = event.currentTarget as HTMLElement;
@@ -6918,6 +7243,112 @@ async function handleUrlUpload() {
 }
 </script>
 <style scoped>
+.material-compact-preview {
+  position: relative;
+  display: inline-flex;
+  width: 96px;
+  height: 96px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  background: var(--el-fill-color-lighter);
+}
+
+.material-compact-preview__image-wrap {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.material-compact-preview__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  cursor: zoom-in;
+}
+
+.material-compact-preview__empty {
+  color: var(--el-text-color-placeholder);
+  font-size: 12px;
+}
+
+.material-compact-preview__corner {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  z-index: 2;
+  display: inline-flex;
+  height: 16px;
+  align-items: center;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(64, 158, 255, 0.92);
+  color: #fff;
+  font-size: 10px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.material-compact-name {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.material-compact-name__title {
+  overflow: hidden;
+  color: var(--el-text-color-primary);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.material-compact-name__meta {
+  display: flex;
+  min-width: 0;
+  gap: 5px;
+  overflow: hidden;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.material-compact-badge {
+  display: inline-flex;
+  height: 20px;
+  align-items: center;
+  padding: 0 6px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 999px;
+  background: var(--el-fill-color-lighter);
+  color: var(--el-text-color-regular);
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.material-compact-badge--success {
+  border-color: var(--el-color-success-light-7);
+  background: var(--el-color-success-light-9);
+  color: var(--el-color-success);
+}
+
+.material-compact-badge--danger {
+  border-color: var(--el-color-danger-light-7);
+  background: var(--el-color-danger-light-9);
+  color: var(--el-color-danger);
+}
+
 /* 预览图片容器样式 */
 .preview-image-wrapper {
   position: relative;
@@ -8591,17 +9022,129 @@ h1 {
 }
 </style>
 <style scoped>
-.op-submenu {
-  min-width: 132px;
-  padding: 1px 0;
+.operation-dropdown {
+  line-height: 1;
 }
 
+.operation-trigger-button {
+  min-width: 42px;
+  padding: 0 4px;
+  border-radius: 4px;
+}
+
+.operation-trigger-button:hover,
+.operation-trigger-button:focus-visible {
+  background: var(--el-color-primary-light-9);
+  outline: none;
+}
+
+:global(.operation-dropdown-popper),
+:global(.operation-dropdown-popper .el-scrollbar),
+:global(.operation-dropdown-popper .el-scrollbar__wrap),
+:global(.operation-dropdown-popper .el-scrollbar__view) {
+  overflow: visible !important;
+}
+
+.op-menu {
+  min-width: 136px;
+  padding: 5px;
+  border-radius: 8px;
+  background: var(--el-bg-color-overlay);
+}
+
+.op-menu-item,
 .op-submenu-item {
   display: flex;
   align-items: center;
-  min-height: 31px;
+  min-height: 32px;
   box-sizing: border-box;
-  padding: 7px 14px;
+  border-radius: 6px;
+  color: var(--el-text-color-regular);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color 0.14s ease,
+    color 0.14s ease,
+    box-shadow 0.14s ease;
+}
+
+.op-menu-item {
+  position: relative;
+  gap: 8px;
+  padding: 7px 10px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.op-menu-item:hover,
+.op-menu-item:focus-visible,
+.op-menu-item.has-submenu:hover,
+.op-submenu-item:hover,
+.op-submenu-item:focus-visible {
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+  box-shadow: inset 0 0 0 1px var(--el-color-primary-light-7);
+  outline: none;
+}
+
+.op-menu-item.danger:hover,
+.op-menu-item.danger:focus-visible {
+  background: var(--el-color-danger-light-9);
+  color: var(--el-color-danger);
+  box-shadow: inset 0 0 0 1px var(--el-color-danger-light-7);
+}
+
+.op-menu-arrow,
+.op-menu-arrow-placeholder {
+  width: 14px;
+  flex: 0 0 14px;
+}
+
+.op-menu-arrow {
+  color: var(--el-text-color-placeholder);
+  transition:
+    color 0.14s ease,
+    transform 0.14s ease;
+}
+
+.op-menu-item.has-submenu:hover .op-menu-arrow {
+  color: var(--el-color-primary);
+  transform: translateX(-2px);
+}
+
+.op-menu-label {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.op-divider {
+  height: 1px;
+  margin: 5px 4px;
+  background: var(--el-border-color-lighter);
+}
+
+.op-submenu {
+  position: fixed;
+  top: 0;
+  left: -9999px;
+  min-width: 132px;
+  max-height: calc(100vh - 20px);
+  overflow-y: auto;
+  padding: 5px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 8px;
+  background: var(--el-bg-color-overlay);
+  box-shadow: var(--el-box-shadow-light);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: 3200;
+}
+
+.op-submenu-item {
+  min-height: 31px;
+  padding: 7px 12px;
   font-size: 12px;
   line-height: 1.45;
 }
@@ -8759,6 +9302,181 @@ h1 {
   line-height: 1.6;
 }
 
+.material-detail-dialog :deep(.el-dialog__body) {
+  padding: 0;
+  overflow: hidden;
+}
+
+.material-detail-dialog :deep(.el-dialog) {
+  border-radius: 0;
+}
+
+.material-detail-dialog :deep(.el-dialog__header) {
+  padding: 16px 24px;
+  margin-right: 0;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.material-detail-dialog :deep(.el-dialog__footer) {
+  padding: 12px 24px;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.material-detail-body {
+  height: calc(100vh - 124px);
+  overflow-y: auto;
+  padding: 20px 24px;
+  background: var(--el-bg-color-page);
+}
+
+.material-detail-hero,
+.material-detail-section {
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
+}
+
+.material-detail-hero {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
+  gap: 20px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.material-detail-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  background-color: var(--el-fill-color-lighter);
+  overflow: hidden;
+}
+
+.material-detail-preview :deep(.el-image) {
+  width: 100%;
+  height: 220px;
+}
+
+.material-detail-preview__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 220px;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+}
+
+.material-detail-summary {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+}
+
+.material-detail-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.material-detail-subtitle {
+  color: var(--el-text-color-secondary);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.material-detail-tags,
+.material-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.material-detail-section {
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.material-detail-section__title {
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.material-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px 12px;
+}
+
+.material-detail-field {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  background: var(--el-fill-color-blank);
+}
+
+.material-detail-field--wide {
+  grid-column: span 2;
+}
+
+.material-detail-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.material-detail-value {
+  display: block;
+  min-width: 0;
+  color: var(--el-text-color-primary);
+  font-size: 13px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.material-detail-value--multiline {
+  white-space: pre-wrap;
+}
+
+.material-detail-value--break {
+  word-break: break-all;
+}
+
+.material-detail-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+
+.material-detail-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid var(--el-border-color);
+}
+
+.material-detail-raw {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--el-text-color-regular);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
 .edit-dialog-footer {
   display: flex;
   justify-content: flex-end;
@@ -8774,12 +9492,29 @@ h1 {
 }
 
 @media (max-width: 1200px) {
-  .edit-material-body {
+  .edit-material-body,
+  .material-detail-body {
     padding: 16px;
+  }
+
+  .material-detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 768px) {
+  .material-detail-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .material-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .material-detail-field--wide {
+    grid-column: span 1;
+  }
+
   .op-submenu {
     min-width: 140px;
   }
