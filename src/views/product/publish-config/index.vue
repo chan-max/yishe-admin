@@ -38,20 +38,24 @@ import TemuProductTemplateInspector from "./components/platform-inspectors/TemuP
 const userStore = useUserStore();
 const loading = ref(false);
 const deleteLoading = ref(false);
-const tableData = ref([]);
+const allTableData = ref<any[]>([]);
+const tableData = ref<any[]>([]);
 const total = ref(0);
 const selectedIds = ref<(string | number)[]>([]);
 
 const queryParams = reactive({
   page: 1,
   pageSize: 20,
+  keyword: "",
+  taskType: "",
+  isActive: "" as "" | boolean,
 });
 
 const { height } = useWindowSize();
 const gridMaxHeight = ref<number>(0);
 
 watchEffect(() => {
-  gridMaxHeight.value = height.value - 220;
+  gridMaxHeight.value = height.value - 300;
 });
 
 const gridOptions = computed(() => ({
@@ -72,6 +76,12 @@ const gridOptions = computed(() => ({
     },
     { field: "description", title: "描述", minWidth: 200, showOverflow: true },
     {
+      field: "isActive",
+      title: "状态",
+      width: 90,
+      formatter: ({ cellValue }) => (cellValue === false ? "停用" : "启用"),
+    },
+    {
       field: "uploader",
       title: "创建者",
       minWidth: 120,
@@ -88,21 +98,63 @@ const gridOptions = computed(() => ({
   ],
 }));
 
+const normalizeText = (value: any) => String(value ?? "").trim().toLowerCase();
+
+const normalizePublishConfigListResponse = (res: any) => {
+  if (Array.isArray(res)) return res;
+  if (Array.isArray(res?.list)) return res.list;
+  if (Array.isArray(res?.data?.list)) return res.data.list;
+  return [];
+};
+
+const getRowTaskType = (row: any) =>
+  String(row?.taskType || derivePublishTaskTypeByPlatform(row?.platform) || "").trim();
+
+const applyLocalQuery = () => {
+  const keyword = normalizeText(queryParams.keyword);
+  const taskType = String(queryParams.taskType || "").trim();
+  const isActive =
+    queryParams.isActive === undefined || queryParams.isActive === null ? "" : queryParams.isActive;
+
+  const filtered = allTableData.value.filter((row: any) => {
+    const rowTaskType = getRowTaskType(row);
+    const searchableText = [
+      row?.name,
+      row?.description,
+      row?.platform,
+      rowTaskType,
+      getTaskTypeLabel(rowTaskType, row?.platform),
+      row?.uploader?.account,
+      row?.uploader?.name,
+      row?.creator,
+      row?.userId,
+    ]
+      .map(normalizeText)
+      .filter(Boolean)
+      .join(" ");
+
+    return (
+      (!keyword || searchableText.includes(keyword)) &&
+      (!taskType || rowTaskType === taskType) &&
+      (isActive === "" || (row?.isActive !== false) === isActive)
+    );
+  });
+
+  total.value = filtered.length;
+  const maxPage = Math.max(1, Math.ceil(filtered.length / queryParams.pageSize));
+  if (queryParams.page > maxPage) {
+    queryParams.page = maxPage;
+  }
+  const start = (queryParams.page - 1) * queryParams.pageSize;
+  tableData.value = filtered.slice(start, start + queryParams.pageSize);
+};
+
 const getList = async () => {
   loading.value = true;
   try {
     const res = await getPublishConfigListApi();
-    if (Array.isArray(res)) {
-      tableData.value = res;
-      total.value = res.length;
-    } else if (res && res.list) {
-      tableData.value = res.list;
-      total.value = res.total;
-    } else {
-      tableData.value = res as any;
-      total.value = (res as any).length;
-    }
-
+    allTableData.value = normalizePublishConfigListResponse(res);
+    applyLocalQuery();
     selectedIds.value = [];
   } catch (err) {
     console.error(err);
@@ -135,7 +187,23 @@ const loadVendorOptions = async () => {
 
 const handleSearch = () => {
   queryParams.page = 1;
+  applyLocalQuery();
+};
+
+const resetQuery = () => {
+  queryParams.keyword = "";
+  queryParams.taskType = "";
+  queryParams.isActive = "";
+  handleSearch();
+};
+
+const handleRefresh = () => {
+  queryParams.page = 1;
   getList();
+};
+
+const handlePagination = () => {
+  applyLocalQuery();
 };
 
 const handleSelectionChange = (e: any) => {
@@ -1075,28 +1143,79 @@ onMounted(() => {
     <ListPageLayout class="publish-config-page">
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
-          <div class="list-page-search-form__actions">
-            <el-button size="small" type="primary" :loading="loading" @click="handleSearch"
-              >刷新</el-button
-            >
-            <el-button
-              size="small"
-              type="primary"
-              :disabled="loading || deleteLoading"
-              @click="handleAdd"
-              >新增任务配置</el-button
-            >
-            <el-button
-              v-if="userStore.user?.isAdmin"
-              size="small"
-              type="danger"
-              :loading="deleteLoading"
-              :disabled="selectedIds.length === 0"
-              @click="handleBatchDelete"
-            >
-              批量删除 <span v-if="selectedIds.length > 0">({{ selectedIds.length }})</span>
-            </el-button>
-          </div>
+          <el-form :model="queryParams" label-position="top" class="list-page-search-form">
+            <el-row :gutter="12" class="list-page-search-form__row">
+              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="8" :lg="6">
+                <el-form-item label="关键词">
+                  <el-input
+                    v-model="queryParams.keyword"
+                    size="small"
+                    clearable
+                    placeholder="搜索配置名称/描述/创建者"
+                    @keyup.enter="handleSearch"
+                    @clear="handleSearch"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="5">
+                <el-form-item label="任务类型">
+                  <el-select
+                    v-model="queryParams.taskType"
+                    size="small"
+                    clearable
+                    filterable
+                    placeholder="全部类型"
+                    @change="handleSearch"
+                  >
+                    <el-option
+                      v-for="item in taskTypeOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
+                <el-form-item label="状态">
+                  <el-select
+                    v-model="queryParams.isActive"
+                    size="small"
+                    clearable
+                    placeholder="全部状态"
+                    @change="handleSearch"
+                  >
+                    <el-option label="启用" :value="true" />
+                    <el-option label="停用" :value="false" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <div class="list-page-search-form__actions">
+              <el-button size="small" type="primary" :loading="loading" @click="handleSearch"
+                >搜索</el-button
+              >
+              <el-button size="small" :disabled="loading" @click="resetQuery">重置</el-button>
+              <el-button size="small" :loading="loading" @click="handleRefresh">刷新</el-button>
+              <el-button
+                size="small"
+                type="primary"
+                :disabled="loading || deleteLoading"
+                @click="handleAdd"
+                >新增任务配置</el-button
+              >
+              <el-button
+                v-if="userStore.user?.isAdmin"
+                size="small"
+                type="danger"
+                :loading="deleteLoading"
+                :disabled="selectedIds.length === 0"
+                @click="handleBatchDelete"
+              >
+                批量删除 <span v-if="selectedIds.length > 0">({{ selectedIds.length }})</span>
+              </el-button>
+            </div>
+          </el-form>
         </div>
       </template>
 
@@ -1137,6 +1256,19 @@ onMounted(() => {
               </vxe-grid>
             </div>
           </div>
+        </div>
+      </template>
+
+      <template #pagination>
+        <div
+          class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat"
+        >
+          <pagination
+            v-model:page="queryParams.page"
+            v-model:limit="queryParams.pageSize"
+            :total="total"
+            @pagination="handlePagination"
+          />
         </div>
       </template>
     </ListPageLayout>
