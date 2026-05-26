@@ -4509,7 +4509,6 @@ const materialPublishConfigUsableCount = computed(
 );
 const materialPublishConfigGridOptions = computed(() => ({
   ...commonGridOptions,
-  height: 520,
   loading: false,
   rowConfig: { isHover: true, keyField: "id" },
   rowClassName: ({ row }: any) =>

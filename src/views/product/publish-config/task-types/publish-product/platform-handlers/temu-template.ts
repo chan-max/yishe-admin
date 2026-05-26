@@ -239,6 +239,7 @@ const NESTED_FIELD_META: Record<string, TemuFieldMeta> = {
   productSkuAccessories: { label: "配件列表", description: "SKU 配件列表。" },
   productSkuNonAuditExtAttrReq: { label: "非审核扩展", description: "SKU 非审核扩展属性。" },
   productSkcId: { label: "SKC ID", description: "平台 SKC ID。" },
+  imgUrl: { label: "详情装修图", description: "goodsLayerDecorationReqs 中图片模块使用的图片 URL。" },
   isBasePlate: { label: "是否底板", description: "当前款式是否为底板。" },
   parentSpecId: { label: "规格组 ID", description: "规格组 ID。" },
   parentSpecName: { label: "规格组名", description: "规格组名称。" },
@@ -491,6 +492,7 @@ function buildArrayItemLabel(value: Record<string, any>, index: number) {
     value?.productName,
     value?.language,
     value?.extCode,
+    value?.imgUrl,
     value?.imageUrl,
   ]
     .map((item) => String(item || "").trim())

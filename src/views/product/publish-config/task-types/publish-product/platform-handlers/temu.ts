@@ -51,6 +51,7 @@ function validateTemplateImageBindingsOneBased(bindings: Record<string, any> | n
   const bindingKeys = [
     "materialImgUrl",
     "carouselImageUrls",
+    "goodsLayerDecorationReqs[].contentList[].imgUrl",
     "productSkcReqs[].previewImgUrls",
     "productSkcReqs[].productSkuReqs[].thumbUrl",
   ];
