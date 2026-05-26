@@ -13,6 +13,32 @@
         style="width: 100%"
         max-height="calc(100vh - 260px)"
       >
+        <el-table-column label="缩略图" width="120" align="center">
+          <template #default="{ row }">
+            <div v-if="getPsdSetImageList(row).length" class="related-psd-set-thumbnail">
+              <el-image
+                :src="getPsdSetThumbnailUrl(row)"
+                :preview-src-list="getPsdSetImageList(row)"
+                :initial-index="0"
+                :preview-teleported="true"
+                :hide-on-click-modal="false"
+                fit="cover"
+                class="related-psd-set-thumbnail__image"
+              >
+                <template #error>
+                  <div class="related-psd-set-thumbnail__empty">加载失败</div>
+                </template>
+              </el-image>
+              <span
+                v-if="getPsdSetImageList(row).length > 1"
+                class="related-psd-set-thumbnail__badge"
+              >
+                {{ getPsdSetImageList(row).length }}张
+              </span>
+            </div>
+            <span v-else class="related-psd-set-thumbnail__empty">无图</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="id" label="套图ID" min-width="220" show-overflow-tooltip />
         <el-table-column prop="name" label="名称" min-width="220" show-overflow-tooltip>
           <template #default="{ row }">
@@ -48,6 +74,7 @@ import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { formatTimestamp } from '@/common/date'
 import { stickerPsdSetApi } from '@/api/stickerPsdSet'
+import { getFastPreviewImageUrl } from '@/utils/image'
 
 const visible = ref(false)
 const loading = ref(false)
@@ -72,6 +99,24 @@ function getStatusTagType(status?: string): 'warning' | 'primary' | 'success' | 
   if (status === 'completed') return 'success'
   if (status === 'failed') return 'danger'
   return 'info'
+}
+
+function getPsdSetImageList(row: any): string[] {
+  const imageList = Array.isArray(row?.images)
+    ? row.images.filter(
+        (url: any): url is string => typeof url === 'string' && url.trim().length > 0
+      )
+    : []
+  const fallbackImages = [row?.thumbnail, row?.preview, row?.image, row?.imageUrl].filter(
+    (url): url is string => typeof url === 'string' && url.trim().length > 0
+  )
+
+  return Array.from(new Set([...imageList, ...fallbackImages]))
+}
+
+function getPsdSetThumbnailUrl(row: any) {
+  const firstImage = getPsdSetImageList(row)[0] || ''
+  return firstImage ? getFastPreviewImageUrl(firstImage, { width: 160, height: 120 }) : ''
 }
 
 async function open(row: any) {
@@ -103,3 +148,50 @@ async function open(row: any) {
 
 defineExpose({ open })
 </script>
+
+<style scoped>
+.related-psd-set-thumbnail {
+  position: relative;
+  display: inline-flex;
+  width: 72px;
+  height: 72px;
+  align-items: center;
+  justify-content: center;
+}
+
+.related-psd-set-thumbnail__image {
+  width: 72px;
+  height: 72px;
+  overflow: hidden;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  background: var(--el-fill-color-lighter);
+  cursor: zoom-in;
+}
+
+.related-psd-set-thumbnail__badge {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.68);
+  color: #fff;
+  font-size: 10px;
+  line-height: 16px;
+}
+
+.related-psd-set-thumbnail__empty {
+  display: inline-flex;
+  width: 72px;
+  height: 72px;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--el-border-color);
+  border-radius: 6px;
+  background: var(--el-fill-color-lighter);
+  color: var(--el-text-color-placeholder);
+  font-size: 12px;
+}
+</style>

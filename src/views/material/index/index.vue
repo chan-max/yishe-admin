@@ -1237,6 +1237,8 @@
                             :alt="tpl.name || '模板缩略图'"
                             class="template-thumbnail"
                             loading="lazy"
+                            title="点击预览"
+                            @click.stop="openImagePreview(tpl.thumbnail || tpl.preview || tpl.image, tpl.name)"
                             @error="handleTemplateImageError"
                           />
                           <div class="template-info">
@@ -9715,7 +9717,6 @@ h1 {
 }
 
 .psd-set-materials .thumbs {
-  flex: 1;
   min-height: 0;
   max-height: 100vh;
   display: flex;
@@ -9910,6 +9911,7 @@ h1 {
 
 .psd-set-templates .template-list {
   flex: 1;
+  padding:1em;
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
@@ -9966,6 +9968,7 @@ h1 {
   border: 1px solid var(--el-border-color-light);
   background: var(--el-fill-color-lighter);
   flex-shrink: 0;
+  cursor: zoom-in;
 }
 
 .psd-set-templates .template-info {
