@@ -37,6 +37,7 @@ export interface TemuWorkspaceAvailabilitySummary {
   detail: string;
   accountText: string;
   mallText: string;
+  mallId: string;
   identityText: string;
   cookieSummary: string;
   validationStatus: string;
@@ -151,6 +152,7 @@ export const resolveTemuWorkspaceAvailability = (
       detail: "正在确认当前环境是否可用，请稍候。",
       accountText,
       mallText,
+      mallId,
       identityText,
       cookieSummary,
       validationStatus,
@@ -175,6 +177,7 @@ export const resolveTemuWorkspaceAvailability = (
       detail: "当前环境还没有可用会话，请先采集 Temu 会话。",
       accountText,
       mallText,
+      mallId,
       identityText,
       cookieSummary,
       validationStatus,
@@ -199,6 +202,7 @@ export const resolveTemuWorkspaceAvailability = (
       detail: String(validation.message || "当前会话已失效，建议重新采集。"),
       accountText,
       mallText,
+      mallId,
       identityText,
       cookieSummary,
       validationStatus,
@@ -225,6 +229,7 @@ export const resolveTemuWorkspaceAvailability = (
       ),
       accountText,
       mallText,
+      mallId,
       identityText,
       cookieSummary,
       validationStatus,
@@ -251,6 +256,7 @@ export const resolveTemuWorkspaceAvailability = (
         : String(userInfo.message || "身份信息还未同步成功，请重新获取。"),
       accountText,
       mallText,
+      mallId,
       identityText,
       cookieSummary,
       validationStatus,
@@ -275,6 +281,7 @@ export const resolveTemuWorkspaceAvailability = (
       detail: String(validation.message || "会话已获取，正在等待可用性校验。"),
       accountText,
       mallText,
+      mallId,
       identityText,
       cookieSummary,
       validationStatus,
@@ -299,6 +306,7 @@ export const resolveTemuWorkspaceAvailability = (
       detail: "当前环境暂不支持自动校验，请以实际执行结果为准。",
       accountText,
       mallText,
+      mallId,
       identityText,
       cookieSummary,
       validationStatus,
@@ -323,6 +331,7 @@ export const resolveTemuWorkspaceAvailability = (
       detail: `${missingRegions.join(" / ")} 会话缺失，当前环境不是完整采集结果，请重新执行 Temu 全量采集。`,
       accountText,
       mallText,
+      mallId,
       identityText,
       cookieSummary,
       validationStatus,
@@ -346,6 +355,7 @@ export const resolveTemuWorkspaceAvailability = (
     detail: "当前环境会话、身份与店铺信息完整，可直接使用。",
     accountText,
     mallText,
+    mallId,
     identityText,
     cookieSummary,
     validationStatus,

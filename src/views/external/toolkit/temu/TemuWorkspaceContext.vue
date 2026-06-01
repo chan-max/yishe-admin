@@ -69,6 +69,14 @@
       >
         同步身份
       </el-button>
+      <el-button
+        v-if="mallId"
+        size="small"
+        type="success"
+        @click="openMallPage"
+      >
+        进入店铺
+      </el-button>
       <el-button size="small" :disabled="!hasSelectedProfile" @click="emit('open-session-center')">
         会话中心
       </el-button>
@@ -204,6 +212,7 @@ const statusText = computed(() => statusMeta.value.text);
 const statusTitle = computed(() => statusMeta.value.title);
 const accountText = computed(() => availability.value.accountText || "-");
 const mallText = computed(() => availability.value.mallText || "未设置");
+const mallId = computed(() => availability.value.mallId || "");
 const cookieSummary = computed(() => availability.value.cookieSummary || "-");
 const validationCheckedAtText = computed(() => props.validationCheckedAtText || "未校验");
 const hasSelectedProfile = computed(() => !!props.profileId);
@@ -211,6 +220,12 @@ const canValidate = computed(() => hasSelectedProfile.value && availability.valu
 const canRefreshIdentity = computed(
   () => hasSelectedProfile.value && availability.value.hasUsableSession,
 );
+
+const openMallPage = () => {
+  if (!mallId.value) return;
+  const url = `https://www.temu.com/mall.html?_bg_fs=1&mall_id=${mallId.value}`;
+  window.open(url, "_blank");
+};
 </script>
 
 <style scoped lang="scss">
@@ -293,6 +308,13 @@ const canRefreshIdentity = computed(
   line-height: 1.35;
   white-space: normal;
   overflow-wrap: anywhere;
+}
+
+.temu-context-meta__mall-link {
+  padding: 0 2px;
+  min-height: auto;
+  font-size: 10px;
+  line-height: 1;
 }
 
 .temu-context-meta__value--time {
