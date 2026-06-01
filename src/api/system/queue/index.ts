@@ -190,9 +190,12 @@ export const deleteTask = (queue: string, messageId: string) => {
 };
 
 // 获取队列统计信息
-export const getQueueStats = (queue?: string) => {
+export const getQueueStats = (queue?: string, types?: string[]) => {
   // 如果 queue 为空字符串，不传该参数（查询所有队列的统计）
   const params: any = {};
+  if (Array.isArray(types) && types.length > 0) {
+    params.types = types.join(",");
+  }
   if (queue && queue.trim()) {
     params.queue = queue.trim();
   }

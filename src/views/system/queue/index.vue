@@ -19,7 +19,7 @@
                     size="small"
                     clearable
                     placeholder="留空则查询全部"
-                    @keyup.enter="getList"
+                    @keyup.enter="handleQueryChange"
                   />
                 </el-form-item>
               </el-col>
@@ -41,7 +41,7 @@
                     clearable
                     filterable
                     placeholder="全部类型"
-                    @change="getList"
+                    @change="handleQueryChange"
                     @clear="handleTypeClear"
                   >
                     <el-option
@@ -67,7 +67,7 @@
                     size="small"
                     clearable
                     placeholder="全部状态"
-                    @change="getList"
+                    @change="handleQueryChange"
                   >
                     <el-option label="待处理" value="pending" />
                     <el-option label="等待中" value="waiting" />
@@ -108,7 +108,7 @@
                 type="primary"
                 :icon="Search"
                 :loading="loading"
-                @click="getList"
+                @click="handleQueryChange"
                 >搜索</el-button
               >
               <el-button size="small" type="primary" :icon="Plus" @click="handleAdd"
@@ -2344,7 +2344,7 @@ async function getList(options?: unknown) {
       id: queryParams.id?.trim() || undefined,
       sortField: sortField as "createdAt" | "updatedAt" | "processedAt",
       sortOrder: sortOrder as "ASC" | "DESC",
-      includeTotal: true,
+      includeTotal: !silent,
       limit: queryParams.pageSize,
       offset: (queryParams.currentPage - 1) * queryParams.pageSize,
     });
@@ -2425,11 +2425,21 @@ function handleSortTypeChange() {
   getList();
 }
 
+function handleQueryChange() {
+  queryParams.currentPage = 1;
+  getList();
+  refreshStats();
+}
+
 async function refreshStats() {
   const requestSeq = ++queueStatsRequestSeq;
   try {
     const queueName = getStatsQueueName();
-    const res = await getQueueStats(queueName);
+    const selectedTypes = getSelectedQueryTypes();
+    const res = await getQueueStats(
+      queueName,
+      selectedTypes.length > 1 ? selectedTypes : undefined,
+    );
 
     let statsData = res;
 
