@@ -1276,7 +1276,7 @@
                   未确认 {{ unconfirmedConfirmationRows.length }}
                 </el-tag>
               </div>
-              <div class="temu-workspace__section-title-actions">
+              <div class="flex gap-4">
                 <el-select
                   v-model="confirmationSiteVersion"
                   size="small"
@@ -4652,6 +4652,9 @@ const stopLiveBatchProgress = () => {
   realPictureBatchSubmitting.value = false;
   complianceBatchSubmitting.value = false;
   complianceBatchMode.value = false;
+  confirmationSubmittingKey.value = "";
+  confirmationBatchSubmitting.value = false;
+  temuBatchProgressStore.stopConfirmationBatch();
 };
 const clearFloatingBatchProgress = async () => {
   batchAbortToken.value += 1;
@@ -5998,12 +6001,18 @@ const submitConfirmationRows = async (rows: ConfirmationPreviewRow[], batchMode 
     temuBatchProgressStore.startConfirmationBatch(validRows.length);
   }
   const ownerRunId = Number(activeTaskRunDetail.value?.id || 0);
+  const batchToken = batchAbortToken.value;
   let successCount = 0;
   let failedCount = 0;
+  let stopped = false;
   for (let i = 0; i < validRows.length; i += 1) {
+    if (batchMode && shouldAbortBatch(batchToken)) {
+      stopped = true;
+      break;
+    }
     const row = validRows[i];
     if (batchMode) {
-      confirmationBatchFinishedCount.value = i;
+      confirmationBatchFinishedCount.value = successCount + failedCount;
     } else {
       confirmationSubmittingKey.value = row.rowKey;
     }
@@ -6018,6 +6027,10 @@ const submitConfirmationRows = async (rows: ConfirmationPreviewRow[], batchMode 
         priceConfirmKeyStr: "1",
         goodsSkuIdList: row.goodsSkuIdList.length ? row.goodsSkuIdList : [row.rawSkcId],
       });
+      if (batchMode && shouldAbortBatch(batchToken)) {
+        stopped = true;
+        break;
+      }
       const success = !!(response as any)?.success;
       if (success) {
         successCount += 1;
@@ -6055,6 +6068,7 @@ const submitConfirmationRows = async (rows: ConfirmationPreviewRow[], batchMode 
       row.submitMessage = confirmationSubmitMarks[row.rowKey].message;
     }
     if (batchMode) {
+      confirmationBatchFinishedCount.value = successCount + failedCount;
       if (i % 5 === 4 || i === validRows.length - 1) {
         temuBatchProgressStore.confirmationBatchFinishedCount = confirmationBatchFinishedCount.value;
         temuBatchProgressStore.confirmationBatchSuccessCount = confirmationBatchSuccessCount.value;
@@ -6064,10 +6078,10 @@ const submitConfirmationRows = async (rows: ConfirmationPreviewRow[], batchMode 
     }
   }
   if (batchMode) {
-    confirmationBatchFinishedCount.value = validRows.length;
+    confirmationBatchFinishedCount.value = successCount + failedCount;
     confirmationBatchSuccessCount.value = successCount;
     confirmationBatchFailedCount.value = failedCount;
-    temuBatchProgressStore.confirmationBatchFinishedCount = validRows.length;
+    temuBatchProgressStore.confirmationBatchFinishedCount = confirmationBatchFinishedCount.value;
     temuBatchProgressStore.confirmationBatchSuccessCount = successCount;
     temuBatchProgressStore.confirmationBatchFailedCount = failedCount;
     temuBatchProgressStore.stopConfirmationBatch();
@@ -6083,7 +6097,11 @@ const submitConfirmationRows = async (rows: ConfirmationPreviewRow[], batchMode 
     }
   }
   if (batchMode) {
-    ElMessage.success(`批量确认完成：成功 ${successCount} 条，失败 ${failedCount} 条`);
+    if (stopped) {
+      ElMessage.warning(`已停止批量确认：已处理 ${successCount + failedCount}/${validRows.length} 条`);
+    } else {
+      ElMessage.success(`批量确认完成：成功 ${successCount} 条，失败 ${failedCount} 条`);
+    }
   } else if (failedCount) {
     ElMessage.error("确认失败");
   } else {
