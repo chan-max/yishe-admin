@@ -2355,10 +2355,8 @@
                     <span class="relation-label">设计模型：</span>
                   </div>
                   <vxe-grid
+                    v-bind="relationGridOptions"
                     :data="[productDetail.customModel]"
-                    :show-header="true"
-                    border
-                    size="mini"
                     class="relation-sub-grid"
                     :columns="[
                       {
@@ -2413,10 +2411,8 @@
                     <span class="relation-label">贴纸：</span>
                   </div>
                   <vxe-grid
+                    v-bind="relationGridOptions"
                     :data="[productDetail.sticker]"
-                    :show-header="true"
-                    border
-                    size="mini"
                     class="relation-sub-grid"
                     :columns="[
                       {
@@ -2466,10 +2462,8 @@
                     <span class="relation-label">PSD套图：</span>
                   </div>
                   <vxe-grid
+                    v-bind="relationGridOptions"
                     :data="[productDetail.meta.psdSet]"
-                    :show-header="true"
-                    border
-                    size="mini"
                     class="relation-sub-grid"
                     :columns="psdSetColumns"
                   >
@@ -2912,6 +2906,24 @@ const psdSetBaseColumns = [
 ];
 const psdSetColumns = psdSetBaseColumns;
 const psdSetDetailColumns = [...psdSetBaseColumns, { field: "id", title: "关联ID", minWidth: 120 }];
+const relationGridOptions = {
+  border: "inner",
+  round: false,
+  size: "small",
+  showHeader: true,
+  showOverflow: "tooltip",
+  showHeaderOverflow: false,
+  minHeight: 156,
+  rowConfig: {
+    isHover: true,
+    height: 78,
+  },
+  columnConfig: {
+    resizable: true,
+  },
+  headerCellClassName: "relation-sub-grid__header",
+  cellClassName: "relation-sub-grid__cell",
+} as const;
 
 const { height } = useWindowSize();
 const gridMaxHeight = ref<number>(0);
@@ -5842,11 +5854,29 @@ function getPublishTaskType(platform: string) {
 
 // 产品详情弹窗样式
 .product-detail-dialog {
+  :deep(.el-dialog__header) {
+    height: 52px;
+    padding: 14px 18px;
+    margin: 0;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+  }
+
+  :deep(.el-dialog__title) {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+  }
+
+  :deep(.el-dialog__headerbtn) {
+    top: 4px;
+  }
+
   .el-dialog__body {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 160px);
-    padding: 20px;
+    height: calc(100vh - 104px);
+    padding: 0;
+    background: var(--el-bg-color);
     overflow: hidden;
   }
 
@@ -5862,63 +5892,74 @@ function getPublishTaskType(platform: string) {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding-right: 8px;
+    padding: 14px 18px 18px;
 
     // 自定义滚动条样式
     &::-webkit-scrollbar {
-      width: 8px;
+      width: 6px;
     }
 
     &::-webkit-scrollbar-track {
-      background: #f1f1f1;
-      border-radius: 4px;
+      background: transparent;
     }
 
     &::-webkit-scrollbar-thumb {
-      background: #c1c1c1;
-      border-radius: 4px;
+      background: var(--el-border-color);
+      border-radius: 999px;
 
       &:hover {
-        background: #a8a8a8;
+        background: var(--el-text-color-placeholder);
       }
     }
   }
 
   .el-dialog__footer {
     flex-shrink: 0;
-    padding: 20px;
+    padding: 10px 18px;
     border-top: 1px solid var(--el-border-color-lighter);
   }
 
   // 产品信息列表样式
   .product-info-list {
-    border: 1px solid var(--el-border-color);
-    border-radius: 4px;
-    overflow: hidden;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+    border-top: 1px solid var(--el-border-color-lighter);
   }
 
   .product-info-item {
-    display: flex;
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr);
+    min-height: 34px;
     border-bottom: 1px solid var(--el-border-color-lighter);
 
-    &:last-child {
-      border-bottom: none;
+    &:nth-child(3),
+    &:nth-child(4),
+    &:nth-child(14),
+    &:nth-child(15),
+    &:nth-child(16),
+    &:nth-child(17),
+    &:nth-child(18),
+    &:nth-child(19),
+    &:nth-child(20),
+    &:nth-child(21) {
+      grid-column: span 2;
     }
 
     .product-info-label {
-      width: 180px;
-      min-width: 180px;
-      padding: 12px 16px;
-      background: var(--el-fill-color-lighter);
-      font-weight: 500;
-      color: var(--el-text-color-primary);
-      border-right: 1px solid var(--el-border-color-lighter);
-      flex-shrink: 0;
+      min-width: 0;
+      padding: 7px 10px 7px 0;
+      font-size: 12px;
+      line-height: 20px;
+      color: var(--el-text-color-secondary);
+      white-space: nowrap;
     }
 
     .product-info-value {
-      flex: 1;
-      padding: 12px 16px;
+      min-width: 0;
+      padding: 7px 12px 7px 0;
+      font-size: 13px;
+      line-height: 20px;
       color: var(--el-text-color-regular);
       word-break: break-word;
     }
@@ -5926,27 +5967,34 @@ function getPublishTaskType(platform: string) {
 
   // 产品详情 section 样式
   .product-detail-section {
-    padding: 16px;
+    padding: 12px 0 14px;
     background: var(--el-bg-color);
-    border-radius: 4px;
-    border: 1px solid var(--el-border-color-lighter);
+    border-bottom: 1px solid var(--el-border-color-lighter);
   }
 
   .product-detail-section-title {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 16px;
+    gap: 6px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--el-text-color-primary);
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--el-border-color-lighter);
+    margin-bottom: 10px;
+    padding: 0;
+    border-bottom: 0;
 
     .el-icon {
-      font-size: 18px;
+      font-size: 16px;
       color: var(--el-color-primary);
     }
+  }
+
+  .product-detail-section-title.flex {
+    min-height: 28px;
+  }
+
+  .product-detail-section-title :deep(.el-button) {
+    padding: 0;
   }
 
   // 发布平台选择对话框样式
@@ -6069,6 +6117,101 @@ function getPublishTaskType(platform: string) {
           }
         }
       }
+    }
+  }
+
+  .relations-detail-content,
+  .relations-info {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .relation-section-item {
+    min-width: 0;
+  }
+
+  .relation-header {
+    display: flex;
+    align-items: center;
+    height: 24px;
+    margin-bottom: 6px;
+  }
+
+  .relation-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--el-text-color-secondary);
+  }
+
+  .relation-sub-grid {
+    width: 100%;
+    min-height: 156px;
+  }
+
+  .relation-sub-grid :deep(.vxe-table--header-wrapper),
+  .relation-sub-grid :deep(.vxe-table--header),
+  .relation-sub-grid :deep(.vxe-header--row) {
+    min-height: 38px !important;
+  }
+
+  .relation-sub-grid :deep(.relation-sub-grid__header) {
+    height: 38px !important;
+    background: var(--el-fill-color-extra-light);
+  }
+
+  .relation-sub-grid :deep(.relation-sub-grid__header .vxe-cell) {
+    min-height: 38px !important;
+    line-height: 18px !important;
+    padding-top: 9px !important;
+    padding-bottom: 9px !important;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: normal;
+  }
+
+  .relation-sub-grid :deep(.relation-sub-grid__cell) {
+    height: 78px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    vertical-align: middle;
+  }
+
+  .relation-thumb-image {
+    width: 64px;
+    height: 64px;
+    border-radius: 4px;
+    background: var(--el-fill-color-extra-light);
+  }
+
+  .relation-thumb-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 68px;
+    height: 68px;
+  }
+
+  @media (max-width: 1280px) {
+    .product-info-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 768px) {
+    .product-info-list,
+    .product-info-item {
+      display: block;
+    }
+
+    .product-info-item {
+      padding: 7px 0;
+    }
+
+    .product-info-item .product-info-label,
+    .product-info-item .product-info-value {
+      padding: 0;
     }
   }
 }

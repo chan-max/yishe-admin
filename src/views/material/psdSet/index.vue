@@ -613,6 +613,7 @@
                 </el-tag>
               </div>
               <vxe-grid
+                :key="generateProductDialogKey"
                 class="generate-product-template-grid"
                 border
                 size="mini"
@@ -627,6 +628,30 @@
               <div class="generate-product-tip">
                 用于生成商品的名称、描述、关键词、价格、库存等独立站商品信息，与发布平台无关。
               </div>
+              <div v-if="generateProductBatchProgress" class="generate-product-progress">
+                <el-progress
+                  :percentage="Number(generateProductBatchProgress.progress || 0)"
+                  :status="generateProductBatchProgress.status === 'failed' ? 'exception' : undefined"
+                />
+                <div class="generate-product-progress__text">
+                  {{ generateProductBatchProgress.message || "处理中" }}
+                  · 成功 {{ generateProductBatchProgress.completed || 0 }}
+                  · 失败 {{ generateProductBatchProgress.failed || 0 }}
+                  · 总数 {{ generateProductBatchProgress.total || 0 }}
+                </div>
+                <div
+                  v-if="generateProductFailedItems.length"
+                  class="generate-product-progress__errors"
+                >
+                  <div
+                    v-for="item in generateProductFailedItems"
+                    :key="`${item.psdSetId}-${item.productGenerationTemplateId}`"
+                    class="generate-product-progress__error"
+                  >
+                    套图 {{ item.psdSetId }} / 模板 {{ item.productGenerationTemplateId }}：{{ item.error || "生成失败" }}
+                  </div>
+                </div>
+              </div>
             </el-form-item>
           </el-form>
         </div>
@@ -635,8 +660,13 @@
       <template #footer>
         <div class="generate-product-dialog-footer">
           <el-button @click="handleCloseGenerateProductDialog">取消</el-button>
-          <el-button type="primary" :loading="generateProductSubmitting" @click="handleSubmitGenerateProduct">
-            确定生成产品
+          <el-button
+            type="primary"
+            :loading="generateProductSubmitting"
+            :disabled="isGenerateProductBatchRunning"
+            @click="handleSubmitGenerateProduct"
+          >
+            {{ isGenerateProductBatchRunning ? "后台生成中" : "确定生成产品" }}
           </el-button>
         </div>
       </template>
@@ -923,6 +953,8 @@ import {
   resolveTaskTypePlatform,
 } from "@/config/task-types";
 import { downloadImageEnhanced } from "@/common/download";
+import { useGlobalNotificationStore } from "@/store/modules/globalNotification";
+const globalNotificationStore = useGlobalNotificationStore();
 const loading = ref(false);
 const dataSource = ref<any[]>([]);
 const total = ref(0);
@@ -958,9 +990,27 @@ const generateProductTargetIds = ref<string[]>([]);
 const generateProductTemplateOptions = ref<any[]>([]);
 const generateProductSelectedTemplateIds = ref<string[]>([]);
 const generateProductTemplateSearchText = ref("");
+const generateProductDialogKey = ref(0);
+const generateProductBatchTaskId = ref("");
+const generateProductBatchProgress = ref<any>(null);
+let generateProductBatchProgressTimer: ReturnType<typeof setTimeout> | null = null;
+const GENERATE_PRODUCT_BATCH_PROGRESS_STORAGE_KEY = "psd-set-generate-product-batch-task";
+const isGenerateProductBatchRunning = computed(() =>
+  ["queued", "processing"].includes(generateProductBatchProgress.value?.status || ""),
+);
+const generateProductFailedItems = computed(() =>
+  (generateProductBatchProgress.value?.items || []).filter((item: any) => item?.status === "failed"),
+);
 const generateProductExpectedCount = computed(
   () => generateProductTargetIds.value.length * generateProductSelectedTemplateIds.value.length,
 );
+const SEO_DESCRIPTION_SAFE_LENGTH = 240;
+const getTextLength = (value: unknown) => String(value || "").length;
+const isSeoDescriptionTooLongError = (error: any) =>
+  String(error?.message || error?.response?.data?.message || error || "")
+    .toLowerCase()
+    .includes("seo_description");
+
 const filteredGenerateProductTemplateOptions = computed(() => {
   const keyword = generateProductTemplateSearchText.value.trim().toLowerCase();
   if (!keyword) {
@@ -987,6 +1037,16 @@ const generateProductTemplateColumns: any[] = [
   },
   { field: "stock", title: "库存", width: 80 },
   { field: "tags", title: "标签", minWidth: 180, showOverflow: true },
+  {
+    field: "seoPrompt",
+    title: "SEO提示",
+    width: 110,
+    formatter: ({ cellValue }) => {
+      const length = getTextLength(cellValue);
+      if (!length) return "-";
+      return length > SEO_DESCRIPTION_SAFE_LENGTH ? `${length}字 偏长` : `${length}字`;
+    },
+  },
 ];
 const publishConfigDialogVisible = ref(false);
 const publishConfigDialogLoading = ref(false);
@@ -3310,14 +3370,12 @@ async function handleRegeneratePublishTask(row: any) {
 }
 
 async function ensureGenerateProductDialogOptions() {
-  if (!generateProductTemplateOptions.value.length) {
-    const res = await productGenerationTemplateApi.getList({
-      currentPage: 1,
-      pageSize: 1000,
-      isActive: true,
-    });
-    generateProductTemplateOptions.value = Array.isArray(res?.list) ? res.list : [];
-  }
+  const res = await productGenerationTemplateApi.getList({
+    currentPage: 1,
+    pageSize: 1000,
+    isActive: true,
+  });
+  generateProductTemplateOptions.value = Array.isArray(res?.list) ? res.list : [];
 }
 
 async function openGenerateProductDialog(ids: string[]) {
@@ -3331,6 +3389,8 @@ async function openGenerateProductDialog(ids: string[]) {
   generateProductTargetIds.value = normalizedIds;
   generateProductSelectedTemplateIds.value = [];
   generateProductTemplateSearchText.value = "";
+  generateProductTemplateOptions.value = [];
+  generateProductDialogKey.value += 1;
   generateProductDialogVisible.value = true;
   generateProductDialogLoading.value = true;
 
@@ -3349,14 +3409,120 @@ function handleCloseGenerateProductDialog() {
   generateProductTargetIds.value = [];
   generateProductSelectedTemplateIds.value = [];
   generateProductTemplateSearchText.value = "";
+  generateProductTemplateOptions.value = [];
+  generateProductDialogLoading.value = false;
+  generateProductSubmitting.value = isGenerateProductBatchRunning.value;
+  generateProductDialogKey.value += 1;
   generatingProductId.value = "";
-  batchGeneratingProducts.value = false;
+  batchGeneratingProducts.value = isGenerateProductBatchRunning.value;
 }
 
 function handleGenerateProductTemplateCheckboxChange(event: any) {
   generateProductSelectedTemplateIds.value = (event?.records || [])
     .map((item: any) => String(item?.id || "").trim())
     .filter(Boolean);
+}
+
+function stopGenerateProductBatchProgressPolling() {
+  if (generateProductBatchProgressTimer) {
+    clearTimeout(generateProductBatchProgressTimer);
+    generateProductBatchProgressTimer = null;
+  }
+}
+
+function persistGenerateProductBatchTask(taskId: string) {
+  const normalizedTaskId = String(taskId || "").trim();
+  if (!normalizedTaskId) return;
+  localStorage.setItem(
+    GENERATE_PRODUCT_BATCH_PROGRESS_STORAGE_KEY,
+    JSON.stringify({
+      taskId: normalizedTaskId,
+      savedAt: Date.now(),
+    }),
+  );
+}
+
+function clearPersistedGenerateProductBatchTask() {
+  localStorage.removeItem(GENERATE_PRODUCT_BATCH_PROGRESS_STORAGE_KEY);
+}
+
+function syncGenerateProductBatchProgressToast(progress: any) {
+  if (!progress?.taskId) return;
+  const isDone = progress.status === "completed" || progress.status === "failed";
+  const hasFailure = Number(progress.failed || 0) > 0;
+  globalNotificationStore.upsertNotification({
+    id: `sticker-psd-set-generate-product:${progress.taskId}`,
+    title: "套图批量生成产品",
+    message: progress.message || "处理中",
+    level: isDone ? (hasFailure ? "warning" : "success") : "info",
+    category: "task",
+    source: "sticker-psd-set-generate-product",
+    sticky: true,
+    durationMs: null,
+    progress: Number(progress.progress || 0),
+    status: isDone ? (hasFailure ? "warning" : "success") : "running",
+    metadata: {
+      taskId: progress.taskId,
+      total: Number(progress.total || 0),
+      completed: Number(progress.completed || 0),
+      failed: Number(progress.failed || 0),
+    },
+    createdAt: progress.createdAt || new Date().toISOString(),
+    updatedAt: progress.updateTime || new Date().toISOString(),
+  });
+}
+
+function restoreGenerateProductBatchProgress() {
+  try {
+    const raw = localStorage.getItem(GENERATE_PRODUCT_BATCH_PROGRESS_STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    const taskId = String(parsed?.taskId || "").trim();
+    if (!taskId) {
+      clearPersistedGenerateProductBatchTask();
+      return;
+    }
+    generateProductBatchTaskId.value = taskId;
+    generateProductSubmitting.value = true;
+    batchGeneratingProducts.value = true;
+    void pollGenerateProductBatchProgress(taskId);
+  } catch {
+    clearPersistedGenerateProductBatchTask();
+  }
+}
+
+async function pollGenerateProductBatchProgress(taskId: string) {
+  stopGenerateProductBatchProgressPolling();
+  if (!taskId) return;
+
+  try {
+    const progress: any = await stickerPsdSetApi.getGenerateProductBatchProgress(taskId);
+    generateProductBatchProgress.value = progress;
+    generateProductBatchTaskId.value = taskId;
+    syncGenerateProductBatchProgressToast(progress);
+    if (progress?.status === "completed" || progress?.status === "failed") {
+      generateProductSubmitting.value = false;
+      batchGeneratingProducts.value = false;
+      clearPersistedGenerateProductBatchTask();
+      if (progress?.completed > 0) {
+        ElMessage.success(progress.message || `成功生成 ${progress.completed} 个产品`);
+        getList();
+      } else {
+        ElMessage.warning(progress?.message || "批量生成产品失败");
+      }
+      return;
+    }
+  } catch (error: any) {
+    generateProductSubmitting.value = false;
+    batchGeneratingProducts.value = false;
+    clearPersistedGenerateProductBatchTask();
+    ElMessage.error(error?.message || "查询生成进度失败");
+    return;
+  }
+
+  generateProductBatchProgressTimer = setTimeout(() => {
+    void pollGenerateProductBatchProgress(taskId);
+  }, 1500);
 }
 
 async function handleSubmitGenerateProduct() {
@@ -3379,42 +3545,28 @@ async function handleSubmitGenerateProduct() {
   );
 
   generateProductSubmitting.value = true;
-  let successCount = 0;
-  let failCount = 0;
+  generateProductBatchProgress.value = null;
 
   try {
-    for (const id of generateProductTargetIds.value) {
-      for (const templateId of generateProductSelectedTemplateIds.value) {
-        try {
-          await stickerPsdSetApi.generateProduct({
-            id,
-            productGenerationTemplateId: templateId,
-          });
-          successCount += 1;
-        } catch (error) {
-          failCount += 1;
-          console.error(`生成产品失败（套图ID: ${id}, 模板ID: ${templateId}）`, error);
-        }
-      }
+    const response: any = await stickerPsdSetApi.generateProductBatch({
+      ids: generateProductTargetIds.value,
+      productGenerationTemplateIds: generateProductSelectedTemplateIds.value,
+    });
+    generateProductBatchTaskId.value = response?.taskId || response?.id || "";
+    if (!generateProductBatchTaskId.value) {
+      throw new Error("后端未返回批量任务ID");
     }
-
-    if (successCount) {
-      ElMessage.success(`成功生成 ${successCount} 个产品`);
-    }
-    if (failCount) {
-      ElMessage.warning(`有 ${failCount} 个产品生成失败，请稍后重试`);
-    }
-
-    if (successCount > 0) {
-      handleCloseGenerateProductDialog();
-      getList();
-    }
-  } finally {
+    persistGenerateProductBatchTask(generateProductBatchTaskId.value);
+    ElMessage.success(response?.message || "批量生成产品任务已提交");
+    await pollGenerateProductBatchProgress(generateProductBatchTaskId.value);
+  } catch (error: any) {
     generateProductSubmitting.value = false;
     batchGeneratingProducts.value = false;
-    if (!generateProductDialogVisible.value) {
-      generatingProductId.value = "";
-    }
+    ElMessage.error(
+      isSeoDescriptionTooLongError(error)
+        ? "SEO 描述过长，请缩短商品生成模板的 SEO 提示词"
+        : error?.message || "提交批量生成产品失败",
+    );
   }
 }
 
@@ -3652,12 +3804,14 @@ onMounted(() => {
     loadPsdSetSchedulerRuntime(),
     loadPublishUsageConfigOptions(),
   ]);
+  restoreGenerateProductBatchProgress();
   psdSetSchedulerRuntimeTimer = setInterval(() => {
     void loadPsdSetSchedulerRuntime();
   }, 10000);
 });
 
 onUnmounted(() => {
+  stopGenerateProductBatchProgressPolling();
   websocketClient.events.off("production-status", productionStatusHandler);
   websocketClient.events.off("psAutomationStatus", psAutomationStatusHandler);
   stopPsdSetActiveRuntimeRefresh();
@@ -4925,6 +5079,35 @@ getList();
   font-size: 12px;
   line-height: 1.5;
   color: var(--el-text-color-secondary);
+}
+
+.generate-product-progress {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--el-border-color-extra-light);
+  border-radius: 6px;
+  background: var(--el-fill-color-extra-light);
+}
+
+.generate-product-progress__text {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.generate-product-progress__errors {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 96px;
+  margin-top: 8px;
+  overflow: auto;
+}
+
+.generate-product-progress__error {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--el-color-danger);
 }
 
 .generate-product-dialog-footer {

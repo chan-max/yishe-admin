@@ -12,7 +12,6 @@ export interface GlobalNotificationToastItem extends GlobalNotificationItem {
 const MAX_NOTIFICATIONS = 80
 const MAX_TOASTS = 3
 const DEFAULT_TOAST_DURATION = 4500
-const STICKY_TOAST_DURATION = 7000
 const toastTimerMap = new Map<string, ReturnType<typeof setTimeout>>()
 
 export const useGlobalNotificationStore = defineStore('globalNotification', {
@@ -24,7 +23,17 @@ export const useGlobalNotificationStore = defineStore('globalNotification', {
   getters: {
     unreadCount: (state) => state.items.filter((item) => !item.read).length,
     latestItems: (state) => state.items.slice(0, 20),
-    activeToasts: (state) => state.toastItems.filter((item) => item.visible)
+    activeToasts: (state) => {
+      const visibleToasts = state.toastItems.filter((item) => item.visible)
+      const visibleToastIds = new Set(visibleToasts.map((item) => item.id))
+      const pinnedToasts = state.items
+        .filter((item) => item.sticky && !visibleToastIds.has(item.id))
+        .map((item) => ({
+          ...item,
+          visible: true
+        }))
+      return [...pinnedToasts, ...visibleToasts]
+    }
   },
   actions: {
     upsertNotification(payload: GlobalNotificationEvent) {
@@ -60,7 +69,11 @@ export const useGlobalNotificationStore = defineStore('globalNotification', {
       }
 
       if (this.toastItems.length > MAX_TOASTS) {
-        const removed = this.toastItems.splice(MAX_TOASTS)
+        const stickyToasts = this.toastItems.filter((toast) => toast.sticky)
+        const normalToasts = this.toastItems.filter((toast) => !toast.sticky)
+        this.toastItems = [...stickyToasts, ...normalToasts.slice(0, Math.max(MAX_TOASTS - stickyToasts.length, 0))]
+        const activeIds = new Set(this.toastItems.map((toast) => toast.id))
+        const removed = [...stickyToasts, ...normalToasts].filter((toast) => !activeIds.has(toast.id))
         removed.forEach((toast) => {
           const timer = toastTimerMap.get(toast.id)
           if (timer) {
@@ -75,10 +88,14 @@ export const useGlobalNotificationStore = defineStore('globalNotification', {
         clearTimeout(oldTimer)
       }
 
-      const timer = setTimeout(() => {
-        this.dismissToast(item.id)
-      }, item.sticky ? STICKY_TOAST_DURATION : item.durationMs ?? DEFAULT_TOAST_DURATION)
-      toastTimerMap.set(item.id, timer)
+      if (!item.sticky) {
+        const timer = setTimeout(() => {
+          this.dismissToast(item.id)
+        }, item.durationMs ?? DEFAULT_TOAST_DURATION)
+        toastTimerMap.set(item.id, timer)
+      } else {
+        toastTimerMap.delete(item.id)
+      }
     },
     dismissToast(id: string) {
       const timer = toastTimerMap.get(id)

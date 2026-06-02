@@ -35,6 +35,26 @@ const getToastMessage = (item: { title?: string; message?: string }) => {
   }
   return message
 }
+
+const hasProgress = (item: { progress?: number | null }) => typeof item.progress === 'number'
+
+const normalizeProgress = (item: { progress?: number | null }) => {
+  if (!hasProgress(item)) {
+    return 0
+  }
+  return Math.min(100, Math.max(0, Number(item.progress || 0)))
+}
+
+const getProgressMeta = (item: { metadata?: Record<string, any> }) => {
+  const metadata = item.metadata || {}
+  const total = Number(metadata.total || 0)
+  const completed = Number(metadata.completed || 0)
+  const failed = Number(metadata.failed || 0)
+  if (!total) {
+    return ''
+  }
+  return `成功 ${completed} / 失败 ${failed} / 总数 ${total}`
+}
 </script>
 
 <template>
@@ -70,6 +90,18 @@ const getToastMessage = (item: { title?: string; message?: string }) => {
           <p v-if="getToastMessage(item)" class="uiverse-toast__message">
             {{ getToastMessage(item) }}
           </p>
+          <div v-if="hasProgress(item)" class="uiverse-toast__progress">
+            <div class="uiverse-toast__progress-track">
+              <div
+                class="uiverse-toast__progress-bar"
+                :style="{ width: `${normalizeProgress(item)}%` }"
+              />
+            </div>
+            <div class="uiverse-toast__progress-row">
+              <span>{{ normalizeProgress(item) }}%</span>
+              <span v-if="getProgressMeta(item)">{{ getProgressMeta(item) }}</span>
+            </div>
+          </div>
         </div>
 
         <button class="uiverse-toast__close" type="button" @click="notificationStore.dismissToast(item.id)">
@@ -102,10 +134,11 @@ const getToastMessage = (item: { title?: string; message?: string }) => {
 .uiverse-toast {
   box-sizing: border-box;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   width: fit-content;
+  min-width: min(420px, calc(100vw - 36px));
   max-width: min(560px, calc(100vw - 36px));
-  padding: 6px 8px;
+  padding: 8px 10px;
   border-left: 4px solid;
   border-top: 1px solid rgba(255, 255, 255, 0.12);
   border-right: 1px solid rgba(255, 255, 255, 0.12);
@@ -130,7 +163,8 @@ const getToastMessage = (item: { title?: string; message?: string }) => {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
-  margin-right: 6px;
+  margin-top: 1px;
+  margin-right: 8px;
 }
 
 .uiverse-toast__content {
@@ -165,6 +199,35 @@ const getToastMessage = (item: { title?: string; message?: string }) => {
   opacity: 0.92;
 }
 
+.uiverse-toast__progress {
+  margin-top: 7px;
+}
+
+.uiverse-toast__progress-track {
+  width: 100%;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.26);
+}
+
+.uiverse-toast__progress-bar {
+  height: 100%;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, 0.92);
+  transition: width 260ms ease;
+}
+
+.uiverse-toast__progress-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 4px;
+  font-size: 10px;
+  line-height: 1.3;
+  opacity: 0.92;
+}
+
 .uiverse-toast__close {
   box-sizing: border-box;
   display: inline-flex;
@@ -172,7 +235,8 @@ const getToastMessage = (item: { title?: string; message?: string }) => {
   justify-content: center;
   width: 18px;
   height: 18px;
-  margin-left: 6px;
+  margin-top: 0;
+  margin-left: 8px;
   padding: 0;
   border: 0;
   background: transparent;
