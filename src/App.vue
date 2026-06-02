@@ -6,6 +6,7 @@ import { CACHE_KEY, useCache } from '@/hooks/web/useCache'
 import routerSearch from '@/components/RouterSearch/index.vue'
 import ToolWindowHost from '@/components/ToolWindowHost/index.vue'
 import GlobalUploadTaskPanel from '@/components/GlobalUploadTaskPanel.vue'
+import GlobalTemuBatchProgress from '@/components/GlobalTemuBatchProgress.vue'
 
 defineOptions({ name: 'APP' })
 
@@ -32,6 +33,7 @@ setDefaultTheme()
     <routerSearch />
     <ToolWindowHost />
     <GlobalUploadTaskPanel />
+    <GlobalTemuBatchProgress />
   </ConfigGlobal>
 </template>
 <style lang="scss">

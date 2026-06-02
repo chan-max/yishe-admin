@@ -15,6 +15,7 @@ export interface TemuBatchProgressItem {
 
 export interface TemuBatchProgressState {
   items: TemuBatchProgressItem[];
+  batchAbortToken: number;
   priceReviewBatchSubmitting: boolean;
   priceReviewBatchSubmittingMode: "" | "confirm" | "abandon" | "reprice";
   priceReviewBatchCurrentStage: string;
@@ -51,6 +52,7 @@ export interface TemuBatchProgressState {
 
 const defaultState = (): TemuBatchProgressState => ({
   items: [],
+  batchAbortToken: 0,
   priceReviewBatchSubmitting: false,
   priceReviewBatchSubmittingMode: "",
   priceReviewBatchCurrentStage: "",
@@ -216,6 +218,7 @@ export const useTemuBatchProgressStore = defineStore("temu-batch-progress", {
       Object.assign(this, defaultState());
     },
     stopAll() {
+      this.batchAbortToken += 1;
       this.priceReviewBatchSubmitting = false;
       this.priceReviewBatchSubmittingMode = "";
       this.priceReviewBatchCurrentStage = "";

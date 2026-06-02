@@ -1,54 +1,5 @@
 <template>
   <section class="temu-workspace">
-    <div
-      v-if="floatingBatchProgressItems.length"
-      class="temu-workspace__floating-progress"
-      :class="{ 'is-collapsed': floatingProgressCollapsed }"
-    >
-      <div class="temu-workspace__floating-progress-head">
-        <strong>{{ floatingProgressTitle }}</strong>
-        <div class="temu-workspace__floating-progress-actions">
-          <span>{{ floatingProgressSummary }}</span>
-          <el-button text size="small" type="danger" @click="clearFloatingBatchProgress">
-            清理
-          </el-button>
-          <el-button
-            text
-            size="small"
-            @click="floatingProgressCollapsed = !floatingProgressCollapsed"
-          >
-            {{ floatingProgressCollapsed ? "展开" : "折叠" }}
-          </el-button>
-        </div>
-      </div>
-      <template v-if="!floatingProgressCollapsed">
-        <div
-          v-for="item in floatingBatchProgressItems"
-          :key="item.key"
-          class="temu-workspace__floating-progress-item"
-        >
-          <div
-            class="temu-workspace__floating-progress-head temu-workspace__floating-progress-head--sub"
-          >
-            <strong>{{ item.title }}</strong>
-            <span>{{ item.progressText }}</span>
-          </div>
-          <el-progress :percentage="item.percent" :stroke-width="8" :show-text="false" />
-          <div class="temu-workspace__floating-progress-meta">
-            <span v-if="item.rowText">{{ item.rowText }}</span>
-            <span v-if="item.stage">{{ item.stage }}</span>
-          </div>
-          <div class="temu-workspace__price-review-batch-stats">
-            <el-tag size="small" effect="plain" type="success">成功 {{ item.successCount }}</el-tag>
-            <el-tag size="small" effect="plain" type="danger">失败 {{ item.failedCount }}</el-tag>
-            <el-tag size="small" effect="plain" type="warning"
-              >剩余 {{ item.remainingCount }}</el-tag
-            >
-          </div>
-        </div>
-      </template>
-    </div>
-
     <section class="temu-workspace__action-shell">
       <div class="temu-workspace__toolbar">
         <div class="temu-workspace__toolbar-main">
@@ -1685,6 +1636,8 @@ import {
 } from "@/api/external/toolkit/temu";
 import { commonGridOptions } from "@/common/table";
 import { useTemuBatchProgressStoreWithOut } from "@/store/modules/temuBatchProgress";
+
+const temuBatchProgressStore = useTemuBatchProgressStoreWithOut();
 import {
   ACTION_PRESETS,
   REGION_LABELS,
@@ -4528,10 +4481,22 @@ const resetPriceReviewBatchProgress = (mode: "confirm" | "abandon" | "reprice", 
   priceReviewBatchTotalCount.value = total;
   priceReviewBatchSuccessCount.value = 0;
   priceReviewBatchFailedCount.value = 0;
+  // Direct store update (survives component unmount)
+  temuBatchProgressStore.startPriceReviewBatch(mode, total);
 };
 const setPriceReviewBatchCurrent = (stage: string, row?: PriceReviewPreviewRow | null) => {
   priceReviewBatchCurrentStage.value = stage;
   priceReviewBatchCurrentRowText.value = row ? `SKU ${row.skuId} / SPU ${row.spuId}` : "";
+  // Direct store update (survives component unmount)
+  temuBatchProgressStore.priceReviewBatchCurrentStage = stage;
+  if (row) {
+    temuBatchProgressStore.priceReviewBatchCurrentRowText = `SKU ${row.skuId} / SPU ${row.spuId}`;
+  }
+};
+const syncPriceReviewBatchProgressToStore = () => {
+  temuBatchProgressStore.priceReviewBatchFinishedCount = priceReviewBatchFinishedCount.value;
+  temuBatchProgressStore.priceReviewBatchSuccessCount = priceReviewBatchSuccessCount.value;
+  temuBatchProgressStore.priceReviewBatchFailedCount = priceReviewBatchFailedCount.value;
 };
 const liveFloatingBatchProgressItems = computed<TemuBatchProgressItem[]>(() => {
   const items: TemuBatchProgressItem[] = [];
@@ -4709,7 +4674,8 @@ const clearFloatingBatchProgressSilently = async () => {
     console.warn("清理批量进度失败", error);
   }
 };
-const shouldAbortBatch = (token: number) => token !== batchAbortToken.value;
+const shouldAbortBatch = (token: number) =>
+  token !== batchAbortToken.value || token !== temuBatchProgressStore.batchAbortToken;
 const withPriceReviewRowTimeout = async <T,>(
   promise: Promise<T>,
   context: {
@@ -5160,7 +5126,9 @@ const loadTaskRunDetail = async (
     }
     return null;
   } finally {
-    if (!options.silent && requestSeq === taskRunDetailRequestSeq.value) {
+    // Clear loading for non-silent requests even if a newer request started
+    // (polling may have incremented taskRunDetailRequestSeq in between)
+    if (!options.silent) {
       taskRunDetailLoading.value = false;
     }
   }
@@ -5366,11 +5334,28 @@ const resetJitBatchProgress = (label: string, total: number) => {
   jitBatchTotalCount.value = total;
   jitBatchSuccessCount.value = 0;
   jitBatchFailedCount.value = 0;
+  // Direct store update (survives component unmount)
+  temuBatchProgressStore.startJitBatch(label, total);
 };
 
 const setJitBatchCurrent = (stage: string, row?: JitPreviewRow | null) => {
   jitBatchCurrentStage.value = stage;
   jitBatchCurrentRowText.value = row ? `SPU ${row.spuId} / SKC ${row.skcId}` : "";
+  // Direct store update (survives component unmount)
+  temuBatchProgressStore.jitBatchCurrentStage = stage;
+  if (row) {
+    temuBatchProgressStore.jitBatchCurrentRowText = `SPU ${row.spuId} / SKC ${row.skcId}`;
+  }
+};
+
+const syncJitBatchProgressToStore = () => {
+  temuBatchProgressStore.jitBatchFinishedCount = jitBatchFinishedCount.value;
+  temuBatchProgressStore.jitBatchSuccessCount = jitBatchSuccessCount.value;
+  temuBatchProgressStore.jitBatchFailedCount = jitBatchFailedCount.value;
+};
+
+const stopJitBatchInStore = () => {
+  temuBatchProgressStore.stopJitBatch();
 };
 
 const buildJitStockSuccessMark = (
@@ -5577,6 +5562,7 @@ const submitJitStockRows = async (inputRows: JitPreviewRow[], batchMode = false)
           jitBatchFinishedCount.value += 1;
           jitBatchSuccessCount.value = successCount;
           jitBatchFailedCount.value = failedCount;
+          syncJitBatchProgressToStore();
           if (index % 5 === 4 || index === rows.length - 1) {
             syncFloatingBatchProgressToServer();
           }
@@ -5607,6 +5593,7 @@ const submitJitStockRows = async (inputRows: JitPreviewRow[], batchMode = false)
       jitBatchCurrentStage.value = "";
       jitBatchCurrentRowText.value = "";
       jitBatchSubmitting.value = false;
+      stopJitBatchInStore();
       syncFloatingBatchProgressToServer();
       void clearFloatingBatchProgressSilently();
     }
@@ -5888,10 +5875,12 @@ const submitSelectedJitOpenAndStockRows = async () => {
         jitBatchFinishedCount.value += 1;
         jitBatchSuccessCount.value = openSuccessCount;
         jitBatchFailedCount.value = openFailedCount;
+        syncJitBatchProgressToStore();
         if (!success) {
           skippedStockCount += 1;
           jitBatchFinishedCount.value += 1;
           jitBatchFailedCount.value = openFailedCount + skippedStockCount;
+          syncJitBatchProgressToStore();
         }
         if (index % 5 === 4 || index === openRows.length - 1) {
           syncFloatingBatchProgressToServer();
@@ -5945,6 +5934,7 @@ const submitSelectedJitOpenAndStockRows = async () => {
         jitBatchFinishedCount.value += 1;
         jitBatchSuccessCount.value = openSuccessCount + stockSuccessCount;
         jitBatchFailedCount.value = openFailedCount + skippedStockCount + stockFailedCount;
+        syncJitBatchProgressToStore();
         if (stockIndex % 5 === 4 || stockIndex === stockRows.length - 1) {
           syncFloatingBatchProgressToServer();
         }
@@ -5977,6 +5967,7 @@ const submitSelectedJitOpenAndStockRows = async () => {
     jitBatchCurrentStage.value = "";
     jitBatchCurrentRowText.value = "";
     jitBatchSubmitting.value = false;
+    stopJitBatchInStore();
     syncFloatingBatchProgressToServer();
     void clearFloatingBatchProgressSilently();
   }
@@ -6004,6 +5995,7 @@ const submitConfirmationRows = async (rows: ConfirmationPreviewRow[], batchMode 
     confirmationBatchTotalCount.value = validRows.length;
     confirmationBatchSuccessCount.value = 0;
     confirmationBatchFailedCount.value = 0;
+    temuBatchProgressStore.startConfirmationBatch(validRows.length);
   }
   const ownerRunId = Number(activeTaskRunDetail.value?.id || 0);
   let successCount = 0;
@@ -6064,6 +6056,9 @@ const submitConfirmationRows = async (rows: ConfirmationPreviewRow[], batchMode 
     }
     if (batchMode) {
       if (i % 5 === 4 || i === validRows.length - 1) {
+        temuBatchProgressStore.confirmationBatchFinishedCount = confirmationBatchFinishedCount.value;
+        temuBatchProgressStore.confirmationBatchSuccessCount = confirmationBatchSuccessCount.value;
+        temuBatchProgressStore.confirmationBatchFailedCount = confirmationBatchFailedCount.value;
         syncFloatingBatchProgressToServer();
       }
     }
@@ -6072,6 +6067,10 @@ const submitConfirmationRows = async (rows: ConfirmationPreviewRow[], batchMode 
     confirmationBatchFinishedCount.value = validRows.length;
     confirmationBatchSuccessCount.value = successCount;
     confirmationBatchFailedCount.value = failedCount;
+    temuBatchProgressStore.confirmationBatchFinishedCount = validRows.length;
+    temuBatchProgressStore.confirmationBatchSuccessCount = successCount;
+    temuBatchProgressStore.confirmationBatchFailedCount = failedCount;
+    temuBatchProgressStore.stopConfirmationBatch();
     syncFloatingBatchProgressToServer();
   }
   confirmationSubmittingKey.value = "";
@@ -6302,6 +6301,7 @@ const submitRealPictureUploadRows = async () => {
   realPictureBatchTotalCount.value = rows.length;
   realPictureBatchSuccessCount.value = 0;
   realPictureBatchFailedCount.value = 0;
+  temuBatchProgressStore.startRealPictureBatch(rows.length);
   let successCount = 0;
   let reusableUploadedPositionImageUrls: Record<string, string[]> | null = null;
   const batchToken = batchAbortToken.value;
@@ -6342,6 +6342,9 @@ const submitRealPictureUploadRows = async () => {
       realPictureBatchFailedCount.value += 1;
     }
     realPictureBatchFinishedCount.value += 1;
+    temuBatchProgressStore.realPictureBatchFinishedCount = realPictureBatchFinishedCount.value;
+    temuBatchProgressStore.realPictureBatchSuccessCount = realPictureBatchSuccessCount.value;
+    temuBatchProgressStore.realPictureBatchFailedCount = realPictureBatchFailedCount.value;
     if (index % 5 === 4 || index === rows.length - 1) {
       syncFloatingBatchProgressToServer();
     }
@@ -6360,6 +6363,7 @@ const submitRealPictureUploadRows = async () => {
   }
 
   realPictureBatchSubmitting.value = false;
+  temuBatchProgressStore.stopRealPictureBatch();
   syncFloatingBatchProgressToServer();
   void clearFloatingBatchProgressSilently();
   realPictureUploadVisible.value = false;
@@ -6896,6 +6900,7 @@ const submitComplianceBatchRows = async () => {
   complianceBatchTotalCount.value = rows.length;
   complianceBatchSuccessCount.value = 0;
   complianceBatchFailedCount.value = 0;
+  temuBatchProgressStore.startComplianceBatch(complianceBatchMode.value, rows.length);
   const batchToken = batchAbortToken.value;
   const ownerRunId = Number(activeTaskRunId.value || 0);
 
@@ -6925,6 +6930,9 @@ const submitComplianceBatchRows = async () => {
       complianceBatchFailedCount.value += 1;
     } finally {
       complianceBatchFinishedCount.value += 1;
+      temuBatchProgressStore.complianceBatchFinishedCount = complianceBatchFinishedCount.value;
+      temuBatchProgressStore.complianceBatchSuccessCount = complianceBatchSuccessCount.value;
+      temuBatchProgressStore.complianceBatchFailedCount = complianceBatchFailedCount.value;
       if (i % 5 === 4 || i === rows.length - 1) {
         syncFloatingBatchProgressToServer();
       }
@@ -6934,6 +6942,7 @@ const submitComplianceBatchRows = async () => {
   const successCount = complianceBatchSuccessCount.value;
   const failedCount = complianceBatchFailedCount.value;
   complianceBatchSubmitting.value = false;
+  temuBatchProgressStore.stopComplianceBatch();
   syncFloatingBatchProgressToServer();
   void clearFloatingBatchProgressSilently();
   complianceBatchMode.value = false;
@@ -7238,6 +7247,7 @@ const submitSelectedPriceReviewRows = async (mode: "confirm" | "abandon" | "repr
         priceReviewBatchFailedCount.value += 1;
       }
       priceReviewBatchFinishedCount.value += 1;
+      syncPriceReviewBatchProgressToStore();
       if (index % 5 === 4 || index === rows.length - 1) {
         syncFloatingBatchProgressToServer();
       }
@@ -7263,6 +7273,7 @@ const submitSelectedPriceReviewRows = async (mode: "confirm" | "abandon" | "repr
     priceReviewBatchCurrentRowText.value = "";
     priceReviewBatchSubmitting.value = false;
     priceReviewBatchSubmittingMode.value = "";
+    temuBatchProgressStore.stopPriceReviewBatch();
     syncFloatingBatchProgressToServer();
     void clearFloatingBatchProgressSilently();
   }
@@ -7331,6 +7342,7 @@ const confirmBatchRepriceRows = async () => {
         priceReviewBatchFailedCount.value += 1;
       }
       priceReviewBatchFinishedCount.value += 1;
+      syncPriceReviewBatchProgressToStore();
       if (index % 5 === 4 || index === rows.length - 1) {
         syncFloatingBatchProgressToServer();
       }
@@ -7356,6 +7368,7 @@ const confirmBatchRepriceRows = async () => {
     priceReviewBatchCurrentRowText.value = "";
     priceReviewBatchSubmitting.value = false;
     priceReviewBatchSubmittingMode.value = "";
+    temuBatchProgressStore.stopPriceReviewBatch();
     syncFloatingBatchProgressToServer();
     void clearFloatingBatchProgressSilently();
   }
@@ -7975,6 +7988,52 @@ const beforeunloadHandler = (event: BeforeUnloadEvent) => {
 
 onMounted(() => {
   window.addEventListener("beforeunload", beforeunloadHandler);
+
+  // Restore batch progress state from Pinia store (survives page navigation)
+  const store = temuBatchProgressStore;
+  if (store.priceReviewBatchSubmitting) {
+    priceReviewBatchSubmitting.value = true;
+    priceReviewBatchSubmittingMode.value = store.priceReviewBatchSubmittingMode as "" | "confirm" | "abandon" | "reprice";
+    priceReviewBatchCurrentStage.value = store.priceReviewBatchCurrentStage;
+    priceReviewBatchCurrentRowText.value = store.priceReviewBatchCurrentRowText;
+    priceReviewBatchFinishedCount.value = store.priceReviewBatchFinishedCount;
+    priceReviewBatchTotalCount.value = store.priceReviewBatchTotalCount;
+    priceReviewBatchSuccessCount.value = store.priceReviewBatchSuccessCount;
+    priceReviewBatchFailedCount.value = store.priceReviewBatchFailedCount;
+  }
+  if (store.jitBatchSubmitting) {
+    jitBatchSubmitting.value = true;
+    jitBatchModeLabel.value = store.jitBatchModeLabel;
+    jitBatchCurrentStage.value = store.jitBatchCurrentStage;
+    jitBatchCurrentRowText.value = store.jitBatchCurrentRowText;
+    jitBatchFinishedCount.value = store.jitBatchFinishedCount;
+    jitBatchTotalCount.value = store.jitBatchTotalCount;
+    jitBatchSuccessCount.value = store.jitBatchSuccessCount;
+    jitBatchFailedCount.value = store.jitBatchFailedCount;
+  }
+  if (store.realPictureBatchSubmitting) {
+    realPictureBatchSubmitting.value = true;
+    realPictureBatchFinishedCount.value = store.realPictureBatchFinishedCount;
+    realPictureBatchTotalCount.value = store.realPictureBatchTotalCount;
+    realPictureBatchSuccessCount.value = store.realPictureBatchSuccessCount;
+    realPictureBatchFailedCount.value = store.realPictureBatchFailedCount;
+  }
+  if (store.complianceBatchSubmitting) {
+    complianceBatchSubmitting.value = true;
+    complianceBatchMode.value = store.complianceBatchMode;
+    complianceBatchFinishedCount.value = store.complianceBatchFinishedCount;
+    complianceBatchTotalCount.value = store.complianceBatchTotalCount;
+    complianceBatchSuccessCount.value = store.complianceBatchSuccessCount;
+    complianceBatchFailedCount.value = store.complianceBatchFailedCount;
+  }
+  if (store.confirmationBatchSubmitting) {
+    confirmationBatchSubmitting.value = true;
+    confirmationBatchFinishedCount.value = store.confirmationBatchFinishedCount;
+    confirmationBatchTotalCount.value = store.confirmationBatchTotalCount;
+    confirmationBatchSuccessCount.value = store.confirmationBatchSuccessCount;
+    confirmationBatchFailedCount.value = store.confirmationBatchFailedCount;
+  }
+
   void loadCatalog();
   void loadFloatingBatchProgressFromServer().then(() => {
     if (persistedFloatingBatchProgressItems.value.length) {
@@ -8951,109 +9010,6 @@ onBeforeUnmount(() => {
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
-}
-
-.temu-workspace__floating-progress {
-  position: fixed;
-  right: 24px;
-  bottom: 24px;
-  z-index: 22000;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: min(380px, calc(100vw - 32px));
-  max-height: min(70vh, 560px);
-  overflow: auto;
-  padding: 12px;
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 8px;
-  background: var(--el-bg-color-overlay);
-  box-shadow: var(--el-box-shadow-light);
-}
-
-.temu-workspace__floating-progress.is-collapsed {
-  width: min(210px, calc(100vw - 32px));
-  max-height: none;
-  overflow: hidden;
-  padding: 6px 8px;
-  border-radius: 6px;
-}
-
-.temu-workspace__floating-progress.is-collapsed .temu-workspace__floating-progress-head {
-  gap: 6px;
-}
-
-.temu-workspace__floating-progress.is-collapsed .temu-workspace__floating-progress-head strong {
-  overflow: hidden;
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.temu-workspace__floating-progress.is-collapsed .temu-workspace__floating-progress-actions {
-  gap: 4px;
-}
-
-.temu-workspace__floating-progress.is-collapsed .temu-workspace__floating-progress-actions span {
-  display: none;
-}
-
-.temu-workspace__floating-progress.is-collapsed .el-button {
-  height: 22px;
-  padding: 0 4px;
-  font-size: 12px;
-}
-
-.temu-workspace__floating-progress-head,
-.temu-workspace__floating-progress-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  min-width: 0;
-}
-
-.temu-workspace__floating-progress-head strong {
-  color: var(--el-text-color-primary);
-  font-size: 13px;
-}
-
-.temu-workspace__floating-progress-head--sub strong {
-  font-size: 12px;
-}
-
-.temu-workspace__floating-progress-actions {
-  display: inline-flex;
-  align-items: center;
-  flex-shrink: 0;
-  gap: 6px;
-  min-width: 0;
-}
-
-.temu-workspace__floating-progress-head span,
-.temu-workspace__floating-progress-meta span {
-  overflow: hidden;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.temu-workspace__floating-progress-actions span {
-  max-width: 190px;
-}
-
-.temu-workspace__floating-progress-item {
-  display: grid;
-  gap: 8px;
-  min-width: 0;
-  padding-top: 8px;
-  border-top: 1px solid var(--el-border-color-lighter);
-}
-
-.temu-workspace__floating-progress-item:first-of-type {
-  padding-top: 0;
-  border-top: 0;
 }
 
 .temu-workspace__batch-reprice-head {
