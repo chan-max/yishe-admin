@@ -811,11 +811,21 @@
                   </span>
                 </template>
               </el-table-column>
-              <el-table-column label="PS" width="72" align="center">
+              <el-table-column label="PS" min-width="168">
                 <template #default="{ row }">
-                  <span class="production-dispatch-dialog__state-text" :class="`is-${row.psStatusTone}`">
-                    {{ row.psStatusText }}
-                  </span>
+                  <div class="production-dispatch-dialog__ps-status">
+                    <span class="production-dispatch-dialog__state-text" :class="`is-${row.psStatusTone}`">
+                      {{ row.psStatusText }}
+                    </span>
+                    <el-tooltip
+                      v-if="row.psStatusReason"
+                      :content="row.psStatusReason"
+                      placement="top"
+                      :show-after="200"
+                    >
+                      <span class="production-dispatch-dialog__ps-reason">{{ row.psStatusReason }}</span>
+                    </el-tooltip>
+                  </div>
                 </template>
               </el-table-column>
               <el-table-column label="制作" width="82" align="center">
@@ -1981,31 +1991,121 @@ function getClientPhotoshopService(client: any) {
 }
 
 function isPhotoshopRuntimeErrorMessage(message: unknown) {
-  const text = String(message || "").toLowerCase();
+  const text = String(message || "").trim().toLowerCase();
+  if (!text) {
+    return false;
+  }
+
+  const positiveHints = [
+    "已连接",
+    "可执行",
+    "已就绪",
+    "已启动",
+    "服务在线",
+    "在线",
+    "可用",
+    "等待 photoshop 启动",
+    "等待 ps 就绪",
+  ];
+  if (positiveHints.some((hint) => text.includes(hint))) {
+    return false;
+  }
+
+  const explicitErrorHints = [
+    "ps 自动化连接异常",
+    "network error",
+    "econnrefused",
+    "econnreset",
+    "econnaborted",
+    "etimedout",
+    "timeout",
+    "timed out",
+    "socket hang up",
+    "ps 处理服务未启动",
+    "photoshop 处理请求超时",
+    "状态检测失败",
+    "状态检测暂时未响应",
+    "处理服务异常",
+    "服务异常",
+    "连接失败",
+    "连接异常",
+    "无法连接",
+  ];
+  if (explicitErrorHints.some((hint) => text.includes(hint))) {
+    return true;
+  }
+
   const hasPhotoshopSignal =
     text.includes("ps 自动化") ||
     text.includes("photoshop") ||
     text.includes("localhost:1595") ||
     text.includes("ps 处理服务");
+
   return !!(
     hasPhotoshopSignal &&
-    (
-      text.includes("ps 自动化连接异常") ||
-      text.includes("network error") ||
-      text.includes("econnrefused") ||
-      text.includes("econnreset") ||
-      text.includes("econnaborted") ||
-      text.includes("etimedout") ||
-      text.includes("timeout") ||
-      text.includes("timed out") ||
-      text.includes("socket hang up") ||
-      text.includes("ps 处理服务未启动") ||
-      text.includes("photoshop 处理请求超时") ||
-      text.includes("状态检测暂时未响应") ||
-      text.includes("网络") ||
-      text.includes("连接")
-    )
+    (text.includes("失败") ||
+      text.includes("异常") ||
+      text.includes("未启动") ||
+      text.includes("不可用") ||
+      text.includes("拒绝") ||
+      text.includes("超时"))
   );
+}
+
+function resolvePhotoshopServiceIssue(service: any) {
+  if (!service) {
+    return {
+      kind: "missing" as const,
+      reason: "未上报 PS 自动化服务",
+    };
+  }
+
+  const details = service?.details || {};
+  const state = String(service?.state || service?.status || "").toLowerCase();
+  const lastError = String(service?.lastError || "").trim();
+  const transientError = String(details?.transientStatusError || "").trim();
+  const message = String(service?.message || "").trim();
+  const fallbackReason = lastError || transientError || message;
+
+  if (isPhotoshopServiceReady(service)) {
+    return {
+      kind: "ready" as const,
+      reason: message || "PS 已就绪，可执行套图制作",
+    };
+  }
+
+  if (state === "error" || service?.status === "error") {
+    return {
+      kind: "error" as const,
+      reason: fallbackReason || "PS 服务状态异常",
+    };
+  }
+
+  if (isPhotoshopRuntimeErrorMessage(lastError)) {
+    return {
+      kind: "error" as const,
+      reason: lastError,
+    };
+  }
+
+  if (state === "offline" || state === "disconnected" || service?.status === "disconnected") {
+    return {
+      kind: "offline" as const,
+      reason: message || "PS 自动化未连接",
+    };
+  }
+
+  if (transientError && !isPhotoshopServiceReady(service)) {
+    return {
+      kind: "not_ready" as const,
+      reason: transientError,
+    };
+  }
+
+  return {
+    kind: "not_ready" as const,
+    reason: fallbackReason || "PS 未就绪，请确认客户端已启动 Photoshop",
+  };
 }
 
 function isPhotoshopServiceReady(service: any) {
@@ -2035,17 +2135,11 @@ function getDispatchClientUnavailableReason(client: any) {
   if (isDispatchClientBusy(client)) {
     return "所选客户端正在制作其他套图";
   }
-  const state = String(service?.state || service?.status || "").toLowerCase();
-  if (state === "error" || isPhotoshopRuntimeErrorMessage(service?.lastError)) {
-    return service?.lastError || service?.message || "所选客户端 PS 自动化异常";
+  const issue = resolvePhotoshopServiceIssue(service);
+  if (issue.kind === "ready") {
+    return "";
   }
-  if (state === "offline" || state === "disconnected") {
-    return service?.message || "所选客户端 PS 自动化未连接";
-  }
-  if (!isPhotoshopServiceReady(service)) {
-    return service?.message || "所选客户端 PS 未就绪";
-  }
-  return "";
+  return issue.reason || "所选客户端 PS 不可用";
 }
 
 function getClientDisplayName(client: any) {
@@ -2111,25 +2205,26 @@ function getDispatchClientOnlineStatus(client: any) {
 function getDispatchClientPsStatus(client: any) {
   const service = getClientPhotoshopService(client);
   if (!client?.isOnline) {
-    return { text: "不可用", tone: "danger" };
+    return { text: "不可用", tone: "danger", reason: "客户端离线" };
   }
   if (!service) {
-    return { text: "未开启", tone: "muted" };
+    return { text: "未开启", tone: "muted", reason: "未上报 PS 自动化服务" };
   }
-  if (
-    service.status === "error" ||
-    service.state === "error" ||
-    isPhotoshopRuntimeErrorMessage(service?.lastError)
-  ) {
-    return { text: "异常", tone: "danger" };
+
+  const issue = resolvePhotoshopServiceIssue(service);
+  if (issue.kind === "ready") {
+    return { text: "已开启", tone: "success", reason: issue.reason };
   }
-  if (isPhotoshopServiceReady(service)) {
-    return { text: "已开启", tone: "success" };
+  if (issue.kind === "error") {
+    return { text: "异常", tone: "danger", reason: issue.reason };
+  }
+  if (issue.kind === "offline") {
+    return { text: "未连接", tone: "danger", reason: issue.reason };
   }
   if (service.connected) {
-    return { text: "未就绪", tone: "info" };
+    return { text: "未就绪", tone: "info", reason: issue.reason };
   }
-  return { text: "未开启", tone: "muted" };
+  return { text: "未开启", tone: "muted", reason: issue.reason };
 }
 
 function getDispatchClientProductionStatus(client: any) {
@@ -2171,6 +2266,7 @@ const dispatchClientRows = computed(() =>
         onlineStatusTone: onlineStatus.tone,
         psStatusText: psStatus.text,
         psStatusTone: psStatus.tone,
+        psStatusReason: psStatus.reason,
         productionStatusText: productionStatus.text,
         productionStatusTone: productionStatus.tone,
         activeTaskLabel: getDispatchClientTaskLabel(client),
@@ -4944,6 +5040,23 @@ getList();
 
 .production-dispatch-dialog__table :deep(.el-radio) {
   pointer-events: none;
+}
+
+.production-dispatch-dialog__ps-status {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.production-dispatch-dialog__ps-reason {
+  display: block;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--el-text-color-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .production-dispatch-dialog__state-text {
