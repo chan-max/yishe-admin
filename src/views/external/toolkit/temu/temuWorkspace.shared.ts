@@ -363,6 +363,7 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
         key: "rapidScreenTypeList",
         label: "快速筛选",
         type: "select",
+        defaultValue: 1,
         options: [
           { label: "gpsr 不合规", value: 1 },
           { label: "不符合土耳其新规", value: 2 },

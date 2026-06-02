@@ -104,7 +104,7 @@ const handleStopAll = async () => {
   position: fixed;
   right: 18px;
   bottom: 18px;
-  z-index: 3000;
+  z-index: 9999;
   width: 420px;
   background: var(--el-bg-color-overlay);
   border: 1px solid var(--el-border-color-light);
