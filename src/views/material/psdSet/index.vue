@@ -3450,15 +3450,17 @@ function syncGenerateProductBatchProgressToast(progress: any) {
   if (!progress?.taskId) return;
   const isDone = progress.status === "completed" || progress.status === "failed";
   const hasFailure = Number(progress.failed || 0) > 0;
+  const notificationId = `sticker-psd-set-generate-product:${progress.taskId}`;
+  globalNotificationStore.removeBySource("sticker-psd-set-generate-product", notificationId);
   globalNotificationStore.upsertNotification({
-    id: `sticker-psd-set-generate-product:${progress.taskId}`,
+    id: notificationId,
     title: "套图批量生成产品",
     message: progress.message || "处理中",
     level: isDone ? (hasFailure ? "warning" : "success") : "info",
     category: "task",
     source: "sticker-psd-set-generate-product",
-    sticky: true,
-    durationMs: null,
+    sticky: !isDone,
+    durationMs: isDone ? 6000 : null,
     progress: Number(progress.progress || 0),
     status: isDone ? (hasFailure ? "warning" : "success") : "running",
     metadata: {

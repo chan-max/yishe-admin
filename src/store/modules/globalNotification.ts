@@ -14,6 +14,9 @@ const MAX_TOASTS = 3
 const DEFAULT_TOAST_DURATION = 4500
 const toastTimerMap = new Map<string, ReturnType<typeof setTimeout>>()
 
+const isRunningStickyToast = (item: GlobalNotificationItem) =>
+  item.sticky && (!item.status || item.status === 'running' || item.status === 'pending')
+
 export const useGlobalNotificationStore = defineStore('globalNotification', {
   state: () => ({
     items: [] as GlobalNotificationItem[],
@@ -27,7 +30,7 @@ export const useGlobalNotificationStore = defineStore('globalNotification', {
       const visibleToasts = state.toastItems.filter((item) => item.visible)
       const visibleToastIds = new Set(visibleToasts.map((item) => item.id))
       const pinnedToasts = state.items
-        .filter((item) => item.sticky && !visibleToastIds.has(item.id))
+        .filter((item) => isRunningStickyToast(item) && !visibleToastIds.has(item.id))
         .map((item) => ({
           ...item,
           visible: true
@@ -128,6 +131,16 @@ export const useGlobalNotificationStore = defineStore('globalNotification', {
     remove(id: string) {
       this.items = this.items.filter((item) => item.id !== id)
       this.dismissToast(id)
+    },
+    removeBySource(source: string, exceptId = '') {
+      const normalizedSource = String(source || '').trim()
+      if (!normalizedSource) return
+      const normalizedExceptId = String(exceptId || '').trim()
+      const removedIds = this.items
+        .filter((item) => item.source === normalizedSource && item.id !== normalizedExceptId)
+        .map((item) => item.id)
+      this.items = this.items.filter((item) => item.source !== normalizedSource || item.id === normalizedExceptId)
+      removedIds.forEach((id) => this.dismissToast(id))
     },
     clear() {
       this.items = []
