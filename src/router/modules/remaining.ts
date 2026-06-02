@@ -364,6 +364,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "ExternalPsAutomation",
         meta: {
           title: "PS 自动化",
+          noCache: true,
         },
       },
       {

@@ -643,7 +643,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
+import { computed, onActivated, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { useLocalStorage } from "@vueuse/core";
 import { ElMessage } from "element-plus";
 import { formatDate } from "@/utils/formatTime";
@@ -731,6 +731,37 @@ const loadingMap = reactive<Record<PsCommandAction, boolean>>({
 });
 
 const pendingActions = reactive<Record<string, PsCommandAction>>({});
+const silentCommandIds = new Set<string>();
+const runtimeBootstrapDone = ref(false);
+let runtimeBootstrapResolver: (() => void) | null = null;
+let runtimeBootstrapTimer: ReturnType<typeof setTimeout> | null = null;
+
+const beginRuntimeBootstrap = () => {
+  runtimeBootstrapDone.value = false;
+  if (runtimeBootstrapTimer) {
+    clearTimeout(runtimeBootstrapTimer);
+    runtimeBootstrapTimer = null;
+  }
+  return new Promise<void>((resolve) => {
+    runtimeBootstrapResolver = resolve;
+    runtimeBootstrapTimer = setTimeout(() => {
+      completeRuntimeBootstrap();
+    }, 12_000);
+  });
+};
+
+const completeRuntimeBootstrap = () => {
+  if (runtimeBootstrapDone.value) {
+    return;
+  }
+  runtimeBootstrapDone.value = true;
+  runtimeBootstrapResolver?.();
+  runtimeBootstrapResolver = null;
+  if (runtimeBootstrapTimer) {
+    clearTimeout(runtimeBootstrapTimer);
+    runtimeBootstrapTimer = null;
+  }
+};
 
 const serviceFormStorage = useLocalStorage("ps_console_panel_service_form", {
   startTimeout: 30,
@@ -848,22 +879,29 @@ const customOptionsTemplates: Record<string, Record<string, any>> = {
 const getPhotoshopService = (client: any) =>
   client.clientInfo?.services?.["ps-automation"] || client.clientInfo?.services?.photoshop || null;
 
+const isPsAutomationActivelyBusy = (psAutomation?: Record<string, any> | null) => {
+  if (!psAutomation || psAutomation.running !== true) {
+    return false;
+  }
+  const queueCount = Number(psAutomation.queueCount ?? 0);
+  const currentPsSetId = String(psAutomation.currentPsSetId || "").trim();
+  return (Number.isFinite(queueCount) && queueCount > 0) || !!currentPsSetId;
+};
+
 const isPsServiceBusy = (client: any, service?: any) => {
   const runtime = service || getPhotoshopService(client);
-  const psAutomation = client?.clientInfo?.psAutomation || {};
-  const psQueueCount = Number(psAutomation?.queueCount ?? 0);
-  const runtimeQueueCount = Number(
-    runtime?.details?.activeJobsCount ?? runtime?.details?.queueCount ?? 0,
-  );
-  const currentTaskId = String(runtime?.currentTaskId || "").trim();
-  return !!(
-    psAutomation?.running === true ||
-    (Number.isFinite(psQueueCount) && psQueueCount > 0) ||
-    runtime?.busy === true ||
-    runtime?.state === "busy" ||
-    !!currentTaskId ||
-    (Number.isFinite(runtimeQueueCount) && runtimeQueueCount > 0)
-  );
+  if (!runtime) {
+    return isPsAutomationActivelyBusy(client?.clientInfo?.psAutomation);
+  }
+  if (runtime.busy === true) {
+    return true;
+  }
+  if (isPsAutomationActivelyBusy(client?.clientInfo?.psAutomation)) {
+    return true;
+  }
+  const taskId = String(runtime.currentTaskId || "").trim();
+  const state = String(runtime.state || "").trim().toLowerCase();
+  return !!(taskId && state === "busy" && runtime.busy !== false);
 };
 
 const hasPsServiceError = (service?: any) =>
@@ -887,17 +925,24 @@ const resolvePsRuntimeDisplay = (service?: any) => {
   const photoshopRunning = !!(
     details?.photoshopRunning ?? (available || busy)
   );
+  const rawPhotoshopStatus = String(details?.photoshopStatus || "").trim().toLowerCase();
   const photoshopStatus = String(
-    details?.photoshopStatus ||
-      (busy
-        ? "busy"
-        : available
-          ? "ready"
-          : photoshopRunning
-            ? "starting"
-            : connected
-              ? "stopped"
-              : "unknown"),
+    !busy && rawPhotoshopStatus === "busy"
+      ? available
+        ? "ready"
+        : photoshopRunning
+          ? "starting"
+          : "stopped"
+      : details?.photoshopStatus ||
+          (busy
+            ? "busy"
+            : available
+              ? "ready"
+              : photoshopRunning
+                ? "starting"
+                : connected
+                  ? "stopped"
+                  : "unknown"),
   );
 
   const serviceStatus = hasError
@@ -966,15 +1011,49 @@ const getPsBridgeService = (client: any) => {
     return null;
   }
 
+  if (!runtimeBootstrapDone.value) {
+    return {
+      ...service,
+      busy: false,
+      hasError: false,
+      level: "info" as ClientNodeBadge["tone"],
+      text: "同步中",
+      serviceStatus: { text: "同步中", tone: "info" as ClientNodeBadge["tone"] },
+      applicationStatus: { text: "-", tone: "info" as ClientNodeBadge["tone"] },
+    };
+  }
+
   const busy = isPsServiceBusy(client, service);
+  const details = service?.details || {};
+  const normalizedState = busy
+    ? "busy"
+    : service?.available || details?.photoshopReady
+      ? "idle"
+      : service?.state === "error"
+        ? "error"
+        : service?.state === "offline"
+          ? "offline"
+          : "connected";
   const display = resolvePsRuntimeDisplay({
     ...service,
     busy,
+    state: normalizedState,
+    details: {
+      ...details,
+      photoshopStatus:
+        !busy && String(details?.photoshopStatus || "").toLowerCase() === "busy"
+          ? service?.available || details?.photoshopReady
+            ? "ready"
+            : "starting"
+          : details?.photoshopStatus,
+    },
   });
 
   return {
     ...service,
     busy,
+    state: normalizedState,
+    currentTaskId: busy ? service?.currentTaskId : null,
     hasError: display.hasError,
     level: display.summary.tone,
     text: display.summary.text,
@@ -1258,6 +1337,7 @@ const clearPendingState = () => {
   Object.keys(pendingActions).forEach((key) => {
     delete pendingActions[key];
   });
+  silentCommandIds.clear();
   (Object.keys(loadingMap) as PsCommandAction[]).forEach((key) => {
     loadingMap[key] = false;
   });
@@ -1331,6 +1411,7 @@ const dispatchPsCommand = async (
   action: PsCommandAction,
   payload: Record<string, any> = {},
   mode: CommandMode = "production",
+  options: { silent?: boolean } = {},
 ) => {
   const client = selectedClient.value;
   if (!client) {
@@ -1343,7 +1424,9 @@ const dispatchPsCommand = async (
   }
 
   loadingMap[action] = true;
-  pushCommandLog(action, "info", `已发送${resolveActionText(action)}命令`, client.id);
+  if (!options.silent) {
+    pushCommandLog(action, "info", `已发送${resolveActionText(action)}命令`, client.id);
+  }
 
   try {
     const response = (await sendServiceCommand({
@@ -1361,25 +1444,47 @@ const dispatchPsCommand = async (
     if (!response?.success) {
       finishAction(action);
       const message = response?.message || "命令发送失败";
-      pushCommandLog(action, "error", message, client.id);
-      ElMessage.error(message);
+      if (options.silent && action === "refreshRuntime") {
+        completeRuntimeBootstrap();
+      }
+      if (!options.silent) {
+        pushCommandLog(action, "error", message, client.id);
+        ElMessage.error(message);
+      }
       return;
     }
 
     const commandId = response.data?.commandId;
     if (commandId) {
       pendingActions[commandId] = action;
+      if (options.silent) {
+        silentCommandIds.add(commandId);
+      }
     } else {
       finishAction(action);
     }
 
-    ElMessage.success(response.message || "命令已发送");
+    if (!options.silent) {
+      ElMessage.success(response.message || "命令已发送");
+    }
   } catch (error: any) {
     finishAction(action);
     const message = error?.message || "命令发送失败";
-    pushCommandLog(action, "error", message, client.id);
-    ElMessage.error(message);
+    if (options.silent && action === "refreshRuntime") {
+      completeRuntimeBootstrap();
+    }
+    if (!options.silent) {
+      pushCommandLog(action, "error", message, client.id);
+      ElMessage.error(message);
+    }
   }
+};
+
+const syncSelectedClientRuntime = async (options: { silent?: boolean } = { silent: true }) => {
+  if (!selectedClient.value?.isOnline) {
+    return;
+  }
+  await dispatchPsCommand("refreshRuntime", {}, "maintenance", options);
 };
 
 const addSmartObject = () => {
@@ -1520,13 +1625,8 @@ const handleDebugProcess = async () => {
   }
 };
 
-const handleServiceRuntime = (event: ServiceRuntimeEvent) => {
-  if (normalizePluginKey(event.pluginKey || event.service) !== "ps-automation") {
-    return;
-  }
-  if (event.clientId !== selectedClientId.value) {
-    return;
-  }
+const handleServiceRuntime = (_event: ServiceRuntimeEvent) => {
+  // 运行态以 store 合并结果为准；不在此处提前结束 bootstrap，避免用到旧的 busy 快照。
 };
 
 const handleServiceCommandResult = async (event: ServiceCommandResultEvent) => {
@@ -1564,14 +1664,42 @@ const handleServiceCommandResult = async (event: ServiceCommandResultEvent) => {
     };
   }
 
-  (event.success ? ElMessage.success : ElMessage.error)(message);
-  await refreshClients();
+  const wasSilent = silentCommandIds.delete(event.commandId);
+  if (!wasSilent) {
+    (event.success ? ElMessage.success : ElMessage.error)(message);
+  }
+  // refreshRuntime 的实时结果由客户端 serviceRuntime 推送；此处再拉 HTTP 节点列表会把旧 busy 覆盖回来。
+  if (action !== "refreshRuntime") {
+    await refreshClients();
+  }
+  if (wasSilent && action === "refreshRuntime") {
+    completeRuntimeBootstrap();
+  }
 };
 
-onMounted(() => {
+const bootstrapPanelRuntime = async () => {
+  const bootstrapDone = beginRuntimeBootstrap();
+  try {
+    await refreshClients();
+    if (!selectedClient.value?.isOnline) {
+      completeRuntimeBootstrap();
+      return;
+    }
+    await syncSelectedClientRuntime({ silent: true });
+    await bootstrapDone;
+  } catch {
+    completeRuntimeBootstrap();
+  }
+};
+
+onMounted(async () => {
   websocketClient.events.on("serviceRuntime", handleServiceRuntime);
   websocketClient.events.on("serviceCommandResult", handleServiceCommandResult);
-  void refreshClients();
+  await bootstrapPanelRuntime();
+});
+
+onActivated(() => {
+  void bootstrapPanelRuntime();
 });
 
 onUnmounted(() => {

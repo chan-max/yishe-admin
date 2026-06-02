@@ -21,15 +21,23 @@ export function isClientServiceRuntimeAvailable(runtime?: ClientServiceRuntimeLi
 
 export function isClientServiceRuntimeBusy(runtime?: ClientServiceRuntimeLike): boolean {
   const safeRuntime = getClientServiceRuntimeSafe(runtime);
+  if (safeRuntime.busy === false) {
+    return false;
+  }
   const activeJobsCount = Number(
     safeRuntime.details?.activeJobsCount ?? safeRuntime.details?.queueCount ?? 0,
   );
+  const currentTaskId = String(safeRuntime.currentTaskId || "").trim();
+  const state = String(safeRuntime.state || "").trim().toLowerCase();
   return !!(
-    safeRuntime.busy ||
-    safeRuntime.state === "busy" ||
-    safeRuntime.currentTaskId ||
-    safeRuntime.details?.currentExecution?.running ||
-    (Number.isFinite(activeJobsCount) && activeJobsCount > 0)
+    safeRuntime.busy === true ||
+    (state === "busy" && !!currentTaskId) ||
+    (!!currentTaskId && safeRuntime.busy !== false && state !== "idle" && state !== "connected") ||
+    safeRuntime.details?.currentExecution?.running === true ||
+    (Number.isFinite(activeJobsCount) &&
+      activeJobsCount > 0 &&
+      safeRuntime.busy !== false &&
+      state !== "idle")
   );
 }
 

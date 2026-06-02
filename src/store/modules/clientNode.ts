@@ -4,7 +4,10 @@ import {
   getMyClientNodeViews,
   type WebsocketConnectionVO,
 } from "@/api/system/websocket";
-import { resolveClientServiceSummary } from "@/services/clientServiceRuntime";
+import {
+  isClientServiceRuntimeBusy,
+  resolveClientServiceSummary,
+} from "@/services/clientServiceRuntime";
 import {
   websocketClient,
   type ClientConnectionChangedEvent,
@@ -103,27 +106,86 @@ const mergeServiceRuntime = (
   const next = incoming && typeof incoming === "object" ? incoming : {};
   const prevDetails = prev.details && typeof prev.details === "object" ? prev.details : {};
   const nextDetails = next.details && typeof next.details === "object" ? next.details : {};
+  const mergedDetails = {
+    ...prevDetails,
+    ...nextDetails,
+    profiles: Array.isArray(nextDetails.profiles) ? nextDetails.profiles : prevDetails.profiles,
+    instances: Array.isArray(nextDetails.instances)
+      ? nextDetails.instances
+      : prevDetails.instances,
+    activeProfile: nextDetails.activeProfile ?? prevDetails.activeProfile,
+    activeProfileId: nextDetails.activeProfileId ?? prevDetails.activeProfileId,
+    browserConnected: nextDetails.browserConnected ?? prevDetails.browserConnected,
+    hasInstance: nextDetails.hasInstance ?? prevDetails.hasInstance,
+    profilesRootDir: nextDetails.profilesRootDir ?? prevDetails.profilesRootDir,
+    workspaceDir: nextDetails.workspaceDir ?? prevDetails.workspaceDir,
+    connection: nextDetails.connection ?? prevDetails.connection,
+    pageCount: nextDetails.pageCount ?? prevDetails.pageCount,
+  };
 
-  return {
+  const merged: Record<string, any> = {
     ...prev,
     ...next,
-    details: {
-      ...prevDetails,
-      ...nextDetails,
-      profiles: Array.isArray(nextDetails.profiles) ? nextDetails.profiles : prevDetails.profiles,
-      instances: Array.isArray(nextDetails.instances)
-        ? nextDetails.instances
-        : prevDetails.instances,
-      activeProfile: nextDetails.activeProfile ?? prevDetails.activeProfile,
-      activeProfileId: nextDetails.activeProfileId ?? prevDetails.activeProfileId,
-      browserConnected: nextDetails.browserConnected ?? prevDetails.browserConnected,
-      hasInstance: nextDetails.hasInstance ?? prevDetails.hasInstance,
-      profilesRootDir: nextDetails.profilesRootDir ?? prevDetails.profilesRootDir,
-      workspaceDir: nextDetails.workspaceDir ?? prevDetails.workspaceDir,
-      connection: nextDetails.connection ?? prevDetails.connection,
-      pageCount: nextDetails.pageCount ?? prevDetails.pageCount,
-    },
+    details: mergedDetails,
   };
+
+  const incomingState = String(next.state || "").trim().toLowerCase();
+  const incomingTaskId = String(next.currentTaskId || "").trim();
+  const claimsBusy =
+    next.busy === true || (incomingState === "busy" && !!incomingTaskId);
+  const reportsIdle = next.busy === false || incomingState === "idle";
+  const implicitIdle =
+    !claimsBusy &&
+    (reportsIdle ||
+      (!!incomingState && incomingState !== "busy") ||
+      (next.connected === true && next.available === true && next.busy !== true));
+
+  if (reportsIdle || implicitIdle) {
+    merged.busy = false;
+    if (!incomingTaskId || !claimsBusy) {
+      merged.currentTaskId = null;
+    }
+    if (merged.state === "busy" || incomingState === "busy" || implicitIdle) {
+      merged.state =
+        incomingState === "idle"
+          ? "idle"
+          : next.connected === true || merged.connected === true
+            ? next.available === true || merged.available === true
+              ? "idle"
+              : "connected"
+            : merged.state === "busy"
+              ? "connected"
+              : merged.state;
+    }
+    if (!Object.prototype.hasOwnProperty.call(nextDetails, "activeJobsCount")) {
+      mergedDetails.activeJobsCount = 0;
+    }
+    if (!Object.prototype.hasOwnProperty.call(nextDetails, "queueCount")) {
+      mergedDetails.queueCount = 0;
+    }
+    if (mergedDetails.photoshopStatus === "busy") {
+      mergedDetails.photoshopStatus =
+        next.available === true || merged.available === true || mergedDetails.photoshopReady === true
+          ? "ready"
+          : "starting";
+    }
+  }
+
+  const nextCheckedAt = Date.parse(String(next.lastCheckedAt || ""));
+  const prevCheckedAt = Date.parse(String(prev.lastCheckedAt || ""));
+  if (
+    Number.isFinite(nextCheckedAt) &&
+    (!Number.isFinite(prevCheckedAt) || nextCheckedAt >= prevCheckedAt)
+  ) {
+    merged.busy = next.busy === true;
+    merged.currentTaskId = next.currentTaskId ?? null;
+    if (next.state !== undefined) {
+      merged.state = next.state;
+    }
+    merged.lastCheckedAt = next.lastCheckedAt;
+  }
+
+  return merged;
 };
 
 const mergeServiceMap = (
@@ -155,8 +217,8 @@ const mergeServiceMap = (
 const mergeClientNodeView = (
   previous: WebsocketConnectionVO | undefined,
   incoming: WebsocketConnectionVO,
-): WebsocketConnectionVO =>
-  ({
+): WebsocketConnectionVO => {
+  const merged = {
     ...(previous || {}),
     ...incoming,
     clientInfo: {
@@ -164,7 +226,28 @@ const mergeClientNodeView = (
       ...(incoming.clientInfo || {}),
       services: mergeServiceMap(previous?.clientInfo?.services, incoming.clientInfo?.services),
     },
-  }) as WebsocketConnectionVO;
+  } as WebsocketConnectionVO;
+
+  const psAutomation = merged.clientInfo?.psAutomation;
+  if (psAutomation?.running === true) {
+    const psRuntime = getClientServiceRuntime(merged, "ps-automation");
+    const hasActivePsdWork =
+      Number(psAutomation.queueCount ?? 0) > 0 ||
+      String(psAutomation.currentPsSetId || "").trim().length > 0;
+    if (psRuntime && !isClientServiceRuntimeBusy(psRuntime) && !hasActivePsdWork) {
+      merged.clientInfo = {
+        ...merged.clientInfo,
+        psAutomation: {
+          ...psAutomation,
+          running: false,
+          queueCount: 0,
+        },
+      };
+    }
+  }
+
+  return merged;
+};
 
 export const getClientServiceRuntime = (
   client: Pick<WebsocketConnectionVO, "clientInfo"> | Record<string, any> | undefined | null,
