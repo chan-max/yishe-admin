@@ -2172,6 +2172,9 @@ function isPhotoshopServiceReady(service: any) {
   if (!service) {
     return false;
   }
+  if (service?.available === true || service?.details?.photoshopReady === true) {
+    return true;
+  }
   const state = String(service?.state || service?.status || "").toLowerCase();
   if (
     state === "error" ||
@@ -2181,7 +2184,7 @@ function isPhotoshopServiceReady(service: any) {
   ) {
     return false;
   }
-  return !!(service?.available === true || service?.details?.photoshopReady === true);
+  return false;
 }
 
 function getDispatchClientUnavailableReason(client: any) {
@@ -3477,11 +3480,15 @@ function syncGenerateProductBatchProgressToast(progress: any) {
 function restoreGenerateProductBatchProgress() {
   try {
     const raw = localStorage.getItem(GENERATE_PRODUCT_BATCH_PROGRESS_STORAGE_KEY);
-    if (!raw) return;
+    if (!raw) {
+      globalNotificationStore.removeBySource("sticker-psd-set-generate-product");
+      return;
+    }
     const parsed = JSON.parse(raw);
     const taskId = String(parsed?.taskId || "").trim();
     if (!taskId) {
       clearPersistedGenerateProductBatchTask();
+      globalNotificationStore.removeBySource("sticker-psd-set-generate-product");
       return;
     }
     generateProductBatchTaskId.value = taskId;

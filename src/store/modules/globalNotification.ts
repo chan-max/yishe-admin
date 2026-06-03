@@ -12,10 +12,26 @@ export interface GlobalNotificationToastItem extends GlobalNotificationItem {
 const MAX_NOTIFICATIONS = 80
 const MAX_TOASTS = 3
 const DEFAULT_TOAST_DURATION = 4500
+const RUNNING_STICKY_RESTORE_TTL_MS = 10 * 60 * 1000
 const toastTimerMap = new Map<string, ReturnType<typeof setTimeout>>()
 
+const getNotificationTime = (item: GlobalNotificationItem) => {
+  const value = Date.parse(String(item.updatedAt || item.createdAt || ''))
+  return Number.isFinite(value) ? value : 0
+}
+
+const isStaleRunningStickyToast = (item: GlobalNotificationItem) => {
+  if (!item.sticky || (item.status && item.status !== 'running' && item.status !== 'pending')) {
+    return false
+  }
+  const time = getNotificationTime(item)
+  return !time || Date.now() - time > RUNNING_STICKY_RESTORE_TTL_MS
+}
+
 const isRunningStickyToast = (item: GlobalNotificationItem) =>
-  item.sticky && (!item.status || item.status === 'running' || item.status === 'pending')
+  item.sticky &&
+  (!item.status || item.status === 'running' || item.status === 'pending') &&
+  !isStaleRunningStickyToast(item)
 
 export const useGlobalNotificationStore = defineStore('globalNotification', {
   state: () => ({
@@ -40,6 +56,7 @@ export const useGlobalNotificationStore = defineStore('globalNotification', {
   },
   actions: {
     upsertNotification(payload: GlobalNotificationEvent) {
+      this.pruneStaleRunningToasts()
       const existingIndex = this.items.findIndex((item) => item.id === payload.id)
       const nextItem: GlobalNotificationItem = {
         ...payload,
@@ -59,6 +76,11 @@ export const useGlobalNotificationStore = defineStore('globalNotification', {
       this.showToast(nextItem)
     },
     showToast(item: GlobalNotificationItem) {
+      if (isStaleRunningStickyToast(item)) {
+        this.remove(item.id)
+        return
+      }
+
       const existingIndex = this.toastItems.findIndex((toast) => toast.id === item.id)
       const nextToast: GlobalNotificationToastItem = {
         ...item,
@@ -140,6 +162,16 @@ export const useGlobalNotificationStore = defineStore('globalNotification', {
         .filter((item) => item.source === normalizedSource && item.id !== normalizedExceptId)
         .map((item) => item.id)
       this.items = this.items.filter((item) => item.source !== normalizedSource || item.id === normalizedExceptId)
+      removedIds.forEach((id) => this.dismissToast(id))
+    },
+    pruneStaleRunningToasts(source = '') {
+      const normalizedSource = String(source || '').trim()
+      const removedIds = this.items
+        .filter((item) => (!normalizedSource || item.source === normalizedSource) && isStaleRunningStickyToast(item))
+        .map((item) => item.id)
+      if (!removedIds.length) return
+      const removedIdSet = new Set(removedIds)
+      this.items = this.items.filter((item) => !removedIdSet.has(item.id))
       removedIds.forEach((id) => this.dismissToast(id))
     },
     clear() {
