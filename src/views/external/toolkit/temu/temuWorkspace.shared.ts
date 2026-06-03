@@ -103,11 +103,9 @@ export const QUICK_ACTION_KEYS = [
 ] as const;
 
 export const NEXT_ACTION_MAP: Record<string, string[]> = {
-  "activity.list": ["activity.match"],
-  "activity.filter": ["activity.match"],
-  "activity.match": ["activity.generate-payload"],
-  "activity.generate-payload": ["activity.merge-payloads", "activity.submit"],
-  "activity.merge-payloads": ["activity.submit"],
+  "activity.list": ["activity.match-products"],
+  "activity.match-products": ["activity.batch-submit"],
+  "activity.batch-submit": ["finance.history"],
   "finance.history": ["finance.download", "finance.direct-url"],
   "goods.category-search": ["goods.expected-place.list"],
   "goods.expected-place.list": ["goods.expected-place.update"],
@@ -251,6 +249,12 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
   },
   "activity.list": {
     fields: [createRegionField()],
+    note: "查询活动列表，获取可报名的大活动和小活动。",
+    buildPayload: buildProfileRegionPayload,
+  },
+  "activity.enroll": {
+    fields: [createRegionField()],
+    note: "报活动：查询活动列表 → 选择活动 → 查询商品 → 勾选报名。",
     buildPayload: buildProfileRegionPayload,
   },
   "activity.filter": {
@@ -316,8 +320,101 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
         rows: 10,
       },
     ],
-    note: "通常与“活动匹配列表”和“生成报名 payload”联动使用。",
+    note: '通常与"活动匹配列表"和"生成报名 payload"联动使用。',
     buildPayload: buildProfileRegionPayload,
+  },
+  "activity.list": {
+    fields: [createRegionField()],
+    note: "第一步：获取所有可报名的活动列表（大活动/小活动），记下 activityType 和 activityThematicId。",
+    buildPayload: buildProfileRegionPayload,
+  },
+  "activity.match-products": {
+    fields: [
+      createRegionField(),
+      {
+        key: "activityType",
+        label: "活动类型",
+        type: "number",
+        required: true,
+        defaultValue: 5,
+        hint: "从第一步结果中获取",
+      },
+      {
+        key: "activityThematicId",
+        label: "专题活动 ID",
+        type: "number",
+        hint: "小活动需要传，大活动不填",
+      },
+      {
+        key: "stockThreshold",
+        label: "活动库存阈值",
+        type: "number",
+        defaultValue: 30,
+        hint: "每个 SPU 报名的库存数量",
+      },
+      {
+        key: "spuIdList",
+        label: "SPU ID 列表",
+        type: "array-number",
+        hint: "留空则查询全部可报名商品",
+      },
+    ],
+    note: "第二步：根据活动类型自动翻页查询所有可报名商品，返回 products 数组。",
+    buildPayload: buildProfileRegionPayload,
+  },
+  "activity.batch-submit": {
+    fields: [
+      createRegionField(),
+      {
+        key: "activityType",
+        label: "活动类型",
+        type: "number",
+        required: true,
+        defaultValue: 5,
+      },
+      {
+        key: "activityThematicId",
+        label: "专题活动 ID",
+        type: "number",
+        hint: "需与第二步保持一致",
+      },
+      {
+        key: "stockThreshold",
+        label: "活动库存阈值",
+        type: "number",
+        defaultValue: 30,
+      },
+      {
+        key: "batchSize",
+        label: "每批提交数量",
+        type: "number",
+        defaultValue: 10,
+        hint: "默认每 10 个 SPU 提交一次",
+      },
+      {
+        key: "selectedProducts",
+        label: "已选商品 JSON",
+        type: "json",
+        required: true,
+        rows: 12,
+        hint: "从第二步结果中复制 products 数组粘贴到这里",
+      },
+    ],
+    note: "第三步：将已选商品生成 payload 并分批提交报名。",
+    buildPayload: (parsed, profileId) => {
+      const payload: Record<string, any> = buildProfileRegionPayload(parsed, profileId);
+      payload.activityType = Number(parsed.activityType);
+      if (parsed.activityThematicId) {
+        payload.activityThematicId = Number(parsed.activityThematicId);
+      }
+      if (parsed.stockThreshold) {
+        payload.stockThreshold = Number(parsed.stockThreshold);
+      }
+      if (parsed.batchSize) {
+        payload.batchSize = Number(parsed.batchSize);
+      }
+      return payload;
+    },
   },
   "finance.history": {
     fields: [

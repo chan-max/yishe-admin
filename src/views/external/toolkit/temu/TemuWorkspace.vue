@@ -1367,6 +1367,124 @@
           </div>
         </div>
 
+        <!-- 报活动面板 -->
+        <div v-if="activeTaskRunDetail?.actionKey === 'activity.enroll'" class="temu-workspace__panel">
+          <div class="temu-workspace__panel-head">
+            <div>
+              <div class="temu-workspace__panel-title">
+                <span>活动报名</span>
+                <el-tag size="small" effect="plain">
+                  {{ activityPanelActivities.length }} 个活动
+                </el-tag>
+              </div>
+              <div class="temu-workspace__editor-desc">
+                选择活动后查询可报名商品，勾选后一键报名。
+              </div>
+            </div>
+            <div class="temu-workspace__panel-tools">
+              <el-button
+                size="small"
+                :loading="activityPanelLoading"
+                @click="loadActivityPanelActivities"
+              >
+                刷新活动列表
+              </el-button>
+            </div>
+          </div>
+
+          <div class="temu-workspace__panel-body">
+            <div v-if="!activityPanelSelectedActivity" class="temu-workspace__activity-list">
+              <div v-if="activityPanelActivities.length === 0" class="temu-workspace__empty-state">
+                暂无活动，请点击"刷新活动列表"
+              </div>
+              <div v-else class="temu-workspace__activity-cards">
+                <div
+                  v-for="act in activityPanelActivities"
+                  :key="act.activityThematicId || act.activityType"
+                  class="temu-workspace__activity-card"
+                  @click="selectActivityPanelActivity(act)"
+                >
+                  <div class="temu-workspace__activity-card-name">
+                    {{ act.activityName }}
+                  </div>
+                  <div class="temu-workspace__activity-card-type">
+                    类型：{{ act.activityType }}
+                  </div>
+                  <div v-if="act.activityThematicId" class="temu-workspace__activity-card-theme">
+                    {{ act.activityThematicName }}
+                  </div>
+                  <div class="temu-workspace__activity-card-stock">
+                    库存阈值：{{ act.stockThreshold || "-" }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <template v-else>
+              <div class="temu-workspace__activity-selector">
+                <span class="temu-workspace__activity-label">当前活动：</span>
+                <el-tag type="primary" size="large">
+                  {{ activityPanelSelectedActivity.activityName }} ({{ activityPanelSelectedActivity.activityType }})
+                  <span v-if="activityPanelSelectedActivity.activityThematicId">
+                    - {{ activityPanelSelectedActivity.activityThematicName }}
+                  </span>
+                </el-tag>
+                <el-button size="small" @click="resetActivityPanelSelection">
+                  切换活动
+                </el-button>
+              </div>
+
+              <div class="temu-workspace__match-config">
+                <el-form :inline="true" size="small">
+                  <el-form-item label="库存阈值">
+                    <el-input-number v-model="activityPanelStockThreshold" :min="1" :max="9999" />
+                  </el-form-item>
+                  <el-form-item label="SPU ID（可选）">
+                    <el-input v-model="activityPanelSpuIdInput" placeholder="留空查询全部" style="width: 200px" />
+                  </el-form-item>
+                  <el-form-item>
+                    <el-button type="primary" :loading="activityPanelMatching" @click="loadActivityPanelMatchProducts">
+                      查询可报名商品
+                    </el-button>
+                  </el-form-item>
+                </el-form>
+              </div>
+
+              <div v-if="activityPanelMatchProducts.length" class="temu-workspace__match-result">
+                <div class="temu-workspace__match-toolbar">
+                  <span>找到 {{ activityPanelMatchProducts.length }} 个商品</span>
+                  <div>
+                    <el-button size="small" @click="activityPanelSelectAll">全选</el-button>
+                    <el-button size="small" @click="activityPanelSelectedProducts = []">清空</el-button>
+                    <el-button
+                      type="success"
+                      :disabled="activityPanelSelectedProducts.length === 0"
+                      :loading="activityPanelSubmitting"
+                      @click="submitActivityPanelEnroll"
+                    >
+                      批量报名（{{ activityPanelSelectedProducts.length }}）
+                    </el-button>
+                  </div>
+                </div>
+
+                <div class="common-table temu-workspace__match-table">
+                  <vxe-grid
+                    v-bind="activityPanelMatchGridOptions"
+                    :data="activityPanelMatchProducts"
+                    :checkbox-config="{ checkField: 'checked' }"
+                    @checkbox-change="onActivityPanelCheckboxChange"
+                    @checkbox-all="onActivityPanelCheckboxAll"
+                  >
+                    <template #matchPriceSlot="{ row }">
+                      {{ getActivityPriceRange(row) }}
+                    </template>
+                  </vxe-grid>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+
         <div v-else class="temu-workspace__unsupported">正在加载记录详情...</div>
       </div>
     </el-dialog>
@@ -1982,7 +2100,20 @@ const confirmationBatchFinishedCount = ref(0);
 const confirmationBatchTotalCount = ref(0);
 const confirmationBatchSuccessCount = ref(0);
 const confirmationBatchFailedCount = ref(0);
+const confirmationBatchSuccessRate = ref(0);
 const confirmationSiteVersion = useLocalStorage("temu-workspace:confirmation-site-version", 10003);
+
+// 活动报名面板状态
+const activityPanelLoading = ref(false);
+const activityPanelMatching = ref(false);
+const activityPanelSubmitting = ref(false);
+const activityPanelActivities = ref<any[]>([]);
+const activityPanelSelectedActivity = ref<any>(null);
+const activityPanelStockThreshold = ref(30);
+const activityPanelSpuIdInput = ref("");
+const activityPanelMatchProducts = ref<any[]>([]);
+const activityPanelSelectedProducts = ref<any[]>([]);
+const activityPanelSearchScrollContext = ref("");
 const selectedConfirmationRowKeys = ref<string[]>([]);
 const confirmationPreviewGridRef = ref<VxeGridInstance<ConfirmationPreviewRow>>();
 const priceReviewRiskFilter = ref<PriceReviewRiskFilter>("all");
@@ -2458,6 +2589,47 @@ const regionCookieCounts = computed(() => ({
 const hasUsableSession = computed(() => regionCookieCounts.value.global > 0);
 
 const normalizedSearchKeyword = computed(() => actionSearchKeyword.value.trim().toLowerCase());
+// 活动报名面板 grid options
+const activityPanelMatchGridOptions = ref<VxeGridProps<any>>({
+  ...(commonGridOptions as any),
+  maxHeight: 600,
+  rowConfig: { keyField: "rowKey" },
+  checkboxConfig: { reserve: true, highlight: true },
+  columns: [
+    { type: "checkbox", width: 64, fixed: "left" },
+    { title: "SPU ID", field: "productId", minWidth: 220 },
+    { title: "SKU 数量", field: "skuCount", minWidth: 140, align: "center" },
+    { title: "推荐价范围", field: "priceRange", minWidth: 260, slots: { default: "matchPriceSlot" } },
+  ],
+});
+
+const normalizeActivityPanelCatalog = (result: any) => {
+  const rawActivities = [
+    ...(Array.isArray(result?.bigActivities) ? result.bigActivities : []),
+    ...(Array.isArray(result?.smallActivities) ? result.smallActivities : []),
+  ];
+  const activities = rawActivities
+    .map((activity: any) => ({
+      ...activity,
+      activityType: Number(activity?.activityType),
+      activityThematicId: activity?.activityThematicId
+        ? Number(activity.activityThematicId)
+        : undefined,
+      stockThreshold: activity?.stockThreshold
+        ? Number(activity.stockThreshold)
+        : undefined,
+    }))
+    .filter((activity: any) => Number.isFinite(activity.activityType) && activity.activityType > 0);
+
+  return { rawActivities, activities };
+};
+
+const applyActivityPanelCatalog = (result: any) => {
+  const { rawActivities, activities } = normalizeActivityPanelCatalog(result);
+  activityPanelActivities.value = activities;
+  return { rawActivities, activities };
+};
+
 const SIMPLIFIED_ACTION_KEYS = [
   "goods.price-review.list",
   "goods.confirmation.list",
@@ -2465,6 +2637,7 @@ const SIMPLIFIED_ACTION_KEYS = [
   "goods.real-picture.list",
   "compliance.page-query",
   "jit.list",
+  "activity.enroll",
 ];
 
 const publishDetailToolItem = computed<ToolkitToolItem | null>(() => {
@@ -4911,6 +5084,14 @@ const syncTaskRunResultToWorkspace = (detail?: TemuTaskRunDetail | null) => {
   }
 
   state.lastResult = result as TemuActionResponse;
+
+  if (actionKey === "activity.enroll") {
+    const actionResult = asPlainObject(result.result);
+    const { activities } = applyActivityPanelCatalog(actionResult);
+    if (activities.length > 0) {
+      resetActivityPanelSelection();
+    }
+  }
 };
 
 const unwrapTemuApiPayload = <T = any,>(value: any): T => {
@@ -5291,10 +5472,33 @@ const requireTemuClientContext = () => {
   return true;
 };
 
-const buildClientTaskPayload = (payload: Record<string, any>) => ({
-  ...payload,
-  clientId: props.clientId,
-});
+// 只有需要客户端浏览器的动作才传 clientId
+const CLIENT_REQUIRED_ACTIONS = new Set([
+  "goods.real-picture.list",
+  "goods.real-picture.submit",
+  "goods.price-review.list",
+  "goods.confirmation.list",
+  "compliance.page-query",
+  "compliance.detail",
+  "compliance.submit",
+  "jit.list",
+  "jit.list-all",
+  "jit.open",
+  "jit.open-maintain",
+  "jit.stock.update",
+  TEMU_PUBLISH_DETAIL_REQUEST_CAPTURE_ACTION_KEY,
+]);
+
+const buildClientTaskPayload = (actionKey: string, payload: Record<string, any>) => {
+  // 服务端 HTTP 代理动作不需要 clientId
+  if (!CLIENT_REQUIRED_ACTIONS.has(actionKey)) {
+    return payload;
+  }
+  return {
+    ...payload,
+    clientId: props.clientId,
+  };
+};
 
 const runTemuClientAction = <TResult = Record<string, any>,>(
   actionKey: string,
@@ -7549,6 +7753,7 @@ const runAction = async () => {
     emit("run-tool", {
       featureKey: action.featureKey || action.key,
       payload: buildClientTaskPayload(
+        action.key,
         selectedActionPreset.value.buildPayload(parsed, props.profileId),
       ),
     });
@@ -7558,6 +7763,7 @@ const runAction = async () => {
   runningActionKey.value = String(action.key || "").trim();
   try {
     const payload = buildClientTaskPayload(
+      action.key,
       selectedActionPreset.value.buildPayload(parsed, props.profileId),
     );
     state.lastResult = null;
@@ -7824,6 +8030,209 @@ const fetchAllConfirmationRows = async () => {
   }
 };
 
+// 活动报名面板方法
+const loadActivityPanelActivities = async () => {
+  activityPanelLoading.value = true;
+  try {
+    const response = normalizeTemuActionResponse(
+      await executeTemuAction("/temu/activity/list", {
+        profileId: props.profileId,
+        region: String(activeTaskRunDetail.value?.region || "global"),
+      }),
+    );
+    if (response.success && response.result) {
+      const { rawActivities, activities: allActivities } = applyActivityPanelCatalog(response.result);
+      if (allActivities.length === 0 && rawActivities.length > 0) {
+        console.warn("[temu activity] invalid activity samples", response.result?.debug?.invalidActivitySamples);
+        ElMessage.warning(`获取到 ${rawActivities.length} 个活动，但活动类型无效，请检查后端活动提取`);
+      } else if (rawActivities.length === 0 && response.result?.debug?.invalidActivitySamples?.length) {
+        console.warn("[temu activity] no valid activities, samples", response.result.debug.invalidActivitySamples);
+        ElMessage.warning("未解析到可报名活动，已在控制台输出活动字段样本");
+      } else {
+        ElMessage.success(`获取活动列表成功，共 ${allActivities.length} 个活动`);
+      }
+    } else {
+      ElMessage.error(response.message || "获取活动列表失败");
+    }
+  } catch (error: any) {
+    ElMessage.error(extractRequestErrorMessage(error, "获取活动列表失败"));
+  } finally {
+    activityPanelLoading.value = false;
+  }
+};
+
+const getSelectedActivityType = () => {
+  const activityType = Number(activityPanelSelectedActivity.value?.activityType);
+  return Number.isFinite(activityType) && activityType > 0 ? activityType : null;
+};
+
+const resetActivityPanelSelection = () => {
+  activityPanelSelectedActivity.value = null;
+  activityPanelMatchProducts.value = [];
+  activityPanelSelectedProducts.value = [];
+  activityPanelSearchScrollContext.value = "";
+};
+
+const selectActivityPanelActivity = (activity: any) => {
+  const activityType = Number(activity?.activityType);
+  if (!Number.isFinite(activityType) || activityType <= 0) {
+    ElMessage.warning("活动类型无效，无法查询可报名商品");
+    return;
+  }
+
+  activityPanelSelectedActivity.value = {
+    ...activity,
+    activityType,
+    activityThematicId: activity?.activityThematicId
+      ? Number(activity.activityThematicId)
+      : undefined,
+  };
+  activityPanelMatchProducts.value = [];
+  activityPanelSelectedProducts.value = [];
+  activityPanelSearchScrollContext.value = "";
+};
+
+const loadActivityPanelMatchProducts = async () => {
+  if (!activityPanelSelectedActivity.value) return;
+  if (activityPanelMatching.value) return;
+  const activityType = getSelectedActivityType();
+  if (!activityType) {
+    ElMessage.warning("活动类型不能为空，请重新选择活动");
+    return;
+  }
+  activityPanelMatching.value = true;
+  try {
+    const act = activityPanelSelectedActivity.value;
+    const spuIdList = activityPanelSpuIdInput.value
+      ? activityPanelSpuIdInput.value
+          .split(/[,，\n]/)
+          .map((s) => parseInt(s.trim()))
+          .filter((n) => !isNaN(n))
+      : undefined;
+
+    const matchPayload = {
+      profileId: props.profileId,
+      region: String(activeTaskRunDetail.value?.region || "global"),
+      activityType,
+      ...(act.activityThematicId ? { activityThematicId: act.activityThematicId } : {}),
+      searchScrollContext: activityPanelSearchScrollContext.value,
+      stockThreshold: activityPanelStockThreshold.value,
+      ...(spuIdList && spuIdList.length > 0 ? { spuIdList } : {}),
+    };
+    console.debug("[temu activity] match payload", matchPayload);
+    const response = normalizeTemuActionResponse(
+      await executeTemuAction("/temu/activity/match-products", matchPayload),
+    );
+
+    if (!response.success) {
+      ElMessage.error(response.message || "查询可报名商品失败");
+      return;
+    }
+
+    const seen = new Set<string>();
+    const products = (Array.isArray(response.result?.products) ? response.result.products : [])
+      .map((product: any, index: number) => {
+        const productId = Number(product?.productId || 0) || null;
+        const fallbackKey = `${activityType}-${act.activityThematicId || "main"}-${index}`;
+        const rowKey = productId ? String(productId) : fallbackKey;
+        return {
+          ...product,
+          productId,
+          rowKey,
+          checked: false,
+          skuCount: Array.isArray(product?.skus) ? product.skus.length : 0,
+        };
+      })
+      .filter((product: any) => {
+        if (seen.has(product.rowKey)) {
+          return false;
+        }
+        seen.add(product.rowKey);
+        return true;
+      });
+
+    activityPanelMatchProducts.value = products;
+    activityPanelSelectedProducts.value = [];
+    activityPanelSearchScrollContext.value = String(response.result?.searchScrollContext || "");
+    ElMessage.success(`查询完成，共 ${products.length} 个可报名商品`);
+  } catch (error: any) {
+    ElMessage.error(extractRequestErrorMessage(error, "查询可报名商品失败"));
+  } finally {
+    activityPanelMatching.value = false;
+  }
+};
+
+const onActivityPanelCheckboxChange = ({ row }: any) => {
+  if (row) {
+    row.checked = !!row.checked;
+  }
+  activityPanelSelectedProducts.value = activityPanelMatchProducts.value.filter((product) => product.checked);
+};
+
+const onActivityPanelCheckboxAll = ({ records }: any) => {
+  const selectedKeys = new Set((Array.isArray(records) ? records : []).map((record: any) => record.rowKey));
+  activityPanelMatchProducts.value.forEach((product) => {
+    product.checked = selectedKeys.has(product.rowKey);
+  });
+  activityPanelSelectedProducts.value = activityPanelMatchProducts.value.filter((product) => product.checked);
+};
+
+const activityPanelSelectAll = () => {
+  activityPanelMatchProducts.value.forEach((p) => (p.checked = true));
+  activityPanelSelectedProducts.value = [...activityPanelMatchProducts.value];
+};
+
+const getActivityPriceRange = (row: any) => {
+  if (!row.skus?.length) return "-";
+  const prices = row.skus
+    .map((s: any) => s.suggestActivityPrice)
+    .filter((p: any) => p != null);
+  if (!prices.length) return "-";
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  return min === max ? `¥${(min / 100).toFixed(2)}` : `¥${(min / 100).toFixed(2)} ~ ¥${(max / 100).toFixed(2)}`;
+};
+
+const submitActivityPanelEnroll = async () => {
+  if (activityPanelSelectedProducts.value.length === 0) {
+    ElMessage.warning("请先选择要报名的商品");
+    return;
+  }
+  const activityType = getSelectedActivityType();
+  if (!activityType) {
+    ElMessage.warning("活动类型不能为空，请重新选择活动");
+    return;
+  }
+  activityPanelSubmitting.value = true;
+  try {
+    const act = activityPanelSelectedActivity.value;
+    const submitPayload = {
+      profileId: props.profileId,
+      region: String(activeTaskRunDetail.value?.region || "global"),
+      activityType,
+      ...(act.activityThematicId ? { activityThematicId: act.activityThematicId } : {}),
+      selectedProducts: activityPanelSelectedProducts.value,
+      stockThreshold: activityPanelStockThreshold.value,
+    };
+    console.debug("[temu activity] submit payload", submitPayload);
+    const response = normalizeTemuActionResponse(
+      await executeTemuAction("/temu/activity/batch-submit", submitPayload),
+    );
+
+    if (response.success) {
+      ElMessage.success(`报名成功，共提交 ${activityPanelSelectedProducts.value.length} 个商品`);
+      activityPanelSelectedProducts.value = [];
+      activityPanelMatchProducts.value.forEach((p) => (p.checked = false));
+    } else {
+      ElMessage.error(response.message || "报名失败");
+    }
+  } catch (error: any) {
+    ElMessage.error(extractRequestErrorMessage(error, "报名失败"));
+  } finally {
+    activityPanelSubmitting.value = false;
+  }
+};
+
 watch(
   selectedCategoryActions,
   () => {
@@ -7839,6 +8248,15 @@ watch(actionSearchKeyword, () => {
 watch(activeTaskRunId, () => {
   resetTaskRunDetailDialogState();
 });
+
+watch(
+  () => activeTaskRunDetail.value?.result,
+  () => {
+    if (activeTaskRunDetail.value?.actionKey === "activity.enroll") {
+      syncTaskRunResultToWorkspace(activeTaskRunDetail.value);
+    }
+  },
+);
 
 watch(taskRunPriceReviewPreviewRows, (rows) => {
   const selectableKeys = new Set(
@@ -9193,5 +9611,89 @@ onBeforeUnmount(() => {
     padding-right: 16px;
     padding-left: 16px;
   }
+}
+
+// 活动报名面板样式
+.temu-workspace__activity-list {
+  padding: 8px 0;
+}
+
+.temu-workspace__activity-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px;
+}
+
+.temu-workspace__activity-card {
+  padding: 14px 16px;
+  background: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--el-color-primary-light-9);
+    border-color: var(--el-color-primary-light-5);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+}
+
+.temu-workspace__activity-card-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  margin-bottom: 8px;
+}
+
+.temu-workspace__activity-card-type,
+.temu-workspace__activity-card-theme,
+.temu-workspace__activity-card-stock {
+  font-size: 13px;
+  color: var(--el-text-color-regular);
+  margin-bottom: 4px;
+}
+
+.temu-workspace__activity-card-theme {
+  color: var(--el-color-primary);
+}
+
+.temu-workspace__activity-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--el-fill-color-light);
+  border-radius: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.temu-workspace__activity-label {
+  font-size: 14px;
+  color: var(--el-text-color-regular);
+  font-weight: 500;
+}
+
+.temu-workspace__match-config {
+  padding: 12px 16px;
+  background: var(--el-fill-color-light);
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+.temu-workspace__match-result {
+  margin-top: 12px;
+}
+
+.temu-workspace__match-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: var(--el-text-color-regular);
 }
 </style>

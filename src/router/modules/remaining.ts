@@ -805,6 +805,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
           toolkitPlatform: "alibaba_1688",
         },
       },
+      {
+        path: "amazon",
+        component: () => import("@/views/external/toolkit/amazon/index.vue"),
+        name: "OperationToolkitAmazon",
+        meta: {
+          title: "卖家精灵（亚马逊）",
+          toolkitPlatform: "amazon",
+        },
+      },
     ],
   },
   {

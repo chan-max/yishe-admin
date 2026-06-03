@@ -427,6 +427,7 @@ export type WebsocketEvents = {
   psAutomationStatus: PsAutomationStatusEvent;
   publishTaskRuntime: PublishTaskRuntimeEvent;
   globalNotification: GlobalNotificationEvent;
+  amazonCrawlerTaskUpdate: Record<string, any>;
 };
 
 const emitter = mitt<WebsocketEvents>();
@@ -905,6 +906,10 @@ function bindSocketEvents(currentSocket: Socket) {
 
   currentSocket.on("publish-task-runtime", (data: PublishTaskRuntimeEvent) => {
     emitter.emit("publishTaskRuntime", data);
+  });
+
+  currentSocket.on("amazon-crawler-task-update", (data) => {
+    emitter.emit("amazonCrawlerTaskUpdate", data);
   });
 
   currentSocket.on("global-notification", (data: GlobalNotificationEvent) => {
