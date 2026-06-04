@@ -104,8 +104,7 @@ const form = reactive<any>({
   price: 0,
   salePrice: 0,
   stock: 0,
-  specificationsText: "",
-  imagePolicyText: "",
+  psdImageIndexes: "",
   autoPublish: true,
   isActive: true,
 });
@@ -128,8 +127,7 @@ const resetForm = () => {
     price: 0,
     salePrice: 0,
     stock: 0,
-    specificationsText: "",
-    imagePolicyText: "",
+    psdImageIndexes: "",
     autoPublish: true,
     isActive: true,
   });
@@ -144,12 +142,25 @@ const handleAdd = () => {
 const handleEdit = (row: any) => {
   resetForm();
   Object.assign(form, {
-    ...row,
+    id: row.id || "",
+    name: row.name || "",
+    productType: row.productType || "",
+    titlePrompt: row.titlePrompt || "",
+    aiPrompt: row.aiPrompt || "",
+    descriptionPrompt: row.descriptionPrompt || "",
+    keywordPrompt: row.keywordPrompt || "",
+    seoPrompt: row.seoPrompt || "",
+    tags: row.tags || "",
     price: Number(row.price || 0),
     salePrice: Number(row.salePrice || 0),
     stock: Number(row.stock || 0),
-    specificationsText: row.specifications ? JSON.stringify(row.specifications, null, 2) : "",
-    imagePolicyText: row.imagePolicy ? JSON.stringify(row.imagePolicy, null, 2) : "",
+    imagePolicy: row.imagePolicy || null,
+    psdImageIndexes: String(
+      row.imagePolicy?.psdImageIndexes ||
+        row.imagePolicy?.imageIndexes ||
+        row.imagePolicy?.indexes ||
+        "",
+    ),
     autoPublish: row.autoPublish !== false,
     isActive: row.isActive !== false,
   });
@@ -157,28 +168,37 @@ const handleEdit = (row: any) => {
   dialogVisible.value = true;
 };
 
-const parseJsonText = (text: string, label: string) => {
-  const raw = String(text || "").trim();
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    throw new Error(`${label} 必须是合法 JSON`);
-  }
-};
-
 const submitForm = async () => {
   if (!formRef.value) return;
   submitLoading.value = true;
   try {
     await formRef.value.validate();
+    const imagePolicy =
+      form.imagePolicy && typeof form.imagePolicy === "object" && !Array.isArray(form.imagePolicy)
+        ? { ...form.imagePolicy }
+        : {};
+    if (form.psdImageIndexes) {
+      imagePolicy.psdImageIndexes = String(form.psdImageIndexes).trim();
+    } else {
+      delete imagePolicy.psdImageIndexes;
+    }
     const payload = {
-      ...form,
-      specifications: parseJsonText(form.specificationsText, "规格配置"),
-      imagePolicy: parseJsonText(form.imagePolicyText, "图片策略"),
+      id: form.id,
+      name: form.name,
+      productType: form.productType,
+      titlePrompt: form.titlePrompt,
+      aiPrompt: form.aiPrompt,
+      descriptionPrompt: form.descriptionPrompt,
+      keywordPrompt: form.keywordPrompt,
+      seoPrompt: form.seoPrompt,
+      tags: form.tags,
+      price: form.price,
+      salePrice: form.salePrice,
+      stock: form.stock,
+      autoPublish: form.autoPublish,
+      isActive: form.isActive,
+      imagePolicy: Object.keys(imagePolicy).length ? imagePolicy : null,
     };
-    delete payload.specificationsText;
-    delete payload.imagePolicyText;
     if (payload.id) {
       await productGenerationTemplateApi.update(payload);
       ElMessage.success("更新成功");
@@ -245,15 +265,10 @@ onMounted(getList);
             <div class="common-table">
               <vxe-grid v-bind="gridOptions" :data="tableData" :loading="loading">
                 <template #action="{ row }">
-                  <el-dropdown class="operation-dropdown" placement="bottom-end">
-                    <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
-                    <template #dropdown>
-                      <el-dropdown-menu class="operation-menu-compact">
-                        <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
-                        <el-dropdown-item divided class="operation-menu-item--danger" @click="handleDelete(row)">删除</el-dropdown-item>
-                      </el-dropdown-menu>
-                    </template>
-                  </el-dropdown>
+                  <div class="template-row-actions">
+                    <el-button type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
+                    <el-button type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
+                  </div>
                 </template>
               </vxe-grid>
             </div>
@@ -307,6 +322,14 @@ onMounted(getList);
             </el-form-item>
           </el-col>
           <el-col :span="24">
+            <el-form-item label="套图图片序号">
+              <el-input
+                v-model="form.psdImageIndexes"
+                placeholder="例如：1,3,5 或 2-4；留空则使用全部套图图片"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="24">
             <el-form-item label="标题提示词">
               <el-input v-model="form.titlePrompt" type="textarea" :rows="3" />
             </el-form-item>
@@ -329,16 +352,6 @@ onMounted(getList);
           <el-col :span="24">
             <el-form-item label="SEO提示词">
               <el-input v-model="form.seoPrompt" type="textarea" :rows="3" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="规格配置">
-              <el-input v-model="form.specificationsText" type="textarea" :rows="4" placeholder='JSON，例如 {"options":[]}' />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="图片策略">
-              <el-input v-model="form.imagePolicyText" type="textarea" :rows="4" placeholder='JSON，例如 {"usePsdImagesAsDetailImages":true}' />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -377,5 +390,14 @@ onMounted(getList);
 
 :deep(.product-generation-template-page .list-page-table-panel__pagination--flat) {
   padding-top: 10px;
+}
+
+.template-row-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
+  white-space: nowrap;
 }
 </style>

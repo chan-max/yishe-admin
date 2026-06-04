@@ -17,9 +17,15 @@ export const openToolWindow = (
     return null
   }
 
+  // 组件工具不需要 src，直接打开
+  if (resolved.component) {
+    const store = useToolWindowStoreWithOut()
+    return store.openWindow(resolved, options)
+  }
+
   const nextSrc = options?.src || resolved.src
   if (!hasUsableToolSrc(nextSrc)) {
-    ElMessage.warning(`工具“${resolved.title}”尚未配置地址`)
+    ElMessage.warning(`工具"${resolved.title}"尚未配置地址`)
     return null
   }
 

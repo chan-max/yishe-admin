@@ -5,9 +5,31 @@
         <div class="list-page-filter list-page-filter--flat">
           <div class="list-page-filter__row">
             <div class="list-page-search-form__actions">
+              <el-input
+                v-model="queryParams.keyword"
+                class="ai-api-key-search"
+                clearable
+                placeholder="搜索名称 / 模型 / Base URL"
+                size="small"
+                @clear="handleSearch"
+                @keyup.enter="handleSearch"
+              />
+              <el-select
+                v-model="queryParams.enabled"
+                class="ai-api-key-status-filter"
+                clearable
+                placeholder="启用状态"
+                size="small"
+                @change="handleSearch"
+                @clear="handleSearch"
+              >
+                <el-option label="启用" value="true" />
+                <el-option label="停用" value="false" />
+              </el-select>
               <el-button size="small" :disabled="loading" @click="openUsageSettingDialog()">
                 AI 使用设置
               </el-button>
+              <el-button size="small" :disabled="loading" @click="handleSearch">查询</el-button>
               <el-button
                 size="small"
                 type="primary"
@@ -142,6 +164,20 @@
           </div>
         </div>
       </template>
+
+      <template #pagination>
+        <div
+          v-if="activeTab === 'mine'"
+          class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat"
+        >
+          <pagination
+            :total="mineTotal"
+            v-model:page="queryParams.currentPage"
+            v-model:limit="queryParams.pageSize"
+            @pagination="getList"
+          />
+        </div>
+      </template>
     </ListPageLayout>
 
     <AiApiKeyDialog ref="dialogRef" @success="handleDialogSuccess" />
@@ -177,10 +213,17 @@ const apiKeyLoadingId = ref<number | null>(null);
 const activeTab = ref<"mine" | "public">("mine");
 const mineList = ref<AiApiKeyConfig[]>([]);
 const publicList = ref<AiApiKeyConfig[]>([]);
+const mineTotal = ref(0);
 const dialogRef = ref();
 const usageSettingDialogRef = ref();
 const revealedApiKeyMap = reactive<Record<number, boolean>>({});
 const plainApiKeyMap = reactive<Record<number, string>>({});
+const queryParams = reactive({
+  currentPage: 1,
+  pageSize: 20,
+  keyword: "",
+  enabled: "",
+});
 
 const mineGridOptions = computed(() => ({
   ...commonGridOptions,
@@ -302,14 +345,28 @@ const resetPlainKeyState = () => {
 const getList = async () => {
   loading.value = true;
   try {
-    const [mineData, publicData] = await Promise.all([getAiApiKeyList(), getPublicAiApiKeyList()]);
-    mineList.value = Array.isArray(mineData) ? mineData : [];
+    const [mineData, publicData] = await Promise.all([
+      getAiApiKeyList({
+        page: queryParams.currentPage,
+        pageSize: queryParams.pageSize,
+        keyword: queryParams.keyword || undefined,
+        enabled: queryParams.enabled || undefined,
+      }),
+      getPublicAiApiKeyList(),
+    ]);
+    mineList.value = Array.isArray(mineData?.list) ? mineData.list : [];
+    mineTotal.value = Number(mineData?.total || 0);
     publicList.value = Array.isArray(publicData) ? publicData : [];
     resetPlainKeyState();
     void refreshAiConfigState();
   } finally {
     loading.value = false;
   }
+};
+
+const handleSearch = async () => {
+  queryParams.currentPage = 1;
+  await getList();
 };
 
 const handleDialogSuccess = async () => {
@@ -429,6 +486,14 @@ onMounted(() => {
 
 .ai-api-key-tabs :deep(.el-tabs__header) {
   margin-bottom: 10px;
+}
+
+.ai-api-key-search {
+  width: 260px;
+}
+
+.ai-api-key-status-filter {
+  width: 120px;
 }
 
 .ai-api-key-mask {

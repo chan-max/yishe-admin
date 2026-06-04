@@ -27,6 +27,21 @@ export interface AiApiKeyConfig {
   updateTime?: string;
 }
 
+export interface AiApiKeyListParams {
+  page?: number;
+  pageSize?: number;
+  keyword?: string;
+  enabled?: boolean | string;
+  isPublic?: boolean | string;
+}
+
+export interface AiApiKeyPageResult {
+  list: AiApiKeyConfig[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export interface AiFeatureRegistryItem {
   code: string;
   label: string;
@@ -35,7 +50,8 @@ export interface AiFeatureRegistryItem {
   description: string;
 }
 
-export const getAiApiKeyList = () => request.get<AiApiKeyConfig[]>({ url: "/system/ai-api-key" });
+export const getAiApiKeyList = (params?: AiApiKeyListParams) =>
+  request.get<AiApiKeyPageResult>({ url: "/system/ai-api-key", params });
 
 export const getPublicAiApiKeyList = () =>
   request.get<AiApiKeyConfig[]>({ url: "/system/ai-api-key/public" });

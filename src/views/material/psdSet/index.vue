@@ -193,66 +193,38 @@
                 <el-dropdown class="operation-dropdown" placement="bottom-end">
                   <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
                   <template #dropdown>
-                    <div class="op-menu">
-                      <div class="op-menu-item" @click="() => handleViewDetail(row)">
-                        <span class="op-menu-label">查看详情</span>
-                      </div>
-
-                      <div class="op-menu-item" @click="() => handleEditConfigDirectly(row)">
-                        <span class="op-menu-label">编辑配置</span>
-                      </div>
-
-                      <div class="op-divider"></div>
-
-                      <el-tooltip content="需要客户端连接" placement="right"
-                        :disabled="isClientConnected || startingProductionId === row.id">
-                        <div class="op-menu-item" @click="() => handleStartProduction(row)" :class="{
-                          'is-disabled': !isClientConnected || startingProductionId === row.id,
-                        }">
-                          <span class="op-menu-label">开始制作</span>
-                        </div>
-                      </el-tooltip>
-
-                      <div class="op-divider"></div>
-
-                      <div class="op-menu-section">
-                        <div class="op-menu-section-title">状态标记</div>
-                        <div class="op-menu-item" @click="() => updateRowStatus(row, 'pending')">
-                          <span class="op-menu-label">待制作</span>
-                        </div>
-                        <div class="op-menu-item" @click="() => updateRowStatus(row, 'processing')">
-                          <span class="op-menu-label">制作中</span>
-                        </div>
-                        <div class="op-menu-item" @click="() => updateRowStatus(row, 'completed')">
-                          <span class="op-menu-label">已完成</span>
-                        </div>
-                        <div class="op-menu-item" @click="() => updateRowStatus(row, 'failed')">
-                          <span class="op-menu-label">失败</span>
-                        </div>
-                      </div>
-
-                      <div class="op-divider"></div>
-
-                      <div class="op-menu-item" @click="() => handleToProduct(row)"
-                        :class="{ 'is-disabled': generatingProductId === row.id }">
-                        <span class="op-menu-label">生成产品</span>
-                      </div>
-                      <div class="op-menu-item" @click="() => handleCreatePublishTask(row)">
-                        <span class="op-menu-label">生成发布任务</span>
-                      </div>
-                      <div class="op-menu-item" @click="() => handleViewPublishTasks(row)">
-                        <span class="op-menu-label">查看发布任务</span>
-                      </div>
-                      <div class="op-menu-item" @click="() => handleViewPublishUsageRecords(row)">
-                        <span class="op-menu-label">查看使用记录</span>
-                      </div>
-
-                      <div class="op-divider"></div>
-
-                      <div class="op-menu-item danger" @click="() => handleDelete(row)">
-                        <span class="op-menu-label">删除</span>
-                      </div>
-                    </div>
+                    <el-dropdown-menu class="operation-menu-compact">
+                      <el-dropdown-item @click="() => handleViewDetail(row)">查看详情</el-dropdown-item>
+                      <el-dropdown-item @click="() => handleEditConfigDirectly(row)">编辑配置</el-dropdown-item>
+                      <el-dropdown-item
+                        divided
+                        :disabled="!isClientConnected || startingProductionId === row.id"
+                        @click="() => handleStartProduction(row)"
+                      >
+                        开始制作
+                      </el-dropdown-item>
+                      <el-dropdown-item divided @click="() => updateRowStatus(row, 'pending')">标记待制作</el-dropdown-item>
+                      <el-dropdown-item @click="() => updateRowStatus(row, 'processing')">标记制作中</el-dropdown-item>
+                      <el-dropdown-item @click="() => updateRowStatus(row, 'completed')">标记已完成</el-dropdown-item>
+                      <el-dropdown-item @click="() => updateRowStatus(row, 'failed')">标记失败</el-dropdown-item>
+                      <el-dropdown-item
+                        divided
+                        :disabled="generatingProductId === row.id"
+                        @click="() => handleToProduct(row)"
+                      >
+                        生成产品
+                      </el-dropdown-item>
+                      <el-dropdown-item @click="() => handleCreatePublishTask(row)">生成发布任务</el-dropdown-item>
+                      <el-dropdown-item @click="() => handleViewPublishTasks(row)">查看发布任务</el-dropdown-item>
+                      <el-dropdown-item @click="() => handleViewPublishUsageRecords(row)">查看使用记录</el-dropdown-item>
+                      <el-dropdown-item
+                        divided
+                        class="operation-menu-item--danger"
+                        @click="() => handleDelete(row)"
+                      >
+                        删除
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
                   </template>
                 </el-dropdown>
               </template>
@@ -994,6 +966,7 @@ const generateProductDialogKey = ref(0);
 const generateProductBatchTaskId = ref("");
 const generateProductBatchProgress = ref<any>(null);
 let generateProductBatchProgressTimer: ReturnType<typeof setTimeout> | null = null;
+let generateProductBatchPollCount = 0;
 const GENERATE_PRODUCT_BATCH_PROGRESS_STORAGE_KEY = "psd-set-generate-product-batch-task";
 const isGenerateProductBatchRunning = computed(() =>
   ["queued", "processing"].includes(generateProductBatchProgress.value?.status || ""),
@@ -1026,6 +999,16 @@ const generateProductTemplateColumns: any[] = [
   { type: "checkbox", width: 48 },
   { field: "name", title: "模板名称", minWidth: 180, showOverflow: true },
   { field: "productType", title: "商品类型", width: 120, showOverflow: true },
+  {
+    field: "imagePolicy",
+    title: "图片",
+    width: 120,
+    formatter: ({ row }) =>
+      row?.imagePolicy?.psdImageIndexes ||
+      row?.imagePolicy?.imageIndexes ||
+      row?.imagePolicy?.indexes ||
+      "全部",
+  },
   {
     field: "salePrice",
     title: "售价",
@@ -3433,6 +3416,19 @@ function stopGenerateProductBatchProgressPolling() {
   }
 }
 
+function getGenerateProductBatchPollDelay() {
+  if (typeof document !== "undefined" && document.hidden) {
+    return 10000;
+  }
+  if (generateProductBatchPollCount < 4) {
+    return 2500;
+  }
+  if (generateProductBatchPollCount < 12) {
+    return 5000;
+  }
+  return 8000;
+}
+
 function persistGenerateProductBatchTask(taskId: string) {
   const normalizedTaskId = String(taskId || "").trim();
   if (!normalizedTaskId) return;
@@ -3449,9 +3445,10 @@ function clearPersistedGenerateProductBatchTask() {
   localStorage.removeItem(GENERATE_PRODUCT_BATCH_PROGRESS_STORAGE_KEY);
 }
 
-function syncGenerateProductBatchProgressToast(progress: any) {
+function syncGenerateProductBatchProgressToast(progress: any, options: { force?: boolean } = {}) {
   if (!progress?.taskId) return;
   const isDone = progress.status === "completed" || progress.status === "failed";
+  if (!options.force && !isDone) return;
   const hasFailure = Number(progress.failed || 0) > 0;
   const notificationId = `sticker-psd-set-generate-product:${progress.taskId}`;
   globalNotificationStore.removeBySource("sticker-psd-set-generate-product", notificationId);
@@ -3494,6 +3491,7 @@ function restoreGenerateProductBatchProgress() {
     generateProductBatchTaskId.value = taskId;
     generateProductSubmitting.value = true;
     batchGeneratingProducts.value = true;
+    generateProductBatchPollCount = 0;
     void pollGenerateProductBatchProgress(taskId);
   } catch {
     clearPersistedGenerateProductBatchTask();
@@ -3508,11 +3506,12 @@ async function pollGenerateProductBatchProgress(taskId: string) {
     const progress: any = await stickerPsdSetApi.getGenerateProductBatchProgress(taskId);
     generateProductBatchProgress.value = progress;
     generateProductBatchTaskId.value = taskId;
-    syncGenerateProductBatchProgressToast(progress);
+    generateProductBatchPollCount += 1;
     if (progress?.status === "completed" || progress?.status === "failed") {
       generateProductSubmitting.value = false;
       batchGeneratingProducts.value = false;
       clearPersistedGenerateProductBatchTask();
+      syncGenerateProductBatchProgressToast(progress, { force: true });
       if (progress?.completed > 0) {
         ElMessage.success(progress.message || `成功生成 ${progress.completed} 个产品`);
         getList();
@@ -3531,7 +3530,7 @@ async function pollGenerateProductBatchProgress(taskId: string) {
 
   generateProductBatchProgressTimer = setTimeout(() => {
     void pollGenerateProductBatchProgress(taskId);
-  }, 1500);
+  }, getGenerateProductBatchPollDelay());
 }
 
 async function handleSubmitGenerateProduct() {
@@ -3555,6 +3554,7 @@ async function handleSubmitGenerateProduct() {
 
   generateProductSubmitting.value = true;
   generateProductBatchProgress.value = null;
+  generateProductBatchPollCount = 0;
 
   try {
     const response: any = await stickerPsdSetApi.generateProductBatch({
@@ -3566,7 +3566,16 @@ async function handleSubmitGenerateProduct() {
       throw new Error("后端未返回批量任务ID");
     }
     persistGenerateProductBatchTask(generateProductBatchTaskId.value);
-    ElMessage.success(response?.message || "批量生成产品任务已提交");
+    generateProductBatchProgress.value = {
+      taskId: generateProductBatchTaskId.value,
+      status: "queued",
+      total: expectedCount,
+      completed: 0,
+      failed: 0,
+      progress: 0,
+      message: response?.message || "批量生成产品任务已提交，后台处理中",
+    };
+    syncGenerateProductBatchProgressToast(generateProductBatchProgress.value, { force: true });
     await pollGenerateProductBatchProgress(generateProductBatchTaskId.value);
   } catch (error: any) {
     generateProductSubmitting.value = false;

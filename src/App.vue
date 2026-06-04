@@ -7,7 +7,6 @@ import routerSearch from '@/components/RouterSearch/index.vue'
 import ToolWindowHost from '@/components/ToolWindowHost/index.vue'
 import GlobalUploadTaskPanel from '@/components/GlobalUploadTaskPanel.vue'
 import GlobalTemuBatchProgress from '@/components/GlobalTemuBatchProgress.vue'
-import FloatingToolButton from '@/components/FloatingToolButton/index.vue'
 
 defineOptions({ name: 'APP' })
 
@@ -35,7 +34,6 @@ setDefaultTheme()
     <ToolWindowHost />
     <GlobalUploadTaskPanel />
     <GlobalTemuBatchProgress />
-    <FloatingToolButton />
   </ConfigGlobal>
 </template>
 <style lang="scss">

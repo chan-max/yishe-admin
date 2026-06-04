@@ -93,9 +93,11 @@ const toRuntimeDefinition = (
 ): ToolWindowDefinition => ({
   ...source,
   title: options?.title || source.title,
-  src: source.buildSrc
-    ? source.buildSrc(options?.src || source.src, source)
-    : options?.src || source.src,
+  src: source.component ? undefined : (
+    source.buildSrc
+      ? source.buildSrc(options?.src || source.src || '', source)
+      : options?.src || source.src
+  ),
   defaultMode: options?.mode || source.defaultMode || 'fullscreen',
   defaultWidth: options?.width || source.defaultWidth || 1280,
   defaultHeight: options?.height || source.defaultHeight || 820,

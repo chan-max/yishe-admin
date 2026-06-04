@@ -2657,13 +2657,6 @@ const baseColumns: any[] = [
   },
   { type: "checkbox", width: 50, showOverflow: true },
   {
-    title: "ID",
-    field: "id",
-    width: 120,
-    showOverflow: false,
-    slots: { default: "idSlot" },
-  },
-  {
     title: "商品图片",
     field: "images",
     width: 180,
@@ -2842,6 +2835,13 @@ const gridColumns = computed(() => {
       width: 100,
       align: "center",
       slots: { default: "publishStatusSlot" },
+    },
+    {
+      title: "ID",
+      field: "id",
+      width: 120,
+      showOverflow: false,
+      slots: { default: "idSlot" },
     },
     {
       title: "创建人",

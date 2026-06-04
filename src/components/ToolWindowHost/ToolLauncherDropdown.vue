@@ -4,14 +4,17 @@ import { openToolWindow, getAvailableToolRegistryList } from "@/hooks/web/useToo
 
 defineOptions({ name: "ToolLauncherDropdown" });
 
-const getModeLabel = (mode?: "window" | "fullscreen") => (mode === "window" ? "浮窗" : "全屏");
+const getModeLabel = (tool: typeof toolRegistryList[number]) => {
+  if (tool.component) return '内置'
+  return tool.defaultMode === 'window' ? '浮窗' : '全屏'
+}
 
 const launcherItems = computed(() =>
   getAvailableToolRegistryList().map((tool) => ({
     key: tool.key,
     title: tool.title,
     icon: tool.icon || "ep:monitor",
-    modeLabel: getModeLabel(tool.defaultMode),
+    modeLabel: getModeLabel(tool),
   })),
 );
 
@@ -103,86 +106,31 @@ const handleOpen = (key: string) => {
 
 .tool-launcher-menu__content {
   display: flex;
-  min-width: 168px;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 7px 10px;
-  border-radius: 4px;
-  transition:
-    background-color 0.18s ease,
-    color 0.18s ease;
 }
 
 .tool-launcher-menu__title {
   display: inline-flex;
-  min-width: 0;
   align-items: center;
   gap: 7px;
-  font-family: "Cascadia Code", "Consolas", "Courier New", monospace;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 500;
 }
 
 .tool-launcher-menu__title-icon {
   flex-shrink: 0;
-  font-size: 11px;
+  font-size: 14px;
   color: var(--el-color-primary);
-}
-
-.tool-launcher-menu__title-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .tool-launcher-menu__tag {
   flex-shrink: 0;
-  padding: 1px 4px;
-  border: 1px solid color-mix(in srgb, var(--el-color-primary) 16%, transparent 84%);
+  padding: 1px 6px;
   border-radius: 3px;
-  background: color-mix(in srgb, var(--el-color-primary) 8%, transparent 92%);
-  font-family: "Cascadia Code", "Consolas", "Courier New", monospace;
-  font-size: 8px;
-  color: var(--el-color-primary);
-}
-
-:global(.tool-launcher-dropdown-popper.el-popper) {
-  border: 1px solid color-mix(in srgb, var(--app-content-border-color) 78%, transparent 22%) !important;
-  background: color-mix(in srgb, var(--el-bg-color) 98%, transparent 2%) !important;
-  box-shadow:
-    0 12px 28px rgba(15, 23, 42, 0.12),
-    0 1px 0 color-mix(in srgb, #ffffff 28%, transparent 72%) inset !important;
-  padding: 4px !important;
-  backdrop-filter: blur(12px);
-}
-
-:global(.tool-launcher-dropdown-popper .tool-launcher-menu) {
-  padding: 0;
-  border: none;
-  background: transparent;
-}
-
-:global(.tool-launcher-dropdown-popper .tool-launcher-menu__item) {
-  padding: 0;
-  border-radius: 4px;
-  line-height: normal;
-  color: var(--el-text-color-primary);
-}
-
-:global(.tool-launcher-dropdown-popper .tool-launcher-menu__item:not(.is-disabled):focus) {
-  background: transparent;
-}
-
-:global(.tool-launcher-dropdown-popper .tool-launcher-menu__item:not(.is-disabled):hover) {
-  background: transparent;
-}
-
-:global(
-  .tool-launcher-dropdown-popper
-    .tool-launcher-menu__item:not(.is-disabled):hover
-    .tool-launcher-menu__content
-) {
   background: var(--el-fill-color-light);
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
 }
 </style>

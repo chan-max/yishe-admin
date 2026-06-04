@@ -9,6 +9,7 @@ import {
 } from '@element-plus/icons-vue'
 import type { ToolWindowInstance } from '@/types/toolWindow'
 import { useToolWindowStore } from '@/store/modules/toolWindow'
+import { defineAsyncComponent, markRaw, h, resolveDynamicComponent, type Component } from 'vue'
 
 defineOptions({ name: 'ToolWindowHost' })
 
@@ -201,14 +202,30 @@ const syncViewport = () => {
   toolWindowStore.syncViewport()
 }
 
-const getWindowHostLabel = (src: string) => {
-  if (!src) return 'NO TARGET'
+const getWindowHostLabel = (windowItem: ToolWindowInstance) => {
+  if (windowItem.component) return ''
+
+  if (!windowItem.src) return 'NO TARGET'
 
   try {
-    return new URL(src, window.location.origin).host
+    return new URL(windowItem.src, window.location.origin).host
   } catch (error) {
     return 'INVALID TARGET'
   }
+}
+
+const toolComponentCache = new Map<string, Component>()
+
+const resolveToolComponent = (windowItem: ToolWindowInstance) => {
+  if (!windowItem.component) return null
+  if (toolComponentCache.has(windowItem.key)) return toolComponentCache.get(windowItem.key)!
+
+  const comp = typeof windowItem.component === 'function'
+    ? defineAsyncComponent(windowItem.component)
+    : resolveDynamicComponent(windowItem.component) as Component
+
+  toolComponentCache.set(windowItem.key, markRaw(comp))
+  return comp
 }
 
 const isDraggingWindow = (id: string) =>
@@ -252,7 +269,7 @@ onBeforeUnmount(() => {
             <div class="tool-window-host__title">
               <Icon :icon="windowItem.icon || 'ep:monitor'" class="tool-window-host__title-icon" />
               <span class="tool-window-host__title-text">{{ windowItem.title }}</span>
-              <span class="tool-window-host__title-host">{{ getWindowHostLabel(windowItem.src) }}</span>
+              <span class="tool-window-host__title-host">{{ getWindowHostLabel(windowItem) }}</span>
             </div>
 
             <div class="tool-window-host__actions">
@@ -291,7 +308,7 @@ onBeforeUnmount(() => {
                 </button>
 
                 <button
-                  v-if="windowItem.allowNewTab !== false"
+                  v-if="windowItem.allowNewTab !== false && !windowItem.component"
                   type="button"
                   class="tool-window-host__action"
                   title="新窗口打开"
@@ -317,8 +334,14 @@ onBeforeUnmount(() => {
           </header>
 
           <div class="tool-window-host__body">
+            <!-- Vue 组件工具 -->
+            <div v-if="windowItem.component" class="tool-window-host__component-wrap">
+              <component :is="resolveToolComponent(windowItem)" :key="`${windowItem.id}-${windowItem.refreshKey}`" />
+            </div>
+
+            <!-- iframe 工具 -->
             <iframe
-              v-if="windowItem.src"
+              v-else-if="windowItem.src"
               :key="`${windowItem.id}-${windowItem.refreshKey}`"
               class="tool-window-host__iframe"
               :src="windowItem.src"
@@ -391,29 +414,23 @@ onBeforeUnmount(() => {
   height: 100%;
   flex-direction: column;
   overflow: hidden;
-  border-top: 0;
-  border-right: 2px solid #314156;
-  border-bottom: 2px solid #314156;
-  border-left: 2px solid #314156;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   background: #0a0f16;
-  box-shadow: none;
-  outline: 1px solid rgba(103, 214, 151, 0.14);
-  outline-offset: -1px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .tool-window-host__window.is-fullscreen .tool-window-host__panel {
   border-radius: 0;
+  border: none;
+  box-shadow: none;
 }
 
 .tool-window-host__window:not(.is-fullscreen) .tool-window-host__panel {
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
 .tool-window-host__window.is-active .tool-window-host__panel {
-  border-right-color: #41556f;
-  border-bottom-color: #41556f;
-  border-left-color: #41556f;
-  outline-color: rgba(103, 214, 151, 0.2);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .tool-window-host__window.is-dragging .tool-window-host__panel,
@@ -560,6 +577,15 @@ onBeforeUnmount(() => {
 
 .tool-window-host__window.is-fullscreen .tool-window-host__body {
   padding: 0;
+}
+
+.tool-window-host__component-wrap {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
 }
 
 .tool-window-host__iframe {

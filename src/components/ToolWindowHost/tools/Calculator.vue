@@ -132,7 +132,13 @@ const rows = [
 </template>
 
 <style scoped lang="scss">
-.calc { display: flex; flex-direction: column; gap: 8px }
+.calc {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 4px;
+}
 
 .calc__screen {
   padding: 6px 2px;
@@ -147,15 +153,15 @@ const rows = [
 .calc__val {
   font-size: 24px;
   font-weight: 300;
-  color: rgba(0, 0, 0, 0.8);
+  color: #eef5ff;
   line-height: 1.1;
   letter-spacing: -0.02em;
-  &.err { color: #ff3b30 }
+  &.err { color: #ff6b6b }
 }
 
 .calc__pre {
   font-size: 11px;
-  color: rgba(0, 0, 0, 0.25);
+  color: rgba(255, 255, 255, 0.25);
   margin-top: 2px;
 }
 
@@ -173,30 +179,20 @@ const rows = [
   font-weight: 400;
   cursor: pointer;
   transition: background 0.1s;
-  background: rgba(0, 0, 0, 0.04);
-  color: rgba(0, 0, 0, 0.75);
-  &:hover { background: rgba(0, 0, 0, 0.07) }
-  &:active { transform: scale(0.96) }
-  &.op {
-    background: rgba(0, 122, 255, 0.1);
-    color: #007aff;
-    &:hover { background: rgba(0, 122, 255, 0.16) }
-  }
-  &.fn {
-    background: rgba(0, 0, 0, 0.05);
-    color: rgba(0, 0, 0, 0.5);
-    &:hover { background: rgba(0, 0, 0, 0.08) }
-  }
-  &.z { grid-column: span 2 }
-}
-
-:root.dark .calc__val { color: rgba(255, 255, 255, 0.85) }
-:root.dark .calc__pre { color: rgba(255, 255, 255, 0.25) }
-:root.dark .k {
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.06);
   color: rgba(255, 255, 255, 0.8);
   &:hover { background: rgba(255, 255, 255, 0.1) }
-  &.op { background: rgba(0, 122, 255, 0.18); color: #0a84ff; &:hover { background: rgba(0, 122, 255, 0.25) } }
-  &.fn { background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.55); &:hover { background: rgba(255, 255, 255, 0.12) } }
+  &:active { transform: scale(0.96) }
+  &.op {
+    background: rgba(103, 214, 151, 0.15);
+    color: #67d697;
+    &:hover { background: rgba(103, 214, 151, 0.22) }
+  }
+  &.fn {
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.5);
+    &:hover { background: rgba(255, 255, 255, 0.08) }
+  }
+  &.z { grid-column: span 2 }
 }
 </style>

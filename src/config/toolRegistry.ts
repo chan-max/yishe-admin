@@ -59,6 +59,21 @@ export const toolRegistry: Record<string, ToolWindowDefinition> = {
     allowFullscreen: true,
     allowNewTab: true,
   },
+  // === 内置组件工具 ===
+  calculator: {
+    key: 'calculator',
+    title: '计算器',
+    icon: 'ep:document-copy',
+    component: () => import('@/components/ToolWindowHost/tools/Calculator.vue'),
+    defaultMode: 'window',
+    defaultWidth: 280,
+    defaultHeight: 460,
+    minWidth: 260,
+    minHeight: 360,
+    allowFullscreen: false,
+    allowNewTab: false,
+    singleton: true,
+  },
 }
 
 export const toolRegistryList = Object.values(toolRegistry)

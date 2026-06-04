@@ -10,7 +10,9 @@ export interface ToolWindowRect {
 export interface ToolWindowDefinition {
   key: string
   title: string
-  src: string
+  src?: string
+  /** Vue component to render instead of iframe */
+  component?: any
   buildSrc?: (baseSrc: string, definition: ToolWindowDefinition) => string
   icon?: string
   singleton?: boolean
