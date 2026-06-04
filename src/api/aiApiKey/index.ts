@@ -71,4 +71,12 @@ export const createAiApiKey = (data: AiApiKeyConfig) =>
 export const updateAiApiKey = (id: number, data: Partial<AiApiKeyConfig>) =>
   request.patch({ url: `/system/ai-api-key/${id}`, data });
 
+export const shareAiApiKeyToUsers = (id: number, data: { userIds: Array<number | string> }) =>
+  request.post<{
+    sourceKeyId: number;
+    createdCount: number;
+    createdIds: number[];
+    skippedUserIds: number[];
+  }>({ url: `/system/ai-api-key/${id}/share`, data });
+
 export const deleteAiApiKey = (id: number) => request.delete({ url: `/system/ai-api-key/${id}` });

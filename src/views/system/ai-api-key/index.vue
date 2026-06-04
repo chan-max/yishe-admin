@@ -147,6 +147,9 @@
                           <el-dropdown-item command="edit">
                             <span>编辑</span>
                           </el-dropdown-item>
+                          <el-dropdown-item v-if="canManagePublic" command="share">
+                            <span>分享给用户</span>
+                          </el-dropdown-item>
                           <el-dropdown-item
                             command="delete"
                             divided
@@ -181,6 +184,7 @@
     </ListPageLayout>
 
     <AiApiKeyDialog ref="dialogRef" @success="handleDialogSuccess" />
+    <AiApiKeyShareDialog ref="shareDialogRef" @success="handleDialogSuccess" />
     <AiUsageSettingPanel ref="usageSettingDialogRef" @saved="handleUsageSettingSaved" />
   </ContentWrap>
 </template>
@@ -199,6 +203,7 @@ import {
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from "@/common/table";
 import { useUserStore } from "@/store/modules/user";
 import AiApiKeyDialog from "./components/AiApiKeyDialog.vue";
+import AiApiKeyShareDialog from "./components/AiApiKeyShareDialog.vue";
 import AiUsageSettingPanel from "./components/AiUsageSettingPanel.vue";
 import { refreshAiConfigState } from "@/services/aiConfigState";
 
@@ -215,6 +220,7 @@ const mineList = ref<AiApiKeyConfig[]>([]);
 const publicList = ref<AiApiKeyConfig[]>([]);
 const mineTotal = ref(0);
 const dialogRef = ref();
+const shareDialogRef = ref();
 const usageSettingDialogRef = ref();
 const revealedApiKeyMap = reactive<Record<number, boolean>>({});
 const plainApiKeyMap = reactive<Record<number, string>>({});
@@ -381,6 +387,10 @@ const openDialog = (id?: number) => {
   dialogRef.value?.open(id);
 };
 
+const openShareDialog = (row: AiApiKeyConfig) => {
+  shareDialogRef.value?.open(row);
+};
+
 const openUsageSettingDialog = () => {
   usageSettingDialogRef.value?.open();
 };
@@ -439,6 +449,10 @@ const handleToggleApiKeyVisible = async (row: AiApiKeyConfig) => {
 const handleOperationCommand = (command: string, row: AiApiKeyConfig) => {
   if (command === "edit") {
     openDialog(row.id);
+    return;
+  }
+  if (command === "share") {
+    openShareDialog(row);
     return;
   }
   if (command === "delete") {
