@@ -16,6 +16,7 @@ export interface ProductVO {
   seoTitle?: string
   seoDescription?: string
   sourceType?: string
+  sourceMaterialCodes?: string
   meta?: any
   isPublish?: boolean // 是否已发布
   createTime: Date

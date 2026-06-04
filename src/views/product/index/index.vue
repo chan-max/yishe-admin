@@ -672,6 +672,24 @@
                   </el-tag>
                 </template>
 
+                <template #sourceMaterialCodesSlot="{ row }">
+                  <div
+                    class="table-copy-row"
+                    :class="{ 'table-copy-row--empty': !getProductSourceMaterialCodesText(row) }"
+                    @click.stop="
+                      getProductSourceMaterialCodesText(row) &&
+                        copyText(getProductSourceMaterialCodesText(row), '素材图编码')
+                    "
+                  >
+                    <span class="table-copy-text">{{
+                      getProductSourceMaterialCodesText(row) || "未关联"
+                    }}</span>
+                    <el-icon v-if="getProductSourceMaterialCodesText(row)" class="table-copy-icon">
+                      <DocumentCopy />
+                    </el-icon>
+                  </div>
+                </template>
+
                 <template #isFeaturedSlot="{ row }">
                   <el-tag v-if="row.isFeatured" type="warning" size="small" effect="plain">精选</el-tag>
                   <span v-else class="table-cell-empty">-</span>
@@ -692,6 +710,12 @@
                           <span class="relation-source-label">套图</span>
                           <span class="relation-source-value">{{
                             getProductSourcePsdSetText(row)
+                          }}</span>
+                        </div>
+                        <div class="relation-source-row">
+                          <span class="relation-source-label">素材编码</span>
+                          <span class="relation-source-value">{{
+                            getProductSourceMaterialCodesText(row) || "未关联"
                           }}</span>
                         </div>
                         <div class="relation-source-row">
@@ -1141,6 +1165,16 @@
                 <el-option label="PSD套图" value="psd_set" />
                 <el-option label="导入" value="import" />
               </el-select>
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="24" :md="24" :lg="12" :xl="12">
+            <el-form-item label="素材图编码" prop="sourceMaterialCodes">
+              <el-input
+                v-model="form.sourceMaterialCodes"
+                disabled
+                placeholder="套图转商品后自动写入"
+              />
             </el-form-item>
           </el-col>
 
@@ -2151,6 +2185,12 @@
                 </div>
               </div>
               <div class="product-info-item">
+                <div class="product-info-label">素材图编码</div>
+                <div class="product-info-value">
+                  {{ getProductSourceMaterialCodesText(productDetail) || "未关联" }}
+                </div>
+              </div>
+              <div class="product-info-item">
                 <div class="product-info-label">生成模板</div>
                 <div class="product-info-value">
                   {{
@@ -2344,159 +2384,155 @@
               <span>关联信息</span>
             </div>
             <div class="relations-detail-content">
-              <!-- 使用已有的关联信息展示逻辑 -->
               <div
                 v-if="productDetail.customModel || productDetail.sticker || productDetail.meta?.psdSet"
                 class="relations-info"
               >
-                <!-- 设计模型 -->
-                <div v-if="productDetail.customModel" class="relation-section-item">
-                  <div class="relation-header">
-                    <span class="relation-label">设计模型：</span>
+                <div v-if="productDetail.customModel" class="relation-card">
+                  <div class="relation-card__media">
+                    <el-image
+                      v-if="productDetail.customModel.thumbnail"
+                      :src="
+                        getPreviewImageUrl(productDetail.customModel.thumbnail, {
+                          width: 240,
+                          quality: 80,
+                          format: 'webp',
+                        })
+                      "
+                      :preview-src-list="getCustomModelImages(productDetail.customModel)"
+                      :initial-index="0"
+                      :preview-teleported="true"
+                      :hide-on-click-modal="false"
+                      class="relation-card__image"
+                      fit="contain"
+                    />
+                    <span v-else class="relation-card__empty">无图</span>
                   </div>
-                  <vxe-grid
-                    v-bind="relationGridOptions"
-                    :data="[productDetail.customModel]"
-                    class="relation-sub-grid"
-                    :columns="[
-                      {
-                        field: 'thumbnail',
-                        title: '缩略图',
-                        width: 120,
-                        slots: { default: 'customModelThumbnailSlot' },
-                      },
-                      { field: 'name', title: '名称', minWidth: 100, showOverflow: true },
-                      { field: 'description', title: '描述', minWidth: 120, showOverflow: true },
-                      { field: 'keywords', title: '关键词', minWidth: 100, showOverflow: true },
-                      {
-                        field: 'updateTime',
-                        title: '更新时间',
-                        width: 140,
-                        slots: { default: 'customModelUpdateTimeSlot' },
-                      },
-                    ]"
-                  >
-                    <template #customModelThumbnailSlot="{ row: modelRow }">
-                      <div class="flex items-center justify-center p-1">
-                        <el-image
-                          v-if="modelRow.thumbnail"
-                          :src="
-                            getPreviewImageUrl(modelRow.thumbnail, {
-                              width: 200,
-                              quality: 80,
-                              format: 'webp',
-                            })
-                          "
-                          :preview-src-list="getCustomModelImages(modelRow)"
-                          :initial-index="0"
-                          :preview-teleported="true"
-                          :hide-on-click-modal="false"
-                          class="relation-thumb-image"
-                          fit="contain"
-                        />
-                        <span v-else class="text-gray-400 text-xs">无</span>
-                      </div>
-                    </template>
-                    <template #customModelUpdateTimeSlot="{ row: modelRow }">
-                      <span class="text-xs">{{
-                        modelRow.updateTime ? formatTimestamp(modelRow.updateTime) : "无"
+                  <div class="relation-card__body">
+                    <div class="relation-card__head">
+                      <span class="relation-card__type">设计模型</span>
+                      <span class="relation-card__title">{{
+                        productDetail.customModel.name || "未命名"
                       }}</span>
-                    </template>
-                  </vxe-grid>
+                    </div>
+                    <div class="relation-card__fields">
+                      <div class="relation-card__field">
+                        <span>描述</span>
+                        <strong>{{ productDetail.customModel.description || "-" }}</strong>
+                      </div>
+                      <div class="relation-card__field">
+                        <span>关键词</span>
+                        <strong>{{ productDetail.customModel.keywords || "-" }}</strong>
+                      </div>
+                      <div class="relation-card__field">
+                        <span>更新时间</span>
+                        <strong>{{
+                          productDetail.customModel.updateTime
+                            ? formatTimestamp(productDetail.customModel.updateTime)
+                            : "-"
+                        }}</strong>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <!-- 贴纸 -->
-                <div v-if="productDetail.sticker" class="relation-section-item">
-                  <div class="relation-header">
-                    <span class="relation-label">贴纸：</span>
+                <div v-if="productDetail.sticker" class="relation-card">
+                  <div class="relation-card__media">
+                    <el-image
+                      v-if="productDetail.sticker.url"
+                      :src="productDetail.sticker.url"
+                      :preview-src-list="[productDetail.sticker.url]"
+                      :initial-index="0"
+                      :preview-teleported="true"
+                      :hide-on-click-modal="false"
+                      class="relation-card__image"
+                      fit="contain"
+                    />
+                    <span v-else class="relation-card__empty">无图</span>
                   </div>
-                  <vxe-grid
-                    v-bind="relationGridOptions"
-                    :data="[productDetail.sticker]"
-                    class="relation-sub-grid"
-                    :columns="[
-                      {
-                        field: 'url',
-                        title: '图片',
-                        width: 120,
-                        slots: { default: 'stickerImageSlot' },
-                      },
-                      { field: 'name', title: '名称', minWidth: 100, showOverflow: true },
-                      { field: 'description', title: '描述', minWidth: 120, showOverflow: true },
-                      { field: 'keywords', title: '关键词', minWidth: 100, showOverflow: true },
-                      { field: 'suffix', title: '后缀', width: 60 },
-                      {
-                        field: 'updateTime',
-                        title: '更新时间',
-                        width: 140,
-                        slots: { default: 'stickerUpdateTimeSlot' },
-                      },
-                    ]"
-                  >
-                    <template #stickerImageSlot="{ row: stickerRow }">
-                      <div class="flex items-center justify-center p-1">
-                        <el-image
-                          v-if="stickerRow.url"
-                          :src="stickerRow.url"
-                          :preview-src-list="[stickerRow.url]"
-                          :initial-index="0"
-                          :preview-teleported="true"
-                          :hide-on-click-modal="false"
-                          class="relation-thumb-image"
-                          fit="contain"
-                        />
-                        <span v-else class="text-gray-400 text-xs">无</span>
-                      </div>
-                    </template>
-                    <template #stickerUpdateTimeSlot="{ row: stickerRow }">
-                      <span class="text-xs">{{
-                        stickerRow.updateTime ? formatTimestamp(stickerRow.updateTime) : "无"
+                  <div class="relation-card__body">
+                    <div class="relation-card__head">
+                      <span class="relation-card__type">贴纸</span>
+                      <span class="relation-card__title">{{
+                        productDetail.sticker.name || "未命名"
                       }}</span>
-                    </template>
-                  </vxe-grid>
+                    </div>
+                    <div class="relation-card__fields">
+                      <div class="relation-card__field">
+                        <span>描述</span>
+                        <strong>{{ productDetail.sticker.description || "-" }}</strong>
+                      </div>
+                      <div class="relation-card__field">
+                        <span>关键词</span>
+                        <strong>{{ productDetail.sticker.keywords || "-" }}</strong>
+                      </div>
+                      <div class="relation-card__field">
+                        <span>格式</span>
+                        <strong>{{ productDetail.sticker.suffix || "-" }}</strong>
+                      </div>
+                      <div class="relation-card__field">
+                        <span>更新时间</span>
+                        <strong>{{
+                          productDetail.sticker.updateTime
+                            ? formatTimestamp(productDetail.sticker.updateTime)
+                            : "-"
+                        }}</strong>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <!-- PSD 套图 -->
-                <div v-if="productDetail.meta?.psdSet" class="relation-section-item">
-                  <div class="relation-header">
-                    <span class="relation-label">PSD套图：</span>
-                  </div>
-                  <vxe-grid
-                    v-bind="relationGridOptions"
-                    :data="[productDetail.meta.psdSet]"
-                    class="relation-sub-grid"
-                    :columns="psdSetColumns"
-                  >
-                    <template #psdSetImagesSlot="{ row: psdRow }">
-                      <div class="flex gap-1 flex-wrap">
-                        <div
-                          v-for="(img, idx) in getPsdSetImages(psdRow).slice(0, 3)"
-                          :key="idx"
-                          class="relation-thumb-wrapper"
-                        >
-                          <el-image
-                            v-if="img"
-                            :src="img"
-                            :preview-src-list="getPsdSetImages(psdRow)"
-                            :initial-index="idx"
-                            :preview-teleported="true"
-                            :hide-on-click-modal="false"
-                            class="relation-thumb-image"
-                            fit="contain"
-                          />
-                          <span v-else class="text-gray-400 text-xs">无</span>
-                        </div>
-                        <span
-                          v-if="getPsdSetImages(psdRow).length > 3"
-                          class="text-xs text-gray-500"
-                          >+{{ getPsdSetImages(psdRow).length - 3 }}</span
-                        >
-                        <span v-if="!getPsdSetImages(psdRow).length" class="text-gray-400 text-xs"
-                          >无</span
-                        >
+                <div v-if="productDetail.meta?.psdSet" class="relation-card relation-card--wide">
+                  <div class="relation-card__body">
+                    <div class="relation-card__head">
+                      <span class="relation-card__type">PSD套图</span>
+                      <span class="relation-card__title">{{
+                        productDetail.meta.psdSet.name || "未命名"
+                      }}</span>
+                    </div>
+                    <div class="relation-card__gallery">
+                      <el-image
+                        v-for="(img, idx) in getPsdSetImages(productDetail.meta.psdSet).slice(0, 4)"
+                        :key="idx"
+                        :src="img"
+                        :preview-src-list="getPsdSetImages(productDetail.meta.psdSet)"
+                        :initial-index="idx"
+                        :preview-teleported="true"
+                        :hide-on-click-modal="false"
+                        class="relation-card__gallery-image"
+                        fit="cover"
+                      />
+                      <div
+                        v-if="getPsdSetImages(productDetail.meta.psdSet).length > 4"
+                        class="relation-card__more"
+                      >
+                        +{{ getPsdSetImages(productDetail.meta.psdSet).length - 4 }}
                       </div>
-                    </template>
-                  </vxe-grid>
+                      <span
+                        v-if="!getPsdSetImages(productDetail.meta.psdSet).length"
+                        class="relation-card__empty"
+                        >无图</span
+                      >
+                    </div>
+                    <div class="relation-card__fields">
+                      <div class="relation-card__field">
+                        <span>ID</span>
+                        <strong>{{ productDetail.meta.psdSet.id || "-" }}</strong>
+                      </div>
+                      <div class="relation-card__field">
+                        <span>描述</span>
+                        <strong>{{ productDetail.meta.psdSet.description || "-" }}</strong>
+                      </div>
+                      <div class="relation-card__field">
+                        <span>更新时间</span>
+                        <strong>{{
+                          productDetail.meta.psdSet.updateTime
+                            ? formatTimestamp(productDetail.meta.psdSet.updateTime)
+                            : "-"
+                        }}</strong>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2711,12 +2747,21 @@ const relationsColumn = {
   slots: { default: "relationsSlot" },
 };
 
+const sourceMaterialCodesColumn = {
+  title: "素材图编码",
+  field: "sourceMaterialCodes",
+  width: 180,
+  showOverflow: true,
+  slots: { default: "sourceMaterialCodesSlot" },
+};
+
 // 动态列配置
 const gridColumns = computed(() => {
   const columns = [...baseColumns];
   if (showRelations.value) {
     columns.push(relationsColumn);
   }
+  columns.push(sourceMaterialCodesColumn);
   columns.push(
     {
       title: "产品代码",
@@ -3187,6 +3232,7 @@ interface ProductForm {
   seoTitle: string;
   seoDescription: string;
   sourceType: string;
+  sourceMaterialCodes: string;
   shippingTemplateId: string;
   packageWeight: number;
   packageLength: number;
@@ -3246,6 +3292,7 @@ const form = ref<ProductForm>({
   seoTitle: "",
   seoDescription: "",
   sourceType: "manual",
+  sourceMaterialCodes: "",
   shippingTemplateId: "",
   packageWeight: 0,
   packageLength: 0,
@@ -3572,9 +3619,16 @@ const getProductSourceTemplateText = (row: any) => {
 const getProductSourcePublishConfigText = (row: any) =>
   formatRelationNames(getProductSourcePublishConfigIds(row), publishConfigMap.value);
 
+const getProductSourceMaterialCodesText = (row: any) => {
+  const { meta } = getProductSourceMeta(row);
+  const value = row?.sourceMaterialCodes || meta.sourceMaterialCodes;
+  return normalizeRelationIdList(value).join("、");
+};
+
 const hasProductRelationInfo = (row: any) =>
   !!(
     getProductSourcePsdSetId(row) ||
+    getProductSourceMaterialCodesText(row) ||
     row?.meta?.psdSet ||
     getProductSourceTemplateIds(row).length ||
     getProductSourcePublishConfigIds(row).length
@@ -3921,6 +3975,7 @@ function handleAdd() {
     seoTitle: "",
     seoDescription: "",
     sourceType: "manual",
+    sourceMaterialCodes: "",
     shippingTemplateId: "",
     packageWeight: 0,
     packageLength: 0,
@@ -3980,6 +4035,7 @@ function handleEdit(row) {
     seoTitle: row.seoTitle || "",
     seoDescription: row.seoDescription || "",
     sourceType: row.sourceType || "manual",
+    sourceMaterialCodes: row.sourceMaterialCodes || "",
     shippingTemplateId: row.shippingTemplateId || "",
     packageWeight: Number(row.packageWeight || 0),
     packageLength: Number(row.packageLength || 0),
@@ -5995,6 +6051,136 @@ function getPublishTaskType(platform: string) {
 
   .product-detail-section-title :deep(.el-button) {
     padding: 0;
+  }
+
+  .relations-info {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .relation-card {
+    display: flex;
+    min-width: 0;
+    min-height: 132px;
+    overflow: hidden;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 6px;
+    background: var(--el-fill-color-extra-light);
+  }
+
+  .relation-card--wide {
+    grid-column: 1 / -1;
+  }
+
+  .relation-card__media {
+    display: flex;
+    width: 132px;
+    min-height: 132px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-right: 1px solid var(--el-border-color-lighter);
+    background: var(--el-bg-color);
+  }
+
+  .relation-card__image {
+    width: 112px;
+    height: 112px;
+    border-radius: 4px;
+    background: var(--el-fill-color-light);
+  }
+
+  .relation-card__body {
+    min-width: 0;
+    flex: 1;
+    padding: 12px;
+  }
+
+  .relation-card__head {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .relation-card__type {
+    flex-shrink: 0;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: var(--el-color-primary-light-9);
+    color: var(--el-color-primary);
+    font-size: 12px;
+    line-height: 18px;
+  }
+
+  .relation-card__title {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--el-text-color-primary);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 22px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .relation-card__fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 14px;
+  }
+
+  .relation-card__field {
+    min-width: 0;
+
+    span {
+      display: block;
+      margin-bottom: 2px;
+      color: var(--el-text-color-secondary);
+      font-size: 12px;
+      line-height: 18px;
+    }
+
+    strong {
+      display: block;
+      min-width: 0;
+      color: var(--el-text-color-regular);
+      font-size: 13px;
+      font-weight: 400;
+      line-height: 20px;
+      word-break: break-word;
+    }
+  }
+
+  .relation-card__gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .relation-card__gallery-image,
+  .relation-card__more {
+    width: 86px;
+    height: 86px;
+    border-radius: 4px;
+    background: var(--el-bg-color);
+  }
+
+  .relation-card__more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed var(--el-border-color);
+    color: var(--el-text-color-secondary);
+    font-size: 13px;
+  }
+
+  .relation-card__empty {
+    color: var(--el-text-color-placeholder);
+    font-size: 12px;
   }
 
   // 发布平台选择对话框样式

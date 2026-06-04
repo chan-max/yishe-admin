@@ -83,6 +83,7 @@ export const MENU_ACCESS_GROUPS: MenuAccessGroup[] = [
     options: [
       { key: "product.category", label: "商品种类" },
       { key: "product.psd-set", label: "套图" },
+      { key: "product.binding-records", label: "发布绑定记录" },
       { key: "product.publish-config", label: "任务配置" },
       { key: "product.queue", label: "任务队列" },
     ],
@@ -176,6 +177,7 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   ProductIndex: "product.index",
   ProductGenerationTemplate: "product.generation-template",
   PsdSet: "product.psd-set",
+  PublishBindingRecords: "product.binding-records",
   DesignRequest: "product.design-request",
   PublishConfig: "product.publish-config",
   SystemQueue: "product.queue",

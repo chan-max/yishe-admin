@@ -500,12 +500,21 @@ const remainingRouter: AppRouteRecordRaw[] = [
         },
       },
       {
+        path: "binding-records",
+        component: () => import("@/views/product/binding-records/index.vue"),
+        name: "PublishBindingRecords",
+        meta: {
+          title: "发布绑定记录",
+          order: 3.5,
+        },
+      },
+      {
         path: "publish-config",
         component: () => import("@/views/product/publish-config/index.vue"),
         name: "PublishConfig",
         meta: {
           title: "任务配置",
-          order: 3,
+          order: 4,
         },
       },
       {
@@ -514,7 +523,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "SystemQueue",
         meta: {
           title: "平台任务",
-          order: 4,
+          order: 5,
         },
       },
     ],
