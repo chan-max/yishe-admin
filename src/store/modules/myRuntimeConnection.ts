@@ -4,6 +4,7 @@ import {
   getMyOnlineRuntimeConnectionViews,
   type WebsocketConnectionVO,
 } from "@/api/system/websocket";
+import { useUserStore } from "@/store/modules/user";
 import { websocketClient, type RuntimeConnectionChangedEvent } from "@/services/websocketClient";
 import { compareRuntimeConnections } from "@/utils/websocketConnection";
 
@@ -18,6 +19,40 @@ const resolveConnectionViews = (response: unknown): WebsocketConnectionVO[] => {
     return (response as any).data;
   }
   return [];
+};
+
+const normalizeId = (value: unknown) => String(value ?? "").trim();
+
+const resolveConnectionUserId = (connection?: Partial<WebsocketConnectionVO> | null) =>
+  normalizeId(
+    connection?.userId ||
+      connection?.tokenUser?.id ||
+      connection?.clientInfo?.user?.id ||
+      "",
+  );
+
+const belongsToCurrentUser = (connection?: Partial<WebsocketConnectionVO> | null) => {
+  const currentUserId = normalizeId(useUserStore().getUser?.id);
+  const connectionUserId = resolveConnectionUserId(connection);
+  return Boolean(currentUserId && connectionUserId && currentUserId === connectionUserId);
+};
+
+const normalizeRuntimeConnections = (list: WebsocketConnectionVO[]) => {
+  const deduped = new Map<string, WebsocketConnectionVO>();
+
+  list.forEach((item) => {
+    if (!item?.id || !belongsToCurrentUser(item)) {
+      return;
+    }
+
+    deduped.set(item.id, {
+      ...item,
+      isOnline: item.isOnline !== false,
+      nodeStatus: item.nodeStatus || "online",
+    });
+  });
+
+  return Array.from(deduped.values()).sort(compareRuntimeConnections);
 };
 
 export const useMyRuntimeConnectionStore = defineStore("my-runtime-connection", () => {
@@ -54,13 +89,7 @@ export const useMyRuntimeConnectionStore = defineStore("my-runtime-connection", 
     loading.value = true;
     try {
       const response = await getMyOnlineRuntimeConnectionViews();
-      connections.value = resolveConnectionViews(response)
-        .map((item) => ({
-          ...item,
-          isOnline: item.isOnline !== false,
-          nodeStatus: item.nodeStatus || "online",
-        }))
-        .sort(compareRuntimeConnections);
+      connections.value = normalizeRuntimeConnections(resolveConnectionViews(response));
     } finally {
       loading.value = false;
     }
@@ -69,6 +98,10 @@ export const useMyRuntimeConnectionStore = defineStore("my-runtime-connection", 
   const handleRuntimeConnectionChanged = (event: RuntimeConnectionChangedEvent) => {
     const connectionId = event.connection?.id;
     if (!connectionId) {
+      return;
+    }
+    if (!belongsToCurrentUser(event.connection)) {
+      replaceConnection(connectionId, () => null);
       return;
     }
 

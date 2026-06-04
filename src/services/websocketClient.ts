@@ -276,12 +276,33 @@ const wsState = reactive<WsState>({
   connectionId: null,
 });
 
+const ADMIN_CLIENT_ID_STORAGE_KEY = "yishe-admin:ws-client-id";
+
 // 生成客户端 ID
-function generateClientId() {
+function createClientId() {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
   }
   return `admin_${Math.random().toString(36).slice(2, 12)}${Date.now().toString(36)}`;
+}
+
+function generateClientId() {
+  if (typeof window === "undefined") {
+    return createClientId();
+  }
+
+  try {
+    const cached = window.sessionStorage.getItem(ADMIN_CLIENT_ID_STORAGE_KEY);
+    if (cached) {
+      return cached;
+    }
+
+    const next = createClientId();
+    window.sessionStorage.setItem(ADMIN_CLIENT_ID_STORAGE_KEY, next);
+    return next;
+  } catch {
+    return createClientId();
+  }
 }
 
 const clientId = generateClientId();
