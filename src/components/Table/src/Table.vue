@@ -112,7 +112,7 @@ export default defineComponent({
           background: true,
           pagerCount: document.body.clientWidth < 992 ? 5 : 7,
           layout: 'total, sizes, prev, pager, next, jumper',
-          pageSizes: [10, 20, 30, 50, 100],
+          pageSizes: [10, 20, 30, 50, 100, 200, 500, 1000],
           disabled: false,
           hideOnSinglePage: false,
           total: 10

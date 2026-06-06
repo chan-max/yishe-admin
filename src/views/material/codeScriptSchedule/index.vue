@@ -17,14 +17,14 @@
                   />
                 </el-form-item>
               </el-col>
-              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="5" :xl="4">
+              <!-- <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="5" :xl="4">
                 <el-form-item label="运行环境">
                   <el-select v-model="queryParams.runtimeEnv" size="small" clearable @change="getList">
                     <el-option label="开发环境" value="development" />
                     <el-option label="生产环境" value="production" />
                   </el-select>
                 </el-form-item>
-              </el-col>
+              </el-col> -->
               <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="6" :xl="5">
                 <el-form-item label="代码脚本">
                   <el-select
@@ -93,12 +93,13 @@
                   </div>
                 </template>
                 <template #envSlot="{ row }">
-                  <el-tag
+                  <!-- <el-tag
                     size="small"
                     :type="row.runtimeEnv === 'production' ? 'danger' : 'success'"
                   >
                     {{ formatRuntimeEnv(row.runtimeEnv) }}
-                  </el-tag>
+                  </el-tag> -->
+                  <span>-</span>
                 </template>
                 <template #triggerSlot="{ row }">
                   <div class="flex flex-col">
@@ -203,12 +204,12 @@
                 />
               </el-select>
             </el-form-item>
-            <el-form-item label="运行环境" prop="runtimeEnv" class="mb-4">
+            <!-- <el-form-item label="运行环境" prop="runtimeEnv" class="mb-4">
               <el-radio-group v-model="form.runtimeEnv">
                 <el-radio label="development">开发环境</el-radio>
                 <el-radio label="production">生产环境</el-radio>
               </el-radio-group>
-            </el-form-item>
+            </el-form-item> -->
             <el-form-item label="是否启用" prop="isEnabled" class="mb-0">
               <el-switch v-model="form.isEnabled" />
             </el-form-item>
@@ -589,7 +590,7 @@ const gridOptions = ref({
       formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
     },
     { title: "关联脚本", field: "scriptName", minWidth: 180, slots: { default: "scriptSlot" } },
-    { title: "运行环境", field: "runtimeEnv", width: 110, slots: { default: "envSlot" } },
+    // { title: "运行环境", field: "runtimeEnv", width: 110, slots: { default: "envSlot" } },
     { title: "触发方式", field: "triggerType", minWidth: 180, slots: { default: "triggerSlot" } },
     { title: "启用状态", field: "isEnabled", width: 100, slots: { default: "enabledSlot" } },
     { title: "执行状态", field: "lastStatus", width: 110, slots: { default: "lastStatusSlot" } },

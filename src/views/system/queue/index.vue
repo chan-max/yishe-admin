@@ -111,6 +111,7 @@
                 @click="handleQueryChange"
                 >搜索</el-button
               >
+              <el-button size="small" :disabled="loading" @click="handleResetQuery">重置</el-button>
               <el-button size="small" type="primary" :icon="Plus" @click="handleAdd"
                 >新增任务</el-button
               >
@@ -301,9 +302,13 @@
                             <el-dropdown-item
                               v-if="String(row.type || '').startsWith('publish-product-')"
                               :command="'regenerate'"
-                              :disabled="row.status === 'processing'"
+                              :disabled="row.status === 'processing' || regeneratingTaskIds.has(row.id)"
                             >
-                              重新生成
+                              <span v-if="regeneratingTaskIds.has(row.id)" class="is-loading">
+                                <el-icon class="is-loading"><Loading /></el-icon>
+                                生成中...
+                              </span>
+                              <span v-else>重新生成</span>
                             </el-dropdown-item>
                             <el-dropdown-item
                               v-if="isPublishTaskRow(row)"
@@ -964,9 +969,9 @@
 <script setup lang="tsx">
 import { ref, reactive, watchEffect, onMounted, onUnmounted, watch, computed } from "vue";
 import { buildOperationColumn, commonGridOptions } from "@/common/table";
-import { useWindowSize } from "@vueuse/core";
+import { useLocalStorage, useWindowSize } from "@vueuse/core";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Search, Delete, Plus } from "@element-plus/icons-vue";
+import { Search, Delete, Plus, Loading } from "@element-plus/icons-vue";
 import {
   getTaskList,
   createTask,
@@ -1085,14 +1090,27 @@ const {
   setAutoSchedulingEnabled: setPublishTaskAutoSchedulingEnabled,
 } = usePublishTaskRuntimeState();
 
-// 查询条件
-const queryParams = reactive({
-  currentPage: 1,
+const defaultQueueQueryFilters = {
   pageSize: 20,
-  status: undefined as "pending" | "waiting" | "processing" | "completed" | "failed" | undefined,
+  status: undefined as QueueMessage["status"] | undefined,
   types: [] as string[],
   id: "",
   sortType: "createdAt_DESC",
+};
+const queueQueryFilterStorage = useLocalStorage("queue_query_filters", defaultQueueQueryFilters, {
+  mergeDefaults: true,
+});
+
+// 查询条件
+const queryParams = reactive({
+  currentPage: 1,
+  pageSize: Number(queueQueryFilterStorage.value.pageSize) || defaultQueueQueryFilters.pageSize,
+  status: queueQueryFilterStorage.value.status,
+  types: Array.isArray(queueQueryFilterStorage.value.types)
+    ? [...queueQueryFilterStorage.value.types]
+    : [],
+  id: String(queueQueryFilterStorage.value.id || ""),
+  sortType: queueQueryFilterStorage.value.sortType || defaultQueueQueryFilters.sortType,
 });
 
 function getSelectedQueryTypes() {
@@ -2425,6 +2443,24 @@ function handleSortTypeChange() {
   getList();
 }
 
+// 重置筛选条件
+function handleResetQuery() {
+  // 恢复默认值
+  queryParams.currentPage = 1;
+  queryParams.pageSize = defaultQueueQueryFilters.pageSize;
+  queryParams.status = undefined;
+  queryParams.types = [];
+  queryParams.id = "";
+  queryParams.sortType = defaultQueueQueryFilters.sortType;
+
+  // 清除缓存
+  queueQueryFilterStorage.value = { ...defaultQueueQueryFilters };
+
+  // 刷新列表和统计
+  getList();
+  refreshStats();
+}
+
 function handleQueryChange() {
   queryParams.currentPage = 1;
   getList();
@@ -3431,6 +3467,9 @@ async function handleDataUpdateSubmit() {
   }
 }
 
+const regeneratingTaskIds = ref<Set<string>>(new Set());
+const actionPendingTaskIds = ref<Set<string>>(new Set());
+
 async function handleRegeneratePublishTask(row: QueueMessage) {
   const taskId = String(row?.id || "").trim();
   if (!taskId) {
@@ -3449,9 +3488,16 @@ async function handleRegeneratePublishTask(row: QueueMessage) {
       },
     );
 
-    loading.value = true;
-    await regeneratePublishTaskApi(taskId);
-    ElMessage.success("发布数据已重新生成");
+    regeneratingTaskIds.value.add(taskId);
+    const result: any = await regeneratePublishTaskApi(taskId);
+    const payload = result?.data?.data ?? result?.data ?? result;
+
+    if (payload?.asyncRegenerate) {
+      ElMessage.success("已提交后台重新生成，完成后会推送通知，请稍后刷新查看");
+    } else {
+      ElMessage.success("发布数据已重新生成");
+    }
+
     await getList();
     await refreshStats();
   } catch (error: any) {
@@ -3460,7 +3506,7 @@ async function handleRegeneratePublishTask(row: QueueMessage) {
     }
     ElMessage.error(error?.message || "重新生成发布数据失败");
   } finally {
-    loading.value = false;
+    regeneratingTaskIds.value.delete(taskId);
   }
 }
 
@@ -3487,7 +3533,7 @@ async function handleStopPublishTask(row: QueueMessage) {
       },
     );
 
-    loading.value = true;
+    actionPendingTaskIds.value.add(taskId);
     const response: any = await stopPublishTaskDispatch(taskId, {
       reason: "管理员手动停止任务",
     });
@@ -3505,7 +3551,7 @@ async function handleStopPublishTask(row: QueueMessage) {
     }
     ElMessage.error(error?.message || "停止任务失败");
   } finally {
-    loading.value = false;
+    actionPendingTaskIds.value.delete(taskId);
   }
 }
 
@@ -3532,7 +3578,7 @@ async function handleResetPublishTask(row: QueueMessage) {
       },
     );
 
-    loading.value = true;
+    actionPendingTaskIds.value.add(taskId);
     await resetPublishTaskDispatch(taskId, {
       reason: "管理员重置为未运行状态",
     });
@@ -3545,7 +3591,7 @@ async function handleResetPublishTask(row: QueueMessage) {
     }
     ElMessage.error(error?.message || "重置任务失败");
   } finally {
-    loading.value = false;
+    actionPendingTaskIds.value.delete(taskId);
   }
 }
 
@@ -3594,17 +3640,25 @@ function resetDataUpdateForm() {
   }, 50);
 }
 
-// 监听任务类型变化，保存到 localStorage
+// 监听筛选条件变化，同步到 useLocalStorage 缓存
 watch(
-  () => queryParams.types.join(","),
-  () => {
-    const selectedTypes = getSelectedQueryTypes();
-    if (selectedTypes.length) {
-      localStorage.setItem("queue_last_type", selectedTypes.join(","));
-    } else {
-      localStorage.removeItem("queue_last_type");
-    }
+  () => ({
+    id: queryParams.id,
+    types: [...queryParams.types],
+    status: queryParams.status,
+    sortType: queryParams.sortType,
+    pageSize: queryParams.pageSize,
+  }),
+  (newValue) => {
+    queueQueryFilterStorage.value = {
+      id: newValue.id || "",
+      types: newValue.types,
+      status: newValue.status,
+      sortType: newValue.sortType,
+      pageSize: newValue.pageSize,
+    };
   },
+  { deep: true },
 );
 
 watch(dispatchAvailableRows, () => {

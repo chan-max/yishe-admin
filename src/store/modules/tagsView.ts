@@ -68,8 +68,10 @@ export const useTagsViewStore = defineStore('tagsView', {
         if (!needCache) {
           continue
         }
-        const name = item.name as string
-        cacheMap.add(name)
+        const rawName = item.name
+        if (!rawName || typeof rawName === 'symbol') continue
+        // 使用统一前缀 + route.name 作为缓存 key，与 AppView.vue 中的 getRouteCacheName 保持一致
+        cacheMap.add(`RouteKeepAlive__${rawName}`)
       }
       if (Array.from(this.cachedViews).sort().toString() === Array.from(cacheMap).sort().toString())
         return
@@ -92,7 +94,10 @@ export const useTagsViewStore = defineStore('tagsView', {
     // 删除缓存
     delCachedView() {
       const route = router.currentRoute.value
-      const index = findIndex<string>(this.getCachedViews, (v) => v === route.name)
+      const rawName = route.name;
+      if (!rawName || typeof rawName === 'symbol') return
+      const routeCacheName = `RouteKeepAlive__${rawName}`
+      const index = findIndex<string>(this.getCachedViews, (v) => v === routeCacheName)
       if (index > -1) {
         this.cachedViews.delete(this.getCachedViews[index])
       }

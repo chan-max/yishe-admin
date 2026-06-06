@@ -36,7 +36,9 @@ const remainingRouter: AppRouteRecordRaw[] = [
         path: ":path(.*)",
         name: "Redirect",
         component: () => import("@/views/Redirect/Redirect.vue"),
-        meta: {},
+        meta: {
+          noCache: true,
+        },
       },
     ],
     meta: {
@@ -364,7 +366,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "ExternalPsAutomation",
         meta: {
           title: "PS 自动化",
-          noCache: true,
         },
       },
       {
@@ -597,7 +598,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "EcomPlatformCollectCapabilityPage",
         meta: {
           title: "平台能力",
-          noCache: true,
           order: 1,
         },
       },
@@ -607,7 +607,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "EcomPlatformCollectTaskPage",
         meta: {
           title: "采集任务",
-          noCache: true,
           order: 2,
         },
       },
@@ -617,7 +616,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "EcomPlatformCollectRunPage",
         meta: {
           title: "采集运行",
-          noCache: true,
           order: 3,
         },
       },
@@ -627,7 +625,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "EcomPlatformCollectRawPage",
         meta: {
           title: "原始数据",
-          noCache: true,
           order: 4,
         },
       },
@@ -637,7 +634,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "EcomSelectionAnalysisTaskPage",
         meta: {
           title: "选品分析任务",
-          noCache: true,
           order: 5,
         },
       },
@@ -647,7 +643,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "EcomSelectionAnalysisRunPage",
         meta: {
           title: "选品分析运行",
-          noCache: true,
           order: 6,
         },
       },
@@ -657,7 +652,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "EcomSelectionAnalysisResultPage",
         meta: {
           title: "选品分析结果",
-          noCache: true,
           order: 7,
         },
       },
@@ -667,7 +661,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "EcomSelectionSupplyMatchTaskPage",
         meta: {
           title: "找同款任务",
-          noCache: true,
           order: 8,
         },
       },
@@ -677,7 +670,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "EcomSelectionSupplyMatchRunPage",
         meta: {
           title: "找同款运行",
-          noCache: true,
           order: 9,
         },
       },
@@ -687,7 +679,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "EcomSelectionSupplyMatchItemPage",
         meta: {
           title: "找同款结果",
-          noCache: true,
           order: 10,
         },
       },
@@ -697,7 +688,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "ExtensionCollectIndex",
         meta: {
           title: "插件采集",
-          noCache: true,
           order: 11,
         },
       },

@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import { useTagsViewStore } from "@/store/modules/tagsView";
 import { useAppStore } from "@/store/modules/app";
 import { Icon } from "@/components/Icon";
 import { useFullscreen } from "@vueuse/core";
@@ -7,10 +6,13 @@ import { useFullscreen } from "@vueuse/core";
 defineOptions({ name: "AppView" });
 
 const appStore = useAppStore();
-const tagsViewStore = useTagsViewStore();
 
 const footer = computed(() => appStore.getFooter);
-const getCaches = computed((): string[] => tagsViewStore.getCachedViews);
+const keepAliveMax = Number(import.meta.env.VITE_APP_KEEP_ALIVE_MAX || 12);
+
+const shouldCacheRoute = (route: any): boolean => {
+  return route?.meta?.noCache !== true;
+};
 
 // 全屏功能
 const appViewRef = ref<HTMLElement | null>(null);
@@ -51,9 +53,10 @@ provide("reload", reload);
 
     <router-view v-if="routerAlive">
       <template #default="{ Component, route }">
-        <keep-alive :include="getCaches">
-          <component :is="Component" :key="route.fullPath" />
+        <keep-alive :max="keepAliveMax">
+          <component :is="Component" v-if="shouldCacheRoute(route)" :key="route.fullPath" />
         </keep-alive>
+        <component :is="Component" v-if="!shouldCacheRoute(route)" :key="route.fullPath" />
       </template>
     </router-view>
   </section>

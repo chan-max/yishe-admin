@@ -713,7 +713,7 @@
 
           <div class="publish-config-pagination">
             <el-pagination v-model:current-page="publishConfigCurrentPage" v-model:page-size="publishConfigPageSize"
-              :total="filteredPublishConfigs.length" :page-sizes="[10, 20, 50, 100]"
+              :total="filteredPublishConfigs.length" :page-sizes="[10, 20, 50, 100, 200, 500, 1000]"
               layout="total, sizes, prev, pager, next" size="small" background />
           </div>
         </div>
@@ -3604,6 +3604,90 @@ async function handleStartProduction(row: any) {
   await openProductionDispatchDialog(row);
 }
 
+function normalizePsdSetErrorPart(value: unknown): string {
+  if (value === undefined || value === null || value === "") {
+    return "";
+  }
+  if (Array.isArray(value)) {
+    return value.map(normalizePsdSetErrorPart).filter(Boolean).join("; ");
+  }
+  if (typeof value === "object") {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  }
+  return String(value);
+}
+
+function getPsdSetRequestErrorDetail(error: any) {
+  const status = error?.response?.status;
+  const data = error?.response?.data;
+  const url = error?.config?.url || "";
+  const method = String(error?.config?.method || "").toUpperCase();
+  const responseMessage =
+    [
+      data?.message,
+      data?.msg,
+      data?.error,
+      data?.details,
+      data?.detail,
+      data?.errors,
+    ]
+      .map(normalizePsdSetErrorPart)
+      .filter(Boolean)
+      .join("; ") || error?.message || "";
+
+  return {
+    status,
+    data,
+    url,
+    method,
+    message: responseMessage || "未知错误",
+  };
+}
+
+function showPsdSetProductionError(error: any, context: Record<string, any>) {
+  const detail = getPsdSetRequestErrorDetail(error);
+  const statusText = detail.status ? `HTTP ${detail.status}` : "请求失败";
+  const message =
+    detail.status === 422
+      ? `开始制作参数校验失败：${detail.message}`
+      : `开始制作失败：${detail.message}`;
+
+  console.error("[PSD 套图] 开始制作失败详情", {
+    ...context,
+    request: {
+      method: detail.method,
+      url: detail.url,
+    },
+    responseStatus: detail.status,
+    responseData: detail.data,
+    error,
+  });
+
+  ElMessageBox.alert(
+    [
+      message,
+      "",
+      `套图 ID：${context.psdSetId || "-"}`,
+      `客户端 ID：${context.clientId || "-"}`,
+      `接口：${detail.method || "POST"} ${detail.url || "/sticker-psd-set/:id/dispatch"}`,
+      `状态：${statusText}`,
+      "",
+      "原始响应：",
+      normalizePsdSetErrorPart(detail.data) || detail.message,
+    ].join("\n"),
+    "开始制作失败",
+    {
+      type: "error",
+      confirmButtonText: "知道了",
+      customClass: "psd-set-production-error-dialog",
+    },
+  );
+}
+
 async function handleConfirmStartProduction() {
   const row = productionDispatchRow.value;
   const isAutoMode = productionDispatchMode.value === "auto";
@@ -3677,9 +3761,16 @@ async function handleConfirmStartProduction() {
       return;
     }
 
-    const response = await stickerPsdSetApi.dispatch(row.id, {
+    const dispatchPayload = {
       clientId: selectedDispatchClientId.value,
+    };
+    console.info("[PSD 套图] 开始制作请求", {
+      psdSetId: row.id,
+      payload: dispatchPayload,
+      selectedClient: selectedDispatchClient.value,
+      row,
     });
+    const response = await stickerPsdSetApi.dispatch(row.id, dispatchPayload);
     startingProductionId.value = "";
     productionDispatchDialogVisible.value = false;
 
@@ -3696,8 +3787,12 @@ async function handleConfirmStartProduction() {
       ElMessage.warning(response?.message || "开始制作失败");
     }
   } catch (error: any) {
-    console.error("开始制作失败:", error);
-    ElMessage.error(error?.message || "开始制作失败，请检查客户端连接状态");
+    showPsdSetProductionError(error, {
+      psdSetId: row?.id,
+      clientId: selectedDispatchClientId.value,
+      selectedClient: selectedDispatchClient.value,
+      row,
+    });
     startingProductionId.value = "";
   }
 }
@@ -4247,9 +4342,9 @@ getList();
 .psd-set-detail-dialog :deep(.el-dialog__body) {
   box-sizing: border-box;
   height: calc(100vh - 78px);
-  padding: 0 22px 22px;
+  padding: 0 18px 18px;
   overflow: hidden;
-  background: var(--el-bg-color-page);
+  background: var(--el-bg-color);
 }
 
 .psd-set-detail-header {
@@ -4291,24 +4386,24 @@ getList();
 .psd-set-detail-layout {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   height: 100%;
   overflow-y: auto;
-  padding-right: 4px;
+  padding: 2px 4px 2px 0;
 }
 
 .psd-set-detail-top {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.42fr);
-  gap: 12px;
+  grid-template-columns: 1fr;
+  gap: 10px;
   align-items: start;
 }
 
 .psd-set-detail-middle {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  align-items: stretch;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  align-items: start;
 }
 
 .psd-set-detail-bottom {
@@ -4316,31 +4411,33 @@ getList();
 }
 
 .psd-set-detail-panel {
-  padding: 14px;
+  padding: 12px;
   border: 1px solid var(--el-border-color-light);
-  border-radius: 8px;
+  border-radius: 6px;
   background: var(--el-bg-color);
 }
 
 .psd-set-detail-panel--hero {
-  padding: 16px;
+  order: 2;
+  padding: 12px;
 }
 
 .psd-set-detail-panel--compact,
 .psd-set-detail-panel--muted {
+  order: 1;
   padding: 12px;
 }
 
 .psd-set-detail-panel--balanced {
   display: flex;
   flex-direction: column;
-  min-height: 420px;
+  min-height: 0;
 }
 
 .psd-set-detail-summary {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
 }
 
 .psd-set-detail-summary__item,
@@ -4349,28 +4446,28 @@ getList();
   flex-direction: column;
   gap: 4px;
   min-width: 0;
-  padding: 8px 10px;
+  padding: 7px 9px;
   border-radius: 6px;
   background: var(--el-fill-color-extra-light);
 }
 
 .psd-set-detail-text-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-  margin-top: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 8px;
 }
 
 .psd-set-detail-image-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
 }
 
 .psd-set-detail-image-card {
   position: relative;
-  padding: 6px;
-  border-radius: 8px;
+  padding: 5px;
+  border-radius: 6px;
   background: var(--el-fill-color-extra-light);
   border: 1px solid var(--el-border-color-light);
   min-width: 0;
@@ -4378,7 +4475,7 @@ getList();
 
 .psd-set-detail-image {
   width: 100%;
-  height: 190px;
+  height: 160px;
   border-radius: 6px;
   background: var(--el-bg-color-page);
 }
@@ -4423,7 +4520,7 @@ getList();
 .psd-set-detail-meta-list--inline {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .psd-set-detail-meta-list>div {
@@ -4438,7 +4535,7 @@ getList();
 
 .detail-sticker-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 8px;
   flex: 1;
   align-content: start;
@@ -4484,7 +4581,7 @@ getList();
   gap: 10px;
   padding: 8px;
   border: 1px solid var(--el-border-color-light);
-  border-radius: 8px;
+  border-radius: 6px;
   background: var(--el-bg-color);
 }
 
@@ -4560,7 +4657,7 @@ getList();
   gap: 8px;
   font-size: 13px;
   line-height: 1.4;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .detail-label {
@@ -4630,7 +4727,7 @@ getList();
   align-items: flex-start;
   padding: 8px;
   border-color: var(--el-border-color-light);
-  border-radius: 8px;
+  border-radius: 6px;
   background: var(--el-bg-color);
 }
 
@@ -4685,8 +4782,7 @@ getList();
 
 @media (max-width: 1100px) {
   .psd-set-detail-dialog :deep(.el-dialog__body) {
-    height: auto;
-    min-height: calc(100vh - 78px);
+    height: calc(100vh - 78px);
   }
 
   .psd-set-detail-layout,
@@ -4707,6 +4803,11 @@ getList();
   }
 
   .psd-set-detail-meta-list--inline {
+    grid-template-columns: 1fr;
+  }
+
+  .psd-set-detail-summary,
+  .psd-set-detail-text-grid {
     grid-template-columns: 1fr;
   }
 }

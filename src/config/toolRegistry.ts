@@ -74,6 +74,20 @@ export const toolRegistry: Record<string, ToolWindowDefinition> = {
     allowNewTab: false,
     singleton: true,
   },
+  translator: {
+    key: 'translator',
+    title: 'AI翻译',
+    icon: 'ep:chat-dot-round',
+    component: () => import('@/components/ToolWindowHost/tools/Translator.vue'),
+    defaultMode: 'window',
+    defaultWidth: 720,
+    defaultHeight: 680,
+    minWidth: 520,
+    minHeight: 480,
+    allowFullscreen: false,
+    allowNewTab: false,
+    singleton: true,
+  },
 }
 
 export const toolRegistryList = Object.values(toolRegistry)

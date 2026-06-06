@@ -139,6 +139,44 @@ const applyOwnershipToPayload = (payload: unknown, userId: string) => {
   return payload;
 };
 
+const normalizeErrorMessagePart = (value: unknown): string => {
+  if (value === undefined || value === null || value === "") {
+    return "";
+  }
+  if (Array.isArray(value)) {
+    return value.map(normalizeErrorMessagePart).filter(Boolean).join("; ");
+  }
+  if (typeof value === "object") {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  }
+  return String(value);
+};
+
+const getResponseErrorMessage = (error: AxiosError): string => {
+  const status = error.response?.status;
+  const data = error.response?.data as any;
+  const parts = [
+    data?.message,
+    data?.msg,
+    data?.error,
+    data?.details,
+    data?.detail,
+    data?.errors,
+  ]
+    .map(normalizeErrorMessagePart)
+    .filter(Boolean);
+
+  if (parts.length) {
+    return status ? `请求失败 ${status}: ${parts.join("; ")}` : parts.join("; ");
+  }
+
+  return "";
+};
+
 // 需要忽略的提示。忽略后，自动 Promise.reject('error')
 const ignoreMsgs = [
   "无效的刷新令牌", // 刷新令牌被删除时，不用提示
@@ -337,8 +375,11 @@ service.interceptors.response.use(
   (error: AxiosError) => {
     console.log("err" + error); // for debug
     let { message } = error;
+    const responseMessage = getResponseErrorMessage(error);
     const { t } = useI18n();
-    if (message === "Network Error") {
+    if (responseMessage) {
+      message = responseMessage;
+    } else if (message === "Network Error") {
       message = t("sys.api.errorMessage");
     } else if (message.includes("timeout")) {
       message = t("sys.api.apiTimeoutMessage");

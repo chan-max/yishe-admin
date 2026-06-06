@@ -582,20 +582,49 @@
               </div>
               <div class="temu-workspace__price-review-toolbar">
                 <div class="temu-workspace__price-review-filters">
-                  <el-select
-                    v-model="priceReviewRiskFilter"
-                    class="temu-workspace__price-review-filter"
-                    size="small"
-                    placeholder="价差比"
-                  >
-                    <el-option label="全部价差比" value="all" />
-                    <el-option label="涨价/持平：>= 0%" value="up" />
-                    <el-option label="绿色：不错，降幅 0% - 10%" value="green" />
-                    <el-option label="黄色：可接受，降幅 10% - 20%" value="yellow" />
-                    <el-option label="橙色：偏高，降幅 20% - 30%" value="orange" />
-                    <el-option label="红色：较差，降幅 30% - 50%" value="red" />
-                    <el-option label="黑红：降幅 > 50%" value="critical" />
-                  </el-select>
+                  <div class="temu-workspace__price-review-filter-slider">
+                    <span class="temu-workspace__price-review-filter-slider-label">价差比</span>
+                    <div class="temu-workspace__price-review-filter-slider-group">
+                      <el-slider
+                        v-model="priceReviewRiskRangeDragging"
+                        class="temu-workspace__price-review-filter-slider-track"
+                        :min="0"
+                        :max="100"
+                        :step="1"
+                        range
+                        :format-tooltip="formatPriceReviewRiskTooltip"
+                        @change="onPriceReviewRiskRangeConfirm"
+                      />
+                      <span class="temu-workspace__price-review-filter-slider-value">
+                        {{ priceReviewRiskLabel }}
+                      </span>
+                    </div>
+                    <el-input-number
+                      v-model="priceReviewRiskRangeDragging[0]"
+                      class="temu-workspace__price-review-filter-slider-input"
+                      size="small"
+                      :min="0"
+                      :max="priceReviewRiskRangeDragging[1]"
+                      :step="5"
+                      controls-position="right"
+                      placeholder="最小%"
+                      @change="onPriceReviewRiskRangeConfirm"
+                      @blur="onPriceReviewRiskRangeConfirm"
+                    />
+                    <span class="temu-workspace__price-review-filter-slider-separator">~</span>
+                    <el-input-number
+                      v-model="priceReviewRiskRangeDragging[1]"
+                      class="temu-workspace__price-review-filter-slider-input"
+                      size="small"
+                      :min="priceReviewRiskRangeDragging[0]"
+                      :max="100"
+                      :step="5"
+                      controls-position="right"
+                      placeholder="最大%"
+                      @change="onPriceReviewRiskRangeConfirm"
+                      @blur="onPriceReviewRiskRangeConfirm"
+                    />
+                  </div>
                   <el-select
                     v-model="priceReviewStatusFilter"
                     class="temu-workspace__price-review-filter"
@@ -1283,6 +1312,7 @@
                   style="width: 110px"
                   placeholder="siteVersion"
                 >
+                       <el-option label="1" :value="1" />
                   <el-option label="10001" :value="10001" />
                   <el-option label="10002" :value="10002" />
                   <el-option label="10003" :value="10003" />
@@ -1978,7 +2008,7 @@ interface ComplianceEditorField {
   raw: Record<string, any>;
 }
 
-type PriceReviewRiskFilter = "all" | "up" | "green" | "yellow" | "orange" | "red" | "critical";
+type PriceReviewRiskRange = [number, number];
 type PriceReviewStatusFilter = "all" | "pending" | "processed";
 type PriceReviewSortMode =
   | "default"
@@ -2023,6 +2053,8 @@ const taskRunPageSize = ref(10);
 const taskRunTotal = ref(0);
 const onlyCurrentActionRuns = ref(true);
 const taskRunList = ref<TemuTaskRunSummary[]>([]);
+const taskRunsLoaded = ref(false);
+const taskRunsLastQueryKey = ref("");
 const selectedTaskRunIds = ref<number[]>([]);
 const taskRunDetailVisible = ref(false);
 const activeTaskRunId = ref<number | null>(null);
@@ -2116,7 +2148,21 @@ const activityPanelSelectedProducts = ref<any[]>([]);
 const activityPanelSearchScrollContext = ref("");
 const selectedConfirmationRowKeys = ref<string[]>([]);
 const confirmationPreviewGridRef = ref<VxeGridInstance<ConfirmationPreviewRow>>();
-const priceReviewRiskFilter = ref<PriceReviewRiskFilter>("all");
+const priceReviewRiskRange = ref<PriceReviewRiskRange>([0, 100]);
+const priceReviewRiskRangeDragging = ref<PriceReviewRiskRange>([0, 100]);
+
+const priceReviewRiskLabel = computed(() => {
+  const [min, max] = priceReviewRiskRange.value;
+  if (min <= 0 && max >= 100) return "全部";
+  return `降幅 ${min}% ~ ${max}%`;
+});
+
+const onPriceReviewRiskRangeConfirm = () => {
+  priceReviewRiskRange.value = [...priceReviewRiskRangeDragging.value];
+};
+
+const formatPriceReviewRiskTooltip = (v: number) => `${v}%`;
+
 const priceReviewStatusFilter = ref<PriceReviewStatusFilter>("all");
 const priceReviewSortMode = ref<PriceReviewSortMode>("default");
 const priceReviewAmountFilterMin = ref<number | undefined>();
@@ -4111,29 +4157,20 @@ const taskRunPriceReviewRawRows = computed(() =>
 const taskRunPriceReviewTotalCount = computed(() => taskRunPriceReviewRawRows.value.length);
 const matchPriceReviewRiskFilter = (row: PriceReviewPreviewRow) => {
   const ratio = row.priceChangeRatioValue;
-  if (priceReviewRiskFilter.value === "all") {
+  const [minRange, maxRange] = priceReviewRiskRange.value;
+
+  // 默认范围 0~100 表示不过滤
+  if (minRange <= 0 && maxRange >= 100) {
     return true;
   }
+
   if (ratio === null || !Number.isFinite(ratio)) {
     return false;
   }
-  if (priceReviewRiskFilter.value === "up") {
-    return ratio >= 0;
-  }
-  const discountRatio = Math.abs(ratio);
-  if (priceReviewRiskFilter.value === "green") {
-    return ratio < 0 && discountRatio <= 0.1;
-  }
-  if (priceReviewRiskFilter.value === "yellow") {
-    return ratio < 0 && discountRatio > 0.1 && discountRatio <= 0.2;
-  }
-  if (priceReviewRiskFilter.value === "orange") {
-    return ratio < 0 && discountRatio > 0.2 && discountRatio <= 0.3;
-  }
-  if (priceReviewRiskFilter.value === "red") {
-    return ratio < 0 && discountRatio > 0.3 && discountRatio <= 0.5;
-  }
-  return ratio < 0 && discountRatio > 0.5;
+
+  // 将小数转换为降幅百分比（负数转正数）进行比较
+  const discountPercent = Math.abs(ratio * 100);
+  return discountPercent >= minRange && discountPercent <= maxRange;
 };
 const matchPriceReviewAmountFilter = (row: PriceReviewPreviewRow) => {
   const minAmount = Number(priceReviewAmountFilterMin.value);
@@ -5318,7 +5355,20 @@ const loadTaskRunDetail = async (
   }
 };
 
-const loadTaskRuns = async (options: { silent?: boolean } = {}) => {
+const getTaskRunsQueryKey = () =>
+  [
+    taskRunPage.value,
+    taskRunPageSize.value,
+    taskRunActionKeyFilter.value || "",
+  ].join("|");
+
+const loadTaskRuns = async (options: { silent?: boolean; skipIfLoaded?: boolean } = {}) => {
+  const queryKey = getTaskRunsQueryKey();
+  if (options.skipIfLoaded && taskRunsLoaded.value && taskRunsLastQueryKey.value === queryKey) {
+    ensureTaskRunPolling();
+    return;
+  }
+
   if (!options.silent) {
     taskRunLoading.value = true;
   }
@@ -5332,6 +5382,8 @@ const loadTaskRuns = async (options: { silent?: boolean } = {}) => {
 
     taskRunList.value = Array.isArray(response?.list) ? response.list : [];
     taskRunTotal.value = Number(response?.total || 0);
+    taskRunsLoaded.value = true;
+    taskRunsLastQueryKey.value = queryKey;
     selectedTaskRunIds.value = selectedTaskRunIds.value.filter((id) =>
       taskRunList.value.some((item) => item.id === id),
     );
@@ -5413,7 +5465,8 @@ const refreshTaskRuns = async () => {
 };
 
 const resetPriceReviewFilters = () => {
-  priceReviewRiskFilter.value = "all";
+  priceReviewRiskRange.value = [0, 100];
+  priceReviewRiskRangeDragging.value = [0, 100];
   priceReviewStatusFilter.value = "all";
   priceReviewSortMode.value = "default";
   priceReviewAmountFilterMin.value = undefined;
@@ -8333,7 +8386,7 @@ watch(
     taskRunDetailVisible.value = false;
     activeTaskRunId.value = null;
     activeTaskRunDetail.value = null;
-    void loadTaskRuns();
+    void loadTaskRuns({ skipIfLoaded: true });
   },
   { immediate: true },
 );
@@ -8476,7 +8529,7 @@ onMounted(() => {
       startBatchProgressPolling();
     }
   });
-  void loadTaskRuns({ silent: true }).then(() => {
+  void loadTaskRuns({ silent: true, skipIfLoaded: true }).then(() => {
     ensureTaskRunPolling();
   });
 });
@@ -9422,6 +9475,50 @@ onBeforeUnmount(() => {
 
 .temu-workspace__price-review-filter-number {
   width: 128px;
+}
+
+.temu-workspace__price-review-filter-slider {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: var(--el-fill-color-light);
+  border-radius: 4px;
+}
+
+.temu-workspace__price-review-filter-slider-label {
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+  white-space: nowrap;
+}
+
+.temu-workspace__price-review-filter-slider-group {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.temu-workspace__price-review-filter-slider-track {
+  width: 180px;
+}
+
+.temu-workspace__price-review-filter-slider-value {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  user-select: none;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.temu-workspace__price-review-filter-slider-input {
+  width: 90px;
+}
+
+.temu-workspace__price-review-filter-slider-separator {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  user-select: none;
 }
 
 .temu-workspace__jit-stock-input {

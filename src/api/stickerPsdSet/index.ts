@@ -52,11 +52,11 @@ export const stickerPsdSetApi = {
   getPublishTasks: (id: string) => request.get({ url: `/sticker-psd-set/publish-tasks/${id}` }),
   update: (id: string, data: any) => request.patch({ url: `/sticker-psd-set/${id}`, data }),
   updateStatus: (id: string, data: { status: string; statusMessage?: string }) =>
-    request.post({ url: `/sticker-psd-set/${id}/status`, data }),
+    request.post({ url: `/sticker-psd-set/${id}/status`, data, ownership: "skip" }),
   dispatch: (id: string, data?: { clientId?: string }) =>
-    request.post({ url: `/sticker-psd-set/${id}/dispatch`, data }),
+    request.post({ url: `/sticker-psd-set/${id}/dispatch`, data, ownership: "skip" }),
   retry: (id: string, data?: { clientId?: string }) =>
-    request.post({ url: `/sticker-psd-set/${id}/retry`, data }),
+    request.post({ url: `/sticker-psd-set/${id}/retry`, data, ownership: "skip" }),
   remove: (id: string) => request.delete({ url: `/sticker-psd-set/${id}` }),
   removeBatch: (ids: string[]) =>
     request.post({ url: `/sticker-psd-set/delete-batch`, data: { ids } }),

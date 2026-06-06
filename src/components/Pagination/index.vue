@@ -9,7 +9,7 @@
       v-model:current-page="currentPage"
       v-model:page-size="pageSize"
       :background="true"
-      :page-sizes="[10, 20, 30, 50, 100]"
+      :page-sizes="[10, 20, 30, 50, 100, 200, 500, 1000]"
       :pager-count="responsivePagerCount"
       :small="isMobile"
       :total="total"

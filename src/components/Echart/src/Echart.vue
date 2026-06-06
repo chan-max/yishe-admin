@@ -105,6 +105,9 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', resizeHandler)
   unref(contentEl) &&
     (unref(contentEl) as Element).removeEventListener('transitionend', contentResizeHandler)
+  resizeHandler.cancel()
+  echartRef?.dispose()
+  echartRef = null
 })
 
 onActivated(() => {
