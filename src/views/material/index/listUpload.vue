@@ -1,6 +1,12 @@
 <template>
   <div class="multi-image-upload-container">
-    <div class="image-preview-container">
+    <div
+      class="image-preview-container"
+      :class="{ 'is-drag-over': isDragOver }"
+      @dragover.prevent="handleDragOver"
+      @dragleave="handleDragLeave"
+      @drop.prevent="handleDropFiles"
+    >
       <div v-if="fileList.length" class="image-preview-list">
         <div v-for="(file, index) in fileList" :key="file.uid" class="image-preview-item">
           <div class="preview-media">
@@ -103,9 +109,7 @@
           </el-icon>
         </div>
         <div class="empty-state-title">还没有待上传的图片</div>
-        <div class="empty-state-desc">
-          点击右侧“选择图片”后，可在这里批量填写名称、描述和关键词。
-        </div>
+        <div class="empty-state-desc">点击右侧“选择图片”，或直接拖拽图片到这里。</div>
       </div>
     </div>
 
@@ -282,6 +286,7 @@ const emits = defineEmits<{
 
 const fileList = ref<UploadImageItem[]>([]);
 const folderInputRef = ref<HTMLInputElement | null>(null);
+const isDragOver = ref(false);
 const usePreview = useLocalStorage("material-upload:use-preview", true);
 const useAiGenerate = useLocalStorage("material-upload:use-ai-generate", false);
 
@@ -404,6 +409,37 @@ const handleFolderChange = async (event: Event) => {
   }
 
   ElMessage.success(`已从文件夹选择 ${addedCount} 张图片`);
+};
+
+const handleDragOver = () => {
+  isDragOver.value = true;
+};
+
+const handleDragLeave = (event: DragEvent) => {
+  const target = event.currentTarget as HTMLElement | null;
+  const related = event.relatedTarget as Node | null;
+  if (!target || !related || !target.contains(related)) {
+    isDragOver.value = false;
+  }
+};
+
+const handleDropFiles = async (event: DragEvent) => {
+  isDragOver.value = false;
+  const files = Array.from(event.dataTransfer?.files || []).filter(isImageFile);
+
+  if (!files.length) {
+    ElMessage.warning("请拖入图片文件");
+    return;
+  }
+
+  let addedCount = 0;
+  for (const file of files) {
+    if (await appendRawFile(file)) {
+      addedCount += 1;
+    }
+  }
+
+  ElMessage.success(`已添加 ${addedCount} 张图片`);
 };
 
 const revokeFileUrl = (index: number) => {
@@ -539,6 +575,7 @@ onBeforeUnmount(() => {
 }
 
 .image-preview-container {
+  position: relative;
   flex: 1 1 auto;
   width: 0;
   min-width: min(100%, 640px);
@@ -557,6 +594,23 @@ onBeforeUnmount(() => {
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--el-fill-color-blank) 70%, transparent 30%),
     0 10px 30px rgba(15, 23, 42, 0.05);
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.image-preview-container.is-drag-over {
+  border-color: color-mix(in srgb, var(--el-color-primary) 56%, var(--el-border-color) 44%);
+  background: color-mix(in srgb, var(--el-color-primary-light-9) 52%, var(--el-fill-color-blank) 48%);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--el-color-primary) 34%, transparent 66%),
+    0 14px 34px rgba(59, 130, 246, 0.12);
+}
+
+.image-preview-container.is-drag-over .empty-state,
+.image-preview-container.is-drag-over .image-preview-list {
+  opacity: 0.82;
 }
 
 .image-preview-list {
