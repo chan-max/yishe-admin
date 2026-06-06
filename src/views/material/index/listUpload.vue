@@ -195,6 +195,17 @@
               清空
             </el-button>
           </div>
+
+          <div class="action-button-row">
+            <el-button
+              class="w-full"
+              plain
+              :disabled="someLoading"
+              @click="clearUploadState"
+            >
+              清空状态
+            </el-button>
+          </div>
         </div>
       </div>
 
@@ -227,6 +238,7 @@ import type { PropType } from "vue";
 import type { UploadFile } from "element-plus";
 import { ElMessage, ElNotification } from "element-plus";
 import { Close, FolderOpened, Loading, PictureFilled, UploadFilled } from "@element-plus/icons-vue";
+import { useLocalStorage } from "@vueuse/core";
 import { uploadToCOS } from "@/api/cos";
 import { uploadMaterialFile } from "@/api/material";
 import { useUserStore } from "@/store/modules/user";
@@ -264,12 +276,14 @@ defineProps({
   },
 });
 
-const emits = defineEmits(["single-file-uploaded"]);
+const emits = defineEmits<{
+  "single-file-uploaded": [{ useAiGenerate: boolean }];
+}>();
 
 const fileList = ref<UploadImageItem[]>([]);
 const folderInputRef = ref<HTMLInputElement | null>(null);
-const usePreview = ref(true);
-const useAiGenerate = ref(false);
+const usePreview = useLocalStorage("material-upload:use-preview", true);
+const useAiGenerate = useLocalStorage("material-upload:use-ai-generate", false);
 
 const totalCount = computed(() => fileList.value.length);
 const successCount = computed(
@@ -313,6 +327,25 @@ const isImageFile = (file: File) => {
 const buildFileUid = (file: File, fallback?: string | number) => {
   const relativePath = String((file as any).webkitRelativePath || "").trim();
   return fallback || `${relativePath || file.name}-${file.size}-${file.lastModified}`;
+};
+
+const buildAiGenerateRawInfo = (file: UploadImageItem) => {
+  const sourceName = file.raw?.name || file.name || "";
+  const nameWithoutExt = sourceName.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim();
+  const parts = [
+    `原始文件名：${sourceName}`,
+    nameWithoutExt ? `从文件名提取的可读名称：${nameWithoutExt}` : "",
+    file.relativePath ? `所在路径：${file.relativePath}` : "",
+    file.width && file.height ? `图片尺寸：${file.width}x${file.height}px` : "",
+    file.name && file.name !== sourceName ? `用户填写名称：${file.name}` : "",
+    file.nameEn ? `用户填写英文名称：${file.nameEn}` : "",
+    file.description ? `用户填写描述：${file.description}` : "",
+    file.descriptionEn ? `用户填写英文描述：${file.descriptionEn}` : "",
+    file.keywords ? `用户填写关键词：${file.keywords}` : "",
+    file.keywordsEn ? `用户填写英文关键词：${file.keywordsEn}` : "",
+  ].filter(Boolean);
+
+  return parts.join("\n");
 };
 
 const appendRawFile = async (rawFile: File, uid?: string | number) => {
@@ -416,6 +449,23 @@ const handleClear = () => {
   fileList.value = [];
 };
 
+const clearUploadState = () => {
+  if (someLoading.value) {
+    ElMessage.warning("还有图片正在上传，上传结束后再清空状态");
+    return;
+  }
+
+  fileList.value.forEach((_, index) => revokeFileUrl(index));
+  fileList.value = [];
+  usePreview.value = true;
+  useAiGenerate.value = false;
+  ElMessage.success("已清空上传状态");
+};
+
+defineExpose({
+  clearUploadState,
+});
+
 const uploadFile = async (file: UploadImageItem) => {
   try {
     let suffix = "";
@@ -459,10 +509,11 @@ const uploadFile = async (file: UploadImageItem) => {
       aspectRatio,
       userId: userStore.user?.id,
       useAiGenerate: useAiGenerate.value,
+      aiGenerateRawInfo: useAiGenerate.value ? buildAiGenerateRawInfo(file) : undefined,
     });
 
     file.status = "success";
-    emits("single-file-uploaded");
+    emits("single-file-uploaded", { useAiGenerate: useAiGenerate.value });
   } catch (error) {
     file.status = "fail";
     console.error("上传文件失败:", error);

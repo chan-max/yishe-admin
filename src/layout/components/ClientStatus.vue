@@ -15,6 +15,8 @@
           type="button"
           class="header-connection-status__trigger"
           :class="[isRemoteConnected ? 'is-online' : 'is-offline', { 'is-active': popoverVisible }]"
+          :title="isRemoteConnected ? '查看连接状态' : '远程已断开，点击重连'"
+          @click="handleTriggerClick"
         >
           <span class="header-connection-status__orb" aria-hidden="true">
             <span class="header-connection-status__wave wave-1" />
@@ -297,6 +299,16 @@ function reconnectRemote() {
   websocketClient.reconnect();
   startWebSocketConnection();
   ElMessage.success("已发起远程重连");
+}
+
+function handleTriggerClick(event: MouseEvent) {
+  if (isRemoteConnected.value) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  reconnectRemote();
 }
 
 async function refreshAllStatuses() {

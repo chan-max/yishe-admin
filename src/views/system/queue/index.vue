@@ -2455,6 +2455,7 @@ function handleResetQuery() {
 
   // 清除缓存
   queueQueryFilterStorage.value = { ...defaultQueueQueryFilters };
+  localStorage.removeItem("queue_last_type");
 
   // 刷新列表和统计
   getList();
@@ -3488,7 +3489,7 @@ async function handleRegeneratePublishTask(row: QueueMessage) {
       },
     );
 
-    regeneratingTaskIds.value.add(taskId);
+    regeneratingTaskIds.value = new Set([...regeneratingTaskIds.value, taskId]);
     const result: any = await regeneratePublishTaskApi(taskId);
     const payload = result?.data?.data ?? result?.data ?? result;
 
@@ -3506,7 +3507,9 @@ async function handleRegeneratePublishTask(row: QueueMessage) {
     }
     ElMessage.error(error?.message || "重新生成发布数据失败");
   } finally {
-    regeneratingTaskIds.value.delete(taskId);
+    const nextRegeneratingTaskIds = new Set(regeneratingTaskIds.value);
+    nextRegeneratingTaskIds.delete(taskId);
+    regeneratingTaskIds.value = nextRegeneratingTaskIds;
   }
 }
 

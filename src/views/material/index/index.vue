@@ -2392,12 +2392,21 @@
       width="calc(100vw - 32px)"
       top="16px"
       :footer="false"
-      :destroy-on-close="true"
+      :destroy-on-close="false"
       class="material-upload-dialog"
       @close="uploadModalClose"
     >
+      <template #header="{ titleId, titleClass }">
+        <div class="material-upload-dialog__header">
+          <span :id="titleId" :class="titleClass">素材上传</span>
+          <el-button size="small" type="danger" plain @click="clearUploadDialogState">
+            清空
+          </el-button>
+        </div>
+      </template>
       <div class="material-upload-dialog__content">
         <list-upload
+          ref="uploadListRef"
           :current-upload-info="currentUploadInfo"
           @single-file-uploaded="singleFileUploaded"
         />
@@ -4662,6 +4671,11 @@ const psdSetDialogTitle = computed(() =>
 // 处理上传
 
 const uploadModalVisible = ref(false);
+const uploadListRef = ref<InstanceType<typeof listUpload> | null>(null);
+
+function clearUploadDialogState() {
+  uploadListRef.value?.clearUploadState?.();
+}
 
 function uploadModalClose() {
   // 关闭时更新 currentUploadInfo，确保下次打开时使用当前选中的文件夹
@@ -6308,9 +6322,9 @@ const delayUpdateList = useDebounceFn(() => {
   getList();
 }, 1999);
 
-function singleFileUploaded() {
+function singleFileUploaded(payload?: { useAiGenerate?: boolean }) {
   console.log("单个文件上传");
-  delayUpdateList();
+  if (!payload?.useAiGenerate) delayUpdateList();
 }
 
 /**
@@ -6380,7 +6394,10 @@ async function handleAiAutoGenerate(row, cb, prompt, aiGenerateRawInfo) {
     const resultData = unwrapAiTaskResult(res);
 
     if (isQueuedAiTaskResult(resultData)) {
-      notifyQueuedAiTask(resultData);
+      notifyQueuedAiTask(resultData, {
+        title: "AI自动生成任务已提交",
+        fallbackMessage: "正在后台生成素材信息，完成后会通过消息中心通知；需要查看最新结果时请手动刷新。",
+      });
       if (typeof cb === "function") cb();
       return;
     }
@@ -6411,7 +6428,6 @@ async function handleAiAutoGenerate(row, cb, prompt, aiGenerateRawInfo) {
     const suitableText = resultData?.suitableFor ? `，适用商品：${resultData.suitableFor}` : "";
     ElNotification.success(`AI自动生成内容成功${infringementText}${suitableText}`);
     if (typeof cb === "function") cb();
-    getList();
   } catch (e) {
     ElNotification.error("AI自动生成内容失败");
     if (typeof cb === "function") cb();
@@ -9189,6 +9205,14 @@ h1 {
   padding: 12px 14px 14px;
   overflow: hidden;
   background: var(--el-bg-color-page);
+}
+
+.material-upload-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-right: 36px;
 }
 
 .material-upload-dialog :deep(.el-dialog__header) {
