@@ -210,23 +210,47 @@
     class="remotion-create-dialog"
     :close-on-click-modal="false"
   >
-    <!-- 步骤指示器 -->
-    <div class="remotion-steps">
-      <div 
-        v-for="(step, index) in steps" 
-        :key="index"
-        class="remotion-step-item"
-        :class="{ 
-          'remotion-step-active': currentStep === index,
-          'remotion-step-done': currentStep > index 
-        }"
-        @click="goToStep(index)"
-      >
-        <div class="remotion-step-icon">
-          <span v-if="currentStep > index">✓</span>
-          <span v-else>{{ index + 1 }}</span>
+    <div class="remotion-dialog-toolbar">
+      <!-- 步骤指示器 -->
+      <div class="remotion-steps">
+        <div 
+          v-for="(step, index) in steps" 
+          :key="index"
+          class="remotion-step-item"
+          :class="{ 
+            'remotion-step-active': currentStep === index,
+            'remotion-step-done': currentStep > index 
+          }"
+          @click="goToStep(index)"
+        >
+          <div class="remotion-step-icon">
+            <span v-if="currentStep > index">✓</span>
+            <span v-else>{{ index + 1 }}</span>
+          </div>
+          <div class="remotion-step-label">{{ step.label }}</div>
         </div>
-        <div class="remotion-step-label">{{ step.label }}</div>
+      </div>
+
+      <div class="remotion-dialog-actions">
+        <el-button @click="createVisible = false">取消</el-button>
+        <el-button v-if="currentStep > 0" @click="currentStep--">上一步</el-button>
+        <el-button 
+          v-if="currentStep < 2" 
+          type="primary" 
+          :disabled="!canGoNext"
+          @click="currentStep++"
+        >
+          下一步
+        </el-button>
+        <el-button
+          v-if="currentStep === 2"
+          type="primary"
+          :loading="submitLoading"
+          :disabled="!canSubmitGenerate"
+          @click="submitGenerate"
+        >
+          开始制作
+        </el-button>
       </div>
     </div>
 
@@ -421,6 +445,9 @@
                     :placeholder="getFieldPlaceholder(field)"
                     @update:model-value="(value) => updateParamField(field, value)"
                   />
+                  <div v-if="isComplexInput(field)" class="param-json-tip">
+                    {{ getComplexFieldTip(field) }}
+                  </div>
                 </el-form-item>
               </el-form>
               <el-empty v-else description="该模板暂无参数字段" :image-size="80" />
@@ -503,36 +530,13 @@
             type="error"
             :closable="false"
             show-icon
-            title="Video Template 服务当前不可用，请先恢复服务后再提交制作任务"
+            title="未检测到可用的视频制作客户端"
+            :description="remotionStatus.message || '请先启动客户端，并使用当前后台账号登录后再提交制作任务。'"
           />
         </div>
       </div>
     </div>
 
-    <!-- 底部操作按钮 -->
-    <template #footer>
-      <div class="remotion-dialog-footer">
-        <el-button @click="createVisible = false">取消</el-button>
-        <el-button v-if="currentStep > 0" @click="currentStep--">上一步</el-button>
-        <el-button 
-          v-if="currentStep < 2" 
-          type="primary" 
-          :disabled="!canGoNext"
-          @click="currentStep++"
-        >
-          下一步
-        </el-button>
-        <el-button
-          v-if="currentStep === 2"
-          type="primary"
-          :loading="submitLoading"
-          :disabled="!canSubmitGenerate"
-          @click="submitGenerate"
-        >
-          开始制作
-        </el-button>
-      </div>
-    </template>
   </el-dialog>
 
   <el-dialog
@@ -750,7 +754,7 @@ const canSubmitGenerate = computed(
 );
 const submitDisabledText = computed(() => {
   if (!form.templateId) return "请先选择模板";
-  if (remotionStatus.checked && !remotionStatus.available) return "Video Template 服务不可用";
+  if (remotionStatus.checked && !remotionStatus.available) return "视频制作客户端未连接";
   return "";
 });
 
@@ -1006,16 +1010,67 @@ function stringifyParamValue(value: any) {
   return String(value);
 }
 
+function cloneParamValue(value: any) {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  if (typeof value !== "object") return value;
+  try {
+    return JSON.parse(JSON.stringify(value));
+  } catch {
+    return value;
+  }
+}
+
+function getFieldDefaultValue(field: any) {
+  if (field?.example !== undefined) {
+    return cloneParamValue(field.example);
+  }
+  if (isComplexInput(field)) {
+    return String(field?.type || "").toLowerCase() === "array" ? [] : {};
+  }
+  if (isBoolInput(field)) return false;
+  if (isNumberInput(field)) return null;
+  return "";
+}
+
+function ensureParamDefaults(template: any) {
+  const fields = Array.isArray(template?.inputSchema) ? template.inputSchema : [];
+  for (const field of fields) {
+    const key = String(field?.key || "").trim();
+    if (!key || formParams[key] !== undefined) {
+      continue;
+    }
+    formParams[key] = getFieldDefaultValue(field);
+  }
+}
+
 function getFieldPlaceholder(field: any) {
+  if (field?.placeholder) return String(field.placeholder);
   if (field?.example === undefined) return isComplexInput(field) ? "请输入 JSON" : "请输入";
-  return `例如: ${stringifyParamValue(field.example)}`;
+  return isComplexInput(field)
+    ? "可直接修改下方 JSON 示例"
+    : `例如: ${stringifyParamValue(field.example)}`;
 }
 
 function getComplexFieldRows(field: any) {
+  const rows = Number(field?.rows);
+  if (Number.isFinite(rows) && rows > 0) {
+    return rows;
+  }
   if (String(field?.type || "").toLowerCase() === "array" || Array.isArray(field?.example)) {
     return 5;
   }
   return 4;
+}
+
+function getComplexFieldTip(field: any) {
+  if (field?.helperText) {
+    return String(field.helperText);
+  }
+  if (String(field?.type || "").toLowerCase() === "array" || Array.isArray(field?.example)) {
+    return "请输入 JSON 数组，可在示例基础上增删项目。";
+  }
+  return "请输入 JSON 对象，可直接修改默认示例。";
 }
 
 function getParamFieldString(key: string) {
@@ -1105,8 +1160,13 @@ function selectTemplate(template: any) {
   
   if (template.defaultInputProps) {
     Object.assign(formParams, template.defaultInputProps);
+    ensureParamDefaults(template);
     syncFormToJson();
   } else {
+    ensureParamDefaults(template);
+    syncFormToJson();
+  }
+  if (!Object.keys(formParams).length) {
     form.inputPropsJson = "{}";
   }
   jsonEditError.value = "";
@@ -1441,7 +1501,9 @@ async function submitGenerate() {
   try {
     await checkRemotionHealth();
     if (remotionStatus.checked && !remotionStatus.available) {
-      ElMessage.error("Video Template 服务不可用，请先恢复服务后再提交");
+      ElMessage.error(
+        remotionStatus.message || "未检测到可用的视频制作客户端，请先启动客户端并登录当前账号",
+      );
       return;
     }
 
@@ -1793,14 +1855,34 @@ watch(
 }
 
 /* 分步向导样式 */
-.remotion-steps {
+.remotion-dialog-toolbar {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 16px;
+  flex: 0 0 auto;
   padding: 8px 0 10px;
   border-bottom: 1px solid var(--el-border-color-lighter);
   margin-bottom: 12px;
+}
+
+.remotion-steps {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.remotion-dialog-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.remotion-dialog-actions .el-button {
+  min-width: 78px;
 }
 
 .remotion-step-item {
@@ -1867,14 +1949,20 @@ watch(
   flex: 1 1 auto;
   min-height: 0;
   max-height: none;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .remotion-step-panel {
   height: 100%;
   min-height: 0;
-  padding: 0 4px;
-  overflow: hidden;
+  padding: 0 10px 2px;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.remotion-step-panel:not(:first-child) {
+  display: flex;
+  flex-direction: column;
 }
 
 .remotion-step-panel:first-child {
@@ -1946,7 +2034,7 @@ watch(
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 8px;
-  max-height: calc(100vh - 230px);
+  max-height: calc(100vh - 158px);
   overflow-y: auto;
   padding: 2px 6px 2px 0;
 }
@@ -2141,7 +2229,7 @@ watch(
   height: 100%;
   min-height: 0;
   gap: 10px;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .params-header {
@@ -2162,12 +2250,23 @@ watch(
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
   gap: 14px;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: calc(100vh - 150px);
+  padding: 2px 6px 6px;
   align-items: start;
+  overflow: visible;
+  box-sizing: border-box;
 }
 
 .params-form {
   min-width: 0;
-  padding-right: 0;
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  padding: 4px 8px 10px 4px;
+  box-sizing: border-box;
+  scrollbar-gutter: stable;
 }
 
 .params-form :deep(.el-form-item) {
@@ -2188,14 +2287,41 @@ watch(
   font-size: 11px;
 }
 
+.param-json-tip {
+  margin-top: 5px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .params-json {
   min-width: 0;
-  position: sticky;
-  top: 0;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+  padding: 4px 6px 10px 4px;
+  box-sizing: border-box;
 }
 
 .json-editor {
+  flex: 1 1 auto;
+  min-height: 0;
   margin-bottom: 0;
+}
+
+.json-editor :deep(.el-textarea),
+.json-editor :deep(.el-textarea__inner) {
+  height: 100%;
+}
+
+.params-form :deep(.el-input),
+.params-form :deep(.el-input-number),
+.params-form :deep(.el-textarea),
+.params-json :deep(.el-textarea) {
+  padding: 2px;
+  margin: -2px;
 }
 
 .params-json-header {
@@ -2224,6 +2350,10 @@ watch(
   display: flex;
   flex-direction: column;
   gap: 20px;
+  min-height: 0;
+  max-height: calc(100vh - 150px);
+  overflow: auto;
+  padding-right: 4px;
 }
 
 .confirm-section {
@@ -2281,27 +2411,11 @@ watch(
   word-break: break-word;
 }
 
-/* 对话框底部 */
-.remotion-dialog-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.remotion-dialog-footer .el-button {
-  min-width: 80px;
-}
-
-.remotion-dialog-footer .el-button:last-child {
-  margin-left: auto;
-}
-
 /* 创建对话框 - 全屏模式 */
 :deep(.remotion-create-dialog .el-dialog__body) {
-  padding: 0 24px 20px;
-  height: calc(100vh - 142px);
-  overflow: hidden;
+  padding: 0 24px 18px;
+  height: calc(100vh - 70px);
+  overflow: visible;
   display: flex;
   flex-direction: column;
 }
@@ -2314,7 +2428,7 @@ watch(
 .remotion-step-content {
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* 全屏模式下模板网格自适应 */
@@ -2324,14 +2438,9 @@ watch(
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 8px;
-  max-height: calc(100vh - 230px);
+  max-height: calc(100vh - 158px);
   overflow-y: auto;
   padding: 2px 6px 2px 0;
-}
-
-:deep(.remotion-create-dialog .el-dialog__footer) {
-  padding: 10px 24px 14px;
-  border-top: 1px solid var(--el-border-color-lighter);
 }
 
 .remotion-detail-layout {
@@ -2538,9 +2647,19 @@ watch(
   }
 
   .remotion-steps {
+    flex: 1 1 auto;
     justify-content: flex-start;
     overflow-x: auto;
-    padding: 8px 0 10px;
+  }
+
+  .remotion-dialog-toolbar {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .remotion-dialog-actions {
+    width: 100%;
   }
 
   .remotion-step-item {
@@ -2563,13 +2682,29 @@ watch(
     max-height: 360px;
   }
 
+  .params-editor-layout {
+    grid-template-columns: 1fr;
+    overflow: auto;
+  }
+
+  .params-form,
+  .params-json {
+    height: auto;
+    overflow: visible;
+  }
+
+  .json-editor {
+    min-height: 320px;
+  }
+
   .template-card {
     min-height: 0;
   }
 
   :deep(.remotion-create-dialog .el-dialog__body) {
     padding: 0 16px 16px;
-    max-height: calc(100vh - 160px);
+    height: calc(100vh - 70px);
+    max-height: none;
   }
 
   .remotion-detail-layout {

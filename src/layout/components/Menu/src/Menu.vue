@@ -1314,4 +1314,40 @@ $prefix-cls: #{$namespace}-menu;
     font-size: 11px;
   }
 }
+
+:global(html.light .v-menu__auto-badge) {
+  border-color: rgb(100 116 139 / 34%) !important;
+  background: rgb(241 245 249 / 98%) !important;
+  color: rgb(51 65 85 / 98%) !important;
+  box-shadow: none !important;
+}
+
+:global(html.light .v-menu__auto-badge--enabled) {
+  border-color: rgb(217 119 6 / 44%) !important;
+  background: rgb(255 247 237 / 98%) !important;
+  color: rgb(154 52 18 / 98%) !important;
+}
+
+:global(html.light .v-menu__auto-badge--psd.v-menu__auto-badge--enabled),
+:global(html.light .v-menu__auto-badge--queue.v-menu__auto-badge--enabled) {
+  border-color: rgb(217 119 6 / 46%) !important;
+  background: rgb(255 247 237 / 98%) !important;
+  color: rgb(154 52 18 / 98%) !important;
+  box-shadow: none !important;
+}
+
+:global(html.light .v-menu__auto-badge--message.v-menu__auto-badge--enabled),
+:global(html.light .v-menu__auto-badge--ai.v-menu__auto-badge--enabled) {
+  border-color: rgb(22 163 74 / 44%) !important;
+  background: rgb(240 253 244 / 98%) !important;
+  color: rgb(21 128 61 / 98%) !important;
+  box-shadow: none !important;
+}
+
+:global(html.light .v-menu__auto-badge--muted),
+:global(html.light .v-menu__auto-badge--ai.v-menu__auto-badge--muted) {
+  border-color: rgb(100 116 139 / 40%) !important;
+  background: rgb(248 250 252 / 98%) !important;
+  color: rgb(51 65 85 / 98%) !important;
+}
 </style>
