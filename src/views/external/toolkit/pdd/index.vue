@@ -6,6 +6,7 @@
     check-login-tool-key="pdd-check-login"
     open-workspace-tool-key="pdd-open-workspace"
     empty-description="当前环境暂无拼多多会话。"
+    :enable-credential-panel="true"
   />
 </template>
 

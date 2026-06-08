@@ -128,6 +128,48 @@
         </el-button>
       </section>
 
+      <section v-if="credentialPanelEnabled" class="session-credentials">
+        <div class="session-credentials__head">
+          <div>
+            <div class="session-credentials__title">账号密码</div>
+            <div class="session-credentials__desc">
+              当前环境 {{ selectedProfileId ? selectedEnvironmentLabel : "未选择" }}
+            </div>
+          </div>
+          <el-button
+            size="small"
+            type="primary"
+            :loading="sessionActionLoading === 'saveCredential'"
+            :disabled="!selectedProfileId"
+            @click="saveCredentials"
+          >
+            保存账号密码
+          </el-button>
+        </div>
+        <div class="session-credentials__form">
+          <el-form-item :error="credentialErrors.account">
+            <template #label>账号</template>
+            <el-input
+              v-model="credentialForm.account"
+              clearable
+              placeholder="请输入账号"
+              @blur="validateCredentialField('account')"
+            />
+          </el-form-item>
+          <el-form-item :error="credentialErrors.password">
+            <template #label>密码</template>
+            <el-input
+              v-model="credentialForm.password"
+              type="password"
+              show-password
+              clearable
+              placeholder="请输入密码"
+              @blur="validateCredentialField('password')"
+            />
+          </el-form-item>
+        </div>
+      </section>
+
       <section class="session-summary">
         <div class="session-summary__main">
           <div class="session-summary__title">
@@ -216,9 +258,11 @@ const props = withDefaults(
     checkLoginToolKey: string;
     openWorkspaceToolKey: string;
     emptyDescription?: string;
+    enableCredentialPanel?: boolean;
   }>(),
   {
     emptyDescription: "当前环境暂无会话。",
+    enableCredentialPanel: false,
   },
 );
 
@@ -251,6 +295,8 @@ const lastRunResult = ref<Record<string, any> | null>(null);
 const lastRunSummary = ref("");
 const detailDialogVisible = ref(false);
 const detailTab = ref("identity");
+const credentialForm = ref({ account: "", password: "" });
+const credentialErrors = ref({ account: "", password: "" });
 
 const platformKey = computed(() => String(props.platformKey || "").trim());
 const platformLabel = computed(() => String(props.platformLabel || "").trim());
@@ -258,6 +304,7 @@ const sessionToolKey = computed(() => String(props.sessionToolKey || "").trim())
 const checkLoginToolKey = computed(() => String(props.checkLoginToolKey || "").trim());
 const openWorkspaceToolKey = computed(() => String(props.openWorkspaceToolKey || "").trim());
 const emptyDescription = computed(() => String(props.emptyDescription || "").trim());
+const credentialPanelEnabled = computed(() => props.enableCredentialPanel === true);
 const selectedProfileId = computed(
   () => String(effectiveProfileId.value || selectedProfile.value?.id || activeProfile.value?.id || "").trim(),
 );
@@ -271,6 +318,11 @@ const storedSession = computed(() => {
   const profileId = selectedProfileId.value;
   const profiles = asPlainObject(storedPlatformSession.value?.profiles);
   return profileId ? asPlainObject(profiles[profileId]) : {};
+});
+const storedCredentials = computed(() => {
+  const profileId = selectedProfileId.value;
+  const credentials = asPlainObject(storedPlatformSession.value?.credentials);
+  return profileId ? asPlainObject(credentials[profileId]) : {};
 });
 const hasStoredSession = computed(() => Object.keys(storedSession.value).length > 0);
 const storedUserInfo = computed(() => asPlainObject(storedSession.value?.userInfo));
@@ -308,6 +360,7 @@ const accountText = computed(() => {
   const userInfo = storedUserInfo.value;
   return (
     [
+      storedCredentials.value.account,
       userInfo.userName || userInfo.accountName || storedSession.value.userName || storedSession.value.accountName,
       userInfo.userId || userInfo.accountId || storedSession.value.userId || storedSession.value.accountId,
     ]
@@ -330,6 +383,10 @@ const shopText = computed(() => {
 const sessionDetail = computed(() => ({
   cookies: sellerCookies.value,
   headers: sellerHeaders.value,
+  credentials: {
+    account: storedCredentials.value.account || storedSession.value.account || "",
+    password: storedCredentials.value.password || storedSession.value.password ? "已保存" : "",
+  },
   updatedAt: sellerSession.value.updatedAt || storedSession.value.updatedAt || "",
 }));
 
@@ -415,6 +472,9 @@ const runFeature = async (featureKey: string) => {
       featureKey: normalizedFeatureKey,
       profileId: selectedProfileId.value,
       keepPageOpen: true,
+      ...(credentialPanelEnabled.value && normalizedFeatureKey === sessionToolKey.value
+        ? buildCredentialCommandPayload()
+        : {}),
     });
     const commandId = String(response?.data?.commandId || "").trim();
     if (!commandId) {
@@ -428,11 +488,86 @@ const runFeature = async (featureKey: string) => {
   }
 };
 
+const buildCredentialCommandPayload = () => {
+  const account = String(credentialForm.value.account || storedCredentials.value.account || "").trim();
+  const password = String(credentialForm.value.password || storedCredentials.value.password || "").trim();
+  return {
+    ...(account ? { account } : {}),
+    ...(password ? { password } : {}),
+  };
+};
+
+const syncCredentialsFromStoredSession = () => {
+  if (!credentialPanelEnabled.value) {
+    credentialForm.value = { account: "", password: "" };
+    credentialErrors.value = { account: "", password: "" };
+    return;
+  }
+  credentialForm.value = {
+    account: String(storedCredentials.value.account || storedSession.value.account || "").trim(),
+    password: String(storedCredentials.value.password || storedSession.value.password || "").trim(),
+  };
+  credentialErrors.value = { account: "", password: "" };
+};
+
+const validateCredentialField = (field: "account" | "password") => {
+  const value = String(credentialForm.value[field] || "").trim();
+  credentialErrors.value = {
+    ...credentialErrors.value,
+    [field]: value ? "" : `请填写${field === "account" ? "账号" : "密码"}`,
+  };
+  return !!value;
+};
+
+const validateCredentials = () => {
+  const accountValid = validateCredentialField("account");
+  const passwordValid = validateCredentialField("password");
+  return accountValid && passwordValid;
+};
+
+const saveCredentials = async () => {
+  if (!selectedProfileId.value) {
+    ElMessage.warning("请先选择环境");
+    return;
+  }
+  if (!validateCredentials()) {
+    return;
+  }
+
+  const savedAt = new Date().toISOString();
+  sessionActionLoading.value = "saveCredential";
+  try {
+    await updatePlatformSessions({
+      platform: platformKey.value,
+      profileId: selectedProfileId.value,
+      data: {
+        account: String(credentialForm.value.account || "").trim(),
+        password: String(credentialForm.value.password || "").trim(),
+        updatedAt: savedAt,
+        validation: Object.keys(validation.value).length
+          ? validation.value
+          : {
+              status: "draft",
+              message: "账号密码已保存，等待采集会话",
+              checkedAt: "",
+            },
+      },
+    });
+    await loadStoredSession();
+    ElMessage.success("账号密码已保存");
+  } catch (error: any) {
+    ElMessage.error(error?.message || "保存账号密码失败");
+  } finally {
+    sessionActionLoading.value = "";
+  }
+};
+
 const buildStoredSessionPayload = (sessionBundle: Record<string, any>, profileId: string) => {
   const collectedAt = String(sessionBundle?.collectedAt || new Date().toISOString()).trim();
   const currentProfile = asPlainObject(asPlainObject(storedPlatformSession.value?.profiles)[profileId]);
   const currentSession = asPlainObject(currentProfile?.session);
   const currentUserInfo = asPlainObject(currentProfile?.userInfo);
+  const credentials = credentialPanelEnabled.value ? buildCredentialCommandPayload() : {};
   const nextUserInfo = asPlainObject(sessionBundle?.userInfo);
   const headersTemplate = asPlainObject(sessionBundle?.headersTemplate || sessionBundle?.headers);
   const cookies = asPlainObject(sessionBundle?.cookies);
@@ -455,6 +590,8 @@ const buildStoredSessionPayload = (sessionBundle: Record<string, any>, profileId
     shopName,
     accountId,
     accountName,
+    ...(credentials.account ? { account: credentials.account } : {}),
+    ...(credentials.password ? { password: credentials.password } : {}),
     roles,
     headersTemplate,
     cookies,
@@ -655,6 +792,14 @@ watch(selectedProfileId, () => {
   void loadStoredSession();
 });
 
+watch(
+  [storedSession, storedCredentials, credentialPanelEnabled],
+  () => {
+    syncCredentialsFromStoredSession();
+  },
+  { immediate: true },
+);
+
 onMounted(async () => {
   websocketClient.events.on("serviceCommandResult", onCommand);
   await refreshClients();
@@ -679,6 +824,7 @@ onUnmounted(() => {
 .session-toolbar,
 .session-status,
 .session-actions,
+.session-credentials,
 .session-summary {
   border: 1px solid var(--el-border-color-light);
   background: var(--el-bg-color);
@@ -720,6 +866,42 @@ onUnmounted(() => {
 
 .session-actions {
   padding: 12px;
+}
+
+.session-credentials {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+}
+
+.session-credentials__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.session-credentials__title {
+  color: var(--el-text-color-primary);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.session-credentials__desc {
+  margin-top: 4px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.session-credentials__form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.session-credentials__form :deep(.el-form-item) {
+  margin-bottom: 0;
 }
 
 .session-status,
@@ -838,6 +1020,14 @@ onUnmounted(() => {
 
   .session-status__chips {
     justify-content: flex-start;
+  }
+
+  .session-credentials__head {
+    flex-direction: column;
+  }
+
+  .session-credentials__form {
+    grid-template-columns: 1fr;
   }
 
   .session-meta-grid {
