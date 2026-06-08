@@ -154,17 +154,30 @@ const buildHeuristicTaskFields = (
   }
 
   if (key.includes("search") || key.includes("keyword") || key.includes("list")) {
-    return cloneFieldSchemas([
-      keywordField,
-      keywordsField,
-      sellerField,
-      maxPagesField,
-      maxItemsField,
-      sortField,
-    ]);
+    return cloneFieldSchemas([keywordField, keywordsField, sellerField, sortField]);
   }
 
   return cloneFieldSchemas([keywordField, keywordsField, urlField, maxPagesField, maxItemsField]);
+};
+
+const isSearchTaskSchema = (
+  taskTypeValue?: string | null,
+  collectSceneValue?: string | null,
+) => {
+  const key = `${taskTypeValue || ""} ${collectSceneValue || ""}`.toLowerCase();
+  return key.includes("search") || key.includes("keyword");
+};
+
+const normalizeTaskFieldSchemas = (
+  fields: EcomCollectFieldSchema[] = [],
+  taskTypeValue?: string | null,
+  collectSceneValue?: string | null,
+) => {
+  const clonedFields = cloneFieldSchemas(fields);
+  if (!isSearchTaskSchema(taskTypeValue, collectSceneValue)) {
+    return clonedFields;
+  }
+  return clonedFields.filter((field) => !["maxPages", "maxItems"].includes(field.key));
 };
 
 export const loadEcomCollectCatalog = async (): Promise<EcomPlatformCollectCatalog> => {
@@ -243,7 +256,7 @@ const buildFallbackTaskTypeSchema = (
     access: scene.access,
     fields:
       Array.isArray(scene.fields) && scene.fields.length
-        ? cloneFieldSchemas(scene.fields)
+        ? normalizeTaskFieldSchemas(scene.fields, value, scene.value)
         : buildHeuristicTaskFields(value, scene.value),
     docs: scene.docs,
   };
@@ -262,7 +275,7 @@ export const getTaskTypeSchemas = (
       ...taskType,
       fields:
         Array.isArray(taskType.fields) && taskType.fields.length
-          ? cloneFieldSchemas(taskType.fields)
+          ? normalizeTaskFieldSchemas(taskType.fields, taskType.value, taskType.collectScene)
           : buildHeuristicTaskFields(taskType.value, taskType.collectScene),
     }));
   }

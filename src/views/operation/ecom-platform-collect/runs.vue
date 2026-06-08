@@ -81,23 +81,50 @@
                 @checkbox-change="handleCheckboxChange"
                 @checkbox-all="handleCheckboxAll"
               >
+                <template #taskNameSlot="{ row }">
+                  <div class="primary-cell">
+                    <strong class="primary-cell__title">{{ row.taskName || "采集运行" }}</strong>
+                    <span class="primary-cell__meta mono-text">{{ row.id }}</span>
+                  </div>
+                </template>
+
                 <template #platformSceneSlot="{ row }">
-                  <div class="table-stack">
-                    <span>{{ getPlatformLabel(catalog, row.platform) }}</span>
-                    <span class="table-meta-text">
-                      {{ getTaskTypeLabel(catalog, row.platform, row.taskType) }}
+                  <div class="inline-chip-list">
+                    <span class="info-chip info-chip--platform">
+                      {{ getPlatformLabel(catalog, row.platform) }}
+                    </span>
+                    <span class="info-chip info-chip--task mono-text">
+                      {{ row.taskType || "-" }}
                     </span>
                   </div>
                 </template>
 
                 <template #statusSlot="{ row }">
-                  <el-tag size="small" :type="getRunStatusTagType(row.status)">
+                  <el-tag
+                    size="small"
+                    effect="plain"
+                    class="status-pill"
+                    :type="getRunStatusTagType(row.status)"
+                  >
                     {{ getRunStatusLabel(row.status) }}
                   </el-tag>
                 </template>
 
+                <template #machineSlot="{ row }">
+                  <span class="mono-inline">{{ row.assignedMachineCode || "-" }}</span>
+                </template>
+
+                <template #recordsSlot="{ row }">
+                  <span
+                    class="metric-badge"
+                    :class="{ 'metric-badge--success': getRunRecordsCount(row) > 0 }"
+                  >
+                    {{ getRunRecordsCount(row) }}
+                  </span>
+                </template>
+
                 <template #summarySlot="{ row }">
-                  <span class="table-meta-text">
+                  <span class="summary-line" :class="{ 'summary-line--error': row.errorMessage }">
                     {{ getRunSummaryMessage(row) }}
                   </span>
                 </template>
@@ -159,7 +186,8 @@
     <el-dialog
       v-model="detailVisible"
       title="运行详情"
-      fullscreen
+      width="720px"
+      align-center
       class="collect-run-detail-dialog"
       @closed="currentDetail = null"
     >
@@ -174,7 +202,7 @@
             <div class="run-detail__title">
               {{ currentDetail.taskName || "采集运行" }}
             </div>
-            <div class="run-detail__summary">
+            <div v-if="getRunSummaryMessage(currentDetail) !== '-'" class="run-detail__summary">
               {{ getRunSummaryMessage(currentDetail) }}
             </div>
           </div>
@@ -198,74 +226,34 @@
               {{ currentDetail.assignedMachineCode || "-" }}
             </strong>
           </div>
-          <div class="run-detail__metric">
-            <span class="run-detail__metric-label">更新时间</span>
-            <strong class="run-detail__metric-value">
-              {{ formatDateTime(currentDetail.updateTime) }}
-            </strong>
+        </section>
+
+        <section class="run-detail__section">
+          <div class="run-detail__info-list">
+            <div class="run-detail__info-row">
+              <span class="run-detail__info-label">运行 ID</span>
+              <span class="run-detail__info-value run-detail__info-value--mono">
+                {{ currentDetail.id || "-" }}
+              </span>
+            </div>
+            <div class="run-detail__info-row">
+              <span class="run-detail__info-label">开始时间</span>
+              <span class="run-detail__info-value">
+                {{ formatDateTime(currentDetail.startedAt) }}
+              </span>
+            </div>
+            <div class="run-detail__info-row">
+              <span class="run-detail__info-label">结束时间</span>
+              <span class="run-detail__info-value">
+                {{ formatDateTime(currentDetail.finishedAt) }}
+              </span>
+            </div>
           </div>
         </section>
 
-        <section class="run-detail__content">
-          <div class="run-detail__section run-detail__section--main">
-            <div class="run-detail__section-title">摘要</div>
-            <p class="run-detail__summary-text">{{ getRunSummaryMessage(currentDetail) }}</p>
-
-            <div v-if="currentDetail.errorMessage" class="run-detail__notice">
-              <span class="run-detail__notice-label">错误信息</span>
-              <div class="run-detail__notice-text">{{ currentDetail.errorMessage }}</div>
-            </div>
-          </div>
-
-          <div class="run-detail__side">
-            <div class="run-detail__section">
-              <div class="run-detail__section-title">运行信息</div>
-              <div class="run-detail__info-list">
-                <div class="run-detail__info-row">
-                  <span class="run-detail__info-label">运行 ID</span>
-                  <span class="run-detail__info-value run-detail__info-value--mono">
-                    {{ currentDetail.id || "-" }}
-                  </span>
-                </div>
-                <div class="run-detail__info-row">
-                  <span class="run-detail__info-label">任务 ID</span>
-                  <span class="run-detail__info-value run-detail__info-value--mono">
-                    {{ currentDetail.taskId || "-" }}
-                  </span>
-                </div>
-                <div class="run-detail__info-row">
-                  <span class="run-detail__info-label">开始时间</span>
-                  <span class="run-detail__info-value">
-                    {{ formatDateTime(currentDetail.startedAt) }}
-                  </span>
-                </div>
-                <div class="run-detail__info-row">
-                  <span class="run-detail__info-label">结束时间</span>
-                  <span class="run-detail__info-value">
-                    {{ formatDateTime(currentDetail.finishedAt) }}
-                  </span>
-                </div>
-                <div class="run-detail__info-row">
-                  <span class="run-detail__info-label">客户端 ID</span>
-                  <span class="run-detail__info-value run-detail__info-value--mono">
-                    {{ currentDetail.assignedClientId || "-" }}
-                  </span>
-                </div>
-                <div class="run-detail__info-row">
-                  <span class="run-detail__info-label">命令 ID</span>
-                  <span class="run-detail__info-value run-detail__info-value--mono">
-                    {{ currentDetail.commandId || "-" }}
-                  </span>
-                </div>
-                <div class="run-detail__info-row">
-                  <span class="run-detail__info-label">摘要更新时间</span>
-                  <span class="run-detail__info-value">
-                    {{ formatDateTime(currentDetail.summaryData?.updatedAt) }}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+        <section v-if="currentDetail.errorMessage" class="run-detail__notice">
+          <span class="run-detail__notice-label">错误信息</span>
+          <div class="run-detail__notice-text">{{ currentDetail.errorMessage }}</div>
         </section>
       </div>
       <el-empty v-else description="暂无运行详情" />
@@ -360,11 +348,17 @@ const gridOptions = ref<VxeGridProps<EcomPlatformCollectRun>>({
   },
   columns: [
     { type: "checkbox", width: 48 },
-    { title: "任务名称", field: "taskName", minWidth: 180, showOverflow: "tooltip" },
+    {
+      title: "任务名称",
+      field: "taskName",
+      minWidth: 240,
+      showOverflow: "tooltip",
+      slots: { default: "taskNameSlot" },
+    },
     {
       title: "平台 / 任务类型",
       field: "platform",
-      width: 160,
+      width: 300,
       slots: { default: "platformSceneSlot" },
     },
     {
@@ -378,13 +372,14 @@ const gridOptions = ref<VxeGridProps<EcomPlatformCollectRun>>({
       field: "assignedMachineCode",
       minWidth: 160,
       showOverflow: "tooltip",
-      formatter: ({ row }) => row.assignedMachineCode || "-",
+      slots: { default: "machineSlot" },
     },
     {
       title: "记录数",
       field: "summaryData",
       width: 90,
-      formatter: ({ row }) => getRunRecordsCount(row),
+      align: "center",
+      slots: { default: "recordsSlot" },
     },
     {
       ...buildTimeColumn("开始时间", "startedAt", 180),
@@ -577,6 +572,134 @@ onActivated(() => {
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+:deep(.ecom-collect-page .common-table__body-cell) {
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+
+:deep(.ecom-collect-page .vxe-body--column .vxe-cell) {
+  min-height: 0 !important;
+  line-height: 1.35 !important;
+}
+
+.primary-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.primary-cell__title {
+  overflow: hidden;
+  color: var(--el-text-color-primary);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.primary-cell__meta {
+  overflow: hidden;
+  color: var(--el-text-color-placeholder);
+  font-size: 10px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mono-text,
+.mono-inline {
+  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+.mono-inline {
+  overflow: hidden;
+  display: inline-block;
+  max-width: 100%;
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+.inline-chip-list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+}
+
+.info-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-height: 20px;
+  padding: 0 7px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  color: var(--el-text-color-regular);
+  background: color-mix(in srgb, var(--el-fill-color-light) 72%, transparent);
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.info-chip--platform {
+  color: var(--el-color-primary);
+  border-color: color-mix(in srgb, var(--el-color-primary) 34%, var(--el-border-color));
+  background: color-mix(in srgb, var(--el-color-primary) 12%, transparent);
+  font-weight: 600;
+}
+
+.info-chip--task {
+  overflow: hidden;
+  color: var(--el-text-color-secondary);
+  text-overflow: ellipsis;
+}
+
+.status-pill {
+  font-weight: 600;
+}
+
+.metric-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  color: var(--el-text-color-secondary);
+  background: color-mix(in srgb, var(--el-fill-color) 76%, transparent);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.metric-badge--success {
+  color: var(--el-color-success);
+  background: color-mix(in srgb, var(--el-color-success) 12%, transparent);
+}
+
+.summary-line {
+  overflow: hidden;
+  display: inline-block;
+  max-width: 100%;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.summary-line--error {
+  color: var(--el-color-danger);
 }
 
 .run-detail {

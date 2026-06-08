@@ -88,17 +88,44 @@
                 @checkbox-change="handleCheckboxChange"
                 @checkbox-all="handleCheckboxAll"
               >
+                <template #runIdSlot="{ row }">
+                  <div class="primary-cell">
+                    <strong class="primary-cell__title mono-text">{{ row.runId || "-" }}</strong>
+                    <span class="primary-cell__meta mono-text">task {{ row.taskId || "-" }}</span>
+                  </div>
+                </template>
+
                 <template #platformSceneSlot="{ row }">
-                  <div class="table-stack">
-                    <span>{{ getPlatformLabel(catalog, getRawPlatform(row)) }}</span>
-                    <span class="table-meta-text">
-                      {{ getTaskTypeLabel(catalog, getRawPlatform(row), getRawTaskType(row)) }}
+                  <div class="inline-chip-list">
+                    <span class="info-chip info-chip--platform">
+                      {{ getPlatformLabel(catalog, getRawPlatform(row)) }}
+                    </span>
+                    <span class="info-chip info-chip--task mono-text">
+                      {{ getRawTaskType(row) || "-" }}
                     </span>
                   </div>
                 </template>
 
                 <template #summarySlot="{ row }">
-                  <span class="table-meta-text">{{ getRawSummaryMessage(row) }}</span>
+                  <span class="summary-line">{{ getRawSummaryMessage(row) }}</span>
+                </template>
+
+                <template #recordsSlot="{ row }">
+                  <span
+                    class="metric-badge"
+                    :class="{ 'metric-badge--success': getRawRecordsCount(row) > 0 }"
+                  >
+                    {{ getRawRecordsCount(row) }}
+                  </span>
+                </template>
+
+                <template #snapshotsSlot="{ row }">
+                  <span
+                    class="metric-badge metric-badge--muted"
+                    :class="{ 'metric-badge--success': getSnapshotCount(row.snapshotData || row.collectData) > 0 }"
+                  >
+                    {{ getSnapshotCount(row.snapshotData || row.collectData) }}
+                  </span>
                 </template>
 
                 <template #operationSlot="{ row }">
@@ -314,12 +341,12 @@ const gridOptions = ref<VxeGridProps<EcomPlatformRawRecord>>({
       field: "runId",
       minWidth: 220,
       showOverflow: "tooltip",
-      formatter: ({ row }) => row.runId || "-",
+      slots: { default: "runIdSlot" },
     },
     {
       title: "平台 / 任务类型",
       field: "collectData",
-      width: 160,
+      width: 300,
       slots: { default: "platformSceneSlot" },
     },
     {
@@ -333,7 +360,8 @@ const gridOptions = ref<VxeGridProps<EcomPlatformRawRecord>>({
       title: "记录数",
       field: "recordsCount",
       width: 90,
-      formatter: ({ row }) => getRawRecordsCount(row),
+      align: "center",
+      slots: { default: "recordsSlot" },
     },
     {
       ...buildTimeColumn("采集时间", "capturedAt", 180),
@@ -347,7 +375,8 @@ const gridOptions = ref<VxeGridProps<EcomPlatformRawRecord>>({
       title: "截图数",
       field: "snapshotData",
       width: 80,
-      formatter: ({ row }) => getSnapshotCount(row.snapshotData || row.collectData),
+      align: "center",
+      slots: { default: "snapshotsSlot" },
     },
     buildOperationColumn("operationSlot", 120),
   ],
@@ -568,12 +597,124 @@ onActivated(() => {
   gap: 4px;
 }
 
+:deep(.ecom-collect-page .common-table__body-cell) {
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+
+:deep(.ecom-collect-page .vxe-body--column .vxe-cell) {
+  min-height: 0 !important;
+  line-height: 1.35 !important;
+}
+
 .mono {
   font-family:
     "SFMono-Regular",
     "Cascadia Code",
     "Source Code Pro",
     monospace;
+}
+
+.mono-text {
+  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+.primary-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.primary-cell__title {
+  overflow: hidden;
+  color: var(--el-text-color-primary);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.primary-cell__meta {
+  overflow: hidden;
+  color: var(--el-text-color-placeholder);
+  font-size: 10px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inline-chip-list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+}
+
+.info-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-height: 20px;
+  padding: 0 7px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  color: var(--el-text-color-regular);
+  background: color-mix(in srgb, var(--el-fill-color-light) 72%, transparent);
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.info-chip--platform {
+  color: var(--el-color-primary);
+  border-color: color-mix(in srgb, var(--el-color-primary) 34%, var(--el-border-color));
+  background: color-mix(in srgb, var(--el-color-primary) 12%, transparent);
+  font-weight: 600;
+}
+
+.info-chip--task {
+  overflow: hidden;
+  color: var(--el-text-color-secondary);
+  text-overflow: ellipsis;
+}
+
+.metric-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  color: var(--el-text-color-secondary);
+  background: color-mix(in srgb, var(--el-fill-color) 76%, transparent);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.metric-badge--success {
+  color: var(--el-color-success);
+  background: color-mix(in srgb, var(--el-color-success) 12%, transparent);
+}
+
+.metric-badge--muted {
+  color: var(--el-text-color-secondary);
+}
+
+.summary-line {
+  overflow: hidden;
+  display: inline-block;
+  max-width: 100%;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  white-space: nowrap;
 }
 
 :deep(.ecom-raw-detail-dialog .el-dialog__header) {

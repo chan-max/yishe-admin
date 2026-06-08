@@ -319,18 +319,17 @@ export function useBrowserAutomationExecutionContext() {
 
   const profileOptions = computed<BrowserAutomationExecutionProfileOption[]>(() => {
     if (!profileItems.value.length) {
-      return [
-        {
-          value:
-            String(activeProfile.value?.id || "").trim() || ACTIVE_BROWSER_AUTOMATION_PROFILE_VALUE,
-          label: activeProfile.value ? buildProfileLabel(activeProfile.value) : "当前活动环境",
-          meta: activeProfile.value
-            ? buildProfileMeta(activeProfile.value, { active: true })
-            : "跟随客户端当前浏览器环境执行",
-          profile: activeProfile.value,
-          isActiveOption: true,
-        },
-      ];
+      return activeProfile.value?.id
+        ? [
+            {
+              value: activeProfile.value.id,
+              label: buildProfileLabel(activeProfile.value),
+              meta: buildProfileMeta(activeProfile.value, { active: true }),
+              profile: activeProfile.value,
+              isActiveOption: true,
+            },
+          ]
+        : [];
     }
 
     const activeProfileId = String(activeProfile.value?.id || "").trim();

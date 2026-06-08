@@ -220,9 +220,129 @@ export interface EcomPlatformCollectCatalog {
   };
 }
 
+export interface EcomCollectFeatureSchema {
+  value: string;
+  featureKey: string;
+  taskType: string;
+  label: string;
+  description?: string;
+  platform: string;
+  platformLabel: string;
+  collectScene?: string;
+  entityType?: string;
+  runnable: boolean;
+  availability?: string;
+  availabilityLabel?: string;
+  verification?: string;
+  verificationLabel?: string;
+  reason?: string | null;
+  access?: EcomCollectAccessSchema;
+  fields?: EcomCollectFieldSchema[];
+  docs?: EcomCollectTaskTypeSchema["docs"];
+  sourceClientId?: string | null;
+  sourceMachineCode?: string | null;
+  sourceUpdatedAt?: string | null;
+}
+
+export interface EcomPlatformCollectFeatureCatalog {
+  schemaVersion?: number;
+  generatedAt?: string | null;
+  list: EcomCollectFeatureSchema[];
+  total: number;
+  meta?: {
+    capabilityClientCount?: number;
+    onlineCapabilityClientCount?: number;
+    generatedAt?: string | null;
+    source?: string;
+    platformCount?: number;
+    runnableFeatureCount?: number;
+  };
+}
+
+export interface EcomPlatformCollectDiagnosticsRequest {
+  platforms?: string[];
+  taskTypes?: string[];
+  keyword?: string;
+  debugPort?: number;
+  maxItems?: number;
+  maxPages?: number;
+  perRunTimeoutMs?: number;
+  clientId?: string;
+  profileId?: string;
+  captureSnapshots?: boolean;
+}
+
+export interface EcomPlatformCollectDiagnosticItem {
+  platform: string;
+  platformLabel: string;
+  taskType?: string | null;
+  taskLabel?: string | null;
+  status: "success" | "failed" | "skipped" | "unsupported" | "timeout";
+  canCollect: boolean;
+  recordsCount: number;
+  message: string;
+  reason?: string | null;
+  taskId?: string | null;
+  runId?: string | null;
+  assignedClientId?: string | null;
+  assignedMachineCode?: string | null;
+  startedAt?: string | null;
+  finishedAt?: string | null;
+  elapsedMs?: number | null;
+  sampleFields?: string[];
+  sampleTitle?: string | null;
+  sampleUrl?: string | null;
+  configData?: Record<string, any>;
+}
+
+export interface EcomPlatformCollectDiagnosticsResult {
+  success: boolean;
+  generatedAt?: string;
+  options?: Record<string, any>;
+  summary: {
+    total: number;
+    canCollectCount: number;
+    failedCount: number;
+    skippedCount: number;
+    unsupportedCount: number;
+    timeoutCount: number;
+    canCollectPlatforms: string[];
+    failedPlatforms: string[];
+    skippedPlatforms: string[];
+    unsupportedPlatforms: string[];
+    timeoutPlatforms: string[];
+    canCollectTaskTypes?: string[];
+    failedTaskTypes?: string[];
+    skippedTaskTypes?: string[];
+    unsupportedTaskTypes?: string[];
+    timeoutTaskTypes?: string[];
+    recommendations?: string[];
+  };
+  analysis?: {
+    headline?: string;
+    recommendations?: string[];
+  };
+  items: EcomPlatformCollectDiagnosticItem[];
+}
+
 export const getEcomPlatformCollectCatalog = () => {
   return request.get<EcomPlatformCollectCatalog>({
     url: "/ecom-platform-collect/catalog",
+  });
+};
+
+export const getEcomPlatformCollectFeatures = () => {
+  return request.get<EcomPlatformCollectFeatureCatalog>({
+    url: "/ecom-platform-collect/features",
+  });
+};
+
+export const runEcomPlatformCollectDiagnostics = (
+  data: EcomPlatformCollectDiagnosticsRequest,
+) => {
+  return request.post<EcomPlatformCollectDiagnosticsResult>({
+    url: "/ecom-platform-collect/diagnostics/run",
+    data,
   });
 };
 
@@ -338,6 +458,17 @@ export const batchDeleteEcomPlatformCollectRun = (ids: string[]) => {
   }>({
     url: "/ecom-platform-collect/run/batch-delete",
     data: { ids },
+  });
+};
+
+export const resetActiveEcomPlatformCollectRuns = () => {
+  return request.post<{
+    success: boolean;
+    message?: string;
+    resetCount: number;
+    runIds: string[];
+  }>({
+    url: "/ecom-platform-collect/run/reset-active",
   });
 };
 

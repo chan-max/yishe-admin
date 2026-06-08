@@ -74,7 +74,11 @@ const handleConfirm = () => {
     executionContext.value,
   );
   if (!String(normalizedContext.clientId || "").trim()) {
-    ElMessage.warning("请先选择浏览器自动化执行环境");
+    ElMessage.warning("请先选择浏览器自动化客户端");
+    return;
+  }
+  if (!String(normalizedContext.profileId || "").trim()) {
+    ElMessage.warning("请先选择浏览器环境 / Profile");
     return;
   }
   emit(

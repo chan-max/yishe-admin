@@ -92,6 +92,66 @@
         </div>
       </div>
 
+      <div class="feature-panel">
+        <div class="feature-panel__header">
+          <div>
+            <div class="feature-panel__title">小功能目录</div>
+            <div class="feature-panel__desc">
+              每一行都是可独立调用的采集功能，平台只是分组；后续测试、AI 调用和组合任务都应优先使用 taskType。
+            </div>
+          </div>
+          <el-tag effect="plain" type="info">共 {{ featureCards.length }} 个</el-tag>
+        </div>
+        <el-table
+          v-if="featureCards.length"
+          :data="featureCards"
+          border
+          size="small"
+          max-height="420"
+          class="feature-table"
+        >
+          <el-table-column label="小功能" min-width="220">
+            <template #default="{ row }">
+              <div class="feature-name-cell">
+                <strong>{{ row.label }}</strong>
+                <code>{{ row.taskType }}</code>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="平台" prop="platformLabel" width="140" />
+          <el-table-column label="场景" width="130">
+            <template #default="{ row }">
+              {{ row.collectScene || "-" }}
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" width="120">
+            <template #default="{ row }">
+              <el-tag size="small" effect="plain" :type="getCapabilityStatusTagType(row.availability)">
+                {{ row.availabilityLabel || getCapabilityStatusLabel(row.availability) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="验证" width="110">
+            <template #default="{ row }">
+              {{ row.verificationLabel || row.verification || "-" }}
+            </template>
+          </el-table-column>
+          <el-table-column label="参数" width="90">
+            <template #default="{ row }">
+              {{ Array.isArray(row.fields) ? row.fields.length : 0 }}
+            </template>
+          </el-table-column>
+          <el-table-column label="说明" min-width="260">
+            <template #default="{ row }">
+              <span class="feature-table__desc">
+                {{ row.description || row.docs?.overview || row.reason || "-" }}
+              </span>
+            </template>
+          </el-table-column>
+        </el-table>
+        <el-empty v-else description="当前筛选条件下暂无小功能" />
+      </div>
+
       <div v-if="platformCards.length" class="platform-card-list">
         <div
           v-for="platform in platformCards"
@@ -362,6 +422,8 @@ import { computed, onActivated, onMounted, reactive, ref } from "vue";
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import CompactNotice from "@/components/CompactNotice/index.vue";
 import {
+  getEcomPlatformCollectFeatures,
+  type EcomCollectFeatureSchema,
   type EcomCollectOutputFieldSchema,
   type EcomCollectPlatformSchema,
   type EcomCollectTaskTypeSchema,
@@ -403,6 +465,7 @@ interface PlatformCard extends EcomCollectPlatformSchema {
 
 const loading = ref(false);
 const catalog = reactive(createEmptyEcomCollectCatalog());
+const features = ref<EcomCollectFeatureSchema[]>([]);
 
 const filters = reactive({
   keyword: "",
@@ -462,6 +525,54 @@ const matchesFocus = (task: TaskTypeCard) => {
       return true;
   }
 };
+
+const matchesFeatureFocus = (feature: EcomCollectFeatureSchema) => {
+  switch (filters.focus) {
+    case "runnable":
+      return feature.runnable !== false;
+    case "blocked":
+      return feature.runnable === false;
+    case "captcha_risk":
+      return feature.access?.captcha === "likely" || feature.access?.captcha === "blocking";
+    case "pod_ready": {
+      const recordFields = Array.isArray(feature.docs?.recordFields)
+        ? feature.docs.recordFields
+        : [];
+      return recordFields.some((field) =>
+        ["imageUrl", "imageUrls", "pictureSource"].includes(String(field.key || "")),
+      );
+    }
+    default:
+      return true;
+  }
+};
+
+const buildFeatureSearchText = (feature: EcomCollectFeatureSchema) =>
+  [
+    feature.value,
+    feature.featureKey,
+    feature.taskType,
+    feature.label,
+    feature.description,
+    feature.platform,
+    feature.platformLabel,
+    feature.collectScene,
+    feature.docs?.overview,
+    feature.reason,
+    ...(Array.isArray(feature.fields) ? feature.fields.map((field) => field.key) : []),
+  ]
+    .map((item) => normalizeText(item))
+    .filter(Boolean)
+    .join("\n")
+    .toLowerCase();
+
+const featureCards = computed(() => {
+  const keyword = normalizeText(filters.keyword).toLowerCase();
+  return features.value
+    .filter((feature) => !filters.platform || feature.platform === filters.platform)
+    .filter((feature) => matchesFeatureFocus(feature))
+    .filter((feature) => !keyword || buildFeatureSearchText(feature).includes(keyword));
+});
 
 const platformCards = computed<PlatformCard[]>(() => {
   const keyword = normalizeText(filters.keyword).toLowerCase();
@@ -547,10 +658,14 @@ const getFieldTagType = (stability?: string | null) => {
 const loadData = async () => {
   loading.value = true;
   try {
-    const data = await loadEcomCollectCatalog();
+    const [data, featureData] = await Promise.all([
+      loadEcomCollectCatalog(),
+      getEcomPlatformCollectFeatures(),
+    ]);
     catalog.platforms = Array.isArray(data?.platforms) ? data.platforms : [];
     catalog.meta = data?.meta || catalog.meta;
     catalog.generatedAt = data?.generatedAt || null;
+    features.value = Array.isArray(featureData?.list) ? featureData.list : [];
   } finally {
     loading.value = false;
   }
@@ -655,6 +770,59 @@ onActivated(() => {
   color: #0f172a;
   font-size: 24px;
   font-weight: 700;
+}
+
+.feature-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.feature-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.feature-panel__title {
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.feature-panel__desc {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.feature-name-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.feature-name-cell strong {
+  color: #0f172a;
+  font-size: 13px;
+}
+
+.feature-name-cell code {
+  color: #2563eb;
+  font-size: 12px;
+}
+
+.feature-table__desc {
+  display: inline-block;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .platform-card-list {
@@ -904,6 +1072,7 @@ onActivated(() => {
   }
 
   .platform-card__header,
+  .feature-panel__header,
   .task-card__title-row,
   .task-card__overview {
     flex-direction: column;

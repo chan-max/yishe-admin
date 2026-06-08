@@ -38,7 +38,7 @@
         </el-col>
 
         <el-col :xs="24" :lg="12">
-          <el-form-item label="浏览器环境 / Profile">
+          <el-form-item label="浏览器环境 / Profile" required>
             <el-select
               v-model="form.profileId"
               filterable
@@ -60,7 +60,7 @@
               </el-option>
             </el-select>
             <div class="execution-context-card__hint">
-              不选时默认由该客户端使用当前活动浏览器环境执行。
+              必须选择一个明确的浏览器环境后才会执行任务。
             </div>
           </el-form-item>
         </el-col>

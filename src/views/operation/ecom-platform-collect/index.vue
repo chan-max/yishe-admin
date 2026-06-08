@@ -58,6 +58,9 @@
               <el-button size="small" type="primary" @click="openTaskDialog()">
                 新建任务
               </el-button>
+              <el-button size="small" type="warning" @click="handleResetActiveRuns">
+                重置运行状态
+              </el-button>
               <el-button
                 size="small"
                 type="danger"
@@ -82,18 +85,37 @@
                 @checkbox-change="handleCheckboxChange"
                 @checkbox-all="handleCheckboxAll"
               >
+                <template #taskNameSlot="{ row }">
+                  <div class="primary-cell">
+                    <strong class="primary-cell__title">{{ row.name || "-" }}</strong>
+                    <span class="primary-cell__meta mono-text">{{ row.id }}</span>
+                  </div>
+                </template>
+
                 <template #platformSceneSlot="{ row }">
-                  <div class="table-stack">
-                    <span>{{ getPlatformLabel(catalog, row.platform) }}</span>
-                    <span class="table-meta-text">
-                      {{ getTaskTypeLabel(catalog, row.platform, row.taskType) }}
+                  <div class="inline-chip-list">
+                    <span class="info-chip info-chip--platform">
+                      {{ getPlatformLabel(catalog, row.platform) }}
+                    </span>
+                    <span class="info-chip info-chip--task mono-text">
+                      {{ row.taskType || "-" }}
                     </span>
                   </div>
                 </template>
 
                 <template #configSlot="{ row }">
-                  <div class="table-stack">
-                    <span class="table-meta-text">{{ getTaskConfigSummary(row) }}</span>
+                  <div class="config-chip-list">
+                    <span
+                      v-for="item in getTaskConfigParts(row)"
+                      :key="`${row.id}-${item.label}`"
+                      class="config-chip"
+                    >
+                      <span class="config-chip__label">{{ item.label }}</span>
+                      <span class="config-chip__value">{{ item.value }}</span>
+                    </span>
+                    <span v-if="!getTaskConfigParts(row).length" class="table-meta-text">
+                      按表单配置执行
+                    </span>
                   </div>
                 </template>
 
@@ -183,6 +205,7 @@ import {
   batchDeleteEcomPlatformCollectTask,
   deleteEcomPlatformCollectTask,
   getEcomPlatformCollectTaskList,
+  resetActiveEcomPlatformCollectRuns,
   triggerEcomPlatformCollectTask,
   type EcomPlatformCollectTask,
 } from "@/api/operation/ecomPlatformCollect";
@@ -243,15 +266,45 @@ const tableData = computed(() => {
 const getTaskConfigSummary = (task: EcomPlatformCollectTask) => {
   const config = task.configData || {};
   const keywords = Array.isArray(config.keywords) ? config.keywords.filter(Boolean) : [];
+  const isSearchTask = String(task.taskType || task.collectScene || "")
+    .toLowerCase()
+    .includes("search");
   const summaryParts = [
     config.keyword ? `关键词: ${config.keyword}` : "",
     !config.keyword && keywords.length ? `关键词: ${keywords.slice(0, 3).join(" / ")}` : "",
     config.targetUrl ? `链接: ${config.targetUrl}` : "",
-    config.maxPages ? `页数: ${config.maxPages}` : "",
-    config.maxItems ? `条数: ${config.maxItems}` : "",
+    !isSearchTask && config.maxPages ? `页数: ${config.maxPages}` : "",
+    !isSearchTask && config.maxItems ? `条数: ${config.maxItems}` : "",
   ].filter(Boolean);
 
   return summaryParts.join(" | ") || "按表单配置执行";
+};
+
+const getShortText = (value: unknown, maxLength = 54) => {
+  const text = String(value || "").trim();
+  if (!text || text.length <= maxLength) {
+    return text;
+  }
+  return `${text.slice(0, Math.max(8, maxLength - 18))}...${text.slice(-12)}`;
+};
+
+const getTaskConfigParts = (task: EcomPlatformCollectTask) => {
+  const config = task.configData || {};
+  const keywords = Array.isArray(config.keywords) ? config.keywords.filter(Boolean) : [];
+  const isSearchTask = String(task.taskType || task.collectScene || "")
+    .toLowerCase()
+    .includes("search");
+  return [
+    config.keyword
+      ? { label: "关键词", value: getShortText(config.keyword, 32) }
+      : null,
+    !config.keyword && keywords.length
+      ? { label: "关键词", value: getShortText(keywords.slice(0, 3).join(" / "), 42) }
+      : null,
+    config.targetUrl ? { label: "链接", value: getShortText(config.targetUrl, 54) } : null,
+    !isSearchTask && config.maxPages ? { label: "页数", value: String(config.maxPages) } : null,
+    !isSearchTask && config.maxItems ? { label: "条数", value: String(config.maxItems) } : null,
+  ].filter(Boolean) as Array<{ label: string; value: string }>;
 };
 
 const gridOptions = ref<VxeGridProps<EcomPlatformCollectTask>>({
@@ -265,11 +318,17 @@ const gridOptions = ref<VxeGridProps<EcomPlatformCollectTask>>({
   },
   columns: [
     { type: "checkbox", width: 48 },
-    { title: "任务名称", field: "name", minWidth: 220, showOverflow: "tooltip" },
+    {
+      title: "任务名称",
+      field: "name",
+      minWidth: 240,
+      showOverflow: "tooltip",
+      slots: { default: "taskNameSlot" },
+    },
     {
       title: "平台 / 任务类型",
       field: "platform",
-      width: 160,
+      width: 220,
       slots: { default: "platformSceneSlot" },
     },
     {
@@ -467,6 +526,19 @@ const handleBatchDelete = async () => {
   } catch {}
 };
 
+const handleResetActiveRuns = async () => {
+  try {
+    await ElMessageBox.confirm(
+      "确认重置所有运行中的采集任务吗？这会把卡住的运行记录标记为失败并释放客户端，不会删除历史采集数据。",
+      "重置采集运行状态",
+      { type: "warning" },
+    );
+    const result = await resetActiveEcomPlatformCollectRuns();
+    ElMessage.success(result?.message || "采集运行状态已重置");
+    await loadList();
+  } catch {}
+};
+
 onMounted(() => {
   void loadData();
 });
@@ -526,5 +598,107 @@ onActivated(() => {
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+:deep(.ecom-collect-page .common-table__body-cell) {
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+
+:deep(.ecom-collect-page .vxe-body--column .vxe-cell) {
+  min-height: 0 !important;
+  line-height: 1.35 !important;
+}
+
+.primary-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.primary-cell__title {
+  overflow: hidden;
+  color: var(--el-text-color-primary);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.primary-cell__meta {
+  overflow: hidden;
+  color: var(--el-text-color-placeholder);
+  font-size: 10px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mono-text {
+  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+.inline-chip-list,
+.config-chip-list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+}
+
+.info-chip,
+.config-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-height: 20px;
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.info-chip {
+  padding: 0 7px;
+  border: 1px solid var(--el-border-color-lighter);
+  color: var(--el-text-color-regular);
+  background: color-mix(in srgb, var(--el-fill-color-light) 72%, transparent);
+}
+
+.info-chip--platform {
+  color: var(--el-color-primary);
+  border-color: color-mix(in srgb, var(--el-color-primary) 34%, var(--el-border-color));
+  background: color-mix(in srgb, var(--el-color-primary) 12%, transparent);
+  font-weight: 600;
+}
+
+.info-chip--task {
+  overflow: hidden;
+  color: var(--el-text-color-secondary);
+  text-overflow: ellipsis;
+}
+
+.config-chip {
+  overflow: hidden;
+  border: 1px solid var(--el-border-color-extra-light);
+  background: var(--el-bg-color-overlay);
+}
+
+.config-chip__label {
+  padding: 3px 5px;
+  color: var(--el-text-color-secondary);
+  background: color-mix(in srgb, var(--el-fill-color) 76%, transparent);
+}
+
+.config-chip__value {
+  overflow: hidden;
+  max-width: 220px;
+  padding: 3px 6px;
+  color: var(--el-text-color-primary);
+  font-weight: 500;
+  text-overflow: ellipsis;
 }
 </style>
