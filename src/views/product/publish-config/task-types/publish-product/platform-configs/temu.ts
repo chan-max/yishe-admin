@@ -20,7 +20,7 @@ export const temuPlatformConfig: PlatformConfig = {
       label: 'SKU供应商商品',
       type: 'vendor-products',
       span: 24,
-      tooltip: '按顺序选择供应商商品，对应 productSkcReqs[0].productSkuReqs 的 SKU 顺序；有商品编码时生成“素材码-供应商商品码”，无商品编码时使用素材码。'
+      tooltip: '按 productSkcReqs[0].productSkuReqs 的 SKU 顺序选择供应商商品；有商品编码时生成“素材码-供应商商品码”，否则使用素材码。'
     },
     {
       key: 'supId',

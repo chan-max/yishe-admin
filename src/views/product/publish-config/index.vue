@@ -1677,6 +1677,7 @@ onMounted(() => {
                           v-if="
                             field.tooltip &&
                             field.type !== 'url-list' &&
+                            field.type !== 'vendor-products' &&
                             field.type !== 'switch' &&
                             !(field.type === 'select' && field.key === 'vendorId')
                           "
