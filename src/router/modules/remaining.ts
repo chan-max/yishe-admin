@@ -778,6 +778,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
         },
       },
       {
+        path: "pdd",
+        component: () => import("@/views/external/toolkit/pdd/index.vue"),
+        name: "OperationToolkitPdd",
+        meta: {
+          title: "拼多多",
+          toolkitPlatform: "pdd",
+        },
+      },
+      {
         path: "kuaishou-shop",
         component: () => import("@/views/external/toolkit/kuaishou-shop/index.vue"),
         name: "OperationToolkitKuaishouShop",
