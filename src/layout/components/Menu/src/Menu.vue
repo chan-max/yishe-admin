@@ -128,7 +128,7 @@ export default defineComponent({
       );
     };
 
-    const renderRunningStatusDot = (title: string, variant?: "queue" | "psd") => {
+    const renderRunningStatusDot = (title: string, variant?: "queue" | "psd" | "video") => {
       return renderMenuStatusHint(
         <span
           class={[
@@ -289,7 +289,11 @@ export default defineComponent({
       if (running) {
         return renderRunningStatusDot(
           title || "当前有任务正在执行",
-          routePath === "/product/queue" ? "queue" : undefined,
+          routePath === "/product/queue"
+            ? "queue"
+            : isRemotionRoute(routePath)
+              ? "video"
+              : undefined,
         );
       }
 
@@ -610,6 +614,8 @@ export default defineComponent({
                                 isPsdSetRoute(childPath) && isAnyPsdSetProcessing.value,
                               [`${prefixCls}__link--running-queue`]:
                                 isQueueRoute(childPath) && !!routeRunningMap.value[childPath],
+                              [`${prefixCls}__link--running-video`]:
+                                isRemotionRoute(childPath) && !!routeRunningMap.value[childPath],
                             },
                           ]}
                           onClick={() => selectMenu(childPath)}
@@ -1015,6 +1021,12 @@ $prefix-cls: #{$namespace}-menu;
     --menu-running-text-color: rgb(234 179 8 / 98%);
   }
 
+  &__link--running-video {
+    --menu-running-rgb: 59 130 246;
+    --menu-running-highlight-rgb: 96 165 250;
+    --menu-running-text-color: rgb(30 41 59 / 98%);
+  }
+
   &__status-dot {
     flex: none;
     position: relative;
@@ -1095,6 +1107,11 @@ $prefix-cls: #{$namespace}-menu;
   &__status-dot--running-psd {
     --menu-running-rgb: 234 179 8;
     --menu-running-highlight-rgb: 250 204 21;
+  }
+
+  &__status-dot--running-video {
+    --menu-running-rgb: 59 130 246;
+    --menu-running-highlight-rgb: 96 165 250;
   }
 
   &__status-dot--offline {
