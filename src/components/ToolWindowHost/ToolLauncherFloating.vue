@@ -72,7 +72,7 @@ const handleOpen = (key: string) => {
 <style scoped>
 .tool-launcher-floating-root {
   position: fixed;
-  right: 32px;
+  right: 24px;
   bottom: 0;
   z-index: 2147483647 !important;
 }
@@ -84,8 +84,8 @@ const handleOpen = (key: string) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   border-radius: 0;
   background: #409eff;
   color: #fff;
@@ -118,8 +118,8 @@ const handleOpen = (key: string) => {
 }
 
 .tool-launcher-floating-icon {
-  width: 16px;
-  height: 16px;
+  width: 12px;
+  height: 12px;
 }
 
 .tool-launcher-floating-backdrop {
@@ -136,7 +136,7 @@ const handleOpen = (key: string) => {
 .tool-launcher-floating-popper {
   position: absolute;
   right: 0;
-  bottom: 40px;
+  bottom: 30px;
   width: 280px;
   max-height: 60vh;
   overflow: hidden;

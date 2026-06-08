@@ -208,270 +208,331 @@
     fullscreen
     destroy-on-close
     class="remotion-create-dialog"
+    :close-on-click-modal="false"
   >
-    <div class="remotion-create-layout">
-      <el-card shadow="never">
-        <template #header>第 1 步 · 选择模板</template>
-        <div class="template-info-panel">
-          <div v-if="templateOverviewStats.length" class="template-library-overview">
-            <div
-              v-for="stat in templateOverviewStats"
-              :key="stat.label"
-              class="template-overview-card"
-            >
-              <span class="template-overview-card__label">{{ stat.label }}</span>
-              <strong class="template-overview-card__value">{{ stat.value }}</strong>
-            </div>
-          </div>
-
-          <el-form label-position="top" class="space-y-1">
-            <el-row :gutter="12">
-              <el-col :xs="24" :sm="12" :lg="6">
-                <el-form-item label="内容分类">
-                  <el-select
-                    v-model="templateFilters.category"
-                    class="w-full"
-                    clearable
-                    placeholder="全部分类"
-                    popper-class="remotion-filter-select-dropdown"
-                    @change="handleTemplateFilterChange"
-                  >
-                    <el-option
-                      v-for="item in templateCategoryOptions"
-                      :key="item"
-                      :label="item"
-                      :value="item"
-                    />
-                  </el-select>
-                </el-form-item>
-              </el-col>
-              <el-col :xs="24" :sm="12" :lg="6">
-                <el-form-item label="时长类型">
-                  <el-select
-                    v-model="templateFilters.durationLabel"
-                    class="w-full"
-                    clearable
-                    placeholder="全部时长"
-                    popper-class="remotion-filter-select-dropdown"
-                    @change="handleTemplateFilterChange"
-                  >
-                    <el-option
-                      v-for="item in templateDurationOptions"
-                      :key="item"
-                      :label="item"
-                      :value="item"
-                    />
-                  </el-select>
-                </el-form-item>
-              </el-col>
-              <el-col :xs="24" :sm="24" :lg="12">
-                <el-form-item label="模板">
-                  <el-select
-                    v-model="form.templateId"
-                    class="w-full"
-                    filterable
-                    placeholder="请选择模板"
-                    popper-class="remotion-template-select-dropdown"
-                    @change="handleTemplateChange"
-                  >
-                    <el-option
-                      v-for="item in filteredTemplateOptions"
-                      :key="item.id"
-                      :label="item.name"
-                      :value="item.id"
-                    >
-                      <div class="template-select-option">
-                        <span class="template-select-option__name">{{ item.name }}</span>
-                        <span class="template-select-option__meta">
-                          {{ item.category || "未分类" }} / {{ item.durationLabel || "-" }}
-                        </span>
-                      </div>
-                    </el-option>
-                  </el-select>
-                </el-form-item>
-              </el-col>
-            </el-row>
-            <div class="template-filter-summary">
-              当前展示 {{ filteredTemplateOptions.length }} / {{ templateOptions.length }} 个模板
-            </div>
-          </el-form>
-
-          <div v-if="selectedTemplate" class="template-summary">
-            <div class="template-summary-name">{{ selectedTemplate.name }}</div>
-            <div class="template-summary-desc">
-              {{ selectedTemplate.description || "暂无模板说明" }}
-            </div>
-            <div class="template-summary-meta">
-              <span v-if="selectedTemplate.category">{{ selectedTemplate.category }}</span>
-              <span v-if="selectedTemplate.style">{{ selectedTemplate.style }}</span>
-              <span v-if="selectedTemplate.durationLabel">{{
-                selectedTemplate.durationLabel
-              }}</span>
-              <span>{{ selectedTemplate.width }} x {{ selectedTemplate.height }}</span>
-              <span>{{ selectedTemplate.fps }}fps</span>
-              <span>{{ selectedTemplate.durationInFrames }}帧</span>
-            </div>
-            <div v-if="selectedTemplate.useCase" class="template-detail-block">
-              <div class="schema-title">使用场景</div>
-              <div class="template-use-case">{{ selectedTemplate.useCase }}</div>
-            </div>
-            <div
-              v-if="selectedTemplate.tags && selectedTemplate.tags.length"
-              class="template-detail-block"
-            >
-              <div class="schema-title">风格标签</div>
-              <div class="template-tag-list">
-                <span v-for="tag in selectedTemplate.tags" :key="tag" class="template-tag">{{
-                  tag
-                }}</span>
-              </div>
-            </div>
-            <div
-              v-if="selectedTemplate.scenes && selectedTemplate.scenes.length"
-              class="template-detail-block"
-            >
-              <div class="schema-title">视频结构</div>
-              <div class="schema-list">
-                <div
-                  v-for="scene in selectedTemplate.scenes"
-                  :key="scene.title + scene.summary"
-                  class="schema-field"
-                >
-                  <div class="schema-field-head">
-                    <strong class="schema-label">{{ scene.title }}</strong>
-                  </div>
-                  <div class="schema-desc">{{ scene.summary }}</div>
-                </div>
-              </div>
-            </div>
-            <div
-              v-if="
-                selectedTemplate.animationHighlights && selectedTemplate.animationHighlights.length
-              "
-              class="template-detail-block"
-            >
-              <div class="schema-title">核心动效</div>
-              <div class="schema-list">
-                <div
-                  v-for="highlight in selectedTemplate.animationHighlights"
-                  :key="highlight"
-                  class="schema-field"
-                >
-                  <div class="schema-desc">{{ highlight }}</div>
-                </div>
-              </div>
-            </div>
-            <div v-if="selectedTemplate.example" class="template-detail-block">
-              <div class="schema-title">示例数据</div>
-              <div class="template-meta-raw">
-                <pre>{{ formatJson(selectedTemplate.example) }}</pre>
-              </div>
-            </div>
-            <div v-if="selectedTemplateDebugMeta" class="template-detail-block">
-              <div class="schema-title">调试元数据</div>
-              <div class="template-meta-raw">
-                <pre>{{ formatJson(selectedTemplateDebugMeta) }}</pre>
-              </div>
-            </div>
-            <div
-              v-if="selectedTemplate.inputSchema && selectedTemplate.inputSchema.length"
-              class="template-input-schema"
-            >
-              <div class="schema-title">参数说明</div>
-              <div class="schema-list">
-                <div
-                  v-for="field in selectedTemplate.inputSchema"
-                  :key="field.key"
-                  class="schema-field"
-                >
-                  <div class="schema-field-head">
-                    <strong class="schema-label">{{ field.label || field.key }}</strong>
-                    <span class="schema-key">{{ field.key }}</span>
-                    <span v-if="field.required" class="schema-required">必填</span>
-                  </div>
-                  <div class="schema-desc">{{ field.description || "-" }}</div>
-                  <div v-if="field.example !== undefined" class="schema-example">
-                    示例：<code>{{ field.example }}</code>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <el-empty v-else description="请选择模板后再填写参数" :image-size="88" />
+    <!-- 步骤指示器 -->
+    <div class="remotion-steps">
+      <div 
+        v-for="(step, index) in steps" 
+        :key="index"
+        class="remotion-step-item"
+        :class="{ 
+          'remotion-step-active': currentStep === index,
+          'remotion-step-done': currentStep > index 
+        }"
+        @click="goToStep(index)"
+      >
+        <div class="remotion-step-icon">
+          <span v-if="currentStep > index">✓</span>
+          <span v-else>{{ index + 1 }}</span>
         </div>
-      </el-card>
+        <div class="remotion-step-label">{{ step.label }}</div>
+      </div>
+    </div>
 
-      <el-card shadow="never">
-        <template #header>第 2 步 · 填写参数（JSON）</template>
-        <div class="remotion-form-panel">
-          <el-form label-position="top" class="remotion-json-form">
-            <el-form-item label="参数 (JSON)" class="remotion-json-form__item">
-              <el-input
-                type="textarea"
-                v-model="form.inputPropsJson"
-                :rows="20"
-                resize="none"
-                class="remotion-json-editor"
-                placeholder='输入 JSON，例如: {"text":"hello","count":3}'
+    <!-- 步骤内容 -->
+    <div class="remotion-step-content">
+      <!-- 步骤1: 选择模板 -->
+      <div v-show="currentStep === 0" class="remotion-step-panel">
+        <div class="template-filter-bar">
+          <div class="template-filter-controls">
+            <el-input
+              v-model="templateSearchKeyword"
+              clearable
+              placeholder="搜索名称、描述、标签"
+              class="filter-search"
+              @input="handleTemplateFilterChange"
+            >
+              <template #prefix>
+                <el-icon><Search /></el-icon>
+              </template>
+            </el-input>
+            <el-select
+              v-model="templateFilters.category"
+              clearable
+              placeholder="内容分类"
+              class="filter-select"
+              @change="handleTemplateFilterChange"
+            >
+              <el-option
+                v-for="item in templateCategoryOptions"
+                :key="item"
+                :label="item"
+                :value="item"
               />
-            </el-form-item>
-          </el-form>
-          <div class="remotion-json-hint">提示：参数为 JSON 格式，提交时会解析为对象。</div>
+            </el-select>
+            <el-select
+              v-model="templateFilters.orientation"
+              clearable
+              placeholder="画幅"
+              class="filter-select filter-select--compact"
+              @change="handleTemplateFilterChange"
+            >
+              <el-option label="竖屏" value="portrait" />
+              <el-option label="横屏" value="landscape" />
+              <el-option label="方屏" value="square" />
+            </el-select>
+            <el-select
+              v-model="templateFilters.durationLabel"
+              clearable
+              placeholder="时长类型"
+              class="filter-select"
+              @change="handleTemplateFilterChange"
+            >
+              <el-option
+                v-for="item in templateDurationOptions"
+                :key="item"
+                :label="item"
+                :value="item"
+              />
+            </el-select>
+            <el-select
+              v-model="templateFilters.tag"
+              clearable
+              filterable
+              placeholder="标签"
+              class="filter-select"
+              @change="handleTemplateFilterChange"
+            >
+              <el-option
+                v-for="item in templateTagOptions"
+                :key="item"
+                :label="item"
+                :value="item"
+              />
+            </el-select>
+            <el-select
+              v-model="templateFilters.style"
+              clearable
+              filterable
+              placeholder="风格"
+              class="filter-select filter-select--wide"
+              @change="handleTemplateFilterChange"
+            >
+              <el-option
+                v-for="item in templateStyleOptions"
+                :key="item"
+                :label="item"
+                :value="item"
+              />
+            </el-select>
+            <el-button class="template-filter-reset" @click="resetTemplateFiltersAndReload">
+              重置
+            </el-button>
+          </div>
+          <div class="template-filter-summary">
+            <span>当前 {{ templateMeta.total || filteredTemplateOptions.length }} 个</span>
+            <span v-if="templateMeta.allTotal">全部 {{ templateMeta.allTotal }} 个</span>
+          </div>
         </div>
-      </el-card>
 
-      <el-card shadow="never">
-        <template #header>第 3 步 · 确认制作</template>
-        <div class="remotion-preview-panel">
-          <div class="remotion-preview-scroll">
-            <div class="confirm-meta">
-              <div v-if="selectedTemplate?.assetSummary" class="template-asset-summary">
-                {{ selectedTemplate.assetSummary }}
+        <div class="template-grid">
+          <div
+            v-for="template in filteredTemplateOptions"
+            :key="template.id"
+            class="template-card"
+            :class="{ 'template-card-selected': form.templateId === template.id }"
+            @click="selectTemplate(template)"
+          >
+            <div class="template-card-header">
+              <div class="template-card-title">
+                <div class="template-card-name">{{ template.name }}</div>
+                <div class="template-card-id">{{ template.id }}</div>
               </div>
-              <el-form label-position="top" class="space-y-1">
-                <el-form-item label="记录标题">
-                  <el-input v-model="form.title" placeholder="用于后台记录展示" />
-                </el-form-item>
-                <el-form-item label="任务超时(ms)">
+            </div>
+            <div class="template-card-desc">{{ template.description || '暂无说明' }}</div>
+            <div class="template-card-meta">
+              <span class="meta-tag">{{ template.category || '未分类' }}</span>
+              <span class="meta-dot"></span>
+              <span>{{ getTemplateOrientationLabel(template) }}</span>
+              <span class="meta-dot"></span>
+              <span>{{ getTemplateDurationText(template) }}</span>
+              <span class="meta-dot"></span>
+              <span>{{ getTemplateFieldCount(template) }} 字段</span>
+            </div>
+            <div v-if="template.tags && template.tags.length" class="template-card-tags">
+              <span v-for="tag in template.tags.slice(0, 3)" :key="tag" class="template-tag">{{
+                tag
+              }}</span>
+              <span v-if="template.tags.length > 3" class="template-tag template-tag--more">
+                +{{ template.tags.length - 3 }}
+              </span>
+            </div>
+          </div>
+          <el-empty
+            v-if="filteredTemplateOptions.length === 0"
+            class="template-empty"
+            description="没有匹配的模板"
+          />
+        </div>
+      </div>
+
+      <!-- 步骤2: 填写参数 -->
+      <div v-show="currentStep === 1" class="remotion-step-panel">
+        <div v-if="selectedTemplate" class="params-panel">
+          <div class="params-header">
+            <div class="params-template-name">{{ selectedTemplate.name }}</div>
+            <el-button type="primary" link @click="currentStep = 0">重新选择</el-button>
+          </div>
+
+          <div class="params-editor-layout">
+            <div class="params-form">
+              <el-form
+                v-if="selectedTemplate.inputSchema && selectedTemplate.inputSchema.length"
+                label-position="top"
+                label-width="auto"
+              >
+                <el-form-item 
+                  v-for="field in selectedTemplate.inputSchema" 
+                  :key="field.key"
+                  :label="field.label || field.key"
+                  :required="field.required"
+                >
+                  <template #label>
+                    <span>{{ field.label || field.key }}</span>
+                    <el-tooltip v-if="field.description" :content="field.description" placement="top">
+                      <el-icon class="ml-1 cursor-pointer"><QuestionFilled /></el-icon>
+                    </el-tooltip>
+                  </template>
+                  <el-input
+                    v-if="isTextInput(field)"
+                    :model-value="getParamFieldString(field.key)"
+                    :placeholder="getFieldPlaceholder(field)"
+                    clearable
+                    @update:model-value="(value) => updateParamField(field, value)"
+                  />
                   <el-input-number
-                    v-model="form.timeoutMs"
-                    :min="1000"
-                    :max="900000"
-                    :step="1000"
+                    v-else-if="isNumberInput(field)"
+                    :model-value="getParamFieldNumber(field.key)"
+                    :placeholder="field.example !== undefined ? String(field.example) : '请输入数字'"
                     class="w-full"
+                    @update:model-value="(value) => updateParamField(field, value)"
+                  />
+                  <el-switch
+                    v-else-if="isBoolInput(field)"
+                    :model-value="!!formParams[field.key]"
+                    @update:model-value="(value) => updateParamField(field, value)"
+                  />
+                  <el-input
+                    v-else
+                    :model-value="getParamFieldJson(field.key)"
+                    type="textarea"
+                    :rows="getComplexFieldRows(field)"
+                    :placeholder="getFieldPlaceholder(field)"
+                    @update:model-value="(value) => updateParamField(field, value)"
                   />
                 </el-form-item>
               </el-form>
+              <el-empty v-else description="该模板暂无参数字段" :image-size="80" />
             </div>
-            <el-alert
-              v-if="remotionStatus.checked && !remotionStatus.available"
-              type="error"
-              :closable="false"
-              show-icon
-              class="remotion-submit-alert"
-              title="Video Template 服务当前不可用，请先恢复服务后再提交制作任务"
-            />
-            <div class="remotion-submit-pipeline">
-              提交后会先创建记录，再由 Video Template 客户端插件渲染视频，最后回写结果。
-            </div>
-            <pre>{{ form.inputPropsJson }}</pre>
-          </div>
-          <div class="remotion-create-actions flex flex-col gap-3">
-            <el-button
-              type="primary"
-              :loading="submitLoading"
-              :disabled="!canSubmitGenerate"
-              @click="submitGenerate"
-            >
-              开始制作
-            </el-button>
-            <div class="remotion-submit-hint">
-              {{ submitDisabledText || "长视频会在后台继续处理，列表会自动刷新状态。" }}
+
+            <div class="params-json">
+              <div class="params-json-header">
+                <span>JSON 参数</span>
+                <span class="json-hint" :class="{ 'json-hint--error': !!jsonEditError }">
+                  {{ jsonEditError || "实时同步，可直接修改" }}
+                </span>
+              </div>
+              <el-input
+                type="textarea"
+                v-model="form.inputPropsJson"
+                :rows="18"
+                resize="none"
+                class="json-editor"
+                placeholder='输入 JSON，例如: {"text":"hello","count":3}'
+                @input="handleJsonInput"
+              />
             </div>
           </div>
         </div>
-      </el-card>
+        <el-empty v-else description="请先选择模板" />
+      </div>
+
+      <!-- 步骤3: 确认提交 -->
+      <div v-show="currentStep === 2" class="remotion-step-panel">
+        <div v-if="selectedTemplate" class="confirm-panel">
+          <div class="confirm-section">
+            <div class="confirm-title">模板信息</div>
+            <div class="confirm-grid">
+              <div class="confirm-item">
+                <span class="confirm-label">模板名称</span>
+                <span class="confirm-value">{{ selectedTemplate.name }}</span>
+              </div>
+              <div class="confirm-item">
+                <span class="confirm-label">分辨率</span>
+                <span class="confirm-value">{{ selectedTemplate.width }} x {{ selectedTemplate.height }}</span>
+              </div>
+              <div class="confirm-item">
+                <span class="confirm-label">时长</span>
+                <span class="confirm-value">{{ selectedTemplate.durationLabel || '-' }}</span>
+              </div>
+              <div class="confirm-item">
+                <span class="confirm-label">帧率</span>
+                <span class="confirm-value">{{ selectedTemplate.fps }}fps</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="confirm-section">
+            <div class="confirm-title">输入参数</div>
+            <div class="confirm-params">
+              <pre>{{ displayParamsJson }}</pre>
+            </div>
+          </div>
+
+          <div class="confirm-section">
+            <div class="confirm-title">任务设置</div>
+            <el-form label-position="top">
+              <el-form-item label="记录标题（可选）">
+                <el-input v-model="form.title" placeholder="用于后台记录展示，默认为模板名称" />
+              </el-form-item>
+              <el-form-item label="超时时间（毫秒）">
+                <el-input-number
+                  v-model="form.timeoutMs"
+                  :min="1000"
+                  :max="900000"
+                  :step="1000"
+                  class="w-full"
+                />
+              </el-form-item>
+            </el-form>
+          </div>
+
+          <el-alert
+            v-if="remotionStatus.checked && !remotionStatus.available"
+            type="error"
+            :closable="false"
+            show-icon
+            title="Video Template 服务当前不可用，请先恢复服务后再提交制作任务"
+          />
+        </div>
+      </div>
     </div>
+
+    <!-- 底部操作按钮 -->
+    <template #footer>
+      <div class="remotion-dialog-footer">
+        <el-button @click="createVisible = false">取消</el-button>
+        <el-button v-if="currentStep > 0" @click="currentStep--">上一步</el-button>
+        <el-button 
+          v-if="currentStep < 2" 
+          type="primary" 
+          :disabled="!canGoNext"
+          @click="currentStep++"
+        >
+          下一步
+        </el-button>
+        <el-button
+          v-if="currentStep === 2"
+          type="primary"
+          :loading="submitLoading"
+          :disabled="!canSubmitGenerate"
+          @click="submitGenerate"
+        >
+          开始制作
+        </el-button>
+      </div>
+    </template>
   </el-dialog>
 
   <el-dialog
@@ -532,7 +593,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Delete, Search } from "@element-plus/icons-vue";
+import { Delete, Search, QuestionFilled } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
 import { formatTimestamp } from "@/common/date";
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from "@/common/table";
@@ -555,16 +616,34 @@ const loading = ref(false);
 const total = ref(0);
 const dataSource = ref<any[]>([]);
 const templateOptions = ref<any[]>([]);
+const templateMeta = reactive({
+  total: 0,
+  allTotal: 0,
+  filters: {
+    categories: [] as string[],
+    durationLabels: [] as string[],
+    styles: [] as string[],
+    useCases: [] as string[],
+    tags: [] as string[],
+    orientations: [] as string[],
+  },
+});
 const templateFilters = reactive({
   category: "",
   durationLabel: "",
+  style: "",
+  useCase: "",
+  tag: "",
+  orientation: "",
 });
+const templateSearchKeyword = ref("");
 const createVisible = ref(false);
 const detailVisible = ref(false);
 const submitLoading = ref(false);
 const currentRow = ref<any>(null);
 const remotionStatus = useServiceHealthState("videoTemplate");
 let processingPollTimer: ReturnType<typeof setTimeout> | null = null;
+let templateSearchTimer: ReturnType<typeof setTimeout> | null = null;
 const ACTIVE_RECORD_STATUSES = new Set([
   "pending",
   "pending_client",
@@ -572,6 +651,19 @@ const ACTIVE_RECORD_STATUSES = new Set([
   "queued",
   "processing",
 ]);
+
+// 分步向导状态
+const currentStep = ref(0);
+const paramsMode = ref<"form" | "json">("form");
+const formParams = reactive<Record<string, any>>({});
+const jsonEditError = ref("");
+let syncingJsonFromForm = false;
+
+const steps = [
+  { label: "选择模板" },
+  { label: "填写参数" },
+  { label: "确认提交" },
+];
 
 const queryParams = reactive({
   currentPage: 1,
@@ -593,51 +685,66 @@ const selectedTemplate = computed(
   () => templateOptions.value.find((item) => item.id === form.templateId) || null,
 );
 const templateCategoryOptions = computed(() =>
-  Array.from(
-    new Set(
-      templateOptions.value.map((item) => String(item?.category || "").trim()).filter(Boolean),
-    ),
-  ),
+  templateMeta.filters.categories.length
+    ? templateMeta.filters.categories
+    : Array.from(
+        new Set(
+          templateOptions.value.map((item) => String(item?.category || "").trim()).filter(Boolean),
+        ),
+      ),
 );
 const templateDurationOptions = computed(() =>
-  Array.from(
-    new Set(
-      templateOptions.value.map((item) => String(item?.durationLabel || "").trim()).filter(Boolean),
-    ),
-  ),
+  templateMeta.filters.durationLabels.length
+    ? templateMeta.filters.durationLabels
+    : Array.from(
+        new Set(
+          templateOptions.value
+            .map((item) => String(item?.durationLabel || "").trim())
+            .filter(Boolean),
+        ),
+      ),
 );
-const filteredTemplateOptions = computed(() =>
-  templateOptions.value.filter((item) => {
-    if (templateFilters.category && item.category !== templateFilters.category) {
-      return false;
-    }
-    if (templateFilters.durationLabel && item.durationLabel !== templateFilters.durationLabel) {
-      return false;
-    }
-    return true;
-  }),
+const templateStyleOptions = computed(() =>
+  templateMeta.filters.styles.length
+    ? templateMeta.filters.styles
+    : Array.from(
+        new Set(templateOptions.value.map((item) => String(item?.style || "").trim()).filter(Boolean)),
+      ),
 );
-const templateOverviewStats = computed(() => [
-  { label: "模板总数", value: templateOptions.value.length },
-  { label: "当前结果", value: filteredTemplateOptions.value.length },
-  { label: "内容分类", value: templateCategoryOptions.value.length },
-]);
-const selectedTemplateDebugMeta = computed(() => {
-  if (!selectedTemplate.value) return null;
-  return {
-    id: selectedTemplate.value.id,
-    compositionId: selectedTemplate.value.compositionId,
-    category: selectedTemplate.value.category,
-    style: selectedTemplate.value.style,
-    durationLabel: selectedTemplate.value.durationLabel,
-    resolution: `${selectedTemplate.value.width} x ${selectedTemplate.value.height}`,
-    fps: selectedTemplate.value.fps,
-    durationInFrames: selectedTemplate.value.durationInFrames,
-    editableFields: selectedTemplate.value.editableFields,
-    assetSummary: selectedTemplate.value.assetSummary,
-    tags: selectedTemplate.value.tags,
-  };
+const templateTagOptions = computed(() =>
+  templateMeta.filters.tags.length
+    ? templateMeta.filters.tags
+    : Array.from(
+        new Set(
+          templateOptions.value
+            .flatMap((item) => (Array.isArray(item?.tags) ? item.tags : []))
+            .map((item) => String(item || "").trim())
+            .filter(Boolean),
+        ),
+      ),
+);
+const filteredTemplateOptions = computed(() => templateOptions.value);
+
+// 分步向导控制
+const canGoNext = computed(() => {
+  if (currentStep.value === 0) return !!form.templateId;
+  if (currentStep.value === 1) {
+    return !jsonEditError.value;
+  }
+  return true;
 });
+
+const displayParamsJson = computed(() => {
+  if (paramsMode.value === "json") {
+    try {
+      return form.inputPropsJson ? JSON.stringify(JSON.parse(form.inputPropsJson), null, 2) : "{}";
+    } catch {
+      return form.inputPropsJson || "{}";
+    }
+  }
+  return JSON.stringify(formParams, null, 2);
+});
+
 const canSubmitGenerate = computed(
   () => !!form.templateId && (!remotionStatus.checked || remotionStatus.available),
 );
@@ -861,12 +968,232 @@ function formatJson(value: any) {
   }
 }
 
+// 判断字段类型
+function isTextInput(field: any) {
+  const type = String(field.type || "").toLowerCase();
+  return type === "string" || type === "text" || (!type && field.example && typeof field.example === "string");
+}
+
+function isNumberInput(field: any) {
+  const type = String(field.type || "").toLowerCase();
+  return type === "number" || type === "int" || (field.example && typeof field.example === "number");
+}
+
+function isBoolInput(field: any) {
+  const type = String(field.type || "").toLowerCase();
+  return type === "boolean" || type === "bool" || (field.example && typeof field.example === "boolean");
+}
+
+function isComplexInput(field: any) {
+  const type = String(field?.type || "").toLowerCase();
+  return (
+    type === "object" ||
+    type === "array" ||
+    Array.isArray(field?.example) ||
+    (!!field?.example && typeof field.example === "object")
+  );
+}
+
+function stringifyParamValue(value: any) {
+  if (value === undefined || value === null) return "";
+  if (typeof value === "object") {
+    try {
+      return JSON.stringify(value, null, 2);
+    } catch {
+      return "";
+    }
+  }
+  return String(value);
+}
+
+function getFieldPlaceholder(field: any) {
+  if (field?.example === undefined) return isComplexInput(field) ? "请输入 JSON" : "请输入";
+  return `例如: ${stringifyParamValue(field.example)}`;
+}
+
+function getComplexFieldRows(field: any) {
+  if (String(field?.type || "").toLowerCase() === "array" || Array.isArray(field?.example)) {
+    return 5;
+  }
+  return 4;
+}
+
+function getParamFieldString(key: string) {
+  const value = formParams[key];
+  return typeof value === "object" ? stringifyParamValue(value) : String(value ?? "");
+}
+
+function getParamFieldNumber(key: string) {
+  const value = Number(formParams[key]);
+  return Number.isFinite(value) ? value : undefined;
+}
+
+function getParamFieldJson(key: string) {
+  return stringifyParamValue(formParams[key]);
+}
+
+function updateParamField(field: any, rawValue: any) {
+  if (isNumberInput(field)) {
+    formParams[field.key] = rawValue ?? null;
+  } else if (isBoolInput(field)) {
+    formParams[field.key] = !!rawValue;
+  } else if (isComplexInput(field)) {
+    const text = String(rawValue || "").trim();
+    if (!text) {
+      formParams[field.key] = Array.isArray(field?.example) ? [] : {};
+    } else {
+      try {
+        formParams[field.key] = JSON.parse(text);
+      } catch {
+        formParams[field.key] = rawValue;
+      }
+    }
+  } else {
+    formParams[field.key] = rawValue;
+  }
+  syncFormToJson();
+}
+
+function getTemplateResolution(template: any) {
+  if (template?.resolution) return template.resolution;
+  if (template?.width && template?.height) return `${template.width}x${template.height}`;
+  return "-";
+}
+
+function getTemplateOrientationLabel(template: any) {
+  const orientation = String(template?.orientation || "").toLowerCase();
+  if (orientation === "portrait") return "竖屏";
+  if (orientation === "landscape") return "横屏";
+  if (orientation === "square") return "方屏";
+  const width = Number(template?.width || 0);
+  const height = Number(template?.height || 0);
+  if (width && height) {
+    if (width === height) return "方屏";
+    return width > height ? "横屏" : "竖屏";
+  }
+  return "-";
+}
+
+function getTemplateDurationText(template: any) {
+  if (template?.durationLabel) return template.durationLabel;
+  const seconds = Number(template?.durationSeconds);
+  if (Number.isFinite(seconds) && seconds > 0) return `${seconds}s`;
+  const frames = Number(template?.durationInFrames || 0);
+  const fps = Number(template?.fps || 0);
+  if (frames > 0 && fps > 0) return `${Math.round((frames / fps) * 10) / 10}s`;
+  return "-";
+}
+
+function getTemplateFieldCount(template: any) {
+  if (Array.isArray(template?.inputSchema)) return template.inputSchema.length;
+  if (Array.isArray(template?.editableFields)) return template.editableFields.length;
+  return 0;
+}
+
+function getTemplateUseCaseText(template: any) {
+  const text = String(template?.useCase || "").trim();
+  return text.length > 18 ? `${text.slice(0, 18)}...` : text;
+}
+
+// 选择模板
+function selectTemplate(template: any) {
+  form.templateId = template.id;
+  form.title = template.name || "";
+  
+  // 初始化表单参数
+  Object.keys(formParams).forEach(key => delete formParams[key]);
+  
+  if (template.defaultInputProps) {
+    Object.assign(formParams, template.defaultInputProps);
+    syncFormToJson();
+  } else {
+    form.inputPropsJson = "{}";
+  }
+  jsonEditError.value = "";
+}
+
+// 步骤导航
+function goToStep(step: number) {
+  // 只允许跳转到已完成的步骤或当前步骤
+  if (step <= currentStep.value) {
+    currentStep.value = step;
+  }
+}
+
+// 同步表单和 JSON
+function syncFormToJson() {
+  try {
+    syncingJsonFromForm = true;
+    form.inputPropsJson = JSON.stringify(formParams, null, 2);
+    jsonEditError.value = "";
+  } catch {
+    form.inputPropsJson = "{}";
+  } finally {
+    syncingJsonFromForm = false;
+  }
+}
+
+function syncJsonToForm() {
+  try {
+    if (form.inputPropsJson && form.inputPropsJson.trim()) {
+      const parsed = JSON.parse(form.inputPropsJson);
+      Object.keys(formParams).forEach(key => delete formParams[key]);
+      Object.assign(formParams, parsed);
+      jsonEditError.value = "";
+    }
+  } catch (error: any) {
+    jsonEditError.value = error?.message || "JSON 格式错误";
+  }
+}
+
+function handleJsonInput() {
+  if (syncingJsonFromForm) return;
+  syncJsonToForm();
+}
+
+// 监听模式切换
+watch(paramsMode, (newMode) => {
+  if (newMode === "json") {
+    syncFormToJson();
+  } else {
+    syncJsonToForm();
+  }
+});
+
 async function loadTemplates() {
   try {
-    const result: any = await getRemotionTemplateList();
-    templateOptions.value = Array.isArray(result) ? result : [];
+    const result: any = await getRemotionTemplateList({
+      keyword: templateSearchKeyword.value || undefined,
+      category: templateFilters.category || undefined,
+      durationLabel: templateFilters.durationLabel || undefined,
+      style: templateFilters.style || undefined,
+      useCase: templateFilters.useCase || undefined,
+      tag: templateFilters.tag || undefined,
+      orientation: templateFilters.orientation || undefined,
+      pageSize: 200,
+    });
+    const list = Array.isArray(result) ? result : result?.list || result?.records || [];
+    templateOptions.value = Array.isArray(list) ? list : [];
+    templateMeta.total = Number(result?.total ?? templateOptions.value.length) || 0;
+    templateMeta.allTotal = Number(result?.allTotal ?? templateMeta.total) || 0;
+    templateMeta.filters.categories = Array.isArray(result?.filters?.categories)
+      ? result.filters.categories
+      : [];
+    templateMeta.filters.durationLabels = Array.isArray(result?.filters?.durationLabels)
+      ? result.filters.durationLabels
+      : [];
+    templateMeta.filters.styles = Array.isArray(result?.filters?.styles) ? result.filters.styles : [];
+    templateMeta.filters.useCases = Array.isArray(result?.filters?.useCases)
+      ? result.filters.useCases
+      : [];
+    templateMeta.filters.tags = Array.isArray(result?.filters?.tags) ? result.filters.tags : [];
+    templateMeta.filters.orientations = Array.isArray(result?.filters?.orientations)
+      ? result.filters.orientations
+      : [];
   } catch (error: any) {
     templateOptions.value = [];
+    templateMeta.total = 0;
+    templateMeta.allTotal = 0;
     ElMessage.error(getRemotionErrorMessage(error, "获取 Video Template 模板失败"));
   }
 }
@@ -878,15 +1205,29 @@ async function checkRemotionHealth() {
 function resetTemplateFilters() {
   templateFilters.category = "";
   templateFilters.durationLabel = "";
+  templateFilters.style = "";
+  templateFilters.useCase = "";
+  templateFilters.tag = "";
+  templateFilters.orientation = "";
+  templateSearchKeyword.value = "";
+}
+
+function resetTemplateFiltersAndReload() {
+  resetTemplateFilters();
+  void loadTemplates();
 }
 
 function resetForm() {
   resetTemplateFilters();
+  currentStep.value = 0;
+  paramsMode.value = "form";
   form.templateId = "";
   form.title = "";
   form.timeoutMs = 300000;
   form.inputProps = {};
   form.inputPropsJson = "{}";
+  jsonEditError.value = "";
+  Object.keys(formParams).forEach(key => delete formParams[key]);
 }
 
 function stopProcessingPoll() {
@@ -1029,13 +1370,19 @@ async function refreshActiveRows() {
 }
 
 function handleTemplateFilterChange() {
-  if (!form.templateId) return;
-  const stillVisible = filteredTemplateOptions.value.some((item) => item.id === form.templateId);
-  if (!stillVisible) {
-    form.templateId = "";
-    form.inputProps = {};
-    form.inputPropsJson = "{}";
+  if (templateSearchTimer) {
+    clearTimeout(templateSearchTimer);
   }
+  templateSearchTimer = setTimeout(async () => {
+    await loadTemplates();
+    if (!form.templateId) return;
+    const stillVisible = filteredTemplateOptions.value.some((item) => item.id === form.templateId);
+    if (!stillVisible) {
+      form.templateId = "";
+      form.inputProps = {};
+      form.inputPropsJson = "{}";
+    }
+  }, 250);
 }
 
 function handleTemplateChange() {
@@ -1056,12 +1403,16 @@ function handleTemplateChange() {
 
 function openCreateDialog(row?: any) {
   createVisible.value = true;
-  void Promise.allSettled([loadTemplates(), checkRemotionHealth()]);
+  currentStep.value = 0;
+  paramsMode.value = "form";
 
   if (!row) {
     resetForm();
+    void Promise.allSettled([loadTemplates(), checkRemotionHealth()]);
     return;
   }
+
+  void Promise.allSettled([loadTemplates(), checkRemotionHealth()]);
 
   resetTemplateFilters();
   form.templateId = row.templateId || "";
@@ -1072,6 +1423,12 @@ function openCreateDialog(row?: any) {
     form.inputPropsJson = row.inputProps ? JSON.stringify(row.inputProps, null, 2) : "{}";
   } catch {
     form.inputPropsJson = "{}";
+  }
+  
+  // 初始化表单参数
+  Object.keys(formParams).forEach(key => delete formParams[key]);
+  if (form.inputProps) {
+    Object.assign(formParams, form.inputProps);
   }
 }
 
@@ -1089,16 +1446,21 @@ async function submitGenerate() {
     }
 
     let inputPropsToSend: Record<string, any> = {};
+
     if (form.inputPropsJson && String(form.inputPropsJson).trim()) {
       try {
         inputPropsToSend = JSON.parse(form.inputPropsJson);
-      } catch (e) {
+      } catch (e: any) {
+        jsonEditError.value = e?.message || "JSON 格式错误";
         ElMessage.error("参数 JSON 格式不正确");
         submitLoading.value = false;
         return;
       }
-    } else {
-      inputPropsToSend = form.inputProps || {};
+    }
+    
+    // 如果都为空，使用默认参数
+    if (Object.keys(inputPropsToSend).length === 0 && selectedTemplate.value?.defaultInputProps) {
+      inputPropsToSend = { ...selectedTemplate.value.defaultInputProps };
     }
 
     const result: any = await generateRemotionVideoRecord({
@@ -1116,6 +1478,7 @@ async function submitGenerate() {
 
     ElMessage.success("已提交制作任务，正在后台生成");
     createVisible.value = false;
+    resetForm();
     await getList();
   } catch (error: any) {
     ElMessage.error(getRemotionErrorMessage(error, "视频生成失败"));
@@ -1279,13 +1642,21 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   websocketClient.events.off("remotionVideoRecordStatus", applyRemotionVideoRecordStatusEvent);
   stopProcessingPoll();
+  if (templateSearchTimer) {
+    clearTimeout(templateSearchTimer);
+    templateSearchTimer = null;
+  }
 });
 
 watch(
   () => websocketClient.state.status,
-  (status) => {
+  async (status, oldStatus) => {
     if (status === "connected") {
       stopProcessingPoll();
+      // WebSocket 新连接时重新加载模板（服务可能是后来启动的）
+      if (oldStatus !== "connected" && templateOptions.value.length === 0) {
+        await loadTemplates();
+      }
       return;
     }
 
@@ -1421,344 +1792,546 @@ watch(
   color: var(--el-text-color-secondary);
 }
 
-.template-info-panel,
-.remotion-form-panel,
-.remotion-preview-panel,
-.detail-section,
-.detail-json-panel {
-  height: 100%;
-  min-height: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-}
-
-.remotion-create-layout {
-  /* 调高弹窗高度以减少空白，调整为更高的可视占比 */
-  height: calc(100vh - 80px);
-  display: grid;
-  grid-template-columns: 360px minmax(0, 1fr) 360px;
-  /* 使三列卡片均分并撑满可用高度，避免底部空白 */
-  grid-template-rows: minmax(0, 1fr);
-  gap: 16px;
-}
-
-:deep(.remotion-create-layout > .el-card) {
-  height: 100%;
+/* 分步向导样式 */
+.remotion-steps {
   display: flex;
-  flex-direction: column;
-}
-
-:deep(.remotion-create-layout > .el-card .el-card__body) {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.remotion-preview-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  overflow: hidden;
-}
-
-.remotion-form-panel {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.remotion-json-form {
-  display: flex;
-  flex: 1 1 auto;
-  min-height: 0;
-  flex-direction: column;
-}
-
-.remotion-json-form__item {
-  display: flex;
-  flex: 1 1 auto;
-  min-height: 0;
-  margin-bottom: 0;
-  flex-direction: column;
-}
-
-:deep(.remotion-json-form__item .el-form-item__content) {
-  display: flex;
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-.remotion-json-editor {
-  display: flex;
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-:deep(.remotion-json-editor .el-textarea) {
-  display: flex;
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-:deep(.remotion-json-editor .el-textarea__inner) {
-  height: 100%;
-  min-height: 100% !important;
-  line-height: 1.6;
-}
-
-.remotion-json-hint {
-  margin-top: 12px;
-  flex: 0 0 auto;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
-.remotion-preview-scroll {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-  padding-right: 4px;
-}
-
-.remotion-create-actions {
-  flex: 0 0 auto;
-  margin-top: 0;
-  padding-top: 12px;
-  border-top: 1px solid var(--el-border-color-lighter);
-}
-
-.remotion-submit-alert {
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 0 10px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
   margin-bottom: 12px;
 }
 
-.remotion-submit-pipeline {
-  margin-bottom: 12px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  background: var(--el-fill-color-light);
-  color: var(--el-text-color-regular);
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.remotion-submit-hint {
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--el-text-color-secondary);
-}
-
-.remotion-create-banner {
-  grid-column: 1 / -1;
+.remotion-step-item {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   gap: 6px;
-  padding: 4px 2px 0;
+  cursor: pointer;
+  min-width: 110px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 999px;
+  background: var(--el-fill-color-blank);
+  position: relative;
 }
 
-.remotion-create-banner__title {
-  font-size: 18px;
+.remotion-step-active {
+  border-color: var(--el-color-primary-light-5);
+  background: var(--el-color-primary-light-9);
+}
+
+.remotion-step-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--el-fill-color);
+  color: var(--el-text-color-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-weight: 600;
-  color: var(--el-text-color-primary);
+  font-size: 11px;
+  transition: all 0.3s;
 }
 
-.remotion-create-banner__desc {
-  font-size: 13px;
-  color: var(--el-text-color-secondary);
+.remotion-step-active .remotion-step-icon {
+  background: var(--el-color-primary);
+  color: #fff;
 }
 
-.template-summary {
-  padding: 12px;
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 12px;
-  margin-top: 12px;
+.remotion-step-done .remotion-step-icon {
+  background: var(--el-color-success);
+  color: #fff;
 }
 
-.template-library-overview {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.template-overview-card {
-  display: grid;
-  gap: 6px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, rgba(64, 158, 255, 0.08), rgba(64, 158, 255, 0.02));
-  border: 1px solid rgba(64, 158, 255, 0.16);
-}
-
-.template-overview-card__label {
+.remotion-step-label {
   font-size: 12px;
   color: var(--el-text-color-secondary);
-}
-
-.template-overview-card__value {
-  font-size: 22px;
-  line-height: 1;
-  color: var(--el-text-color-primary);
-}
-
-.template-select-option {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.template-select-option__name {
-  flex: 1 1 auto;
-  min-width: 0;
-  color: var(--el-text-color-primary);
-  line-height: 1.45;
-  white-space: normal;
-  word-break: break-word;
-}
-
-.template-select-option__meta {
-  flex: 0 0 auto;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-  line-height: 1.45;
+  transition: color 0.3s;
   white-space: nowrap;
 }
 
-.template-filter-summary {
-  margin-top: 2px;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
+.remotion-step-active .remotion-step-label {
+  color: var(--el-color-primary);
+  font-weight: 500;
 }
 
-.template-summary-meta {
-  margin-top: 8px;
+.remotion-step-done .remotion-step-label {
+  color: var(--el-color-success);
+}
+
+.remotion-step-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow: hidden;
+}
+
+.remotion-step-panel {
+  height: 100%;
+  min-height: 0;
+  padding: 0 4px;
+  overflow: hidden;
+}
+
+.remotion-step-panel:first-child {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px 12px;
+  flex-direction: column;
 }
 
-.template-detail-block {
-  margin-top: 12px;
-}
-
-.template-use-case {
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--el-text-color-regular);
-}
-
-.template-tag-list {
+/* 模板筛选栏 */
+.template-filter-bar {
+  flex: 0 0 auto;
   display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 0 0 10px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.template-filter-controls {
+  display: flex;
+  min-width: 0;
+  flex: 1;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.filter-select {
+  width: 132px;
+  flex: 0 0 132px;
+}
+
+.filter-select--compact {
+  width: 92px;
+  flex-basis: 92px;
+}
+
+.filter-select--wide {
+  width: 170px;
+  flex-basis: 170px;
+}
+
+.filter-search {
+  flex: 1 1 260px;
+  min-width: 220px;
+}
+
+.template-filter-reset {
+  flex: 0 0 auto;
+  height: 32px;
+  padding: 0 12px;
+}
+
+.template-filter-summary {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* 模板卡片网格 */
+.template-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 8px;
+  max-height: calc(100vh - 230px);
+  overflow-y: auto;
+  padding: 2px 6px 2px 0;
+}
+
+.template-card {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(30px, auto) auto auto;
+  gap: 7px;
+  min-height: 126px;
+  padding: 10px 11px;
+  border: 1px solid #dcdfe6;
+  border-radius: 8px;
+  cursor: pointer;
+  background: var(--el-fill-color-blank);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+}
+
+.template-card:hover {
+  border-color: #b6c7dd;
+  background: #fbfcfe;
+  box-shadow: none;
+}
+
+.template-card-selected {
+  border-color: #5b8def;
+  background: #f7faff;
+  box-shadow: none;
+}
+
+.template-card-selected::after {
+  content: "";
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #5b8def;
+}
+
+.template-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.template-card-title {
+  min-width: 0;
+  flex: 1;
+}
+
+.template-card-name {
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--el-text-color-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.template-card-id {
+  display: none;
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--el-text-color-placeholder);
+  font-family: Consolas, Monaco, monospace;
+  font-size: 11px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.template-card-desc {
+  min-height: 30px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.template-card-specs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.template-spec {
+  min-width: 0;
+  padding: 6px 4px;
+  background: var(--el-fill-color-light);
+  border-right: 1px solid var(--el-border-color-lighter);
+  text-align: center;
+}
+
+.template-spec:last-child {
+  border-right: 0;
+}
+
+.template-spec-label {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--el-text-color-placeholder);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.template-spec strong {
+  display: block;
+  overflow: hidden;
+  color: var(--el-text-color-primary);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.template-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 18px;
+  overflow: hidden;
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.meta-tag {
+  overflow: hidden;
+  color: var(--el-text-color-regular);
+  font-weight: 500;
+  text-overflow: ellipsis;
+}
+
+.meta-dot {
+  width: 3px;
+  height: 3px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--el-border-color);
+}
+
+.template-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-height: 18px;
 }
 
 .template-tag {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(64, 158, 255, 0.08);
-  border: 1px solid rgba(64, 158, 255, 0.14);
-  color: var(--el-color-primary);
-  font-size: 12px;
-  line-height: 1.4;
+  max-width: 96px;
+  height: 18px;
+  padding: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.template-meta-form {
-  margin-top: 12px;
-}
-.template-asset-summary {
-  margin-top: 10px;
-  font-size: 13px;
+.template-tag--more {
   color: var(--el-text-color-secondary);
 }
-.confirm-meta {
-  margin-bottom: 12px;
-}
 
-.detail-section > div {
-  word-break: break-word;
-  line-height: 1.6;
-}
-
-.template-input-schema {
-  margin-top: 12px;
-  padding: 10px;
+.template-empty {
+  grid-column: 1 / -1;
+  min-height: 260px;
+  border: 1px dashed var(--el-border-color);
   border-radius: 8px;
-  background: rgba(250, 250, 250, 0.02);
-  border: 1px dashed var(--el-border-color-light);
 }
-.schema-title {
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-.schema-list {
+
+/* 参数面板 */
+.params-panel {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  height: 100%;
+  min-height: 0;
+  gap: 10px;
+  overflow: auto;
 }
-.schema-field {
-  font-size: 13px;
-}
-.schema-field-head {
+
+.params-header {
   display: flex;
-  gap: 8px;
-  align-items: baseline;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
 }
-.schema-label {
+
+.params-template-name {
+  font-size: 16px;
+  font-weight: 600;
   color: var(--el-text-color-primary);
 }
-.schema-key {
+
+.params-editor-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.params-form {
+  min-width: 0;
+  padding-right: 0;
+}
+
+.params-form :deep(.el-form-item) {
+  margin-bottom: 10px;
+}
+
+.param-example {
+  margin-top: 4px;
   font-size: 12px;
   color: var(--el-text-color-secondary);
 }
-.schema-required {
-  background: #ffecb5;
-  color: #663c00;
+
+.param-example code {
+  background: var(--el-fill-color);
   padding: 2px 6px;
   border-radius: 4px;
+  font-family: Consolas, Monaco, monospace;
   font-size: 11px;
 }
-.schema-desc {
-  color: var(--el-text-color-secondary);
-}
-.schema-example code {
-  background: rgba(0, 0, 0, 0.05);
-  padding: 2px 6px;
-  border-radius: 4px;
+
+.params-json {
+  min-width: 0;
+  position: sticky;
+  top: 0;
 }
 
-/* 原始元数据展示适配 */
-.template-meta-raw {
-  margin-top: 8px;
+.json-editor {
+  margin-bottom: 0;
 }
-.template-meta-raw pre {
-  margin: 8px 0 0 0;
-  max-height: 50vh;
-  overflow: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
-  background: rgba(0, 0, 0, 0.03);
-  padding: 10px;
+
+.params-json-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  color: var(--el-text-color-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.json-hint {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--el-text-color-secondary);
+}
+
+.json-hint--error {
+  color: var(--el-color-danger);
+}
+
+/* 确认面板 */
+.confirm-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.confirm-section {
+  padding: 16px;
+  background: var(--el-fill-color-light);
+  border-radius: 8px;
+}
+
+.confirm-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.confirm-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.confirm-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.confirm-label {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.confirm-value {
+  font-size: 14px;
+  color: var(--el-text-color-primary);
+  font-weight: 500;
+}
+
+.confirm-params {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.confirm-params pre {
+  margin: 0;
+  padding: 12px;
+  background: var(--el-fill-color);
   border-radius: 6px;
-  border: 1px solid var(--el-border-color-light);
   font-family: Consolas, Monaco, monospace;
   font-size: 12px;
   line-height: 1.6;
-}
-
-.remotion-preview-panel pre,
-.detail-json-panel pre {
-  margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
-  font-family: Consolas, Monaco, monospace;
-  font-size: 12px;
-  line-height: 1.7;
+}
+
+/* 对话框底部 */
+.remotion-dialog-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.remotion-dialog-footer .el-button {
+  min-width: 80px;
+}
+
+.remotion-dialog-footer .el-button:last-child {
+  margin-left: auto;
+}
+
+/* 创建对话框 - 全屏模式 */
+:deep(.remotion-create-dialog .el-dialog__body) {
+  padding: 0 24px 20px;
+  height: calc(100vh - 142px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+:deep(.remotion-create-dialog .el-dialog__header) {
+  margin-right: 0;
+  padding: 16px 24px 0;
+}
+
+.remotion-step-content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* 全屏模式下模板网格自适应 */
+.template-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 8px;
+  max-height: calc(100vh - 230px);
+  overflow-y: auto;
+  padding: 2px 6px 2px 0;
+}
+
+:deep(.remotion-create-dialog .el-dialog__footer) {
+  padding: 10px 24px 14px;
+  border-top: 1px solid var(--el-border-color-lighter);
 }
 
 .remotion-detail-layout {
@@ -1768,14 +2341,9 @@ watch(
   gap: 16px;
 }
 
-.remotion-detail-layout > .el-card,
-.remotion-detail-side,
-.remotion-detail-side > .el-card {
-  min-height: 0;
-}
-
-.remotion-detail-layout > .el-card:first-child :deep(.el-card__body) {
-  height: calc(100% - 56px);
+:deep(.remotion-detail-dialog .el-dialog__body) {
+  padding: 16px 20px 20px;
+  overflow: hidden;
 }
 
 .remotion-detail-side {
@@ -1817,11 +2385,6 @@ watch(
   object-fit: contain;
   border-radius: 8px;
   background: #000;
-}
-
-.remotion-video-preview {
-  aspect-ratio: 16 / 9;
-  max-height: 100%;
 }
 
 .cell-video-player {
@@ -1888,55 +2451,18 @@ watch(
   cursor: pointer;
 }
 
-.remotion-detail-grid {
-  min-height: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 16px;
-}
-
-/* 使左右两栏在高度受限时可滚动，确保参数区域可见 */
-.remotion-detail-grid > .el-card {
-  max-height: calc(100vh - 420px);
-  overflow: auto;
-}
-
 .detail-json-panel pre {
-  max-height: none;
-  overflow: auto;
-}
-
-:deep(.remotion-filter-select-dropdown.el-select__popper) {
-  min-width: 240px !important;
-}
-
-:deep(.remotion-template-select-dropdown.el-select__popper) {
-  min-width: 520px !important;
-  max-width: min(720px, calc(100vw - 32px));
-}
-
-:deep(.remotion-template-select-dropdown .el-select-dropdown__item) {
-  height: auto;
-  min-height: 44px;
-  padding-top: 8px;
-  padding-bottom: 8px;
-  line-height: 1.4;
-}
-
-:deep(.remotion-create-dialog .el-dialog__body),
-:deep(.remotion-detail-dialog .el-dialog__body) {
-  overflow: hidden;
-  padding: 16px 20px 20px;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: Consolas, Monaco, monospace;
+  font-size: 12px;
+  line-height: 1.7;
 }
 
 @media (max-width: 1280px) {
   .remotion-record-page__status-content {
     max-width: none;
-  }
-
-  .remotion-create-layout {
-    grid-template-columns: 1fr;
-    height: auto;
   }
 
   .remotion-detail-layout {
@@ -1961,13 +2487,13 @@ watch(
     width: 140px;
     height: 79px;
   }
+
+  .template-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
 }
 
 @media (max-width: 768px) {
-  .template-library-overview {
-    grid-template-columns: 1fr;
-  }
-
   :deep(.remotion-record-page .list-page-search-form__row) {
     row-gap: 0;
   }
@@ -1989,25 +2515,61 @@ watch(
     white-space: nowrap;
   }
 
-  .remotion-create-layout {
-    gap: 12px;
+  .template-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
   }
 
-  .remotion-preview-panel,
-  .remotion-preview-scroll {
-    overflow: visible;
+  .template-filter-controls {
+    flex-direction: column;
   }
 
-  :deep(.remotion-create-layout > .el-card),
-  :deep(.remotion-detail-layout > .el-card),
-  :deep(.remotion-detail-side > .el-card) {
-    border-radius: 10px;
+  .filter-select,
+  .filter-search {
+    flex: 0 0 auto;
+    min-width: 0;
+    width: 100%;
   }
 
-  :deep(.remotion-create-dialog .el-dialog__body),
-  :deep(.remotion-detail-dialog .el-dialog__body) {
-    overflow: auto;
-    padding: 12px;
+  .template-filter-summary {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .remotion-steps {
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding: 8px 0 10px;
+  }
+
+  .remotion-step-item {
+    min-width: 96px;
+    padding: 0 8px;
+  }
+
+  .remotion-step-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+  }
+
+  .remotion-step-label {
+    font-size: 11px;
+  }
+
+  .template-grid {
+    grid-template-columns: 1fr;
+    max-height: 360px;
+  }
+
+  .template-card {
+    min-height: 0;
+  }
+
+  :deep(.remotion-create-dialog .el-dialog__body) {
+    padding: 0 16px 16px;
+    max-height: calc(100vh - 160px);
   }
 
   .remotion-detail-layout {
@@ -2027,20 +2589,8 @@ watch(
     padding: 8px;
   }
 
-  .template-summary-meta {
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .template-meta-raw pre,
-  .remotion-preview-panel pre,
-  .detail-json-panel pre {
-    font-size: 11px;
-    line-height: 1.6;
-  }
-
-  :deep(.remotion-template-select-dropdown.el-select__popper) {
-    min-width: min(520px, calc(100vw - 24px)) !important;
+  .confirm-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -2074,9 +2624,19 @@ watch(
     min-height: 180px;
   }
 
-  .template-summary,
-  .template-input-schema {
-    padding: 10px;
+  .remotion-step-item {
+    min-width: 92px;
+    padding: 0 8px;
+  }
+
+  .remotion-step-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+  }
+
+  .remotion-step-label {
+    font-size: 11px;
   }
 }
 </style>

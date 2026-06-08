@@ -1,8 +1,21 @@
 ﻿import request from '@/config/axios'
 
-export function getRemotionTemplateList() {
+export function getRemotionTemplateList(params?: {
+  keyword?: string
+  category?: string
+  style?: string
+  useCase?: string
+  durationLabel?: string
+  duration?: string
+  tag?: string
+  orientation?: string
+  currentPage?: number
+  page?: number
+  pageSize?: number
+}) {
   return request.get({
-    url: '/remotion-video-record/templates'
+    url: '/remotion-video-record/templates',
+    params
   })
 }
 

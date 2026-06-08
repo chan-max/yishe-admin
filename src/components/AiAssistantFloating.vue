@@ -204,7 +204,7 @@ onBeforeUnmount(() => {
 .ai-assistant-popper {
   position: absolute;
   right: 0;
-  bottom: 40px;
+  bottom: 30px;
   display: flex;
   flex-direction: column;
   width: min(380px, calc(100vw - 32px));
@@ -475,8 +475,8 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   overflow: hidden;
   background: var(--el-color-primary, #1677ff);
   color: #fff;
@@ -506,7 +506,7 @@ onBeforeUnmount(() => {
 }
 
 .btn-icon {
-  width: 16px;
-  height: 16px;
+  width: 12px;
+  height: 12px;
 }
 </style>
