@@ -12,6 +12,8 @@ export interface ImageProcessingRoutePrefill {
   sourceRecordId?: string
   taskType?: ImageProcessingTaskType
   openCreate?: boolean
+  operations?: any[]
+  operationKeyword?: string
 }
 
 export const IMAGE_PROCESSING_PREFILL_QUERY_KEYS = [
@@ -22,7 +24,9 @@ export const IMAGE_PROCESSING_PREFILL_QUERY_KEYS = [
   'sourceModule',
   'sourceRecordId',
   'taskType',
-  'openCreate'
+  'openCreate',
+  'operations',
+  'operationKeyword'
 ] as const
 
 const normalizeQueryValue = (value: unknown) => {
@@ -51,6 +55,8 @@ const normalizePrefillPayload = (payload: Partial<ImageProcessingRoutePrefill> |
   const sourceModule = normalizeQueryValue(payload?.sourceModule)
   const sourceRecordId = normalizeQueryValue(payload?.sourceRecordId)
   const taskType = normalizeTaskType(payload?.taskType)
+  const operations = Array.isArray(payload?.operations) ? payload.operations : undefined
+  const operationKeyword = normalizeQueryValue(payload?.operationKeyword)
   const openCreate =
     payload?.openCreate === undefined ? true : payload.openCreate !== false
 
@@ -61,7 +67,9 @@ const normalizePrefillPayload = (payload: Partial<ImageProcessingRoutePrefill> |
     sourceModule: sourceModule || undefined,
     sourceRecordId: sourceRecordId || undefined,
     taskType,
-    openCreate
+    openCreate,
+    operations,
+    operationKeyword: operationKeyword || undefined
   } satisfies ImageProcessingRoutePrefill
 }
 
@@ -126,7 +134,13 @@ export const buildImageProcessingRouteLocation = (
         ...(normalizedPayload.sourceRecordId
           ? { sourceRecordId: normalizedPayload.sourceRecordId }
           : {}),
-        ...(normalizedPayload.taskType ? { taskType: normalizedPayload.taskType } : {})
+        ...(normalizedPayload.taskType ? { taskType: normalizedPayload.taskType } : {}),
+        ...(normalizedPayload.operationKeyword
+          ? { operationKeyword: normalizedPayload.operationKeyword }
+          : {}),
+        ...(normalizedPayload.operations
+          ? { operations: JSON.stringify(normalizedPayload.operations) }
+          : {})
       }
 
   return {
@@ -153,8 +167,23 @@ export const resolveImageProcessingRoutePrefill = (
     sourceModule: normalizeQueryValue(query.sourceModule),
     sourceRecordId: normalizeQueryValue(query.sourceRecordId),
     taskType: normalizeTaskType(query.taskType),
-    openCreate: normalizeQueryValue(query.openCreate) !== '0'
+    openCreate: normalizeQueryValue(query.openCreate) !== '0',
+    operationKeyword: normalizeQueryValue(query.operationKeyword),
+    operations: parseOperationsQueryValue(query.operations)
   })
+}
+
+const parseOperationsQueryValue = (value: unknown) => {
+  const raw = normalizeQueryValue(value)
+  if (!raw) {
+    return undefined
+  }
+  try {
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : undefined
+  } catch {
+    return undefined
+  }
 }
 
 export const clearImageProcessingRoutePrefill = (query: LocationQuery) => {
@@ -192,6 +221,8 @@ export const buildImageProcessingPrefillSignature = (
     payload.sourceModule || '',
     payload.sourceRecordId || '',
     payload.taskType || 'process',
-    payload.openCreate === false ? '0' : '1'
+    payload.openCreate === false ? '0' : '1',
+    payload.operationKeyword || '',
+    JSON.stringify(payload.operations || [])
   ].join('::')
 }

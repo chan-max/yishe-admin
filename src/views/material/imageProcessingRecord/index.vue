@@ -1194,7 +1194,14 @@ function applyRoutePrefill() {
   form.sourceModule = prefill.sourceModule || "";
   form.sourceRecordId = prefill.sourceRecordId || "";
   form.sourceName = prefill.sourceName || "";
-  syncDefaultOperationsJson();
+  if (Array.isArray(prefill.operations) && prefill.operations.length) {
+    replaceOperationsJson(prefill.operations);
+  } else {
+    syncDefaultOperationsJson();
+  }
+  if (prefill.operationKeyword) {
+    operationKeyword.value = prefill.operationKeyword;
+  }
 
   if (prefill.openCreate !== false) {
     createVisible.value = true;

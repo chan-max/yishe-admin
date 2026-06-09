@@ -1992,8 +1992,8 @@
                 </template>
 
                 <template #seamlessSlot="{ row }">
-                  <el-tag :type="row.seamless ? 'success' : 'info'" size="small">
-                    {{ row.seamless ? "是" : "否" }}
+                  <el-tag :type="normalizeBooleanValue(row.seamless) ? 'success' : 'info'" size="small">
+                    {{ normalizeBooleanValue(row.seamless) ? "是" : "否" }}
                   </el-tag>
                 </template>
 
@@ -2527,7 +2527,7 @@
         >
           <section class="edit-section">
             <div class="edit-section-title">基础信息</div>
-            <el-row :gutter="20">
+            <el-row :gutter="12">
               <el-col :xs="24" :md="12">
                 <el-form-item label="名称">
                   <el-input v-model="editForm.name" placeholder="请输入名称" clearable />
@@ -2543,7 +2543,7 @@
                   <el-input
                     v-model="editForm.description"
                     type="textarea"
-                    :rows="8"
+                    :rows="4"
                     placeholder="请输入描述"
                     maxlength="1000"
                     show-word-limit
@@ -2555,7 +2555,7 @@
                   <el-input
                     v-model="editForm.descriptionEn"
                     type="textarea"
-                    :rows="8"
+                    :rows="4"
                     placeholder="请输入英文描述"
                     maxlength="1000"
                     show-word-limit
@@ -2594,8 +2594,8 @@
 
           <section class="edit-section">
             <div class="edit-section-title">状态与属性</div>
-            <el-row :gutter="20">
-              <el-col :xs="24" :sm="12" :lg="6">
+            <el-row :gutter="12">
+              <el-col :xs="12" :sm="8" :lg="4">
                 <el-form-item label="自定义贴纸">
                   <el-switch
                     v-model="editForm.isCustom"
@@ -2605,7 +2605,7 @@
                   />
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :lg="6">
+              <el-col :xs="12" :sm="8" :lg="4">
                 <el-form-item label="是否公开">
                   <el-switch
                     v-model="editForm.isPublic"
@@ -2615,7 +2615,7 @@
                   />
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :lg="6">
+              <el-col :xs="12" :sm="8" :lg="4">
                 <el-form-item label="是否为材质">
                   <el-switch
                     v-model="editForm.isTexture"
@@ -2625,7 +2625,7 @@
                   />
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :lg="6">
+              <el-col :xs="12" :sm="8" :lg="4">
                 <el-form-item label="抠图素材">
                   <el-switch
                     v-model="editForm.isCutout"
@@ -2635,7 +2635,7 @@
                   />
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :lg="6">
+              <el-col :xs="12" :sm="8" :lg="4">
                 <el-form-item label="无缝贴图">
                   <el-switch
                     v-model="editForm.seamless"
@@ -2645,7 +2645,7 @@
                   />
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :md="12">
+              <el-col :xs="12" :sm="8" :lg="4">
                 <el-form-item label="侵权状态">
                   <el-select
                     v-model="editForm.isInfringement"
@@ -2691,7 +2691,7 @@
 
           <section class="edit-section">
             <div class="edit-section-title">元信息（只读）</div>
-            <el-row :gutter="20">
+            <el-row :gutter="12">
               <el-col :xs="24" :sm="12" :lg="8">
                 <el-form-item label="图片尺寸">
                   <el-input
@@ -2735,7 +2735,7 @@
 
           <section class="edit-section">
             <div class="edit-section-title">来源信息</div>
-            <el-row :gutter="20">
+            <el-row :gutter="12">
               <el-col :xs="24">
                 <el-form-item label="原始地址">
                   <el-input v-model="editForm.originUrl" placeholder="请输入原始地址" clearable />
@@ -2817,7 +2817,7 @@
                 <el-tag v-if="stickerDetailCurrent.isCutout" size="small" type="success" effect="plain">
                   抠图
                 </el-tag>
-                <el-tag v-if="stickerDetailCurrent.seamless" size="small" type="warning" effect="plain">
+                <el-tag v-if="normalizeBooleanValue(stickerDetailCurrent.seamless)" size="small" type="warning" effect="plain">
                   无缝
                 </el-tag>
               </div>
@@ -4227,7 +4227,13 @@ function formatDetailValue(value: any, fallback = "-") {
 
 function formatBooleanDetail(value: any) {
   if (value === undefined || value === null || value === "") return "-";
-  return value === true || value === "true" || value === 1 || value === "1" ? "是" : "否";
+  return normalizeBooleanValue(value) ? "是" : "否";
+}
+
+function normalizeBooleanValue(value: any) {
+  if (value === true || value === 1) return true;
+  const normalized = String(value ?? "").trim().toLowerCase();
+  return normalized === "true" || normalized === "1" || normalized === "yes";
 }
 
 function formatAspectRatio(value: any) {
@@ -6509,11 +6515,12 @@ async function handleEdit(row) {
     keywordsEn: detail.keywordsEn || "",
     suitableFor: detail.suitableFor || "",
     suffix: detail.suffix || "",
-    isCustom: detail.isCustom || false,
-    isPublic: detail.isPublic || false,
-    isTexture: detail.isTexture || false,
-    isInfringement: detail.isInfringement || false,
-    isCutout: detail.isCutout || false,
+    isCustom: normalizeBooleanValue(detail.isCustom),
+    isPublic: normalizeBooleanValue(detail.isPublic),
+    isTexture: normalizeBooleanValue(detail.isTexture),
+    seamless: normalizeBooleanValue(detail.seamless),
+    isInfringement: normalizeBooleanValue(detail.isInfringement),
+    isCutout: normalizeBooleanValue(detail.isCutout),
     originUrl: detail.originUrl || "",
     source: detail.source || "",
     folderId: detail.folderId ?? detail.folder?.id ?? null,
@@ -6574,6 +6581,7 @@ async function submitEdit() {
       isCustom: editForm.value.isCustom,
       isPublic: editForm.value.isPublic,
       isTexture: editForm.value.isTexture,
+      seamless: editForm.value.seamless,
       isInfringement: editForm.value.isInfringement,
       isCutout: editForm.value.isCutout,
       originUrl: editForm.value.originUrl,
@@ -6708,6 +6716,37 @@ async function handleGenerateImageInfo(row) {
   }
 }
 
+function buildImageProcessingPrefillOptions(row: any, taskType: "process" | "variations") {
+  if (taskType !== "process") {
+    return {};
+  }
+
+  const isSeamlessMaterial = normalizeBooleanValue(row?.seamless) || normalizeBooleanValue(row?.isTexture);
+  if (!isSeamlessMaterial) {
+    return {};
+  }
+
+  const params: Record<string, any> = {
+    mode: "sticker",
+    tileMode: "mirror",
+    blendPercent: 12,
+    preserveTransparent: true,
+  };
+  if (!row?.width || !row?.height) {
+    params.outputSize = 1024;
+  }
+
+  return {
+    operationKeyword: "无缝",
+    operations: [
+      {
+        type: "seamless-tile",
+        params,
+      },
+    ],
+  };
+}
+
 function openImageProcessingWorkbench(row: any, taskType: "process" | "variations" = "process") {
   if (!isAdmin.value) {
     ElMessage.warning("当前功能仅管理员可用");
@@ -6729,6 +6768,7 @@ function openImageProcessingWorkbench(row: any, taskType: "process" | "variation
       sourceRecordId: row?.id ? String(row.id) : "",
       taskType,
       openCreate: true,
+      ...buildImageProcessingPrefillOptions(row, taskType),
     }),
   );
 }
@@ -9244,58 +9284,67 @@ h1 {
 }
 
 .edit-material-dialog :deep(.el-dialog__body) {
+  flex: 1;
+  min-height: 0;
   padding: 0;
   overflow: hidden;
 }
 
 .edit-material-dialog :deep(.el-dialog) {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
   border-radius: 0;
+  overflow: hidden;
 }
 
 .edit-material-dialog :deep(.el-dialog__header) {
-  padding: 16px 24px;
+  padding: 10px 16px;
   margin-right: 0;
   border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
 .edit-material-dialog :deep(.el-dialog__footer) {
-  padding: 12px 24px;
+  padding: 8px 16px;
   border-top: 1px solid var(--el-border-color-lighter);
 }
 
 .edit-material-body {
-  height: calc(100vh - 124px);
+  flex: 1;
+  min-height: 0;
+  height: auto;
   overflow-y: auto;
-  padding: 20px 24px;
+  padding: 10px 12px;
   background: var(--el-bg-color-page);
 }
 
 .edit-form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .edit-section {
   background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
-  border-radius: 10px;
-  padding: 16px 16px 4px;
+  border-radius: 8px;
+  padding: 10px 12px 2px;
 }
 
 .edit-section-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--el-text-color-primary);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .edit-form :deep(.el-form-item) {
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .edit-form :deep(.el-form-item__label) {
-  padding-bottom: 6px;
+  padding-bottom: 3px;
+  line-height: 1.35;
   font-weight: 500;
   color: var(--el-text-color-regular);
 }
@@ -9305,7 +9354,7 @@ h1 {
 }
 
 .edit-form :deep(.el-form-item__content) {
-  min-height: 32px;
+  min-height: 28px;
   display: flex;
   align-items: center;
 }
@@ -9314,17 +9363,24 @@ h1 {
   width: 100%;
 }
 
+.edit-form :deep(.el-input__wrapper),
+.edit-form :deep(.el-select__wrapper) {
+  min-height: 28px;
+}
+
 .edit-form :deep(.el-switch) {
   width: auto;
+  height: 22px;
+  --el-switch-on-color: var(--el-color-primary);
 }
 
 .edit-form :deep(.el-input-group__append .el-button) {
-  min-width: 72px;
+  min-width: 64px;
 }
 
 .edit-form :deep(.el-textarea__inner) {
-  min-height: 120px;
-  line-height: 1.6;
+  min-height: 84px;
+  line-height: 1.45;
 }
 
 .material-detail-dialog :deep(.el-dialog__body) {
