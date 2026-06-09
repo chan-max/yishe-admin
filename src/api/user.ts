@@ -181,20 +181,6 @@ export interface UserAiSetting {
   updatedAt?: string;
 }
 
-export interface UserMessagePushSummary {
-  id: number;
-  name: string;
-  platform: string;
-  enabled: boolean;
-  remark: string;
-}
-
-export interface UserMessagePushSetting {
-  enabled: boolean;
-  defaultChannelId: number | null;
-  defaultMessagePush: UserMessagePushSummary | null;
-}
-
 export function getAiSetting() {
   return request.post<UserAiSetting>({
     url: "/user/getAiSetting",
@@ -206,23 +192,6 @@ export function updateAiSetting(aiSetting: UserAiSetting) {
   return request.post<UserAiSetting>({
     url: "/user/updateAiSetting",
     data: { aiSetting },
-  });
-}
-
-export function getMessagePushSetting() {
-  return request.post<UserMessagePushSetting>({
-    url: "/user/getMessagePushSetting",
-    data: {},
-  });
-}
-
-export function updateMessagePushSetting(data: {
-  enabled?: boolean;
-  defaultChannelId?: number | null;
-}) {
-  return request.post<UserMessagePushSetting>({
-    url: "/user/updateMessagePushSetting",
-    data,
   });
 }
 

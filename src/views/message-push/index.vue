@@ -8,7 +8,7 @@
               <el-button
                 size="small"
                 :disabled="loading || deleteLoading"
-                @click="openDefaultDialog"
+                @click="openSettingPanel"
               >
                 通知设置
               </el-button>
@@ -32,17 +32,7 @@
             <div class="common-table">
               <vxe-grid v-bind="gridOptions" :data="list" :loading="loading">
                 <template #nameSlot="{ row }">
-                  <div class="message-push-name-cell">
-                    <span>{{ row.name }}</span>
-                    <el-tag
-                      v-if="Number(row.id) === Number(messagePushSetting.defaultChannelId)"
-                      size="small"
-                      type="primary"
-                      effect="light"
-                    >
-                      默认通知
-                    </el-tag>
-                  </div>
+                  <span>{{ row.name }}</span>
                 </template>
 
                 <template #platformSlot="{ row }">
@@ -103,11 +93,7 @@
     </ListPageLayout>
 
     <MessagePushDialog ref="dialogRef" @success="refreshPageData" />
-    <MessagePushDefaultDialog
-      ref="defaultDialogRef"
-      :channels="list"
-      @saved="handleMessagePushSettingSaved"
-    />
+    <MessagePushSettingPanel ref="settingPanelRef" @saved="handleMessagePushSettingSaved" />
     <MessagePushTestDialog ref="testDialogRef" />
   </ContentWrap>
 </template>
@@ -121,24 +107,18 @@ import {
   type MessagePushConfig,
   type MessagePushPlatform,
 } from "@/api/messagePush";
-import { getMessagePushSetting, type UserMessagePushSetting } from "@/api/user";
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from "@/common/table";
 import { syncMessagePushMenuState } from "@/services/messagePushState";
 import MessagePushDialog from "./components/MessagePushDialog.vue";
-import MessagePushDefaultDialog from "./components/MessagePushDefaultDialog.vue";
+import MessagePushSettingPanel from "./components/MessagePushSettingPanel.vue";
 import MessagePushTestDialog from "./components/MessagePushTestDialog.vue";
 
 const loading = ref(false);
 const deleteLoading = ref(false);
 const list = ref<MessagePushConfig[]>([]);
 const dialogRef = ref();
-const defaultDialogRef = ref();
+const settingPanelRef = ref();
 const testDialogRef = ref();
-const messagePushSetting = ref<UserMessagePushSetting>({
-  enabled: true,
-  defaultChannelId: null,
-  defaultMessagePush: null,
-});
 
 const platformLabelMap: Record<MessagePushPlatform, string> = {
   feishu: "飞书",
@@ -189,26 +169,16 @@ const getList = async () => {
   }
 };
 
-const loadMessagePushSetting = async () => {
-  const data = await getMessagePushSetting();
-  messagePushSetting.value = data || {
-    enabled: true,
-    defaultChannelId: null,
-    defaultMessagePush: null,
-  };
-  syncMessagePushMenuState(messagePushSetting.value);
-};
-
 const refreshPageData = async () => {
-  await Promise.all([getList(), loadMessagePushSetting()]);
+  await getList();
 };
 
 const openDialog = (id?: number) => {
   dialogRef.value?.open(id);
 };
 
-const openDefaultDialog = () => {
-  defaultDialogRef.value?.open();
+const openSettingPanel = () => {
+  settingPanelRef.value?.open();
 };
 
 const openTestDialog = (row: MessagePushConfig) => {
@@ -218,13 +188,7 @@ const openTestDialog = (row: MessagePushConfig) => {
   });
 };
 
-const handleMessagePushSettingSaved = async (payload: UserMessagePushSetting) => {
-  messagePushSetting.value = payload || {
-    enabled: true,
-    defaultChannelId: null,
-    defaultMessagePush: null,
-  };
-  syncMessagePushMenuState(messagePushSetting.value);
+const handleMessagePushSettingSaved = async () => {
   await getList();
 };
 
@@ -281,19 +245,6 @@ onMounted(() => {
   line-height: 1.5;
   color: var(--el-text-color-secondary);
   word-break: break-all;
-}
-
-.message-push-name-cell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-.message-push-name-cell span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .message-push-toolbar {

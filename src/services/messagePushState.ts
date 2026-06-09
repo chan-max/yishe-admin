@@ -1,29 +1,27 @@
 import { reactive } from "vue";
-import { getMessagePushSetting, type UserMessagePushSetting } from "@/api/user";
+import { getUserMessagePushSetting, type UserMessagePushSetting } from "@/api/messagePush";
 
 type MessagePushMenuState = {
   initialized: boolean;
   loading: boolean;
-  enabled: boolean;
-  defaultChannelId: number | null;
-  defaultChannelName: string;
+  enabledSceneCount: number;
+  configuredSceneCount: number;
 };
 
 export const messagePushMenuState = reactive<MessagePushMenuState>({
   initialized: false,
   loading: false,
-  enabled: false,
-  defaultChannelId: null,
-  defaultChannelName: "",
+  enabledSceneCount: 0,
+  configuredSceneCount: 0,
 });
 
 let pendingRefresh: Promise<void> | null = null;
 
 function applyMessagePushSetting(setting?: UserMessagePushSetting | null) {
   messagePushMenuState.initialized = true;
-  messagePushMenuState.enabled = setting?.enabled !== false;
-  messagePushMenuState.defaultChannelId = setting?.defaultChannelId ?? null;
-  messagePushMenuState.defaultChannelName = String(setting?.defaultMessagePush?.name || "").trim();
+  const scenes = setting?.scenes || [];
+  messagePushMenuState.enabledSceneCount = scenes.filter((s) => s.enabled).length;
+  messagePushMenuState.configuredSceneCount = scenes.filter((s) => s.enabled && s.channelId).length;
 }
 
 export function syncMessagePushMenuState(setting?: UserMessagePushSetting | null) {
@@ -38,7 +36,7 @@ export async function refreshMessagePushMenuState() {
   pendingRefresh = (async () => {
     messagePushMenuState.loading = true;
     try {
-      const setting = await getMessagePushSetting();
+      const setting = await getUserMessagePushSetting();
       applyMessagePushSetting(setting);
     } catch (error) {
       console.warn("[message-push-state] refresh failed", error);

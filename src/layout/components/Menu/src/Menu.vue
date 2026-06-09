@@ -402,17 +402,24 @@ export default defineComponent({
         return undefined;
       }
 
-      const enabled = messagePushMenuState.enabled;
-      const channelText = messagePushMenuState.defaultChannelName
-        ? `，默认渠道：${messagePushMenuState.defaultChannelName}`
-        : messagePushMenuState.defaultChannelId
-          ? `，默认渠道 ID：${messagePushMenuState.defaultChannelId}`
-          : "，未绑定默认渠道";
+      const enabledCount = messagePushMenuState.enabledSceneCount;
+      const configuredCount = messagePushMenuState.configuredSceneCount;
 
-      return renderAutoModeBadge(enabled ? `消息推送已开启${channelText}` : "消息推送已关闭", {
-        enabled,
+      if (enabledCount === 0) {
+        return renderAutoModeBadge("通知已关闭", {
+          enabled: false,
+          variant: "message",
+          label: "关",
+        });
+      }
+
+      const label = `${configuredCount}/${enabledCount}`;
+      const tip = `已开启 ${enabledCount} 个场景通知，${configuredCount} 个已配置渠道`;
+
+      return renderAutoModeBadge(tip, {
+        enabled: true,
         variant: "message",
-        label: enabled ? "开" : "关",
+        label,
       });
     };
 
