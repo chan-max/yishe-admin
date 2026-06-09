@@ -779,7 +779,7 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="productionDispatchDialogVisible" width="760px" :title="productionDispatchDialogTitle"
+    <el-dialog v-model="productionDispatchDialogVisible" width="960px" :title="productionDispatchDialogTitle"
       align-center append-to-body destroy-on-close class="production-dispatch-dialog" @open="handleOpenProductionDispatchDialog"
       @closed="handleCloseProductionDispatchDialog">
       <div class="production-dispatch-dialog__body">
@@ -787,7 +787,7 @@
           class="production-dispatch-dialog__panel">
           <div class="production-dispatch-dialog__panel-title">客户端节点</div>
           <div v-if="!productionDispatchLoading && dispatchClientRows.length" class="production-dispatch-dialog__table">
-            <el-table :data="dispatchClientRows" border size="small" row-key="id" :max-height="332"
+            <el-table :data="dispatchClientRows" border size="small" row-key="id" :max-height="420"
               class="production-dispatch-dialog__table-main" :row-class-name="resolveDispatchClientRowClassName"
               @row-click="handleDispatchClientRowClick">
               <el-table-column label="" width="46" align="center">
@@ -796,9 +796,9 @@
                     @click.stop />
                 </template>
               </el-table-column>
-              <el-table-column prop="clientLabel" label="客户端节点" min-width="140" show-overflow-tooltip />
-              <el-table-column prop="connectedAtLabel" label="连接时间" min-width="150" show-overflow-tooltip />
-              <el-table-column label="当前套图" min-width="190" show-overflow-tooltip>
+              <el-table-column prop="clientLabel" label="客户端节点" min-width="190" show-overflow-tooltip />
+              <el-table-column prop="connectedAtLabel" label="连接时间" min-width="170" show-overflow-tooltip />
+              <el-table-column label="当前套图" min-width="260" show-overflow-tooltip>
                 <template #default="{ row }">
                   <div class="production-dispatch-dialog__task">
                     <span>{{ row.activeTaskLabel }}</span>
@@ -813,7 +813,7 @@
                   </span>
                 </template>
               </el-table-column>
-              <el-table-column label="PS" min-width="168">
+              <el-table-column label="PS" min-width="190">
                 <template #default="{ row }">
                   <div class="production-dispatch-dialog__ps-status">
                     <span class="production-dispatch-dialog__state-text" :class="`is-${row.psStatusTone}`">
@@ -840,6 +840,49 @@
             </el-table>
           </div>
           <div v-else class="production-dispatch-dialog__empty">暂无可选客户端节点。</div>
+        </div>
+        <div v-if="productionDispatchMode === 'auto'" class="production-dispatch-dialog__filters">
+          <div class="production-dispatch-dialog__panel-title">自动领取条件</div>
+          <el-form label-position="top" class="production-dispatch-dialog__filter-form">
+            <el-row :gutter="12">
+              <el-col :xs="24" :sm="12">
+                <el-form-item label="关键词">
+                  <el-input
+                    v-model="autoDispatchFilterForm.keyword"
+                    clearable
+                    placeholder="名称 / 描述 / 关键词 / ID"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12">
+                <el-form-item label="排序">
+                  <el-select
+                    v-model="autoDispatchFilterForm.sortOrder"
+                    placeholder="请选择排序方式"
+                    style="width: 100%"
+                  >
+                    <el-option label="最早优先" value="oldest" />
+                    <el-option label="最新优先" value="newest" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="24">
+                <el-form-item label="创建时间">
+                  <el-date-picker
+                    v-model="autoDispatchFilterForm.createdAtRange"
+                    type="datetimerange"
+                    range-separator="至"
+                    start-placeholder="开始时间"
+                    end-placeholder="结束时间"
+                    format="YYYY-MM-DD HH:mm:ss"
+                    value-format="YYYY-MM-DD HH:mm:ss"
+                    clearable
+                    style="width: 100%"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </el-form>
         </div>
       </div>
       <template #footer>
@@ -952,6 +995,11 @@ const productionDispatchLoading = ref(false);
 const productionDispatchRow = ref<any>(null);
 const productionDispatchMode = ref<"manual" | "auto">("manual");
 const selectedDispatchClientId = ref("");
+const autoDispatchFilterForm = reactive({
+  keyword: "",
+  createdAtRange: [] as string[],
+  sortOrder: "oldest" as "oldest" | "newest",
+});
 const resettingPsRuntime = ref(false);
 const userAutoSchedulingLoading = ref(false);
 const psdSetSchedulerRuntime = ref<AutoDispatchSchedulerRuntime | null>(null);
@@ -1058,12 +1106,14 @@ const { clients: clientNodes, refresh: refreshClientNodes } = useClientNodeState
 const {
   userAutoSchedulingEnabled,
   userAutoDispatchClientId,
+  userAutoDispatchFilters,
   activePsdSets,
   activePsdSetClientIds,
   refreshActiveSummary: refreshPsdSetRuntimeSummary,
   refreshUserAutoScheduling,
   setUserAutoSchedulingEnabled,
   setUserAutoDispatchTarget,
+  setUserAutoDispatchFilters,
 } = usePsdSetRuntimeState();
 
 function schedulePsdSetMenuRuntimeSync() {
@@ -2477,6 +2527,19 @@ const psdSetAutoDispatchTargetLabel = computed(() => {
   return `目标 / ${clientLabel}`;
 });
 
+const autoDispatchFilterSummary = computed(() => {
+  const parts = [];
+  const keyword = autoDispatchFilterForm.keyword.trim();
+  if (keyword) {
+    parts.push(`关键词：${keyword}`);
+  }
+  if (autoDispatchFilterForm.createdAtRange?.length === 2) {
+    parts.push(`创建时间：${autoDispatchFilterForm.createdAtRange[0]} 至 ${autoDispatchFilterForm.createdAtRange[1]}`);
+  }
+  parts.push(autoDispatchFilterForm.sortOrder === "newest" ? "最新优先" : "最早优先");
+  return parts.join("，");
+});
+
 const psdSetSchedulerIndicator = computed(() =>
   resolveAutoDispatchSchedulerIndicator(psdSetSchedulerRuntime.value),
 );
@@ -2499,6 +2562,35 @@ const psdSetSchedulerRuntimeSummary = computed(() => {
     : "实时检测";
 });
 
+function normalizeAutoDispatchFilters(filters?: Record<string, any> | null) {
+  return {
+    keyword: String(filters?.keyword || "").trim(),
+    createdAtStart: String(filters?.createdAtStart || "").trim(),
+    createdAtEnd: String(filters?.createdAtEnd || "").trim(),
+    sortOrder: filters?.sortOrder === "newest" ? "newest" : "oldest",
+  };
+}
+
+function applyAutoDispatchFiltersToForm(filters?: Record<string, any> | null) {
+  const normalized = normalizeAutoDispatchFilters(filters);
+  autoDispatchFilterForm.keyword = normalized.keyword;
+  autoDispatchFilterForm.createdAtRange =
+    normalized.createdAtStart && normalized.createdAtEnd
+      ? [normalized.createdAtStart, normalized.createdAtEnd]
+      : [];
+  autoDispatchFilterForm.sortOrder = normalized.sortOrder;
+}
+
+function buildAutoDispatchFiltersPayload() {
+  const [createdAtStart = "", createdAtEnd = ""] = autoDispatchFilterForm.createdAtRange || [];
+  return {
+    keyword: autoDispatchFilterForm.keyword.trim(),
+    createdAtStart,
+    createdAtEnd,
+    sortOrder: autoDispatchFilterForm.sortOrder,
+  };
+}
+
 async function openProductionDispatchDialog(row: any) {
   productionDispatchMode.value = "manual";
   productionDispatchRow.value = row;
@@ -2512,6 +2604,7 @@ async function openAutoSchedulingDispatchDialog() {
   productionDispatchMode.value = "auto";
   productionDispatchRow.value = null;
   selectedDispatchClientId.value = userAutoDispatchClientId.value || "";
+  applyAutoDispatchFiltersToForm(userAutoDispatchFilters.value);
   productionDispatchLoading.value = true;
   productionDispatchDialogVisible.value = true;
 }
@@ -2629,15 +2722,19 @@ async function handleToggleUserAutoScheduling(enabled: boolean) {
 
   const previousEnabled = userAutoSchedulingEnabled.value;
   const previousClientId = userAutoDispatchClientId.value;
+  const previousFilters = userAutoDispatchFilters.value;
   setUserAutoSchedulingEnabled(enabled);
   userAutoSchedulingLoading.value = true;
   try {
-    const result = await ClientControlService.setPsAutomationUserAutoScheduling(enabled);
+    const result = await ClientControlService.setPsAutomationUserAutoScheduling(enabled, false, {
+      filters: previousFilters,
+    });
     if (!result.success) {
       setUserAutoSchedulingEnabled(previousEnabled);
       setUserAutoDispatchTarget({
         clientId: previousClientId,
       });
+      setUserAutoDispatchFilters(previousFilters);
       return;
     }
 
@@ -3711,7 +3808,7 @@ async function handleConfirmStartProduction() {
   try {
     await ElMessageBox.confirm(
       isAutoMode
-        ? `确认开启自动制作，并固定使用客户端 ${getClientDisplayName(selectedDispatchClient.value)} 吗？`
+        ? `确认开启自动制作，并固定使用客户端 ${getClientDisplayName(selectedDispatchClient.value)} 吗？\n${autoDispatchFilterSummary.value}`
         : `确认由客户端 ${getClientDisplayName(selectedDispatchClient.value)} 开始制作该套图吗？`,
       isAutoMode ? "开启自动制作确认" : "开始制作确认",
       {
@@ -3730,17 +3827,21 @@ async function handleConfirmStartProduction() {
     if (isAutoMode) {
       const previousEnabled = userAutoSchedulingEnabled.value;
       const previousClientId = userAutoDispatchClientId.value;
+      const previousFilters = userAutoDispatchFilters.value;
+      const nextFilters = buildAutoDispatchFiltersPayload();
       userAutoSchedulingLoading.value = true;
       setUserAutoSchedulingEnabled(true);
       setUserAutoDispatchTarget({
         clientId: selectedDispatchClientId.value,
       });
+      setUserAutoDispatchFilters(nextFilters);
       try {
         const result = await ClientControlService.setPsAutomationUserAutoScheduling(
           true,
           false,
           {
             clientId: selectedDispatchClientId.value,
+            filters: nextFilters,
           },
         );
         if (!result.success) {
@@ -3748,6 +3849,7 @@ async function handleConfirmStartProduction() {
           setUserAutoDispatchTarget({
             clientId: previousClientId,
           });
+          setUserAutoDispatchFilters(previousFilters);
           return;
         }
         productionDispatchDialogVisible.value = false;
@@ -5288,6 +5390,17 @@ getList();
   border-radius: 12px;
   background: color-mix(in srgb, var(--el-bg-color) 94%, var(--el-fill-color-light) 6%);
   min-height: 206px;
+}
+
+.production-dispatch-dialog__filters {
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--el-border-color) 62%, transparent 38%);
+  border-radius: 12px;
+  background: var(--el-bg-color);
+}
+
+.production-dispatch-dialog__filter-form :deep(.el-form-item) {
+  margin-bottom: 8px;
 }
 
 .production-dispatch-dialog__panel-title {

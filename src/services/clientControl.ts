@@ -236,7 +236,11 @@ export class ClientControlService {
   static async setPsAutomationUserAutoScheduling(
     enabled: boolean,
     silent: boolean = false,
-    target?: { clientId?: string | null; machineCode?: string | null },
+    target?: {
+      clientId?: string | null;
+      machineCode?: string | null;
+      filters?: Record<string, any> | null;
+    },
   ): Promise<{ success: boolean; dispatched?: boolean; reason?: string; message?: string }> {
     try {
       const currentSetting = await this.getRawPsAutomationUserSetting();
@@ -252,6 +256,10 @@ export class ClientControlService {
           autoSchedulingEnabled: enabled,
           autoDispatchClientId: nextClientId || undefined,
           autoDispatchMachineCode: nextMachineCode || undefined,
+          autoDispatchFilters:
+            target?.filters !== undefined
+              ? target.filters || {}
+              : currentSetting.autoDispatchFilters || {},
         },
       });
 

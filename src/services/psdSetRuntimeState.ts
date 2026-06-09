@@ -13,6 +13,7 @@ type RealtimeActivePsdSetSummaryItem = ActivePsdSetSummaryItem & {
 
 const userAutoSchedulingEnabled = ref(false)
 const userAutoDispatchClientId = ref('')
+const userAutoDispatchFilters = ref<Record<string, any>>({})
 const settingLoaded = ref(false)
 const activeSummaryLoaded = ref(false)
 const serverActivePsdSets = ref<ActivePsdSetSummaryItem[]>([])
@@ -195,9 +196,14 @@ const refreshUserAutoScheduling = async () => {
     const data = getResponseData(response)
     userAutoSchedulingEnabled.value = !!data?.autoSchedulingEnabled
     userAutoDispatchClientId.value = String(data?.autoDispatchClientId || '').trim()
+    userAutoDispatchFilters.value =
+      data?.autoDispatchFilters && typeof data.autoDispatchFilters === 'object'
+        ? data.autoDispatchFilters
+        : {}
   } catch {
     userAutoSchedulingEnabled.value = false
     userAutoDispatchClientId.value = ''
+    userAutoDispatchFilters.value = {}
   } finally {
     settingLoaded.value = true
   }
@@ -355,9 +361,14 @@ export function usePsdSetRuntimeState() {
     userAutoDispatchClientId.value = String(target?.clientId || '').trim()
   }
 
+  const setUserAutoDispatchFilters = (filters?: Record<string, any> | null) => {
+    userAutoDispatchFilters.value = filters && typeof filters === 'object' ? filters : {}
+  }
+
   return {
     userAutoSchedulingEnabled: readonly(userAutoSchedulingEnabled),
     userAutoDispatchClientId: readonly(userAutoDispatchClientId),
+    userAutoDispatchFilters: readonly(userAutoDispatchFilters),
     settingLoaded: readonly(settingLoaded),
     activeSummaryLoaded: readonly(activeSummaryLoaded),
     activePsdSets: readonly(activePsdSets),
@@ -370,6 +381,7 @@ export function usePsdSetRuntimeState() {
     refreshActiveSummary,
     refreshUserAutoScheduling,
     setUserAutoSchedulingEnabled,
-    setUserAutoDispatchTarget
+    setUserAutoDispatchTarget,
+    setUserAutoDispatchFilters
   }
 }
