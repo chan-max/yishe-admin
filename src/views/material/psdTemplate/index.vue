@@ -274,6 +274,24 @@
                     </div>
                   </template>
 
+                  <template #psdFileInfoSlot="{ row }">
+                    <div class="psd-info-cell">
+                      <el-button
+                        v-if="row.psdFileInfo"
+                        type="primary"
+                        link
+                        size="small"
+                        @click="handleViewPsdFileInfo(row)"
+                      >
+                        <el-icon class="info-icon">
+                          <InfoFilled />
+                        </el-icon>
+                        <span class="info-text">文件信息</span>
+                      </el-button>
+                      <span v-else class="text-gray-400 text-xs">无</span>
+                    </div>
+                  </template>
+
                   <template #suitableSizesSlot="{ row }">
                     <div class="suitable-sizes-cell-compact">
                       <template v-if="row.suitableSizes && row.suitableSizes.length > 0">
@@ -680,12 +698,22 @@
           <div class="dialog-section dialog-section-config">
             <div class="dialog-section-title">模板配置</div>
             <el-form :model="form" label-width="100px" class="psd-template-form">
+              <el-form-item label="PSD信息" prop="psdFileInfo">
+                <el-input
+                  v-model="form.psdFileInfoText"
+                  type="textarea"
+                  :rows="6"
+                  :autosize="{ minRows: 6, maxRows: 10 }"
+                  placeholder='建议 JSON 格式，如：{"canvas":"2000x2000px","smartObjects":[{"name":"主图","size":"1200x1200px"}],"notes":""}'
+                />
+              </el-form-item>
+
               <el-form-item label="配置内容" prop="psdTemplateConfig">
                 <el-input
                   v-model="form.psdTemplateConfigText"
                   type="textarea"
-                  :rows="6"
-                  :autosize="{ minRows: 6, maxRows: 8 }"
+                  :rows="12"
+                  :autosize="{ minRows: 12, maxRows: 18 }"
                   placeholder='支持 JSON 格式，如：{"images": [], "description": ""}'
                 />
               </el-form-item>
@@ -703,6 +731,30 @@
             </el-button>
           </div>
         </div>
+      </template>
+    </el-dialog>
+
+    <el-dialog
+      v-model="psdFileInfoDialogVisible"
+      title="PSD文件信息"
+      fullscreen
+      :destroy-on-close="true"
+    >
+      <div class="psd-info-fullscreen-content">
+        <div class="psd-info-header">
+          <div class="psd-info-title">
+            <span>模板名称：</span>
+            <strong>{{ currentPsdFileInfoRow?.name || "未知" }}</strong>
+          </div>
+        </div>
+        <div class="psd-info-body">
+          <pre class="psd-info-json-fullscreen">{{
+            formatPsdInfo(currentPsdFileInfoRow?.psdFileInfo)
+          }}</pre>
+        </div>
+      </div>
+      <template #footer>
+        <el-button type="primary" @click="psdFileInfoDialogVisible = false">关闭</el-button>
       </template>
     </el-dialog>
 
@@ -982,6 +1034,15 @@ const gridOptions = ref<VxeGridProps<any>>({
       showOverflow: true,
       slots: {
         default: "psdInfoSlot",
+      },
+    },
+    {
+      title: "PSD文件信息",
+      field: "psdFileInfo",
+      minWidth: 200,
+      showOverflow: true,
+      slots: {
+        default: "psdFileInfoSlot",
       },
     },
     { title: "ID", field: "id", width: 140, showOverflow: true },
@@ -1416,6 +1477,8 @@ function handleAdd() {
     windowsLocalPath: "",
     thumbnail: "",
     thumbnailFile: null,
+    psdFileInfo: createDefaultPsdFileInfo(),
+    psdFileInfoText: stringifyPsdInfo(createDefaultPsdFileInfo()),
     psdTemplateConfig: createDefaultPsdTemplateConfig(),
     psdTemplateConfigText: stringifyPsdTemplateConfig(createDefaultPsdTemplateConfig()),
     enabled: false, // 默认不可用
@@ -1450,6 +1513,8 @@ function handleEdit(row) {
   resetSelectedFileState();
 
   // 处理psdTemplateConfig：如果是对象，转换为JSON字符串显示
+  form.value.psdFileInfoText = stringifyPsdInfo(form.value.psdFileInfo || createDefaultPsdFileInfo());
+
   if (form.value.psdTemplateConfig) {
     try {
       form.value.psdTemplateConfigText =
@@ -1475,6 +1540,8 @@ const form = ref<any>({
   windowsLocalPath: "",
   thumbnail: "",
   thumbnailFile: null,
+  psdFileInfo: null,
+  psdFileInfoText: "",
   psdTemplateConfig: null,
   psdTemplateConfigText: "", // 用于表单编辑的文本字段
   enabled: false, // 是否可用，默认不可用
@@ -1493,6 +1560,8 @@ const aiTableLoading = ref<Record<string, boolean>>({});
 // psd模板配置全屏弹窗相关
 const psdInfoDialogVisible = ref(false);
 const currentPsdInfoRow = ref<any>(null);
+const psdFileInfoDialogVisible = ref(false);
+const currentPsdFileInfoRow = ref<any>(null);
 
 const rules = {
   name: [{ required: true, message: "请输入模板名称", trigger: "blur" }],
@@ -1517,6 +1586,11 @@ function checkboxAllChange(e) {
 }
 
 const buildPsdTemplateSubmitSnapshot = () => {
+  let psdFileInfo = null;
+  if (form.value.psdFileInfoText && form.value.psdFileInfoText.trim()) {
+    psdFileInfo = parsePsdInfoText(form.value.psdFileInfoText);
+  }
+
   let psdTemplateConfig = null;
   if (form.value.psdTemplateConfigText && form.value.psdTemplateConfigText.trim()) {
     psdTemplateConfig = parsePsdInfoText(form.value.psdTemplateConfigText);
@@ -1533,6 +1607,7 @@ const buildPsdTemplateSubmitSnapshot = () => {
     windowsLocalPath: form.value.windowsLocalPath || "",
     url: form.value.url || "",
     thumbnail: form.value.thumbnail || "",
+    psdFileInfo,
     psdTemplateConfig,
     enabled: form.value.enabled !== undefined ? form.value.enabled : false,
     size: form.value.size,
@@ -1596,6 +1671,7 @@ const runPsdTemplateSaveTask = async (
         windowsLocalPath: snapshot.windowsLocalPath,
         url: url || undefined,
         thumbnail: thumbnail || "",
+        psdFileInfo: snapshot.psdFileInfo,
         psdTemplateConfig: snapshot.psdTemplateConfig,
         enabled: snapshot.enabled,
         size: snapshot.size,
@@ -1612,6 +1688,7 @@ const runPsdTemplateSaveTask = async (
         thumbnail,
         file: null,
         userId: snapshot.userId,
+        psdFileInfo: snapshot.psdFileInfo,
         psdTemplateConfig: snapshot.psdTemplateConfig,
         enabled: snapshot.enabled,
         size: snapshot.size,
@@ -1679,6 +1756,14 @@ const thumbnailFileInfo = ref<ImageFileInfo | null>(null);
 
 type PsdFileInfo = {
   name: string;
+  size: number;
+  width?: number;
+  height?: number;
+  format: string;
+  colorMode?: string;
+  depth?: number;
+  channels?: number;
+  modifiedAt?: number;
   sizeLabel: string;
   dimensionsLabel: string;
   formatLabel: string;
@@ -1791,6 +1876,9 @@ const readPsdHeader = async (file: File) => {
 const buildPsdFileInfo = async (file: File): Promise<PsdFileInfo> => {
   const baseInfo: PsdFileInfo = {
     name: file.name,
+    size: file.size,
+    format: getPsdFormatLabel(file),
+    modifiedAt: file.lastModified,
     sizeLabel: formatBytes(file.size),
     dimensionsLabel: "解析失败",
     formatLabel: getPsdFormatLabel(file),
@@ -1804,6 +1892,12 @@ const buildPsdFileInfo = async (file: File): Promise<PsdFileInfo> => {
     const header = await readPsdHeader(file);
     return {
       ...baseInfo,
+      width: header.width,
+      height: header.height,
+      format: getPsdFormatLabel(file, header.version),
+      colorMode: PSD_COLOR_MODE_MAP[header.colorMode] || `模式 ${header.colorMode}`,
+      depth: header.depth,
+      channels: header.channels,
       dimensionsLabel: formatDimensions(header.width, header.height),
       formatLabel: getPsdFormatLabel(file, header.version),
       colorModeLabel: PSD_COLOR_MODE_MAP[header.colorMode] || `模式 ${header.colorMode}`,
@@ -1814,6 +1908,26 @@ const buildPsdFileInfo = async (file: File): Promise<PsdFileInfo> => {
     return baseInfo;
   }
 };
+
+function createDefaultPsdFileInfo(fileInfo?: PsdFileInfo | null) {
+  return {
+    fileName: fileInfo?.name || "",
+    canvas: fileInfo?.width && fileInfo?.height ? `${fileInfo.width}x${fileInfo.height}px` : "",
+    colorMode: fileInfo?.colorMode || "",
+    smartObjects: [
+      {
+        name: "",
+        size: "",
+        notes: "",
+      },
+    ],
+    notes: "",
+  };
+}
+
+function stringifyPsdInfo(info: any) {
+  return JSON.stringify(info, null, 2);
+}
 
 const readImageDimensions = (src: string) =>
   new Promise<{ width: number; height: number }>((resolve, reject) => {
@@ -1865,6 +1979,8 @@ const handleFileChange = async (file, files) => {
   const nextInfo = await buildPsdFileInfo(rawFile);
   if (form.value.file === rawFile) {
     psdFileInfo.value = nextInfo;
+    form.value.psdFileInfo = createDefaultPsdFileInfo(nextInfo);
+    form.value.psdFileInfoText = stringifyPsdInfo(form.value.psdFileInfo);
   }
 };
 
@@ -2039,6 +2155,11 @@ function handleViewPsdInfo(row: any) {
   psdInfoDialogVisible.value = true;
 }
 
+function handleViewPsdFileInfo(row: any) {
+  currentPsdFileInfoRow.value = row;
+  psdFileInfoDialogVisible.value = true;
+}
+
 // 格式化psd模板配置显示（支持后端返回的新数据结构）
 function formatPsdInfo(psdInfo: any): string {
   if (!psdInfo) return "无";
@@ -2083,6 +2204,7 @@ async function handleToggleEnabled(row: any) {
       windowsLocalPath: row.windowsLocalPath || "",
       url: row.url || undefined,
       thumbnail: row.thumbnail || "",
+      psdFileInfo: row.psdFileInfo,
       psdTemplateConfig: row.psdTemplateConfig,
       enabled: newEnabled,
     });
