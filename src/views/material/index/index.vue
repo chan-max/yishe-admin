@@ -1358,6 +1358,7 @@
                 </el-button>
                 <el-button
                   type="info"
+                  plain
                   :disabled="!ids.length || !selectedPsdTemplateIds.length"
                   @click="showPsdSetParams"
                   >查看发送参数</el-button

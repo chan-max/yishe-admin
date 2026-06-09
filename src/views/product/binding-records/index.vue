@@ -48,18 +48,19 @@
             <div class="common-table">
               <vxe-grid ref="gridRef" v-bind="gridOptions" :data="dataSource" :loading="loading">
                 <template #publishConfigDefaultSlot="{ row }">
-                  <div class="publish-config-cell">
-                    <span class="publish-config-name">{{ row.publishConfig?.name || "-" }}</span>
-                    <el-tag v-if="row.publishConfig?.platform" size="small" type="info" class="platform-tag">
-                      {{ row.publishConfig.platform }}
-                    </el-tag>
-                  </div>
+                  {{ row.publishConfigId || "-" }}
                 </template>
 
                 <template #statusDefaultSlot="{ row }">
                   <el-tag :type="getStatusType(row.status)" size="small">
                     {{ getStatusLabel(row.status) }}
                   </el-tag>
+                </template>
+
+                <template #actionDefaultSlot="{ row }">
+                  <el-button link type="primary" size="small" @click="handleViewDetail(row)">
+                    查看详情
+                  </el-button>
                 </template>
               </vxe-grid>
             </div>
@@ -73,6 +74,199 @@
         </div>
       </template>
     </ListPageLayout>
+
+    <!-- 详情对话框 -->
+    <el-dialog
+      v-model="detailDialogVisible"
+      title="绑定记录详情"
+      width="1000px"
+      :close-on-click-modal="false"
+    >
+      <div v-loading="detailLoading" v-if="detailData" class="detail-content">
+        <!-- 图片（贴纸）模块 -->
+        <div class="detail-section">
+          <div class="detail-section__header">
+            <el-icon><Picture /></el-icon>
+            <span>图片</span>
+          </div>
+          <div v-if="detailData.sticker?.id" class="detail-body">
+            <div class="detail-body__main">
+              <el-image
+                v-if="detailData.sticker.url"
+                :src="detailData.sticker.url"
+                fit="contain"
+                class="detail-sticker-img"
+                :preview-src-list="[detailData.sticker.url]"
+              />
+              <div class="detail-body__info">
+                <div class="detail-row">
+                  <span class="detail-label">名称</span>
+                  <span class="detail-value">{{ detailData.sticker.name || "-" }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">ID</span>
+                  <span class="detail-value detail-value--mono">{{ detailData.sticker.id }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">尺寸</span>
+                  <span class="detail-value">
+                    <template v-if="detailData.sticker.width && detailData.sticker.height">
+                      {{ detailData.sticker.width }} × {{ detailData.sticker.height }}px
+                      <span class="detail-value--sub">({{ detailData.sticker.aspectRatio?.toFixed(2) || '-' }})</span>
+                    </template>
+                    <template v-else>-</template>
+                  </span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">格式</span>
+                  <span class="detail-value">{{ detailData.sticker.suffix?.toUpperCase() || '-' }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">文件夹</span>
+                  <span class="detail-value">{{ detailData.sticker.folder || '-' }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">属性</span>
+                  <span class="detail-value">
+                    <el-tag v-if="detailData.sticker.isCustom" size="small" style="margin-right: 4px">自定义</el-tag>
+                    <el-tag v-if="detailData.sticker.isCutout" size="small" type="success" style="margin-right: 4px">抠图</el-tag>
+                    <el-tag v-if="detailData.sticker.isInfringement" size="small" type="danger">侵权</el-tag>
+                    <span v-if="!detailData.sticker.isCustom && !detailData.sticker.isCutout && !detailData.sticker.isInfringement" class="detail-value--sub">普通素材</span>
+                  </span>
+                </div>
+                <div class="detail-row" v-if="detailData.sticker.keywords">
+                  <span class="detail-label">关键字</span>
+                  <span class="detail-value">{{ detailData.sticker.keywords }}</span>
+                </div>
+                <div class="detail-row" v-if="detailData.sticker.description">
+                  <span class="detail-label">描述</span>
+                  <span class="detail-value">{{ detailData.sticker.description }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">创建时间</span>
+                  <span class="detail-value detail-value--sub">{{ formatTimestamp(detailData.sticker.createTime) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-else class="detail-body detail-body--empty">
+            <el-tag type="warning" size="small">⚠ 贴纸信息丢失</el-tag>
+          </div>
+        </div>
+
+        <!-- PSD模板（套图）模块 -->
+        <div class="detail-section">
+          <div class="detail-section__header">
+            <el-icon><Grid /></el-icon>
+            <span>PSD模板</span>
+          </div>
+          <div v-if="detailData.psdSet?.id" class="detail-body">
+            <div class="detail-body__info">
+              <div class="detail-row">
+                <span class="detail-label">名称</span>
+                <span class="detail-value">{{ detailData.psdSet.name || "-" }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">ID</span>
+                <span class="detail-value detail-value--mono">{{ detailData.psdSet.id }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">图片数</span>
+                <span class="detail-value">{{ detailData.psdSet.imageCount || 0 }} 张</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">状态</span>
+                <span class="detail-value">
+                  <el-tag size="small" :type="detailData.psdSet.status === 'completed' ? 'success' : detailData.psdSet.status === 'failed' ? 'danger' : 'info'">
+                    {{ detailData.psdSet.status || '-' }}
+                  </el-tag>
+                </span>
+              </div>
+              <div class="detail-row" v-if="detailData.psdSet.keywords">
+                <span class="detail-label">关键字</span>
+                <span class="detail-value">{{ detailData.psdSet.keywords }}</span>
+              </div>
+              <div class="detail-row" v-if="detailData.psdSet.description">
+                <span class="detail-label">描述</span>
+                <span class="detail-value">{{ detailData.psdSet.description }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">创建时间</span>
+                <span class="detail-value detail-value--sub">{{ formatTimestamp(detailData.psdSet.createTime) }}</span>
+              </div>
+            </div>
+          </div>
+          <div v-else class="detail-body detail-body--empty">
+            <el-tag type="warning" size="small">⚠ 套图信息丢失</el-tag>
+          </div>
+        </div>
+
+        <!-- 发布任务模块 -->
+        <div class="detail-section">
+          <div class="detail-section__header">
+            <el-icon><Upload /></el-icon>
+            <span>发布任务</span>
+          </div>
+          <div class="detail-body">
+            <div class="detail-body__info">
+              <div class="detail-row">
+                <span class="detail-label">记录ID</span>
+                <span class="detail-value detail-value--mono">{{ detailData.id }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">任务ID</span>
+                <span class="detail-value detail-value--mono">{{ detailData.taskId || '-' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">状态</span>
+                <span class="detail-value">
+                  <el-tag :type="getStatusType(detailData.status)" size="small">{{ getStatusLabel(detailData.status) }}</el-tag>
+                </span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">用户ID</span>
+                <span class="detail-value">{{ detailData.userId || '-' }}</span>
+              </div>
+
+              <div class="detail-divider"></div>
+
+              <div class="detail-row" v-if="detailData.publishConfig?.id">
+                <span class="detail-label">发布配置</span>
+                <span class="detail-value">
+                  {{ detailData.publishConfig.name }}
+                  <el-tag size="small" type="info" style="margin-left: 6px">{{ detailData.publishConfig.platform }}</el-tag>
+                  <el-tag size="small" style="margin-left: 4px">{{ detailData.publishConfig.taskType }}</el-tag>
+                </span>
+              </div>
+              <div class="detail-row" v-else>
+                <span class="detail-label">发布配置</span>
+                <span class="detail-value"><el-tag type="warning" size="small">⚠ 配置信息丢失</el-tag></span>
+              </div>
+              <div class="detail-row" v-if="detailData.publishConfig?.description">
+                <span class="detail-label">配置描述</span>
+                <span class="detail-value">{{ detailData.publishConfig.description }}</span>
+              </div>
+
+              <div class="detail-divider" v-if="detailData.resultMessage || detailData.errorInfo"></div>
+
+              <div class="detail-row" v-if="detailData.resultMessage">
+                <span class="detail-label">结果</span>
+                <span class="detail-value">{{ detailData.resultMessage }}</span>
+              </div>
+              <div class="detail-row" v-if="detailData.errorInfo">
+                <span class="detail-label">错误</span>
+                <span class="detail-value detail-value--error">{{ detailData.errorInfo }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">记录时间</span>
+                <span class="detail-value detail-value--sub">{{ formatTimestamp(detailData.createTime) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <el-empty v-else-if="!detailLoading" description="暂无数据" />
+    </el-dialog>
   </ContentWrap>
 </template>
 
@@ -83,7 +277,7 @@ import { formatTimestamp } from "@/common/date";
 import { useWindowSize } from "@vueuse/core";
 import { defaultSortingValue } from "@/common/sort";
 import { ElMessage } from "element-plus";
-import { Search, Refresh } from "@element-plus/icons-vue";
+import { Search, Refresh, Picture, Grid, Upload } from "@element-plus/icons-vue";
 import { podPublishImageBindingApi } from "@/api/podPublishImageBinding";
 import Pagination from "@/components/Pagination/index.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
@@ -107,11 +301,12 @@ const gridOptions = ref({
   columns: [
     { title: "套图ID", field: "psdSetId", minWidth: 180 },
     { title: "贴纸ID", field: "stickerId", minWidth: 180 },
-    { title: "发布配置", field: "publishConfig.name", minWidth: 200, slots: { default: "publishConfigDefaultSlot" } },
+    { title: "发布配置", field: "publishConfigId", minWidth: 200, slots: { default: "publishConfigDefaultSlot" } },
     { title: "任务ID", field: "taskId", minWidth: 180 },
     { title: "状态", field: "status", width: 100, slots: { default: "statusDefaultSlot" } },
     { title: "创建时间", field: "createTime", width: 170, formatter: ({ cellValue }) => formatTimestamp(cellValue) },
     { title: "更新时间", field: "updateTime", width: 170, formatter: ({ cellValue }) => formatTimestamp(cellValue) },
+    { title: "操作", width: 100, fixed: "right", slots: { default: "actionDefaultSlot" } },
   ],
 });
 
@@ -192,6 +387,25 @@ function getStatusLabel(status: string) {
   }
 }
 
+// 详情对话框
+const detailDialogVisible = ref(false);
+const detailLoading = ref(false);
+const detailData = ref<any>(null);
+
+async function handleViewDetail(row: any) {
+  detailDialogVisible.value = true;
+  detailLoading.value = true;
+  try {
+    const res = await podPublishImageBindingApi.getDetail(row.id);
+    detailData.value = res;
+  } catch (error) {
+    ElMessage.error("获取详情失败");
+    detailData.value = null;
+  } finally {
+    detailLoading.value = false;
+  }
+}
+
 onMounted(() => {
   getList();
   getPublishConfigOptions();
@@ -212,19 +426,108 @@ onMounted(() => {
   padding-bottom: 10px;
 }
 
-.publish-binding-records-page {
-  :deep(.publish-config-cell) {
+.detail-content {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.detail-section {
+  margin-bottom: 16px;
+  background: var(--el-bg-color-page);
+  border-radius: 6px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &__header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    .publish-config-name {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .platform-tag {
-      flex-shrink: 0;
+    gap: 6px;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--el-text-color-regular);
+
+    .el-icon {
+      font-size: 15px;
+      color: var(--el-color-primary);
     }
   }
+}
+
+.detail-body {
+  padding: 8px 14px 14px;
+
+  &__main {
+    display: flex;
+    gap: 16px;
+  }
+
+  &__info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &--empty {
+    padding: 16px;
+    text-align: center;
+  }
+}
+
+.detail-sticker-img {
+  width: 140px;
+  height: 140px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  background: var(--el-fill-color-light);
+  cursor: pointer;
+}
+
+.detail-row {
+  display: flex;
+  align-items: baseline;
+  padding: 5px 0;
+  font-size: 13px;
+  line-height: 1.5;
+
+  &:not(:last-child) {
+    border-bottom: 1px dashed var(--el-border-color-lighter);
+  }
+}
+
+.detail-label {
+  flex-shrink: 0;
+  width: 70px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.detail-value {
+  flex: 1;
+  min-width: 0;
+  color: var(--el-text-color-primary);
+  word-break: break-all;
+
+  &--mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+  }
+
+  &--sub {
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+  }
+
+  &--error {
+    color: var(--el-color-danger);
+  }
+}
+
+.detail-divider {
+  margin: 8px 0;
+  border-top: 1px dashed var(--el-border-color-lighter);
 }
 </style>

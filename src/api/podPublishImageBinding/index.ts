@@ -17,4 +17,7 @@ export const podPublishImageBindingApi = {
   // 查询发布配置可选列表
   getPublishConfigOptions: () =>
     request.get({ url: "/pod-publish-image-binding/publish-config-options" }),
+  // 获取绑定记录详情
+  getDetail: (id: string) =>
+    request.get({ url: "/pod-publish-image-binding/" + id }),
 };
