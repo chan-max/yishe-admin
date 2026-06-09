@@ -58,6 +58,10 @@
               Run {{ currentRunId.slice(-8) }}
             </span>
           </el-tooltip>
+          <el-button size="small" plain @click="handleOpenToolDialog">
+            <el-icon><Grid /></el-icon>
+            查看工具
+          </el-button>
           <el-button v-if="messages.length" size="small" plain @click="handleClear">
             清空记录
           </el-button>
@@ -173,6 +177,204 @@
         </div>
       </footer>
     </el-main>
+
+    <!-- 工具列表对话框 -->
+    <el-dialog
+      v-model="showToolDialog"
+      title="可用工具列表"
+      fullscreen
+      :close-on-click-modal="false"
+      class="tool-list-dialog"
+    >
+      <div class="tool-dialog-content">
+        <div class="tool-dialog-header">
+          <el-input
+            v-model="toolSearchQuery"
+            placeholder="搜索工具名称、描述或标签..."
+            clearable
+            @input="handleToolSearch"
+          >
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
+          <div class="tool-stats">
+            <el-tag size="small" type="primary">
+              共 {{ filteredTools.length }} 个工具
+            </el-tag>
+            <el-tag size="small" type="success">
+              {{ readOnlyToolsCount }} 只读
+            </el-tag>
+            <el-tag size="small" type="warning">
+              {{ writeToolsCount }} 可写入
+            </el-tag>
+          </div>
+        </div>
+
+        <el-tabs v-model="activeToolTab" class="tool-tabs">
+          <el-tab-pane label="全部工具" name="all">
+            <el-scrollbar class="tool-list-scroll">
+              <div v-if="toolsLoading" class="tool-loading">
+                <el-icon class="is-loading"><Loading /></el-icon>
+                <span>加载中...</span>
+              </div>
+              <el-empty v-else-if="filteredTools.length === 0" description="暂无工具" :image-size="80" />
+              <div v-else class="tool-list">
+                <div
+                  v-for="tool in filteredTools"
+                  :key="tool.name"
+                  class="tool-item"
+                  @click="showToolDetail(tool)"
+                >
+                  <div class="tool-item-header">
+                    <div class="tool-item-title">
+                      <span class="tool-name">{{ tool.name }}</span>
+                      <el-tag size="small" :type="tool.readOnly ? 'success' : 'warning'">
+                        {{ tool.readOnly ? '只读' : '可写入' }}
+                      </el-tag>
+                    </div>
+                    <div class="tool-item-category">
+                      {{ tool.categoryLabel }}
+                    </div>
+                  </div>
+                  <div class="tool-item-description">
+                    {{ tool.description }}
+                  </div>
+                  <div class="tool-item-meta">
+                    <el-tag
+                      v-for="tag in (tool.tags || []).slice(0, 3)"
+                      :key="tag"
+                      size="small"
+                      effect="plain"
+                    >
+                      {{ tag }}
+                    </el-tag>
+                    <span class="tool-params-count">
+                      {{ getToolParameters(tool).length }} 个参数
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </el-scrollbar>
+          </el-tab-pane>
+
+          <el-tab-pane label="按分类" name="category">
+            <el-scrollbar class="tool-list-scroll">
+              <div v-if="toolsLoading" class="tool-loading">
+                <el-icon class="is-loading"><Loading /></el-icon>
+                <span>加载中...</span>
+              </div>
+              <el-empty v-else-if="toolCategories.length === 0" description="暂无分类" :image-size="80" />
+              <div v-else class="tool-categories">
+                <div
+                  v-for="category in toolCategories"
+                  :key="category.key"
+                  class="tool-category"
+                >
+                  <h3 class="category-title">
+                    {{ category.label }}
+                    <el-tag size="small" type="info">
+                      {{ category.toolCount }} 个工具
+                    </el-tag>
+                  </h3>
+                  <div class="category-tools">
+                    <div
+                      v-for="tool in (category.tools || []).slice(0, 6)"
+                      :key="tool.name"
+                      class="tool-item-compact"
+                      @click="showToolDetail(tool)"
+                    >
+                      <span class="tool-name-compact">{{ tool.name }}</span>
+                      <span class="tool-label-compact">{{ tool.label }}</span>
+                    </div>
+                    <el-button
+                      v-if="category.tools && category.tools.length > 6"
+                      size="small"
+                      text
+                      @click="filterByCategory(category.key)"
+                    >
+                      查看全部 {{ category.toolCount }} 个 →
+                    </el-button>
+                  </div>
+                </div>
+              </div>
+            </el-scrollbar>
+          </el-tab-pane>
+        </el-tabs>
+      </div>
+
+      <template #footer>
+        <el-button @click="showToolDialog = false">关闭</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 工具详情对话框 -->
+    <el-dialog
+      v-model="showToolDetailDialog"
+      :title="selectedTool?.label || '工具详情'"
+      width="70%"
+      class="tool-detail-dialog"
+    >
+      <div v-if="selectedTool" class="tool-detail-content">
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="工具名称">
+            <code>{{ selectedTool.name }}</code>
+          </el-descriptions-item>
+          <el-descriptions-item label="分类">
+            {{ selectedTool.categoryLabel }}
+          </el-descriptions-item>
+          <el-descriptions-item label="权限">
+            <el-tag :type="selectedTool.readOnly ? 'success' : 'warning'" size="small">
+              {{ selectedTool.readOnly ? '只读' : '可写入' }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="风险等级">
+            <el-tag :type="riskLevelType(selectedTool.executionPolicy.riskLevel)" size="small">
+              {{ selectedTool.executionPolicy.riskLevel }}
+            </el-tag>
+          </el-descriptions-item>
+        </el-descriptions>
+
+        <el-divider>工具描述</el-divider>
+        <p class="tool-description">{{ selectedTool.description }}</p>
+
+        <el-divider>参数列表</el-divider>
+        <el-table :data="getToolParameters(selectedTool)" stripe border size="small">
+          <el-table-column prop="name" label="参数名" width="180">
+            <template #default="{ row }">
+              <code>{{ row.name }}</code>
+              <el-tag v-if="row.required" type="danger" size="small" style="margin-left: 4px;">
+                必填
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="type" label="类型" width="120" />
+          <el-table-column prop="description" label="描述" min-width="200" />
+          <el-table-column prop="default" label="默认值" width="120">
+            <template #default="{ row }">
+              {{ row.default !== undefined ? JSON.stringify(row.default) : '-' }}
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <el-divider>使用示例</el-divider>
+        <div v-if="selectedTool.examples && selectedTool.examples.length > 0" class="tool-examples">
+          <div
+            v-for="(example, index) in selectedTool.examples.slice(0, 5)"
+            :key="index"
+            class="example-item"
+          >
+            <el-icon><ChatLineRound /></el-icon>
+            <span>{{ example.prompt }}</span>
+          </div>
+        </div>
+        <el-empty v-else description="暂无示例" :image-size="60" />
+      </div>
+
+      <template #footer>
+        <el-button @click="showToolDetailDialog = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </el-container>
 </template>
 
@@ -181,7 +383,7 @@ import { computed, nextTick, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import dayjs from "dayjs";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { ChatDotRound, Delete, Plus, Promotion, Refresh } from "@element-plus/icons-vue";
+import { ChatDotRound, Delete, Plus, Promotion, Refresh, Grid, Search, ChatLineRound, Loading } from "@element-plus/icons-vue";
 import type { ScrollbarInstance } from "element-plus";
 import {
   AiAssistantApi,
@@ -191,6 +393,17 @@ import {
 import MarkdownView from "@/components/MarkdownView/index.vue";
 import InteractionRenderer from "./interactions/InteractionRenderer.vue";
 import type { InteractionPayload, InteractionSubmitResult } from "./interactions/types";
+
+// 工具列表相关状态
+const showToolDialog = ref(false);
+const showToolDetailDialog = ref(false);
+const toolSearchQuery = ref("");
+const activeToolTab = ref("all");
+const allTools = ref<any[]>([]);
+const filteredTools = ref<any[]>([]);
+const toolCategories = ref<any[]>([]);
+const selectedTool = ref<any>(null);
+const toolsLoading = ref(false);
 
 interface StreamContext {
   fullReply: string;
@@ -244,6 +457,15 @@ const inputHintText = computed(() => {
 const canSend = computed(
   () => Boolean(inputMessage.value.trim()) && !loading.value && !pendingInteraction.value,
 );
+
+// 工具列表计算属性
+const readOnlyToolsCount = computed(() => {
+  return filteredTools.value.filter((t) => t.readOnly).length;
+});
+
+const writeToolsCount = computed(() => {
+  return filteredTools.value.filter((t) => !t.readOnly).length;
+});
 
 const hasPendingAssistantMessage = computed(() =>
   messages.value.some(
@@ -340,6 +562,184 @@ async function handleDeleteConversation(id: number) {
     ElMessage.success("已删除");
   } catch (error) {
     if (error !== "cancel") ElMessage.error("删除失败");
+  }
+}
+
+// ========== 工具列表相关方法 ==========
+
+/**
+ * 打开工具列表对话框
+ */
+async function handleOpenToolDialog() {
+  console.log('[ToolDialog] 打开工具列表对话框');
+  showToolDialog.value = true;
+  
+  // 如果还没有加载工具数据，则加载
+  if (allTools.value.length === 0) {
+    console.log('[ToolDialog] 首次加载，开始获取工具列表...');
+    await loadTools();
+  }
+}
+
+/**
+ * 加载工具列表
+ */
+async function loadTools() {
+  toolsLoading.value = true;
+  try {
+    console.log('[ToolDialog] 开始请求工具列表...');
+    
+    // 使用统一的 API 方法，自动携带 token
+    const data = await AiAssistantApi.getTools();
+    console.log('[ToolDialog] 获取到工具数据:', data);
+    
+    // 为每个工具提取参数
+    const tools = (data.tools || []).map((tool: any) => ({
+      ...tool,
+      parameters: extractParameters(tool.inputSchema),
+    }));
+    
+    allTools.value = tools;
+    console.log('[ToolDialog] 工具数量:', allTools.value.length);
+    
+    filteredTools.value = allTools.value;
+    
+    // 构建分类信息
+    buildToolCategories();
+    console.log('[ToolDialog] 分类数量:', toolCategories.value.length);
+    
+    if (allTools.value.length === 0) {
+      ElMessage.warning('当前没有可用的工具');
+    }
+  } catch (error: any) {
+    console.error('[ToolDialog] 加载工具列表失败:', error);
+    ElMessage.error(`加载工具列表失败: ${error.message || '未知错误'}`);
+  } finally {
+    toolsLoading.value = false;
+  }
+}
+
+/**
+ * 构建工具分类
+ */
+function buildToolCategories() {
+  const categoryMap = new Map<string, any[]>();
+
+  allTools.value.forEach((tool) => {
+    const category = tool.category;
+    if (!categoryMap.has(category)) {
+      categoryMap.set(category, []);
+    }
+    categoryMap.get(category)!.push(tool);
+  });
+
+  const categoryLabels: Record<string, string> = {
+    system: '系统查询',
+    temu: 'Temu 业务',
+    browser: '浏览器自动化',
+    material: '素材资源',
+    product: '商品管理',
+    shop: '店铺管理',
+    publish: '发布任务',
+    'ps-automation': 'Photoshop 自动化',
+    statistics: '统计分析',
+    human: '用户交互',
+  };
+
+  toolCategories.value = Array.from(categoryMap.entries()).map(([key, tools]) => ({
+    key,
+    label: categoryLabels[key] || key,
+    toolCount: tools.length,
+    tools,
+  })).sort((a, b) => b.toolCount - a.toolCount);
+}
+
+/**
+ * 从 inputSchema 提取参数列表
+ */
+function extractParameters(inputSchema: any): any[] {
+  if (!inputSchema || !inputSchema.properties) return [];
+  
+  const properties = inputSchema.properties;
+  const required = inputSchema.required || [];
+  const params: any[] = [];
+  
+  for (const [name, prop] of Object.entries(properties)) {
+    const p = prop as any;
+    params.push({
+      name,
+      label: p.label || name,
+      description: p.description || '',
+      type: Array.isArray(p.type) ? p.type.join(' | ') : (p.type || 'any'),
+      required: required.includes(name),
+      default: p.default,
+      enum: p.enum,
+      example: p.example,
+    });
+  }
+  
+  return params;
+}
+
+/**
+ * 获取工具的参数列表
+ */
+function getToolParameters(tool: any): any[] {
+  return tool.parameters || [];
+}
+
+/**
+ * 工具搜索
+ */
+function handleToolSearch() {
+  const query = toolSearchQuery.value.toLowerCase().trim();
+  
+  if (!query) {
+    filteredTools.value = allTools.value;
+    return;
+  }
+  
+  filteredTools.value = allTools.value.filter((tool) => {
+    return (
+      tool.name.toLowerCase().includes(query) ||
+      tool.label.toLowerCase().includes(query) ||
+      tool.description.toLowerCase().includes(query) ||
+      tool.category.toLowerCase().includes(query) ||
+      (tool.tags && tool.tags.some((tag: string) => tag.toLowerCase().includes(query)))
+    );
+  });
+}
+
+/**
+ * 显示工具详情
+ */
+function showToolDetail(tool: any) {
+  selectedTool.value = tool;
+  showToolDetailDialog.value = true;
+}
+
+/**
+ * 按分类过滤
+ */
+function filterByCategory(category: string) {
+  activeToolTab.value = 'all';
+  toolSearchQuery.value = '';
+  filteredTools.value = allTools.value.filter((t) => t.category === category);
+}
+
+/**
+ * 风险等级标签类型
+ */
+function riskLevelType(level: string) {
+  switch (level) {
+    case 'low':
+      return 'success';
+    case 'medium':
+      return 'warning';
+    case 'high':
+      return 'danger';
+    default:
+      return 'info';
   }
 }
 
@@ -736,16 +1136,18 @@ onMounted(async () => {
   flex-direction: column;
   background: transparent;
   min-height: 0;
+  border-right: 1px solid var(--el-border-color-light);
 }
 
 .sidebar-header {
   min-height: 48px;
-  padding: 8px 12px 6px 14px;
+  padding: 8px 14px 6px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 8px;
   font-weight: 500;
+  border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
 .sidebar-title {
@@ -1265,5 +1667,267 @@ onMounted(async () => {
   .input-hint {
     display: none;
   }
+}
+
+/* 工具列表对话框样式 */
+.tool-list-dialog :deep(.el-dialog__wrapper) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tool-list-dialog :deep(.el-dialog) {
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.tool-list-dialog :deep(.el-dialog__header) {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--el-border-color-light);
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.tool-list-dialog :deep(.el-dialog__body) {
+  padding: 0;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.tool-list-dialog :deep(.el-dialog__footer) {
+  padding: 12px 20px;
+  border-top: 1px solid var(--el-border-color-light);
+  flex-shrink: 0;
+}
+
+.tool-dialog-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 120px);
+}
+
+.tool-dialog-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--el-border-color-light);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.tool-dialog-header .el-input {
+  flex: 1;
+}
+
+.tool-stats {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.tool-tabs {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.tool-tabs :deep(.el-tabs__header) {
+  margin: 0;
+  padding: 0 16px;
+  flex-shrink: 0;
+}
+
+.tool-tabs :deep(.el-tabs__content) {
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.tool-tabs :deep(.el-tab-pane) {
+  height: 100%;
+}
+
+.tool-list-scroll {
+  height: 100%;
+  max-height: calc(100vh - 200px);
+}
+
+.tool-list-scroll :deep(.el-scrollbar__wrap) {
+  max-height: calc(100vh - 200px);
+}
+
+.tool-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px 0;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+}
+
+.tool-loading .el-icon {
+  font-size: 24px;
+}
+
+.tool-list {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tool-item {
+  padding: 12px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tool-item:hover {
+  border-color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+}
+
+.tool-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.tool-item-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tool-name {
+  font-weight: 600;
+  font-family: monospace;
+}
+
+.tool-item-category {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.tool-item-description {
+  font-size: 13px;
+  color: var(--el-text-color-regular);
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.tool-item-meta {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tool-params-count {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  margin-left: auto;
+}
+
+/* 工具分类 */
+.tool-categories {
+  padding: 12px;
+}
+
+.tool-category {
+  margin-bottom: 20px;
+}
+
+.category-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.category-tools {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 8px;
+}
+
+.tool-item-compact {
+  padding: 8px 12px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tool-item-compact:hover {
+  border-color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+}
+
+.tool-name-compact {
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tool-label-compact {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+/* 工具详情对话框 */
+.tool-detail-dialog :deep(.el-dialog__body) {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.tool-detail-content {
+  padding: 8px 0;
+}
+
+.tool-description {
+  line-height: 1.6;
+  color: var(--el-text-color-regular);
+}
+
+.tool-examples {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.example-item {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 8px 12px;
+  background: var(--el-fill-color-light);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.example-item .el-icon {
+  color: var(--el-color-primary);
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 </style>

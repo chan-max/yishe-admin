@@ -48,15 +48,6 @@
               <el-button
                 v-if="isAdmin"
                 size="small"
-                :loading="moveLoading"
-                :disabled="!ids.length || selectedFolderId === FOLDER_FILTER.ALL"
-                @click="handleBatchMoveToCurrentFolder"
-              >
-                移到当前分类({{ ids.length }})
-              </el-button>
-              <el-button
-                v-if="isAdmin"
-                size="small"
                 type="danger"
                 :icon="Delete"
                 :loading="deleteLoading"
@@ -79,8 +70,12 @@
                 width="100%"
                 :folder-category="FOLDER_CATEGORY"
                 :show-count="false"
+                :drag-state="dragState"
                 @change="handleFolderChange"
                 @reloaded="handleFolderTreeReloaded"
+                @folder-drag-over="handleFolderDragOver"
+                @folder-drag-leave="handleFolderDragLeave"
+                @folder-drop="handleFolderDrop"
               />
             </div>
           </div>
@@ -99,7 +94,7 @@
       </template>
 
       <template #table>
-        <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat material-dnd-grid">
           <div class="list-page-table-panel__body">
             <div class="common-table">
               <vxe-grid
@@ -109,6 +104,10 @@
                 @checkbox-change="checkboxChange"
                 @checkbox-all="checkboxAllChange"
               >
+                <template #dragHandleSlot>
+                  <TableRowDragHandle />
+                </template>
+
                 <template #operationDefaultSlot="{ row }">
                   <div class="flex justify-start">
                     <el-dropdown
@@ -305,7 +304,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watchEffect } from "vue";
+import { computed, nextTick, onMounted, reactive, ref, watchEffect } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { DArrowLeft, DArrowRight, Delete, DocumentCopy, Plus, Search } from "@element-plus/icons-vue";
 import { useLocalStorage, useWindowSize } from "@vueuse/core";
@@ -322,8 +321,10 @@ import FolderTree from "@/components/material/FolderTree.vue";
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import Pagination from "@/components/Pagination/index.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
+import TableRowDragHandle from "@/components/TableRowDragHandle/index.vue";
 import { FOLDER_FILTER, convertFolderIdToApiParam } from "@/constants/folder";
 import { useUserStore } from "@/store/modules/user";
+import { useFolderRowDrag } from "@/hooks/useFolderRowDrag";
 
 defineOptions({ name: "AiPromptIndex" });
 
@@ -345,6 +346,13 @@ const queryParams = reactive({
   folderId: FOLDER_FILTER.ALL as string | null | undefined,
 });
 
+function getRowClassName({ row }) {
+  if (dragState.dragging && dragState.draggingIds.includes(String(row.id))) {
+    return "is-dragging-row";
+  }
+  return "";
+}
+
 const gridOptions = ref({
   ...commonGridOptions,
   maxHeight: null,
@@ -352,6 +360,12 @@ const gridOptions = ref({
   checkboxConfig: { reserve: true },
   columns: [
     { type: "checkbox", width: 50, ellipsis: true, reserve: true },
+    {
+      title: "拖拽",
+      field: "dragHandle",
+      width: 50,
+      slots: { default: "dragHandleSlot" },
+    },
     { title: "ID", field: "id", width: 80 },
     {
       title: "标题",
@@ -421,7 +435,6 @@ const dialogVisible = ref(false);
 const isEdit = ref(false);
 const submitLoading = ref(false);
 const deleteLoading = ref(false);
-const moveLoading = ref(false);
 const editId = ref<number | null>(null);
 
 const form = ref({
@@ -431,6 +444,51 @@ const form = ref({
   tags: "",
   folderId: FOLDER_FILTER.NOT_GROUP as string | null,
 });
+
+const {
+  dragState,
+  setupRowDrag,
+  handleFolderDragOver,
+  handleFolderDragLeave,
+  resetAfterDrop,
+  markExternalFolderDropHandled,
+} = useFolderRowDrag({
+  gridClass: "material-dnd-grid",
+  handleSelector: ".row-drag-handle",
+  dataSource,
+  selectedIds: ids,
+  onDropToFolder: handleFolderDrop,
+});
+
+async function handleFolderDrop({ data }) {
+  if (!dragState.draggingIds.length) return;
+  
+  // 不允许拖拽到"全部"文件夹
+  if (data.id === FOLDER_FILTER.ALL) {
+    ElMessage.warning("不能移动到全部文件夹");
+    resetAfterDrop();
+    return;
+  }
+
+  const targetFolderId = data.id === FOLDER_FILTER.NOT_GROUP ? null : (data.id || null);
+  const movingIds = [...dragState.draggingIds].map((id) => Number(id));
+
+  try {
+    await batchMovePrompt({
+      ids: movingIds,
+      folderId: targetFolderId,
+    });
+    
+    markExternalFolderDropHandled();
+    ElMessage.success(`已将 ${movingIds.length} 条提示词移动到"${data.name || "未分组"}"`);
+    await getList();
+  } catch (error) {
+    console.error("移动提示词失败:", error);
+    ElMessage.error("移动提示词失败");
+  } finally {
+    resetAfterDrop();
+  }
+}
 
 function formatDateTime(dateStr: string) {
   if (!dateStr) return "-";
@@ -557,33 +615,6 @@ function handleEdit(row: any) {
   };
 }
 
-async function handleBatchMoveToCurrentFolder() {
-  if (!ids.value.length) {
-    ElMessage.warning("请选择要移动的提示词");
-    return;
-  }
-
-  if (selectedFolderId.value === FOLDER_FILTER.ALL) {
-    ElMessage.warning("请先在左侧选择一个目标分类");
-    return;
-  }
-
-  try {
-    moveLoading.value = true;
-    await batchMovePrompt({
-      ids: [...ids.value],
-      folderId: convertFolderIdToApiParam(selectedFolderId.value) as string | null,
-    });
-    ElMessage.success("已移动到当前分类");
-    await getList();
-  } catch (error) {
-    console.error("批量移动失败:", error);
-    ElMessage.error("批量移动失败");
-  } finally {
-    moveLoading.value = false;
-  }
-}
-
 function handleDelete(row?: any) {
   let delIds: number[] = [];
   if (row) {
@@ -687,6 +718,7 @@ async function submitForm() {
 onMounted(async () => {
   await loadFolderOptions();
   await getList();
+  nextTick(setupRowDrag);
 });
 </script>
 
@@ -822,6 +854,23 @@ onMounted(async () => {
 
 .prompt-editor-dialog :deep(.prompt-editor-content-input .el-textarea__inner) {
   min-height: calc(100vh - 320px) !important;
+}
+
+/* 拖拽样式 */
+:deep(.material-dnd-grid .vxe-table--body tbody tr.is-dragging-row) {
+  opacity: 0.5;
+  background: var(--el-color-primary-light-9);
+}
+
+:deep(.material-drag-ghost) {
+  opacity: 0.8;
+  background: var(--el-bg-color-overlay);
+  box-shadow: var(--el-box-shadow-light);
+  transform: rotate(2deg);
+}
+
+:deep(.material-drag-chosen) {
+  background: var(--el-color-primary-light-9);
 }
 
 @media (max-width: 600px) {

@@ -120,10 +120,17 @@ const handleStopAll = async () => {
 }
 
 .global-temu-batch-progress.is-collapsed {
+  right: 60px;
+  left: auto;
+  bottom: 0;
   width: auto;
-  min-width: 190px;
+  min-width: 200px;
   max-height: none;
   overflow-y: visible;
+  border-radius: 8px 8px 0 0;
+  padding: 6px 12px;
+  gap: 0;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .global-temu-batch-progress__head {
@@ -134,11 +141,20 @@ const handleStopAll = async () => {
   flex-shrink: 0;
 }
 
+.global-temu-batch-progress.is-collapsed .global-temu-batch-progress__head {
+  padding: 0;
+  gap: 6px;
+}
+
 .global-temu-batch-progress__title {
   font-size: 13px;
   color: var(--el-text-color-primary);
   white-space: nowrap;
   font-weight: 600;
+}
+
+.global-temu-batch-progress.is-collapsed .global-temu-batch-progress__title {
+  font-size: 12px;
 }
 
 .global-temu-batch-progress__actions {
@@ -155,10 +171,20 @@ const handleStopAll = async () => {
   white-space: nowrap;
 }
 
+.global-temu-batch-progress.is-collapsed .global-temu-batch-progress__summary {
+  font-size: 11px;
+}
+
 .global-temu-batch-progress__stop-btn,
 .global-temu-batch-progress__toggle-btn {
   padding: 2px 6px;
   min-height: auto;
+  font-size: 11px;
+}
+
+.global-temu-batch-progress.is-collapsed .global-temu-batch-progress__stop-btn,
+.global-temu-batch-progress.is-collapsed .global-temu-batch-progress__toggle-btn {
+  padding: 1px 4px;
   font-size: 11px;
 }
 
