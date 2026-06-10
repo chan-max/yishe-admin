@@ -443,22 +443,24 @@
     >
       <div class="psd-template-dialog-layout">
         <div class="psd-template-dialog-main">
+          <!-- 基础信息区域 - 紧凑排列在上方 -->
           <div class="dialog-section dialog-section-basic">
             <div class="dialog-section-title">基础信息</div>
             <el-form
               :model="form"
               :rules="rules"
               ref="formRef"
-              label-width="100px"
+              label-width="90px"
               class="psd-template-form"
             >
+              <!-- 第一行：模板名称 + 是否可用 -->
               <el-row :gutter="16">
-                <el-col :span="12">
+                <el-col :span="16">
                   <el-form-item label="模板名称" prop="name">
                     <el-input v-model="form.name" placeholder="请输入模板名称" />
                   </el-form-item>
                 </el-col>
-                <el-col :span="12">
+                <el-col :span="8">
                   <el-form-item label="是否可用">
                     <el-switch
                       v-model="form.enabled"
@@ -469,36 +471,35 @@
                 </el-col>
               </el-row>
 
+              <!-- 第二行：关键词 + 本地路径 -->
               <el-row :gutter="16">
-                <el-col :span="24">
+                <el-col :span="12">
                   <el-form-item label="关键词" prop="keywords">
                     <el-input
                       v-model="form.keywords"
-                      placeholder="请输入关键词，多个关键词用逗号分隔"
+                      placeholder="多个关键词用逗号分隔"
+                    />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="本地路径" prop="windowsLocalPath">
+                    <el-input
+                      v-model="form.windowsLocalPath"
+                      placeholder="Windows 本地路径"
                     />
                   </el-form-item>
                 </el-col>
               </el-row>
 
+              <!-- 第三行：描述 - 全宽 -->
               <el-row :gutter="16">
                 <el-col :span="24">
                   <el-form-item label="描述" prop="description">
                     <el-input
                       v-model="form.description"
                       type="textarea"
-                      :rows="2"
+                      :rows="3"
                       placeholder="请输入模板描述"
-                    />
-                  </el-form-item>
-                </el-col>
-              </el-row>
-
-              <el-row :gutter="16">
-                <el-col :span="24">
-                  <el-form-item label="本地路径" prop="windowsLocalPath">
-                    <el-input
-                      v-model="form.windowsLocalPath"
-                      placeholder="请输入 Windows 本地路径"
                     />
                   </el-form-item>
                 </el-col>
@@ -697,26 +698,34 @@
 
           <div class="dialog-section dialog-section-config">
             <div class="dialog-section-title">模板配置</div>
-            <el-form :model="form" label-width="100px" class="psd-template-form">
-              <el-form-item label="PSD信息" prop="psdFileInfo">
-                <el-input
-                  v-model="form.psdFileInfoText"
-                  type="textarea"
-                  :rows="6"
-                  :autosize="{ minRows: 6, maxRows: 10 }"
-                  placeholder='建议 JSON 格式，如：{"canvas":"2000x2000px","smartObjects":[{"name":"主图","size":"1200x1200px"}],"notes":""}'
-                />
-              </el-form-item>
+            <el-form :model="form" label-width="90px" class="psd-template-form">
+              <el-row :gutter="16">
+                <!-- PSD信息 - 较小 -->
+                <el-col :span="12">
+                  <el-form-item label="PSD信息" prop="psdFileInfo">
+                    <el-input
+                      v-model="form.psdFileInfoText"
+                      type="textarea"
+                      :rows="8"
+                      :autosize="{ minRows: 8, maxRows: 12 }"
+                      placeholder='建议 JSON 格式，如：{"canvas":"2000x2000px","smartObjects":[{"name":"主图","size":"1200x1200px"}],"notes":""}'
+                    />
+                  </el-form-item>
+                </el-col>
 
-              <el-form-item label="配置内容" prop="psdTemplateConfig">
-                <el-input
-                  v-model="form.psdTemplateConfigText"
-                  type="textarea"
-                  :rows="12"
-                  :autosize="{ minRows: 12, maxRows: 18 }"
-                  placeholder='支持 JSON 格式，如：{"images": [], "description": ""}'
-                />
-              </el-form-item>
+                <!-- 配置内容 - 更大，占据更多空间 -->
+                <el-col :span="12">
+                  <el-form-item label="配置内容" prop="psdTemplateConfig">
+                    <el-input
+                      v-model="form.psdTemplateConfigText"
+                      type="textarea"
+                      :rows="16"
+                      :autosize="{ minRows: 16, maxRows: 24 }"
+                      placeholder='支持 JSON 格式，如：{"images": [], "description": ""}'
+                    />
+                  </el-form-item>
+                </el-col>
+              </el-row>
             </el-form>
           </div>
         </div>
@@ -2390,12 +2399,9 @@ function handleCutoutModesChange(values: string[]) {
 }
 
 .psd-template-dialog-main {
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
-  grid-template-areas:
-    "basic assets"
-    "sizes config";
-  gap: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   width: 100%;
   min-width: 0;
   min-height: 0;
@@ -2414,30 +2420,38 @@ function handleCutoutModesChange(values: string[]) {
   font-size: 14px;
   font-weight: 600;
   color: var(--el-text-color-primary);
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   line-height: 1.2;
 }
 
 .dialog-section-basic {
-  grid-area: basic;
+  flex-shrink: 0;
 }
 
 .dialog-section-assets {
-  grid-area: assets;
+  flex-shrink: 0;
 }
 
 .dialog-section-sizes {
-  grid-area: sizes;
+  flex-shrink: 0;
 }
 
 .dialog-section-config {
-  grid-area: config;
+  flex: 1;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+.dialog-section-config .psd-template-form {
+  flex: 1;
+  min-height: 0;
 }
 
 .psd-template-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 
   :deep(.el-form-item__label) {
     color: var(--el-text-color-secondary);
@@ -2458,7 +2472,7 @@ function handleCutoutModesChange(values: string[]) {
   }
 
   :deep(.el-row) {
-    row-gap: 16px;
+    row-gap: 12px;
   }
 }
 
@@ -2627,12 +2641,6 @@ function handleCutoutModesChange(values: string[]) {
   }
 
   .psd-template-dialog-main {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "basic"
-      "assets"
-      "sizes"
-      "config";
     height: auto;
   }
 }

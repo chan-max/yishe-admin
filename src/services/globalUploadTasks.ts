@@ -11,6 +11,7 @@ export interface GlobalUploadTask {
   startedAt: number;
   error?: string;
   source?: string;
+  autoRemoveTimer?: ReturnType<typeof setTimeout>;
 }
 
 const tasks = ref<GlobalUploadTask[]>([]);
@@ -46,21 +47,41 @@ export const updateGlobalUploadTask = (
   taskId: string,
   patch: Partial<Omit<GlobalUploadTask, "id" | "startedAt">>,
 ) => {
-  tasks.value = tasks.value.map((task) =>
-    task.id === taskId
-      ? {
-          ...task,
-          ...patch,
-          progress:
-            patch.progress === undefined
-              ? task.progress
-              : Math.max(0, Math.min(100, Number(patch.progress) || 0)),
-        }
-      : task,
-  );
+  tasks.value = tasks.value.map((task) => {
+    if (task.id !== taskId) return task;
+
+    const updatedTask = {
+      ...task,
+      ...patch,
+      progress:
+        patch.progress === undefined
+          ? task.progress
+          : Math.max(0, Math.min(100, Number(patch.progress) || 0)),
+    };
+
+    // 当任务完成时，设置3秒后自动移除
+    if (patch.status === 'success' && task.status !== 'success') {
+      // 清除可能存在的旧定时器
+      if (task.autoRemoveTimer) {
+        clearTimeout(task.autoRemoveTimer);
+      }
+      
+      // 设置3秒后自动移除
+      updatedTask.autoRemoveTimer = setTimeout(() => {
+        tasks.value = tasks.value.filter((t) => t.id !== taskId);
+      }, 3000);
+    }
+
+    return updatedTask;
+  });
 };
 
 export const clearFinishedGlobalUploadTasks = () => {
+  tasks.value.forEach((task) => {
+    if (task.autoRemoveTimer) {
+      clearTimeout(task.autoRemoveTimer);
+    }
+  });
   tasks.value = tasks.value.filter((task) => task.status === "running");
 };
 

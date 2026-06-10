@@ -4,7 +4,9 @@
       "Bash(npm run *)",
       "Bash(npx *)",
       "Bash(findstr *)",
-      "Bash(del *)"
+      "Bash(del *)",
+      "Bash(select-string *)",
+      "Bash(select-object *)"
     ]
   },
   "$version": 4
