@@ -131,24 +131,16 @@
                   <div class="record-video-cell">
                     <div class="cell-video-wrapper">
                       <video
-                        v-if="row.url"
-                        :id="'thumb-' + row.id"
-                        :src="row.url"
-                        preload="metadata"
-                        class="cell-video-player"
-                        muted
-                        playsinline
-                        :controls="false"
-                      ></video>
-                      <div
-                        v-if="row.url"
-                        class="cell-play-overlay"
-                        aria-hidden="true"
-                        @click.stop="previewVideo(row)"
-                      >
-                        <span class="cell-play-icon"></span>
-                      </div>
-                      <span v-if="!row.url" class="cell-video-placeholder">-</span>
+                          v-if="row.url"
+                          :src="row.url"
+                          preload="metadata"
+                          class="cell-video-player"
+                          muted
+                          playsinline
+                          :controls="false"
+                          @click.stop="previewVideo(row)"
+                        ></video>
+                        <span v-if="!row.url" class="cell-video-placeholder">-</span>
                     </div>
                   </div>
                 </template>
@@ -213,13 +205,13 @@
     <div class="remotion-dialog-toolbar">
       <!-- 步骤指示器 -->
       <div class="remotion-steps">
-        <div 
-          v-for="(step, index) in steps" 
+        <div
+          v-for="(step, index) in steps"
           :key="index"
           class="remotion-step-item"
-          :class="{ 
+          :class="{
             'remotion-step-active': currentStep === index,
-            'remotion-step-done': currentStep > index 
+            'remotion-step-done': currentStep > index
           }"
           @click="goToStep(index)"
         >
@@ -234,9 +226,9 @@
       <div class="remotion-dialog-actions">
         <el-button @click="createVisible = false">取消</el-button>
         <el-button v-if="currentStep > 0" @click="currentStep--">上一步</el-button>
-        <el-button 
-          v-if="currentStep < 2" 
-          type="primary" 
+        <el-button
+          v-if="currentStep < 2"
+          type="primary"
           :disabled="!canGoNext"
           @click="currentStep++"
         >
@@ -350,44 +342,37 @@
           </div>
         </div>
 
-        <div class="template-grid">
+        <div v-if="categorizedTemplates.length === 0" class="template-grid-empty">
+          <el-empty description="没有匹配的模板" />
+        </div>
+        <div v-else class="template-categories">
           <div
-            v-for="template in filteredTemplateOptions"
-            :key="template.id"
-            class="template-card"
-            :class="{ 'template-card-selected': form.templateId === template.id }"
-            @click="selectTemplate(template)"
+            v-for="group in categorizedTemplates"
+            :key="group.category"
+            class="template-category"
           >
-            <div class="template-card-header">
-              <div class="template-card-title">
-                <div class="template-card-name">{{ template.name }}</div>
-                <div class="template-card-id">{{ template.id }}</div>
+            <div class="template-category-header">
+              <span class="template-category-name">{{ group.category }}</span>
+              <span class="template-category-count">{{ group.templates.length }} 个模板</span>
+            </div>
+            <div class="template-grid">
+              <div
+                v-for="template in group.templates"
+                :key="template.id"
+                class="template-card"
+                :class="{ 'template-card-selected': form.templateId === template.id }"
+                @click="selectTemplate(template)"
+              >
+                <div class="template-card-name">{{ getTemplateLocalName(template) }}</div>
+                <div class="template-card-desc">{{ getTemplateLocalDesc(template) }}</div>
+                <div class="template-card-meta">
+                  <span>{{ getTemplateOrientationLabel(template) }}</span>
+                  <span class="meta-dot"></span>
+                  <span>{{ getTemplateDurationText(template) }}</span>
+                </div>
               </div>
             </div>
-            <div class="template-card-desc">{{ template.description || '暂无说明' }}</div>
-            <div class="template-card-meta">
-              <span class="meta-tag">{{ template.category || '未分类' }}</span>
-              <span class="meta-dot"></span>
-              <span>{{ getTemplateOrientationLabel(template) }}</span>
-              <span class="meta-dot"></span>
-              <span>{{ getTemplateDurationText(template) }}</span>
-              <span class="meta-dot"></span>
-              <span>{{ getTemplateFieldCount(template) }} 字段</span>
-            </div>
-            <div v-if="template.tags && template.tags.length" class="template-card-tags">
-              <span v-for="tag in template.tags.slice(0, 3)" :key="tag" class="template-tag">{{
-                tag
-              }}</span>
-              <span v-if="template.tags.length > 3" class="template-tag template-tag--more">
-                +{{ template.tags.length - 3 }}
-              </span>
-            </div>
           </div>
-          <el-empty
-            v-if="filteredTemplateOptions.length === 0"
-            class="template-empty"
-            description="没有匹配的模板"
-          />
         </div>
       </div>
 
@@ -406,8 +391,8 @@
                 label-position="top"
                 label-width="auto"
               >
-                <el-form-item 
-                  v-for="field in selectedTemplate.inputSchema" 
+                <el-form-item
+                  v-for="field in selectedTemplate.inputSchema"
                   :key="field.key"
                   :label="field.label || field.key"
                   :required="field.required"
@@ -592,6 +577,24 @@
       </div>
     </div>
   </el-dialog>
+
+  <el-dialog
+    v-model="previewVisible"
+    title="视频预览"
+    width="680px"
+    destroy-on-close
+    class="remotion-preview-dialog"
+  >
+    <div class="preview-video-wrapper">
+      <video
+        v-if="previewUrl"
+        :src="previewUrl"
+        controls
+        autoplay
+        class="preview-video-player"
+      ></video>
+    </div>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -645,6 +648,8 @@ const createVisible = ref(false);
 const detailVisible = ref(false);
 const submitLoading = ref(false);
 const currentRow = ref<any>(null);
+const previewVisible = ref(false);
+const previewUrl = ref('');
 const remotionStatus = useServiceHealthState("videoTemplate");
 let processingPollTimer: ReturnType<typeof setTimeout> | null = null;
 let templateSearchTimer: ReturnType<typeof setTimeout> | null = null;
@@ -728,6 +733,79 @@ const templateTagOptions = computed(() =>
       ),
 );
 const filteredTemplateOptions = computed(() => templateOptions.value);
+
+/** 模板中文名映射（ID → 名称/描述） */
+const templateNameMap: Record<string, { name: string; desc: string }> = {
+  // 过渡效果
+  'fade': { name: '淡入淡出', desc: '图片平滑渐显或渐隐切换' },
+  'fade-in': { name: '淡入', desc: '图片从透明渐显出现' },
+  'fade-out': { name: '淡出', desc: '图片逐渐透明消失' },
+  'crossfade': { name: '交叉淡化', desc: '前后两张图片交叉渐变过渡' },
+  'dissolve': { name: '溶解', desc: '图片颗粒状溶解过渡' },
+  'wipe': { name: '擦除', desc: '新画面擦除旧画面切换' },
+  // 滑动
+  'slide': { name: '滑动', desc: '图片滑动切换' },
+  'slide-left': { name: '向左滑动', desc: '图片向左滑入切换' },
+  'slide-right': { name: '向右滑动', desc: '图片向右滑入切换' },
+  'slide-up': { name: '向上滑动', desc: '图片向上滑入切换' },
+  'slide-down': { name: '向下滑动', desc: '图片向下滑入切换' },
+  // 缩放
+  'zoom': { name: '缩放', desc: '图片缩放过渡' },
+  'zoom-in': { name: '放大进入', desc: '图片从远处放大至全屏' },
+  'zoom-out': { name: '缩小退出', desc: '图片从全屏缩小至远处' },
+  'scale': { name: '缩放切换', desc: '图片大小变化过渡' },
+  // 旋转
+  'rotate': { name: '旋转', desc: '图片旋转切换' },
+  'spin': { name: '旋转切换', desc: '图片360度旋转过渡' },
+  // 翻转
+  'flip': { name: '翻转', desc: '图片翻转切换' },
+  'flip-horizontal': { name: '水平翻转', desc: '图片左右翻转过渡' },
+  'flip-vertical': { name: '垂直翻转', desc: '图片上下翻转过渡' },
+  // 其他基础效果
+  'blur': { name: '模糊过渡', desc: '图片模糊后切换至清晰' },
+  'ken-burns': { name: '缓动缩放', desc: '图片缓慢缩放+位移，Ken Burns效果' },
+  'parallax': { name: '视差', desc: '图片多层视差滚动效果' },
+  'push': { name: '推拉', desc: '新画面推入/旧画面拉出' },
+  'none': { name: '无过渡', desc: '直接切换，无过渡效果' },
+  // 合成
+  'slideshow': { name: '幻灯片', desc: '多图顺序播放' },
+  'collage': { name: '拼贴', desc: '多张图片拼贴组合展示' },
+  'grid': { name: '网格', desc: '图片以网格形式排列展示' },
+};
+
+function getTemplateLocalName(template: any): string {
+  return templateNameMap[template.id]?.name || template.name || template.id;
+}
+
+function getTemplateLocalDesc(template: any): string {
+  return templateNameMap[template.id]?.desc || template.description || '暂无说明';
+}
+
+const categorizedTemplates = computed(() => {
+  const categoryOrder: string[] = [
+    '过渡效果', '滑动', '缩放', '旋转', '翻转', '基础效果', '合成', '其他',
+  ];
+  const groupMap = new Map<string, any[]>();
+
+  for (const t of filteredTemplateOptions.value) {
+    const cat = String(t.category || '其他').trim() || '其他';
+    if (!groupMap.has(cat)) groupMap.set(cat, []);
+    groupMap.get(cat)!.push(t);
+  }
+
+  // 按预定义顺序排列，未列出的分类排在后面
+  const known = new Set(categoryOrder);
+  const sortedCats = [...groupMap.keys()].sort((a, b) => {
+    const ia = categoryOrder.indexOf(a);
+    const ib = categoryOrder.indexOf(b);
+    return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+  });
+
+  return sortedCats.map(category => ({
+    category,
+    templates: groupMap.get(category) || [],
+  }));
+});
 
 // 分步向导控制
 const canGoNext = computed(() => {
@@ -1154,10 +1232,10 @@ function getTemplateUseCaseText(template: any) {
 function selectTemplate(template: any) {
   form.templateId = template.id;
   form.title = template.name || "";
-  
+
   // 初始化表单参数
   Object.keys(formParams).forEach(key => delete formParams[key]);
-  
+
   if (template.defaultInputProps) {
     Object.assign(formParams, template.defaultInputProps);
     ensureParamDefaults(template);
@@ -1484,7 +1562,7 @@ function openCreateDialog(row?: any) {
   } catch {
     form.inputPropsJson = "{}";
   }
-  
+
   // 初始化表单参数
   Object.keys(formParams).forEach(key => delete formParams[key]);
   if (form.inputProps) {
@@ -1519,7 +1597,7 @@ async function submitGenerate() {
         return;
       }
     }
-    
+
     // 如果都为空，使用默认参数
     if (Object.keys(inputPropsToSend).length === 0 && selectedTemplate.value?.defaultInputProps) {
       inputPropsToSend = { ...selectedTemplate.value.defaultInputProps };
@@ -1597,76 +1675,8 @@ async function openDetail(row: any) {
 
 function previewVideo(row: any) {
   if (!row?.url) return;
-
-  const el = document.getElementById(`thumb-${row.id}`) as HTMLVideoElement | null;
-  if (!el) {
-    // fallback: 在新标签打开
-    window.open(row.url, "_blank");
-    return;
-  }
-
-  try {
-    // 在全屏前开启控件，尝试播放，然后进入全屏
-    el.controls = true;
-    const p = el.play();
-    if (p && typeof p.then === "function") p.catch(() => {});
-
-    // 隐藏覆盖层，避免覆盖原生控件
-    try {
-      const overlay = el.parentElement?.querySelector(".cell-play-overlay") as HTMLElement | null;
-      if (overlay) overlay.style.display = "none";
-    } catch {}
-
-    // 标准全屏 API
-    if (el.requestFullscreen) {
-      el.requestFullscreen().catch(() => {});
-    } else {
-      // iOS Safari 回退方法（非标准）
-      const anyEl: any = el;
-      if (anyEl.webkitEnterFullscreen) {
-        try {
-          anyEl.webkitEnterFullscreen();
-        } catch {}
-      } else {
-        // 最后回退为在新标签打开
-        window.open(row.url, "_blank");
-      }
-    }
-
-    // 监听退出全屏，恢复覆盖层与控件状态
-    const onFullChange = () => {
-      try {
-        if (document.fullscreenElement !== el) {
-          el.controls = false;
-          const overlay = el.parentElement?.querySelector(
-            ".cell-play-overlay",
-          ) as HTMLElement | null;
-          if (overlay) overlay.style.display = "";
-          document.removeEventListener("fullscreenchange", onFullChange);
-        }
-      } catch {}
-    };
-    document.addEventListener("fullscreenchange", onFullChange);
-
-    // iOS 退出事件回退
-    try {
-      el.addEventListener(
-        "webkitendfullscreen",
-        () => {
-          try {
-            el.controls = false;
-            const overlay = el.parentElement?.querySelector(
-              ".cell-play-overlay",
-            ) as HTMLElement | null;
-            if (overlay) overlay.style.display = "";
-          } catch {}
-        },
-        { once: true },
-      );
-    } catch {}
-  } catch (err) {
-    window.open(row.url, "_blank");
-  }
+  previewUrl.value = row.url;
+  previewVisible.value = true;
 }
 
 async function handleDelete(row: any) {
@@ -2027,66 +2037,87 @@ watch(
   white-space: nowrap;
 }
 
-/* 模板卡片网格 */
-.template-grid {
+/* 模板分类容器 */
+.template-categories {
   flex: 1 1 auto;
   min-height: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 8px;
   max-height: calc(100vh - 158px);
   overflow-y: auto;
   padding: 2px 6px 2px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.template-category-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.template-category-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.template-category-count {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.template-grid-empty {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 260px;
+  border: 1px dashed var(--el-border-color);
+  border-radius: 8px;
+}
+
+/* 模板卡片网格 */
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
 }
 
 .template-card {
   position: relative;
-  display: grid;
-  grid-template-rows: auto minmax(30px, auto) auto auto;
-  gap: 7px;
-  min-height: 126px;
-  padding: 10px 11px;
-  border: 1px solid #dcdfe6;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
   cursor: pointer;
   background: var(--el-fill-color-blank);
-  transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+  transition: border-color 0.16s ease, background-color 0.16s ease;
 }
 
 .template-card:hover {
-  border-color: #b6c7dd;
-  background: #fbfcfe;
-  box-shadow: none;
+  border-color: var(--el-color-primary-light-5);
+  background: var(--el-color-primary-light-9);
 }
 
 .template-card-selected {
-  border-color: #5b8def;
-  background: #f7faff;
-  box-shadow: none;
+  border-color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
 }
 
 .template-card-selected::after {
   content: "";
   position: absolute;
-  top: 9px;
-  right: 9px;
+  top: 8px;
+  right: 8px;
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #5b8def;
-}
-
-.template-card-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
-  min-width: 0;
-}
-
-.template-card-title {
-  min-width: 0;
-  flex: 1;
+  background: var(--el-color-primary);
 }
 
 .template-card-name {
@@ -2099,20 +2130,7 @@ watch(
   white-space: nowrap;
 }
 
-.template-card-id {
-  display: none;
-  margin-top: 2px;
-  overflow: hidden;
-  color: var(--el-text-color-placeholder);
-  font-family: Consolas, Monaco, monospace;
-  font-size: 11px;
-  line-height: 1.2;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .template-card-desc {
-  min-height: 30px;
   font-size: 12px;
   color: var(--el-text-color-secondary);
   line-height: 1.45;
@@ -2215,11 +2233,27 @@ watch(
   color: var(--el-text-color-secondary);
 }
 
-.template-empty {
-  grid-column: 1 / -1;
-  min-height: 260px;
-  border: 1px dashed var(--el-border-color);
-  border-radius: 8px;
+/* 视频预览弹窗 */
+.preview-video-wrapper {
+  display: flex;
+  justify-content: center;
+  background: #000;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.preview-video-player {
+  width: 100%;
+  max-height: 460px;
+  display: block;
+}
+
+.record-video-cell .cell-video-wrapper {
+  cursor: pointer;
+}
+
+.record-video-cell .cell-video-player:hover {
+  opacity: 0.85;
 }
 
 /* 参数面板 */
@@ -2527,37 +2561,12 @@ watch(
   line-height: 1;
 }
 
-.cell-play-overlay {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: auto;
-  z-index: 2;
-}
-
-.cell-play-icon {
-  width: 0;
-  height: 0;
-  border-left: 10px solid #fff;
-  border-top: 6px solid transparent;
-  border-bottom: 6px solid transparent;
-  margin-left: 2px;
-}
-
-.cell-video-wrapper:hover .cell-play-overlay {
-  background: rgba(0, 0, 0, 0.65);
-}
-
 .cell-video-wrapper {
   cursor: pointer;
+}
+
+.cell-video-wrapper:hover .cell-video-player {
+  opacity: 0.85;
 }
 
 .detail-json-panel pre {

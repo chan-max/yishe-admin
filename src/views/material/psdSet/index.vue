@@ -216,6 +216,7 @@
                       </el-dropdown-item>
                       <el-dropdown-item @click="() => handleCreatePublishTask(row)">生成发布任务</el-dropdown-item>
                       <el-dropdown-item @click="() => handleViewPublishTasks(row)">查看发布任务</el-dropdown-item>
+                      <el-dropdown-item @click="() => handleViewProducts(row)">查看产品</el-dropdown-item>
                       <el-dropdown-item @click="() => handleViewPublishUsageRecords(row)">查看使用记录</el-dropdown-item>
                       <el-dropdown-item
                         divided
@@ -779,6 +780,67 @@
       </template>
     </el-dialog>
 
+    <!-- 查看生成的产品对话框 -->
+    <el-dialog v-model="productsDialogVisible" fullscreen :show-close="true" :destroy-on-close="false"
+      class="publish-task-list-dialog">
+      <template #header>
+        <div class="generate-product-dialog-header">
+          <div>
+            <div class="generate-product-dialog-title">套图关联产品</div>
+            <div class="generate-product-dialog-subtitle">
+              共 {{ productsDialogTotal }} 个产品
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <div v-loading="productsDialogLoading" class="publish-task-list-body">
+        <div v-if="productsDialogData.length" class="publish-task-list-toolbar">
+          <el-tag type="info" effect="plain">总数 {{ productsDialogTotal }}</el-tag>
+          <el-tag type="success" effect="plain">已发布 {{ productsDialogData.filter((p: any) => p.isPublish).length }}</el-tag>
+        </div>
+
+        <el-empty v-if="!productsDialogLoading && productsDialogData.length === 0" description="暂无关联产品" />
+        <vxe-grid v-else v-bind="productsGridOptions" :data="productsDialogData" class="publish-task-list-grid">
+          <template #productImageSlot="{ row }">
+            <div v-if="row.images && row.images.length" class="product-thumb-cell">
+              <el-image :src="getPreviewImageUrl(row.images[0], { width: 120, quality: 80, format: 'webp' })"
+                :preview-src-list="row.images" :preview-teleported="true" :hide-on-click-modal="false"
+                fit="contain" class="product-thumb-image" />
+            </div>
+            <span v-else class="text-gray-400 text-xs">无图</span>
+          </template>
+          <template #productStatusSlot="{ row }">
+            <el-tag :type="row.isPublish ? 'success' : 'info'" size="small" effect="plain">
+              {{ row.isPublish ? '已发布' : '未发布' }}
+            </el-tag>
+          </template>
+          <template #productPriceSlot="{ row }">
+            <div class="product-price-cell">
+              <span v-if="row.salePrice" class="product-price-sale">¥{{ Number(row.salePrice).toFixed(2) }}</span>
+              <span v-if="row.price && row.price !== row.salePrice" class="product-price-original">¥{{ Number(row.price).toFixed(2) }}</span>
+              <span v-if="!row.salePrice && !row.price" class="text-gray-400">-</span>
+            </div>
+          </template>
+          <template #productActionSlot="{ row }">
+            <el-button link type="primary" size="small" @click="handleOpenProductDetail(row)">
+              查看详情
+            </el-button>
+          </template>
+        </vxe-grid>
+
+        <div v-if="productsDialogTotal > productsDialogPageSize" class="publish-config-pagination">
+          <el-pagination v-model:current-page="productsDialogPage" v-model:page-size="productsDialogPageSize"
+            :total="productsDialogTotal" :page-sizes="[10, 20, 50]"
+            layout="total, sizes, prev, pager, next" size="small" background
+            @current-change="handleProductsPageChange" @size-change="handleProductsPageChange" />
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="productsDialogVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
+
     <el-dialog v-model="productionDispatchDialogVisible" width="960px" :title="productionDispatchDialogTitle"
       align-center append-to-body destroy-on-close class="production-dispatch-dialog" @open="handleOpenProductionDispatchDialog"
       @closed="handleCloseProductionDispatchDialog">
@@ -938,6 +1000,7 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { stickerPsdSetApi } from "@/api/stickerPsdSet";
+import { getProductList } from "@/api/product/index";
 import { productGenerationTemplateApi } from "@/api/product-generation-template";
 import {
   getPublishConfigListApi,
@@ -1097,6 +1160,14 @@ const publishUsageConfigOptions = ref<any[]>([]);
 const publishUsageDialogVisible = ref(false);
 const publishUsageLoading = ref(false);
 const publishUsageRecords = ref<any[]>([]);
+// 查看产品对话框状态
+const productsDialogVisible = ref(false);
+const productsDialogLoading = ref(false);
+const productsDialogData = ref<any[]>([]);
+const productsDialogTotal = ref(0);
+const productsDialogPage = ref(1);
+const productsDialogPageSize = ref(20);
+const currentProductsPsdSetId = ref<string>("");
 let psdSetMenuRuntimeSyncTimer: ReturnType<typeof setTimeout> | null = null;
 let psdSetListRequestSeq = 0;
 
@@ -1389,6 +1460,29 @@ const publishUsageGridOptions = computed(() => ({
       width: 170,
       formatter: ({ cellValue }: any) => formatTimestamp(cellValue),
     },
+  ],
+}));
+
+const productsGridOptions = computed(() => ({
+  ...commonGridOptions,
+  maxHeight: Math.max(height.value - 320, 360),
+  rowConfig: { isHover: true, keyField: "id" },
+  columnConfig: { resizable: true },
+  columns: [
+    { field: "id", title: "产品ID", minWidth: 200, showOverflow: true },
+    { field: "images", title: "图片", width: 100, slots: { default: "productImageSlot" } },
+    { field: "name", title: "产品名称", minWidth: 220, showOverflow: true },
+    { field: "type", title: "类型", width: 110, showOverflow: true },
+    { field: "salePrice", title: "价格", width: 140, slots: { default: "productPriceSlot" } },
+    { field: "stock", title: "库存", width: 80 },
+    { field: "isPublish", title: "状态", width: 100, slots: { default: "productStatusSlot" } },
+    {
+      field: "createTime",
+      title: "创建时间",
+      width: 180,
+      formatter: ({ cellValue }: any) => formatTimestamp(cellValue),
+    },
+    buildOperationColumn("productActionSlot"),
   ],
 }));
 
@@ -3391,6 +3485,50 @@ async function handleViewPublishUsageRecords(row: any) {
   } finally {
     publishUsageLoading.value = false;
   }
+}
+
+// 查看套图关联的产品
+async function handleViewProducts(row: any) {
+  if (!row?.id) {
+    return ElMessage.warning("缺少套图ID，无法查看产品");
+  }
+  currentProductsPsdSetId.value = String(row.id);
+  productsDialogPage.value = 1;
+  await loadProductsForPsdSet(row.id);
+}
+
+async function loadProductsForPsdSet(psdSetId: string) {
+  productsDialogVisible.value = true;
+  productsDialogLoading.value = true;
+  productsDialogData.value = [];
+  productsDialogTotal.value = 0;
+  try {
+    const res = await getProductList({
+      psdSetId,
+      currentPage: productsDialogPage.value,
+      pageSize: productsDialogPageSize.value,
+      sortBy: "createTime",
+      sortDir: "DESC",
+    });
+    productsDialogData.value = Array.isArray(res?.list) ? res.list : [];
+    productsDialogTotal.value = Number(res?.total || 0);
+  } catch (error: any) {
+    console.error("获取套图关联产品失败:", error);
+    ElMessage.error(error?.message || "获取产品失败");
+    productsDialogVisible.value = false;
+  } finally {
+    productsDialogLoading.value = false;
+  }
+}
+
+async function handleProductsPageChange() {
+  if (!currentProductsPsdSetId.value) return;
+  await loadProductsForPsdSet(currentProductsPsdSetId.value);
+}
+
+function handleOpenProductDetail(row: any) {
+  if (!row?.id) return;
+  window.open(`${window.location.origin}/#/independent-site/product?id=${row.id}`, "_blank");
 }
 
 async function loadPublishUsageConfigOptions() {
@@ -5604,5 +5742,39 @@ getList();
     width: 100%;
     justify-content: flex-start;
   }
+}
+
+.product-thumb-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  overflow: hidden;
+}
+
+.product-thumb-image {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.product-price-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.product-price-sale {
+  font-weight: 600;
+  color: var(--el-color-danger);
+}
+
+.product-price-original {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  text-decoration: line-through;
 }
 </style>

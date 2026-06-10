@@ -2924,11 +2924,23 @@ const gridOptions = computed(() => ({
   ...commonGridOptions,
   maxHeight: gridMaxHeight.value,
   rowClassName: ({ row }) => {
-    const baseClass = row.isPublish ? "published-row" : "unpublished-row";
+    if (!row) return "";
     if (dragState.dragging && dragState.draggingIds.includes(String(row.id))) {
-      return `${baseClass} is-dragging-row`;
+      return "is-dragging-row";
     }
-    return baseClass;
+    return "";
+  },
+  rowStyle: ({ row }) => {
+    if (!row) return {};
+    return row.isPublish
+      ? { backgroundColor: "#f0f9eb" }
+      : { backgroundColor: "#fdf6ec" };
+  },
+  cellStyle: ({ row }) => {
+    if (!row) return {};
+    return row.isPublish
+      ? { backgroundColor: "#f0f9eb" }
+      : { backgroundColor: "#fdf6ec" };
   },
   rowConfig: {
     isHover: true,
@@ -4515,6 +4527,19 @@ async function batchPublish(rows?: any[]) {
     return ElMessage.warning("请先选择要发布的记录");
   }
   try {
+    await ElMessageBox.confirm(
+      `确定将选中的 ${list.length} 条商品标记为发布吗？`,
+      "批量发布确认",
+      {
+        confirmButtonText: "确定发布",
+        cancelButtonText: "取消",
+        type: "warning",
+      },
+    );
+  } catch {
+    return;
+  }
+  try {
     const tasks = list.map((item) => updatePublishStatus({ id: item.id, isPublish: true }));
     await Promise.all(tasks);
     ElMessage.success(`已发布 ${list.length} 条记录`);
@@ -4529,6 +4554,19 @@ async function batchUnpublish(rows?: any[]) {
   const list = rows && rows.length ? rows : selectedRows.value;
   if (!list || list.length === 0) {
     return ElMessage.warning("请先选择要下架的记录");
+  }
+  try {
+    await ElMessageBox.confirm(
+      `确定将选中的 ${list.length} 条商品下架吗？下架后商品将不再对外展示。`,
+      "批量下架确认",
+      {
+        confirmButtonText: "确定下架",
+        cancelButtonText: "取消",
+        type: "warning",
+      },
+    );
+  } catch {
+    return;
   }
   try {
     const tasks = list.map((item) => updatePublishStatus({ id: item.id, isPublish: false }));
@@ -6845,4 +6883,6 @@ function getPublishTaskType(platform: string) {
     }
   }
 }
+
+/* 商品表格：发布/未发布颜色区分（由 rowStyle + cellStyle 内联样式控制，无需 CSS） */
 </style>

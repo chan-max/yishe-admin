@@ -1,70 +1,83 @@
-import request from '@/config/axios'
+import request from "@/config/axios";
 
 // 商品 VO
 export interface ProductVO {
-  id: string
-  name: string
-  description: string
-  type: string
-  images: string[]
-  price: number
-  salePrice: number
-  stock: number
-  specifications: string
-  tags: string
-  slug?: string
-  seoTitle?: string
-  seoDescription?: string
-  sourceType?: string
-  sourceMaterialCodes?: string
-  meta?: any
-  isPublish?: boolean // 是否已发布
-  createTime: Date
-  updateTime: Date
+  id: string;
+  name: string;
+  description: string;
+  type: string;
+  images: string[];
+  price: number;
+  salePrice: number;
+  stock: number;
+  specifications: string;
+  tags: string;
+  slug?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  sourceType?: string;
+  sourceMaterialCodes?: string;
+  meta?: any;
+  isPublish?: boolean; // 是否已发布
+  createTime: Date;
+  updateTime: Date;
 }
 
 // 创建商品
 export const createProduct = (data: ProductVO) => {
   return request.post({
-    url: '/product/create',
-    data
-  })
-}
+    url: "/product/create",
+    data,
+  });
+};
 
 // 获取商品列表
-export const getProductList = (data) => {
+export const getProductList = (data: {
+  currentPage?: number;
+  pageSize?: number;
+  search?: string;
+  searchText?: string;
+  psdSetId?: string;
+  folderId?: string;
+  status?: string;
+  type?: string;
+  isPublish?: boolean;
+  sortBy?: string;
+  sortDir?: string;
+  [key: string]: any;
+}) => {
   return request.post({
-    url: '/product/page',
-    data
-  })
-}
+    url: "/product/page",
+    data,
+  });
+};
 
 // 获取商品详情
 export const getProduct = (id: string) => {
   return request.get({
-    url: `/product/${id}`
-  })
-}
+    url: `/product/${id}`,
+  });
+};
 
 // 更新商品
 export const updateProduct = (data: ProductVO) => {
   return request.post({
-    url: '/product/update',
-    data
-  })
-}
+    url: "/product/update",
+    data,
+  });
+};
 
 // 删除商品
 export const deleteProduct = (ids: string[]) => {
   return request.post({
-    url: '/product/delete',
-    data: { ids }
-  })
-}
+    url: "/product/delete",
+    data: { ids },
+  });
+};
 
 // 获取商品的发布任务列表
 export const getProductPublishTasks = (id: string) => {
   return request.get({
-    url: `/product/publish-tasks/${id}`
-  })
-}
+    url: `/product/publish-tasks/${id}`,
+  });
+};
