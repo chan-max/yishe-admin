@@ -3,35 +3,19 @@ import { store } from '@/store'
 import { cloneDeep } from 'lodash-es'
 import remainingRouter from '@/router/modules/remaining'
 import { hasRouteMenuAccess } from '@/router/access-control'
+import {
+  resolveFirstAccessibleMenuPath,
+  resolveMenuRoutePath
+} from '@/router/menu-path'
 import { useUserStore } from '@/store/modules/user'
 import { pathResolve } from '@/utils/routerHelper'
 import { isUrl } from '@/utils/is'
 
-function getRouteOrder(route: AppRouteRecordRaw): number {
-  const order = route.meta?.order
-  return typeof order === 'number' ? order : Number.MAX_SAFE_INTEGER
-}
-
-function sortRoutes(routes: AppRouteRecordRaw[]): AppRouteRecordRaw[] {
-  return [...routes]
-    .sort((a, b) => {
-      const orderDiff = getRouteOrder(a) - getRouteOrder(b)
-      if (orderDiff !== 0) {
-        return orderDiff
-      }
-
-      const titleA = String(a.meta?.title ?? '')
-      const titleB = String(b.meta?.title ?? '')
-      const titleDiff = titleA.localeCompare(titleB, 'zh-CN')
-      if (titleDiff !== 0) {
-        return titleDiff
-      }
-
-      return a.path.localeCompare(b.path, 'en')
-    })
+function cloneRoutesInDefinedOrder(routes: AppRouteRecordRaw[]): AppRouteRecordRaw[] {
+  return routes
     .map((route) => ({
       ...route,
-      children: route.children ? sortRoutes(route.children) : route.children
+      children: route.children ? cloneRoutesInDefinedOrder(route.children) : route.children
     }))
 }
 
@@ -64,7 +48,7 @@ function filterRoutesByAccess(routes: AppRouteRecordRaw[], user: any): AppRouteR
 }
 
 function getDefaultRoutes(routes: AppRouteRecordRaw[]): AppRouteRecordRaw[] {
-  return sortRoutes(routes.filter((route) => !route.meta?.hidden))
+  return cloneRoutesInDefinedOrder(routes.filter((route) => !route.meta?.hidden))
 }
 
 function getVisibleChildren(children: AppRouteRecordRaw[] = []) {
@@ -96,7 +80,7 @@ function flattenChildrenToSecondLevel(
 }
 
 function flattenMenusToTwoLevels(routes: AppRouteRecordRaw[]): AppRouteRecordRaw[] {
-  return sortRoutes(routes).map((route) => {
+  return cloneRoutesInDefinedOrder(routes).map((route) => {
     const visibleChildren = getVisibleChildren(route.children)
 
     if (!visibleChildren.length) {
@@ -105,7 +89,28 @@ function flattenMenusToTwoLevels(routes: AppRouteRecordRaw[]): AppRouteRecordRaw
 
     return {
       ...route,
-      children: sortRoutes(flattenChildrenToSecondLevel(visibleChildren, route.path))
+      children: cloneRoutesInDefinedOrder(flattenChildrenToSecondLevel(visibleChildren, route.path))
+    }
+  })
+}
+
+function applyAccessibleRedirects(
+  routes: AppRouteRecordRaw[],
+  parentPath = '/'
+): AppRouteRecordRaw[] {
+  return routes.map((route) => {
+    const routePath = resolveMenuRoutePath(route, parentPath)
+    const children = route.children
+      ? applyAccessibleRedirects(route.children, routePath)
+      : route.children
+    const firstChildPath = children?.length
+      ? resolveFirstAccessibleMenuPath(children, routePath)
+      : ''
+
+    return {
+      ...route,
+      ...(firstChildPath ? { redirect: firstChildPath } : {}),
+      children
     }
   })
 }
@@ -137,7 +142,7 @@ export const usePermissionStore = defineStore('permission', {
     async generateRoutes(): Promise<void> {
       const userStore = useUserStore(store)
       const accessRoutes = filterRoutesByAccess(cloneDeep(remainingRouter), userStore.user)
-      const routers = flattenMenusToTwoLevels(accessRoutes)
+      const routers = applyAccessibleRedirects(flattenMenusToTwoLevels(accessRoutes))
 
       this.routers = routers
       this.addRouters = getDefaultRoutes(routers)
@@ -151,4 +156,15 @@ export const usePermissionStore = defineStore('permission', {
 
 export const usePermissionStoreWithOut = () => {
   return usePermissionStore(store)
+}
+
+if (import.meta.hot) {
+  import.meta.hot.accept('@/router/modules/remaining', () => {
+    const userStore = useUserStore(store)
+    if (!userStore.getIsSetUser) {
+      return
+    }
+
+    void usePermissionStore(store).generateRoutes()
+  })
 }

@@ -168,6 +168,7 @@ import type { RouteLocationNormalizedLoaded } from "vue-router";
 import * as authUtil from "@/utils/auth";
 import { useIcon } from "@/hooks/web/useIcon";
 import { usePermissionStoreWithOut } from "@/store/modules/permission";
+import { resolveFirstAccessibleMenuPath } from "@/router/menu-path";
 import * as LoginApi from "@/api/login";
 import { LoginStateEnum, useFormValid, useLoginState } from "./useLogin";
 import { useUserStoreWithOut } from "@/store/modules/user";
@@ -196,6 +197,12 @@ const LoginRules = {
   account: [required],
   password: [required],
 };
+
+const resolveFirstAccessiblePath = () => {
+  const permissionStore = usePermissionStoreWithOut();
+  return resolveFirstAccessibleMenuPath(permissionStore.getAddRouters) || "/403";
+};
+
 const loginData = reactive({
   isShowPassword: false,
   tenantEnable: import.meta.env.VITE_APP_TENANT_ENABLE,
@@ -302,7 +309,7 @@ const handleLogin = async () => {
       // 生成路由
       await permissionStore.generateRoutes();
 
-      await push({ path: "/" });
+      await push({ path: resolveFirstAccessiblePath() });
     } catch (error) {
       console.error("获取用户信息或生成路由失败:", error);
       message.error("系统初始化失败，请刷新页面重试");

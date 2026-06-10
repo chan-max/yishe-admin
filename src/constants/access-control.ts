@@ -5,6 +5,7 @@ export interface MenuAccessOption {
   key: string;
   label: string;
   adminOnly?: boolean;
+  legacyKeys?: string[];
 }
 
 export interface MenuAccessGroup {
@@ -20,119 +21,6 @@ export const ADMIN_ONLY_MENU_KEYS = new Set([
   "system.operatelog",
   "system.file-log",
 ]);
-
-export const MENU_ACCESS_GROUPS: MenuAccessGroup[] = [
-  {
-    label: "工作台",
-    options: [
-      { key: "home.index", label: "首页" },
-      { key: "home.hot-search", label: "热搜" },
-      { key: "home.tools", label: "工具" },
-      { key: "home.statistics", label: "数据统计" },
-    ],
-  },
-  {
-    label: "资源中心",
-    options: [
-      { key: "resource.crawler-material", label: "爬图素材" },
-      { key: "resource.material", label: "图片素材" },
-      { key: FILE_RESOURCE_MENU_KEY, label: "文件资源" },
-      { key: "resource.asset-3d", label: "3D资源" },
-      { key: "resource.font", label: "字体" },
-      { key: "resource.psd", label: "PSD模板" },
-      { key: "resource.story-script", label: "故事脚本" },
-      { key: "resource.sentence", label: "文案管理" },
-      { key: "resource.text-document", label: "文档库" },
-    ],
-  },
-  {
-    label: "内容与自动化",
-    options: [
-      { key: "content.code-script", label: "代码脚本" },
-      { key: "content.code-script-schedule", label: "脚本调度" },
-      { key: "content.remotion-video-record", label: "视频模板(video-template)" },
-      { key: "content.image-processing-record", label: "图片处理(image-tool)" },
-    ],
-  },
-  {
-    label: "客户端功能",
-    options: [
-      { key: "external.browser-automation", label: "浏览器自动化" },
-      { key: "external.browser-plugin", label: "浏览器插件" },
-      { key: "external.ps-automation", label: "PS 自动化" },
-      { key: "external.google-art", label: "Google Art" },
-      { key: "client.management", label: "客户端管理" },
-    ],
-  },
-  {
-    label: "设计工具",
-    options: [{ key: "design-tool.connection", label: "连接管理" }],
-  },
-  {
-    label: "AI创作",
-    options: [
-      { key: "ai.assistant", label: "智能助手" },
-      { key: "ai.tti", label: "AI文字生成图片" },
-      { key: "ai.tts", label: "AI文字转语音" },
-      { key: "ai.agent", label: "Agent 控制台" },
-      { key: "ai.prompt", label: "AI提示词管理" },
-    ],
-  },
-  {
-    label: "商品与发布",
-    options: [
-      { key: "product.category", label: "商品种类" },
-      { key: "product.psd-set", label: "套图" },
-      { key: "product.binding-records", label: "发布绑定记录" },
-      { key: "product.publish-config", label: "任务配置" },
-      { key: "product.queue", label: "任务队列" },
-    ],
-  },
-  {
-    label: "独立站",
-    options: [
-      { key: "product.index", label: "商品模块" },
-      { key: "product.generation-template", label: "商品生成模板" },
-      { key: "product.design-request", label: "设计需求" },
-      { key: "system.public-user", label: "开放用户管理" },
-    ],
-  },
-  {
-    label: "运营支持",
-    options: [
-      { key: "operation.ecom-platform-collect", label: "电商数据链路" },
-      { key: "external.toolkit", label: "工具集总览" },
-      { key: "external.toolkit.temu", label: "工具集 · Temu" },
-      { key: "external.toolkit.doudian", label: "工具集 · 抖店" },
-      { key: "external.toolkit.pdd", label: "工具集 · 拼多多" },
-      { key: "external.toolkit.kuaishou-shop", label: "工具集 · 快手小店" },
-      { key: "external.toolkit.qianniu", label: "工具集 · 千牛" },
-      { key: "external.toolkit.alibaba-1688", label: "工具集 · 1688" },
-      { key: "external.toolkit.amazon", label: "工具集 · 卖家精灵" },
-      { key: "operation.link-navigation", label: "链接导航" },
-      { key: "operation.shop", label: "店铺" },
-      { key: "operation.vendor", label: "厂家" },
-      { key: "operation.common-url", label: "通用链接" },
-    ],
-  },
-  {
-    label: "系统管理",
-    options: [
-      { key: "system.ai-api-key", label: "AI API Key" },
-      { key: "system.message-push", label: "消息推送" },
-      { key: "system.user", label: "用户管理", adminOnly: true },
-      { key: "system.company", label: "公司管理", adminOnly: true },
-      { key: "system.websocket", label: "远程连接", adminOnly: true },
-      { key: "system.service-file-cache", label: "服务缓存文件", adminOnly: true },
-      { key: "system.operatelog", label: "操作日志", adminOnly: true },
-      { key: "system.file-log", label: "系统日志", adminOnly: true },
-    ],
-  },
-  {
-    label: "个人账户",
-    options: [{ key: "personal.settings", label: "个人设置" }],
-  },
-];
 
 export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   Index: "home.index",
@@ -153,8 +41,6 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   CodeScriptSchedule: "content.code-script-schedule",
   RemotionVideoRecord: "content.remotion-video-record",
   ImageProcessingRecord: "content.image-processing-record",
-  OperationToolkitRoot: "external.toolkit",
-  OperationToolkit: "external.toolkit",
   OperationToolkitTemu: "external.toolkit.temu",
   OperationToolkitDoudian: "external.toolkit.doudian",
   OperationToolkitPdd: "external.toolkit.pdd",
@@ -183,22 +69,21 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   DesignRequest: "product.design-request",
   PublishConfig: "product.publish-config",
   SystemQueue: "product.queue",
-  EcomPlatformCollectRoot: "operation.ecom-platform-collect",
-  EcomPlatformCollectTaskPage: "operation.ecom-platform-collect",
-  EcomPlatformCollectRunPage: "operation.ecom-platform-collect",
-  EcomPlatformCollectRawPage: "operation.ecom-platform-collect",
-  EcomSelectionAnalysisTaskPage: "operation.ecom-platform-collect",
-  EcomSelectionAnalysisRunPage: "operation.ecom-platform-collect",
-  EcomSelectionAnalysisResultPage: "operation.ecom-platform-collect",
-  EcomSelectionSupplyMatchTaskPage: "operation.ecom-platform-collect",
-  EcomSelectionSupplyMatchRunPage: "operation.ecom-platform-collect",
-  EcomSelectionSupplyMatchItemPage: "operation.ecom-platform-collect",
-  ExtensionCollectIndex: "operation.ecom-platform-collect",
-  OperationEcomPlatformCollect: "operation.ecom-platform-collect",
+  EcomPlatformCollectCapabilityPage: "operation.ecom-platform-collect.capabilities",
+  EcomPlatformCollectTaskPage: "operation.ecom-platform-collect.tasks",
+  EcomPlatformCollectRunPage: "operation.ecom-platform-collect.runs",
+  EcomPlatformCollectRawPage: "operation.ecom-platform-collect.raw-records",
+  EcomSelectionAnalysisTaskPage: "operation.ecom-selection-analysis.tasks",
+  EcomSelectionAnalysisRunPage: "operation.ecom-selection-analysis.runs",
+  EcomSelectionAnalysisResultPage: "operation.ecom-selection-analysis.results",
+  EcomSelectionSupplyMatchTaskPage: "operation.ecom-selection-supply-match.tasks",
+  EcomSelectionSupplyMatchRunPage: "operation.ecom-selection-supply-match.runs",
+  EcomSelectionSupplyMatchItemPage: "operation.ecom-selection-supply-match.items",
+  ExtensionCollectIndex: "operation.extension-collect",
   OperationLinkNavigation: "operation.link-navigation",
   ShopIndex: "operation.shop",
   VendorIndex: "operation.vendor",
-  VendorProductIndex: "operation.vendor",
+  VendorProductIndex: "operation.vendor-product",
   CommonUrlIndex: "operation.common-url",
   SystemAiApiKeyIndex: "system.ai-api-key",
   MessagePushIndex: "system.message-push",
@@ -210,4 +95,26 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   SystemOperateLog: "system.operatelog",
   SystemFileLog: "system.file-log",
   PersonalSettings: "personal.settings",
+};
+
+export const ROUTE_MENU_LEGACY_KEY_MAP: Record<string, string[]> = {
+  OperationToolkitTemu: ["external.toolkit"],
+  OperationToolkitDoudian: ["external.toolkit"],
+  OperationToolkitPdd: ["external.toolkit"],
+  OperationToolkitKuaishouShop: ["external.toolkit"],
+  OperationToolkitQianniu: ["external.toolkit"],
+  OperationToolkitAlibaba1688: ["external.toolkit"],
+  OperationToolkitAmazon: ["external.toolkit"],
+  EcomPlatformCollectCapabilityPage: ["operation.ecom-platform-collect"],
+  EcomPlatformCollectTaskPage: ["operation.ecom-platform-collect"],
+  EcomPlatformCollectRunPage: ["operation.ecom-platform-collect"],
+  EcomPlatformCollectRawPage: ["operation.ecom-platform-collect"],
+  EcomSelectionAnalysisTaskPage: ["operation.ecom-platform-collect"],
+  EcomSelectionAnalysisRunPage: ["operation.ecom-platform-collect"],
+  EcomSelectionAnalysisResultPage: ["operation.ecom-platform-collect"],
+  EcomSelectionSupplyMatchTaskPage: ["operation.ecom-platform-collect"],
+  EcomSelectionSupplyMatchRunPage: ["operation.ecom-platform-collect"],
+  EcomSelectionSupplyMatchItemPage: ["operation.ecom-platform-collect"],
+  ExtensionCollectIndex: ["operation.ecom-platform-collect"],
+  VendorProductIndex: ["operation.vendor"],
 };

@@ -6,7 +6,9 @@ function readConfiguredMenuKeys(setting: any) {
   }
 
   const rawMenuAccess =
-    setting.menuAccess && typeof setting.menuAccess === "object" ? setting.menuAccess : null;
+    setting.menuAccess && typeof setting.menuAccess === "object"
+      ? setting.menuAccess
+      : null;
   const rawAccessControl =
     setting.accessControl && typeof setting.accessControl === "object"
       ? setting.accessControl
@@ -20,7 +22,11 @@ function readConfiguredMenuKeys(setting: any) {
 
   return {
     configured,
-    keys: Array.from(new Set(keys.map((item: any) => String(item || "").trim()).filter(Boolean))),
+    keys: Array.from(
+      new Set(
+        keys.map((item: any) => String(item || "").trim()).filter(Boolean),
+      ),
+    ),
   };
 }
 
@@ -40,6 +46,12 @@ export function hasRouteMenuAccess(route: AppRouteRecordRaw, user: any) {
   const isAdmin = !!user?.isAdmin;
   const routeName = String(route.name || "").trim();
   const menuKey = String(route.meta?.menuKey || "").trim();
+  const legacyMenuKeys = Array.isArray(route.meta?.legacyMenuKeys)
+    ? route.meta.legacyMenuKeys
+        .map((item: any) => String(item || "").trim())
+        .filter(Boolean)
+    : [];
+  const acceptedMenuKeys = [menuKey, ...legacyMenuKeys].filter(Boolean);
 
   if (ALWAYS_ALLOW_ROUTE_NAMES.has(routeName)) {
     return true;
@@ -59,10 +71,15 @@ export function hasRouteMenuAccess(route: AppRouteRecordRaw, user: any) {
     }
 
     if (configured) {
-      return keys.includes(menuKey);
+      return acceptedMenuKeys.some((key) => keys.includes(key));
     }
 
-    return menuKey === "personal.settings";
+    // 未配置权限时，默认允许工作台页面和个人设置
+    if (menuKey === "personal.settings" || menuKey.startsWith("home.")) {
+      return true;
+    }
+
+    return false;
   }
 
   if (!isAdmin && route.meta?.requiresAdmin) {

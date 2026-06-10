@@ -1,5 +1,8 @@
 import { Layout } from "@/utils/routerHelper";
-import { ROUTE_MENU_KEY_MAP } from "@/constants/access-control";
+import {
+  ROUTE_MENU_KEY_MAP,
+  ROUTE_MENU_LEGACY_KEY_MAP,
+} from "@/constants/access-control";
 
 const { t } = useI18n();
 /**
@@ -46,6 +49,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       noTagsView: true,
     },
   },
+  // ── 1. 工作台 ──────────────────────────────────────────────────
   {
     path: "/home",
     component: Layout,
@@ -134,6 +138,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       noTagsView: true,
     },
   },
+  // ── 2. 资源中心 ─────────────────────────────────────────────────────
   {
     path: "/resource",
     component: Layout,
@@ -251,6 +256,57 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
     ],
   },
+  // ── 3. AI创作 ─────────────────────────────────────────────────────
+  {
+    path: "/ai",
+    component: Layout,
+    name: "AiService",
+    redirect: "/ai/assistant",
+    meta: {
+      title: "AI创作",
+      icon: "ep:cpu",
+      order: 3,
+      alwaysShow: true,
+    },
+    children: [
+      {
+        path: "assistant",
+        component: () => import("@/views/ai/assistant/index.vue"),
+        name: "AiAssistant",
+        meta: {
+          title: "智能助手",
+        },
+      },
+      {
+        path: "tti",
+        component: () => import("@/views/ai/tti.vue"),
+        name: "AiTti",
+        meta: {
+          title: "AI文字生成图片",
+        },
+      },
+      {
+        path: "tts",
+        component: () => import("@/views/ai/tts.vue"),
+        name: "AiTts",
+        meta: {
+          title: "AI文字转语音",
+        },
+      },
+      {
+        path: "prompt",
+        component: () => import("@/views/material/prompt/index.vue"),
+        name: "Prompt",
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: "AI提示词管理",
+        },
+      },
+    ],
+  },
+  // ── 4. 内容与自动化 ───────────────────────────────────────────────────
   {
     path: "/content",
     component: Layout,
@@ -259,7 +315,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     meta: {
       title: "内容与自动化",
       icon: "ep:files",
-      order: 3,
+      order: 4,
       alwaysShow: true,
     },
     children: [
@@ -315,6 +371,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
     ],
   },
+  // ── 5. 客户端功能 ────────────────────────────────────────────────────
   {
     path: "/external",
     component: Layout,
@@ -323,7 +380,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     meta: {
       title: "客户端功能",
       icon: "ep:connection",
-      order: 4,
+      order: 5,
       alwaysShow: true,
     },
     children: [
@@ -388,79 +445,150 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: "客户端管理",
         },
       },
-    ],
-  },
-  {
-    path: "/design-tool",
-    component: Layout,
-    name: "DesignTool",
-    redirect: "/design-tool/connection",
-    meta: {
-      title: "设计工具",
-      icon: "ep:edit",
-      order: 4.5,
-      alwaysShow: true,
-    },
-    children: [
       {
         path: "connection",
         component: () => import("@/views/external/design-tool/index.vue"),
         name: "DesignToolConnection",
         meta: {
-          title: "连接管理",
+          title: "设计工具连接",
         },
       },
     ],
   },
+  // ── 6. 工具集 ─────────────────────────────────────────────────────
   {
-    path: "/ai",
+    path: "/operation/toolkit",
     component: Layout,
-    name: "AiService",
-    redirect: "/ai/assistant",
+    name: "OperationToolkitRoot",
+    redirect: "/operation/toolkit/temu",
     meta: {
-      title: "AI创作",
-      icon: "ep:cpu",
-      order: 4,
+      title: "工具集",
+      icon: "ep:box",
+      order: 6,
       alwaysShow: true,
     },
     children: [
       {
-        path: "assistant",
-        component: () => import("@/views/ai/assistant/index.vue"),
-        name: "AiAssistant",
+        path: "temu",
+        component: () => import("@/views/external/toolkit/index.vue"),
+        name: "OperationToolkitTemu",
         meta: {
-          title: "智能助手",
+          title: "Temu",
+          toolkitPlatform: "temu",
         },
       },
       {
-        path: "tti",
-        component: () => import("@/views/ai/tti.vue"),
-        name: "AiTti",
+        path: "doudian",
+        component: () => import("@/views/external/toolkit/doudian/index.vue"),
+        name: "OperationToolkitDoudian",
         meta: {
-          title: "AI文字生成图片",
+          title: "抖店",
+          toolkitPlatform: "doudian",
         },
       },
       {
-        path: "tts",
-        component: () => import("@/views/ai/tts.vue"),
-        name: "AiTts",
+        path: "pdd",
+        component: () => import("@/views/external/toolkit/pdd/index.vue"),
+        name: "OperationToolkitPdd",
         meta: {
-          title: "AI文字转语音",
+          title: "拼多多",
+          toolkitPlatform: "pdd",
         },
       },
       {
-        path: "prompt",
-        component: () => import("@/views/material/prompt/index.vue"),
-        name: "Prompt",
+        path: "kuaishou-shop",
+        component: () =>
+          import("@/views/external/toolkit/kuaishou-shop/index.vue"),
+        name: "OperationToolkitKuaishouShop",
         meta: {
-          canTo: true,
-          hidden: false,
-          noTagsView: false,
-          title: "AI提示词管理",
+          title: "快手小店",
+          toolkitPlatform: "kuaishou_shop",
+        },
+      },
+      {
+        path: "qianniu",
+        component: () => import("@/views/external/toolkit/qianniu/index.vue"),
+        name: "OperationToolkitQianniu",
+        meta: {
+          title: "千牛",
+          toolkitPlatform: "qianniu",
+        },
+      },
+      {
+        path: "alibaba-1688",
+        component: () =>
+          import("@/views/external/toolkit/alibaba-1688/index.vue"),
+        name: "OperationToolkitAlibaba1688",
+        meta: {
+          title: "1688",
+          toolkitPlatform: "alibaba_1688",
+        },
+      },
+      {
+        path: "amazon",
+        component: () => import("@/views/external/toolkit/amazon/index.vue"),
+        name: "OperationToolkitAmazon",
+        meta: {
+          title: "卖家精灵（亚马逊）",
+          toolkitPlatform: "amazon",
         },
       },
     ],
   },
+  // ── 7. 独立站 ──────────────────────────────────────────────────────────────────
+  {
+    path: "/independent-site",
+    component: Layout,
+    name: "IndependentSite",
+    redirect: "/independent-site/product",
+    meta: {
+      title: "独立站",
+      icon: "ep:shop",
+      order: 7,
+      alwaysShow: true,
+    },
+    children: [
+      {
+        path: "product",
+        component: () => import("@/views/product/index/index.vue"),
+        name: "ProductIndex",
+        meta: {
+          title: "商品模块",
+          order: 1,
+        },
+      },
+      {
+        path: "generation-template",
+        component: () =>
+          import("@/views/product/generation-template/index.vue"),
+        name: "ProductGenerationTemplate",
+        meta: {
+          title: "商品生成模板",
+          order: 2,
+        },
+      },
+      {
+        path: "design-request",
+        component: () => import("@/views/material/designRequest/index.vue"),
+        name: "DesignRequest",
+        meta: {
+          title: "设计请求",
+          order: 3,
+        },
+      },
+      {
+        path: "public-user",
+        component: () => import("@/views/system/public-user/index.vue"),
+        name: "PublicUser",
+        meta: {
+          title: "开放用户管理",
+          requiresAdmin: true,
+          order: 4,
+        },
+      },
+    ],
+  },
+  // ── 9. 商品与发布 ────────────────────────────────────────────────────
   {
     path: "/product",
     component: Layout,
@@ -469,7 +597,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     meta: {
       title: "商品与发布",
       icon: "ep:goods",
-      order: 6,
+      order: 9,
       alwaysShow: true,
     },
     children: [
@@ -523,58 +651,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
     ],
   },
-  {
-    path: "/independent-site",
-    component: Layout,
-    name: "IndependentSite",
-    redirect: "/independent-site/product",
-    meta: {
-      title: "独立站",
-      icon: "ep:shop",
-      order: 5,
-      alwaysShow: true,
-    },
-    children: [
-      {
-        path: "product",
-        component: () => import("@/views/product/index/index.vue"),
-        name: "ProductIndex",
-        meta: {
-          title: "商品模块",
-          order: 1,
-        },
-      },
-      {
-        path: "generation-template",
-        component: () =>
-          import("@/views/product/generation-template/index.vue"),
-        name: "ProductGenerationTemplate",
-        meta: {
-          title: "商品生成模板",
-          order: 2,
-        },
-      },
-      {
-        path: "design-request",
-        component: () => import("@/views/material/designRequest/index.vue"),
-        name: "DesignRequest",
-        meta: {
-          title: "设计请求",
-          order: 3,
-        },
-      },
-      {
-        path: "public-user",
-        component: () => import("@/views/system/public-user/index.vue"),
-        name: "PublicUser",
-        meta: {
-          title: "开放用户管理",
-          requiresAdmin: true,
-          order: 4,
-        },
-      },
-    ],
-  },
+  // ── 10. 电商数据链路 ───────────────────────────────────────────────────
   {
     path: "/ecom-platform-collect",
     component: Layout,
@@ -583,7 +660,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     meta: {
       title: "电商数据链路",
       icon: "ep:data-analysis",
-      order: 6,
+      order: 10,
       alwaysShow: true,
     },
     children: [
@@ -699,6 +776,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
     ],
   },
+  // ── 11. 运营支持 ─────────────────────────────────────────────────────
   {
     path: "/operation",
     component: Layout,
@@ -707,7 +785,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     meta: {
       title: "运营支持",
       icon: "ep:shop",
-      order: 7,
+      order: 11,
       alwaysShow: true,
     },
     children: [
@@ -753,85 +831,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
     ],
   },
-  {
-    path: "/operation/toolkit",
-    component: Layout,
-    name: "OperationToolkitRoot",
-    redirect: "/operation/toolkit/temu",
-    meta: {
-      title: "工具集",
-      icon: "ep:box",
-      order: 7,
-      alwaysShow: true,
-    },
-    children: [
-      {
-        path: "temu",
-        component: () => import("@/views/external/toolkit/index.vue"),
-        name: "OperationToolkitTemu",
-        meta: {
-          title: "Temu",
-          toolkitPlatform: "temu",
-        },
-      },
-      {
-        path: "doudian",
-        component: () => import("@/views/external/toolkit/doudian/index.vue"),
-        name: "OperationToolkitDoudian",
-        meta: {
-          title: "抖店",
-          toolkitPlatform: "doudian",
-        },
-      },
-      {
-        path: "pdd",
-        component: () => import("@/views/external/toolkit/pdd/index.vue"),
-        name: "OperationToolkitPdd",
-        meta: {
-          title: "拼多多",
-          toolkitPlatform: "pdd",
-        },
-      },
-      {
-        path: "kuaishou-shop",
-        component: () =>
-          import("@/views/external/toolkit/kuaishou-shop/index.vue"),
-        name: "OperationToolkitKuaishouShop",
-        meta: {
-          title: "快手小店",
-          toolkitPlatform: "kuaishou_shop",
-        },
-      },
-      {
-        path: "qianniu",
-        component: () => import("@/views/external/toolkit/qianniu/index.vue"),
-        name: "OperationToolkitQianniu",
-        meta: {
-          title: "千牛",
-          toolkitPlatform: "qianniu",
-        },
-      },
-      {
-        path: "alibaba-1688",
-        component: () =>
-          import("@/views/external/toolkit/alibaba-1688/index.vue"),
-        name: "OperationToolkitAlibaba1688",
-        meta: {
-          title: "1688",
-          toolkitPlatform: "alibaba_1688",
-        },
-      },
-      {
-        path: "amazon",
-        component: () => import("@/views/external/toolkit/amazon/index.vue"),
-        name: "OperationToolkitAmazon",
-        meta: {
-          title: "卖家精灵（亚马逊）",
-          toolkitPlatform: "amazon",
-        },
-      },
-    ],
-  },
+  // ── 12. 个人设置 ────────────────────────────────────────────────────
   {
     path: "/personal",
     component: Layout,
@@ -840,7 +840,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     meta: {
       title: "个人设置",
       icon: "ep:user-filled",
-      order: 7,
+      order: 12,
       alwaysShow: true,
     },
     children: [
@@ -854,6 +854,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
     ],
   },
+  // ── 13. 系统管理 ────────────────────────────────────────────────────
   {
     path: "/system",
     component: Layout,
@@ -862,7 +863,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     meta: {
       title: "系统管理",
       icon: "ep:setting",
-      order: 8,
+      order: 13,
       alwaysShow: true,
     },
     children: [
@@ -950,6 +951,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
     path: "/user/profile",
     redirect: "/personal/settings",
     name: "UserProfileCompat",
+    meta: {
+      hidden: true,
+      noTagsView: true,
+    },
+  },
+  {
+    path: "/design-tool/connection",
+    redirect: "/external/connection",
+    name: "DesignToolConnectionCompat",
     meta: {
       hidden: true,
       noTagsView: true,
@@ -1099,16 +1109,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
       noTagsView: true,
     },
   },
-  // Agent 调试台兼容路由先一并停用，避免继续访问旧入口。
-  // {
-  //   path: "/ai/generation/agent",
-  //   redirect: "/ai/agent",
-  //   name: "AiGenerationAgentCompat",
-  //   meta: {
-  //     hidden: true,
-  //     noTagsView: true,
-  //   },
-  // },
   {
     path: "/shop",
     redirect: "/operation/shop",
@@ -1402,13 +1402,16 @@ const remainingRouter: AppRouteRecordRaw[] = [
 
 function attachMenuKeys(routes: AppRouteRecordRaw[]): AppRouteRecordRaw[] {
   return routes.map((route) => {
-    const menuKey = route.name ? ROUTE_MENU_KEY_MAP[String(route.name)] : "";
+    const routeName = route.name ? String(route.name) : "";
+    const menuKey = routeName ? ROUTE_MENU_KEY_MAP[routeName] : "";
+    const legacyMenuKeys = routeName ? ROUTE_MENU_LEGACY_KEY_MAP[routeName] : [];
     return {
       ...route,
       meta: menuKey
         ? {
             ...(route.meta || {}),
             menuKey,
+            ...(legacyMenuKeys?.length ? { legacyMenuKeys } : {}),
           }
         : route.meta,
       children: route.children

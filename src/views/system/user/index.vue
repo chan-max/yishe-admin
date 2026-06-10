@@ -315,9 +315,7 @@
       </div>
     </el-form>
     <template #footer>
-      <div
-        class="flex justify-end gap-3 border-t border-solid border-[var(--el-border-color-lighter)] pt-4"
-      >
+      <div class="flex justify-end gap-3">
         <el-button :disabled="submitLoading" @click="dialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="submitLoading" @click="handleSubmit">确定</el-button>
       </div>
@@ -359,9 +357,7 @@
       </div>
     </el-form>
     <template #footer>
-      <div
-        class="flex justify-end gap-3 border-t border-solid border-[var(--el-border-color-lighter)] pt-4"
-      >
+      <div class="flex justify-end gap-3">
         <el-button :disabled="passwordSubmitLoading" @click="passwordDialogVisible = false"
           >取消</el-button
         >

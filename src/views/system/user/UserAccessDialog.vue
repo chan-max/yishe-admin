@@ -106,7 +106,12 @@ import {
   updateUserAccessSetting,
   type UserAccessControlSetting,
 } from "@/api/user";
-import { MENU_ACCESS_GROUPS, type MenuAccessOption } from "@/constants/access-control";
+import type { MenuAccessOption } from "@/constants/access-control";
+import {
+  MENU_ACCESS_GROUPS,
+  MENU_ACCESS_OPTIONS,
+  normalizeMenuAccessKeys,
+} from "@/router/menu-access-options";
 
 const props = defineProps<{
   modelValue: boolean;
@@ -132,8 +137,7 @@ const form = reactive<UserAccessControlSetting>({
   aiAccessEnabled: false,
 });
 
-const allMenuOptions = MENU_ACCESS_GROUPS.flatMap((group) => group.options);
-const allMenuKeySet = new Set(allMenuOptions.map((option) => option.key));
+const allMenuOptions = MENU_ACCESS_OPTIONS;
 const targetUserIsAdmin = computed(() => !!props.userIsAdmin);
 const selectableMenuKeys = computed(() =>
   allMenuOptions
@@ -143,14 +147,7 @@ const selectableMenuKeys = computed(() =>
 const selectableMenuKeySet = computed(() => new Set(selectableMenuKeys.value));
 
 function sanitizeMenuKeys(menuKeys: string[]) {
-  return Array.from(
-    new Set(
-      menuKeys
-        .map((item) => String(item || "").trim())
-        .filter((item) => allMenuKeySet.has(item))
-        .filter((item) => selectableMenuKeySet.value.has(item)),
-    ),
-  );
+  return normalizeMenuAccessKeys(menuKeys, selectableMenuKeySet.value);
 }
 
 function isOptionDisabled(option: MenuAccessOption) {

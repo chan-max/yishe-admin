@@ -8,6 +8,7 @@ import { useDictStoreWithOut } from "@/store/modules/dict";
 import { useUserStoreWithOut } from "@/store/modules/user";
 import { usePermissionStoreWithOut } from "@/store/modules/permission";
 import { hasRouteMenuAccess } from "@/router/access-control";
+import { resolveFirstAccessibleMenuPath } from "@/router/menu-path";
 
 const { start, done } = useNProgress();
 
@@ -62,16 +63,7 @@ const whiteList = [
 
 const resolveFirstAccessiblePath = () => {
   const permissionStore = usePermissionStoreWithOut();
-  const firstRoute = permissionStore.getAddRouters[0];
-  if (!firstRoute) {
-    return "/403";
-  }
-
-  if (typeof firstRoute.redirect === "string" && firstRoute.redirect) {
-    return firstRoute.redirect;
-  }
-
-  return firstRoute.path || "/403";
+  return resolveFirstAccessibleMenuPath(permissionStore.getAddRouters) || "/403";
 };
 
 const handleDeniedRoute = (to: any, next: any) => {
@@ -92,13 +84,10 @@ router.beforeEach(async (to, from, next) => {
   start();
   loadStart();
   if (getAccessToken()) {
+    const dictStore = useDictStoreWithOut();
+    const userStore = useUserStoreWithOut();
+    const permissionStore = usePermissionStoreWithOut();
     if (to.path === "/login") {
-      next({ path: "/home/index" });
-    } else {
-      // 获取所有字典
-      const dictStore = useDictStoreWithOut();
-      const userStore = useUserStoreWithOut();
-      const permissionStore = usePermissionStoreWithOut();
       if (!dictStore.getIsSetDict) {
         await dictStore.setDictMap();
       }
@@ -106,7 +95,30 @@ router.beforeEach(async (to, from, next) => {
         isRelogin.show = true;
         await userStore.setUserInfoAction();
         isRelogin.show = false;
+      }
+      await permissionStore.generateRoutes();
+      next({ path: resolveFirstAccessiblePath(), replace: true });
+    } else {
+      // 获取所有字典
+      if (!dictStore.getIsSetDict) {
+        await dictStore.setDictMap();
+      }
+      const needsUserInit = !userStore.getIsSetUser;
+      const shouldRebuildRoutes =
+        needsUserInit || !permissionStore.getAddRouters.length || to.path === "/";
+      if (shouldRebuildRoutes) {
+        isRelogin.show = true;
+        if (needsUserInit) {
+          await userStore.setUserInfoAction();
+        }
+        isRelogin.show = false;
         await permissionStore.generateRoutes();
+      }
+      if (to.path === "/") {
+        next({ path: resolveFirstAccessiblePath(), replace: true });
+        return;
+      }
+      if (needsUserInit) {
         if (!hasPageAccess(to, userStore.getUser)) {
           handleDeniedRoute(to, next);
           return;
