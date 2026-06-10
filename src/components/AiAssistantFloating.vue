@@ -53,23 +53,58 @@ const handleSend = async () => {
   const userText = inputText.value.trim();
   inputText.value = "";
   messages.value.push({ role: "user", content: userText });
+
+  // 先插入一条空的 assistant 消息，流式填充
+  const assistantIdx = messages.value.length;
+  messages.value.push({ role: "assistant", content: "" });
   loading.value = true;
 
   await nextTick();
   scrollToBottom();
 
+  let gotAnyText = false;
+
   try {
-    const result = await AiAssistantApi.chat({
-      message: userText,
-      conversationId: conversationId.value || undefined,
-    });
-    const assistantText = result.reply || result.content || "暂无回复";
-    messages.value.push({ role: "assistant", content: assistantText });
+    await AiAssistantApi.chatStream(
+      {
+        message: userText,
+        conversationId: conversationId.value || undefined,
+      },
+      {
+        onEvent: (event) => {
+          const { event: type, data } = event;
+          if (type === "assistant.answer.delta" && data?.text) {
+            messages.value[assistantIdx].content += data.text;
+            gotAnyText = true;
+            scrollToBottom();
+          } else if (type === "assistant.answer" && data?.text) {
+            // 完整回复（非增量模式兜底）
+            if (!gotAnyText) {
+              messages.value[assistantIdx].content = data.text;
+              gotAnyText = true;
+            }
+          } else if (type === "run.completed" && data?.conversationId) {
+            conversationId.value = data.conversationId;
+          }
+        },
+        onError: (err) => {
+          if (!gotAnyText) {
+            messages.value[assistantIdx].content =
+              "请求失败: " + (err?.message || "未知错误");
+          }
+        },
+        onDone: () => {
+          if (!gotAnyText) {
+            messages.value[assistantIdx].content = "暂无回复";
+          }
+        },
+      },
+    );
   } catch (e: any) {
-    messages.value.push({
-      role: "assistant",
-      content: "请求失败: " + (e?.message || "未知错误"),
-    });
+    if (!gotAnyText) {
+      messages.value[assistantIdx].content =
+        "请求失败: " + (e?.message || "未知错误");
+    }
   } finally {
     loading.value = false;
     await nextTick();

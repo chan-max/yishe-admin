@@ -6,7 +6,8 @@
       "Bash(findstr *)",
       "Bash(del *)",
       "Bash(select-string *)",
-      "Bash(select-object *)"
+      "Bash(select-object *)",
+      "Agent(Explore)"
     ]
   },
   "$version": 4

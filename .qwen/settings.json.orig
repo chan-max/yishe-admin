@@ -5,7 +5,8 @@
       "Bash(npx *)",
       "Bash(findstr *)",
       "Bash(del *)",
-      "Bash(select-string *)"
+      "Bash(select-string *)",
+      "Bash(select-object *)"
     ]
   },
   "$version": 4
