@@ -265,7 +265,10 @@ export const AiAssistantApi = {
     });
   },
 
-  updateConversationPersona: async (conversationId: number, personaKey: string) => {
+  updateConversationPersona: async (
+    conversationId: number,
+    personaKey: string,
+  ) => {
     return request.patch<AiAssistantConversation>({
       url: `/ai-assistant/conversations/${conversationId}/persona`,
       data: { personaKey },
@@ -296,6 +299,25 @@ export const AiAssistantApi = {
     return request.delete({
       url: "/ai-assistant/messages",
       params: { conversationId: conversationId || undefined },
+    });
+  },
+
+  getCommands: async () => {
+    return request.get<{
+      commands: Array<{
+        name: string;
+        aliases: string[];
+        category: string;
+        description: string;
+        arguments: Array<{
+          name: string;
+          type: string;
+          required: boolean;
+          description: string;
+        }>;
+      }>;
+    }>({
+      url: "/ai-assistant/commands",
     });
   },
 
@@ -348,7 +370,8 @@ export const AiAssistantApi = {
 
   chatStream: async (...args: any[]) => {
     const first = args[0];
-    const isObjectCall = first && typeof first === "object" && !Array.isArray(first);
+    const isObjectCall =
+      first && typeof first === "object" && !Array.isArray(first);
     const body = isObjectCall
       ? first
       : {
@@ -448,7 +471,11 @@ export const AiAssistantApi = {
     });
   },
 
-  getRunEvents: async (runId: string, conversationId?: number | null, limit = 100) => {
+  getRunEvents: async (
+    runId: string,
+    conversationId?: number | null,
+    limit = 100,
+  ) => {
     return request.get<AiAssistantRunEventsResult>({
       url: `/ai-assistant/runs/${runId}/events`,
       params: {

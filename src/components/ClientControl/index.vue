@@ -133,6 +133,55 @@
                 <div class="detail-row"><span class="detail-key">用户 ID</span><span class="detail-value">{{ currentUserId(client) }}</span></div>
               </div>
 
+              <div v-if="getAgentStatus(client)" class="detail-card detail-card--full agent-card">
+                <div class="detail-card__title">
+                  <Icon icon="ep:cpu" class="mr-4px" />
+                  AI Agent 状态
+                  <el-tag :type="agentStateType(getAgentStatus(client).agentState)" size="small" class="ml-8px">
+                    {{ agentStateLabel(getAgentStatus(client).agentState) }}
+                  </el-tag>
+                  <el-tag v-if="getAgentStatus(client).available" type="success" size="small" class="ml-4px">可制作</el-tag>
+                </div>
+                <div class="agent-grid">
+                  <div v-if="getAgentStatus(client).userInput" class="agent-row">
+                    <span class="agent-label">用户输入</span>
+                    <span class="agent-value agent-value--highlight">{{ getAgentStatus(client).userInput }}</span>
+                  </div>
+                  <div v-if="getAgentStatus(client).plan" class="agent-row">
+                    <span class="agent-label">执行计划</span>
+                    <span class="agent-value">
+                      {{ getAgentStatus(client).plan.goal }}
+                      <el-progress
+                        :percentage="Math.round(getAgentStatus(client).plan.currentStep / getAgentStatus(client).plan.totalSteps * 100)"
+                        :stroke-width="8"
+                        style="width: 120px; display: inline-flex; vertical-align: middle; margin-left: 8px;"
+                      />
+                      {{ getAgentStatus(client).plan.currentStep }}/{{ getAgentStatus(client).plan.totalSteps }}
+                    </span>
+                  </div>
+                  <div v-if="getAgentStatus(client).step" class="agent-row">
+                    <span class="agent-label">当前步骤</span>
+                    <span class="agent-value">{{ getAgentStatus(client).step }}</span>
+                  </div>
+                  <div v-if="getAgentStatus(client).lastToolCall" class="agent-row">
+                    <span class="agent-label">最近工具</span>
+                    <span class="agent-value agent-value--mono">{{ getAgentStatus(client).lastToolCall }}</span>
+                  </div>
+                  <div v-if="getAgentStatus(client).iteration" class="agent-row">
+                    <span class="agent-label">推理轮次</span>
+                    <span class="agent-value">第 {{ getAgentStatus(client).iteration }} 轮</span>
+                  </div>
+                  <div v-if="getAgentStatus(client).lastError" class="agent-row">
+                    <span class="agent-label">错误</span>
+                    <span class="agent-value" style="color: var(--el-color-danger);">{{ getAgentStatus(client).lastError }}</span>
+                  </div>
+                  <div class="agent-row">
+                    <span class="agent-label">更新时间</span>
+                    <span class="agent-value">{{ formatAgentTime(getAgentStatus(client).updatedAt) }}</span>
+                  </div>
+                </div>
+              </div>
+
               <div class="detail-card detail-card--full">
                 <div class="detail-card__title">地理与网络</div>
                 <div class="detail-row"><span class="detail-key">地区</span><span class="detail-value">{{ formatLocation(client) }}</span></div>
@@ -326,6 +375,34 @@ const formatLocation = (client: WebsocketConnectionVO) => {
   return fields.length ? fields.join(' / ') : '-'
 }
 
+const getAgentStatus = (client: WebsocketConnectionVO) => {
+  return (client.clientInfo as any)?.agent || null
+}
+
+const agentStateLabel = (state: string) => {
+  const map: Record<string, string> = {
+    idle: '空闲', thinking: '思考中', executing: '执行中',
+    waiting_user: '等待用户', error: '异常',
+  }
+  return map[state] || state
+}
+
+const agentStateType = (state: string): '' | 'success' | 'warning' | 'danger' | 'info' => {
+  const map: Record<string, '' | 'success' | 'warning' | 'danger' | 'info'> = {
+    idle: 'success', thinking: 'warning', executing: '',
+    waiting_user: 'info', error: 'danger',
+  }
+  return map[state] || 'info'
+}
+
+const formatAgentTime = (isoStr: string) => {
+  if (!isoStr) return '-'
+  try {
+    const d = new Date(isoStr)
+    return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  } catch { return isoStr }
+}
+
 const toggleExpand = (id: string) => {
   if (expandedIds.value.includes(id)) {
     expandedIds.value = expandedIds.value.filter((item) => item !== id)
@@ -375,7 +452,7 @@ const handleConfirmSendMessage = async () => {
       currentClient.value.id,
       messageContent.value.trim()
     )
-    
+
     if (success) {
       sendMessageDialogVisible.value = false
       messageContent.value = ''
@@ -393,6 +470,48 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+.agent-card {
+  background: var(--el-color-primary-light-9);
+  border: 1px solid var(--el-color-primary-light-7);
+}
+
+.agent-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.agent-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 3px 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.agent-label {
+  color: var(--el-text-color-secondary);
+  white-space: nowrap;
+  min-width: 72px;
+  flex-shrink: 0;
+}
+
+.agent-value {
+  color: var(--el-text-color-primary);
+  word-break: break-all;
+}
+
+.agent-value--highlight {
+  color: var(--el-color-primary);
+  font-weight: 500;
+}
+
+.agent-value--mono {
+  font-family: 'SF Mono', 'Cascadia Code', Consolas, monospace;
+  font-size: 12px;
+}
+
 .client-control {
   .card-header {
     display: flex;

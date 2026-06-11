@@ -446,7 +446,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         },
       },
       {
-        path: "connection",
+        path: "design-tool",
         component: () => import("@/views/external/design-tool/index.vue"),
         name: "DesignToolConnection",
         meta: {
@@ -958,8 +958,17 @@ const remainingRouter: AppRouteRecordRaw[] = [
   },
   {
     path: "/design-tool/connection",
-    redirect: "/external/connection",
+    redirect: "/external/design-tool",
     name: "DesignToolConnectionCompat",
+    meta: {
+      hidden: true,
+      noTagsView: true,
+    },
+  },
+  {
+    path: "/external/connection",
+    redirect: "/external/design-tool",
+    name: "ExternalConnectionCompat",
     meta: {
       hidden: true,
       noTagsView: true,
@@ -1404,7 +1413,9 @@ function attachMenuKeys(routes: AppRouteRecordRaw[]): AppRouteRecordRaw[] {
   return routes.map((route) => {
     const routeName = route.name ? String(route.name) : "";
     const menuKey = routeName ? ROUTE_MENU_KEY_MAP[routeName] : "";
-    const legacyMenuKeys = routeName ? ROUTE_MENU_LEGACY_KEY_MAP[routeName] : [];
+    const legacyMenuKeys = routeName
+      ? ROUTE_MENU_LEGACY_KEY_MAP[routeName]
+      : [];
     return {
       ...route,
       meta: menuKey

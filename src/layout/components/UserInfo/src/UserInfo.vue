@@ -1,11 +1,12 @@
 <script lang="ts" setup>
-import { ElMessageBox } from "element-plus";
+import { ElMessage, ElMessageBox } from "element-plus";
 
 import avatarImg from "@/assets/imgs/avatar.png";
 import { useDesign } from "@/hooks/web/useDesign";
 import { useTagsViewStore } from "@/store/modules/tagsView";
 import { usePermissionStore } from "@/store/modules/permission";
 import { useUserStore } from "@/store/modules/user";
+import { getAccessToken } from "@/utils/auth";
 
 defineOptions({ name: "UserInfo" });
 
@@ -76,6 +77,55 @@ const toProfile = async () => {
   }
   push("/personal/settings");
 };
+
+function copyToClipboard(text: string): boolean {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {}
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.style.cssText = "position:fixed;left:-9999px;top:-9999px;opacity:0";
+  document.body.appendChild(textarea);
+  textarea.select();
+  try {
+    document.execCommand("copy");
+    return true;
+  } catch {
+    return false;
+  } finally {
+    document.body.removeChild(textarea);
+  }
+}
+
+function handleViewToken() {
+  const token = getAccessToken();
+  if (!token) {
+    ElMessage.warning("当前没有可用的 Token");
+    return;
+  }
+  ElMessageBox.alert(
+    `<div style="word-break:break-all;font-family:monospace;font-size:12px;line-height:1.6;max-height:200px;overflow-y:auto;padding:8px;background:var(--el-fill-color-light);border-radius:4px;user-select:all">${token}</div>`,
+    "当前登录 Token",
+    {
+      dangerouslyUseHTMLString: true,
+      confirmButtonText: "复制并关闭",
+      showClose: true,
+      customClass: "token-viewer-dialog",
+      callback: (action: string) => {
+        if (action === "confirm") {
+          if (copyToClipboard(token)) {
+            ElMessage.success("Token 已复制到剪贴板");
+          } else {
+            ElMessage.error("复制失败，请手动选中复制");
+          }
+        }
+      },
+    },
+  );
+}
 </script>
 
 <template>
@@ -106,6 +156,10 @@ const toProfile = async () => {
           <ElDropdownItem v-if="canAccessProfile" @click="toProfile" class="ud-item">
             <Icon icon="ep:user" class="ud-icon" />
             {{ t("common.profile") }}
+          </ElDropdownItem>
+          <ElDropdownItem @click="handleViewToken" class="ud-item">
+            <Icon icon="ep:view" class="ud-icon" />
+            查看 Token
           </ElDropdownItem>
           <div class="ud-sep" />
           <ElDropdownItem @click="loginOut" class="ud-item ud-item--out">
@@ -280,6 +334,30 @@ const toProfile = async () => {
   .user-trigger {
     padding: 2px;
     gap: 0;
+  }
+}
+</style>
+
+<style lang="scss">
+/* Token viewer dialog — must be global (ElMessageBox renders outside scoped scope) */
+.token-viewer-dialog {
+  max-width: 560px;
+
+  .el-message-box__header {
+    padding-bottom: 8px;
+  }
+
+  .el-message-box__title {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .el-message-box__content {
+    padding-top: 0;
+  }
+
+  .el-message-box__btns {
+    padding-top: 12px;
   }
 }
 </style>
