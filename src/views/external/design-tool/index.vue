@@ -111,7 +111,7 @@
                 <el-dropdown-menu>
                   <el-dropdown-item command="chat">发送指令</el-dropdown-item>
                   <el-dropdown-item command="log">对话日志</el-dropdown-item>
-                  <el-dropdown-item command="clear" divided>清空画布</el-dropdown-item>
+                  <el-dropdown-item command="clear" divided>清空对话</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -416,6 +416,7 @@ const remoteResults = ref<Array<{
   requestId: string;
   success: boolean;
   message?: string;
+  agentResponse?: string;
   error?: string;
   connectionId?: string;
   reportedAt?: string;
@@ -618,6 +619,7 @@ const resultHandler = (data: any) => {
     requestId: data?.requestId || "unknown",
     success: data?.success,
     message: data?.message,
+    agentResponse: data?.agentResponse,
     error: data?.error,
     connectionId: data?.connectionId,
     reportedAt: data?.reportedAt,
