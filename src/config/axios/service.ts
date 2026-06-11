@@ -208,10 +208,10 @@ service.interceptors.request.use(
     let isToken = requestHeaders?.isToken === false;
     const isLoginEndpoint = config.url && config.url.indexOf("/auth/login") > -1;
 
-    // 登录接口特殊处理：如果有 token，也带上 token（后端会检查是否有效）
-    if (isLoginEndpoint && getAccessToken()) {
-      config.headers.Authorization = "Bearer " + getAccessToken();
-      console.log("登录接口：检测到已有 token，已添加到请求头（后端会检查是否有效）");
+    // 登录接口必须只使用本次输入的账号密码，避免残留 token 干扰后端鉴权判断。
+    if (isLoginEndpoint) {
+      delete config.headers.Authorization;
+      isToken = false;
     } else {
       // 其他接口按原逻辑处理
       whiteList.some((v) => {

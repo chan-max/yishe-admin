@@ -172,7 +172,7 @@ import { resolveFirstAccessibleMenuPath } from "@/router/menu-path";
 import * as LoginApi from "@/api/login";
 import { LoginStateEnum, useFormValid, useLoginState } from "./useLogin";
 import { useUserStoreWithOut } from "@/store/modules/user";
-import { setAccessToken } from "@/utils/auth";
+import { removeToken, setAccessToken } from "@/utils/auth";
 import { getDeviceInfo } from "@/utils/device";
 
 defineOptions({ name: "LoginForm" });
@@ -276,6 +276,7 @@ const handleLogin = async () => {
       terminalType: "admin" as const,
       deviceInfo: getDeviceInfo(), // 添加设备信息
     };
+    removeToken();
     const res = await LoginApi.login(loginDataLoginForm);
     if (!res) {
       return;
