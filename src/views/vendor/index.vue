@@ -22,7 +22,7 @@
             <div class="common-table">
               <vxe-grid
                 v-bind="gridOptions"
-                :data="list"
+                :data="pagedList"
                 :loading="loading"
                 @checkbox-change="handleCheckboxChange"
                 @checkbox-all="handleCheckboxAll"
@@ -103,6 +103,15 @@
           </div>
         </div>
       </template>
+
+      <template #pagination>
+        <Pagination
+          v-model:page="queryParams.currentPage"
+          v-model:limit="queryParams.pageSize"
+          :total="list.length"
+          @pagination="handlePaginationChange"
+        />
+      </template>
     </ListPageLayout>
 
     <VendorDialog ref="dialogRef" @success="getList" />
@@ -110,7 +119,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Goods } from "@element-plus/icons-vue";
@@ -120,12 +129,24 @@ import { batchDeleteVendor, deleteVendor, getVendorList } from "@/api/vendor";
 import VendorDialog from "./components/VendorDialog.vue";
 import { formatDate } from "@/utils/formatTime";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
+import Pagination from "@/components/Pagination/index.vue";
 
 const loading = ref(false);
 const list = ref<any[]>([]);
 const dialogRef = ref();
 const selectedIds = ref<number[]>([]);
 const router = useRouter();
+const queryParams = reactive({
+  currentPage: 1,
+  pageSize: 10,
+});
+
+const pagedList = computed(() => {
+  const currentPage = Math.max(1, Number(queryParams.currentPage) || 1);
+  const pageSize = Math.max(1, Number(queryParams.pageSize) || 10);
+  const start = (currentPage - 1) * pageSize;
+  return list.value.slice(start, start + pageSize);
+});
 
 const updateSelectedIds = (records: any[]) => {
   selectedIds.value = (records || [])
@@ -173,10 +194,18 @@ const getList = async () => {
   try {
     const data = await getVendorList();
     list.value = Array.isArray(data) ? data : [];
+    const maxPage = Math.max(1, Math.ceil(list.value.length / queryParams.pageSize));
+    if (queryParams.currentPage > maxPage) {
+      queryParams.currentPage = maxPage;
+    }
     selectedIds.value = [];
   } finally {
     loading.value = false;
   }
+};
+
+const handlePaginationChange = () => {
+  selectedIds.value = [];
 };
 
 const openDialog = (id?: number) => {

@@ -277,7 +277,12 @@ const submitForm = async () => {
     try {
       const images = await uploadPendingImages()
       const payload = {
-        ...formData,
+        id: formData.id,
+        name: formData.name,
+        description: formData.description,
+        contactName: formData.contactName,
+        contactPhone: formData.contactPhone,
+        address: formData.address,
         images
       }
 
