@@ -13,7 +13,7 @@
                   <el-input
                     v-model="queryParams.searchKeyword"
                     size="small"
-                    placeholder="搜索字体名称、描述、关键字"
+                    placeholder="搜索字体 ID、名称、描述、关键字"
                     clearable
                     @keyup.enter="handleSearch"
                     @clear="handleSearch"
@@ -1030,6 +1030,7 @@ const gridOptions = ref({
       },
     },
     { type: "checkbox", width: 50, showOverflow: true },
+    { title: "字体 ID", field: "id", width: 220, showOverflow: true },
     {
       title: "缩略图",
       field: "thumbnail",
@@ -1429,6 +1430,7 @@ function handleFolderChange(payload: { folderId: string | null }) {
 
 // 搜索功能
 function handleSearch() {
+  queryParams.currentPage = 1;
   getList();
 }
 
