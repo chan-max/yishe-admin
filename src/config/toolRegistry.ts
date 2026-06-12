@@ -10,13 +10,17 @@ const normalizeEmbeddedToken = (tokenValue: unknown) => {
   return normalizedValue.replace(/^Bearer\s+/i, '').trim()
 }
 
-const resolveDesignToolUrl = () => {
+export const resolveDesignToolUrl = () => {
   const configuredUrl = String(import.meta.env.VITE_YISHE_TOOL_URL || '').trim()
   if (configuredUrl) {
     return configuredUrl
   }
 
-  return import.meta.env.DEV ? 'http://localhost:1522' : ''
+  if (import.meta.env.DEV) {
+    return 'http://localhost:1522'
+  }
+
+  return 'https://tool.1s.design'
 }
 
 const buildEmbeddedToolUrl = (baseSrc: string) => {

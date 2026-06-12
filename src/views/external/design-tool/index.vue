@@ -12,6 +12,9 @@
       </div>
       <div class="dt-toolbar__right">
         <span class="dt-toolbar__time">{{ lastRefreshText }}</span>
+        <el-button size="small" type="primary" @click="openLaunchDialog">
+          打开设计工具
+        </el-button>
         <el-switch v-model="autoRefresh" size="small" inline-prompt active-text="自动" inactive-text="手动" />
         <el-button size="small" :loading="refreshing" @click="refreshConnections" circle>
           <Icon icon="ep:refresh" />
@@ -41,11 +44,15 @@
         </template>
       </el-table-column>
 
-      <el-table-column label="环境" min-width="170" show-overflow-tooltip>
+      <el-table-column label="环境" min-width="240" show-overflow-tooltip>
         <template #default="{ row }">
           <div class="cell-env">
             <span>{{ formatBrowser(row) }} · {{ formatOs(row) }}</span>
             <span class="cell-env__sub">{{ row.clientInfo?.machine?.code || '-' }} · {{ formatScreen(row) }}</span>
+            <div v-if="getLaunchBinding(row)" class="cell-launch">
+              <el-tag size="small" type="primary" effect="plain">客户端环境</el-tag>
+              <span class="cell-launch__text">{{ formatLaunchBinding(row) }}</span>
+            </div>
           </div>
         </template>
       </el-table-column>
@@ -258,6 +265,80 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <el-dialog
+      v-model="launchDialogVisible"
+      title="打开设计工具"
+      width="560px"
+      :close-on-click-modal="false"
+    >
+      <el-form label-position="top">
+        <el-form-item label="目标客户端">
+          <el-select
+            v-model="launchClientId"
+            placeholder="选择在线客户端"
+            filterable
+            style="width: 100%"
+            :loading="launchClientsLoading"
+          >
+            <el-option
+              v-for="client in launchClientOptions"
+              :key="client.id"
+              :label="formatLaunchClientLabel(client)"
+              :value="client.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="浏览器环境">
+          <el-select
+            v-model="launchProfileId"
+            placeholder="请选择浏览器环境"
+            filterable
+            style="width: 100%"
+            :disabled="!launchClientId"
+            popper-class="design-tool-launch-profile-popper"
+          >
+            <el-option
+              v-for="profile in launchProfileOptions"
+              :key="profile.profileId"
+              :label="profile.label"
+              :value="profile.profileId"
+              :disabled="profile.busy"
+            >
+              <div class="launch-profile-option">
+                <span class="launch-profile-option__name">{{ profile.label }}</span>
+                <span class="launch-profile-option__meta">
+                  <el-tag v-if="profile.isActive" size="small" type="success" effect="plain">当前</el-tag>
+                  <small>{{ profile.description }}</small>
+                </span>
+              </div>
+            </el-option>
+          </el-select>
+          <div v-if="launchClientId && !launchProfileOptions.length" class="launch-form-tip">
+            当前客户端没有上报浏览器环境，请先在浏览器自动化/Temu 工具集中同步或创建环境。
+          </div>
+        </el-form-item>
+        <el-form-item label="初始指令">
+          <el-input
+            v-model="launchPrompt"
+            type="textarea"
+            :rows="3"
+            placeholder="可选：打开后要执行的设计需求，后续会自动交给 tool agent"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="launchDialogVisible = false">取消</el-button>
+        <el-button
+          type="primary"
+          :loading="launchSending"
+          :disabled="!launchClientId || !launchProfileId"
+          @click="sendLaunchDesignTool"
+        >
+          打开
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -265,16 +346,28 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import {
   getMyOnlineRuntimeConnectionViews,
+  openDesignToolOnClient,
   type WebsocketConnectionVO,
 } from "@/api/system/websocket";
-import { websocketClient, type RuntimeConnectionChangedEvent } from "@/services/websocketClient";
+import {
+  websocketClient,
+  type RuntimeConnectionChangedEvent,
+  type ServiceCommandResultEvent,
+} from "@/services/websocketClient";
 import { formatDate, formatPast } from "@/utils/formatTime";
 import request from "@/config/axios";
+import { getAccessToken } from "@/utils/auth";
+import { ElMessage } from "element-plus";
+import { useClientNodeStore } from "@/store/modules/clientNode";
+import { normalizeBrowserAutomationProfilesPayload } from "@/services/browserAutomationExecutionContext";
+import { resolveDesignToolUrl } from "@/config/toolRegistry";
 
 defineOptions({ name: "DesignToolConnection" });
 
 const DESIGN_TOOL_SOURCES = new Set(["设计工具", "设计端"]);
+const CLIENT_SOURCES = new Set(["客户端"]);
 const AUTO_REFRESH_INTERVAL_MS = 60_000; // WebSocket 实时推送为主，60s 轮询为兆底
+type TagType = "success" | "warning" | "danger" | "info" | "primary";
 
 const initialLoading = ref(true);
 const refreshing = ref(false);
@@ -282,10 +375,77 @@ const autoRefresh = ref(true);
 const toolConnections = ref<WebsocketConnectionVO[]>([]);
 const refreshTimer = ref<number | null>(null);
 const lastRefreshAt = ref<string | null>(null);
+const launchDialogVisible = ref(false);
+const launchClientsLoading = ref(false);
+const launchSending = ref(false);
+const launchClientId = ref("");
+const launchProfileId = ref("");
+const defaultDesignToolUrl = resolveDesignToolUrl();
+const launchPrompt = ref("");
+const launchClientOptions = ref<WebsocketConnectionVO[]>([]);
+const clientNodeStore = useClientNodeStore();
+const pendingLaunchCommandId = ref("");
+const pendingLaunchClientId = ref("");
+const pendingLaunchProfileId = ref("");
+let launchResultTimer: number | null = null;
 
-const adminWsStatusTag = computed(() => {
+const selectedLaunchClient = computed(() =>
+  launchClientOptions.value.find((item) => item.id === launchClientId.value) || null,
+);
+
+const getBrowserAutomationRuntime = (row?: WebsocketConnectionVO | null) =>
+  row?.clientInfo?.services?.["browser-automation"] ||
+  row?.clientInfo?.services?.uploader ||
+  null;
+
+const launchProfileOptions = computed(() => {
+  const runtime = getBrowserAutomationRuntime(selectedLaunchClient.value) as any;
+  const profilePayload = normalizeBrowserAutomationProfilesPayload(runtime?.details || {});
+  const profiles = Array.isArray(profilePayload.items) ? profilePayload.items : [];
+  const instances = Array.isArray(runtime?.details?.browserInstances)
+    ? runtime.details.browserInstances
+    : Array.isArray(runtime?.details?.instances)
+      ? runtime.details.instances
+      : [];
+  const instanceMap = new Map<string, any>(
+    instances
+      .map((item: any) => [String(item?.profileId || item?.id || "").trim(), item] as const)
+      .filter(([profileId]) => !!profileId),
+  );
+
+  return profiles
+    .map((profile: any) => {
+      const profileId = String(profile?.id || profile?.profileId || "").trim();
+      if (!profileId) return null;
+      const name = String(profile?.name || profile?.profileName || profileId).trim();
+      const instance = instanceMap.get(profileId) || null;
+      const busy = instance?.busy === true || instance?.state === "busy";
+      const connected = instance?.connected === true || instance?.hasInstance === true;
+      const pageCount = typeof instance?.pageCount === "number" ? instance.pageCount : null;
+      const isActive = profileId === String(profilePayload.activeProfileId || "").trim();
+      return {
+        profileId,
+        name,
+        label: `${name} (${profileId})`,
+        description: busy
+          ? "当前环境忙碌"
+          : connected
+            ? pageCount !== null
+              ? `浏览器已打开，${pageCount} 个页面`
+              : "浏览器已打开"
+            : isActive
+              ? "当前活动环境，执行时复用"
+              : "未打开，执行时自动拉起",
+        busy,
+        isActive,
+      };
+    })
+    .filter(Boolean) as Array<{ profileId: string; name: string; label: string; description: string; busy: boolean; isActive: boolean }>;
+});
+
+const adminWsStatusTag = computed<{ text: string; type: TagType }>(() => {
   const s = websocketClient.state.status;
-  const m: Record<string, { text: string; type: "success" | "warning" | "danger" | "info" }> = {
+  const m: Record<string, { text: string; type: TagType }> = {
     connected: { text: "已连接", type: "success" },
     connecting: { text: "连接中", type: "warning" },
     reconnecting: { text: "重连中", type: "warning" },
@@ -320,6 +480,12 @@ const isDesignToolConnection = (row?: WebsocketConnectionVO | null) => {
   );
 };
 
+const isClientConnection = (row?: WebsocketConnectionVO | null) => {
+  const src = row?.clientSource || row?.query?.clientSource;
+  const s = Array.isArray(src) ? src[0] : src || "";
+  return CLIENT_SOURCES.has(String(s).trim());
+};
+
 const normalizeRows = (res: unknown): WebsocketConnectionVO[] => {
   if (Array.isArray(res)) return res;
   if (res && typeof res === "object" && Array.isArray((res as any).data)) return (res as any).data;
@@ -339,6 +505,200 @@ const refreshConnections = async () => {
     refreshing.value = false;
     initialLoading.value = false;
   }
+};
+
+const refreshLaunchClients = async () => {
+  launchClientsLoading.value = true;
+  try {
+    await clientNodeStore.refresh({ summary: false });
+    launchClientOptions.value = clientNodeStore.clients
+      .filter((r) => r.isOnline !== false && isClientConnection(r))
+      .sort((a, b) => ((a.connectedAt || "") > (b.connectedAt || "") ? -1 : 1));
+    if (!launchClientId.value && launchClientOptions.value.length) {
+      launchClientId.value = launchClientOptions.value[0].id;
+    } else if (
+      launchClientId.value &&
+      !launchClientOptions.value.some((item) => item.id === launchClientId.value)
+    ) {
+      launchClientId.value = launchClientOptions.value[0]?.id || "";
+    }
+  } finally {
+    launchClientsLoading.value = false;
+  }
+};
+
+const formatLaunchClientLabel = (r: WebsocketConnectionVO) => {
+  const machine = r.clientInfo?.machine?.code || r.clientInfo?.machineCode || "";
+  const workspace = r.clientInfo?.workspaceDirectory || "";
+  return [machine || r.id, workspace].filter(Boolean).join(" · ");
+};
+
+const openLaunchDialog = () => {
+  launchDialogVisible.value = true;
+  void refreshLaunchClients();
+};
+
+watch(
+  () => [launchClientId.value, launchProfileOptions.value.map((item) => `${item.profileId}:${item.busy}`).join("|")],
+  () => {
+    if (!launchClientId.value) {
+      launchProfileId.value = "";
+      return;
+    }
+    if (
+      launchProfileId.value &&
+      launchProfileOptions.value.some((item) => item.profileId === launchProfileId.value && !item.busy)
+    ) {
+      return;
+    }
+    launchProfileId.value =
+      launchProfileOptions.value.find((item) => !item.busy)?.profileId ||
+      launchProfileOptions.value[0]?.profileId ||
+      "";
+  },
+);
+
+const selectedLaunchProfile = computed(
+  () => launchProfileOptions.value.find((item) => item.profileId === launchProfileId.value) || null,
+);
+
+const clearLaunchResultTimer = () => {
+  if (launchResultTimer !== null) {
+    window.clearTimeout(launchResultTimer);
+    launchResultTimer = null;
+  }
+};
+
+const finishLaunchWaiting = () => {
+  pendingLaunchCommandId.value = "";
+  pendingLaunchClientId.value = "";
+  pendingLaunchProfileId.value = "";
+  clearLaunchResultTimer();
+  launchSending.value = false;
+};
+
+const getCommandResultMessage = (event: ServiceCommandResultEvent) => {
+  const data = event.data && typeof event.data === "object" ? event.data : {};
+  const result = data.result && typeof data.result === "object" ? data.result : {};
+  return (
+    event.message ||
+    event.error ||
+    result.message ||
+    data.message ||
+    "客户端打开设计工具失败"
+  );
+};
+
+const sendLaunchDesignTool = async () => {
+  const token = String(getAccessToken() || "").trim();
+  if (!token) {
+    ElMessage.warning("当前后台没有可用 token，请重新登录");
+    return;
+  }
+  if (!launchClientId.value) {
+    ElMessage.warning("请选择目标客户端");
+    return;
+  }
+  if (!launchProfileId.value) {
+    ElMessage.warning("请选择浏览器环境");
+    return;
+  }
+
+  launchSending.value = true;
+  try {
+    const res: any = await openDesignToolOnClient({
+      clientId: launchClientId.value,
+      token,
+      profileId: launchProfileId.value,
+      profileName: selectedLaunchProfile.value?.name || selectedLaunchProfile.value?.label,
+      machineCode: selectedLaunchClient.value?.clientInfo?.machine?.code,
+      toolUrl: defaultDesignToolUrl,
+      prompt: launchPrompt.value,
+    });
+    if (res?.success === false) {
+      throw new Error(res?.message || "打开设计工具失败");
+    }
+    const commandId = String(res?.data?.commandId || "").trim();
+    if (!commandId) {
+      throw new Error(res?.message || "打开命令没有返回 commandId");
+    }
+    pendingLaunchCommandId.value = commandId;
+    pendingLaunchClientId.value = launchClientId.value;
+    pendingLaunchProfileId.value = launchProfileId.value;
+    ElMessage.success("打开命令已发送，等待客户端执行结果");
+    clearLaunchResultTimer();
+    launchResultTimer = window.setTimeout(() => {
+      if (pendingLaunchCommandId.value === commandId) {
+        const timeoutText = [
+          "客户端执行结果等待超时",
+          `commandId=${commandId}`,
+          `clientId=${pendingLaunchClientId.value || "-"}`,
+          `profileId=${pendingLaunchProfileId.value || "-"}`,
+        ].join("，");
+        finishLaunchWaiting();
+        ElMessage.warning(timeoutText);
+      }
+    }, 30_000);
+  } catch (error: any) {
+    pendingLaunchCommandId.value = "";
+    pendingLaunchClientId.value = "";
+    pendingLaunchProfileId.value = "";
+    clearLaunchResultTimer();
+    ElMessage.error(error?.message || "打开设计工具失败");
+    launchSending.value = false;
+  }
+};
+
+const onServiceCommandResult = (event: ServiceCommandResultEvent) => {
+  if (!pendingLaunchCommandId.value || event.commandId !== pendingLaunchCommandId.value) {
+    return;
+  }
+
+  finishLaunchWaiting();
+  if (event.success) {
+    ElMessage.success(event.message || "设计工具已在所选浏览器环境中打开");
+    launchDialogVisible.value = false;
+    void refreshConnections();
+    return;
+  }
+
+  ElMessage.error(getCommandResultMessage(event));
+};
+
+const resetLaunchState = () => {
+  finishLaunchWaiting();
+};
+
+const handleLaunchDialogClosed = () => {
+  if (!pendingLaunchCommandId.value) {
+    return;
+  }
+  resetLaunchState();
+};
+
+watch(launchDialogVisible, (visible) => {
+  if (!visible) {
+    handleLaunchDialogClosed();
+  }
+});
+
+watch(launchClientId, () => {
+  if (pendingLaunchCommandId.value) {
+    resetLaunchState();
+  }
+});
+
+watch(launchProfileId, () => {
+  if (pendingLaunchCommandId.value) {
+    resetLaunchState();
+  }
+});
+
+const clearLaunchStateOnUnmount = () => {
+  clearLaunchResultTimer();
+  pendingLaunchCommandId.value = "";
+  pendingLaunchClientId.value = "";
+  pendingLaunchProfileId.value = "";
 };
 
 const tableRowClass = ({ row }: { row: WebsocketConnectionVO }) =>
@@ -365,6 +725,26 @@ const formatScreen = (r: WebsocketConnectionVO) => {
   return s?.width && s?.height ? `${s.width}×${s.height}` : "-";
 };
 
+const getLaunchBinding = (r: WebsocketConnectionVO) => {
+  const launch = r.clientInfo?.launch;
+  if (
+    launch?.source !== "admin-design-tool" ||
+    !String(launch.clientId || "").trim() ||
+    !String(launch.profileId || "").trim()
+  ) {
+    return null;
+  }
+  return launch;
+};
+
+const formatLaunchBinding = (r: WebsocketConnectionVO) => {
+  const launch = getLaunchBinding(r);
+  if (!launch) return "";
+  const client = launch.machineCode || launch.clientId;
+  const profile = launch.profileName || launch.profileId;
+  return `${client} · ${profile}`;
+};
+
 const formatDateTime = (v?: string | null) => (v ? formatDate(new Date(v), "YYYY-MM-DD HH:mm:ss") : "-");
 
 const getAgent = (r: WebsocketConnectionVO) => (r.clientInfo as any)?.agent || null;
@@ -372,8 +752,8 @@ const getAgent = (r: WebsocketConnectionVO) => (r.clientInfo as any)?.agent || n
 const agentLabel = (s: string) =>
   ({ idle: "空闲", thinking: "思考中", executing: "执行中", waiting_user: "等待用户", error: "异常" }[s] || s);
 
-const agentTagType = (s: string): "" | "success" | "warning" | "danger" | "info" =>
-  ({ idle: "success", thinking: "warning", executing: "", waiting_user: "info", error: "danger" }[s] as any || "info");
+const agentTagType = (s: string): TagType =>
+  ({ idle: "success", thinking: "warning", executing: "primary", waiting_user: "info", error: "danger" }[s] as TagType || "info");
 
 const formatAgentTime = (iso?: string) => {
   if (!iso) return "-";
@@ -631,15 +1011,18 @@ onMounted(() => {
   refreshConnections();
   startTimer();
   const handler = onRuntimeConnectionChanged;
-  websocketClient.events.on("runtimeConnectionChanged", handler);
-  wsUnsubscribe = () => websocketClient.events.off("runtimeConnectionChanged", handler);
-  websocketClient.events.on("remote-result", resultHandler);
+  websocketClient.events.on("runtimeConnectionChanged", handler as any);
+  wsUnsubscribe = () => websocketClient.events.off("runtimeConnectionChanged", handler as any);
+  websocketClient.events.on("serviceCommandResult", onServiceCommandResult);
+  (websocketClient.events as any).on("remote-result", resultHandler);
 });
 
 onBeforeUnmount(() => {
   stopTimer();
   wsUnsubscribe?.();
-  websocketClient.events.off("remote-result", resultHandler);
+  websocketClient.events.off("serviceCommandResult", onServiceCommandResult);
+  clearLaunchStateOnUnmount();
+  (websocketClient.events as any).off("remote-result", resultHandler);
 });
 </script>
 
@@ -734,6 +1117,21 @@ onBeforeUnmount(() => {
 /* ── Env cell ── */
 .cell-env { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--el-text-color-primary); }
 .cell-env__sub { font-size: 11px; color: var(--el-text-color-secondary); }
+.cell-launch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin-top: 2px;
+}
+.cell-launch__text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+}
 
 /* ── Connection cell ── */
 .cell-conn { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--el-text-color-primary); }
@@ -759,6 +1157,56 @@ onBeforeUnmount(() => {
 }
 
 .cell-empty { color: var(--el-text-color-placeholder); }
+
+.launch-profile-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  width: 100%;
+  line-height: 1.2;
+}
+
+.launch-profile-option__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.launch-profile-option__meta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex: none;
+  max-width: 48%;
+  min-width: 0;
+}
+
+.launch-profile-option__meta small,
+.launch-form-tip {
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+}
+
+.launch-profile-option__meta small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:global(.design-tool-launch-profile-popper .el-select-dropdown__item) {
+  height: 34px;
+  line-height: 34px;
+}
+
+.launch-form-tip {
+  margin-top: 6px;
+  line-height: 1.5;
+}
 
 /* ── Conversation Dialog ── */
 .conv-dialog {

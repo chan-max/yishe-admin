@@ -98,7 +98,16 @@ export interface TokenUserInfo {
 
 export interface WebsocketClientInfo {
   clientId?: string;
+  machineCode?: string;
   source?: string;
+  launch?: {
+    source?: string;
+    clientId?: string;
+    profileId?: string;
+    profileName?: string;
+    machineCode?: string;
+    launchedAt?: string;
+  };
   workspaceDirectory?: string;
   app?: {
     name?: string;
@@ -315,6 +324,38 @@ export const sendServiceCommand = (data: ServiceCommandDTO) => {
   return request.post<{ success: boolean; message: string; data?: any }>({
     url: "/websocket/service-command",
     data,
+  });
+};
+
+export interface OpenDesignToolDTO {
+  clientId: string;
+  token: string;
+  profileId: string;
+  profileName?: string;
+  machineCode?: string;
+  toolUrl?: string;
+  prompt?: string;
+  tenantId?: string;
+}
+
+export const openDesignToolOnClient = (data: OpenDesignToolDTO) => {
+  const url = new URL(data.toolUrl || window.location.origin);
+  url.searchParams.set("token", String(data.token || "").replace(/^Bearer\s+/i, "").trim());
+  url.searchParams.set("embed", "admin-launch");
+  url.searchParams.set("launchSource", "admin-design-tool");
+  url.searchParams.set("launchClientId", data.clientId);
+  url.searchParams.set("launchProfileId", data.profileId);
+  if (data.profileName) url.searchParams.set("launchProfileName", data.profileName);
+  if (data.machineCode) url.searchParams.set("launchMachineCode", data.machineCode);
+  if (data.prompt) url.searchParams.set("prompt", data.prompt);
+  if (data.tenantId) url.searchParams.set("tenantId", data.tenantId);
+
+  return request.post<{ success: boolean; message: string; data?: { commandId?: string } }>({
+    url: `/external/browser-automation/${encodeURIComponent(data.clientId)}/open-link`,
+    data: {
+      url: url.toString(),
+      profileId: data.profileId,
+    },
   });
 };
 
