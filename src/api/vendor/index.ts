@@ -32,7 +32,12 @@ export interface VendorProductItem {
   updateTime?: string
 }
 
-export const getVendorList = () => request.get({ url: '/operations/vendor' })
+export interface VendorListParams {
+  search?: string
+}
+
+export const getVendorList = (params?: VendorListParams) =>
+  request.get({ url: '/operations/vendor', params })
 
 export const getVendorDetail = (id: number) => request.get({ url: `/operations/vendor/${id}` })
 

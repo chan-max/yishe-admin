@@ -91,6 +91,15 @@
           检测登录
         </el-button>
         <el-button
+          v-if="clickLoginToolKey"
+          :loading="runningFeatureKey === clickLoginToolKey"
+          :disabled="!canRunTool || !hasTool(clickLoginToolKey)"
+          :icon="Link"
+          @click="runFeature(clickLoginToolKey)"
+        >
+          点击登录
+        </el-button>
+        <el-button
           :loading="runningFeatureKey === openWorkspaceToolKey"
           :disabled="!canRunTool || !hasTool(openWorkspaceToolKey)"
           :icon="Link"
@@ -257,11 +266,13 @@ const props = withDefaults(
     sessionToolKey: string;
     checkLoginToolKey: string;
     openWorkspaceToolKey: string;
+    clickLoginToolKey?: string;
     emptyDescription?: string;
     enableCredentialPanel?: boolean;
   }>(),
   {
     emptyDescription: "当前环境暂无会话。",
+    clickLoginToolKey: "",
     enableCredentialPanel: false,
   },
 );
@@ -303,6 +314,7 @@ const platformLabel = computed(() => String(props.platformLabel || "").trim());
 const sessionToolKey = computed(() => String(props.sessionToolKey || "").trim());
 const checkLoginToolKey = computed(() => String(props.checkLoginToolKey || "").trim());
 const openWorkspaceToolKey = computed(() => String(props.openWorkspaceToolKey || "").trim());
+const clickLoginToolKey = computed(() => String(props.clickLoginToolKey || "").trim());
 const emptyDescription = computed(() => String(props.emptyDescription || "").trim());
 const credentialPanelEnabled = computed(() => props.enableCredentialPanel === true);
 const selectedProfileId = computed(
@@ -472,7 +484,8 @@ const runFeature = async (featureKey: string) => {
       featureKey: normalizedFeatureKey,
       profileId: selectedProfileId.value,
       keepPageOpen: true,
-      ...(credentialPanelEnabled.value && normalizedFeatureKey === sessionToolKey.value
+      ...(credentialPanelEnabled.value &&
+      (normalizedFeatureKey === sessionToolKey.value || normalizedFeatureKey === clickLoginToolKey.value)
         ? buildCredentialCommandPayload()
         : {}),
     });

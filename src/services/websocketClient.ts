@@ -276,7 +276,7 @@ const wsState = reactive<WsState>({
   connectionId: null,
 });
 
-const ADMIN_CLIENT_ID_STORAGE_KEY = "yishe-admin:ws-client-id";
+const ADMIN_CLIENT_ID_WINDOW_KEY = "__YISHE_ADMIN_WS_CLIENT_ID__";
 
 // 生成客户端 ID
 function createClientId() {
@@ -292,13 +292,14 @@ function generateClientId() {
   }
 
   try {
-    const cached = window.sessionStorage.getItem(ADMIN_CLIENT_ID_STORAGE_KEY);
+    const windowState = window as typeof window & Record<string, string | undefined>;
+    const cached = windowState[ADMIN_CLIENT_ID_WINDOW_KEY];
     if (cached) {
       return cached;
     }
 
     const next = createClientId();
-    window.sessionStorage.setItem(ADMIN_CLIENT_ID_STORAGE_KEY, next);
+    windowState[ADMIN_CLIENT_ID_WINDOW_KEY] = next;
     return next;
   } catch {
     return createClientId();

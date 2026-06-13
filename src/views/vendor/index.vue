@@ -3,21 +3,61 @@
     <ListPageLayout class="vendor-page">
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
-          <div class="resource-toolbar">
-            <div class="resource-toolbar__meta">
-              <div class="resource-toolbar__actions">
-                <el-button size="small" type="primary" @click="openDialog()">新增厂家</el-button>
-                <el-button size="small" type="danger" plain :disabled="!selectedIds.length" @click="handleBatchDelete">
-                  批量删除
-                </el-button>
-              </div>
+          <el-form :model="queryParams" label-position="top" class="list-page-search-form">
+            <el-row :gutter="12" class="list-page-search-form__row">
+              <el-col
+                class="list-page-search-form__col--wide"
+                :xs="24"
+                :sm="12"
+                :md="8"
+                :lg="6"
+                :xl="5"
+              >
+                <el-form-item label="关键词">
+                  <el-input
+                    v-model="queryParams.search"
+                    size="small"
+                    placeholder="搜索编码/名称/联系人/电话/地址"
+                    clearable
+                    @keyup.enter="handleSearch"
+                    @clear="handleSearch"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <div class="list-page-search-form__actions">
+              <el-button
+                size="small"
+                type="primary"
+                :icon="Search"
+                :loading="loading"
+                @click="handleSearch"
+                >搜索</el-button
+              >
+              <el-button size="small" :icon="Refresh" :disabled="loading" @click="resetQuery"
+                >重置</el-button
+              >
+              <el-button size="small" type="primary" :icon="Plus" @click="openDialog()"
+                >新增厂家</el-button
+              >
+              <el-button
+                size="small"
+                type="danger"
+                :icon="Delete"
+                :disabled="!selectedIds.length"
+                @click="handleBatchDelete"
+              >
+                批量删除
+              </el-button>
             </div>
-          </div>
+          </el-form>
         </div>
       </template>
 
       <template #table>
-        <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
+        <div
+          class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat"
+        >
           <div class="list-page-table-panel__body">
             <div class="common-table">
               <vxe-grid
@@ -39,9 +79,7 @@
                         preview-teleported
                         class="table-thumb table-thumb--sm"
                       />
-                      <span
-                        v-if="row.images.length > 3"
-                        class="table-thumb-count"
+                      <span v-if="row.images.length > 3" class="table-thumb-count"
                         >+{{ row.images.length - 3 }}</span
                       >
                     </template>
@@ -54,7 +92,9 @@
                 </template>
 
                 <template #uploaderSlot="{ row }">
-                  <span>{{ row?.uploader?.account || row?.uploader?.name || row?.userId || '-' }}</span>
+                  <span>{{
+                    row?.uploader?.account || row?.uploader?.name || row?.userId || "-"
+                  }}</span>
                 </template>
 
                 <template #productsSlot="{ row }">
@@ -78,7 +118,9 @@
                       placement="bottom-end"
                       @command="(command) => handleOperationCommand(String(command), row)"
                     >
-                      <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
+                      <el-button type="primary" link size="small" class="operation-trigger-button"
+                        >操作</el-button
+                      >
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
                           <el-dropdown-item command="edit">
@@ -89,7 +131,11 @@
                             <el-icon><Goods /></el-icon>
                             <span>商品</span>
                           </el-dropdown-item>
-                          <el-dropdown-item command="delete" divided class="operation-menu-item--danger">
+                          <el-dropdown-item
+                            command="delete"
+                            divided
+                            class="operation-menu-item--danger"
+                          >
                             <el-icon><Delete /></el-icon>
                             <span>删除</span>
                           </el-dropdown-item>
@@ -122,7 +168,7 @@
 import { computed, onMounted, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Goods } from "@element-plus/icons-vue";
+import { Delete, Goods, Plus, Refresh, Search } from "@element-plus/icons-vue";
 import type { VendorProductItem } from "@/api/vendor";
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from "@/common/table";
 import { batchDeleteVendor, deleteVendor, getVendorList } from "@/api/vendor";
@@ -139,6 +185,7 @@ const router = useRouter();
 const queryParams = reactive({
   currentPage: 1,
   pageSize: 10,
+  search: "",
 });
 
 const pagedList = computed(() => {
@@ -192,7 +239,9 @@ const gridOptions = ref({
 const getList = async () => {
   loading.value = true;
   try {
-    const data = await getVendorList();
+    const data = await getVendorList({
+      search: queryParams.search.trim() || undefined,
+    });
     list.value = Array.isArray(data) ? data : [];
     const maxPage = Math.max(1, Math.ceil(list.value.length / queryParams.pageSize));
     if (queryParams.currentPage > maxPage) {
@@ -202,6 +251,16 @@ const getList = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+const handleSearch = () => {
+  queryParams.currentPage = 1;
+  getList();
+};
+
+const resetQuery = () => {
+  queryParams.search = "";
+  handleSearch();
 };
 
 const handlePaginationChange = () => {
@@ -268,14 +327,6 @@ onMounted(() => {
 :deep(.vendor-page) {
   gap: 10px;
   padding: 8px 0 0;
-}
-
-:deep(.vendor-page .resource-toolbar) {
-  justify-content: flex-start;
-}
-
-:deep(.vendor-page .resource-toolbar__meta) {
-  flex: 0 1 auto;
 }
 
 :deep(.vendor-page .list-page-layout__main) {
