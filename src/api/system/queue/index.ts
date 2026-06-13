@@ -36,6 +36,8 @@ export type TaskExecutionReadinessStatus =
   | "manual_blocked"
   | "unknown";
 
+export type QueueExecutionReadinessStatusFilter = TaskExecutionReadinessStatus;
+
 export type TaskExecutionReadinessOverrideMode = "ready" | "blocked" | "auto";
 
 export interface TaskExecutionReadinessSnapshot {
@@ -154,6 +156,7 @@ export const getTaskList = (params: {
   type?: string;
   types?: string[];
   id?: string;
+  executionReadinessStatus?: QueueExecutionReadinessStatusFilter;
   sortField?: "createdAt" | "updatedAt" | "processedAt";
   sortOrder?: "ASC" | "DESC";
   includeTotal?: boolean;
@@ -175,6 +178,9 @@ export const getTaskList = (params: {
   }
   if (!queryParams.id || !queryParams.id.trim()) {
     delete queryParams.id;
+  }
+  if (!queryParams.executionReadinessStatus) {
+    delete queryParams.executionReadinessStatus;
   }
   return request.get({ url: `/queue/messages`, params: queryParams });
 };

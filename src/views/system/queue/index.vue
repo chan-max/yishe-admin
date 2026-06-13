@@ -78,6 +78,29 @@
                 </el-form-item>
               </el-col>
               <el-col
+                class="list-page-search-form__col--narrow"
+                :xs="24"
+                :sm="12"
+                :md="8"
+                :lg="5"
+                :xl="4"
+              >
+                <el-form-item label="可执行状态">
+                  <el-select
+                    v-model="queryParams.executionReadinessStatus"
+                    size="small"
+                    clearable
+                    placeholder="全部"
+                    @change="handleQueryChange"
+                  >
+                    <el-option label="可执行" value="ready" />
+                    <el-option label="待准备" value="waiting" />
+                    <el-option label="不可执行" value="blocked" />
+                    <el-option label="未知" value="unknown" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col
                 class="list-page-search-form__col--wide"
                 :xs="24"
                 :sm="12"
@@ -132,6 +155,16 @@
                 @click="handleBatchResetPublishTasksToPending"
               >
                 批量重置为未运行
+              </el-button>
+              <el-button
+                size="small"
+                type="warning"
+                plain
+                :disabled="!ids.length"
+                :loading="batchRegenerateLoading"
+                @click="handleBatchRegeneratePublishTasks"
+              >
+                批量重新生成
               </el-button>
             </div>
           </el-form>
@@ -992,10 +1025,11 @@ import {
   updateTaskData,
   updateTaskStatus,
   batchResetPublishTasksToPending,
+  type QueueExecutionReadinessStatusFilter,
   type QueueMessage,
   type QueueStats,
 } from "@/api/system/queue";
-import { regeneratePublishTaskApi } from "@/api/product/publishConfig";
+import { regeneratePublishTaskApi, regeneratePublishTasksBatchApi } from "@/api/product/publishConfig";
 import {
   resetPublishTaskDispatch,
   startPublishTaskDispatch,
@@ -1108,6 +1142,7 @@ const {
 const defaultQueueQueryFilters = {
   pageSize: 20,
   status: undefined as QueueMessage["status"] | undefined,
+  executionReadinessStatus: undefined as QueueExecutionReadinessStatusFilter | undefined,
   types: [] as string[],
   id: "",
   sortType: "createdAt_DESC",
@@ -1121,6 +1156,7 @@ const queryParams = reactive({
   currentPage: 1,
   pageSize: Number(queueQueryFilterStorage.value.pageSize) || defaultQueueQueryFilters.pageSize,
   status: queueQueryFilterStorage.value.status,
+  executionReadinessStatus: queueQueryFilterStorage.value.executionReadinessStatus,
   types: Array.isArray(queueQueryFilterStorage.value.types)
     ? [...queueQueryFilterStorage.value.types]
     : [],
@@ -1255,6 +1291,7 @@ const statusSubmitLoading = ref(false);
 const dataUpdateSubmitting = ref(false);
 const deleteLoading = ref(false);
 const batchResetPendingLoading = ref(false);
+const batchRegenerateLoading = ref(false);
 const publishTaskAutoDispatchEnabled = ref(false);
 const publishTaskAutoDispatchLoading = ref(false);
 const publishDispatchDialogVisible = ref(false);
@@ -2216,8 +2253,8 @@ function canStopPublishExecution(row: QueueMessage) {
   const dispatchMeta = getPublishDispatchMeta(row);
   return (
     row.status === "processing" ||
-    dispatchMeta.status === "assigned" ||
-    dispatchMeta.status === "running"
+    ((row.status === "pending" || row.status === "waiting") &&
+      (dispatchMeta.status === "assigned" || dispatchMeta.status === "running"))
   );
 }
 
@@ -2387,8 +2424,8 @@ function getQueueRowClassName(row: QueueMessage) {
   const dispatchMeta = getPublishDispatchMeta(row);
   if (
     row.status === "processing" ||
-    dispatchMeta.status === "assigned" ||
-    dispatchMeta.status === "running"
+    ((row.status === "pending" || row.status === "waiting") &&
+      (dispatchMeta.status === "assigned" || dispatchMeta.status === "running"))
   ) {
     return "queue-row queue-row--running";
   }
@@ -2427,6 +2464,7 @@ async function getList(options?: unknown) {
     const [sortField, sortOrder] = queryParams.sortType.split("_");
     const res = await getTaskList({
       status: queryParams.status,
+      executionReadinessStatus: queryParams.executionReadinessStatus,
       types: getSelectedQueryTypes().length > 0 ? getSelectedQueryTypes() : undefined,
       id: queryParams.id?.trim() || undefined,
       sortField: sortField as "createdAt" | "updatedAt" | "processedAt",
@@ -2518,6 +2556,7 @@ function handleResetQuery() {
   queryParams.currentPage = 1;
   queryParams.pageSize = defaultQueueQueryFilters.pageSize;
   queryParams.status = undefined;
+  queryParams.executionReadinessStatus = undefined;
   queryParams.types = [];
   queryParams.id = "";
   queryParams.sortType = defaultQueueQueryFilters.sortType;
@@ -3388,6 +3427,59 @@ async function handleBatchResetPublishTasksToPending() {
   }
 }
 
+async function handleBatchRegeneratePublishTasks() {
+  if (batchRegenerateLoading.value) return;
+  const selectedRows = getSelectedQueueRows();
+  if (!selectedRows.length) {
+    return ElMessage.warning("请选择要重新生成的平台任务");
+  }
+
+  const publishRows = selectedRows.filter((row) =>
+    String(row?.type || "").startsWith("publish-product-"),
+  );
+  const ignoredNonPublishCount = selectedRows.length - publishRows.length;
+  if (!publishRows.length) {
+    return ElMessage.warning("选中的数据里没有可重新生成的平台发布任务");
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      `确认重新生成选中的 ${publishRows.length} 条平台任务吗？系统会清理旧发布数据、错误和日志，并重新进入准备流程；执行中的任务会自动跳过。`,
+      "批量重新生成发布数据",
+      {
+        type: "warning",
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+      },
+    );
+
+    batchRegenerateLoading.value = true;
+    const response: any = await regeneratePublishTasksBatchApi(publishRows.map((row) => row.id));
+    const payload = response?.data?.data ?? response?.data ?? response;
+    const updated = Number(payload?.updated) || 0;
+    const skipped = Array.isArray(payload?.skipped) ? payload.skipped : [];
+    const skippedCount = skipped.length + ignoredNonPublishCount;
+
+    if (updated > 0 && skippedCount > 0) {
+      ElMessage.warning(`已提交重新生成 ${updated} 条，跳过 ${skippedCount} 条`);
+    } else if (updated > 0) {
+      ElMessage.success(`已提交重新生成 ${updated} 条平台任务`);
+    } else {
+      ElMessage.warning(skipped[0]?.reason || "没有可重新生成的平台任务");
+    }
+
+    schedulePublishTaskMenuRuntimeSync();
+    await refreshPublishDispatchPageState();
+  } catch (error: any) {
+    if (error === "cancel" || error === "close") {
+      return;
+    }
+    ElMessage.error(error?.message || "批量重新生成失败");
+  } finally {
+    batchRegenerateLoading.value = false;
+  }
+}
+
 // 提交表单
 async function handleSubmit() {
   if (submitLoading.value) return;
@@ -3559,7 +3651,7 @@ async function handleRegeneratePublishTask(row: QueueMessage) {
 
   try {
     await ElMessageBox.confirm(
-      "将基于当前套图信息和任务配置重新生成这条任务的发布数据，不会重新执行任务，是否继续？",
+      "将清理这条任务的旧发布数据、错误和日志，并基于当前套图信息和任务配置重新进入准备流程，是否继续？",
       "重新生成发布数据",
       {
         type: "warning",
@@ -3781,6 +3873,7 @@ watch(
     id: queryParams.id,
     types: [...queryParams.types],
     status: queryParams.status,
+    executionReadinessStatus: queryParams.executionReadinessStatus,
     sortType: queryParams.sortType,
     pageSize: queryParams.pageSize,
   }),
@@ -3789,6 +3882,7 @@ watch(
       id: newValue.id || "",
       types: newValue.types,
       status: newValue.status,
+      executionReadinessStatus: newValue.executionReadinessStatus,
       sortType: newValue.sortType,
       pageSize: newValue.pageSize,
     };

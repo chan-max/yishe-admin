@@ -56,3 +56,25 @@ export const regeneratePublishTaskApi = (taskId: string) => {
     ownership: "skip",
   });
 };
+
+export const regeneratePublishTasksBatchApi = (taskIds: string[]) => {
+  return request.post<{
+    success: boolean;
+    data: {
+      total: number;
+      updated: number;
+      skipped: Array<{ id: string; reason: string }>;
+      items: Array<{
+        id: string;
+        success: boolean;
+        asyncRegenerate?: boolean;
+        status?: string;
+        reason?: string;
+      }>;
+    };
+  }>({
+    url: "/publish-config/regenerate-publish-tasks/batch",
+    data: { taskIds },
+    ownership: "skip",
+  });
+};
