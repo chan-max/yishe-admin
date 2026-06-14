@@ -3,7 +3,7 @@
     <div
       class="mb-14px rounded-12px bg-[var(--el-fill-color-light)] px-14px py-10px text-[12px] leading-[1.7] text-[var(--el-text-color-secondary)]"
     >
-      这里录入的是可复用的 AI Key 配置。模型直接跟随 Key 本身，后续在“AI 使用设置”里只需要按功能选择使用哪个 Key。
+      这里录入的是可复用的 AI 凭据。具体功能使用哪个调用方式和模型，请在“AI 使用设置”里配置。
     </div>
 
     <el-form
@@ -23,10 +23,10 @@
           </el-form-item>
         </el-col>
         <el-col :xs="24" :md="12">
-          <el-form-item label="模型" prop="model" class="ai-api-key-form__control-item">
+          <el-form-item label="默认模型" class="ai-api-key-form__control-item">
             <el-input
               v-model="formData.model"
-              placeholder="例如：gpt-4o / qwen-vl-max-latest"
+              placeholder="可选，例如：gpt-4o / qwen-vl-max-latest"
             />
           </el-form-item>
         </el-col>
@@ -134,7 +134,6 @@ const formData = reactive<AiApiKeyConfig>({
 
 const formRules = {
   name: [{ required: true, message: "请输入名称", trigger: "blur" }],
-  model: [{ required: true, message: "请输入模型", trigger: "blur" }],
   apiKey: [{ required: true, message: "请输入 API Key", trigger: "blur" }],
 };
 

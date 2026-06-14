@@ -9,7 +9,7 @@
                 v-model="queryParams.keyword"
                 class="ai-api-key-search"
                 clearable
-                placeholder="搜索名称 / 模型 / Base URL"
+                placeholder="搜索名称 / 默认模型 / Base URL"
                 size="small"
                 @clear="handleSearch"
                 @keyup.enter="handleSearch"
@@ -244,7 +244,7 @@ const mineGridOptions = computed(() => ({
       formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
     },
     {
-      title: "模型",
+      title: "默认模型",
       field: "model",
       minWidth: 180,
       showOverflow: "tooltip",
@@ -279,7 +279,7 @@ const publicGridOptions = computed(() => ({
       formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
     },
     {
-      title: "模型",
+      title: "默认模型",
       field: "model",
       minWidth: 180,
       showOverflow: "tooltip",

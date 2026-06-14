@@ -1,9 +1,5 @@
 import { reactive } from "vue";
-import {
-  getAiApiKeyUsageOptions,
-  getAiFeatureRegistry,
-  type AiApiKeyConfig,
-} from "@/api/aiApiKey";
+import { getAiApiKeyUsageOptions, getAiFeatureRegistry, type AiApiKeyConfig } from "@/api/aiApiKey";
 import { getAiSetting, type UserAiSetting } from "@/api/user";
 
 type AiConfigState = {
@@ -41,6 +37,23 @@ const normalizeKeyId = (value: unknown) => {
 };
 
 const normalizeFeatureKeys = (payload?: Partial<UserAiSetting>) => {
+  if (
+    payload?.featureBindings &&
+    typeof payload.featureBindings === "object" &&
+    !Array.isArray(payload.featureBindings)
+  ) {
+    return Object.entries(payload.featureBindings).reduce<Record<string, number>>(
+      (result, [featureCode, binding]) => {
+        const keyId = normalizeKeyId(binding?.keyId);
+        if (keyId) {
+          result[featureCode] = keyId;
+        }
+        return result;
+      },
+      {},
+    );
+  }
+
   if (
     payload?.featureKeys &&
     typeof payload.featureKeys === "object" &&

@@ -12,10 +12,7 @@ import { usePsdSetRuntimeState } from "@/services/psdSetRuntimeState";
 import { usePublishTaskRuntimeState } from "@/services/publishTaskRuntimeState";
 import { isClientServiceRuntimeBusy } from "@/services/clientServiceRuntime";
 import { aiConfigState, refreshAiConfigState } from "@/services/aiConfigState";
-import {
-  messagePushMenuState,
-  refreshMessagePushMenuState,
-} from "@/services/messagePushState";
+import { messagePushMenuState, refreshMessagePushMenuState } from "@/services/messagePushState";
 import { getBrowserAutomationRuntimeHint } from "@/services/browserAutomationRuntime";
 import {
   ensureServiceHealthInitialized,
@@ -171,22 +168,19 @@ export default defineComponent({
       routePath: string,
     ) => {
       if (running) {
-        return routePath === "/operation/toolkit" ||
-          routePath === "/external/toolkit"
+        return routePath === "/operation/toolkit" || routePath === "/external/toolkit"
           ? "当前有工具任务正在执行"
           : "当前有任务正在执行";
       }
 
       if (status === "available") {
-        return routePath === "/operation/toolkit" ||
-          routePath === "/external/toolkit"
+        return routePath === "/operation/toolkit" || routePath === "/external/toolkit"
           ? "工具集可用"
           : "浏览器自动化可用";
       }
 
       if (status === "offline") {
-        return routePath === "/operation/toolkit" ||
-          routePath === "/external/toolkit"
+        return routePath === "/operation/toolkit" || routePath === "/external/toolkit"
           ? "工具集不可用"
           : "浏览器自动化不可用";
       }
@@ -282,9 +276,9 @@ export default defineComponent({
             ? resolveBrowserAutomationStatusTitle(status, running, routePath)
             : routePath === "/content/image-processing-record" && running
               ? "当前有图片任务正在执行"
-            : running
-              ? "当前有任务正在执行"
-              : titleMap[routePath]?.[status];
+              : running
+                ? "当前有任务正在执行"
+                : titleMap[routePath]?.[status];
 
       if (running) {
         return renderRunningStatusDot(
@@ -380,6 +374,7 @@ export default defineComponent({
       if (
         routePath !== "/system/ai-api-key" ||
         !aiConfigState.initialized ||
+        aiConfigState.loading ||
         aiConfigState.totalFeatureCount <= 0
       ) {
         return undefined;
@@ -466,7 +461,9 @@ export default defineComponent({
     };
 
     const shouldTrackAiConfig = computed(() => hasRoutePath(routers.value, "/system/ai-api-key"));
-    const shouldTrackMessagePush = computed(() => hasRoutePath(routers.value, "/system/message-push"));
+    const shouldTrackMessagePush = computed(() =>
+      hasRoutePath(routers.value, "/system/message-push"),
+    );
 
     const hasActiveChild = (route: AppRouteRecordRaw) => {
       const routePath = getRoutePath(route);
@@ -563,7 +560,7 @@ export default defineComponent({
                 >
                   <div class={`${prefixCls}__section-head`}>
                     <div class={`${prefixCls}__section-label`}>
-                    {route.meta?.icon ? (
+                      {route.meta?.icon ? (
                         <Icon class={`${prefixCls}__section-icon`} icon={route.meta.icon} />
                       ) : undefined}
                       <span class={`${prefixCls}__section-title`}>{route.meta?.title}</span>
@@ -615,6 +612,7 @@ export default defineComponent({
                               [`${prefixCls}__link--warning`]:
                                 childPath === "/system/ai-api-key" &&
                                 aiConfigState.initialized &&
+                                !aiConfigState.loading &&
                                 aiConfigState.missing,
                               [`${prefixCls}__link--running`]: isMenuLinkRunning(childPath),
                               [`${prefixCls}__link--running-psd`]:
@@ -1126,7 +1124,7 @@ $prefix-cls: #{$namespace}-menu;
     box-shadow:
       0 0 0 1px rgb(148 163 184 / 12%),
       0 0 8px rgb(148 163 184 / 12%);
-      opacity:.1;
+    opacity: 0.1;
   }
 
   &__link:hover &__status-dot--offline,
@@ -1202,7 +1200,6 @@ $prefix-cls: #{$namespace}-menu;
     transform: scale(2.8);
   }
 }
-
 
 @keyframes status-dot-breathe-offline {
   0%,

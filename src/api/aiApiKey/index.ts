@@ -48,6 +48,18 @@ export interface AiFeatureRegistryItem {
   group: string;
   scene: string;
   description: string;
+  defaultSpecCode?: string;
+  allowedSpecCodes?: string[];
+}
+
+export interface AiProviderSpec {
+  code: string;
+  label: string;
+  category: string;
+  description: string;
+  capabilities: string[];
+  defaultBaseUrl?: string;
+  defaultModel?: string;
 }
 
 export const getAiApiKeyList = (params?: AiApiKeyListParams) =>
@@ -61,6 +73,9 @@ export const getAiApiKeyUsageOptions = () =>
 
 export const getAiFeatureRegistry = () =>
   request.get<AiFeatureRegistryItem[]>({ url: "/system/ai-api-key/feature-registry" });
+
+export const getAiProviderSpecs = () =>
+  request.get<AiProviderSpec[]>({ url: "/system/ai-api-key/provider-specs" });
 
 export const getAiApiKeyDetail = (id: number) =>
   request.get<AiApiKeyConfig>({ url: `/system/ai-api-key/${id}` });

@@ -51,22 +51,49 @@
               <el-button v-if="isAdmin" size="small" type="primary" @click="handleAdd" :icon="Plus">
                 新增字体
               </el-button>
-              <el-button
-                v-if="isAdmin"
-                size="small"
-                type="primary"
-                @click="handleBatchGenerateThumbnail"
-                :loading="batchGenerateThumbnailLoading"
-              >
-                <template v-if="batchGenerateThumbnailLoading">
-                  生成中 {{ batchGenerateThumbnailProgress.processed }}/{{
-                    batchGenerateThumbnailProgress.total
-                  }}
-                </template>
-                <template v-else>
-                  批量生成缩略图并补全 {{ ids.length ? `(${ids.length})` : "" }}
-                </template>
-              </el-button>
+              <div v-if="isAdmin" class="batch-thumbnail-action">
+                <el-button
+                  size="small"
+                  type="primary"
+                  @click="handleBatchGenerateThumbnail({ completeWithAi: false })"
+                  :loading="batchGenerateThumbnailLoading"
+                >
+                  <template v-if="batchGenerateThumbnailLoading">
+                    生成中 {{ batchGenerateThumbnailProgress.processed }}/{{
+                      batchGenerateThumbnailProgress.total
+                    }}
+                  </template>
+                  <template v-else>
+                    批量生成缩略图 {{ ids.length ? `(${ids.length})` : "" }}
+                  </template>
+                </el-button>
+                <el-dropdown
+                  trigger="click"
+                  :disabled="batchGenerateThumbnailLoading"
+                  @command="handleBatchGenerateThumbnailCommand"
+                >
+                  <el-button
+                    size="small"
+                    type="primary"
+                    plain
+                    class="batch-thumbnail-action__more"
+                    :disabled="batchGenerateThumbnailLoading"
+                  >
+                    <el-icon><ArrowDown /></el-icon>
+                  </el-button>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item command="thumbnail-only">仅生成缩略图</el-dropdown-item>
+                      <el-dropdown-item command="thumbnail-ai">
+                        生成缩略图并 AI 补全
+                      </el-dropdown-item>
+                      <el-dropdown-item command="ai-only" :disabled="!ids.length">
+                        仅 AI 补全选中项
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </div>
               <el-button
                 v-if="batchGenerateThumbnailLoading"
                 size="small"
@@ -914,6 +941,7 @@ import {
   DocumentCopy,
   DArrowLeft,
   DArrowRight,
+  ArrowDown,
 } from "@element-plus/icons-vue";
 import { useWindowSize, useLocalStorage } from "@vueuse/core";
 
@@ -1248,6 +1276,10 @@ const batchGenerateThumbnailProgress = ref({
   failed: 0,
 });
 const batchGenerateThumbnailAbortController = ref<AbortController | null>(null);
+
+type BatchGenerateThumbnailOptions = {
+  completeWithAi?: boolean;
+};
 
 async function getList() {
   loading.value = true;
@@ -1997,8 +2029,23 @@ async function submitFrontendGenerateThumbnail() {
   }
 }
 
+function handleBatchGenerateThumbnailCommand(command: string) {
+  if (command === "thumbnail-ai") {
+    void handleBatchGenerateThumbnail({ completeWithAi: true });
+    return;
+  }
+
+  if (command === "ai-only") {
+    handleBatchAiGenerate();
+    return;
+  }
+
+  void handleBatchGenerateThumbnail({ completeWithAi: false });
+}
+
 // 批量生成缩略图
-async function handleBatchGenerateThumbnail() {
+async function handleBatchGenerateThumbnail(options: BatchGenerateThumbnailOptions = {}) {
+  const completeWithAi = options.completeWithAi === true;
   // 获取要处理的字体列表：选中的或者全部没有缩略图的
   let fontsToProcess = [];
   if (ids.value.length > 0) {
@@ -2017,8 +2064,8 @@ async function handleBatchGenerateThumbnail() {
   // 确认操作
   try {
     await ElMessageBox.confirm(
-      `即将为 ${fontsToProcess.length} 个字体模板批量生成缩略图，是否继续？`,
-      "批量生成缩略图",
+      `即将为 ${fontsToProcess.length} 个字体模板批量生成缩略图${completeWithAi ? "，并在生成后调用 AI 补全内容" : ""}，是否继续？`,
+      completeWithAi ? "批量生成缩略图并补全" : "批量生成缩略图",
       { type: "warning" },
     );
   } catch {
@@ -2101,8 +2148,11 @@ async function handleBatchGenerateThumbnail() {
       // 9. 关闭弹窗
       generateThumbnailDialogVisible.value = false;
 
-      // 10. 触发 AI 补全（异步，不等待）
-      fontTemplateApi.aiCompleteContent(font.id).catch(() => {});
+      if (completeWithAi) {
+        await fontTemplateApi.aiCompleteContent(font.id).catch((error) => {
+          console.warn(`AI补全失败 ${font.name || font.id}:`, error);
+        });
+      }
 
       batchGenerateThumbnailProgress.value.success++;
       console.log(`  [OK] ${font.name || font.id}`);
@@ -2126,7 +2176,9 @@ async function handleBatchGenerateThumbnail() {
   batchGenerateThumbnailAbortController.value = null;
 
   const { success, failed, total } = batchGenerateThumbnailProgress.value;
-  ElMessage.success(`批量生成完成：成功 ${success} 个，失败 ${failed} 个，共 ${total} 个`);
+  ElMessage.success(
+    `${completeWithAi ? "批量生成并补全" : "批量生成缩略图"}完成：成功 ${success} 个，失败 ${failed} 个，共 ${total} 个`,
+  );
 
   // 刷新列表
   getList();
@@ -2295,6 +2347,17 @@ function closeImagePreview() {
 
 .font-template-page .list-page-table-panel__pagination--flat {
   padding-top: 10px;
+}
+
+.batch-thumbnail-action {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+
+  .batch-thumbnail-action__more {
+    margin-left: 1px;
+    padding: 8px;
+  }
 }
 
 .font-template-sidebar {

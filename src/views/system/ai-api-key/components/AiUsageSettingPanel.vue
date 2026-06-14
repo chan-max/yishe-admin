@@ -34,7 +34,7 @@
         </div>
       </div>
 
-      <div v-if="!availableKeyCount" class="ai-setting-dialog__empty">
+      <div v-if="!loading && !availableKeyCount" class="ai-setting-dialog__empty">
         当前还没有可用 Key。请先新增自己的 Key，或联系管理员开放公开 Key 和共享 AI 使用权限。
       </div>
 
@@ -129,6 +129,9 @@
                       {{ resolveSelectedOption(row.keyId)?.unavailableReasonText || "不可用" }}，
                       请重新选择。
                     </div>
+                    <div v-if="row.specCode" class="ai-setting-feature__current-meta">
+                      <span>{{ getSpecLabel(row.specCode) || "未选择调用方式" }}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -172,6 +175,30 @@
                       </div>
                     </el-option>
                   </el-select>
+                  <el-select
+                    v-model="row.specCode"
+                    size="small"
+                    class="w-full"
+                    filterable
+                    placeholder="调用方式"
+                  >
+                    <el-option
+                      v-for="item in getFeatureSpecOptions(row)"
+                      :key="item.code"
+                      :label="item.label"
+                      :value="item.code"
+                    >
+                      <div class="key-option">
+                        <div class="key-option__title-row">
+                          <span class="key-option__title">{{ item.label }}</span>
+                        </div>
+                        <div class="key-option__meta">
+                          <span>{{ item.category }}</span>
+                          <span v-if="item.defaultModel"> / 默认 {{ item.defaultModel }}</span>
+                        </div>
+                      </div>
+                    </el-option>
+                  </el-select>
                   <el-button link :disabled="!row.keyId" @click="resetFeature(row)">清空</el-button>
                 </div>
               </article>
@@ -201,15 +228,19 @@ import dayjs from "dayjs";
 import {
   getAiApiKeyUsageOptions,
   getAiFeatureRegistry,
+  getAiProviderSpecs,
   type AiApiKeyConfig,
   type AiApiKeySource,
   type AiFeatureRegistryItem,
+  type AiProviderSpec,
 } from "@/api/aiApiKey";
 import { getAiSetting, updateAiSetting, type UserAiSetting } from "@/api/user";
 import { ElMessage } from "element-plus";
 
 type FeatureSettingFormItem = AiFeatureRegistryItem & {
   keyId: number | null;
+  specCode: string;
+  params: Record<string, any>;
 };
 
 type AiSettingFormData = {
@@ -231,6 +262,7 @@ const loading = ref(false);
 const saving = ref(false);
 const registry = ref<AiFeatureRegistryItem[]>([]);
 const usageOptions = ref<AiApiKeyConfig[]>([]);
+const providerSpecs = ref<AiProviderSpec[]>([]);
 
 const createDefaultSetting = (): AiSettingFormData => ({
   version: 1,
@@ -250,6 +282,10 @@ const keyOptionMap = computed(() => {
       .map((item) => [normalizeKeyId(item.id), item] as const)
       .filter((item): item is [number, AiApiKeyConfig] => item[0] !== null),
   );
+});
+
+const providerSpecMap = computed(() => {
+  return new Map(providerSpecs.value.map((item) => [item.code, item]));
 });
 
 const availableKeyCount = computed(() => {
@@ -319,6 +355,14 @@ const resolveSelectedOption = (keyId: unknown) => {
   return keyOptionMap.value.get(normalizedKeyId) || null;
 };
 
+const getSpecLabel = (specCode?: string) => {
+  return specCode ? providerSpecMap.value.get(specCode)?.label || specCode : "";
+};
+
+const getFeatureSpecOptions = (_row?: FeatureSettingFormItem) => {
+  return providerSpecs.value;
+};
+
 const applySetting = (payload?: Partial<UserAiSetting>) => {
   const rawFeatureKeys =
     payload?.featureKeys &&
@@ -326,13 +370,35 @@ const applySetting = (payload?: Partial<UserAiSetting>) => {
     !Array.isArray(payload.featureKeys)
       ? payload.featureKeys
       : {};
+  const rawFeatureBindings =
+    payload?.featureBindings &&
+    typeof payload.featureBindings === "object" &&
+    !Array.isArray(payload.featureBindings)
+      ? payload.featureBindings
+      : {};
 
   Object.assign(form, {
-    version: Number(payload?.version || 1) || 1,
-    items: registry.value.map((item) => ({
-      ...item,
-      keyId: normalizeKeyId(rawFeatureKeys[item.code]),
-    })),
+    version: Number(payload?.version || 2) || 2,
+    items: registry.value.map((item) => {
+      const binding = rawFeatureBindings[item.code];
+      const normalizedBinding =
+        binding && typeof binding === "object" && !Array.isArray(binding) ? binding : null;
+      const specCode =
+        String(normalizedBinding?.specCode || item.defaultSpecCode || "").trim() ||
+        providerSpecs.value[0]?.code ||
+        "";
+      return {
+        ...item,
+        keyId: normalizeKeyId(normalizedBinding?.keyId || rawFeatureKeys[item.code]),
+        specCode,
+        params:
+          normalizedBinding?.params &&
+          typeof normalizedBinding.params === "object" &&
+          !Array.isArray(normalizedBinding.params)
+            ? normalizedBinding.params
+            : {},
+      };
+    }),
     updatedAt: String(payload?.updatedAt || "").trim(),
   });
 };
@@ -340,13 +406,15 @@ const applySetting = (payload?: Partial<UserAiSetting>) => {
 const loadConfig = async () => {
   loading.value = true;
   try {
-    const [registryData, settingData, optionData] = await Promise.all([
+    const [registryData, settingData, optionData, specData] = await Promise.all([
       getAiFeatureRegistry(),
       getAiSetting(),
       getAiApiKeyUsageOptions(),
+      getAiProviderSpecs(),
     ]);
     registry.value = Array.isArray(registryData) ? registryData : [];
     usageOptions.value = Array.isArray(optionData) ? optionData : [];
+    providerSpecs.value = Array.isArray(specData) ? specData : [];
     applySetting(settingData || {});
   } finally {
     loading.value = false;
@@ -371,10 +439,26 @@ const saveConfig = async () => {
     result[item.code] = keyId;
     return result;
   }, {});
+  const featureBindings = form.items.reduce<NonNullable<UserAiSetting["featureBindings"]>>(
+    (result, item) => {
+      const keyId = normalizeKeyId(item.keyId);
+      if (!keyId) {
+        return result;
+      }
+      result[item.code] = {
+        keyId,
+        specCode: item.specCode || item.defaultSpecCode || providerSpecs.value[0]?.code || "",
+        params: item.params || {},
+      };
+      return result;
+    },
+    {},
+  );
 
   const payload: UserAiSetting = {
-    version: 1,
+    version: 2,
     featureKeys,
+    featureBindings,
     updatedAt: form.updatedAt || "",
   };
 
@@ -557,14 +641,14 @@ defineExpose({
 
 .ai-setting-group__cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
   gap: 10px;
 }
 
 .ai-setting-feature {
   display: flex;
   min-width: 0;
-  min-height: 238px;
+  min-height: 206px;
   flex-direction: column;
   justify-content: space-between;
   gap: 10px;
@@ -670,7 +754,7 @@ defineExpose({
   display: flex;
   flex-direction: column;
   gap: 5px;
-  min-height: 74px;
+  min-height: 64px;
   padding: 9px 10px;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
@@ -714,9 +798,14 @@ defineExpose({
 
 .ai-setting-feature__footer {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
+}
+
+.ai-setting-feature__footer :deep(.el-input),
+.ai-setting-feature__footer :deep(.el-select) {
+  min-width: 0;
 }
 
 .key-option {
@@ -738,6 +827,9 @@ defineExpose({
   color: var(--el-text-color-primary);
   font-weight: 600;
   font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .key-option__meta {
@@ -805,7 +897,7 @@ defineExpose({
 
 @media (max-width: 640px) {
   .ai-setting-dialog {
-    padding: 16px;
+    padding: 12px;
   }
 
   .ai-setting-dialog__stats {
@@ -814,8 +906,7 @@ defineExpose({
 
   .ai-setting-dialog__toolbar,
   .ai-setting-dialog__footer,
-  .ai-setting-dialog__footer-actions,
-  .ai-setting-feature__footer {
+  .ai-setting-dialog__footer-actions {
     flex-direction: column;
     align-items: stretch;
   }
@@ -825,7 +916,7 @@ defineExpose({
   }
 
   .ai-setting-feature__footer {
-    display: flex;
+    grid-template-columns: 1fr;
   }
 }
 </style>
