@@ -472,7 +472,7 @@ const getList = async () => {
     selectedIds.value = [];
   } catch (error) {
     console.error("加载记录失败:", error);
-    ElMessage.error("加载失败");
+    ElMessage.error({ message: "加载失败", duration: 4000 });
   } finally {
     loading.value = false;
   }
@@ -519,13 +519,13 @@ const submitForm = async () => {
     });
     await getList();
     if (record?.status === "failed") {
-      ElMessage.error(getErrorMessage(record));
+      ElMessage.error({ message: getErrorMessage(record), duration: 4000 });
       return;
     }
-    ElMessage.success("提交成功");
+    ElMessage.success({ message: "提交成功", duration: 3000 });
     dialogVisible.value = false;
   } catch (error) {
-    ElMessage.error(extractSubmitErrorMessage(error));
+    ElMessage.error({ message: extractSubmitErrorMessage(error), duration: 4000 });
   } finally {
     submitLoading.value = false;
   }
@@ -540,7 +540,7 @@ const handleDelete = async (row: any) => {
     });
     deleteLoading.value = true;
     await deleteTtiRecord(row.id);
-    ElMessage.success("删除成功");
+    ElMessage.success({ message: "删除成功", duration: 3000 });
     await getList();
   } catch {
   } finally {
@@ -559,7 +559,7 @@ const loadPromptOptions = async () => {
     promptOptions.value = Array.isArray((res as any)?.list) ? res.list : [];
   } catch (error) {
     console.error("加载提示词模板失败:", error);
-    ElMessage.error("加载提示词模板失败");
+    ElMessage.error({ message: "加载提示词模板失败", duration: 4000 });
   } finally {
     promptLoading.value = false;
   }
@@ -579,7 +579,7 @@ const handlePromptChange = () => {
 
 const handleBatchDelete = async () => {
   if (!selectedIds.value.length) {
-    ElMessage.warning("请选择要删除的记录");
+    ElMessage.warning({ message: "请选择要删除的记录", duration: 3000 });
     return;
   }
 
@@ -595,7 +595,7 @@ const handleBatchDelete = async () => {
     );
     deleteLoading.value = true;
     await batchDeleteTtiRecord(selectedIds.value);
-    ElMessage.success("批量删除完成");
+    ElMessage.success({ message: "批量删除完成", duration: 3000 });
     await getList();
   } catch {
   } finally {

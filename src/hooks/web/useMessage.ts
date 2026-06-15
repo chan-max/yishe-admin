@@ -1,23 +1,23 @@
-import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
-import { useI18n } from './useI18n'
+import { ElMessage, ElMessageBox, ElNotification } from "element-plus";
+import { useI18n } from "./useI18n";
 export const useMessage = () => {
-  const { t } = useI18n()
+  const { t } = useI18n();
   return {
     // 消息提示
     info(content: string) {
-      ElMessage.info(content)
+      ElMessage.info({ message: content, duration: 3000 });
     },
     // 错误消息
     error(content: string) {
-      ElMessage.error(content)
+      ElMessage.error({ message: content, duration: 4000 });
     },
     // 成功消息
     success(content: string) {
-      ElMessage.success(content)
+      ElMessage.success({ message: content, duration: 3000 });
     },
     // 警告消息
     warning(content: string) {
-      ElMessage.warning(content)
+      ElMessage.warning({ message: content, duration: 3000 });
     },
     // 弹出提示
     alert(content: string) {
