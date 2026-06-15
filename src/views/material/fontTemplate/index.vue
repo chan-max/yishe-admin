@@ -1058,7 +1058,7 @@ const gridOptions = ref({
       },
     },
     { type: "checkbox", width: 50, showOverflow: true },
-    { title: "字体 ID", field: "id", width: 220, showOverflow: true },
+
     {
       title: "缩略图",
       field: "thumbnail",
@@ -1077,6 +1077,7 @@ const gridOptions = ref({
       minWidth: 200,
       slots: { default: "languagesSlot" },
     },
+        { title: "字体 ID", field: "id", width: 220, showOverflow: true },
     {
       title: "上传者",
       field: "uploader",
