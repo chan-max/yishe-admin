@@ -264,6 +264,17 @@ export interface AdminMessageEvent {
   receivedAt: string;
 }
 
+export interface RemoteResultEvent {
+  requestId: string;
+  success: boolean;
+  message?: string;
+  agentResponse?: string;
+  error?: string;
+  connectionId?: string;
+  reportedAt?: string;
+  [key: string]: any;
+}
+
 const wsState = reactive<WsState>({
   endpoint: DEFAULT_WS_ENDPOINT,
   status: "idle",
@@ -450,6 +461,7 @@ export type WebsocketEvents = {
   publishTaskRuntime: PublishTaskRuntimeEvent;
   globalNotification: GlobalNotificationEvent;
   amazonCrawlerTaskUpdate: Record<string, any>;
+  "remote-result": RemoteResultEvent;
 };
 
 const emitter = mitt<WebsocketEvents>();
@@ -904,6 +916,10 @@ function bindSocketEvents(currentSocket: Socket) {
 
   currentSocket.on("service-command-result", (data: ServiceCommandResultEvent) => {
     emitter.emit("serviceCommandResult", data);
+  });
+
+  currentSocket.on("remote-result", (data: RemoteResultEvent) => {
+    emitter.emit("remote-result", data);
   });
 
   currentSocket.on("client-connection-changed", (data: ClientConnectionChangedEvent) => {
