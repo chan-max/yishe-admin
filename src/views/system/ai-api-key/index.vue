@@ -226,7 +226,7 @@ const revealedApiKeyMap = reactive<Record<number, boolean>>({});
 const plainApiKeyMap = reactive<Record<number, string>>({});
 const queryParams = reactive({
   currentPage: 1,
-  pageSize: 20,
+  pageSize: 10,
   keyword: "",
   enabled: "",
 });
