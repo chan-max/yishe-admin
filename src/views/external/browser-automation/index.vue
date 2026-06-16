@@ -1111,6 +1111,26 @@ const buildDebugFeedback = (event: ServiceCommandResultEvent, action?: string) =
     updatedAt: toNullableText(event.finishedAt),
   } satisfies BrowserDebugFeedback;
 };
+
+const isServiceCommandFailure = (event: ServiceCommandResultEvent) => {
+  if (event.success === false) {
+    return true;
+  }
+
+  const data = event.data && typeof event.data === "object" ? event.data : {};
+  const result = data.result && typeof data.result === "object" ? data.result : {};
+  return (
+    data.success === false ||
+    result.success === false ||
+    !!event.error ||
+    !!event.errorDetail ||
+    !!result.error ||
+    !!result.errorDetail ||
+    !!data.error ||
+    !!data.errorDetail
+  );
+};
+
 const buildDebugResultText = (feedback: BrowserDebugFeedback, data: Record<string, any>) => {
   if (feedback.action === "pages") {
     return jsonText({
@@ -1652,7 +1672,7 @@ const onCommand = async (event: ServiceCommandResultEvent) => {
     profileDialogVisible.value = false;
     resetProfileForm();
   }
-  (event.success ? ElMessage.success : ElMessage.error)(feedback.message);
+  (isServiceCommandFailure(event) ? ElMessage.error : ElMessage.success)(feedback.message);
   await loadClients();
 };
 

@@ -11,7 +11,9 @@
       <div class="ai-setting-dialog__hero">
         <div class="ai-setting-dialog__hero-main">
           <div class="ai-setting-dialog__hero-title">功能场景绑定</div>
-          <div class="ai-setting-dialog__hero-desc">按功能选择实际调用的 AI Key。</div>
+          <div class="ai-setting-dialog__hero-desc">
+            按功能选择实际调用的 AI Key，调用规范由系统按功能固定。
+          </div>
         </div>
 
         <div class="ai-setting-dialog__stats">
@@ -130,76 +132,67 @@
                       请重新选择。
                     </div>
                     <div v-if="row.specCode" class="ai-setting-feature__current-meta">
-                      <span>{{ getSpecLabel(row.specCode) || "未选择调用方式" }}</span>
+                      <span>固定规范：{{ getSpecLabel(row.specCode) || "未配置" }}</span>
                     </div>
                   </div>
                 </div>
 
                 <div class="ai-setting-feature__footer">
-                  <el-select
-                    v-model="row.keyId"
-                    size="small"
-                    class="w-full"
-                    clearable
-                    filterable
-                    placeholder="选择 Key"
-                  >
-                    <el-option
-                      v-for="item in keyOptions"
-                      :key="item.id"
-                      :label="formatKeyOptionLabel(item)"
-                      :value="item.id!"
-                      :disabled="item.available === false"
+                  <div class="ai-setting-feature__footer-main">
+                    <el-select
+                      v-model="row.keyId"
+                      size="small"
+                      class="w-full"
+                      clearable
+                      filterable
+                      placeholder="选择 Key"
                     >
-                      <div class="key-option">
-                        <div class="key-option__title-row">
-                          <span class="key-option__title">{{ item.name }}</span>
-                          <span
-                            v-if="item.source && item.source !== 'missing'"
-                            class="key-option__tag"
-                            :data-source="item.source"
-                          >
-                            {{ formatSourceLabel(item.source) }}
-                          </span>
-                          <span
-                            v-if="item.available === false"
-                            class="key-option__tag key-option__tag--danger"
-                          >
-                            {{ item.unavailableReasonText || "不可用" }}
-                          </span>
+                      <el-option
+                        v-for="item in keyOptions"
+                        :key="item.id"
+                        :label="formatKeyOptionLabel(item)"
+                        :value="item.id!"
+                        :disabled="item.available === false"
+                      >
+                        <div class="key-option">
+                          <div class="key-option__title-row">
+                            <span class="key-option__title">{{ item.name }}</span>
+                            <span
+                              v-if="item.source && item.source !== 'missing'"
+                              class="key-option__tag"
+                              :data-source="item.source"
+                            >
+                              {{ formatSourceLabel(item.source) }}
+                            </span>
+                            <span
+                              v-if="item.available === false"
+                              class="key-option__tag key-option__tag--danger"
+                            >
+                              {{ item.unavailableReasonText || "不可用" }}
+                            </span>
+                          </div>
+                          <div class="key-option__meta">
+                            <span>{{ item.model || "未设置模型" }}</span>
+                            <span v-if="item.uploader?.account">
+                              / {{ item.uploader.account }}
+                            </span>
+                          </div>
                         </div>
-                        <div class="key-option__meta">
-                          <span>{{ item.model || "未设置模型" }}</span>
-                          <span v-if="item.uploader?.account"> / {{ item.uploader.account }} </span>
-                        </div>
-                      </div>
-                    </el-option>
-                  </el-select>
-                  <el-select
-                    v-model="row.specCode"
-                    size="small"
-                    class="w-full"
-                    filterable
-                    placeholder="调用方式"
+                      </el-option>
+                    </el-select>
+                    <el-button link :disabled="!row.keyId" @click="resetFeature(row)">
+                      清空
+                    </el-button>
+                  </div>
+                  <div
+                    class="ai-setting-feature__fixed-spec"
+                    :title="getSpecLabel(row.specCode) || '未配置'"
                   >
-                    <el-option
-                      v-for="item in getFeatureSpecOptions(row)"
-                      :key="item.code"
-                      :label="item.label"
-                      :value="item.code"
-                    >
-                      <div class="key-option">
-                        <div class="key-option__title-row">
-                          <span class="key-option__title">{{ item.label }}</span>
-                        </div>
-                        <div class="key-option__meta">
-                          <span>{{ item.category }}</span>
-                          <span v-if="item.defaultModel"> / 默认 {{ item.defaultModel }}</span>
-                        </div>
-                      </div>
-                    </el-option>
-                  </el-select>
-                  <el-button link :disabled="!row.keyId" @click="resetFeature(row)">清空</el-button>
+                    <span class="ai-setting-feature__fixed-spec-label">固定规范</span>
+                    <span class="ai-setting-feature__fixed-spec-value">
+                      {{ getSpecLabel(row.specCode) || "未配置" }}
+                    </span>
+                  </div>
                 </div>
               </article>
             </div>
@@ -359,8 +352,13 @@ const getSpecLabel = (specCode?: string) => {
   return specCode ? providerSpecMap.value.get(specCode)?.label || specCode : "";
 };
 
-const getFeatureSpecOptions = (_row?: FeatureSettingFormItem) => {
-  return providerSpecs.value;
+const getFeatureDefaultSpecCode = (feature: AiFeatureRegistryItem) => {
+  return (
+    String(feature.defaultSpecCode || "").trim() ||
+    String(feature.allowedSpecCodes?.[0] || "").trim() ||
+    providerSpecs.value[0]?.code ||
+    ""
+  );
 };
 
 const applySetting = (payload?: Partial<UserAiSetting>) => {
@@ -383,10 +381,7 @@ const applySetting = (payload?: Partial<UserAiSetting>) => {
       const binding = rawFeatureBindings[item.code];
       const normalizedBinding =
         binding && typeof binding === "object" && !Array.isArray(binding) ? binding : null;
-      const specCode =
-        String(normalizedBinding?.specCode || item.defaultSpecCode || "").trim() ||
-        providerSpecs.value[0]?.code ||
-        "";
+      const specCode = getFeatureDefaultSpecCode(item);
       return {
         ...item,
         keyId: normalizeKeyId(normalizedBinding?.keyId || rawFeatureKeys[item.code]),
@@ -447,7 +442,7 @@ const saveConfig = async () => {
       }
       result[item.code] = {
         keyId,
-        specCode: item.specCode || item.defaultSpecCode || providerSpecs.value[0]?.code || "",
+        specCode: getFeatureDefaultSpecCode(item),
         params: item.params || {},
       };
       return result;
@@ -797,8 +792,15 @@ defineExpose({
 }
 
 .ai-setting-feature__footer {
-  display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) auto;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ai-setting-feature__footer-main {
+  display: flex;
+  min-width: 0;
   align-items: center;
   gap: 8px;
 }
@@ -806,6 +808,45 @@ defineExpose({
 .ai-setting-feature__footer :deep(.el-input),
 .ai-setting-feature__footer :deep(.el-select) {
   min-width: 0;
+}
+
+.ai-setting-feature__footer-main :deep(.el-select) {
+  flex: 1;
+}
+
+.ai-setting-feature__footer-main :deep(.el-button) {
+  flex: none;
+}
+
+.ai-setting-feature__fixed-spec {
+  display: flex;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  background: var(--el-fill-color-lighter);
+  color: var(--el-text-color-regular);
+  font-size: 12px;
+  line-height: 30px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ai-setting-feature__fixed-spec-label {
+  flex: none;
+  color: var(--el-text-color-secondary);
+}
+
+.ai-setting-feature__fixed-spec-value {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--el-text-color-regular);
+  text-overflow: ellipsis;
 }
 
 .key-option {

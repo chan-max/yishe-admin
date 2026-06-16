@@ -116,7 +116,8 @@
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item command="chat">发送指令</el-dropdown-item>
+                  <el-dropdown-item command="monitor">整页监控</el-dropdown-item>
+                  <el-dropdown-item command="chat" divided>发送指令</el-dropdown-item>
                   <el-dropdown-item command="log">对话日志</el-dropdown-item>
                   <el-dropdown-item command="clear" divided>清空对话</el-dropdown-item>
                 </el-dropdown-menu>
@@ -214,6 +215,75 @@
       </template>
     </el-dialog>
 
+    <!-- 整页监控对话框 -->
+    <el-dialog
+      v-model="monitorDialogVisible"
+      :title="`整页监控 · ${monitorTarget?.id?.slice(0, 20) || '设计工具'}`"
+      width="90%"
+      top="5vh"
+      :close-on-click-modal="false"
+      @close="stopMonitoring"
+    >
+      <div class="monitor-dialog">
+        <div class="monitor-header">
+          <div class="monitor-status">
+            <el-tag v-if="monitorStatus.connecting" type="warning" size="small">连接中...</el-tag>
+            <el-tag v-else-if="monitorStatus.connected" type="success" size="small">已连接</el-tag>
+            <el-tag v-else type="info" size="small">未连接</el-tag>
+            <span v-if="monitorStatus.designToolPeerId" class="monitor-peer-id">
+              Peer ID: {{ monitorStatus.designToolPeerId.slice(0, 20) }}...
+            </span>
+          </div>
+          <div class="monitor-controls">
+            <el-button size="small" @click="stopMonitoring" :disabled="!monitorStatus.connected && !monitorStatus.connecting">
+              停止监控
+            </el-button>
+          </div>
+        </div>
+        
+        <div v-if="monitorStatus.error" class="monitor-error">
+          <el-alert type="error" :title="monitorStatus.error" :closable="false" />
+        </div>
+
+        <div class="monitor-video-container">
+          <video
+            ref="monitorVideoRef"
+            class="monitor-video"
+            autoplay
+            playsinline
+            muted
+          ></video>
+          <div v-if="monitorStatus.connecting" class="monitor-loading">
+            <el-icon class="is-loading"><Loading /></el-icon>
+            <span>正在连接页面流...</span>
+          </div>
+          <div v-else-if="!monitorStatus.connected" class="monitor-placeholder">
+            <el-empty description="等待连接" :image-size="60" />
+          </div>
+        </div>
+
+        <div class="monitor-info">
+          <el-descriptions :column="2" size="small" border>
+            <el-descriptions-item label="设计工具ID">
+              {{ monitorTarget?.id || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="连接状态">
+              {{ monitorStatus.connected ? '已连接' : '未连接' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="监控范围">
+              整个设计工具页面
+            </el-descriptions-item>
+            <el-descriptions-item label="传输方式">
+              浏览器 P2P (WebRTC)
+            </el-descriptions-item>
+            <el-descriptions-item label="服务端负载">
+              仅权限/信令，不传输视频帧
+            </el-descriptions-item>
+          </el-descriptions>
+        </div>
+      </div>
+    </el-dialog>
+
     <!-- 远程指令对话框 -->
     <el-dialog
       v-model="remoteDialogVisible"
@@ -303,12 +373,16 @@
               :key="profile.profileId"
               :label="profile.label"
               :value="profile.profileId"
-              :disabled="profile.busy"
             >
-              <div class="launch-profile-option">
-                <span class="launch-profile-option__name">{{ profile.label }}</span>
+              <div class="launch-profile-option" :class="{ 'launch-profile-option--busy': profile.busy }">
+                <div class="launch-profile-option__main">
+                  <span class="launch-profile-option__name">{{ profile.name }}</span>
+                  <span class="launch-profile-option__id">{{ profile.profileId }}</span>
+                </div>
                 <span class="launch-profile-option__meta">
                   <el-tag v-if="profile.isActive" size="small" type="success" effect="plain">当前</el-tag>
+                  <el-tag v-if="profile.busy" size="small" type="warning" effect="plain">执行中</el-tag>
+                  <el-tag v-else-if="profile.connected" size="small" type="info" effect="plain">已打开</el-tag>
                   <small>{{ profile.description }}</small>
                 </span>
               </div>
@@ -316,6 +390,9 @@
           </el-select>
           <div v-if="launchClientId && !launchProfileOptions.length" class="launch-form-tip">
             当前客户端没有上报浏览器环境，请先在浏览器自动化/Temu 工具集中同步或创建环境。
+          </div>
+          <div v-else-if="hasBusyLaunchProfiles" class="launch-form-tip">
+            环境执行发布任务时仍可打开设计工具，打开操作不会中断当前任务。
           </div>
         </el-form-item>
         <el-form-item label="初始指令">
@@ -343,7 +420,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch, nextTick } from "vue";
+import { Loading } from "@element-plus/icons-vue";
 import {
   getMyOnlineRuntimeConnectionViews,
   openDesignToolOnClient,
@@ -389,6 +467,18 @@ const pendingLaunchClientId = ref("");
 const pendingLaunchProfileId = ref("");
 let launchResultTimer: number | null = null;
 
+// 监控相关状态
+const monitorDialogVisible = ref(false);
+const monitorTarget = ref<WebsocketConnectionVO | null>(null);
+const monitorVideoRef = ref<HTMLVideoElement | null>(null);
+const monitorStatus = ref({
+  connecting: false,
+  connected: false,
+  error: null as string | null,
+  designToolPeerId: null as string | null,
+});
+let monitorSessionId = 0;
+
 const selectedLaunchClient = computed(() =>
   launchClientOptions.value.find((item) => item.id === launchClientId.value) || null,
 );
@@ -428,7 +518,9 @@ const launchProfileOptions = computed(() => {
         name,
         label: `${name} (${profileId})`,
         description: busy
-          ? "当前环境忙碌"
+          ? pageCount !== null
+            ? `任务执行中，${pageCount} 个页面`
+            : "任务执行中，可继续打开"
           : connected
             ? pageCount !== null
               ? `浏览器已打开，${pageCount} 个页面`
@@ -437,11 +529,14 @@ const launchProfileOptions = computed(() => {
               ? "当前活动环境，执行时复用"
               : "未打开，执行时自动拉起",
         busy,
+        connected,
         isActive,
       };
     })
-    .filter(Boolean) as Array<{ profileId: string; name: string; label: string; description: string; busy: boolean; isActive: boolean }>;
+    .filter(Boolean) as Array<{ profileId: string; name: string; label: string; description: string; busy: boolean; connected: boolean; isActive: boolean }>;
 });
+
+const hasBusyLaunchProfiles = computed(() => launchProfileOptions.value.some((item) => item.busy));
 
 const adminWsStatusTag = computed<{ text: string; type: TagType }>(() => {
   const s = websocketClient.state.status;
@@ -539,7 +634,7 @@ const openLaunchDialog = () => {
 };
 
 watch(
-  () => [launchClientId.value, launchProfileOptions.value.map((item) => `${item.profileId}:${item.busy}`).join("|")],
+  () => [launchClientId.value, launchProfileOptions.value.map((item) => item.profileId).join("|")],
   () => {
     if (!launchClientId.value) {
       launchProfileId.value = "";
@@ -547,12 +642,12 @@ watch(
     }
     if (
       launchProfileId.value &&
-      launchProfileOptions.value.some((item) => item.profileId === launchProfileId.value && !item.busy)
+      launchProfileOptions.value.some((item) => item.profileId === launchProfileId.value)
     ) {
       return;
     }
     launchProfileId.value =
-      launchProfileOptions.value.find((item) => !item.busy)?.profileId ||
+      launchProfileOptions.value.find((item) => item.isActive)?.profileId ||
       launchProfileOptions.value[0]?.profileId ||
       "";
   },
@@ -589,6 +684,29 @@ const getCommandResultMessage = (event: ServiceCommandResultEvent) => {
   );
 };
 
+const isCommandResultFailure = (event: ServiceCommandResultEvent) => {
+  if (event.success === false) {
+    return true;
+  }
+
+  const data = event.data && typeof event.data === "object" ? event.data : {};
+  const result = data.result && typeof data.result === "object" ? data.result : {};
+  return (
+    data.success === false ||
+    result.success === false ||
+    !!event.error ||
+    !!event.errorDetail ||
+    !!result.error ||
+    !!result.errorDetail ||
+    !!data.error ||
+    !!data.errorDetail
+  );
+};
+
+const getLaunchCommandId = (response: any) => {
+  return String(response?.data?.commandId || response?.commandId || response?.data?.data?.commandId || "").trim();
+};
+
 const sendLaunchDesignTool = async () => {
   const token = String(getAccessToken() || "").trim();
   if (!token) {
@@ -618,7 +736,7 @@ const sendLaunchDesignTool = async () => {
     if (res?.success === false) {
       throw new Error(res?.message || "打开设计工具失败");
     }
-    const commandId = String(res?.data?.commandId || "").trim();
+    const commandId = getLaunchCommandId(res);
     if (!commandId) {
       throw new Error(res?.message || "打开命令没有返回 commandId");
     }
@@ -655,7 +773,7 @@ const onServiceCommandResult = (event: ServiceCommandResultEvent) => {
   }
 
   finishLaunchWaiting();
-  if (event.success) {
+  if (!isCommandResultFailure(event)) {
     ElMessage.success(event.message || "设计工具已在所选浏览器环境中打开");
     launchDialogVisible.value = false;
     void refreshConnections();
@@ -808,8 +926,176 @@ const openRemoteDialog = (row: WebsocketConnectionVO) => {
   remoteDialogVisible.value = true;
 };
 
+const openMonitorDialog = async (row: WebsocketConnectionVO) => {
+  if (monitorStatus.value.connected || monitorStatus.value.connecting) {
+    await stopMonitoring();
+  }
+  monitorTarget.value = row;
+  monitorDialogVisible.value = true;
+  monitorSessionId += 1;
+  monitorStatus.value = {
+    connecting: false,
+    connected: false,
+    error: null,
+    designToolPeerId: null,
+  };
+  // 自动开始监控
+  nextTick(() => {
+    void startMonitoring(row);
+  });
+};
+
+const startMonitoring = async (row: WebsocketConnectionVO) => {
+  const sessionId = monitorSessionId;
+  if (!monitorVideoRef.value) {
+    monitorStatus.value.error = "视频元素未准备好";
+    return;
+  }
+
+  monitorStatus.value.connecting = true;
+  monitorStatus.value.error = null;
+  let removeResponseListener = () => {};
+
+  try {
+    const { canvasMonitorService } = await import("@/services/canvasMonitor");
+    const adminPeerId = await canvasMonitorService.initPeer();
+    
+    // 请求设计端准备整页监控流。服务端只转发 JSON 命令，媒体流走 WebRTC P2P。
+    const requestId = `monitor-${Date.now()}`;
+    const responsePromise = new Promise<any>((resolve) => {
+      let settled = false;
+      let timer: number | null = null;
+      const cleanup = (handler: (data: any) => void) => {
+        (websocketClient.events as any).off("remote-result", handler);
+        if (timer !== null) {
+          window.clearTimeout(timer);
+          timer = null;
+        }
+      };
+      const handler = (data: any) => {
+        if (data?.requestId !== requestId || settled) return;
+        settled = true;
+        cleanup(handler);
+        resolve(data);
+      };
+      removeResponseListener = () => {
+        if (settled) return;
+        settled = true;
+        cleanup(handler);
+      };
+      (websocketClient.events as any).on("remote-result", handler);
+
+      timer = window.setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        cleanup(handler);
+        resolve({ success: false, error: "请求超时" });
+      }, 15000);
+    });
+
+    if (sessionId !== monitorSessionId || !monitorDialogVisible.value) {
+      removeResponseListener();
+      return;
+    }
+
+    const sendResult: any = await request.postOriginal({
+      url: "/websocket/remote-command",
+      data: {
+        connectionId: row.id,
+        command: {
+          type: "page-monitor-request",
+          payload: {
+            adminPeerId,
+            requestId,
+            snapshotFps: 1,
+            fps: 6,
+            maxWidth: 1280,
+            maxHeight: 720,
+            targetSelector: "#app",
+          },
+          requestId,
+        },
+      },
+    });
+    if (sendResult?.success === false) {
+      removeResponseListener();
+      throw new Error(sendResult?.message || "监控请求发送失败");
+    }
+
+    const response = await responsePromise;
+
+    if (sessionId !== monitorSessionId || !monitorDialogVisible.value) {
+      return;
+    }
+    
+    if (!response.success || !response.designToolPeerId) {
+      throw new Error(response.error || "获取设计端页面流 Peer ID 失败");
+    }
+
+    monitorStatus.value.designToolPeerId = response.designToolPeerId;
+
+    // 连接到设计端
+    await canvasMonitorService.connectToDesignTool(
+      response.designToolPeerId,
+      monitorVideoRef.value,
+      {
+        autoReconnect: true,
+        maxRetries: 3,
+        onStatusChange: (status) => {
+          if (sessionId !== monitorSessionId || !monitorDialogVisible.value) return;
+          monitorStatus.value.connected = status.isConnected;
+          monitorStatus.value.connecting = !status.isConnected && !status.error;
+          monitorStatus.value.error = status.error;
+        },
+      },
+    );
+
+    if (sessionId !== monitorSessionId || !monitorDialogVisible.value) {
+      canvasMonitorService.stopMonitoring();
+      return;
+    }
+
+    monitorStatus.value.connected = true;
+    monitorStatus.value.connecting = false;
+  } catch (error: any) {
+    removeResponseListener();
+    console.error("启动监控失败:", error);
+    monitorStatus.value.error = error?.message || "启动监控失败";
+    monitorStatus.value.connecting = false;
+  }
+};
+
+const stopMonitoring = async () => {
+  const targetId = monitorTarget.value?.id;
+  monitorSessionId += 1;
+  try {
+    const { canvasMonitorService } = await import("@/services/canvasMonitor");
+    canvasMonitorService.stopMonitoring();
+  } catch (error) {
+    console.error("停止监控失败:", error);
+  }
+  monitorStatus.value.connected = false;
+  monitorStatus.value.connecting = false;
+  monitorStatus.value.designToolPeerId = null;
+  monitorStatus.value.error = null;
+
+  if (targetId) {
+    request.postOriginal({
+      url: "/websocket/remote-command",
+      data: {
+        connectionId: targetId,
+        command: {
+          type: "page-monitor-stop",
+          requestId: `monitor-stop-${Date.now()}`,
+        },
+      },
+    }).catch(() => undefined);
+  }
+};
+
 const handleAction = (cmd: string, row: WebsocketConnectionVO) => {
   switch (cmd) {
+    case "monitor": void openMonitorDialog(row); break;
     case "chat": openRemoteDialog(row); break;
     case "log": fetchConversation(row); break;
     case "clear": sendRemoteClear(row); break;
@@ -821,7 +1107,7 @@ const sendRemoteCommand = async () => {
   remoteSending.value = true;
   const requestId = `cmd-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
   try {
-    const res = await request.post({
+    const res: any = await request.postOriginal({
       url: "/websocket/remote-command",
       data: {
         connectionId: remoteTarget.value.id,
@@ -832,19 +1118,24 @@ const sendRemoteCommand = async () => {
         },
       },
     });
-    if (res?.data?.success || res?.success) {
-      remoteResults.value.unshift({
-        requestId,
-        success: true,
-        message: "命令已发送，Agent 正在处理...",
-      });
-      remoteMessage.value = "";
+    if (res?.success === false) {
+      throw new Error(res?.message || "发送失败");
     }
+    remoteResults.value.unshift({
+      requestId,
+      success: true,
+      message: "命令已发送，Agent 正在处理...",
+      connectionId: remoteTarget.value.id,
+      reportedAt: new Date().toISOString(),
+    });
+    remoteMessage.value = "";
   } catch (error: any) {
     remoteResults.value.unshift({
       requestId,
       success: false,
       error: error?.message || "发送失败",
+      connectionId: remoteTarget.value.id,
+      reportedAt: new Date().toISOString(),
     });
   } finally {
     remoteSending.value = false;
@@ -853,13 +1144,16 @@ const sendRemoteCommand = async () => {
 
 const sendRemoteClear = async (row: WebsocketConnectionVO) => {
   try {
-    await request.post({
+    const res: any = await request.postOriginal({
       url: "/websocket/remote-command",
       data: {
         connectionId: row.id,
         command: { type: "clear", requestId: `clear-${Date.now()}` },
       },
     });
+    if (res?.success === false) {
+      throw new Error(res?.message || "远程清空失败");
+    }
   } catch (error: any) {
     console.error("远程清空失败:", error);
   }
@@ -910,13 +1204,16 @@ const fetchConversation = async (row: WebsocketConnectionVO) => {
   conversationData.value = null;
   const requestId = `conv-${Date.now()}`;
   try {
-    await request.post({
+    const res: any = await request.postOriginal({
       url: "/websocket/remote-command",
       data: {
         connectionId: row.id,
         command: { type: "getConversation", requestId },
       },
     });
+    if (res?.success === false) {
+      throw new Error(res?.message || "请求失败");
+    }
   } catch (error: any) {
     conversationData.value = { message: `请求失败: ${error?.message || "网络错误"}` };
     conversationLoading.value = false;
@@ -995,6 +1292,10 @@ const resultHandler = (data: any) => {
     return;
   }
   // 普通远程命令结果
+  if (data?.requestId?.startsWith("monitor-") || data?.requestId?.startsWith("monitor-stop-")) {
+    return;
+  }
+
   remoteResults.value.unshift({
     requestId: data?.requestId || "unknown",
     success: data?.success,
@@ -1023,6 +1324,8 @@ onBeforeUnmount(() => {
   websocketClient.events.off("serviceCommandResult", onServiceCommandResult);
   clearLaunchStateOnUnmount();
   (websocketClient.events as any).off("remote-result", resultHandler);
+  // 清理监控连接
+  stopMonitoring();
 });
 </script>
 
@@ -1042,6 +1345,72 @@ onBeforeUnmount(() => {
   gap: 12px;
   flex-wrap: wrap;
   padding: 6px 0;
+}
+
+/* ── Monitor Dialog ── */
+.monitor-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.monitor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.monitor-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.monitor-peer-id {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  font-family: monospace;
+}
+
+.monitor-error {
+  padding: 8px 0;
+}
+
+.monitor-video-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.monitor-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.monitor-loading,
+.monitor-placeholder {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: #fff;
+}
+
+.monitor-loading .el-icon {
+  font-size: 32px;
+}
+
+.monitor-info {
+  padding: 8px 0;
 }
 
 .dt-toolbar__left {
@@ -1160,12 +1529,20 @@ onBeforeUnmount(() => {
 
 .launch-profile-option {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   min-width: 0;
   width: 100%;
-  line-height: 1.2;
+  padding: 5px 0;
+  line-height: 1.25;
+}
+
+.launch-profile-option__main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .launch-profile-option__name {
@@ -1174,15 +1551,27 @@ onBeforeUnmount(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 13px;
+  color: var(--el-text-color-primary);
+}
+
+.launch-profile-option__id {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--el-text-color-secondary);
+  font-family: "SF Mono", Consolas, monospace;
+  font-size: 11px;
 }
 
 .launch-profile-option__meta {
-  display: inline-flex;
-  align-items: center;
+  display: flex;
+  align-items: flex-end;
   justify-content: flex-end;
+  flex-direction: column;
   gap: 6px;
   flex: none;
-  max-width: 48%;
+  max-width: 44%;
   min-width: 0;
 }
 
@@ -1196,11 +1585,20 @@ onBeforeUnmount(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  max-width: 100%;
+  line-height: 1.2;
+}
+
+.launch-profile-option--busy .launch-profile-option__name {
+  color: var(--el-text-color-regular);
 }
 
 :global(.design-tool-launch-profile-popper .el-select-dropdown__item) {
-  height: 34px;
-  line-height: 34px;
+  height: auto;
+  min-height: 48px;
+  line-height: normal;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 
 .launch-form-tip {

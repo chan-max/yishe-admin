@@ -272,6 +272,9 @@ export interface RemoteResultEvent {
   error?: string;
   connectionId?: string;
   reportedAt?: string;
+  designToolPeerId?: string;
+  adminPeerId?: string;
+  streamMode?: "page" | "canvas" | string;
   [key: string]: any;
 }
 
