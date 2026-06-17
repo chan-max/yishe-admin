@@ -47,8 +47,13 @@ class PageMonitorService {
         return;
       }
 
+      const peerConfig = resolvePeerjsConfig();
       this.peer = new Peer(undefined, {
         debug: 1,
+        host: peerConfig.host,
+        port: peerConfig.port,
+        path: peerConfig.path,
+        secure: peerConfig.secure,
         config: {
           iceServers: [
             { urls: "stun:stun.l.google.com:19302" },
@@ -298,6 +303,49 @@ class PageMonitorService {
 
   private notify(config: MonitorConfig): void {
     config.onStatusChange?.(this.getStatus());
+  }
+}
+
+function resolvePeerjsConfig() {
+  const explicitHost = import.meta.env.VITE_PEERJS_HOST;
+  if (explicitHost) {
+    const explicitConfig = parsePeerjsUrl(explicitHost);
+    if (explicitConfig) return explicitConfig;
+  }
+
+  const candidates = [
+    import.meta.env.VITE_BASE_URL,
+    import.meta.env.VITE_API_URL,
+  ].filter(Boolean);
+
+  for (const candidate of candidates) {
+    const peerConfig = parsePeerjsUrl(candidate);
+    if (peerConfig) return peerConfig;
+  }
+
+  const { protocol, hostname } = window.location;
+  return {
+    host: hostname,
+    port: protocol === "https:" ? 443 : 80,
+    path: "/",
+    secure: protocol === "https:",
+  };
+}
+
+function parsePeerjsUrl(rawUrl: string) {
+  const value = String(rawUrl || "").trim();
+  if (!value || !/^https?:\/\//i.test(value)) return null;
+
+  try {
+    const url = new URL(value);
+    return {
+      host: url.hostname,
+      port: url.port ? Number(url.port) : url.protocol === "https:" ? 443 : 80,
+      path: "/",
+      secure: url.protocol === "https:",
+    };
+  } catch {
+    return null;
   }
 }
 

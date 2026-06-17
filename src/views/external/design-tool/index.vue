@@ -31,7 +31,7 @@
       size="small"
       :row-class-name="tableRowClass"
     >
-      <el-table-column label="实例" min-width="200" show-overflow-tooltip>
+      <el-table-column label="实例" min-width="220" show-overflow-tooltip>
         <template #default="{ row }">
           <div class="cell-instance">
             <div class="cell-instance__main">
@@ -57,6 +57,13 @@
         </template>
       </el-table-column>
 
+      <el-table-column label="状态" width="80" align="center">
+        <template #default="{ row }">
+          <span v-if="isStreaming(row)" class="cell-status cell-status--active">● 共享中</span>
+          <span v-else class="cell-status cell-status--idle">空闲</span>
+        </template>
+      </el-table-column>
+
       <el-table-column label="连接" min-width="140" show-overflow-tooltip>
         <template #default="{ row }">
           <div class="cell-conn">
@@ -66,7 +73,7 @@
         </template>
       </el-table-column>
 
-      <el-table-column label="AI Agent" min-width="300">
+      <el-table-column label="AI Agent" min-width="220">
         <template #default="{ row }">
           <div v-if="getAgent(row)" class="cell-agent">
             <div class="cell-agent__header">
@@ -76,29 +83,24 @@
               <el-tag v-if="getAgent(row).available" type="success" size="small" effect="plain">可制作</el-tag>
               <span class="cell-agent__time">{{ formatAgentTime(getAgent(row).updatedAt) }}</span>
             </div>
-            <!-- 只在非空闲状态时显示详细信息 -->
+            <!-- 只在非空闲状态时显示详细信息，单行紧凑布局 -->
             <template v-if="getAgent(row).agentState !== 'idle'">
-              <div v-if="getAgent(row).userInput" class="cell-agent__row">
-                <span class="cell-agent__k">输入</span>
+              <div v-if="getAgent(row).userInput" class="cell-agent__compact">
                 <span class="cell-agent__v cell-agent__v--hl">{{ getAgent(row).userInput }}</span>
               </div>
-              <div v-if="getAgent(row).plan" class="cell-agent__row">
-                <span class="cell-agent__k">计划</span>
+              <div v-if="getAgent(row).plan" class="cell-agent__compact">
                 <span class="cell-agent__v">
                   {{ getAgent(row).plan.goal }}
                   <b class="cell-agent__p">{{ getAgent(row).plan.currentStep }}/{{ getAgent(row).plan.totalSteps }}</b>
                 </span>
               </div>
-              <div v-if="getAgent(row).step" class="cell-agent__row">
-                <span class="cell-agent__k">步骤</span>
+              <div v-if="getAgent(row).step" class="cell-agent__compact">
                 <span class="cell-agent__v">{{ getAgent(row).step }}</span>
               </div>
-              <div v-if="getAgent(row).lastToolCall" class="cell-agent__row">
-                <span class="cell-agent__k">工具</span>
+              <div v-if="getAgent(row).lastToolCall" class="cell-agent__compact">
                 <span class="cell-agent__v cell-agent__v--mono">{{ getAgent(row).lastToolCall }}</span>
               </div>
-              <div v-if="getAgent(row).lastError" class="cell-agent__row">
-                <span class="cell-agent__k">错误</span>
+              <div v-if="getAgent(row).lastError" class="cell-agent__compact">
                 <span class="cell-agent__v cell-agent__v--err">{{ getAgent(row).lastError }}</span>
               </div>
             </template>
@@ -116,9 +118,7 @@
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item command="monitor">整页监控</el-dropdown-item>
-                  <el-dropdown-item command="chat" divided>发送指令</el-dropdown-item>
-                  <el-dropdown-item command="log">对话日志</el-dropdown-item>
+                  <el-dropdown-item command="control">操控面板</el-dropdown-item>
                   <el-dropdown-item command="clear" divided>清空对话</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -130,210 +130,129 @@
 
     <el-empty v-else description="当前没有已连接的设计工具" :image-size="60" />
 
-    <!-- 对话日志对话框 -->
+    <!-- 操控面板 -->
     <el-dialog
-      v-model="conversationDialogVisible"
-      :title="`对话日志 · ${conversationTarget?.id?.slice(0, 20) || ''}`"
-      width="80%"
-      top="3vh"
-      :close-on-click-modal="true"
+      v-model="controlPanelVisible"
+      fullscreen
+      :show-close="false"
+      :close-on-click-modal="false"
       destroy-on-close
+      @close="onControlPanelClose"
     >
-      <div v-loading="conversationLoading" class="conv-dialog">
-        <!-- Agent 状态概览 -->
-        <div v-if="conversationData?.agentStatus" class="conv-status">
-          <el-tag :type="agentTagType(conversationData.agentStatus.status)" size="small">
-            {{ agentLabel(conversationData.agentStatus.status) }}
+      <div v-if="controlTarget" class="cp">
+        <!-- 顶部工具栏 -->
+        <div class="cp-topbar">
+          <span class="cp-topbar__title">{{ controlTarget.clientInfo?.app?.name || '设计工具' }}</span>
+          <span class="cp-topbar__id">{{ controlTarget.id?.slice(0, 20) || '' }}</span>
+          <el-tag v-if="getAgent(controlTarget)" :type="agentTagType(getAgent(controlTarget).agentState)" size="small">
+            {{ agentLabel(getAgent(controlTarget).agentState) }}
           </el-tag>
-          <span v-if="conversationData.agentStatus.error" class="conv-status__err">
-            {{ conversationData.agentStatus.error }}
-          </span>
-          <span v-if="conversationData.agentStatus.plan" class="conv-status__plan">
-            计划: {{ conversationData.agentStatus.plan.goal }}
-            ({{ conversationData.agentStatus.plan.currentStep }}/{{ conversationData.agentStatus.plan.totalSteps }})
-          </span>
+          <span v-if="getAgent(controlTarget)?.step" class="cp-agent-step">{{ getAgent(controlTarget).step }}</span>
+          <span class="cp-spacer" />
+          <!-- 流状态 -->
+          <el-tag v-if="streamStatus === 'streaming'" type="success" size="small" effect="plain">工具端正在共享</el-tag>
+          <el-tag v-else-if="streamStatus === 'idle'" type="info" size="small" effect="plain">工具端未共享</el-tag>
+          <el-button size="small" text :loading="conversationLoading" @click="fetchConversation(controlTarget!)">刷新</el-button>
+          <el-button size="small" text @click="copyConversation">复制日志</el-button>
+          <el-button size="small" text circle @click="controlPanelVisible = false">
+            <Icon icon="ep:close" />
+          </el-button>
         </div>
 
-        <!-- 消息列表 -->
-        <div v-if="conversationData?.conversation?.length" class="conv-timeline">
-          <div
-            v-for="(msg, idx) in conversationData.conversation"
-            :key="msg.id || idx"
-            class="conv-msg"
-            :class="`conv-msg--${msg.role}`"
-          >
-            <div class="conv-msg__header">
-              <span class="conv-msg__role">{{ msg.role }}</span>
-              <span v-if="msg.meta?.iteration" class="conv-msg__iter">第{{ msg.meta.iteration }}轮</span>
-              <span v-if="msg.meta?.duration" class="conv-msg__dur">{{ msg.meta.duration }}ms</span>
-              <span class="conv-msg__time">{{ formatMs(msg.timestamp) }}</span>
+        <!-- 左右分栏 -->
+        <div class="cp-main">
+          <!-- 左侧：日志 + 输入 -->
+          <div class="cp-left">
+            <div v-loading="conversationLoading" class="cp-log-body">
+              <template v-if="conversationData?.conversation?.length">
+                <div
+                  v-for="(msg, idx) in conversationData.conversation"
+                  :key="msg.id || idx"
+                  class="conv-msg"
+                  :class="`conv-msg--${msg.role}`"
+                >
+                  <div class="conv-msg__header">
+                    <span class="conv-msg__role">{{ msg.role }}</span>
+                    <span v-if="msg.meta?.iteration" class="conv-msg__iter">第{{ msg.meta.iteration }}轮</span>
+                    <span v-if="msg.meta?.duration" class="conv-msg__dur">{{ msg.meta.duration }}ms</span>
+                    <span class="conv-msg__time">{{ formatMs(msg.timestamp) }}</span>
+                  </div>
+                  <div v-if="msg.content" class="conv-msg__body">{{ msg.content }}</div>
+                  <div v-if="msg.tool_calls?.length" class="conv-msg__tools">
+                    <div v-for="tc in msg.tool_calls" :key="tc.id" class="conv-tool">
+                      <div class="conv-tool__name">{{ tc.name }}</div>
+                      <pre class="conv-tool__args">{{ formatJson(tc.arguments) }}</pre>
+                    </div>
+                  </div>
+                  <div v-if="msg.role === 'tool' && msg.meta?.toolResult" class="conv-msg__result">
+                    <span :class="msg.meta.toolResult.success ? 'conv-ok' : 'conv-err'">
+                      {{ msg.meta.toolResult.success ? '✅' : '❌' }}
+                    </span>
+                    <pre class="conv-tool__args">{{ formatJson(msg.meta.toolResult) }}</pre>
+                  </div>
+                  <div v-if="msg.role === 'tool' && msg.meta?.toolArgs" class="conv-msg__args">
+                    <span class="conv-label">调用参数:</span>
+                    <pre class="conv-tool__args">{{ formatJson(msg.meta.toolArgs) }}</pre>
+                  </div>
+                  <div v-if="msg.meta?.plan" class="conv-msg__plan">
+                    <span class="conv-label">计划:</span>
+                    {{ msg.meta.plan.goal }} ({{ msg.meta.plan.currentStep || 0 }}/{{ msg.meta.plan.totalSteps }}步)
+                  </div>
+                </div>
+              </template>
+              <el-empty v-else-if="!conversationLoading" description="暂无对话数据" :image-size="36" />
             </div>
 
-            <!-- 内容 -->
-            <div v-if="msg.content" class="conv-msg__body">{{ msg.content }}</div>
-
-            <!-- 工具调用 -->
-            <div v-if="msg.tool_calls?.length" class="conv-msg__tools">
-              <div v-for="tc in msg.tool_calls" :key="tc.id" class="conv-tool">
-                <div class="conv-tool__name">{{ tc.name }}</div>
-                <pre class="conv-tool__args">{{ formatJson(tc.arguments) }}</pre>
+            <!-- 指令输入 -->
+            <div class="cp-input">
+              <div class="cp-input-row">
+                <el-input
+                  v-model="remoteMessage"
+                  type="textarea"
+                  :rows="2"
+                  placeholder="输入设计需求（Ctrl+Enter 发送）"
+                  :disabled="remoteSending"
+                  @keydown.enter.ctrl="sendRemoteCommand"
+                />
+                <el-button class="cp-send-btn" type="primary" :loading="remoteSending" :disabled="!remoteMessage.trim()" @click="sendRemoteCommand">
+                  发送
+                </el-button>
+              </div>
+              <div v-if="targetResults.length" class="cp-results">
+                <div v-for="r in targetResults" :key="r.requestId" class="cp-result" :class="r.success ? 'cp-result--ok' : 'cp-result--err'">
+                  <el-tag :type="r.success ? 'success' : 'danger'" size="small" effect="plain">{{ r.success ? '完成' : '失败' }}</el-tag>
+                  <span v-if="r.message" class="cp-result__msg">{{ r.message }}</span>
+                  <span v-if="r.error" class="cp-result__err">{{ r.error }}</span>
+                  <span class="cp-result__time">{{ formatAgentTime(r.reportedAt) }}</span>
+                </div>
               </div>
             </div>
+          </div>
 
-            <!-- 工具结果 -->
-            <div v-if="msg.role === 'tool' && msg.meta?.toolResult" class="conv-msg__result">
-              <span :class="msg.meta.toolResult.success ? 'conv-ok' : 'conv-err'">
-                {{ msg.meta.toolResult.success ? '✅' : '❌' }}
-              </span>
-              <pre class="conv-tool__args">{{ formatJson(msg.meta.toolResult) }}</pre>
+          <!-- 右侧：监控画面（常驻） -->
+          <div class="cp-right">
+            <div class="cp-video-bar">
+              <el-tag v-if="monitorStatus.connecting" type="warning" size="small">连接中...</el-tag>
+              <el-tag v-else-if="monitorStatus.connected" type="success" size="small" effect="plain">已连接</el-tag>
+              <span v-else class="cp-video-idle">等待工具端共享</span>
+              <span v-if="monitorStatus.error" class="cp-err">{{ monitorStatus.error }}</span>
+              <span class="cp-spacer" />
+              <el-button v-if="monitorStatus.connected || monitorStatus.connecting" size="small" text @click="stopMonitoring">断开</el-button>
+              <el-button v-else size="small" text type="primary" @click="startMonitoringFromPanel">连接</el-button>
             </div>
-
-            <!-- 工具参数 (from meta) -->
-            <div v-if="msg.role === 'tool' && msg.meta?.toolArgs" class="conv-msg__args">
-              <span class="conv-label">调用参数:</span>
-              <pre class="conv-tool__args">{{ formatJson(msg.meta.toolArgs) }}</pre>
-            </div>
-
-            <!-- 计划 -->
-            <div v-if="msg.meta?.plan" class="conv-msg__plan">
-              <span class="conv-label">计划:</span>
-              {{ msg.meta.plan.goal }}
-              ({{ msg.meta.plan.currentStep || 0 }}/{{ msg.meta.plan.totalSteps }}步)
+            <div class="cp-video-box">
+              <video ref="monitorVideoRef" class="cp-video" autoplay playsinline muted />
+              <div v-if="monitorStatus.connecting" class="cp-video-overlay">
+                <el-icon class="is-loading"><Loading /></el-icon>
+                <span>等待选择共享窗口...</span>
+              </div>
+              <div v-else-if="!monitorStatus.connected" class="cp-video-overlay">
+                <span class="cp-video-hint">工具端共享屏幕后，点击"连接"查看</span>
+              </div>
             </div>
           </div>
         </div>
-
-        <el-empty v-else-if="!conversationLoading" description="暂无对话数据" :image-size="40" />
       </div>
-
-      <template #footer>
-        <el-button :loading="conversationLoading" @click="fetchConversation(conversationTarget!)">
-          刷新
-        </el-button>
-        <el-button @click="copyConversation">复制日志</el-button>
-        <el-button type="primary" @click="conversationDialogVisible = false">关闭</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 整页监控对话框 -->
-    <el-dialog
-      v-model="monitorDialogVisible"
-      :title="`整页监控 · ${monitorTarget?.id?.slice(0, 20) || '设计工具'}`"
-      width="90%"
-      top="5vh"
-      :close-on-click-modal="false"
-      @close="stopMonitoring"
-    >
-      <div class="monitor-dialog">
-        <div class="monitor-header">
-          <div class="monitor-status">
-            <el-tag v-if="monitorStatus.connecting" type="warning" size="small">连接中...</el-tag>
-            <el-tag v-else-if="monitorStatus.connected" type="success" size="small">已连接</el-tag>
-            <el-tag v-else type="info" size="small">未连接</el-tag>
-            <span v-if="monitorStatus.designToolPeerId" class="monitor-peer-id">
-              Peer ID: {{ monitorStatus.designToolPeerId.slice(0, 20) }}...
-            </span>
-          </div>
-          <div class="monitor-controls">
-            <el-button size="small" @click="stopMonitoring" :disabled="!monitorStatus.connected && !monitorStatus.connecting">
-              停止监控
-            </el-button>
-          </div>
-        </div>
-        
-        <div v-if="monitorStatus.error" class="monitor-error">
-          <el-alert type="error" :title="monitorStatus.error" :closable="false" />
-        </div>
-
-        <div class="monitor-video-container">
-          <video
-            ref="monitorVideoRef"
-            class="monitor-video"
-            autoplay
-            playsinline
-            muted
-          ></video>
-          <div v-if="monitorStatus.connecting" class="monitor-loading">
-            <el-icon class="is-loading"><Loading /></el-icon>
-            <span>正在连接页面流...</span>
-          </div>
-          <div v-else-if="!monitorStatus.connected" class="monitor-placeholder">
-            <el-empty description="等待连接" :image-size="60" />
-          </div>
-        </div>
-
-        <div class="monitor-info">
-          <el-descriptions :column="2" size="small" border>
-            <el-descriptions-item label="设计工具ID">
-              {{ monitorTarget?.id || '-' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="连接状态">
-              {{ monitorStatus.connected ? '已连接' : '未连接' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="监控范围">
-              整个设计工具页面
-            </el-descriptions-item>
-            <el-descriptions-item label="传输方式">
-              浏览器 P2P (WebRTC)
-            </el-descriptions-item>
-            <el-descriptions-item label="服务端负载">
-              仅权限/信令，不传输视频帧
-            </el-descriptions-item>
-          </el-descriptions>
-        </div>
-      </div>
-    </el-dialog>
-
-    <!-- 远程指令对话框 -->
-    <el-dialog
-      v-model="remoteDialogVisible"
-      :title="`发送指令 → ${remoteTarget?.id?.slice(0, 20) || '设计工具'}`"
-      width="500px"
-      :close-on-click-modal="false"
-    >
-      <div style="margin-bottom: 12px;">
-        <div v-if="getAgent(remoteTarget!)" style="margin-bottom: 8px;">
-          <el-tag :type="agentTagType(getAgent(remoteTarget!).agentState)" size="small">
-            {{ agentLabel(getAgent(remoteTarget!).agentState) }}
-          </el-tag>
-          <span v-if="getAgent(remoteTarget!).step" style="margin-left: 8px; font-size: 12px; color: var(--el-text-color-secondary);">
-            {{ getAgent(remoteTarget!).step }}
-          </span>
-        </div>
-      </div>
-      <el-input
-        v-model="remoteMessage"
-        type="textarea"
-        :rows="3"
-        placeholder="输入设计需求，如：创建一个科技风格的猫咪贴纸"
-        :disabled="remoteSending"
-        @keydown.enter.ctrl="sendRemoteCommand"
-      />
-      <div style="margin-top: 6px; font-size: 11px; color: var(--el-text-color-placeholder);">
-        Ctrl+Enter 发送。发送后可在表格中实时观察 Agent 状态变化。
-      </div>
-
-      <!-- 执行结果 -->
-      <div v-if="targetResults.length" class="remote-results">
-        <div class="remote-results__title">执行结果</div>
-        <div v-for="r in targetResults" :key="r.requestId" class="remote-results__item" :class="r.success ? 'remote-results__item--ok' : 'remote-results__item--err'">
-          <div class="remote-results__header">
-            <el-tag :type="r.success ? 'success' : 'danger'" size="small" effect="plain">
-              {{ r.success ? '完成' : '失败' }}
-            </el-tag>
-            <span class="remote-results__time">{{ formatAgentTime(r.reportedAt) }}</span>
-          </div>
-          <div v-if="r.message" class="remote-results__msg">{{ r.message }}</div>
-          <div v-if="r.agentResponse" class="remote-results__response">{{ r.agentResponse }}</div>
-          <div v-if="r.error" class="remote-results__error">{{ r.error }}</div>
-        </div>
-      </div>
-      <template #footer>
-        <el-button @click="remoteDialogVisible = false">关闭</el-button>
-        <el-button type="primary" :loading="remoteSending" :disabled="!remoteMessage.trim()" @click="sendRemoteCommand">
-          发送
-        </el-button>
-      </template>
     </el-dialog>
 
     <el-dialog
@@ -467,9 +386,9 @@ const pendingLaunchClientId = ref("");
 const pendingLaunchProfileId = ref("");
 let launchResultTimer: number | null = null;
 
-// 监控相关状态
-const monitorDialogVisible = ref(false);
-const monitorTarget = ref<WebsocketConnectionVO | null>(null);
+// 操控面板状态
+const controlPanelVisible = ref(false);
+const controlTarget = ref<WebsocketConnectionVO | null>(null);
 const monitorVideoRef = ref<HTMLVideoElement | null>(null);
 const monitorStatus = ref({
   connecting: false,
@@ -537,6 +456,15 @@ const launchProfileOptions = computed(() => {
 });
 
 const hasBusyLaunchProfiles = computed(() => launchProfileOptions.value.some((item) => item.busy));
+
+// 工具端视频流状态（从 clientInfo.screenSharing 读取）
+const isStreaming = (row: WebsocketConnectionVO) => !!(row.clientInfo as any)?.screenSharing;
+
+// 工具端视频流状态（当前操控面板目标）
+const streamStatus = computed(() => {
+  if (!controlTarget.value) return "idle";
+  return isStreaming(controlTarget.value) ? "streaming" : "idle";
+});
 
 const adminWsStatusTag = computed<{ text: string; type: TagType }>(() => {
   const s = websocketClient.state.status;
@@ -906,10 +834,8 @@ const onRuntimeConnectionChanged = (evt: RuntimeConnectionChangedEvent) => {
 const startTimer = () => { stopTimer(); if (autoRefresh.value) refreshTimer.value = window.setInterval(() => refreshConnections(), AUTO_REFRESH_INTERVAL_MS); };
 
 // ── 远程命令 ──
-const remoteTarget = ref<WebsocketConnectionVO | null>(null);
 const remoteMessage = ref("");
 const remoteSending = ref(false);
-const remoteDialogVisible = ref(false);
 const remoteResults = ref<Array<{
   requestId: string;
   success: boolean;
@@ -920,18 +846,15 @@ const remoteResults = ref<Array<{
   reportedAt?: string;
 }>>([]);
 
-const openRemoteDialog = (row: WebsocketConnectionVO) => {
-  remoteTarget.value = row;
-  remoteMessage.value = "";
-  remoteDialogVisible.value = true;
-};
-
-const openMonitorDialog = async (row: WebsocketConnectionVO) => {
-  if (monitorStatus.value.connected || monitorStatus.value.connecting) {
+const openControlPanel = async (row: WebsocketConnectionVO) => {
+  // 关闭旧面板
+  if (controlPanelVisible.value) {
     await stopMonitoring();
   }
-  monitorTarget.value = row;
-  monitorDialogVisible.value = true;
+  controlTarget.value = row;
+  remoteMessage.value = "";
+  remoteResults.value = [];
+  controlPanelVisible.value = true;
   monitorSessionId += 1;
   monitorStatus.value = {
     connecting: false,
@@ -939,10 +862,19 @@ const openMonitorDialog = async (row: WebsocketConnectionVO) => {
     error: null,
     designToolPeerId: null,
   };
-  // 自动开始监控
-  nextTick(() => {
-    void startMonitoring(row);
-  });
+  // 加载对话日志
+  fetchConversation(row);
+};
+
+const onControlPanelClose = () => {
+  stopMonitoring();
+  controlTarget.value = null;
+};
+
+const startMonitoringFromPanel = () => {
+  if (controlTarget.value) {
+    void startMonitoring(controlTarget.value);
+  }
 };
 
 const startMonitoring = async (row: WebsocketConnectionVO) => {
@@ -993,7 +925,7 @@ const startMonitoring = async (row: WebsocketConnectionVO) => {
       }, 15000);
     });
 
-    if (sessionId !== monitorSessionId || !monitorDialogVisible.value) {
+    if (sessionId !== monitorSessionId || !controlPanelVisible.value) {
       removeResponseListener();
       return;
     }
@@ -1007,11 +939,6 @@ const startMonitoring = async (row: WebsocketConnectionVO) => {
           payload: {
             adminPeerId,
             requestId,
-            snapshotFps: 1,
-            fps: 6,
-            maxWidth: 1280,
-            maxHeight: 720,
-            targetSelector: "#app",
           },
           requestId,
         },
@@ -1024,7 +951,7 @@ const startMonitoring = async (row: WebsocketConnectionVO) => {
 
     const response = await responsePromise;
 
-    if (sessionId !== monitorSessionId || !monitorDialogVisible.value) {
+    if (sessionId !== monitorSessionId || !controlPanelVisible.value) {
       return;
     }
     
@@ -1042,7 +969,7 @@ const startMonitoring = async (row: WebsocketConnectionVO) => {
         autoReconnect: true,
         maxRetries: 3,
         onStatusChange: (status) => {
-          if (sessionId !== monitorSessionId || !monitorDialogVisible.value) return;
+          if (sessionId !== monitorSessionId || !controlPanelVisible.value) return;
           monitorStatus.value.connected = status.isConnected;
           monitorStatus.value.connecting = !status.isConnected && !status.error;
           monitorStatus.value.error = status.error;
@@ -1050,7 +977,7 @@ const startMonitoring = async (row: WebsocketConnectionVO) => {
       },
     );
 
-    if (sessionId !== monitorSessionId || !monitorDialogVisible.value) {
+    if (sessionId !== monitorSessionId || !controlPanelVisible.value) {
       canvasMonitorService.stopMonitoring();
       return;
     }
@@ -1066,7 +993,7 @@ const startMonitoring = async (row: WebsocketConnectionVO) => {
 };
 
 const stopMonitoring = async () => {
-  const targetId = monitorTarget.value?.id;
+  const targetId = controlTarget.value?.id;
   monitorSessionId += 1;
   try {
     const { canvasMonitorService } = await import("@/services/canvasMonitor");
@@ -1095,22 +1022,20 @@ const stopMonitoring = async () => {
 
 const handleAction = (cmd: string, row: WebsocketConnectionVO) => {
   switch (cmd) {
-    case "monitor": void openMonitorDialog(row); break;
-    case "chat": openRemoteDialog(row); break;
-    case "log": fetchConversation(row); break;
+    case "control": void openControlPanel(row); break;
     case "clear": sendRemoteClear(row); break;
   }
 };
 
 const sendRemoteCommand = async () => {
-  if (!remoteTarget.value || !remoteMessage.value.trim() || remoteSending.value) return;
+  if (!controlTarget.value || !remoteMessage.value.trim() || remoteSending.value) return;
   remoteSending.value = true;
   const requestId = `cmd-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
   try {
     const res: any = await request.postOriginal({
       url: "/websocket/remote-command",
       data: {
-        connectionId: remoteTarget.value.id,
+        connectionId: controlTarget.value.id,
         command: {
           type: "chat",
           payload: { message: remoteMessage.value.trim() },
@@ -1125,7 +1050,7 @@ const sendRemoteCommand = async () => {
       requestId,
       success: true,
       message: "命令已发送，Agent 正在处理...",
-      connectionId: remoteTarget.value.id,
+      connectionId: controlTarget.value.id,
       reportedAt: new Date().toISOString(),
     });
     remoteMessage.value = "";
@@ -1134,7 +1059,7 @@ const sendRemoteCommand = async () => {
       requestId,
       success: false,
       error: error?.message || "发送失败",
-      connectionId: remoteTarget.value.id,
+      connectionId: controlTarget.value.id,
       reportedAt: new Date().toISOString(),
     });
   } finally {
@@ -1161,14 +1086,13 @@ const sendRemoteClear = async (row: WebsocketConnectionVO) => {
 
 // 过滤当前目标的执行结果
 const targetResults = computed(() => {
-  if (!remoteTarget.value) return [];
+  if (!controlTarget.value) return [];
   return remoteResults.value
-    .filter((r) => r.connectionId === remoteTarget.value!.id)
+    .filter((r) => r.connectionId === controlTarget.value!.id)
     .slice(0, 5);
 });
 
 // ── 对话日志 ──
-const conversationDialogVisible = ref(false);
 const conversationTarget = ref<WebsocketConnectionVO | null>(null);
 const conversationLoading = ref(false);
 const conversationData = ref<{
@@ -1199,7 +1123,6 @@ const conversationData = ref<{
 
 const fetchConversation = async (row: WebsocketConnectionVO) => {
   conversationTarget.value = row;
-  conversationDialogVisible.value = true;
   conversationLoading.value = true;
   conversationData.value = null;
   const requestId = `conv-${Date.now()}`;
@@ -1342,75 +1265,154 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
   flex-wrap: wrap;
-  padding: 6px 0;
+  padding: 4px 0;
 }
 
-/* ── Monitor Dialog ── */
-.monitor-dialog {
+/* ── Control Panel (fullscreen) ── */
+:deep(.el-dialog__header) {
+  display: none;
+}
+:deep(.el-dialog__body) {
+  padding: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.cp {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-}
-
-.monitor-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 0;
-}
-
-.monitor-status {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.monitor-peer-id {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  font-family: monospace;
-}
-
-.monitor-error {
-  padding: 8px 0;
-}
-
-.monitor-video-container {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  background: #000;
-  border-radius: 8px;
+  height: 100vh;
   overflow: hidden;
+}
+
+.cp-spacer { flex: 1; }
+.cp-err { font-size: 12px; color: var(--el-color-danger); margin-left: 4px; }
+
+/* 顶部工具栏 */
+.cp-topbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  flex-shrink: 0;
+  background: var(--el-bg-color);
+}
+.cp-topbar__title { font-size: 14px; font-weight: 700; white-space: nowrap; }
+.cp-topbar__id { font-size: 11px; color: var(--el-text-color-placeholder); font-family: monospace; }
+.cp-agent-step { font-size: 12px; color: var(--el-text-color-secondary); max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 左右分栏 */
+.cp-main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* 左侧：日志 + 输入 */
+.cp-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+.cp-log-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px;
+}
+
+/* 指令输入区 */
+.cp-input {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border-top: 1px solid var(--el-border-color-lighter);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cp-input-row { display: flex; gap: 8px; align-items: flex-start; }
+.cp-input-row .el-textarea { flex: 1; }
+.cp-send-btn { align-self: flex-end; }
+
+/* 执行结果 */
+.cp-results { display: flex; flex-direction: column; gap: 3px; max-height: 80px; overflow-y: auto; }
+.cp-result { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 3px 6px; border-radius: 3px; background: var(--el-fill-color-light); }
+.cp-result--ok { border-left: 3px solid var(--el-color-success); }
+.cp-result--err { border-left: 3px solid var(--el-color-danger); }
+.cp-result__msg { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cp-result__err { flex: 1; color: var(--el-color-danger); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cp-result__time { font-size: 10px; color: var(--el-text-color-placeholder); flex: none; }
+
+/* 右侧：监控画面（常驻） */
+.cp-right {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  border-left: 1px solid var(--el-border-color-lighter);
+  overflow: hidden;
+}
+.cp-video-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--el-bg-color);
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  flex-shrink: 0;
+}
+.cp-video-idle { font-size: 12px; color: var(--el-text-color-placeholder); }
+.cp-video-box {
+  position: relative;
+  width: 640px;
+  height: 360px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-
-.monitor-video {
+.cp-video {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  background: #000;
 }
-
-.monitor-loading,
-.monitor-placeholder {
+.cp-video-overlay {
   position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  color: #fff;
+  justify-content: center;
+  gap: 6px;
+  color: rgba(255,255,255,0.5);
+  font-size: 13px;
 }
+.cp-video-overlay .el-icon { font-size: 24px; }
+.cp-video-hint { font-size: 12px; color: rgba(255,255,255,0.35); }
 
-.monitor-loading .el-icon {
-  font-size: 32px;
-}
-
-.monitor-info {
-  padding: 8px 0;
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .cp-main {
+    flex-direction: column;
+  }
+  .cp-right {
+    border-left: none;
+    border-top: 1px solid var(--el-border-color-lighter);
+  }
+  .cp-video-box {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
+  .cp-topbar__id,
+  .cp-agent-step {
+    display: none;
+  }
 }
 
 .dt-toolbar__left {
@@ -1459,11 +1461,11 @@ onBeforeUnmount(() => {
   font-weight: 600;
   color: var(--el-text-color-secondary);
   background: var(--el-fill-color-light);
-  padding: 6px 0;
+  padding: 4px 0;
 }
 
 :deep(.dt-table .el-table__cell) {
-  padding: 6px 0;
+  padding: 4px 0;
   vertical-align: top;
 }
 
@@ -1480,6 +1482,7 @@ onBeforeUnmount(() => {
 }
 .cell-instance__dot--off { background: var(--el-text-color-placeholder); }
 .cell-instance__name { font-size: 13px; font-weight: 600; color: var(--el-text-color-primary); }
+.cell-instance__stream { font-size: 11px; color: #52c41a; margin-left: 4px; white-space: nowrap; }
 .cell-instance__ver { font-size: 11px; color: var(--el-text-color-secondary); }
 .cell-instance__id { font-size: 10px; color: var(--el-text-color-placeholder); word-break: break-all; }
 
@@ -1507,14 +1510,13 @@ onBeforeUnmount(() => {
 .cell-conn__sub { font-size: 11px; color: var(--el-text-color-secondary); }
 
 /* ── Agent cell ── */
-.cell-agent { display: flex; flex-direction: column; gap: 2px; font-size: 12px; line-height: 1.45; }
-.cell-agent__header { display: flex; align-items: center; gap: 6px; margin-bottom: 1px; }
+.cell-agent { display: flex; flex-direction: column; gap: 1px; font-size: 12px; line-height: 1.4; }
+.cell-agent__header { display: flex; align-items: center; gap: 4px; }
 .cell-agent__time { font-size: 10px; color: var(--el-text-color-placeholder); margin-left: auto; }
-.cell-agent__row { display: flex; align-items: baseline; gap: 4px; }
-.cell-agent__k { flex: none; width: 24px; font-size: 10px; color: var(--el-text-color-secondary); }
-.cell-agent__v { color: var(--el-text-color-primary); word-break: break-all; }
+.cell-agent__compact { font-size: 11px; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cell-agent__v { color: var(--el-text-color-primary); }
 .cell-agent__v--hl { color: var(--el-color-primary); font-weight: 600; }
-.cell-agent__v--mono { font-family: "SF Mono", Consolas, monospace; font-size: 11px; }
+.cell-agent__v--mono { font-family: "SF Mono", Consolas, monospace; font-size: 10px; }
 .cell-agent__v--err { color: var(--el-color-danger); }
 .cell-agent__p { font-weight: 700; color: var(--el-color-primary); margin-left: 4px; }
 
@@ -1522,10 +1524,15 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 2px;
   height: 100%;
 }
 
 .cell-empty { color: var(--el-text-color-placeholder); }
+
+.cell-status { font-size: 12px; white-space: nowrap; }
+.cell-status--active { color: #52c41a; }
+.cell-status--idle { color: var(--el-text-color-placeholder); }
 
 .launch-profile-option {
   display: flex;

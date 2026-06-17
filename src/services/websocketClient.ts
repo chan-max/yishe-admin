@@ -1019,7 +1019,7 @@ function connect(endpoint?: string) {
   lastAuthToken = token;
 
   socket = io(targetEndpoint, {
-    transports: ["websocket"],
+    transports: ["websocket", "polling"],
     reconnection: true,
     reconnectionAttempts: Infinity,
     reconnectionDelay: 2000,
