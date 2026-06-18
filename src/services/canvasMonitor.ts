@@ -48,6 +48,8 @@ class PageMonitorService {
       }
 
       const peerConfig = resolvePeerjsConfig();
+      console.log("[PageMonitor] peerConfig:", peerConfig);
+      console.log("[PageMonitor] creating Peer with host:", peerConfig.host, "port:", peerConfig.port, "path:", peerConfig.path);
       this.peer = new Peer(undefined, {
         debug: 1,
         host: peerConfig.host,
@@ -96,26 +98,36 @@ class PageMonitorService {
     this.notify(config);
 
     if (!this.peer || this.peer.destroyed) {
+      console.log("[PageMonitor] peer not ready, calling initPeer...");
       await this.initPeer();
     }
+    console.log("[PageMonitor] peer ready, peerId:", this.peer?.id, "destroyed:", this.peer?.destroyed);
 
     return new Promise<void>((resolve, reject) => {
+      console.log("[PageMonitor] creating offer stream...");
       const localStream = this.createLocalOfferStream();
+      console.log("[PageMonitor] calling designToolPeerId:", designToolPeerId);
       const call = this.peer!.call(designToolPeerId, localStream, {
         metadata: { mode: "page-monitor", requestedAt: new Date().toISOString() },
       });
       this.currentCall = call;
+      console.log("[PageMonitor] call object created:", call?.peer);
 
       let settled = false;
       const finish = (error?: Error) => {
         if (settled) return;
         settled = true;
         this.clearConnectTimeout();
+        if (error) {
+          console.error("[PageMonitor] call finished with error:", error.message);
+        } else {
+          console.log("[PageMonitor] call finished successfully");
+        }
         error ? reject(error) : resolve();
       };
 
       call.on("stream", (remoteStream: MediaStream) => {
-        console.log("[PageMonitor] Received page stream");
+        console.log("[PageMonitor] Received page stream, tracks:", remoteStream.getTracks().length);
         this.remoteStream = remoteStream;
         this.attachStreamToVideo(remoteStream);
         this.status.isConnected = true;
@@ -145,6 +157,7 @@ class PageMonitorService {
 
       this.connectTimeout = setTimeout(() => {
         if (this.status.isConnected) return;
+        console.warn("[PageMonitor] connect timeout (12s), isConnected:", this.status.isConnected, "peerId:", this.peer?.id);
         const error = new Error("页面监控连接超时");
         this.status.error = error.message;
         this.handleCallClose({ ...config, autoReconnect: false });
@@ -155,6 +168,7 @@ class PageMonitorService {
   }
 
   stopMonitoring(): void {
+    console.log("[PageMonitor] stopMonitoring called");
     this.manuallyStopping = true;
     this.closeCurrentCall();
     this.clearConnectTimeout();
@@ -307,46 +321,14 @@ class PageMonitorService {
 }
 
 function resolvePeerjsConfig() {
-  const explicitHost = import.meta.env.VITE_PEERJS_HOST;
-  if (explicitHost) {
-    const explicitConfig = parsePeerjsUrl(explicitHost);
-    if (explicitConfig) return explicitConfig;
-  }
-
-  const candidates = [
-    import.meta.env.VITE_BASE_URL,
-    import.meta.env.VITE_API_URL,
-  ].filter(Boolean);
-
-  for (const candidate of candidates) {
-    const peerConfig = parsePeerjsUrl(candidate);
-    if (peerConfig) return peerConfig;
-  }
-
   const { protocol, hostname } = window.location;
+  const peerPort = Number(import.meta.env.VITE_PEERJS_PORT) || 15203;
   return {
     host: hostname,
-    port: protocol === "https:" ? 443 : 80,
+    port: peerPort,
     path: "/",
     secure: protocol === "https:",
   };
-}
-
-function parsePeerjsUrl(rawUrl: string) {
-  const value = String(rawUrl || "").trim();
-  if (!value || !/^https?:\/\//i.test(value)) return null;
-
-  try {
-    const url = new URL(value);
-    return {
-      host: url.hostname,
-      port: url.port ? Number(url.port) : url.protocol === "https:" ? 443 : 80,
-      path: "/",
-      secure: url.protocol === "https:",
-    };
-  } catch {
-    return null;
-  }
 }
 
 export const canvasMonitorService = new PageMonitorService();

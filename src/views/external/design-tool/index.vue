@@ -133,6 +133,7 @@
     <!-- 操控面板 -->
     <el-dialog
       v-model="controlPanelVisible"
+      class="cp-dialog"
       fullscreen
       :show-close="false"
       :close-on-click-modal="false"
@@ -142,18 +143,15 @@
       <div v-if="controlTarget" class="cp">
         <!-- 顶部工具栏 -->
         <div class="cp-topbar">
-          <span class="cp-topbar__title">{{ controlTarget.clientInfo?.app?.name || '设计工具' }}</span>
-          <span class="cp-topbar__id">{{ controlTarget.id?.slice(0, 20) || '' }}</span>
+          <span class="cp-topbar__title">设计工具</span>
           <el-tag v-if="getAgent(controlTarget)" :type="agentTagType(getAgent(controlTarget).agentState)" size="small">
             {{ agentLabel(getAgent(controlTarget).agentState) }}
           </el-tag>
-          <span v-if="getAgent(controlTarget)?.step" class="cp-agent-step">{{ getAgent(controlTarget).step }}</span>
+          <span class="cp-topbar__step">{{ getAgent(controlTarget)?.step || '' }}</span>
           <span class="cp-spacer" />
-          <!-- 流状态 -->
-          <el-tag v-if="streamStatus === 'streaming'" type="success" size="small" effect="plain">工具端正在共享</el-tag>
-          <el-tag v-else-if="streamStatus === 'idle'" type="info" size="small" effect="plain">工具端未共享</el-tag>
+          <el-tag v-if="streamStatus === 'streaming'" type="success" size="small" effect="plain">共享中</el-tag>
           <el-button size="small" text :loading="conversationLoading" @click="fetchConversation(controlTarget!)">刷新</el-button>
-          <el-button size="small" text @click="copyConversation">复制日志</el-button>
+          <el-button size="small" text class="cp-topbar__hide-mobile" @click="copyConversation">复制</el-button>
           <el-button size="small" text circle @click="controlPanelVisible = false">
             <Icon icon="ep:close" />
           </el-button>
@@ -879,34 +877,41 @@ const startMonitoringFromPanel = () => {
 
 const startMonitoring = async (row: WebsocketConnectionVO) => {
   const sessionId = monitorSessionId;
+  console.log("[Monitor] startMonitoring called, sessionId:", sessionId, "targetId:", row.id);
+
   if (!monitorVideoRef.value) {
+    console.warn("[Monitor] monitorVideoRef is null");
     monitorStatus.value.error = "视频元素未准备好";
     return;
   }
+  console.log("[Monitor] monitorVideoRef OK");
 
   monitorStatus.value.connecting = true;
   monitorStatus.value.error = null;
   let removeResponseListener = () => {};
 
   try {
+    console.log("[Monitor] importing canvasMonitorService...");
     const { canvasMonitorService } = await import("@/services/canvasMonitor");
+    console.log("[Monitor] canvasMonitorService imported, initPeer...");
+
     const adminPeerId = await canvasMonitorService.initPeer();
-    
-    // 请求设计端准备整页监控流。服务端只转发 JSON 命令，媒体流走 WebRTC P2P。
+    console.log("[Monitor] adminPeerId:", adminPeerId);
+
     const requestId = `monitor-${Date.now()}`;
+    console.log("[Monitor] requestId:", requestId);
+
     const responsePromise = new Promise<any>((resolve) => {
       let settled = false;
       let timer: number | null = null;
       const cleanup = (handler: (data: any) => void) => {
         (websocketClient.events as any).off("remote-result", handler);
-        if (timer !== null) {
-          window.clearTimeout(timer);
-          timer = null;
-        }
+        if (timer !== null) { window.clearTimeout(timer); timer = null; }
       };
       const handler = (data: any) => {
         if (data?.requestId !== requestId || settled) return;
         settled = true;
+        console.log("[Monitor] remote-result received:", data);
         cleanup(handler);
         resolve(data);
       };
@@ -920,48 +925,53 @@ const startMonitoring = async (row: WebsocketConnectionVO) => {
       timer = window.setTimeout(() => {
         if (settled) return;
         settled = true;
+        console.warn("[Monitor] remote-result timeout (15s)");
         cleanup(handler);
         resolve({ success: false, error: "请求超时" });
       }, 15000);
     });
 
     if (sessionId !== monitorSessionId || !controlPanelVisible.value) {
+      console.log("[Monitor] session changed or panel closed, aborting");
       removeResponseListener();
       return;
     }
 
+    console.log("[Monitor] sending page-monitor-request to connection:", row.id);
     const sendResult: any = await request.postOriginal({
       url: "/websocket/remote-command",
       data: {
         connectionId: row.id,
         command: {
           type: "page-monitor-request",
-          payload: {
-            adminPeerId,
-            requestId,
-          },
+          payload: { adminPeerId, requestId },
           requestId,
         },
       },
     });
+    console.log("[Monitor] sendResult:", sendResult);
+
     if (sendResult?.success === false) {
       removeResponseListener();
       throw new Error(sendResult?.message || "监控请求发送失败");
     }
 
+    console.log("[Monitor] waiting for remote-result...");
     const response = await responsePromise;
+    console.log("[Monitor] response:", response);
 
     if (sessionId !== monitorSessionId || !controlPanelVisible.value) {
+      console.log("[Monitor] session changed after response, aborting");
       return;
     }
-    
+
     if (!response.success || !response.designToolPeerId) {
       throw new Error(response.error || "获取设计端页面流 Peer ID 失败");
     }
 
     monitorStatus.value.designToolPeerId = response.designToolPeerId;
+    console.log("[Monitor] connecting to design tool peer:", response.designToolPeerId);
 
-    // 连接到设计端
     await canvasMonitorService.connectToDesignTool(
       response.designToolPeerId,
       monitorVideoRef.value,
@@ -969,6 +979,7 @@ const startMonitoring = async (row: WebsocketConnectionVO) => {
         autoReconnect: true,
         maxRetries: 3,
         onStatusChange: (status) => {
+          console.log("[Monitor] onStatusChange:", status);
           if (sessionId !== monitorSessionId || !controlPanelVisible.value) return;
           monitorStatus.value.connected = status.isConnected;
           monitorStatus.value.connecting = !status.isConnected && !status.error;
@@ -978,15 +989,17 @@ const startMonitoring = async (row: WebsocketConnectionVO) => {
     );
 
     if (sessionId !== monitorSessionId || !controlPanelVisible.value) {
+      console.log("[Monitor] session changed after connect, stopping");
       canvasMonitorService.stopMonitoring();
       return;
     }
 
     monitorStatus.value.connected = true;
     monitorStatus.value.connecting = false;
+    console.log("[Monitor] monitoring started successfully");
   } catch (error: any) {
     removeResponseListener();
-    console.error("启动监控失败:", error);
+    console.error("[Monitor] startMonitoring failed:", error?.message, error);
     monitorStatus.value.error = error?.message || "启动监控失败";
     monitorStatus.value.connecting = false;
   }
@@ -1271,10 +1284,10 @@ onBeforeUnmount(() => {
 }
 
 /* ── Control Panel (fullscreen) ── */
-:deep(.el-dialog__header) {
+.cp-dialog :deep(.el-dialog__header) {
   display: none;
 }
-:deep(.el-dialog__body) {
+.cp-dialog :deep(.el-dialog__body) {
   padding: 0;
   height: 100vh;
   overflow: hidden;
@@ -1294,15 +1307,27 @@ onBeforeUnmount(() => {
 .cp-topbar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
+  gap: 6px;
+  padding: 6px 10px;
   border-bottom: 1px solid var(--el-border-color-lighter);
   flex-shrink: 0;
   background: var(--el-bg-color);
+  min-width: 0;
+  flex-wrap: nowrap;
 }
-.cp-topbar__title { font-size: 14px; font-weight: 700; white-space: nowrap; }
-.cp-topbar__id { font-size: 11px; color: var(--el-text-color-placeholder); font-family: monospace; }
-.cp-agent-step { font-size: 12px; color: var(--el-text-color-secondary); max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cp-topbar__title { font-size: 14px; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+.cp-topbar__step {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  max-width: 200px;
+}
+.cp-topbar .el-tag { flex-shrink: 0; }
+.cp-topbar .el-button { flex-shrink: 0; }
+.cp-spacer { flex: 1; min-width: 8px; }
 
 /* 左右分栏 */
 .cp-main {
@@ -1409,8 +1434,14 @@ onBeforeUnmount(() => {
     height: auto;
     aspect-ratio: 16 / 9;
   }
-  .cp-topbar__id,
-  .cp-agent-step {
+  .cp-topbar {
+    gap: 4px;
+    padding: 6px 8px;
+  }
+  .cp-topbar__step {
+    display: none;
+  }
+  .cp-topbar__hide-mobile {
     display: none;
   }
 }
