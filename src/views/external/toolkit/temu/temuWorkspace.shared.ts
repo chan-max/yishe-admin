@@ -98,6 +98,7 @@ export const QUICK_ACTION_KEYS = [
   "finance.history",
   "goods.adjust-price.list",
   "goods.real-picture.list",
+  "goods.published-site.list",
   "jit.list-all",
   "goods.category-search",
 ] as const;
@@ -111,6 +112,7 @@ export const NEXT_ACTION_MAP: Record<string, string[]> = {
   "goods.expected-place.list": ["goods.expected-place.update"],
   "goods.adjust-price.list": ["goods.adjust-price.reject"],
   "goods.lifecycle": ["jit.open", "jit.stock.update"],
+  "goods.published-site.list": ["goods.published-site.off-sale"],
   "goods.real-picture.list": ["goods.real-picture.submit"],
   "jit.list": ["jit.open"],
   "jit.list-all": ["jit.open"],
@@ -766,6 +768,49 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
           ? parsed.goodsStatusList
           : [1, 2],
     }),
+  },
+  "goods.published-site.list": {
+    fields: [
+      createRegionField(),
+      {
+        key: "leafCatIdList",
+        label: "叶子类目 ID 列表",
+        type: "array-number",
+        hint: "支持换行、逗号、中文逗号分隔；留空则不过滤类目",
+      },
+      { key: "pageNum", label: "页码", type: "number", defaultValue: 1 },
+      createPageSizeField(10),
+    ],
+    note: "获取已发布站点商品；固定筛选条件 removeStatus=0、secondarySelectStatusList=[12]、supplierTodoTypeList=[]。点击「一键获取全部」自动翻页拉取全部数据。",
+    buildPayload: buildProfileRegionPayload,
+  },
+  "goods.published-site.off-sale": {
+    fields: [
+      createRegionField(),
+      {
+        key: "mmsOffSaleProductReqList",
+        label: "下架商品列表 JSON",
+        type: "json",
+        required: true,
+        rows: 12,
+        hint: '格式：[{"productId":4468896989,"productSkcId":19777585518}]，saleStatus/offSaleType/reason 可选',
+      },
+    ],
+    note: '批量下架已发布站点商品。saleStatus 默认 0（下架），offSaleType 默认 2001，reason 默认"无"。',
+    buildPayload: (parsed, profileId) => {
+      const payload: Record<string, any> = buildProfileRegionPayload(parsed, profileId);
+      const rawList = Array.isArray(parsed.mmsOffSaleProductReqList)
+        ? parsed.mmsOffSaleProductReqList
+        : [];
+      payload.mmsOffSaleProductReqList = rawList.map((item: any) => ({
+        productId: Number(item.productId),
+        productSkcId: Number(item.productSkcId),
+        saleStatus: item.saleStatus !== undefined ? Number(item.saleStatus) : 0,
+        offSaleType: item.offSaleType !== undefined ? Number(item.offSaleType) : 2001,
+        reason: String(item.reason || "无").trim(),
+      }));
+      return payload;
+    },
   },
   "goods.real-picture.submit": {
     fields: [

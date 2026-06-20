@@ -286,6 +286,18 @@
               一键获取全部
             </el-button>
             <el-button
+              v-if="selectedAction?.key === 'goods.published-site.list'"
+              :loading="publishedSiteFetchingAll"
+              :disabled="
+                !canRunSelectedAction ||
+                activeActionRunning ||
+                publishedSiteFetchingAll
+              "
+              @click="fetchAllPublishedSiteRows"
+            >
+              一键获取全部
+            </el-button>
+            <el-button
               type="primary"
               :loading="activeActionRunning"
               :disabled="!canRunSelectedAction || activeActionRunning"
@@ -1626,6 +1638,85 @@
           </div>
         </div>
 
+        <!-- 已发布站点商品列表 -->
+        <div
+          v-if="isPublishedSiteTaskRunResult"
+          class="temu-workspace__task-detail-section temu-workspace__task-preview-section"
+        >
+          <div
+            class="temu-workspace__section-title temu-workspace__price-review-list-head"
+          >
+            <div class="temu-workspace__section-title-main">
+              <span>已发布站点商品</span>
+              <el-tag size="small" effect="plain">{{
+                taskRunPublishedSiteRows.length
+              }}</el-tag>
+              <el-tag
+                v-if="
+                  taskRunPublishedSiteTotalCount !==
+                  taskRunPublishedSiteRows.length
+                "
+                size="small"
+                effect="plain"
+                type="warning"
+              >
+                全部 {{ taskRunPublishedSiteTotalCount }}
+              </el-tag>
+              <el-tag
+                v-if="publishedSiteOffSaleSubmitting"
+                size="small"
+                effect="plain"
+                type="info"
+              >
+                {{ publishedSiteOffSaleProgressText }}
+              </el-tag>
+            </div>
+            <div class="flex gap-4">
+              <el-button
+                size="small"
+                type="danger"
+                :loading="publishedSiteOffSaleSubmitting"
+                :disabled="!selectedPublishedSiteRows.length"
+                @click="submitPublishedSiteOffSale(selectedPublishedSiteRows)"
+              >
+                批量下架 ({{ selectedPublishedSiteRows.length }})
+              </el-button>
+            </div>
+          </div>
+          <div class="common-table">
+            <vxe-grid
+              ref="publishedSitePreviewGridRef"
+              v-bind="publishedSitePreviewGridOptions"
+              :data="taskRunPublishedSiteRows"
+              class="temu-workspace__preview-table"
+              @checkbox-change="onPublishedSiteSelectionChange"
+              @checkbox-all="onPublishedSiteSelectionChange"
+            >
+              <template #publishedSiteImageSlot="{ row }">
+                <el-image
+                  v-if="row.imageUrl && row.imageUrl !== '-'"
+                  class="temu-workspace__preview-image"
+                  :src="row.imageUrl"
+                  :preview-src-list="[row.imageUrl]"
+                  preview-teleported
+                  fit="cover"
+                />
+                <span v-else>-</span>
+              </template>
+              <template #publishedSiteIdentitySlot="{ row }">
+                <div class="temu-workspace__price-review-identity">
+                  <div>
+                    <span>SPU</span><strong>{{ row.productId }}</strong>
+                  </div>
+                  <div>
+                    <span>goodsId</span><strong>{{ row.goodsId }}</strong>
+                  </div>
+                </div>
+              </template>
+            </vxe-grid>
+          </div>
+        </div>
+
         <!-- 报活动面板 -->
         <div
           v-if="activeTaskRunDetail?.actionKey === 'activity.enroll'"
@@ -2269,6 +2360,28 @@ interface RealPicturePreviewRow {
   raw: Record<string, any>;
 }
 
+interface PublishedSitePreviewRow {
+  rowKey: string;
+  imageUrl: string;
+  productId: string;
+  goodsId: string;
+  rawProductId: number;
+  rawGoodsId: number;
+  supplierId: number | null;
+  supplierName: string;
+  contact: string;
+  nickContact: string;
+  productName: string;
+  leafCategoryName: string;
+  fullCategoryName: string;
+  supplierPrice: string;
+  createTime: string;
+  updateTime: string;
+  skcCount: number;
+  addedSiteCount: number;
+  raw: Record<string, any>;
+}
+
 interface CompliancePreviewRow {
   rowKey: string;
   spuId: string;
@@ -2459,6 +2572,7 @@ const jitBatchSuccessCount = ref(0);
 const jitBatchFailedCount = ref(0);
 const jitFetchingAll = ref(false);
 const confirmationFetchingAll = ref(false);
+const publishedSiteFetchingAll = ref(false);
 const confirmationSubmitMarks = reactive<
   Record<string, ConfirmationSubmitMark>
 >({});
@@ -2488,6 +2602,16 @@ const activityPanelSearchScrollContext = ref("");
 const selectedConfirmationRowKeys = ref<string[]>([]);
 const confirmationPreviewGridRef =
   ref<VxeGridInstance<ConfirmationPreviewRow>>();
+
+// 已发布站点商品 - 下架状态
+const selectedPublishedSiteRowKeys = ref<string[]>([]);
+const publishedSitePreviewGridRef =
+  ref<VxeGridInstance<PublishedSitePreviewRow>>();
+const publishedSiteOffSaleSubmitting = ref(false);
+const publishedSiteOffSaleFinishedCount = ref(0);
+const publishedSiteOffSaleTotalCount = ref(0);
+const publishedSiteOffSaleSuccessCount = ref(0);
+const publishedSiteOffSaleFailedCount = ref(0);
 const priceReviewRiskRange = ref<PriceReviewRiskRange>([0, 100]);
 const priceReviewRiskRangeDragging = ref<PriceReviewRiskRange>([0, 100]);
 
@@ -2973,6 +3097,76 @@ const compliancePreviewGridOptions = ref<VxeGridProps<CompliancePreviewRow>>({
   ],
 });
 
+const publishedSitePreviewGridOptions = ref<VxeGridProps<PublishedSitePreviewRow>>({
+  ...(commonGridOptions as VxeGridProps<PublishedSitePreviewRow>),
+  maxHeight: 780,
+  rowConfig: {
+    ...(commonGridOptions as any).rowConfig,
+    keyField: "rowKey",
+  },
+  checkboxConfig: {
+    ...(commonGridOptions as any).checkboxConfig,
+  },
+  columns: [
+    { type: "checkbox", width: 46, fixed: "left" },
+    {
+      title: "商品图",
+      field: "imageUrl",
+      width: 96,
+      align: "center",
+      slots: { default: "publishedSiteImageSlot" },
+    },
+    {
+      title: "商品信息",
+      field: "productId",
+      minWidth: 200,
+      slots: { default: "publishedSiteIdentitySlot" },
+    },
+    {
+      title: "商品名称",
+      field: "productName",
+      minWidth: 260,
+      showOverflow: "tooltip",
+    },
+    {
+      title: "类目",
+      field: "leafCategoryName",
+      minWidth: 160,
+      showOverflow: "tooltip",
+    },
+    {
+      title: "供应价",
+      field: "supplierPrice",
+      width: 140,
+      align: "center",
+    },
+    {
+      title: "SKC数",
+      field: "skcCount",
+      width: 80,
+      align: "center",
+    },
+    {
+      title: "已发站点",
+      field: "addedSiteCount",
+      width: 90,
+      align: "center",
+    },
+    {
+      title: "联系人",
+      field: "contact",
+      width: 120,
+      showOverflow: "tooltip",
+    },
+    {
+      title: "创建时间",
+      field: "createTime",
+      width: 160,
+      showOverflow: "tooltip",
+    },
+  ],
+});
+
 const sessionRecord = computed(() => asPlainObject(props.sessionRecord));
 const sessionData = computed(() => asPlainObject(sessionRecord.value?.session));
 const regionCookieCounts = computed(() => ({
@@ -3039,6 +3233,7 @@ const SIMPLIFIED_ACTION_KEYS = [
   "goods.confirmation.list",
   TEMU_PUBLISH_DETAIL_REQUEST_CAPTURE_ACTION_KEY,
   "goods.real-picture.list",
+  "goods.published-site.list",
   "compliance.page-query",
   "jit.list",
   "activity.enroll",
@@ -4212,6 +4407,62 @@ const buildCompliancePreviewRows = (
     })
     .filter((row) => row.actionablePendingCount > 0);
 };
+const buildPublishedSitePreviewRows = (
+  response?: TemuActionResponse | Record<string, any> | null,
+): PublishedSitePreviewRow[] => {
+  const action = String(response?.action || "").trim();
+  if (action !== "goods.published-site.list") {
+    return [];
+  }
+
+  const result = asPlainObject(response?.result);
+  const items = Array.isArray(result.items) ? result.items : [];
+  return items.map((item: any, index: number) => {
+    const rawProductId = Number(item?.productId || 0);
+    const rawGoodsId = Number(item?.goodsId || 0);
+    const carouselImageUrlList = Array.isArray(item?.carouselImageUrlList)
+      ? item.carouselImageUrlList
+      : [];
+    const fullCategoryName = Array.isArray(item?.fullCategoryName)
+      ? item.fullCategoryName.join(" > ")
+      : String(item?.fullCategoryName || "");
+    const skcList = Array.isArray(item?.skcList) ? item.skcList : [];
+    const maxAddedSiteCount = skcList.reduce((max: number, skc: any) => {
+      const count = Array.isArray(skc?.addedSiteList) ? skc.addedSiteList.length : 0;
+      return Math.max(max, count);
+    }, 0);
+    const createdAt = Number(item?.productCreatedAt || 0);
+    const updatedAt = Number(item?.productUpdatedAt || 0);
+
+    return {
+      rowKey: `ps-${rawProductId}-${rawGoodsId}-${index}`,
+      imageUrl: carouselImageUrlList.length ? String(carouselImageUrlList[0]).trim() : "",
+      productId: toDisplayText(rawProductId),
+      goodsId: toDisplayText(rawGoodsId),
+      rawProductId,
+      rawGoodsId,
+      supplierId: Number(item?.supplierId || 0) || null,
+      supplierName: toDisplayText(item?.supplierName),
+      contact: toDisplayText(item?.contact),
+      nickContact: toDisplayText(item?.nickContact),
+      productName: toDisplayText(item?.productName),
+      leafCategoryName: toDisplayText(item?.leafCategoryName),
+      fullCategoryName,
+      supplierPrice: toDisplayText(item?.supplierPrice),
+      createTime: createdAt ? formatTimestamp(createdAt) : "",
+      updateTime: updatedAt ? formatTimestamp(updatedAt) : "",
+      skcCount: skcList.length,
+      addedSiteCount: maxAddedSiteCount,
+      raw: item,
+    };
+  });
+};
+const formatTimestamp = (ts: number) => {
+  if (!ts) return "";
+  const d = new Date(ts);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
 const getComplianceTaskStatusText = (status: number | null) => {
   if (status === 2) {
     return "待上传";
@@ -4711,6 +4962,20 @@ const isConfirmationTaskRunResult = computed(
     String(activeTaskRunDetail.value?.result?.action || "").trim() ===
     "goods.confirmation.list",
 );
+const isPublishedSiteTaskRunResult = computed(
+  () =>
+    String(activeTaskRunDetail.value?.result?.action || "").trim() ===
+    "goods.published-site.list",
+);
+const taskRunPublishedSiteRows = computed(() =>
+  buildPublishedSitePreviewRows(
+    activeTaskRunDetail.value?.result as Record<string, any> | null,
+  ),
+);
+const taskRunPublishedSiteTotalCount = computed(() => {
+  const result = asPlainObject(activeTaskRunDetail.value?.result?.result);
+  return Number(result.total || taskRunPublishedSiteRows.value.length || 0) || 0;
+});
 const taskRunPriceReviewRawRows = computed(() =>
   buildPriceReviewPreviewRows(
     activeTaskRunDetail.value?.result as Record<string, any> | null,
@@ -4919,6 +5184,21 @@ const confirmationBatchProgressText = computed(() => {
     return "";
   }
   return `处理中 ${confirmationBatchFinishedCount.value}/${confirmationBatchTotalCount.value}`;
+});
+const selectedPublishedSiteRows = computed(() => {
+  const selectedKeys = new Set(selectedPublishedSiteRowKeys.value);
+  return taskRunPublishedSiteRows.value.filter((row) =>
+    selectedKeys.has(row.rowKey),
+  );
+});
+const publishedSiteOffSaleProgressText = computed(() => {
+  if (
+    !publishedSiteOffSaleSubmitting.value ||
+    publishedSiteOffSaleTotalCount.value <= 0
+  ) {
+    return "";
+  }
+  return `下架中 ${publishedSiteOffSaleFinishedCount.value}/${publishedSiteOffSaleTotalCount.value}`;
 });
 const confirmationBatchProgressPercent = computed(() => {
   if (confirmationBatchTotalCount.value <= 0) {
@@ -7196,6 +7476,101 @@ const onConfirmationSelectionChange = ({
     .filter(Boolean);
 };
 
+const onPublishedSiteSelectionChange = ({
+  records,
+}: {
+  records: PublishedSitePreviewRow[];
+}) => {
+  selectedPublishedSiteRowKeys.value = (Array.isArray(records) ? records : [])
+    .map((row) => String(row?.rowKey || "").trim())
+    .filter(Boolean);
+};
+
+const submitPublishedSiteOffSale = async (rows: PublishedSitePreviewRow[]) => {
+  if (!requireTemuClientContext()) return;
+  const validRows = rows.filter((row) => row.rawProductId > 0 && row.rawGoodsId > 0);
+  if (!validRows.length) {
+    ElMessage.warning("请先选择要下架的商品");
+    return;
+  }
+
+  // 从每个 item 的 skcList 中收集所有 skcId
+  const reqList: Array<{ productId: number; productSkcId: number }> = [];
+  validRows.forEach((row) => {
+    const item = row.raw;
+    const skcList = Array.isArray(item?.skcList) ? item.skcList : [];
+    if (skcList.length) {
+      skcList.forEach((skc: any) => {
+        const skcId = Number(skc?.skcId || 0);
+        if (skcId) {
+          reqList.push({ productId: row.rawProductId, productSkcId: skcId });
+        }
+      });
+    } else {
+      // fallback: 如果没有 skcList，用 item 级别
+      reqList.push({ productId: row.rawProductId, productSkcId: 0 });
+    }
+  });
+
+  if (!reqList.length) {
+    ElMessage.warning("未找到可下架的 SKC");
+    return;
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      `确认下架 ${validRows.length} 个商品（共 ${reqList.length} 个 SKC）？`,
+      "批量下架确认",
+      { type: "warning" },
+    );
+  } catch {
+    return;
+  }
+
+  publishedSiteOffSaleSubmitting.value = true;
+  publishedSiteOffSaleTotalCount.value = reqList.length;
+  publishedSiteOffSaleFinishedCount.value = 0;
+  publishedSiteOffSaleSuccessCount.value = 0;
+  publishedSiteOffSaleFailedCount.value = 0;
+  temuBatchProgressStore.startPublishedSiteBatch(reqList.length);
+
+  try {
+    const response = await runTemuClientAction("goods.published-site.off-sale", {
+      profileId: props.profileId,
+      region: String(
+        activeTaskRunDetail.value?.region ||
+          activeActionResult.value?.region ||
+          "global",
+      ),
+      mmsOffSaleProductReqList: reqList,
+    });
+    const result = (response as any)?.result || {};
+    const details = Array.isArray(result.details) ? result.details : [];
+    const successCount = Number(result.successCount || 0);
+    const failedCount = Number(result.failCount || 0);
+    publishedSiteOffSaleSuccessCount.value = successCount;
+    publishedSiteOffSaleFailedCount.value = failedCount;
+    publishedSiteOffSaleFinishedCount.value = details.length;
+    temuBatchProgressStore.finishPublishedSiteBatch(successCount, failedCount);
+
+    if (successCount > 0 && failedCount === 0) {
+      ElMessage.success(`全部下架成功（${successCount} 个 SKC）`);
+    } else if (successCount > 0) {
+      ElMessage.warning(`部分下架成功：成功 ${successCount}，失败 ${failedCount}`);
+    } else {
+      ElMessage.error("下架失败");
+    }
+    // 延迟关闭进度条，让用户看到结果
+    await new Promise((r) => setTimeout(r, 2500));
+    temuBatchProgressStore.stopPublishedSiteBatch();
+  } catch (e: any) {
+    temuBatchProgressStore.stopPublishedSiteBatch();
+    ElMessage.error(e?.message || "下架请求失败");
+  } finally {
+    publishedSiteOffSaleSubmitting.value = false;
+  }
+};
+
 const buildSingleRealPicturePayload = (
   row: RealPicturePreviewRow,
   positionImageUrls: Record<string, string[]>,
@@ -9137,6 +9512,64 @@ const fetchAllConfirmationRows = async () => {
     );
   } finally {
     confirmationFetchingAll.value = false;
+  }
+};
+
+const fetchAllPublishedSiteRows = async () => {
+  const state = activeActionState.value;
+  const action = selectedAction.value;
+  if (
+    !action ||
+    action.key !== "goods.published-site.list" ||
+    !selectedActionPreset.value
+  ) {
+    ElMessage.warning("请先选择已发布站点商品动作");
+    return;
+  }
+  if (!requireTemuClientContext()) {
+    return;
+  }
+
+  const { valid, parsed } = validateForm();
+  if (!valid) {
+    ElMessage.warning("请先完善动作参数");
+    return;
+  }
+
+  const pageSize = Math.min(
+    1000,
+    Math.max(1, Number(parsed.pageSize || 10) || 10),
+  );
+  const payload = {
+    ...selectedActionPreset.value.buildPayload(parsed, props.profileId),
+    clientId: props.clientId,
+    pageNum: 1,
+    pageSize,
+    fetchAll: true,
+    allPages: true,
+  };
+
+  publishedSiteFetchingAll.value = true;
+  try {
+    state.lastResult = null;
+    const detail = await createTemuTaskRun({
+      actionKey: action.key,
+      payload,
+    });
+    syncTaskRunResultToWorkspace(detail);
+    taskRunPage.value = 1;
+    activeTaskRunId.value = null;
+    activeTaskRunDetail.value = null;
+    taskRunDetailVisible.value = false;
+    await loadTaskRuns();
+    ensureTaskRunPolling();
+    ElMessage.success(`已创建已发布站点商品一键获取全部执行记录 #${detail.id}`);
+  } catch (error: any) {
+    ElMessage.error(
+      extractRequestErrorMessage(error, "创建一键获取全部执行记录失败"),
+    );
+  } finally {
+    publishedSiteFetchingAll.value = false;
   }
 };
 

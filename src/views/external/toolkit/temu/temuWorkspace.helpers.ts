@@ -769,6 +769,14 @@ export const buildResultInsightCards = (
         ),
       );
       break;
+    case "goods.published-site.list":
+      cards.push(
+        buildInsightCard("total", "总商品数", result.total, "success"),
+        buildInsightCard("items", "本页返回", asArray(result.items).length, "accent"),
+        buildInsightCard("page", "当前页", result.pageNum),
+        buildInsightCard("page-size", "每页数量", result.pageSize),
+      );
+      break;
     default: {
       const resultKeys = Object.keys(result);
       cards.push(

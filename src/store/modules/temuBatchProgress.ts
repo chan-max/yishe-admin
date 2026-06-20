@@ -48,6 +48,11 @@ export interface TemuBatchProgressState {
   confirmationBatchTotalCount: number;
   confirmationBatchSuccessCount: number;
   confirmationBatchFailedCount: number;
+  publishedSiteBatchSubmitting: boolean;
+  publishedSiteBatchStage: string;
+  publishedSiteBatchTotalCount: number;
+  publishedSiteBatchSuccessCount: number;
+  publishedSiteBatchFailedCount: number;
 }
 
 const defaultState = (): TemuBatchProgressState => ({
@@ -85,6 +90,11 @@ const defaultState = (): TemuBatchProgressState => ({
   confirmationBatchTotalCount: 0,
   confirmationBatchSuccessCount: 0,
   confirmationBatchFailedCount: 0,
+  publishedSiteBatchSubmitting: false,
+  publishedSiteBatchStage: "",
+  publishedSiteBatchTotalCount: 0,
+  publishedSiteBatchSuccessCount: 0,
+  publishedSiteBatchFailedCount: 0,
 });
 
 export const useTemuBatchProgressStore = defineStore("temu-batch-progress", {
@@ -95,7 +105,8 @@ export const useTemuBatchProgressStore = defineStore("temu-batch-progress", {
       state.jitBatchSubmitting ||
       state.realPictureBatchSubmitting ||
       state.complianceBatchSubmitting ||
-      state.confirmationBatchSubmitting,
+      state.confirmationBatchSubmitting ||
+      state.publishedSiteBatchSubmitting,
     priceReviewBatchProgressPercent: (state) => {
       if (state.priceReviewBatchTotalCount <= 0) return 0;
       return Math.round(
@@ -149,6 +160,25 @@ export const useTemuBatchProgressStore = defineStore("temu-batch-progress", {
       Math.max(0, state.confirmationBatchTotalCount - state.confirmationBatchFinishedCount),
     confirmationBatchProgressText: (state) =>
       `${state.confirmationBatchFinishedCount}/${state.confirmationBatchTotalCount}`,
+    publishedSiteBatchProgressPercent: (state) => {
+      if (state.publishedSiteBatchTotalCount <= 0) return 0;
+      if (!state.publishedSiteBatchSubmitting) return 100;
+      if (state.publishedSiteBatchSuccessCount + state.publishedSiteBatchFailedCount > 0) {
+        return Math.round(
+          ((state.publishedSiteBatchSuccessCount + state.publishedSiteBatchFailedCount) / state.publishedSiteBatchTotalCount) * 100,
+        );
+      }
+      return 0;
+    },
+    publishedSiteBatchRemainingCount: (state) =>
+      Math.max(0, state.publishedSiteBatchTotalCount - state.publishedSiteBatchSuccessCount - state.publishedSiteBatchFailedCount),
+    publishedSiteBatchProgressText: (state) => {
+      const done = state.publishedSiteBatchSuccessCount + state.publishedSiteBatchFailedCount;
+      if (!state.publishedSiteBatchSubmitting && done > 0) {
+        return `完成 ${done}/${state.publishedSiteBatchTotalCount}`;
+      }
+      return `${done}/${state.publishedSiteBatchTotalCount}`;
+    },
     liveItems(): TemuBatchProgressItem[] {
       const items: TemuBatchProgressItem[] = [];
       if (this.priceReviewBatchSubmitting) {
@@ -210,6 +240,18 @@ export const useTemuBatchProgressStore = defineStore("temu-batch-progress", {
           remainingCount: this.confirmationBatchRemainingCount,
         });
       }
+      if (this.publishedSiteBatchSubmitting) {
+        items.push({
+          key: "published-site-off-sale",
+          title: "批量下架商品",
+          progressText: this.publishedSiteBatchProgressText,
+          percent: this.publishedSiteBatchProgressPercent,
+          stage: this.publishedSiteBatchStage,
+          successCount: this.publishedSiteBatchSuccessCount,
+          failedCount: this.publishedSiteBatchFailedCount,
+          remainingCount: this.publishedSiteBatchRemainingCount,
+        });
+      }
       return items;
     },
   },
@@ -230,6 +272,8 @@ export const useTemuBatchProgressStore = defineStore("temu-batch-progress", {
       this.complianceBatchSubmitting = false;
       this.complianceBatchMode = false;
       this.confirmationBatchSubmitting = false;
+      this.publishedSiteBatchSubmitting = false;
+      this.publishedSiteBatchStage = "";
     },
     setItems(items: TemuBatchProgressItem[]) {
       this.items = items;
@@ -344,6 +388,23 @@ export const useTemuBatchProgressStore = defineStore("temu-batch-progress", {
     },
     stopConfirmationBatch() {
       this.confirmationBatchSubmitting = false;
+    },
+    startPublishedSiteBatch(totalCount: number) {
+      this.publishedSiteBatchSubmitting = true;
+      this.publishedSiteBatchStage = "正在请求下架接口...";
+      this.publishedSiteBatchTotalCount = totalCount;
+      this.publishedSiteBatchSuccessCount = 0;
+      this.publishedSiteBatchFailedCount = 0;
+    },
+    finishPublishedSiteBatch(successCount: number, failedCount: number) {
+      this.publishedSiteBatchStage = "";
+      this.publishedSiteBatchSuccessCount = successCount;
+      this.publishedSiteBatchFailedCount = failedCount;
+      // 不立即设 submitting=false，等调用方延迟后再调 stopPublishedSiteBatch
+    },
+    stopPublishedSiteBatch() {
+      this.publishedSiteBatchStage = "";
+      this.publishedSiteBatchSubmitting = false;
     },
   },
 });
