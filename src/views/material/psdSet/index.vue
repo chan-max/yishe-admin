@@ -144,7 +144,7 @@
         <div
           class="common-table list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
           <div class="list-page-table-panel__body psd-set-page__table-body">
-            <vxe-grid v-bind="gridOptions" :data="dataSource" :loading="loading"
+            <vxe-grid ref="psdSetGridRef" v-bind="gridOptions" :data="dataSource" :loading="loading"
               :row-class-name="psdSetRowClassName" @checkbox-change="onSelectionChange"
               @checkbox-all="onSelectionChange" @cell-click="handlePsdSetCellClick">
               <template #idSlot="{ row }">
@@ -1038,6 +1038,7 @@ const dataSource = ref<any[]>([]);
 const total = ref(0);
 const selectedIds = ref<string[]>([]);
 const selectedPsdSetRows = ref<any[]>([]);
+const psdSetGridRef = ref<any>(null);
 const tablePreviewImageIndexMap = reactive<Record<string, number>>({});
 const tableImageViewerVisible = ref(false);
 const tableImageViewerUrls = ref<string[]>([]);
@@ -3169,6 +3170,8 @@ function handleDelete(row) {
     .then(async () => {
       await stickerPsdSetApi.remove(row.id);
       ElMessage.success("删除成功");
+      selectedIds.value = selectedIds.value.filter((id) => id !== row.id);
+      selectedPsdSetRows.value = selectedPsdSetRows.value.filter((r) => r.id !== row.id);
       getList();
     })
     .catch(() => { });
@@ -3187,6 +3190,8 @@ function handleBatchDelete() {
       await stickerPsdSetApi.removeBatch(selectedIds.value);
       ElMessage.success("批量删除成功");
       selectedIds.value = [];
+      selectedPsdSetRows.value = [];
+      psdSetGridRef.value?.clearCheckboxRow();
       getList();
     })
     .catch(() => { });
