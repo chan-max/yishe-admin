@@ -181,7 +181,7 @@
               </template>
               <template #configSlot="{ row }">
                 <div class="flex items-center gap-2">
-                  <el-tag v-if="row.stickerPsdSetConfig" type="info" size="small" effect="plain" class="cursor-pointer"
+                  <el-tag v-if="row.hasConfig" type="info" size="small" effect="plain" class="cursor-pointer"
                     @click="() => handleViewConfig(row)">
                     已配置
                   </el-tag>
