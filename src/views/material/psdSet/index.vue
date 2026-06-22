@@ -1847,14 +1847,6 @@ function getColumns() {
     { title: "套图图片", field: "images", width: 200, slots: { default: "imagesSlot" } },
     { title: "套图名称", field: "name", minWidth: 180 },
     { title: "多素材关联", field: "stickers", width: 120, slots: { default: "stickersCountSlot" } },
-    { title: "描述", field: "description", minWidth: 200, showOverflow: true },
-    { title: "关键词", field: "keywords", minWidth: 180, showOverflow: true },
-    {
-      title: "上传者",
-      field: "uploader",
-      width: 140,
-      formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
-    },
     { title: "状态", field: "status", width: 120, slots: { default: "statusSlot" } },
     {
       title: "状态说明",
