@@ -1649,7 +1649,7 @@
             <div class="temu-workspace__section-title-main">
               <span>已发布站点商品</span>
               <el-tag size="small" effect="plain">{{
-                taskRunPublishedSiteRows.length
+                filteredPublishedSiteRows.length
               }}</el-tag>
               <el-tag
                 v-if="
@@ -1670,6 +1670,16 @@
               >
                 {{ publishedSiteOffSaleProgressText }}
               </el-tag>
+              <el-date-picker
+                v-model="publishedSiteCreateDateRange"
+                type="daterange"
+                range-separator="~"
+                start-placeholder="创建开始日期"
+                end-placeholder="创建结束日期"
+                size="small"
+                value-format="YYYY-MM-DD"
+                style="width: 260px; margin-left: 8px"
+              />
             </div>
             <div class="flex gap-4">
               <el-button
@@ -1687,7 +1697,7 @@
             <vxe-grid
               ref="publishedSitePreviewGridRef"
               v-bind="publishedSitePreviewGridOptions"
-              :data="taskRunPublishedSiteRows"
+              :data="filteredPublishedSiteRows"
               class="temu-workspace__preview-table"
               @checkbox-change="onPublishedSiteSelectionChange"
               @checkbox-all="onPublishedSiteSelectionChange"
@@ -2612,6 +2622,7 @@ const publishedSiteOffSaleFinishedCount = ref(0);
 const publishedSiteOffSaleTotalCount = ref(0);
 const publishedSiteOffSaleSuccessCount = ref(0);
 const publishedSiteOffSaleFailedCount = ref(0);
+const publishedSiteCreateDateRange = ref<[string, string] | null>(null);
 const priceReviewRiskRange = ref<PriceReviewRiskRange>([0, 100]);
 const priceReviewRiskRangeDragging = ref<PriceReviewRiskRange>([0, 100]);
 
@@ -4975,6 +4986,17 @@ const taskRunPublishedSiteRows = computed(() =>
 const taskRunPublishedSiteTotalCount = computed(() => {
   const result = asPlainObject(activeTaskRunDetail.value?.result?.result);
   return Number(result.total || taskRunPublishedSiteRows.value.length || 0) || 0;
+});
+const filteredPublishedSiteRows = computed(() => {
+  const range = publishedSiteCreateDateRange.value;
+  if (!range || !range[0] || !range[1]) return taskRunPublishedSiteRows.value;
+  const start = range[0];
+  const end = range[1];
+  return taskRunPublishedSiteRows.value.filter((row) => {
+    if (!row.createTime) return false;
+    const date = row.createTime.slice(0, 10);
+    return date >= start && date <= end;
+  });
 });
 const taskRunPriceReviewRawRows = computed(() =>
   buildPriceReviewPreviewRows(

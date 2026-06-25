@@ -162,6 +162,8 @@ export const getTaskList = (params: {
   includeTotal?: boolean;
   limit?: number;
   offset?: number;
+  createdAfter?: string;
+  createdBefore?: string;
 }) => {
   const queryParams: any = { ...params };
   if (!queryParams.queue || !queryParams.queue.trim()) {
@@ -181,6 +183,12 @@ export const getTaskList = (params: {
   }
   if (!queryParams.executionReadinessStatus) {
     delete queryParams.executionReadinessStatus;
+  }
+  if (!queryParams.createdAfter) {
+    delete queryParams.createdAfter;
+  }
+  if (!queryParams.createdBefore) {
+    delete queryParams.createdBefore;
   }
   return request.get({ url: `/queue/messages`, params: queryParams });
 };

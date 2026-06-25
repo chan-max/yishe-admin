@@ -124,6 +124,28 @@
                   </el-select>
                 </el-form-item>
               </el-col>
+              <el-col
+                class="list-page-search-form__col--wide"
+                :xs="24"
+                :sm="12"
+                :md="8"
+                :lg="7"
+                :xl="8"
+              >
+                <el-form-item label="创建时间">
+                  <el-date-picker
+                    v-model="queryParams.createdDateRange"
+                    type="datetimerange"
+                    range-separator="至"
+                    start-placeholder="开始时间"
+                    end-placeholder="结束时间"
+                    value-format="YYYY-MM-DD HH:mm:ss"
+                    size="small"
+                    clearable
+                    @change="handleQueryChange"
+                  />
+                </el-form-item>
+              </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
               <el-button
@@ -1146,6 +1168,7 @@ const defaultQueueQueryFilters = {
   types: [] as string[],
   id: "",
   sortType: "createdAt_DESC",
+  createdDateRange: null as [string, string] | null,
 };
 const queueQueryFilterStorage = useLocalStorage("queue_query_filters", defaultQueueQueryFilters, {
   mergeDefaults: true,
@@ -1162,6 +1185,7 @@ const queryParams = reactive({
     : [],
   id: String(queueQueryFilterStorage.value.id || ""),
   sortType: queueQueryFilterStorage.value.sortType || defaultQueueQueryFilters.sortType,
+  createdDateRange: queueQueryFilterStorage.value.createdDateRange || null,
 });
 
 function getSelectedQueryTypes() {
@@ -2472,6 +2496,8 @@ async function getList(options?: unknown) {
       includeTotal: !silent,
       limit: queryParams.pageSize,
       offset: (queryParams.currentPage - 1) * queryParams.pageSize,
+      createdAfter: queryParams.createdDateRange?.[0] || undefined,
+      createdBefore: queryParams.createdDateRange?.[1] || undefined,
     });
 
     let responseData = res;
@@ -2560,6 +2586,7 @@ function handleResetQuery() {
   queryParams.types = [];
   queryParams.id = "";
   queryParams.sortType = defaultQueueQueryFilters.sortType;
+  queryParams.createdDateRange = null;
 
   // 清除缓存
   queueQueryFilterStorage.value = { ...defaultQueueQueryFilters };
@@ -3876,6 +3903,7 @@ watch(
     executionReadinessStatus: queryParams.executionReadinessStatus,
     sortType: queryParams.sortType,
     pageSize: queryParams.pageSize,
+    createdDateRange: queryParams.createdDateRange,
   }),
   (newValue) => {
     queueQueryFilterStorage.value = {
@@ -3885,6 +3913,7 @@ watch(
       executionReadinessStatus: newValue.executionReadinessStatus,
       sortType: newValue.sortType,
       pageSize: newValue.pageSize,
+      createdDateRange: newValue.createdDateRange,
     };
   },
   { deep: true },

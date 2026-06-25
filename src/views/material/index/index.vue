@@ -8769,6 +8769,10 @@ h1 {
   overflow: auto;
 }
 
+.material-publish-config-dialog__panel--configs {
+  align-self: start;
+}
+
 .material-publish-config-dialog__section-head {
   display: flex;
   align-items: flex-start;
@@ -8926,7 +8930,7 @@ h1 {
 }
 
 .material-publish-config-dialog__table {
-  flex: 1;
+  flex: none;
   min-height: 0;
 }
 
