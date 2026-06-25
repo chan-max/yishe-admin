@@ -127,23 +127,40 @@
               <el-col
                 class="list-page-search-form__col--wide"
                 :xs="24"
-                :sm="12"
-                :md="8"
-                :lg="7"
-                :xl="8"
+                :sm="24"
+                :md="16"
+                :lg="12"
+                :xl="12"
               >
                 <el-form-item label="创建时间">
-                  <el-date-picker
-                    v-model="queryParams.createdDateRange"
-                    type="datetimerange"
-                    range-separator="至"
-                    start-placeholder="开始时间"
-                    end-placeholder="结束时间"
-                    value-format="YYYY-MM-DD HH:mm:ss"
-                    size="small"
-                    clearable
-                    @change="handleQueryChange"
-                  />
+                  <div class="time-range-filter">
+                    <el-radio-group
+                      v-model="timeRangePreset"
+                      size="small"
+                      @change="handleTimeRangePresetChange"
+                    >
+                      <el-radio-button value="all">全部</el-radio-button>
+                      <el-radio-button value="today">今天</el-radio-button>
+                      <el-radio-button value="last24h">近24小时</el-radio-button>
+                      <el-radio-button value="last3d">近3天</el-radio-button>
+                      <el-radio-button value="last7d">近7天</el-radio-button>
+                      <el-radio-button value="last30d">近30天</el-radio-button>
+                      <el-radio-button value="custom">自定义</el-radio-button>
+                    </el-radio-group>
+                    <el-date-picker
+                      v-if="timeRangePreset === 'custom'"
+                      v-model="queryParams.createdDateRange"
+                      type="datetimerange"
+                      range-separator="至"
+                      start-placeholder="开始时间"
+                      end-placeholder="结束时间"
+                      value-format="YYYY-MM-DD HH:mm:ss"
+                      size="small"
+                      clearable
+                      :default-time="[new Date(0, 0, 0, 0, 0, 0), new Date(0, 0, 0, 23, 59, 59)]"
+                      @change="handleQueryChange"
+                    />
+                  </div>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -1187,6 +1204,63 @@ const queryParams = reactive({
   sortType: queueQueryFilterStorage.value.sortType || defaultQueueQueryFilters.sortType,
   createdDateRange: queueQueryFilterStorage.value.createdDateRange || null,
 });
+
+// 时间范围预设
+const timeRangePreset = ref<string>(
+  queueQueryFilterStorage.value.createdDateRange ? "custom" : "all"
+);
+
+function handleTimeRangePresetChange(preset: string) {
+  const now = new Date();
+  let range: [string, string] | null = null;
+
+  switch (preset) {
+    case "all":
+      range = null;
+      break;
+    case "today": {
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      range = [formatDate(start), formatEndDate(now)];
+      break;
+    }
+    case "last24h": {
+      const start = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      range = [formatDate(start), formatEndDate(now)];
+      break;
+    }
+    case "last3d": {
+      const start = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+      range = [formatDate(start), formatEndDate(now)];
+      break;
+    }
+    case "last7d": {
+      const start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      range = [formatDate(start), formatEndDate(now)];
+      break;
+    }
+    case "last30d": {
+      const start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      range = [formatDate(start), formatEndDate(now)];
+      break;
+    }
+    case "custom":
+      // 不自动设置，等用户选择日期
+      return;
+  }
+
+  queryParams.createdDateRange = range;
+  handleQueryChange();
+}
+
+function formatDate(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} 00:00:00`;
+}
+
+function formatEndDate(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} 23:59:59`;
+}
 
 function getSelectedQueryTypes() {
   return queryParams.types.map((item) => String(item || "").trim()).filter(Boolean);
@@ -2587,6 +2661,7 @@ function handleResetQuery() {
   queryParams.id = "";
   queryParams.sortType = defaultQueueQueryFilters.sortType;
   queryParams.createdDateRange = null;
+  timeRangePreset.value = "all";
 
   // 清除缓存
   queueQueryFilterStorage.value = { ...defaultQueueQueryFilters };
@@ -5361,6 +5436,21 @@ onUnmounted(() => {
 
   100% {
     opacity: 1;
+  }
+}
+
+.time-range-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  .el-radio-group {
+    flex-shrink: 0;
+  }
+
+  .el-date-editor {
+    max-width: 380px;
   }
 }
 </style>
