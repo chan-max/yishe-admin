@@ -37,7 +37,7 @@ function pickTemuConfigFields(configData: Record<string, any> = {}) {
     vendorCode: configData?.vendorCode,
     vendorName: configData?.vendorName,
     vendorProductMappings: configData?.vendorProductMappings,
-    supId: configData?.supId,
+    spuId: configData?.spuId,
     productTemplate: configData?.productTemplate,
     templateImageBindings: configData?.templateImageBindings,
   };
@@ -149,8 +149,8 @@ export const temuHandler: PlatformHandler = {
           .filter((item: any) => item.vendorProductId !== undefined || item.code || item.name || item.model)
       : [];
 
-    if (formatted.supId !== undefined && formatted.supId !== null) {
-      formatted.supId = String(formatted.supId).trim() || undefined;
+    if (formatted.spuId !== undefined && formatted.spuId !== null) {
+      formatted.spuId = String(formatted.spuId).trim() || undefined;
     }
 
     if (normalizedProductTemplate) {
@@ -185,8 +185,8 @@ export const temuHandler: PlatformHandler = {
           sort: Number(item?.sort) || index + 1,
         }))
       : [];
-    if (formatted.supId !== undefined && formatted.supId !== null) {
-      formatted.supId = String(formatted.supId).trim();
+    if (formatted.spuId !== undefined && formatted.spuId !== null) {
+      formatted.spuId = String(formatted.spuId).trim();
     }
     formatted.productTemplate = (() => {
       const nextValue = normalizeTemuProductTemplate(formatted.productTemplate);

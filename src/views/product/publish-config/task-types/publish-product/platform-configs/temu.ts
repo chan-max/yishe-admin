@@ -23,10 +23,10 @@ export const temuPlatformConfig: PlatformConfig = {
       tooltip: '按 productSkcReqs[0].productSkuReqs 的 SKU 顺序选择供应商商品；有商品编码时生成“素材码-供应商商品码”，否则使用素材码。'
     },
     {
-      key: 'supId',
-      label: 'Sup ID',
+      key: 'spuId',
+      label: 'SPU ID',
       type: 'input',
-      placeholder: '请输入 Sup ID',
+      placeholder: '请输入 SPU ID',
       span: 24,
       tooltip: '仅用于配置存储，当前发布流程暂不使用。'
     },
