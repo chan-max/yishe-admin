@@ -5,7 +5,8 @@ import {
   normalizePsdImageIndexes,
   parsePsdImageIndexes,
   validatePositiveIndexList,
-  validatePsdImageIndexes
+  validatePsdImageIndexes,
+  normalizeVendorProductMappings
 } from './shared'
 
 export const pddHandler: PlatformHandler = {
@@ -87,6 +88,9 @@ export const pddHandler: PlatformHandler = {
     formatted.appendImageUrls = normalizeHttpUrlList(formatted.appendImageUrls)
     formatted.psdImageIndexes = normalizePsdImageIndexes(formatted.psdImageIndexes) || undefined
     formatted.skuImageIndexes = normalizeIndexList(formatted.skuImageIndexes) || undefined
+    formatted.vendorCode = String(formatted.vendorCode || '').trim() || undefined
+    formatted.vendorName = String(formatted.vendorName || '').trim() || undefined
+    formatted.vendorProductMappings = normalizeVendorProductMappings(formatted.vendorProductMappings)
 
     return formatted
   },

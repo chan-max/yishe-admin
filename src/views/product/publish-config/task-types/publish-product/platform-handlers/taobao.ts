@@ -1,5 +1,5 @@
 import type { PlatformHandler } from './types'
-import { normalizeHttpUrlList, normalizePsdImageIndexes, validatePsdImageIndexes } from './shared'
+import { normalizeHttpUrlList, normalizePsdImageIndexes, validatePsdImageIndexes, normalizeVendorProductMappings } from './shared'
 
 export const taobaoHandler: PlatformHandler = {
   platform: 'taobao',
@@ -66,6 +66,9 @@ export const taobaoHandler: PlatformHandler = {
     formatted.fromAIPublish = true
     formatted.appendImageUrls = normalizeHttpUrlList(formatted.appendImageUrls)
     formatted.psdImageIndexes = normalizePsdImageIndexes(formatted.psdImageIndexes) || undefined
+    formatted.vendorCode = String(formatted.vendorCode || '').trim() || undefined
+    formatted.vendorName = String(formatted.vendorName || '').trim() || undefined
+    formatted.vendorProductMappings = normalizeVendorProductMappings(formatted.vendorProductMappings)
 
     return formatted
   },

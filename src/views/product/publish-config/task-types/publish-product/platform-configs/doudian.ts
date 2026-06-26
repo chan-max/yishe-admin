@@ -24,6 +24,13 @@ export const doudianPlatformConfig: PlatformConfig = {
       span: 24
     },
     {
+      key: 'vendorProducts',
+      label: '供应商商品',
+      type: 'vendor-products',
+      span: 24,
+      tooltip: '选择厂家后可选商品。编码规则：有商品时"素材码-商品码"，无商品时"素材码"。'
+    },
+    {
       key: 'stock',
       label: '库存',
       type: 'number',

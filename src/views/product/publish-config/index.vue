@@ -369,18 +369,18 @@ const platformImageLimitTip = computed(() => {
   return "";
 });
 
-const selectedTemuVendor = computed(() => {
+const selectedVendor = computed(() => {
   const vendorId = Number(platformConfigData.value?.vendorId);
   if (!Number.isFinite(vendorId)) return null;
   return vendorRows.value.find((item) => Number(item.id) === vendorId) || null;
 });
 
-const selectedTemuVendorProducts = computed<VendorProductItem[]>(() =>
-  Array.isArray(selectedTemuVendor.value?.products) ? selectedTemuVendor.value.products || [] : [],
+const selectedVendorProducts = computed<VendorProductItem[]>(() =>
+  Array.isArray(selectedVendor.value?.products) ? selectedVendor.value.products || [] : [],
 );
 
-const temuVendorProductOptions = computed(() =>
-  selectedTemuVendorProducts.value
+const vendorProductOptions = computed(() =>
+  selectedVendorProducts.value
     .map((item) => ({
       label: [item.code || "-", item.name, item.model, item.productSize || item.size]
         .map((part) => String(part || "").trim())
@@ -415,13 +415,13 @@ function parseTemuTemplateForUi(value: any) {
   }
 }
 
-function ensureTemuVendorProductMappings() {
+function ensureVendorProductMappings() {
   if (!Array.isArray(platformConfigData.value.vendorProductMappings)) {
     platformConfigData.value.vendorProductMappings = [];
   }
 }
 
-function buildTemuVendorProductSnapshot(product?: VendorProductItem | null, sort = 1) {
+function buildVendorProductSnapshot(product?: VendorProductItem | null, sort = 1) {
   return {
     vendorProductId: product?.id ? Number(product.id) : undefined,
     code: String(product?.code || "").trim(),
@@ -434,14 +434,14 @@ function buildTemuVendorProductSnapshot(product?: VendorProductItem | null, sort
   };
 }
 
-function refreshTemuVendorSnapshot() {
-  const vendor = selectedTemuVendor.value;
+function refreshVendorSnapshot() {
+  const vendor = selectedVendor.value;
   platformConfigData.value.vendorCode = String(vendor?.code || "").trim();
   platformConfigData.value.vendorName = String(vendor?.name || "").trim();
 }
 
-function normalizeTemuVendorProductMappingSort() {
-  ensureTemuVendorProductMappings();
+function normalizeVendorProductMappingSort() {
+  ensureVendorProductMappings();
   platformConfigData.value.vendorProductMappings = platformConfigData.value.vendorProductMappings.map(
     (item: any, index: number) => ({
       ...item,
@@ -450,60 +450,59 @@ function normalizeTemuVendorProductMappingSort() {
   );
 }
 
-function addTemuVendorProductMapping() {
-  ensureTemuVendorProductMappings();
+function addVendorProductMapping() {
+  ensureVendorProductMappings();
   const usedIds = new Set(
     platformConfigData.value.vendorProductMappings
       .map((item: any) => Number(item?.vendorProductId))
       .filter((id: number) => Number.isFinite(id)),
   );
   const nextProduct =
-    temuVendorProductOptions.value.find((item) => !usedIds.has(item.value))?.product ||
-    temuVendorProductOptions.value[0]?.product ||
+    vendorProductOptions.value.find((item) => !usedIds.has(item.value))?.product ||
+    vendorProductOptions.value[0]?.product ||
     null;
   platformConfigData.value.vendorProductMappings.push(
-    buildTemuVendorProductSnapshot(nextProduct, platformConfigData.value.vendorProductMappings.length + 1),
+    buildVendorProductSnapshot(nextProduct, platformConfigData.value.vendorProductMappings.length + 1),
   );
 }
 
-function removeTemuVendorProductMapping(index: number) {
-  ensureTemuVendorProductMappings();
+function removeVendorProductMapping(index: number) {
+  ensureVendorProductMappings();
   platformConfigData.value.vendorProductMappings.splice(index, 1);
-  normalizeTemuVendorProductMappingSort();
+  normalizeVendorProductMappingSort();
 }
 
-function moveTemuVendorProductMapping(index: number, direction: -1 | 1) {
-  ensureTemuVendorProductMappings();
+function moveVendorProductMapping(index: number, direction: -1 | 1) {
+  ensureVendorProductMappings();
   const list = platformConfigData.value.vendorProductMappings;
   const nextIndex = index + direction;
   if (nextIndex < 0 || nextIndex >= list.length) return;
   const [item] = list.splice(index, 1);
   list.splice(nextIndex, 0, item);
-  normalizeTemuVendorProductMappingSort();
+  normalizeVendorProductMappingSort();
 }
 
-function handleTemuVendorProductChange(index: number, vendorProductId: number) {
-  ensureTemuVendorProductMappings();
-  const product = selectedTemuVendorProducts.value.find(
+function handleVendorProductChange(index: number, vendorProductId: number) {
+  ensureVendorProductMappings();
+  const product = selectedVendorProducts.value.find(
     (item) => Number(item.id) === Number(vendorProductId),
   );
-  platformConfigData.value.vendorProductMappings[index] = buildTemuVendorProductSnapshot(
+  platformConfigData.value.vendorProductMappings[index] = buildVendorProductSnapshot(
     product,
     index + 1,
   );
 }
 
-function applyTemuVendorSnapshotBeforeSubmit() {
-  if (resolveTaskTypePlatform(form.taskType) !== "temu") return;
-  refreshTemuVendorSnapshot();
-  ensureTemuVendorProductMappings();
+function applyVendorSnapshotBeforeSubmit() {
+  refreshVendorSnapshot();
+  ensureVendorProductMappings();
   platformConfigData.value.vendorProductMappings = platformConfigData.value.vendorProductMappings
     .map((item: any, index: number) => {
-      const product = selectedTemuVendorProducts.value.find(
+      const product = selectedVendorProducts.value.find(
         (candidate) => Number(candidate.id) === Number(item?.vendorProductId),
       );
       return product
-        ? buildTemuVendorProductSnapshot(product, index + 1)
+        ? buildVendorProductSnapshot(product, index + 1)
         : {
             ...item,
             code: String(item?.code || "").trim(),
@@ -653,8 +652,7 @@ watch(dialogVisible, (value) => {
 watch(
   () => platformConfigData.value?.vendorId,
   (vendorId, previousVendorId) => {
-    if (resolveTaskTypePlatform(form.taskType) !== "temu") return;
-    refreshTemuVendorSnapshot();
+    refreshVendorSnapshot();
     if (previousVendorId !== undefined && vendorId !== previousVendorId) {
       platformConfigData.value.vendorProductMappings = [];
     }
@@ -949,7 +947,7 @@ const submitForm = async () => {
   submitLoading.value = true;
   try {
     await formRef.value.validate();
-    applyTemuVendorSnapshotBeforeSubmit();
+    applyVendorSnapshotBeforeSubmit();
 
     // 校验任务类型配置
     const validation = validateTaskTypeConfig(form.taskType, platformConfigData.value);
@@ -1579,13 +1577,13 @@ onMounted(() => {
                         </div>
 
                         <div v-else-if="field.type === 'vendor-products'" class="temu-vendor-products">
-                          <div class="publish-config-field-note">
+                          <div v-if="resolveTaskTypePlatform(form.taskType) === 'temu' && temuFirstSkcSkuCount > 0" class="publish-config-field-note">
                             当前模板首个 SKC 含 {{ temuFirstSkcSkuCount }} 个 SKU；下方顺序对应 SKU 顺序，多余商品会在发布时忽略。
                           </div>
                           <div v-if="!platformConfigData.vendorId" class="publish-config-field-tip">
                             请先选择绑定厂家。
                           </div>
-                          <div v-else-if="!temuVendorProductOptions.length" class="publish-config-field-tip">
+                          <div v-else-if="!vendorProductOptions.length" class="publish-config-field-tip">
                             当前厂家暂无供应商商品。
                           </div>
                           <div
@@ -1600,35 +1598,35 @@ onMounted(() => {
                               v-model="mapping.vendorProductId"
                               filterable
                               placeholder="请选择供应商商品"
-                              @change="(value) => handleTemuVendorProductChange(index, Number(value))"
+                              @change="(value) => handleVendorProductChange(index, Number(value))"
                             >
                               <el-option
-                                v-for="option in temuVendorProductOptions"
+                                v-for="option in vendorProductOptions"
                                 :key="option.value"
                                 :label="option.label"
                                 :value="option.value"
                               />
                             </el-select>
                             <code class="temu-vendor-products__code">{{ mapping.code || "-" }}</code>
-                            <el-button text :disabled="index === 0" @click="moveTemuVendorProductMapping(index, -1)">
+                            <el-button text :disabled="index === 0" @click="moveVendorProductMapping(index, -1)">
                               上移
                             </el-button>
                             <el-button
                               text
                               :disabled="index >= platformConfigData.vendorProductMappings.length - 1"
-                              @click="moveTemuVendorProductMapping(index, 1)"
+                              @click="moveVendorProductMapping(index, 1)"
                             >
                               下移
                             </el-button>
-                            <el-button text type="danger" @click="removeTemuVendorProductMapping(index)">
+                            <el-button text type="danger" @click="removeVendorProductMapping(index)">
                               删除
                             </el-button>
                           </div>
                           <el-button
                             text
                             type="primary"
-                            :disabled="!platformConfigData.vendorId || !temuVendorProductOptions.length"
-                            @click="addTemuVendorProductMapping"
+                            :disabled="!platformConfigData.vendorId || !vendorProductOptions.length"
+                            @click="addVendorProductMapping"
                           >
                             添加供应商商品
                           </el-button>

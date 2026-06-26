@@ -1,5 +1,5 @@
 import type { PlatformHandler } from './types'
-import { normalizePsdImageIndexes, validatePsdImageIndexes } from './shared'
+import { normalizePsdImageIndexes, validatePsdImageIndexes, normalizeVendorProductMappings } from './shared'
 
 export const kuaishouShopHandler: PlatformHandler = {
   platform: 'kuaishou_shop',
@@ -37,6 +37,9 @@ export const kuaishouShopHandler: PlatformHandler = {
       formatted.vendorId = undefined
     }
     formatted.psdImageIndexes = normalizePsdImageIndexes(formatted.psdImageIndexes) || undefined
+    formatted.vendorCode = String(formatted.vendorCode || '').trim() || undefined
+    formatted.vendorName = String(formatted.vendorName || '').trim() || undefined
+    formatted.vendorProductMappings = normalizeVendorProductMappings(formatted.vendorProductMappings)
 
     return formatted
   },

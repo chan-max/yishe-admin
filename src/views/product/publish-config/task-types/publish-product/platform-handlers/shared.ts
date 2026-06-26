@@ -112,6 +112,25 @@ export function validatePositiveIndexList(input: unknown): boolean {
     .every((segment) => /^\d+$/.test(segment) && Number(segment) > 0)
 }
 
+export function normalizeVendorProductMappings(input: unknown): Array<{
+  vendorProductId?: number
+  code: string
+  name: string
+  model: string
+  sort: number
+}> {
+  if (!Array.isArray(input)) return []
+  return input
+    .map((item: any, index: number) => ({
+      vendorProductId: item?.vendorProductId ? Number(item.vendorProductId) : undefined,
+      code: String(item?.code || '').trim(),
+      name: String(item?.name || '').trim(),
+      model: String(item?.model || '').trim(),
+      sort: Number(item?.sort) || index + 1,
+    }))
+    .filter((item) => item.vendorProductId !== undefined || item.code)
+}
+
 export function normalizeTemuCategoryPath(input: unknown): string[] {
   if (Array.isArray(input)) {
     return Array.from(
