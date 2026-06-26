@@ -25,7 +25,7 @@ import {
   formatTaskTypeConfigForEdit,
   executeTaskTypeBeforeSubmit,
 } from "./task-types";
-import { getVendorList, type Vendor, type VendorProductItem } from "@/api/vendor";
+import { getVendorList, getVendorProductsByVendor, type Vendor, type VendorProductItem } from "@/api/vendor";
 import { derivePublishTaskTypeByPlatform, getTaskTypeLabel } from "@/config/task-types";
 import {
   publishTaskTypeOptions,
@@ -375,8 +375,34 @@ const selectedVendor = computed(() => {
   return vendorRows.value.find((item) => Number(item.id) === vendorId) || null;
 });
 
+// 厂家商品实时查询（选厂家后加载）
+const vendorProductsList = ref<VendorProductItem[]>([]);
+const vendorProductsLoading = ref(false);
+
+async function loadVendorProducts(vendorId: number) {
+  if (!Number.isFinite(vendorId) || vendorId <= 0) {
+    vendorProductsList.value = [];
+    return;
+  }
+  vendorProductsLoading.value = true;
+  try {
+    const res = await getVendorProductsByVendor(vendorId);
+    const list = Array.isArray(res) ? res : Array.isArray((res as any)?.list) ? (res as any).list : [];
+    vendorProductsList.value = list;
+  } catch (err) {
+    console.error("加载厂家商品失败:", err);
+    vendorProductsList.value = [];
+  } finally {
+    vendorProductsLoading.value = false;
+  }
+}
+
 const selectedVendorProducts = computed<VendorProductItem[]>(() =>
-  Array.isArray(selectedVendor.value?.products) ? selectedVendor.value.products || [] : [],
+  vendorProductsList.value.length > 0
+    ? vendorProductsList.value
+    : Array.isArray(selectedVendor.value?.products)
+      ? selectedVendor.value.products || []
+      : [],
 );
 
 const vendorProductOptions = computed(() =>
@@ -656,6 +682,13 @@ watch(
     if (previousVendorId !== undefined && vendorId !== previousVendorId) {
       platformConfigData.value.vendorProductMappings = [];
     }
+    // 实时加载厂家商品
+    const numericVendorId = Number(vendorId);
+    if (Number.isFinite(numericVendorId) && numericVendorId > 0) {
+      loadVendorProducts(numericVendorId);
+    } else {
+      vendorProductsList.value = [];
+    }
   },
 );
 
@@ -931,6 +964,11 @@ const handleEdit = async (row: any) => {
     form.taskType,
     formatTaskTypeConfigForEdit(form.taskType, configData),
   );
+  // 加载厂家商品（编辑回显）
+  const editVendorId = Number(platformConfigData.value?.vendorId);
+  if (Number.isFinite(editVendorId) && editVendorId > 0) {
+    loadVendorProducts(editVendorId);
+  }
   temuTemplateInspectorVisible.value = false;
   resetTemplateBindingState();
   await hydrateTemplateBinding(configData?.templateBinding?.psdTemplateId);
@@ -1097,6 +1135,11 @@ const handleCopy = async (row: any) => {
     form.taskType,
     formatTaskTypeConfigForEdit(form.taskType, configData),
   );
+  // 加载厂家商品（复制回显）
+  const copyVendorId = Number(platformConfigData.value?.vendorId);
+  if (Number.isFinite(copyVendorId) && copyVendorId > 0) {
+    loadVendorProducts(copyVendorId);
+  }
   temuTemplateInspectorVisible.value = false;
   resetTemplateBindingState();
   await hydrateTemplateBinding(configData?.templateBinding?.psdTemplateId);
@@ -1597,6 +1640,7 @@ onMounted(() => {
                             <el-select
                               v-model="mapping.vendorProductId"
                               filterable
+                              :loading="vendorProductsLoading"
                               placeholder="请选择供应商商品"
                               @change="(value) => handleVendorProductChange(index, Number(value))"
                             >
