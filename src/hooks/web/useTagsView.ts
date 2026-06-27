@@ -1,55 +1,50 @@
-import { useTagsViewStoreWithOut } from '@/store/modules/tagsView'
-import { RouteLocationNormalizedLoaded, useRouter } from 'vue-router'
-import { computed, nextTick, unref } from 'vue'
+import { useTagsViewStoreWithOut } from "@/store/modules/tagsView";
+import { RouteLocationNormalizedLoaded, useRouter } from "vue-router";
+import { computed, unref } from "vue";
 
 export const useTagsView = () => {
-  const tagsViewStore = useTagsViewStoreWithOut()
+  const tagsViewStore = useTagsViewStoreWithOut();
 
-  const { replace, currentRoute } = useRouter()
+  const { currentRoute } = useRouter();
 
-  const selectedTag = computed(() => tagsViewStore.getSelectedTag)
+  const selectedTag = computed(() => tagsViewStore.getSelectedTag);
 
   const closeAll = (callback?: Fn) => {
-    tagsViewStore.delAllViews()
-    callback?.()
-  }
+    tagsViewStore.delAllViews();
+    callback?.();
+  };
 
   const closeLeft = (callback?: Fn) => {
-    tagsViewStore.delLeftViews(unref(selectedTag) as RouteLocationNormalizedLoaded)
-    callback?.()
-  }
+    tagsViewStore.delLeftViews(unref(selectedTag) as RouteLocationNormalizedLoaded);
+    callback?.();
+  };
 
   const closeRight = (callback?: Fn) => {
-    tagsViewStore.delRightViews(unref(selectedTag) as RouteLocationNormalizedLoaded)
-    callback?.()
-  }
+    tagsViewStore.delRightViews(unref(selectedTag) as RouteLocationNormalizedLoaded);
+    callback?.();
+  };
 
   const closeOther = (callback?: Fn) => {
-    tagsViewStore.delOthersViews(unref(selectedTag) as RouteLocationNormalizedLoaded)
-    callback?.()
-  }
+    tagsViewStore.delOthersViews(unref(selectedTag) as RouteLocationNormalizedLoaded);
+    callback?.();
+  };
 
   const closeCurrent = (view?: RouteLocationNormalizedLoaded, callback?: Fn) => {
-    if (view?.meta?.affix) return
-    tagsViewStore.delView(view || unref(currentRoute))
+    if (view?.meta?.affix) return;
+    tagsViewStore.delView(view || unref(currentRoute));
 
-    callback?.()
-  }
+    callback?.();
+  };
 
   const refreshPage = async (view?: RouteLocationNormalizedLoaded, callback?: Fn) => {
-    tagsViewStore.delCachedView()
-    const { path, query } = view || unref(currentRoute)
-    await nextTick()
-    replace({
-      path: '/redirect' + path,
-      query: query
-    })
-    callback?.()
-  }
+    const target = view || unref(currentRoute);
+    tagsViewStore.refreshView(target);
+    callback?.();
+  };
 
   const setTitle = (title: string, path?: string) => {
-    tagsViewStore.setTitle(title, path)
-  }
+    tagsViewStore.setTitle(title, path);
+  };
 
   return {
     closeAll,
@@ -58,6 +53,6 @@ export const useTagsView = () => {
     closeOther,
     closeCurrent,
     refreshPage,
-    setTitle
-  }
-}
+    setTitle,
+  };
+};

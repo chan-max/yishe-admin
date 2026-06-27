@@ -1,17 +1,25 @@
 <script lang="ts" setup>
 import { useAppStore } from "@/store/modules/app";
+import { useTagsViewStore } from "@/store/modules/tagsView";
 import { Icon } from "@/components/Icon";
 import { useFullscreen } from "@vueuse/core";
 
 defineOptions({ name: "AppView" });
 
 const appStore = useAppStore();
+const tagsViewStore = useTagsViewStore();
 
 const footer = computed(() => appStore.getFooter);
 const keepAliveMax = Number(import.meta.env.VITE_APP_KEEP_ALIVE_MAX || 12);
 
 const shouldCacheRoute = (route: any): boolean => {
   return route?.meta?.noCache !== true;
+};
+
+// 基于 refreshViewMap 生成动态 key，刷新时 key 变化会触发 keep-alive 创建新组件实例
+const getComponentKey = (route: any): string => {
+  const refreshCount = tagsViewStore.refreshViewMap[route.name] || 0;
+  return refreshCount > 0 ? `${route.fullPath}__refresh_${refreshCount}` : route.fullPath;
 };
 
 // 全屏功能
@@ -54,9 +62,9 @@ provide("reload", reload);
     <router-view v-if="routerAlive">
       <template #default="{ Component, route }">
         <keep-alive :max="keepAliveMax">
-          <component :is="Component" v-if="shouldCacheRoute(route)" :key="route.fullPath" />
+          <component :is="Component" v-if="shouldCacheRoute(route)" :key="getComponentKey(route)" />
         </keep-alive>
-        <component :is="Component" v-if="!shouldCacheRoute(route)" :key="route.fullPath" />
+        <component :is="Component" v-if="!shouldCacheRoute(route)" :key="getComponentKey(route)" />
       </template>
     </router-view>
   </section>
