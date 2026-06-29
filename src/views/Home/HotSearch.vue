@@ -1,506 +1,1076 @@
 <template>
-  <div class="hot-search-page">
-    <ContentWrap plain>
-      <div class="hot-search-page__header">
-        <div class="hot-search-page__title-wrap">
-          <div class="hot-search-page__title">热搜</div>
-          <div v-if="lastUpdateTime" class="hot-search-page__meta">
-            最近更新 {{ formatUpdateTime(lastUpdateTime) }}
-          </div>
-        </div>
-        <el-button :loading="loading" size="small" @click="refreshData">
-          刷新
+  <!-- 定时采集状态栏 -->
+  <ContentWrap plain>
+    <div class="schedule-bar">
+      <div class="schedule-bar__left">
+        <span class="schedule-bar__label">定时采集</span>
+        <template v-if="currentSchedule">
+          <el-tag size="small" :type="currentSchedule.enabled ? 'success' : 'info'" effect="light">
+            {{ currentSchedule.enabled ? "已开启" : "已关闭" }}
+          </el-tag>
+          <span class="schedule-bar__info">
+            {{ getClientLabel(currentSchedule.clientId) }} · 每
+            {{ currentSchedule.intervalMinutes }} 分钟 ·
+            {{ currentSchedule.platforms?.length || 0 }} 个平台
+          </span>
+          <span v-if="currentSchedule.lastRunAt" class="schedule-bar__info">
+            上次 {{ formatDateTime(currentSchedule.lastRunAt) }}
+          </span>
+        </template>
+        <span v-else class="schedule-bar__info">未配置</span>
+      </div>
+      <div class="schedule-bar__right">
+        <el-switch
+          v-if="currentSchedule"
+          :model-value="currentSchedule.enabled"
+          @change="(val: boolean) => handleToggleSchedule(currentSchedule!.id, val)"
+        />
+        <el-button size="small" @click="openScheduleDialog">
+          {{ currentSchedule ? "编辑" : "设置" }}
         </el-button>
       </div>
-    </ContentWrap>
+    </div>
+  </ContentWrap>
 
-    <div v-loading="loading" class="hot-search-page__content">
-      <template v-if="platformSections.length">
-        <section
-          v-for="platform in platformSections"
-          :key="platform.key"
-          class="platform-block"
+  <!-- 定时任务设置弹窗 -->
+  <el-dialog v-model="showScheduleDialog" title="定时采集设置" width="640px">
+    <el-form label-position="top" size="default">
+      <el-form-item label="客户端">
+        <el-select v-model="scheduleForm.clientId" placeholder="选择客户端" style="width: 100%" :disabled="!!currentSchedule">
+          <el-option v-for="c in clientList" :key="c.id" :label="c.label" :value="c.id">
+            <span style="display: flex; align-items: center; gap: 6px">
+              <span class="client-dot" :class="{ 'is-online': c.isOnline }" />
+              {{ c.label }}
+              <el-tag v-if="c.isOnline" size="small" type="success" effect="plain">在线</el-tag>
+            </span>
+          </el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="浏览器环境（可选）">
+        <el-select
+          v-model="scheduleForm.profileId"
+          clearable
+          placeholder="留空则使用默认环境"
+          style="width: 100%"
         >
-          <header class="platform-block__header">
-            <div class="platform-block__title-wrap">
-              <div class="platform-block__title">{{ platform.label }}</div>
-              <div class="platform-block__sub">
-                {{ platform.items.length }} 条
-                <span v-if="platform.timestamp">
-                  · {{ formatUpdateTime(platform.timestamp) }}
-                </span>
-              </div>
-            </div>
-          </header>
+          <el-option
+            v-for="p in getClientProfiles(scheduleForm.clientId)"
+            :key="p.id"
+            :label="p.label"
+            :value="p.id"
+          />
+        </el-select>
+      </el-form-item>
 
-          <div class="platform-block__list">
-            <a
-              v-for="(item, index) in platform.items"
-              :key="`${platform.key}-${index}-${item.title}`"
-              class="hot-item"
-              :class="{ 'is-top': index < 3 }"
-              :href="item.url || undefined"
-              :target="item.url ? '_blank' : undefined"
-              :rel="item.url ? 'noreferrer noopener' : undefined"
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="采集间隔">
+            <el-input-number
+              v-model="scheduleForm.intervalMinutes"
+              :min="1"
+              :max="1440"
+              style="width: 100%"
+            />
+            <div class="form-tip">分钟</div>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="网络环境">
+            <el-select v-model="scheduleForm.environment" style="width: 100%">
+              <el-option label="全部" value="all" />
+              <el-option label="国内直连" value="direct" />
+              <el-option label="需代理" value="proxy" />
+            </el-select>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-form-item label="采集平台">
+        <el-checkbox
+          v-model="scheduleSelectAll"
+          :indeterminate="scheduleIndeterminate"
+          @change="handleScheduleSelectAll"
+          style="margin-bottom: 8px"
+        >
+          全选
+        </el-checkbox>
+        <el-checkbox-group v-model="scheduleForm.platforms">
+          <el-checkbox v-for="p in ALL_PLATFORMS" :key="p.key" :value="p.key" border>
+            {{ p.name }}
+          </el-checkbox>
+        </el-checkbox-group>
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button
+        v-if="currentSchedule"
+        type="danger"
+        text
+        @click="handleDeleteSchedule"
+        style="float: left"
+      >
+        删除定时
+      </el-button>
+      <el-button @click="showScheduleDialog = false">取消</el-button>
+      <el-button type="primary" :loading="scheduleSaving" @click="handleSaveSchedule"
+        >保存</el-button
+      >
+    </template>
+  </el-dialog>
+
+  <ContentWrap :plain="true">
+    <ListPageLayout class="hotsearch-page">
+      <template #filter>
+        <div class="list-page-filter list-page-filter--flat">
+          <div class="list-page-filter__actions">
+            <el-button size="small" type="primary" @click="openCollectDialog"> 采集 </el-button>
+            <el-button size="small" :loading="loading" @click="loadList">刷新</el-button>
+            <el-button
+              size="small"
+              type="danger"
+              :disabled="!selectedIds.length"
+              @click="handleBatchDelete"
             >
-              <div class="hot-item__rank">{{ item.rank }}</div>
-              <div class="hot-item__content">
-                <div class="hot-item__title-row">
-                  <div class="hot-item__title">{{ item.title }}</div>
-                  <span v-if="item.tag" class="hot-item__tag">{{ item.tag }}</span>
-                </div>
-                <div v-if="item.hotText || item.subText" class="hot-item__meta">
-                  <span v-if="item.hotText" class="hot-item__hot">{{ item.hotText }}</span>
-                  <span v-if="item.subText" class="hot-item__sub">{{ item.subText }}</span>
-                </div>
-              </div>
-            </a>
+              批量删除 ({{ selectedIds.length }})
+            </el-button>
           </div>
-        </section>
+        </div>
       </template>
 
-      <el-empty
-        v-else
-        :image-size="88"
-        description="暂无热搜数据"
-        class="hot-search-page__empty"
-      />
+      <template #table>
+        <div
+          class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat"
+        >
+          <div class="list-page-table-panel__body">
+            <div class="common-table">
+              <vxe-grid
+                v-bind="gridOptions"
+                :data="tableData"
+                :loading="loading"
+                @checkbox-change="handleCheckboxChange"
+                @checkbox-all="handleCheckboxAll"
+              >
+                <!-- 采集时间 -->
+                <template #timeSlot="{ row }">
+                  <span>{{ formatDateTime(row.fetchedAt) }}</span>
+                </template>
+
+                <!-- 状态 -->
+                <template #statusSlot="{ row }">
+                  <el-tag size="small" effect="plain" :type="statusTagType(row.status)">
+                    {{ statusLabel(row.status) }}
+                  </el-tag>
+                </template>
+
+                <!-- 平台列表 -->
+                <template #platformsSlot="{ row }">
+                  <div class="inline-chip-list">
+                    <span v-for="p in (row.platforms || []).slice(0, 5)" :key="p" class="info-chip">
+                      {{ platformNameMap[p] || p }}
+                    </span>
+                    <span v-if="(row.platforms || []).length > 5" class="info-chip info-chip--more">
+                      +{{ row.platforms.length - 5 }}
+                    </span>
+                  </div>
+                </template>
+
+                <!-- 数据量 -->
+                <template #countSlot="{ row }">
+                  <span
+                    class="metric-badge"
+                    :class="{ 'metric-badge--success': row.itemCount > 0 }"
+                  >
+                    {{ row.itemCount }}
+                  </span>
+                </template>
+
+                <!-- 成功率 -->
+                <template #rateSlot="{ row }">
+                  <span
+                    :class="{
+                      'text-success': row.failCount === 0,
+                      'text-warning': row.failCount > 0,
+                    }"
+                  >
+                    {{ row.successCount }}/{{ row.platformCount }}
+                  </span>
+                </template>
+
+                <!-- 操作 -->
+                <template #operationSlot="{ row }">
+                  <div class="table-operation-cell__actions">
+                    <el-button link type="primary" size="small" @click="openDetail(row)">
+                      详情
+                    </el-button>
+                    <el-button link type="danger" size="small" @click="handleDelete(row.id)">
+                      删除
+                    </el-button>
+                  </div>
+                </template>
+              </vxe-grid>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <template #pagination>
+        <div
+          class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat"
+        >
+          <Pagination
+            :total="total"
+            v-model:page="pageNo"
+            v-model:limit="pageSize"
+            @pagination="loadList"
+          />
+        </div>
+      </template>
+    </ListPageLayout>
+  </ContentWrap>
+
+  <!-- 详情弹窗 -->
+  <el-dialog v-model="detailVisible" title="采集详情" fullscreen @closed="currentDetail = null">
+    <div v-if="currentDetail" class="detail-dialog">
+      <section class="detail-dialog__hero">
+        <div>
+          <div class="detail-dialog__time">{{ formatDateTime(currentDetail.fetchedAt) }}</div>
+          <div class="detail-dialog__summary">
+            {{ currentDetail.platformCount }} 个平台 · {{ currentDetail.itemCount }} 条热搜
+            <span v-if="currentDetail.duration">
+              · 耗时 {{ (currentDetail.duration / 1000).toFixed(1) }}s</span
+            >
+          </div>
+        </div>
+        <el-tag size="small" :type="statusTagType(currentDetail.status)">
+          {{ statusLabel(currentDetail.status) }}
+        </el-tag>
+      </section>
+
+      <div v-if="currentDetail.data" class="detail-dialog__platforms">
+        <div
+          v-for="key in getDetailPlatformOrder(currentDetail)"
+          :key="key"
+          class="detail-platform"
+        >
+          <div class="detail-platform__header">
+            <span class="detail-platform__name">
+              <span v-if="!currentDetail.data[key]?.success" class="detail-platform__dot" />
+              {{ currentDetail.data[key]?.name || key }}
+            </span>
+            <span class="detail-platform__count"
+              >{{ currentDetail.data[key]?.itemCount || 0 }} 条</span
+            >
+          </div>
+          <div v-if="currentDetail.data[key]?.items?.length" class="detail-platform__list">
+            <div
+              v-for="(item, idx) in currentDetail.data[key].items"
+              :key="idx"
+              class="detail-item"
+            >
+              <span class="detail-item__rank" :class="{ 'is-top': idx < 3 }">{{ item.rank }}</span>
+              <a
+                class="detail-item__title"
+                :href="item.url || undefined"
+                :target="item.url ? '_blank' : undefined"
+                >{{ item.title }}</a
+              >
+              <span v-if="item.hot" class="detail-item__hot">{{ formatHot(item.hot) }}</span>
+            </div>
+          </div>
+          <div v-else-if="!currentDetail.data[key]?.success" class="detail-platform__error">
+            {{ currentDetail.data[key]?.error || "采集失败" }}
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
+    <el-empty v-else description="暂无详情" />
+  </el-dialog>
+
+  <!-- 采集弹窗 -->
+  <el-dialog
+    v-model="showDialog"
+    title="采集热搜"
+    width="640px"
+    :close-on-click-modal="!collectLoading"
+  >
+    <div class="dialog-section">
+      <div class="dialog-section__title">执行环境</div>
+      <el-form label-position="top" size="default">
+        <el-form-item label="客户端">
+          <el-select v-model="execContext.clientId" placeholder="选择客户端" style="width: 100%">
+            <el-option v-for="c in clientList" :key="c.id" :label="c.label" :value="c.id">
+              <span style="display: flex; align-items: center; gap: 6px">
+                <span class="client-dot" :class="{ 'is-online': c.isOnline }" />
+                {{ c.label }}
+                <el-tag v-if="c.isOnline" size="small" type="success" effect="plain">在线</el-tag>
+              </span>
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="浏览器环境（可选）">
+          <el-select
+            v-model="execContext.profileId"
+            clearable
+            placeholder="留空则使用默认环境"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="p in getClientProfiles(execContext.clientId)"
+              :key="p.id"
+              :label="p.label"
+              :value="p.id"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+    </div>
+
+    <div class="dialog-section">
+      <div class="dialog-section__title">网络环境</div>
+      <el-radio-group v-model="selectedEnv">
+        <el-radio-button value="all">全部</el-radio-button>
+        <el-radio-button value="direct">国内直连</el-radio-button>
+        <el-radio-button value="proxy">需代理</el-radio-button>
+      </el-radio-group>
+    </div>
+
+    <div class="dialog-section">
+      <div class="dialog-section__title">
+        平台
+        <el-checkbox
+          v-model="selectAll"
+          :indeterminate="isIndeterminate"
+          @change="handleSelectAll"
+          style="margin-left: 12px"
+        >
+          全选
+        </el-checkbox>
+      </div>
+      <el-checkbox-group v-model="selectedPlatforms" class="platform-grid">
+        <el-checkbox
+          v-for="p in filteredPlatforms"
+          :key="p.key"
+          :value="p.key"
+          :disabled="collectLoading"
+          border
+        >
+          {{ p.name }}
+        </el-checkbox>
+      </el-checkbox-group>
+    </div>
+
+    <template #footer>
+      <el-button @click="showDialog = false" :disabled="collectLoading">取消</el-button>
+      <el-button
+        type="primary"
+        :loading="collectLoading"
+        :disabled="!execContext.clientId || selectedPlatforms.length === 0"
+        @click="triggerCollect"
+      >
+        采集 {{ selectedPlatforms.length }} 个平台
+      </el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { ElMessage } from 'element-plus'
-import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
-import { getAllHotsearch, refreshHotsearch } from '@/api/hotsearch'
-import type { HotsearchData, HotsearchItem, HotsearchResponse } from '@/api/hotsearch'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { ElMessage, ElMessageBox } from "element-plus";
+import type { VxeGridProps } from "vxe-table";
+import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
+import ListPageLayout from "@/components/ListPageLayout/index.vue";
+import Pagination from "@/components/Pagination/index.vue";
+import {
+  pageHotsearch,
+  deleteHotsearch,
+  getSchedules,
+  saveSchedule,
+  toggleSchedule,
+  deleteSchedule,
+} from "@/api/hotsearch-data";
+import type { HotSearchCollectRecord, HotsearchSchedule } from "@/api/hotsearch-data";
+import { useClientNodeState } from "@/services/clientNodeState";
+import { getClientServiceRuntime } from "@/store/modules/clientNode";
+import { buildOperationColumn, commonGridOptions } from "@/common/table";
 
-defineOptions({ name: 'HotSearch' })
+defineOptions({ name: "HotSearch" });
 
-interface PlatformConfig {
-  key: string
-  label: string
-  limit?: number
+// ============ 客户端列表 ============
+const { clients } = useClientNodeState();
+const clientList = computed(() =>
+  clients.value
+    .filter((c: any) => c.clientInfo?.deviceKey) // 只显示有 deviceKey 的客户端
+    .map((c: any) => ({
+      id: c.clientInfo.deviceKey, // 用 deviceKey 作为 ID，和客户端轮询一致
+      label:
+        c.clientInfo?.machine?.code ||
+        c.clientInfo?.machine?.platform ||
+        c.clientInfo.deviceKey.slice(0, 16),
+      isOnline: c.isOnline,
+    })),
+);
+const getClientLabel = (clientId: string) => {
+  return clientList.value.find((c) => c.id === clientId)?.label || clientId.slice(0, 16);
+};
+
+// 从客户端 runtime 中提取浏览器 Profile 列表
+const getClientProfiles = (clientId: string) => {
+  if (!clientId) return [];
+  // clientId 现在是 deviceKey，需要从 clients 中匹配
+  const client = clients.value.find((c: any) => c.clientInfo?.deviceKey === clientId);
+  if (!client) return [];
+  const runtime = getClientServiceRuntime(client, "browser-automation");
+  const details = runtime?.details || runtime || {};
+  const items = Array.isArray(details.items)
+    ? details.items
+    : Array.isArray(details.profiles)
+      ? details.profiles
+      : [];
+  return items
+    .filter((p: any) => p?.id)
+    .map((p: any) => ({
+      id: p.id,
+      label: p.name || p.label || p.id,
+    }));
+};
+
+// ============ 平台定义 ============
+interface PlatformDef {
+  key: string;
+  name: string;
+  environment: "direct" | "proxy" | "browser";
 }
 
-interface NormalizedHotItem {
-  title: string
-  rank: number
-  hotText: string
-  subText: string
-  tag: string
-  url: string
-}
+const ALL_PLATFORMS: PlatformDef[] = [
+  { key: "weibo", name: "微博", environment: "direct" },
+  { key: "douyin", name: "抖音", environment: "direct" },
+  { key: "bilibili", name: "哔哩哔哩", environment: "direct" },
+  { key: "zhihu", name: "知乎", environment: "direct" },
+  { key: "toutiao", name: "今日头条", environment: "direct" },
+  { key: "douban", name: "豆瓣", environment: "direct" },
+  { key: "kuaishou", name: "快手", environment: "direct" },
+  { key: "v2ex", name: "V2EX", environment: "direct" },
+  { key: "github", name: "GitHub", environment: "direct" },
+  { key: "wikipedia", name: "维基百科", environment: "direct" },
+  { key: "google_trends", name: "Google Trends", environment: "proxy" },
+  { key: "hackernews", name: "Hacker News", environment: "proxy" },
+  { key: "reddit", name: "Reddit", environment: "proxy" },
+  { key: "producthunt", name: "Product Hunt", environment: "proxy" },
+];
 
-interface PlatformSection {
-  key: string
-  label: string
-  timestamp: string
-  items: NormalizedHotItem[]
-}
+const platformNameMap: Record<string, string> = Object.fromEntries(
+  ALL_PLATFORMS.map((p) => [p.key, p.name]),
+);
 
-const platformConfigs: PlatformConfig[] = [
-  { key: 'weibo', label: '微博', limit: 10 },
-  { key: 'douyin', label: '抖音', limit: 16 },
-  { key: 'ks', label: '快手', limit: 16 },
-  { key: 'toutiao', label: '今日头条', limit: 16 },
-  { key: 'bilibili', label: '哔哩哔哩', limit: 16 },
-  { key: 'zhihu', label: '知乎', limit: 16 },
-  { key: 'douban', label: '豆瓣', limit: 16 },
-  { key: 'music', label: '酷狗音乐', limit: 16 }
-]
+// ============ 表格 ============
+const loading = ref(false);
+const tableData = ref<HotSearchCollectRecord[]>([]);
+const total = ref(0);
+const pageNo = ref(1);
+const pageSize = ref(20);
+const selectedIds = ref<number[]>([]);
 
-const loading = ref(false)
-const hotsearchData = ref<Record<string, HotsearchData>>({})
-const lastUpdateTime = ref('')
+const gridOptions = ref<VxeGridProps<HotSearchCollectRecord>>({
+  ...(commonGridOptions as VxeGridProps<HotSearchCollectRecord>),
+  rowConfig: { ...(commonGridOptions as any).rowConfig, keyField: "id" },
+  checkboxConfig: { reserve: true },
+  columns: [
+    { type: "checkbox", width: 48 },
+    { title: "采集时间", field: "fetchedAt", minWidth: 200, slots: { default: "timeSlot" } },
+    { title: "状态", field: "status", width: 100, slots: { default: "statusSlot" } },
+    { title: "平台", field: "platforms", minWidth: 260, slots: { default: "platformsSlot" } },
+    {
+      title: "条目数",
+      field: "itemCount",
+      width: 90,
+      align: "center",
+      slots: { default: "countSlot" },
+    },
+    {
+      title: "成功率",
+      field: "successCount",
+      width: 80,
+      align: "center",
+      slots: { default: "rateSlot" },
+    },
+    buildOperationColumn("operationSlot", 120),
+  ],
+});
 
-const platformSections = computed<PlatformSection[]>(() => {
-  return platformConfigs
-    .map((platform) => {
-      const data = hotsearchData.value[platform.key]
-      const items = Array.isArray(data?.data) ? data.data : []
-      const normalizedItems = items
-        .map((item, index) => normalizeItem(item, index))
-        .filter((item) => item.title)
-        .slice(0, platform.limit ?? items.length)
+const handleCheckboxChange = ({ records }: any) => {
+  selectedIds.value = records.map((r: any) => r.id);
+};
+const handleCheckboxAll = ({ records }: any) => {
+  selectedIds.value = records.map((r: any) => r.id);
+};
 
-      return {
-        key: platform.key,
-        label: data?.name || platform.label,
-        timestamp: data?.timestamp || '',
-        items: normalizedItems
-      }
-    })
-    .filter((platform) => platform.items.length > 0)
-})
+const statusTagType = (s: string) =>
+  s === "success" ? "success" : s === "partial" ? "warning" : s === "failed" ? "danger" : "info";
+const statusLabel = (s: string) =>
+  s === "success" ? "全部成功" : s === "partial" ? "部分成功" : s === "failed" ? "全部失败" : s;
 
-const normalizeResponseData = (payload: HotsearchResponse | Record<string, any> | undefined) => {
-  if (!payload || typeof payload !== 'object') {
-    return {}
-  }
+const formatDateTime = (v: any) => {
+  if (!v) return "-";
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return "-";
+  return d.toLocaleString("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+};
 
-  const source = 'data' in payload && payload.data && typeof payload.data === 'object'
-    ? payload.data
-    : payload
+const formatHot = (hot: string | number) => {
+  if (!hot) return "";
+  const t = String(hot).trim();
+  if (/^\d+$/.test(t)) return Number(t).toLocaleString();
+  return t;
+};
 
-  if (!source || typeof source !== 'object' || Array.isArray(source)) {
-    return {}
-  }
-
-  return Object.entries(source).reduce<Record<string, HotsearchData>>((result, [key, value]) => {
-    if (!value || typeof value !== 'object') {
-      return result
-    }
-
-    const current = value as Record<string, any>
-    const items = Array.isArray(current.data)
-      ? current.data
-      : Array.isArray(current.list)
-        ? current.list
-        : []
-
-    result[key] = {
-      key: String(current.key || key),
-      data: items,
-      timestamp: String(current.timestamp || current.updatedAt || ''),
-      expireAt: String(current.expireAt || ''),
-      category: current.category,
-      platform: String(current.platform || key),
-      name: String(current.name || current.label || key),
-      platformIndex: String(current.platformIndex || '')
-    }
-    return result
-  }, {})
-}
-
-const normalizeItem = (item: HotsearchItem, index: number): NormalizedHotItem => {
-  const title = String(
-    item.title ||
-      item.word ||
-      item.name ||
-      item.songName ||
-      item.keyword ||
-      item.desc ||
-      ''
-  ).trim()
-
-  const hotText = formatHot(item)
-  const subText = String(item.subtitle || item.note || item.artist || item.icon_desc || '').trim()
-  const tag = String(item.label || item.tag || item.type || item.flag || '').trim()
-  const url = String(item.url || item.scheme || item.word_scheme || '').trim()
-  const rank = Number(item.rank || index + 1)
-
-  return {
-    title,
-    rank: Number.isFinite(rank) && rank > 0 ? rank : index + 1,
-    hotText,
-    subText,
-    tag,
-    url
-  }
-}
-
-const formatHot = (item: HotsearchItem) => {
-  if (item.subtitle) {
-    return ''
-  }
-
-  const value = item.hot ?? item.hotValue ?? item.num ?? item.video_count ?? ''
-  if (value === null || value === undefined || value === '') {
-    return ''
-  }
-
-  if (typeof value === 'number') {
-    return `热度 ${value.toLocaleString()}`
-  }
-
-  const text = String(value).trim()
-  if (!text) {
-    return ''
-  }
-
-  if (/^\d+$/.test(text)) {
-    return `热度 ${Number(text).toLocaleString()}`
-  }
-
-  return text
-}
-
-const refreshLastUpdateTime = (data: Record<string, HotsearchData>) => {
-  const timestamps = Object.values(data)
-    .map((item) => item.timestamp)
-    .filter(Boolean)
-    .sort()
-
-  lastUpdateTime.value = timestamps.at(-1) || ''
-}
-
-const fetchData = async (options?: { silent?: boolean; keepLoading?: boolean }) => {
-  if (!options?.keepLoading) {
-    loading.value = true
-  }
-
+const loadList = async () => {
+  loading.value = true;
   try {
-    const response = await getAllHotsearch()
-    const normalized = normalizeResponseData(response)
-    hotsearchData.value = normalized
-    refreshLastUpdateTime(normalized)
-
-    if (!options?.silent) {
-      ElMessage.success('热搜数据已更新')
-    }
-  } catch (error) {
-    console.error('获取热搜数据失败:', error)
-    if (!options?.silent) {
-      ElMessage.error('获取热搜数据失败')
-    }
+    const res = await pageHotsearch({ currentPage: pageNo.value, pageSize: pageSize.value });
+    tableData.value = res.list || [];
+    total.value = res.total || 0;
+    selectedIds.value = [];
+  } catch {
+    ElMessage.error("获取采集记录失败");
   } finally {
-    if (!options?.keepLoading) {
-      loading.value = false
-    }
+    loading.value = false;
   }
-}
+};
 
-const refreshData = async () => {
-  loading.value = true
+// ============ 详情弹窗 ============
+const detailVisible = ref(false);
+const currentDetail = ref<HotSearchCollectRecord | null>(null);
+
+const openDetail = (row: HotSearchCollectRecord) => {
+  currentDetail.value = row;
+  detailVisible.value = true;
+};
+
+const getDetailPlatformOrder = (record: HotSearchCollectRecord) => {
+  if (!record.data) return [];
+  return Object.keys(record.data).sort((a, b) => {
+    const order = ALL_PLATFORMS.map((p) => p.key);
+    return (
+      (order.indexOf(a) === -1 ? 999 : order.indexOf(a)) -
+      (order.indexOf(b) === -1 ? 999 : order.indexOf(b))
+    );
+  });
+};
+
+// ============ 删除 ============
+const handleDelete = async (id: number) => {
   try {
-    await refreshHotsearch()
-    await fetchData({ silent: true, keepLoading: true })
-    ElMessage.success('热搜数据已刷新')
-  } catch (error) {
-    console.error('刷新热搜数据失败:', error)
-    ElMessage.error('刷新热搜数据失败')
+    await ElMessageBox.confirm("确定删除这条采集记录？", "确认删除", {
+      confirmButtonText: "删除",
+      type: "warning",
+    });
+    await deleteHotsearch(id);
+    ElMessage.success("已删除");
+    loadList();
+  } catch (e: any) {
+    if (e !== "cancel") ElMessage.error("删除失败");
+  }
+};
+
+const handleBatchDelete = async () => {
+  try {
+    await ElMessageBox.confirm(`确定删除选中的 ${selectedIds.value.length} 条记录？`, "批量删除", {
+      confirmButtonText: "删除",
+      type: "warning",
+    });
+    await Promise.all(selectedIds.value.map((id) => deleteHotsearch(id)));
+    ElMessage.success("已删除");
+    loadList();
+  } catch (e: any) {
+    if (e !== "cancel") ElMessage.error("删除失败");
+  }
+};
+
+// ============ 采集弹窗 ============
+const showDialog = ref(false);
+const collectLoading = ref(false);
+const execContext = ref<Record<string, any>>({ clientId: "", profileId: "", notes: "" });
+const selectedEnv = ref<"all" | "direct" | "proxy">("direct");
+const selectedPlatforms = ref<string[]>([]);
+
+const filteredPlatforms = computed(() => {
+  if (selectedEnv.value === "all") return ALL_PLATFORMS;
+  return ALL_PLATFORMS.filter((p) => p.environment === selectedEnv.value);
+});
+
+const selectAll = computed({
+  get: () =>
+    filteredPlatforms.value.length > 0 &&
+    selectedPlatforms.value.length === filteredPlatforms.value.length,
+  set: () => {},
+});
+const isIndeterminate = computed(() => {
+  const c = selectedPlatforms.value.length;
+  return c > 0 && c < filteredPlatforms.value.length;
+});
+const handleSelectAll = (val: boolean) => {
+  selectedPlatforms.value = val ? filteredPlatforms.value.map((p) => p.key) : [];
+};
+
+watch(selectedEnv, () => {
+  const validKeys = new Set(filteredPlatforms.value.map((p) => p.key));
+  selectedPlatforms.value = selectedPlatforms.value.filter((k) => validKeys.has(k));
+});
+
+const openCollectDialog = () => {
+  // 默认选中第一个客户端（让浏览器环境下拉框有选项）
+  if (!execContext.value.clientId) {
+    execContext.value.clientId = clientList.value[0]?.id || "";
+  }
+  showDialog.value = true;
+  if (!selectedPlatforms.value.length) {
+    selectedEnv.value = "direct";
+    selectedPlatforms.value = ALL_PLATFORMS.filter((p) => p.environment === "direct").map(
+      (p) => p.key,
+    );
+  }
+};
+
+const triggerCollect = async () => {
+  if (!execContext.value.clientId) {
+    ElMessage.warning("请选择客户端");
+    return;
+  }
+  if (!selectedPlatforms.value.length) {
+    ElMessage.warning("请选择平台");
+    return;
+  }
+
+  collectLoading.value = true;
+  try {
+    const res = await fetch("http://localhost:1519/api/hotsearch/fetch", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        platforms: selectedPlatforms.value,
+        reportToServer: true,
+        clientId: execContext.value.clientId,
+        profileId: execContext.value.profileId || undefined,
+      }),
+    });
+
+    if (!res.ok) throw new Error(`客户端响应异常: ${res.status}`);
+    const result = await res.json();
+
+    if (result.success) {
+      const { summary } = result;
+      ElMessage.success(`采集完成: 成功 ${summary.success}, 失败 ${summary.failed}`);
+      showDialog.value = false;
+      pageNo.value = 1;
+      await loadList();
+    } else {
+      throw new Error(result.message || "采集失败");
+    }
+  } catch (e: any) {
+    ElMessage.error(`采集失败: ${e.message}`);
   } finally {
-    loading.value = false
+    collectLoading.value = false;
   }
-}
+};
 
-const formatUpdateTime = (timestamp: string) => {
-  if (!timestamp) {
-    return ''
-  }
+// ============ 定时任务管理 ============
+const schedules = ref<HotsearchSchedule[]>([]);
+const showScheduleDialog = ref(false);
+const scheduleSaving = ref(false);
+const scheduleForm = ref({
+  id: undefined as number | undefined,
+  clientId: "",
+  profileId: "",
+  platforms: [] as string[],
+  intervalMinutes: 60,
+  environment: "all",
+});
 
-  const date = new Date(timestamp)
-  if (Number.isNaN(date.getTime())) {
-    return timestamp
-  }
+const currentSchedule = computed(() => schedules.value[0] || null);
 
-  const diff = Date.now() - date.getTime()
-  const minutes = Math.floor(diff / (1000 * 60))
-  const hours = Math.floor(diff / (1000 * 60 * 60))
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+const scheduleSelectAll = computed({
+  get: () =>
+    ALL_PLATFORMS.length > 0 && scheduleForm.value.platforms.length === ALL_PLATFORMS.length,
+  set: () => {},
+});
+const scheduleIndeterminate = computed(() => {
+  const c = scheduleForm.value.platforms.length;
+  return c > 0 && c < ALL_PLATFORMS.length;
+});
+const handleScheduleSelectAll = (val: boolean) => {
+  scheduleForm.value.platforms = val ? ALL_PLATFORMS.map((p) => p.key) : [];
+};
 
-  if (minutes < 1) {
-    return '刚刚'
-  }
-  if (minutes < 60) {
-    return `${minutes} 分钟前`
-  }
-  if (hours < 24) {
-    return `${hours} 小时前`
-  }
-  if (days < 7) {
-    return `${days} 天前`
-  }
+const loadSchedules = async () => {
+  try {
+    const res = await getSchedules();
+    // API 返回 { data: [...], code: 0 } 或直接是数组
+    schedules.value = Array.isArray(res)
+      ? res
+      : Array.isArray((res as any)?.data)
+        ? (res as any).data
+        : [];
+  } catch {}
+};
 
-  return date.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
+const openScheduleDialog = () => {
+  const s = currentSchedule.value;
+  // clientId 始终使用当前连接的客户端（保证一致）
+  const fixedClientId = clientList.value[0]?.id || s?.clientId || "";
+  if (s) {
+    scheduleForm.value = {
+      id: s.id,
+      clientId: fixedClientId,
+      profileId: "",
+      platforms: s.platforms || [],
+      intervalMinutes: s.intervalMinutes,
+      environment: s.environment || "all",
+    };
+  } else {
+    scheduleForm.value = {
+      id: undefined,
+      clientId: fixedClientId,
+      profileId: "",
+      platforms: ALL_PLATFORMS.filter((p) => p.environment === "direct").map((p) => p.key),
+      intervalMinutes: 60,
+      environment: "all",
+    };
+  }
+  showScheduleDialog.value = true;
+};
+
+const handleSaveSchedule = async () => {
+  if (!scheduleForm.value.clientId) {
+    ElMessage.warning("请选择客户端");
+    return;
+  }
+  if (!scheduleForm.value.platforms.length) {
+    ElMessage.warning("请选择平台");
+    return;
+  }
+  scheduleSaving.value = true;
+  try {
+    await saveSchedule(scheduleForm.value);
+    ElMessage.success("已保存");
+    showScheduleDialog.value = false;
+    await loadSchedules();
+  } catch {
+    ElMessage.error("保存失败");
+  } finally {
+    scheduleSaving.value = false;
+  }
+};
+
+const handleToggleSchedule = async (id: number, enabled: boolean) => {
+  try {
+    await toggleSchedule(id, enabled);
+    ElMessage.success(enabled ? "已开启" : "已关闭");
+    await loadSchedules();
+  } catch {
+    ElMessage.error("操作失败");
+  }
+};
+
+const handleDeleteSchedule = async () => {
+  if (!currentSchedule.value) return;
+  try {
+    await ElMessageBox.confirm("确定删除定时采集配置？", "确认", { type: "warning" });
+    await deleteSchedule(currentSchedule.value.id);
+    ElMessage.success("已删除");
+    showScheduleDialog.value = false;
+    await loadSchedules();
+  } catch (e: any) {
+    if (e !== "cancel") ElMessage.error("删除失败");
+  }
+};
+
+// 定时轮询 schedules（和客户端保持同步）
+let schedulePollTimer: ReturnType<typeof setInterval> | null = null;
 
 onMounted(() => {
-  fetchData()
-})
+  loadList();
+  loadSchedules();
+  schedulePollTimer = setInterval(loadSchedules, 15000);
+});
+
+onBeforeUnmount(() => {
+  if (schedulePollTimer) {
+    clearInterval(schedulePollTimer);
+    schedulePollTimer = null;
+  }
+});
 </script>
 
 <style scoped lang="scss">
-.hot-search-page {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+.hotsearch-page {
   min-height: 100%;
 }
 
-.hot-search-page__header {
+:deep(.hotsearch-page) {
+  gap: 10px;
+  padding: 8px 0 0;
+}
+
+:deep(.hotsearch-page .list-page-layout__main) {
+  gap: 10px;
+}
+
+:deep(.hotsearch-page .list-page-filter--flat) {
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+:deep(.hotsearch-page .list-page-table-panel__pagination--flat) {
+  padding-top: 10px;
+}
+
+:deep(.hotsearch-page .common-table__body-cell) {
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+
+:deep(.hotsearch-page .vxe-body--column .vxe-cell) {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+/* 列表操作区 */
+.list-page-filter__actions {
+  display: flex;
+  gap: 8px;
+  padding: 0 0 12px;
+}
+
+/* 表格单元格 */
+.primary-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.primary-cell__title {
+  font-size: 13px;
+  font-weight: 500;
+}
+.primary-cell__meta {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  font-family: monospace;
+}
+
+.inline-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.info-chip {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 4px;
+  background: var(--el-fill-color-light);
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+}
+.info-chip--more {
+  color: var(--el-text-color-secondary);
+}
+
+.metric-badge {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-secondary);
+}
+.metric-badge--success {
+  color: var(--el-color-success);
+}
+
+.text-success {
+  color: var(--el-color-success);
+  font-weight: 600;
+}
+.text-warning {
+  color: var(--el-color-warning);
+  font-weight: 600;
+}
+
+.table-operation-cell__actions {
+  display: flex;
+  gap: 4px;
+}
+
+/* 详情弹窗 */
+.detail-dialog__hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+.detail-dialog__time {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--el-text-color-primary);
+}
+.detail-dialog__summary {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+}
+
+.detail-dialog__platforms {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.detail-platform {
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.detail-platform__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--el-fill-color-lighter);
+  font-size: 13px;
+  font-weight: 600;
+}
+.detail-platform__name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.detail-platform__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--el-color-danger);
+}
+.detail-platform__count {
+  color: var(--el-text-color-secondary);
+  font-weight: 400;
+}
+.detail-platform__list {
+  padding: 6px 10px 8px;
+}
+.detail-platform__error {
+  padding: 8px 14px;
+  color: var(--el-color-danger);
+  font-size: 12px;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 4px;
+  border-radius: 6px;
+  &:hover {
+    background: var(--el-fill-color-light);
+  }
+}
+.detail-item__rank {
+  width: 20px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--el-text-color-secondary);
+  &.is-top {
+    color: var(--el-color-primary);
+  }
+}
+.detail-item__title {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--el-text-color-primary);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  &:hover {
+    color: var(--el-color-primary);
+  }
+}
+.detail-item__hot {
+  font-size: 11px;
+  color: var(--el-color-danger);
+}
+
+/* 弹窗 */
+.dialog-section {
+  margin-bottom: 20px;
+}
+.dialog-section__title {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  margin-bottom: 10px;
+}
+/* 注: 不再隐藏最后一个 el-form-item，否则浏览器环境和采集平台会被隐藏 */
+.platform-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.platform-grid .el-checkbox {
+  margin-right: 0;
+}
+
+/* 定时采集状态栏 */
+.schedule-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 4px 0 2px;
 }
-
-.hot-search-page__title-wrap {
-  min-width: 0;
-}
-
-.hot-search-page__title {
-  color: var(--el-text-color-primary);
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-}
-
-.hot-search-page__meta {
-  margin-top: 6px;
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.hot-search-page__content {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 14px;
-  align-items: start;
-}
-
-.platform-block {
-  overflow: hidden;
-  border: 1px solid var(--app-content-border-color);
-  border-radius: 18px;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--app-content-surface-muted-color) 72%, transparent 28%) 0%,
-      var(--app-content-surface-color) 100%
-    );
-  box-shadow: var(--app-content-shadow);
-}
-
-.platform-block__header {
-  padding: 16px 18px 12px;
-  border-bottom: 1px solid color-mix(in srgb, var(--app-content-border-color) 78%, transparent 22%);
-}
-
-.platform-block__title {
-  color: var(--el-text-color-primary);
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.platform-block__sub {
-  margin-top: 4px;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.platform-block__list {
-  display: flex;
-  flex-direction: column;
-  padding: 6px 10px 10px;
-}
-
-.hot-item {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  padding: 11px 10px;
-  border-radius: 12px;
-  color: inherit;
-  text-decoration: none;
-  transition:
-    background-color var(--el-transition-duration-fast),
-    transform var(--el-transition-duration-fast);
-
-  &:hover {
-    background: color-mix(in srgb, var(--el-fill-color-light) 82%, transparent 18%);
-  }
-}
-
-.hot-item__rank {
-  display: flex;
-  width: 24px;
-  min-width: 24px;
-  justify-content: center;
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.8;
-}
-
-.hot-item.is-top .hot-item__rank {
-  color: var(--el-color-primary);
-}
-
-.hot-item__content {
-  min-width: 0;
-  flex: 1;
-}
-
-.hot-item__title-row {
+.schedule-bar__left {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-.hot-item__title {
-  min-width: 0;
-  color: var(--el-text-color-primary);
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 1.55;
-  word-break: break-word;
-}
-
-.hot-item__tag {
-  flex-shrink: 0;
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--el-color-primary-light-9) 88%, transparent 12%);
-  color: var(--el-color-primary);
-  font-size: 11px;
-  line-height: 1.6;
-}
-
-.hot-item__meta {
-  display: flex;
+  gap: 10px;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 4px;
+  min-width: 0;
+}
+.schedule-bar__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+.schedule-bar__info {
+  font-size: 13px;
   color: var(--el-text-color-secondary);
+}
+.schedule-bar__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.form-tip {
   font-size: 12px;
-  line-height: 1.5;
+  color: var(--el-text-color-secondary);
+  margin-top: 4px;
 }
 
-.hot-item__hot {
-  color: var(--el-color-danger);
-}
-
-.hot-search-page__empty {
-  grid-column: 1 / -1;
-  padding: 48px 0 18px;
-  border: 1px dashed var(--app-content-border-color);
-  border-radius: 18px;
-  background: color-mix(in srgb, var(--app-content-surface-muted-color) 65%, transparent 35%);
-}
-
-@media (max-width: 768px) {
-  .hot-search-page__header {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .hot-search-page__content {
-    grid-template-columns: 1fr;
-  }
-
-  .platform-block {
-    border-radius: 16px;
-  }
-
-  .platform-block__header {
-    padding: 14px 14px 10px;
-  }
-
-  .platform-block__list {
-    padding: 4px 8px 8px;
+.client-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--el-text-color-placeholder);
+  flex-shrink: 0;
+  &.is-online {
+    background: var(--el-color-success);
   }
 }
 </style>
