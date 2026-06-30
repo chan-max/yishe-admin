@@ -441,6 +441,7 @@ interface PlatformDef {
 }
 
 const ALL_PLATFORMS: PlatformDef[] = [
+  // 国内直连
   { key: "weibo", name: "微博", environment: "direct" },
   { key: "douyin", name: "抖音", environment: "direct" },
   { key: "bilibili", name: "哔哩哔哩", environment: "direct" },
@@ -449,12 +450,38 @@ const ALL_PLATFORMS: PlatformDef[] = [
   { key: "douban", name: "豆瓣", environment: "direct" },
   { key: "kuaishou", name: "快手", environment: "direct" },
   { key: "v2ex", name: "V2EX", environment: "direct" },
+  { key: "36kr", name: "36氪", environment: "direct" },
+  { key: "huxiu", name: "虎嗅", environment: "direct" },
+  { key: "sspai", name: "少数派", environment: "direct" },
+  { key: "ithome", name: "IT之家", environment: "direct" },
+  { key: "taobao_hot", name: "淘宝热搜", environment: "direct" },
+  { key: "jd_hot", name: "京东热搜", environment: "direct" },
+  { key: "pdd_hot", name: "拼多多热搜", environment: "direct" },
+  // 国际新闻/趋势（需代理）
   { key: "github", name: "GitHub", environment: "direct" },
   { key: "wikipedia", name: "维基百科", environment: "direct" },
+  { key: "devto", name: "Dev.to", environment: "direct" },
+  { key: "npm_trending", name: "npm Trending", environment: "direct" },
   { key: "google_trends", name: "Google Trends", environment: "proxy" },
   { key: "hackernews", name: "Hacker News", environment: "proxy" },
   { key: "reddit", name: "Reddit", environment: "proxy" },
   { key: "producthunt", name: "Product Hunt", environment: "proxy" },
+  { key: "bbc_news", name: "BBC News", environment: "proxy" },
+  { key: "cnn", name: "CNN", environment: "proxy" },
+  { key: "nytimes", name: "New York Times", environment: "proxy" },
+  { key: "guardian", name: "The Guardian", environment: "proxy" },
+  { key: "reuters", name: "Reuters", environment: "proxy" },
+  { key: "aljazeera", name: "Al Jazeera", environment: "proxy" },
+  { key: "yahoo_news", name: "Yahoo News", environment: "proxy" },
+  { key: "medium", name: "Medium", environment: "proxy" },
+  { key: "quora", name: "Quora", environment: "proxy" },
+  { key: "flipboard", name: "Flipboard", environment: "proxy" },
+  // 电商平台（需代理）
+  { key: "amazon_bestsellers", name: "Amazon 畅销榜", environment: "proxy" },
+  { key: "aliexpress_popular", name: "AliExpress 热门", environment: "proxy" },
+  { key: "ebay_trending", name: "eBay Trending", environment: "proxy" },
+  { key: "etsy_trending", name: "Etsy Trending", environment: "proxy" },
+  { key: "shopify_trending", name: "Shopify Trending", environment: "proxy" },
 ];
 
 const platformNameMap: Record<string, string> = Object.fromEntries(
