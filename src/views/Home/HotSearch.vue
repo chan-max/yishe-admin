@@ -352,55 +352,75 @@
         </el-tab-pane>
 
       <!-- AI 分析 Tab -->
-      <el-tab-pane label="AI 分析" name="analysis">
+      <el-tab-pane label="热搜标签" name="analysis">
         <div v-if="currentDetail.analysisStatus === 'done' && currentDetail.analysis" class="analysis-content">
           <!-- 趋势总结 -->
           <div class="analysis-section">
-            <h4>📝 趋势总结</h4>
+            <h4>📝 今日热点</h4>
             <p>{{ currentDetail.analysis.summary }}</p>
           </div>
 
-          <!-- 热点列表 -->
-          <div v-if="currentDetail.analysis.trends?.length" class="analysis-section">
-            <h4>🔥 热点趋势 ({{ currentDetail.analysis.trends.length }})</h4>
-            <div class="analysis-trends">
-              <div v-for="(trend, i) in currentDetail.analysis.trends" :key="i" class="analysis-trend-card">
-                <div class="analysis-trend-header">
-                  <span class="analysis-trend-rank">#{{ i + 1 }}</span>
-                  <span class="analysis-trend-title">{{ trend.title }}</span>
-                  <el-tag size="small" :type="trend.significance === 'high' ? 'danger' : trend.significance === 'medium' ? 'warning' : 'info'">
-                    {{ trend.significance }}
-                  </el-tag>
-                </div>
-                <div class="analysis-trend-desc">{{ trend.description }}</div>
-                <div class="analysis-trend-platform">{{ trend.platform }}</div>
-              </div>
+          <!-- 核心标签 -->
+          <div v-if="currentDetail.analysis.hotTags?.length" class="analysis-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px">
+              <h4 style="margin: 0">🏷️ 核心热搜标签 ({{ currentDetail.analysis.hotTags.length }})</h4>
+              <el-button size="small" type="primary" @click="copyAllTags(currentDetail.analysis.hotTags)">
+                一键复制全部
+              </el-button>
+            </div>
+            <div class="analysis-tags-wrap">
+              <el-tag
+                v-for="(item, i) in currentDetail.analysis.hotTags"
+                :key="i"
+                size="default"
+                :type="item.heat === 'hot' ? 'danger' : item.heat === 'rising' ? 'warning' : 'info'"
+                effect="light"
+                class="analysis-tag-item"
+                @click="copyTag(item.tag)"
+              >
+                #{{ item.tag }}
+                <span class="analysis-tag-meta">{{ item.category }}</span>
+              </el-tag>
             </div>
           </div>
 
-          <!-- POD 推荐 -->
-          <div v-if="currentDetail.analysis.podRecommendations?.length" class="analysis-section">
-            <h4>🎯 POD 商品推荐 ({{ currentDetail.analysis.podRecommendations.length }})</h4>
-            <div class="analysis-pod-grid">
-              <div v-for="(pod, i) in currentDetail.analysis.podRecommendations" :key="i" class="analysis-pod-card">
-                <div class="analysis-pod-element">{{ pod.element }}</div>
-                <div class="analysis-pod-source">来源: {{ pod.source }}</div>
-                <div class="analysis-pod-products">
-                  <el-tag v-for="p in pod.targetProducts" :key="p" size="small" effect="plain">{{ p }}</el-tag>
-                </div>
-                <div class="analysis-pod-reason">{{ pod.reason }}</div>
-                <div class="analysis-pod-suggestion">💡 {{ pod.designSuggestion }}</div>
-                <el-tag size="small" :type="pod.estimatedAppeal === 'high' ? 'success' : pod.estimatedAppeal === 'medium' ? 'warning' : 'info'">
-                  潜力: {{ pod.estimatedAppeal }}
+          <!-- 分类标签组 -->
+          <div v-if="currentDetail.analysis.tagGroups?.length" class="analysis-section">
+            <h4>📂 分类标签</h4>
+            <div v-for="(group, i) in currentDetail.analysis.tagGroups" :key="i" class="analysis-group">
+              <div class="analysis-group-header">
+                <span>{{ group.category }}</span>
+                <el-button link type="primary" size="small" @click="copyTags(group.tags)">复制</el-button>
+              </div>
+              <div class="analysis-tags-wrap">
+                <el-tag
+                  v-for="(tag, j) in group.tags"
+                  :key="j"
+                  size="small"
+                  effect="plain"
+                  class="analysis-tag-item"
+                  @click="copyTag(tag)"
+                >
+                  #{{ tag }}
                 </el-tag>
               </div>
             </div>
           </div>
 
-          <!-- 市场洞察 -->
-          <div v-if="currentDetail.analysis.marketInsights" class="analysis-section">
-            <h4>💡 市场洞察</h4>
-            <p>{{ currentDetail.analysis.marketInsights }}</p>
+          <!-- 推荐组合 -->
+          <div v-if="currentDetail.analysis.recommendedMix?.length" class="analysis-section">
+            <h4>✨ 推荐组合（搭配使用效果更好）</h4>
+            <div v-for="(mix, i) in currentDetail.analysis.recommendedMix" :key="i" class="analysis-mix">
+              <div class="analysis-mix-header">
+                <span>组合 {{ i + 1 }}</span>
+                <el-button link type="primary" size="small" @click="copyTags(mix)">复制</el-button>
+              </div>
+              <div class="analysis-tags-wrap">
+                <el-tag v-for="(tag, j) in mix" :key="j" size="small" type="warning" effect="light" class="analysis-tag-item">
+                  #{{ tag }}
+                </el-tag>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -743,6 +763,26 @@ const handleTriggerAnalysis = async (row: HotSearchCollectRecord) => {
   } finally {
     analyzingId.value = null;
   }
+};
+
+const copyTag = (tag: string) => {
+  navigator.clipboard.writeText(`#${tag}`).then(() => {
+    ElMessage.success(`已复制 #${tag}`);
+  });
+};
+
+const copyTags = (tags: string[]) => {
+  const text = tags.map((t) => `#${t}`).join(" ");
+  navigator.clipboard.writeText(text).then(() => {
+    ElMessage.success(`已复制 ${tags.length} 个标签`);
+  });
+};
+
+const copyAllTags = (hotTags: { tag: string }[]) => {
+  const text = hotTags.map((t) => `#${t.tag}`).join(" ");
+  navigator.clipboard.writeText(text).then(() => {
+    ElMessage.success(`已复制全部 ${hotTags.length} 个标签`);
+  });
 };
 
 const getDetailPlatformOrder = (record: HotSearchCollectRecord) => {
@@ -1277,7 +1317,7 @@ onBeforeUnmount(() => {
   }
 }
 
-/* AI 分析 */
+/* AI 分析 - 标签 */
 .analysis-content {
   padding: 0 4px;
 }
@@ -1295,76 +1335,50 @@ onBeforeUnmount(() => {
     color: var(--el-text-color-regular);
   }
 }
-.analysis-trends {
+.analysis-tags-wrap {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
-.analysis-trend-card {
-  padding: 12px 14px;
+.analysis-tag-item {
+  cursor: pointer;
+  transition: transform 0.15s;
+  &:hover {
+    transform: scale(1.05);
+  }
+}
+.analysis-tag-meta {
+  margin-left: 4px;
+  font-size: 11px;
+  opacity: 0.6;
+}
+.analysis-group {
+  margin-bottom: 16px;
+  padding: 12px;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
 }
-.analysis-trend-header {
+.analysis-group-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 8px;
-}
-.analysis-trend-rank {
-  font-weight: 700;
-  color: var(--el-color-primary);
-  font-size: 14px;
-  min-width: 24px;
-}
-.analysis-trend-title {
-  flex: 1;
-  font-weight: 500;
-  font-size: 14px;
-}
-.analysis-trend-desc {
-  font-size: 13px;
-  color: var(--el-text-color-secondary);
-  margin-top: 4px;
-}
-.analysis-trend-platform {
-  font-size: 12px;
-  color: var(--el-text-color-placeholder);
-  margin-top: 2px;
-}
-.analysis-pod-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 12px;
-}
-.analysis-pod-card {
-  padding: 14px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.analysis-pod-element {
-  font-size: 14px;
+  margin-bottom: 8px;
   font-weight: 600;
-  color: var(--el-text-color-primary);
+  font-size: 14px;
 }
-.analysis-pod-source {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
+.analysis-mix {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: var(--el-fill-color-lighter);
+  border-radius: 8px;
 }
-.analysis-pod-products {
+.analysis-mix-header {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-.analysis-pod-reason {
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
   font-size: 13px;
-  color: var(--el-text-color-regular);
-  line-height: 1.5;
-}
-.analysis-pod-suggestion {
-  font-size: 12px;
-  color: var(--el-color-primary);
+  font-weight: 500;
+  color: var(--el-text-color-secondary);
 }
 </style>
