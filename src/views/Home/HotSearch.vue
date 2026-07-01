@@ -410,7 +410,10 @@
         </div>
 
         <div v-else-if="currentDetail.analysisStatus === 'failed'" style="text-align: center; padding: 60px 0">
-          <p style="color: var(--el-color-danger)">AI 分析失败</p>
+          <p style="color: var(--el-color-danger); font-size: 16px; margin-bottom: 8px">AI 分析失败</p>
+          <p v-if="currentDetail.analysis?.error" style="color: var(--el-text-color-secondary); font-size: 13px; max-width: 600px; margin: 0 auto 16px; word-break: break-all">
+            {{ currentDetail.analysis.error }}
+          </p>
           <el-button size="small" type="primary" @click="handleTriggerAnalysis(currentDetail)">重试</el-button>
         </div>
 
