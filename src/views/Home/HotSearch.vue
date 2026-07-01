@@ -288,45 +288,44 @@
 
       <!-- Tabs: 原始数据 / AI 分析 -->
       <el-tabs v-model="detailTab" style="margin-top: 16px">
-        <el-tab-pane label="原始数据" name="data" />
-
-      <div v-if="currentDetail.data" class="detail-dialog__platforms">
-        <div
-          v-for="key in getDetailPlatformOrder(currentDetail)"
-          :key="key"
-          class="detail-platform"
-        >
-          <div class="detail-platform__header">
-            <span class="detail-platform__name">
-              <span v-if="!currentDetail.data[key]?.success" class="detail-platform__dot" />
-              {{ currentDetail.data[key]?.name || key }}
-            </span>
-            <span class="detail-platform__count"
-              >{{ currentDetail.data[key]?.itemCount || 0 }} 条</span
-            >
-          </div>
-          <div v-if="currentDetail.data[key]?.items?.length" class="detail-platform__list">
+        <el-tab-pane label="原始数据" name="data">
+          <div v-if="currentDetail.data" class="detail-dialog__platforms">
             <div
-              v-for="(item, idx) in currentDetail.data[key].items"
-              :key="idx"
-              class="detail-item"
+              v-for="key in getDetailPlatformOrder(currentDetail)"
+              :key="key"
+              class="detail-platform"
             >
-              <span class="detail-item__rank" :class="{ 'is-top': idx < 3 }">{{ item.rank }}</span>
-              <a
-                class="detail-item__title"
-                :href="item.url || undefined"
-                :target="item.url ? '_blank' : undefined"
-                >{{ item.title }}</a
-              >
-              <span v-if="item.hot" class="detail-item__hot">{{ formatHot(item.hot) }}</span>
+              <div class="detail-platform__header">
+                <span class="detail-platform__name">
+                  <span v-if="!currentDetail.data[key]?.success" class="detail-platform__dot" />
+                  {{ currentDetail.data[key]?.name || key }}
+                </span>
+                <span class="detail-platform__count"
+                  >{{ currentDetail.data[key]?.itemCount || 0 }} 条</span
+                >
+              </div>
+              <div v-if="currentDetail.data[key]?.items?.length" class="detail-platform__list">
+                <div
+                  v-for="(item, idx) in currentDetail.data[key].items"
+                  :key="idx"
+                  class="detail-item"
+                >
+                  <span class="detail-item__rank" :class="{ 'is-top': idx < 3 }">{{ item.rank }}</span>
+                  <a
+                    class="detail-item__title"
+                    :href="item.url || undefined"
+                    :target="item.url ? '_blank' : undefined"
+                    >{{ item.title }}</a
+                  >
+                  <span v-if="item.hot" class="detail-item__hot">{{ formatHot(item.hot) }}</span>
+                </div>
+              </div>
+              <div v-else-if="!currentDetail.data[key]?.success" class="detail-platform__error">
+                {{ currentDetail.data[key]?.error || "采集失败" }}
+              </div>
             </div>
           </div>
-          <div v-else-if="!currentDetail.data[key]?.success" class="detail-platform__error">
-            {{ currentDetail.data[key]?.error || "采集失败" }}
-          </div>
-        </div>
-      </div>
-      </el-tab-pane>
+        </el-tab-pane>
 
       <!-- AI 分析 Tab -->
       <el-tab-pane label="AI 分析" name="analysis">
