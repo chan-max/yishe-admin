@@ -99,6 +99,30 @@
           </el-checkbox>
         </el-checkbox-group>
       </el-form-item>
+
+      <!-- AI 分析设置 -->
+      <el-divider content-position="left">AI 分析设置</el-divider>
+      <el-form-item label="采集后自动 AI 分析">
+        <el-switch v-model="scheduleForm.autoAnalyze" />
+      </el-form-item>
+      <template v-if="scheduleForm.autoAnalyze">
+        <el-form-item label="分析风格">
+          <el-select v-model="scheduleForm.analysisStyle" style="width: 100%">
+            <el-option label="专业分析" value="professional" />
+            <el-option label="轻松解读" value="casual" />
+            <el-option label="详尽深入" value="detailed" />
+            <el-option label="创意设计" value="creative" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="自定义提示词（可选）">
+          <el-input
+            v-model="scheduleForm.analysisPrompt"
+            type="textarea"
+            :rows="3"
+            placeholder="例如：重点关注跨境电商市场、特别分析东南亚地区趋势、推荐适合女性用户的设计元素..."
+          />
+        </el-form-item>
+      </template>
     </el-form>
     <template #footer>
       <el-button
@@ -856,6 +880,9 @@ const scheduleForm = ref({
   platforms: [] as string[],
   intervalMinutes: 60,
   environment: "all",
+  autoAnalyze: true,
+  analysisPrompt: "",
+  analysisStyle: "professional",
 });
 
 const currentSchedule = computed(() => schedules.value[0] || null);
@@ -897,6 +924,9 @@ const openScheduleDialog = () => {
       platforms: s.platforms || [],
       intervalMinutes: s.intervalMinutes,
       environment: s.environment || "all",
+      autoAnalyze: s.autoAnalyze ?? true,
+      analysisPrompt: s.analysisPrompt || "",
+      analysisStyle: s.analysisStyle || "professional",
     };
   } else {
     scheduleForm.value = {
@@ -906,6 +936,9 @@ const openScheduleDialog = () => {
       platforms: ALL_PLATFORMS.filter((p) => p.environment === "direct").map((p) => p.key),
       intervalMinutes: 60,
       environment: "all",
+      autoAnalyze: true,
+      analysisPrompt: "",
+      analysisStyle: "professional",
     };
   }
   showScheduleDialog.value = true;

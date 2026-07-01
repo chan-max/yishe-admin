@@ -83,6 +83,9 @@ export interface HotsearchSchedule {
   intervalMinutes: number
   enabled: boolean
   environment: string
+  autoAnalyze: boolean
+  analysisPrompt: string | null
+  analysisStyle: string
   lastRunAt: string | null
   nextRunAt: string | null
   runStatus: string
@@ -104,6 +107,9 @@ export const saveSchedule = (data: {
   intervalMinutes?: number
   enabled?: boolean
   environment?: string
+  autoAnalyze?: boolean
+  analysisPrompt?: string
+  analysisStyle?: string
 }) => {
   return request.post<{ success: boolean; data: HotsearchSchedule }>({ url: '/hotsearch-data/schedule', data })
 }
