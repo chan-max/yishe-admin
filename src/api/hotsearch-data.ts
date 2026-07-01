@@ -32,6 +32,13 @@ export interface HotSearchCollectRecord {
   triggeredBy: string
   duration: number | null
   fetchedAt: string
+  analysisStatus: 'pending' | 'analyzing' | 'done' | 'failed'
+  analysis: {
+    summary?: string
+    trends?: { title: string; platform: string; significance: string; description: string }[]
+    podRecommendations?: { element: string; source: string; targetProducts: string[]; reason: string; designSuggestion: string; estimatedAppeal: string }[]
+    marketInsights?: string
+  } | null
   createTime: string
 }
 
@@ -107,4 +114,10 @@ export const toggleSchedule = (id: number, enabled: boolean) => {
 
 export const deleteSchedule = (id: number) => {
   return request.delete({ url: `/hotsearch-data/schedule/${id}` })
+}
+
+// ==================== AI 分析 ====================
+
+export const triggerAnalysis = (id: number) => {
+  return request.post({ url: `/hotsearch-data/analyze/${id}` })
 }

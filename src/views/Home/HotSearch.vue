@@ -195,6 +195,36 @@
                   </span>
                 </template>
 
+                <!-- AI分析 -->
+                <template #analysisSlot="{ row }">
+                  <el-tag
+                    v-if="row.analysisStatus === 'done'"
+                    size="small"
+                    type="success"
+                    effect="plain"
+                    @click="openDetail(row)"
+                    style="cursor: pointer"
+                  >
+                    已分析
+                  </el-tag>
+                  <el-tag v-else-if="row.analysisStatus === 'analyzing'" size="small" type="warning" effect="plain">
+                    分析中
+                  </el-tag>
+                  <el-tag v-else-if="row.analysisStatus === 'failed'" size="small" type="danger" effect="plain">
+                    失败
+                  </el-tag>
+                  <el-button
+                    v-else
+                    link
+                    type="primary"
+                    size="small"
+                    :loading="analyzingId === row.id"
+                    @click="handleTriggerAnalysis(row)"
+                  >
+                    分析
+                  </el-button>
+                </template>
+
                 <!-- 操作 -->
                 <template #operationSlot="{ row }">
                   <div class="table-operation-cell__actions">
@@ -240,10 +270,25 @@
             >
           </div>
         </div>
-        <el-tag size="small" :type="statusTagType(currentDetail.status)">
-          {{ statusLabel(currentDetail.status) }}
-        </el-tag>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <el-tag size="small" :type="statusTagType(currentDetail.status)">
+            {{ statusLabel(currentDetail.status) }}
+          </el-tag>
+          <el-button
+            v-if="currentDetail.analysisStatus !== 'done' && currentDetail.analysisStatus !== 'analyzing'"
+            size="small"
+            type="primary"
+            :loading="analyzingId === currentDetail.id"
+            @click="handleTriggerAnalysis(currentDetail)"
+          >
+            AI 分析
+          </el-button>
+        </div>
       </section>
+
+      <!-- Tabs: 原始数据 / AI 分析 -->
+      <el-tabs v-model="detailTab" style="margin-top: 16px">
+        <el-tab-pane label="原始数据" name="data" />
 
       <div v-if="currentDetail.data" class="detail-dialog__platforms">
         <div
@@ -281,6 +326,77 @@
           </div>
         </div>
       </div>
+      </el-tab-pane>
+
+      <!-- AI 分析 Tab -->
+      <el-tab-pane label="AI 分析" name="analysis">
+        <div v-if="currentDetail.analysisStatus === 'done' && currentDetail.analysis" class="analysis-content">
+          <!-- 趋势总结 -->
+          <div class="analysis-section">
+            <h4>📝 趋势总结</h4>
+            <p>{{ currentDetail.analysis.summary }}</p>
+          </div>
+
+          <!-- 热点列表 -->
+          <div v-if="currentDetail.analysis.trends?.length" class="analysis-section">
+            <h4>🔥 热点趋势 ({{ currentDetail.analysis.trends.length }})</h4>
+            <div class="analysis-trends">
+              <div v-for="(trend, i) in currentDetail.analysis.trends" :key="i" class="analysis-trend-card">
+                <div class="analysis-trend-header">
+                  <span class="analysis-trend-rank">#{{ i + 1 }}</span>
+                  <span class="analysis-trend-title">{{ trend.title }}</span>
+                  <el-tag size="small" :type="trend.significance === 'high' ? 'danger' : trend.significance === 'medium' ? 'warning' : 'info'">
+                    {{ trend.significance }}
+                  </el-tag>
+                </div>
+                <div class="analysis-trend-desc">{{ trend.description }}</div>
+                <div class="analysis-trend-platform">{{ trend.platform }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- POD 推荐 -->
+          <div v-if="currentDetail.analysis.podRecommendations?.length" class="analysis-section">
+            <h4>🎯 POD 商品推荐 ({{ currentDetail.analysis.podRecommendations.length }})</h4>
+            <div class="analysis-pod-grid">
+              <div v-for="(pod, i) in currentDetail.analysis.podRecommendations" :key="i" class="analysis-pod-card">
+                <div class="analysis-pod-element">{{ pod.element }}</div>
+                <div class="analysis-pod-source">来源: {{ pod.source }}</div>
+                <div class="analysis-pod-products">
+                  <el-tag v-for="p in pod.targetProducts" :key="p" size="small" effect="plain">{{ p }}</el-tag>
+                </div>
+                <div class="analysis-pod-reason">{{ pod.reason }}</div>
+                <div class="analysis-pod-suggestion">💡 {{ pod.designSuggestion }}</div>
+                <el-tag size="small" :type="pod.estimatedAppeal === 'high' ? 'success' : pod.estimatedAppeal === 'medium' ? 'warning' : 'info'">
+                  潜力: {{ pod.estimatedAppeal }}
+                </el-tag>
+              </div>
+            </div>
+          </div>
+
+          <!-- 市场洞察 -->
+          <div v-if="currentDetail.analysis.marketInsights" class="analysis-section">
+            <h4>💡 市场洞察</h4>
+            <p>{{ currentDetail.analysis.marketInsights }}</p>
+          </div>
+        </div>
+
+        <div v-else-if="currentDetail.analysisStatus === 'analyzing'" style="text-align: center; padding: 60px 0">
+          <el-icon class="is-loading" :size="32"><i class="el-icon-loading" /></el-icon>
+          <p style="margin-top: 12px; color: var(--el-text-color-secondary)">AI 正在分析中...</p>
+        </div>
+
+        <div v-else-if="currentDetail.analysisStatus === 'failed'" style="text-align: center; padding: 60px 0">
+          <p style="color: var(--el-color-danger)">AI 分析失败</p>
+          <el-button size="small" type="primary" @click="handleTriggerAnalysis(currentDetail)">重试</el-button>
+        </div>
+
+        <div v-else style="text-align: center; padding: 60px 0">
+          <p style="color: var(--el-text-color-secondary)">尚未进行 AI 分析</p>
+          <el-button size="small" type="primary" :loading="analyzingId === currentDetail.id" @click="handleTriggerAnalysis(currentDetail)">开始分析</el-button>
+        </div>
+      </el-tab-pane>
+      </el-tabs>
     </div>
     <el-empty v-else description="暂无详情" />
   </el-dialog>
@@ -386,6 +502,7 @@ import {
   saveSchedule,
   toggleSchedule,
   deleteSchedule,
+  triggerAnalysis,
 } from "@/api/hotsearch-data";
 import type { HotSearchCollectRecord, HotsearchSchedule } from "@/api/hotsearch-data";
 import { useClientNodeState } from "@/services/clientNodeState";
@@ -519,6 +636,13 @@ const gridOptions = ref<VxeGridProps<HotSearchCollectRecord>>({
       align: "center",
       slots: { default: "rateSlot" },
     },
+    {
+      title: "AI分析",
+      field: "analysisStatus",
+      width: 90,
+      align: "center",
+      slots: { default: "analysisSlot" },
+    },
     buildOperationColumn("operationSlot", 120),
   ],
 });
@@ -572,10 +696,27 @@ const loadList = async () => {
 // ============ 详情弹窗 ============
 const detailVisible = ref(false);
 const currentDetail = ref<HotSearchCollectRecord | null>(null);
+const detailTab = ref("data");
+const analyzingId = ref<number | null>(null);
 
 const openDetail = (row: HotSearchCollectRecord) => {
   currentDetail.value = row;
+  detailTab.value = row.analysisStatus === "done" ? "analysis" : "data";
   detailVisible.value = true;
+};
+
+const handleTriggerAnalysis = async (row: HotSearchCollectRecord) => {
+  analyzingId.value = row.id;
+  try {
+    await triggerAnalysis(row.id);
+    ElMessage.success("AI 分析已触发，完成后将推送通知");
+    // 更新本地状态
+    row.analysisStatus = "analyzing";
+  } catch (e: any) {
+    ElMessage.error(`触发失败: ${e?.message || "未知错误"}`);
+  } finally {
+    analyzingId.value = null;
+  }
 };
 
 const getDetailPlatformOrder = (record: HotSearchCollectRecord) => {
@@ -1099,5 +1240,96 @@ onBeforeUnmount(() => {
   &.is-online {
     background: var(--el-color-success);
   }
+}
+
+/* AI 分析 */
+.analysis-content {
+  padding: 0 4px;
+}
+.analysis-section {
+  margin-bottom: 24px;
+  h4 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--el-text-color-primary);
+  }
+  p {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--el-text-color-regular);
+  }
+}
+.analysis-trends {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.analysis-trend-card {
+  padding: 12px 14px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+}
+.analysis-trend-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.analysis-trend-rank {
+  font-weight: 700;
+  color: var(--el-color-primary);
+  font-size: 14px;
+  min-width: 24px;
+}
+.analysis-trend-title {
+  flex: 1;
+  font-weight: 500;
+  font-size: 14px;
+}
+.analysis-trend-desc {
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+  margin-top: 4px;
+}
+.analysis-trend-platform {
+  font-size: 12px;
+  color: var(--el-text-color-placeholder);
+  margin-top: 2px;
+}
+.analysis-pod-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px;
+}
+.analysis-pod-card {
+  padding: 14px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.analysis-pod-element {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+.analysis-pod-source {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+.analysis-pod-products {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.analysis-pod-reason {
+  font-size: 13px;
+  color: var(--el-text-color-regular);
+  line-height: 1.5;
+}
+.analysis-pod-suggestion {
+  font-size: 12px;
+  color: var(--el-color-primary);
 }
 </style>
