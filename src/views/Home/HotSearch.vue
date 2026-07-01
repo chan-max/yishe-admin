@@ -33,7 +33,7 @@
   </ContentWrap>
 
   <!-- 定时任务设置弹窗 -->
-  <el-dialog v-model="showScheduleDialog" title="定时采集设置" width="640px">
+  <el-dialog v-model="showScheduleDialog" title="定时采集设置" width="900px">
     <el-form label-position="top" size="default">
       <el-form-item label="客户端">
         <el-select v-model="scheduleForm.clientId" placeholder="选择客户端" style="width: 100%" :disabled="!!currentSchedule">
@@ -933,7 +933,7 @@ const openScheduleDialog = () => {
       id: undefined,
       clientId: fixedClientId,
       profileId: "",
-      platforms: ALL_PLATFORMS.filter((p) => p.environment === "direct").map((p) => p.key),
+      platforms: ALL_PLATFORMS.map((p) => p.key),
       intervalMinutes: 60,
       environment: "all",
       autoAnalyze: true,
