@@ -219,48 +219,82 @@
                   </span>
                 </template>
 
-                <!-- 分析结果 -->
-                <template #analysisSlot="{ row }">
+                <!-- 热点总结列 -->
+                <template #summarySlot="{ row }">
                   <div v-if="row.analysisStatus === 'done' && row.analysis" class="analysis-cell">
-                    <!-- 总结 -->
                     <div class="analysis-cell__summary">
-                      {{ (row.analysis.fullSummary || row.analysis.summary || '').slice(0, 100) }}{{ (row.analysis.fullSummary || row.analysis.summary || '').length > 100 ? '…' : '' }}
+                      {{ (row.analysis.fullSummary || row.analysis.summary || '').slice(0, 150) }}{{ (row.analysis.fullSummary || row.analysis.summary || '').length > 150 ? '…' : '' }}
                     </div>
-                    <!-- 设计灵感 -->
-                    <div v-if="row.analysis.designElements?.length" class="analysis-cell__design">
-                      🎨 <span v-for="(de, i) in row.analysis.designElements.slice(0, 3)" :key="i" class="analysis-cell__design-item">
-                        {{ de.element }}[{{ de.products?.[0] }}]{{ i < Math.min(row.analysis.designElements.length, 3) - 1 ? '、' : '' }}
-                      </span>
-                    </div>
-                    <!-- 标签 -->
-                    <div v-if="(row.analysis.tags || row.analysis.hotTags || []).length" class="analysis-cell__tags">
-                      <el-tag
-                        v-for="(t, i) in (row.analysis.tags || row.analysis.hotTags || []).slice(0, 6)"
-                        :key="i"
-                        size="small"
-                        effect="light"
-                        class="analysis-cell__tag"
-                        @click.stop="copyTag(t.tag)"
-                      >
-                        #{{ t.tag }}
+                    <div v-if="row.analysis.keyTopics?.length" class="analysis-cell__topics">
+                      <el-tag v-for="(t, i) in row.analysis.keyTopics.slice(0, 4)" :key="i" size="small" effect="plain" type="info" class="analysis-cell__topic-tag">
+                        {{ t.topic }}
                       </el-tag>
-                      <span v-if="(row.analysis.tags || row.analysis.hotTags || []).length > 6" class="analysis-cell__more">
-                        +{{ (row.analysis.tags || row.analysis.hotTags || []).length - 6 }}
-                      </span>
                     </div>
                   </div>
-                  <div v-else-if="row.analysisStatus === 'analyzing'" class="analysis-cell__status">
-                    <el-tag size="small" type="warning" effect="plain">分析中...</el-tag>
+                  <span v-else-if="row.analysisStatus === 'analyzing'" style="color: var(--el-color-warning); font-size: 12px">分析中...</span>
+                  <span v-else-if="row.analysisStatus === 'failed'" style="color: var(--el-color-danger); font-size: 12px">失败</span>
+                  <span v-else style="color: var(--el-text-color-placeholder); font-size: 12px">未分析</span>
+                </template>
+
+                <!-- 设计灵感列 -->
+                <template #designSlot="{ row }">
+                  <div v-if="row.analysisStatus === 'done' && row.analysis?.designElements?.length" class="analysis-cell">
+                    <div v-for="(de, i) in row.analysis.designElements.slice(0, 3)" :key="i" class="analysis-cell__design-row">
+                      <div class="analysis-cell__design-source">{{ de.source }}</div>
+                      <div class="analysis-cell__design-element">→ {{ de.element }}</div>
+                      <div class="analysis-cell__design-products">
+                        <el-tag v-for="p in (de.products || []).slice(0, 3)" :key="p" size="small" effect="plain" type="success">{{ p }}</el-tag>
+                      </div>
+                    </div>
+                    <div v-if="row.analysis.designElements.length > 3" class="analysis-cell__more">
+                      +{{ row.analysis.designElements.length - 3 }}个
+                    </div>
                   </div>
-                  <div v-else-if="row.analysisStatus === 'failed'" class="analysis-cell__status">
-                    <el-tag size="small" type="danger" effect="plain">失败</el-tag>
-                    <el-button link type="primary" size="small" @click.stop="handleTriggerAnalysis(row)">重试</el-button>
+                  <span v-else-if="row.analysisStatus === 'done'" style="color: var(--el-text-color-placeholder); font-size: 12px">无设计灵感</span>
+                </template>
+
+                <!-- 标签列 -->
+                <template #tagsSlot="{ row }">
+                  <div v-if="row.analysisStatus === 'done' && (row.analysis?.tags || row.analysis?.hotTags)?.length" class="analysis-cell__tags">
+                    <el-tag
+                      v-for="(t, i) in (row.analysis.tags || row.analysis.hotTags || []).slice(0, 8)"
+                      :key="i"
+                      size="small"
+                      effect="light"
+                      class="analysis-cell__tag"
+                      @click.stop="copyTag(t.tag)"
+                    >
+                      #{{ t.tag }}
+                    </el-tag>
+                    <span v-if="(row.analysis.tags || row.analysis.hotTags || []).length > 8" class="analysis-cell__more">
+                      +{{ (row.analysis.tags || row.analysis.hotTags || []).length - 8 }}
+                    </span>
                   </div>
-                  <div v-else class="analysis-cell__status">
-                    <el-button link type="primary" size="small" :loading="analyzingId === row.id" @click.stop="handleTriggerAnalysis(row)">
-                      AI 分析
-                    </el-button>
-                  </div>
+                </template>
+
+                <!-- AI状态列 -->
+                <template #aiStatusSlot="{ row }">
+                  <el-button
+                    v-if="row.analysisStatus === 'pending' || !row.analysisStatus"
+                    link
+                    type="primary"
+                    size="small"
+                    :loading="analyzingId === row.id"
+                    @click.stop="handleTriggerAnalysis(row)"
+                  >
+                    分析
+                  </el-button>
+                  <el-button
+                    v-else-if="row.analysisStatus === 'failed'"
+                    link
+                    type="danger"
+                    size="small"
+                    @click.stop="handleTriggerAnalysis(row)"
+                  >
+                    重试
+                  </el-button>
+                  <el-icon v-else-if="row.analysisStatus === 'analyzing'" class="is-loading" style="color: var(--el-color-warning)"><i class="el-icon-loading" /></el-icon>
+                  <el-icon v-else-if="row.analysisStatus === 'done'" style="color: var(--el-color-success)"><span>✓</span></el-icon>
                 </template>
 
                 <!-- 操作 -->
@@ -726,11 +760,29 @@ const gridOptions = ref<VxeGridProps<HotSearchCollectRecord>>({
       slots: { default: "rateSlot" },
     },
     {
-      title: "分析结果",
+      title: "热点总结",
       field: "analysisStatus",
-      minWidth: 380,
+      minWidth: 280,
+      slots: { default: "summarySlot" },
+    },
+    {
+      title: "设计灵感",
+      field: "analysisStatus",
+      minWidth: 260,
+      slots: { default: "designSlot" },
+    },
+    {
+      title: "标签",
+      field: "analysisStatus",
+      minWidth: 220,
+      slots: { default: "tagsSlot" },
+    },
+    {
+      title: "AI",
+      field: "analysisStatus",
+      width: 80,
       align: "center",
-      slots: { default: "analysisSlot" },
+      slots: { default: "aiStatusSlot" },
     },
     buildOperationColumn("operationSlot", 120),
   ],
@@ -1481,6 +1533,36 @@ onBeforeUnmount(() => {
   align-items: center;
   font-size: 12px;
   color: var(--el-text-color-secondary);
+}
+
+/* 表格内设计灵感行 */
+.analysis-cell__design-row {
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--el-border-color-lighter);
+  &:last-child {
+    border-bottom: none;
+  }
+}
+.analysis-cell__design-source {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.analysis-cell__design-element {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--el-color-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.analysis-cell__design-products {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-top: 2px;
 }
 
 /* 表格内分析内容 */
