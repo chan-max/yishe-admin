@@ -352,28 +352,68 @@
         </el-tab-pane>
 
       <!-- AI 分析 Tab -->
-      <el-tab-pane label="热搜标签" name="analysis">
+      <el-tab-pane label="热点分析" name="analysis">
         <div v-if="currentDetail.analysisStatus === 'done' && currentDetail.analysis" class="analysis-content">
-          <!-- 趋势总结 -->
+
+          <!-- 降级提示 -->
+          <el-alert
+            v-if="currentDetail.analysis.aiError"
+            type="warning"
+            :closable="false"
+            style="margin-bottom: 16px"
+          >
+            AI分析降级（自动提取）: {{ currentDetail.analysis.aiError }}
+          </el-alert>
+
+          <!-- 完整热点总结 -->
           <div class="analysis-section">
-            <h4>📝 今日热点</h4>
-            <p>{{ currentDetail.analysis.summary }}</p>
+            <h4>📝 热点总结</h4>
+            <div class="analysis-summary-text">{{ currentDetail.analysis.fullSummary || currentDetail.analysis.summary || '暂无' }}</div>
           </div>
 
-          <!-- 核心标签 -->
-          <div v-if="currentDetail.analysis.hotTags?.length" class="analysis-section">
+          <!-- 核心话题 -->
+          <div v-if="currentDetail.analysis.keyTopics?.length" class="analysis-section">
+            <h4>💡 核心话题 ({{ currentDetail.analysis.keyTopics.length }})</h4>
+            <div class="analysis-topics-grid">
+              <div v-for="(topic, i) in currentDetail.analysis.keyTopics" :key="i" class="analysis-topic-card">
+                <div class="analysis-topic-header">
+                  <span class="analysis-topic-name">{{ topic.topic }}</span>
+                  <el-tag size="small" :type="topic.heat === 'high' ? 'danger' : topic.heat === 'rising' ? 'warning' : 'info'">
+                    {{ topic.heat }}
+                  </el-tag>
+                </div>
+                <div class="analysis-topic-desc">{{ topic.description }}</div>
+                <div class="analysis-topic-platforms">
+                  <el-tag v-for="p in (topic.platforms || []).slice(0, 4)" :key="p" size="small" effect="plain" type="info">{{ p }}</el-tag>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 各平台特色热点 -->
+          <div v-if="currentDetail.analysis.platformHighlights?.length" class="analysis-section">
+            <h4>🔍 各平台特色热点</h4>
+            <div v-for="(ph, i) in currentDetail.analysis.platformHighlights" :key="i" class="analysis-group">
+              <div class="analysis-group-header">
+                <span>{{ ph.platform }}</span>
+              </div>
+              <ul class="analysis-highlight-list">
+                <li v-for="(h, j) in ph.highlights" :key="j">{{ h }}</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- 可用标签 -->
+          <div v-if="allTags.length" class="analysis-section">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px">
-              <h4 style="margin: 0">🏷️ 核心热搜标签 ({{ currentDetail.analysis.hotTags.length }})</h4>
-              <el-button size="small" type="primary" @click="copyAllTags(currentDetail.analysis.hotTags)">
-                一键复制全部
-              </el-button>
+              <h4 style="margin: 0">🏷️ 可用标签 ({{ allTags.length }})</h4>
+              <el-button size="small" type="primary" @click="copyAllTags(allTags)">一键复制全部</el-button>
             </div>
             <div class="analysis-tags-wrap">
               <el-tag
-                v-for="(item, i) in currentDetail.analysis.hotTags"
+                v-for="(item, i) in allTags"
                 :key="i"
                 size="default"
-                :type="item.heat === 'hot' ? 'danger' : item.heat === 'rising' ? 'warning' : 'info'"
                 effect="light"
                 class="analysis-tag-item"
                 @click="copyTag(item.tag)"
@@ -381,45 +421,6 @@
                 #{{ item.tag }}
                 <span class="analysis-tag-meta">{{ item.category }}</span>
               </el-tag>
-            </div>
-          </div>
-
-          <!-- 分类标签组 -->
-          <div v-if="currentDetail.analysis.tagGroups?.length" class="analysis-section">
-            <h4>📂 分类标签</h4>
-            <div v-for="(group, i) in currentDetail.analysis.tagGroups" :key="i" class="analysis-group">
-              <div class="analysis-group-header">
-                <span>{{ group.category }}</span>
-                <el-button link type="primary" size="small" @click="copyTags(group.tags)">复制</el-button>
-              </div>
-              <div class="analysis-tags-wrap">
-                <el-tag
-                  v-for="(tag, j) in group.tags"
-                  :key="j"
-                  size="small"
-                  effect="plain"
-                  class="analysis-tag-item"
-                  @click="copyTag(tag)"
-                >
-                  #{{ tag }}
-                </el-tag>
-              </div>
-            </div>
-          </div>
-
-          <!-- 推荐组合 -->
-          <div v-if="currentDetail.analysis.recommendedMix?.length" class="analysis-section">
-            <h4>✨ 推荐组合（搭配使用效果更好）</h4>
-            <div v-for="(mix, i) in currentDetail.analysis.recommendedMix" :key="i" class="analysis-mix">
-              <div class="analysis-mix-header">
-                <span>组合 {{ i + 1 }}</span>
-                <el-button link type="primary" size="small" @click="copyTags(mix)">复制</el-button>
-              </div>
-              <div class="analysis-tags-wrap">
-                <el-tag v-for="(tag, j) in mix" :key="j" size="small" type="warning" effect="light" class="analysis-tag-item">
-                  #{{ tag }}
-                </el-tag>
-              </div>
             </div>
           </div>
         </div>
@@ -745,6 +746,20 @@ const currentDetail = ref<HotSearchCollectRecord | null>(null);
 const detailTab = ref("data");
 const analyzingId = ref<number | null>(null);
 
+// 合并所有标签（兼容新旧格式）
+const allTags = computed(() => {
+  const analysis = currentDetail.value?.analysis;
+  if (!analysis) return [];
+  const tags = analysis.tags || analysis.hotTags || [];
+  // 去重
+  const seen = new Set<string>();
+  return tags.filter((t: any) => {
+    if (!t?.tag || seen.has(t.tag)) return false;
+    seen.add(t.tag);
+    return true;
+  });
+});
+
 const openDetail = (row: HotSearchCollectRecord) => {
   currentDetail.value = row;
   detailTab.value = row.analysisStatus === "done" ? "analysis" : "data";
@@ -778,10 +793,10 @@ const copyTags = (tags: string[]) => {
   });
 };
 
-const copyAllTags = (hotTags: { tag: string }[]) => {
-  const text = hotTags.map((t) => `#${t.tag}`).join(" ");
+const copyAllTags = (tags: { tag: string }[]) => {
+  const text = tags.map((t) => `#${t.tag}`).join(" ");
   navigator.clipboard.writeText(text).then(() => {
-    ElMessage.success(`已复制全部 ${hotTags.length} 个标签`);
+    ElMessage.success(`已复制全部 ${tags.length} 个标签`);
   });
 };
 
@@ -1317,7 +1332,7 @@ onBeforeUnmount(() => {
   }
 }
 
-/* AI 分析 - 标签 */
+/* AI 分析 */
 .analysis-content {
   padding: 0 4px;
 }
@@ -1331,6 +1346,56 @@ onBeforeUnmount(() => {
   }
   p {
     font-size: 14px;
+    line-height: 1.7;
+    color: var(--el-text-color-regular);
+  }
+}
+.analysis-summary-text {
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--el-text-color-regular);
+  padding: 14px 16px;
+  background: var(--el-fill-color-lighter);
+  border-radius: 8px;
+  white-space: pre-wrap;
+}
+.analysis-topics-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.analysis-topic-card {
+  padding: 12px 14px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+}
+.analysis-topic-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.analysis-topic-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+.analysis-topic-desc {
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+.analysis-topic-platforms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.analysis-highlight-list {
+  margin: 0;
+  padding-left: 18px;
+  li {
+    font-size: 13px;
     line-height: 1.7;
     color: var(--el-text-color-regular);
   }
