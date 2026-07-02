@@ -219,34 +219,48 @@
                   </span>
                 </template>
 
-                <!-- AI分析 -->
+                <!-- 分析结果 -->
                 <template #analysisSlot="{ row }">
-                  <el-tag
-                    v-if="row.analysisStatus === 'done'"
-                    size="small"
-                    type="success"
-                    effect="plain"
-                    @click="openDetail(row)"
-                    style="cursor: pointer"
-                  >
-                    已分析
-                  </el-tag>
-                  <el-tag v-else-if="row.analysisStatus === 'analyzing'" size="small" type="warning" effect="plain">
-                    分析中
-                  </el-tag>
-                  <el-tag v-else-if="row.analysisStatus === 'failed'" size="small" type="danger" effect="plain">
-                    失败
-                  </el-tag>
-                  <el-button
-                    v-else
-                    link
-                    type="primary"
-                    size="small"
-                    :loading="analyzingId === row.id"
-                    @click="handleTriggerAnalysis(row)"
-                  >
-                    分析
-                  </el-button>
+                  <div v-if="row.analysisStatus === 'done' && row.analysis" class="analysis-cell">
+                    <!-- 总结 -->
+                    <div class="analysis-cell__summary">
+                      {{ (row.analysis.fullSummary || row.analysis.summary || '').slice(0, 120) }}{{ (row.analysis.fullSummary || row.analysis.summary || '').length > 120 ? '…' : '' }}
+                    </div>
+                    <!-- 核心话题 -->
+                    <div v-if="row.analysis.keyTopics?.length" class="analysis-cell__topics">
+                      <el-tag v-for="(t, i) in row.analysis.keyTopics.slice(0, 5)" :key="i" size="small" effect="plain" type="info" class="analysis-cell__topic-tag">
+                        {{ t.topic }}
+                      </el-tag>
+                    </div>
+                    <!-- 标签 -->
+                    <div v-if="(row.analysis.tags || row.analysis.hotTags || []).length" class="analysis-cell__tags">
+                      <el-tag
+                        v-for="(t, i) in (row.analysis.tags || row.analysis.hotTags || []).slice(0, 8)"
+                        :key="i"
+                        size="small"
+                        effect="light"
+                        class="analysis-cell__tag"
+                        @click.stop="copyTag(t.tag)"
+                      >
+                        #{{ t.tag }}
+                      </el-tag>
+                      <span v-if="(row.analysis.tags || row.analysis.hotTags || []).length > 8" class="analysis-cell__more">
+                        +{{ (row.analysis.tags || row.analysis.hotTags || []).length - 8 }}
+                      </span>
+                    </div>
+                  </div>
+                  <div v-else-if="row.analysisStatus === 'analyzing'" class="analysis-cell__status">
+                    <el-tag size="small" type="warning" effect="plain">分析中...</el-tag>
+                  </div>
+                  <div v-else-if="row.analysisStatus === 'failed'" class="analysis-cell__status">
+                    <el-tag size="small" type="danger" effect="plain">失败</el-tag>
+                    <el-button link type="primary" size="small" @click.stop="handleTriggerAnalysis(row)">重试</el-button>
+                  </div>
+                  <div v-else class="analysis-cell__status">
+                    <el-button link type="primary" size="small" :loading="analyzingId === row.id" @click.stop="handleTriggerAnalysis(row)">
+                      AI 分析
+                    </el-button>
+                  </div>
                 </template>
 
                 <!-- 操作 -->
@@ -684,9 +698,9 @@ const gridOptions = ref<VxeGridProps<HotSearchCollectRecord>>({
       slots: { default: "rateSlot" },
     },
     {
-      title: "AI分析",
+      title: "分析结果",
       field: "analysisStatus",
-      width: 90,
+      minWidth: 380,
       align: "center",
       slots: { default: "analysisSlot" },
     },
@@ -1399,6 +1413,50 @@ onBeforeUnmount(() => {
     line-height: 1.7;
     color: var(--el-text-color-regular);
   }
+}
+
+/* 表格内分析内容 */
+.analysis-cell {
+  padding: 4px 0;
+}
+.analysis-cell__summary {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--el-text-color-regular);
+  margin-bottom: 6px;
+}
+.analysis-cell__topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+.analysis-cell__topic-tag {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.analysis-cell__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  align-items: center;
+}
+.analysis-cell__tag {
+  cursor: pointer;
+  &:hover {
+    opacity: 0.8;
+  }
+}
+.analysis-cell__more {
+  font-size: 11px;
+  color: var(--el-text-color-placeholder);
+}
+.analysis-cell__status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 .analysis-tags-wrap {
   display: flex;
