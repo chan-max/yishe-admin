@@ -224,18 +224,18 @@
                   <div v-if="row.analysisStatus === 'done' && row.analysis" class="analysis-cell">
                     <!-- 总结 -->
                     <div class="analysis-cell__summary">
-                      {{ (row.analysis.fullSummary || row.analysis.summary || '').slice(0, 120) }}{{ (row.analysis.fullSummary || row.analysis.summary || '').length > 120 ? '…' : '' }}
+                      {{ (row.analysis.fullSummary || row.analysis.summary || '').slice(0, 100) }}{{ (row.analysis.fullSummary || row.analysis.summary || '').length > 100 ? '…' : '' }}
                     </div>
-                    <!-- 核心话题 -->
-                    <div v-if="row.analysis.keyTopics?.length" class="analysis-cell__topics">
-                      <el-tag v-for="(t, i) in row.analysis.keyTopics.slice(0, 5)" :key="i" size="small" effect="plain" type="info" class="analysis-cell__topic-tag">
-                        {{ t.topic }}
-                      </el-tag>
+                    <!-- 设计灵感 -->
+                    <div v-if="row.analysis.designElements?.length" class="analysis-cell__design">
+                      🎨 <span v-for="(de, i) in row.analysis.designElements.slice(0, 3)" :key="i" class="analysis-cell__design-item">
+                        {{ de.element }}[{{ de.products?.[0] }}]{{ i < Math.min(row.analysis.designElements.length, 3) - 1 ? '、' : '' }}
+                      </span>
                     </div>
                     <!-- 标签 -->
                     <div v-if="(row.analysis.tags || row.analysis.hotTags || []).length" class="analysis-cell__tags">
                       <el-tag
-                        v-for="(t, i) in (row.analysis.tags || row.analysis.hotTags || []).slice(0, 8)"
+                        v-for="(t, i) in (row.analysis.tags || row.analysis.hotTags || []).slice(0, 6)"
                         :key="i"
                         size="small"
                         effect="light"
@@ -244,8 +244,8 @@
                       >
                         #{{ t.tag }}
                       </el-tag>
-                      <span v-if="(row.analysis.tags || row.analysis.hotTags || []).length > 8" class="analysis-cell__more">
-                        +{{ (row.analysis.tags || row.analysis.hotTags || []).length - 8 }}
+                      <span v-if="(row.analysis.tags || row.analysis.hotTags || []).length > 6" class="analysis-cell__more">
+                        +{{ (row.analysis.tags || row.analysis.hotTags || []).length - 6 }}
                       </span>
                     </div>
                   </div>
@@ -404,15 +404,43 @@
             </div>
           </div>
 
-          <!-- 各平台特色热点 -->
+          <!-- 设计元素分析 -->
+          <div v-if="currentDetail.analysis.designElements?.length" class="analysis-section">
+            <h4>🎨 设计元素灵感 ({{ currentDetail.analysis.designElements.length }})</h4>
+            <div class="analysis-design-grid">
+              <div v-for="(de, i) in currentDetail.analysis.designElements" :key="i" class="analysis-design-card">
+                <div class="analysis-design-source">{{ de.source }}</div>
+                <div class="analysis-design-element">{{ de.element }}</div>
+                <div class="analysis-design-suggestion">💡 {{ de.suggestion }}</div>
+                <div class="analysis-design-products">
+                  <el-tag v-for="p in de.products" :key="p" size="small" effect="plain" type="success">{{ p }}</el-tag>
+                </div>
+                <div class="analysis-design-meta">
+                  <span>受众: {{ de.audience }}</span>
+                  <el-tag size="small" :type="de.appeal === 'high' ? 'danger' : de.appeal === 'medium' ? 'warning' : 'info'">
+                    {{ de.appeal }}
+                  </el-tag>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 各平台热搜原始内容 -->
           <div v-if="currentDetail.analysis.platformHighlights?.length" class="analysis-section">
-            <h4>🔍 各平台特色热点</h4>
+            <h4>🔍 各平台热搜</h4>
             <div v-for="(ph, i) in currentDetail.analysis.platformHighlights" :key="i" class="analysis-group">
               <div class="analysis-group-header">
                 <span>{{ ph.platform }}</span>
+                <span v-if="ph.summary" style="font-size: 12px; color: var(--el-text-color-secondary)">{{ ph.summary }}</span>
               </div>
               <ul class="analysis-highlight-list">
-                <li v-for="(h, j) in ph.highlights" :key="j">{{ h }}</li>
+                <li v-for="(item, j) in (ph.items || ph.highlights || [])" :key="j">
+                  <span v-if="typeof item === 'object'">
+                    {{ item.title }}
+                    <span v-if="item.hot" style="color: var(--el-color-danger); font-size: 11px; margin-left: 4px">{{ item.hot }}</span>
+                  </span>
+                  <span v-else>{{ item }}</span>
+                </li>
               </ul>
             </div>
           </div>
@@ -1413,6 +1441,46 @@ onBeforeUnmount(() => {
     line-height: 1.7;
     color: var(--el-text-color-regular);
   }
+}
+
+/* 设计元素 */
+.analysis-design-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+.analysis-design-card {
+  padding: 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.analysis-design-source {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+.analysis-design-element {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+.analysis-design-suggestion {
+  font-size: 13px;
+  color: var(--el-color-primary);
+}
+.analysis-design-products {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.analysis-design-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 /* 表格内分析内容 */
