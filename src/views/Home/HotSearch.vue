@@ -25,8 +25,8 @@
           :model-value="currentSchedule.enabled"
           @change="(val: boolean) => handleToggleSchedule(currentSchedule!.id, val)"
         />
-        <el-button size="small" @click="openScheduleDialog">
-          {{ currentSchedule ? "编辑" : "设置" }}
+        <el-button v-if="!currentSchedule" size="small" @click="openScheduleDialog">
+          设置
         </el-button>
       </div>
     </div>
