@@ -104,6 +104,39 @@ export function getPreviewImageUrl(url: string | null | undefined, options: Imag
 }
 
 /**
+ * 获取旋转后的图片URL（使用腾讯云COS imageMogr2 接口）
+ * 旋转后画布尺寸保持不变，内容旋转
+ *
+ * @param url 原始图片URL
+ * @param degrees 旋转角度，支持 90/180/270，默认 90
+ */
+export function getRotatedImageUrl(url: string | null | undefined, degrees: 90 | 180 | 270 = 90): string | null {
+  if (!url || typeof url !== 'string' || url.trim() === '') {
+    return null
+  }
+
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    return url
+  }
+
+  // SVG 不支持旋转处理
+  try {
+    const urlObj = new URL(url)
+    if (urlObj.pathname.toLowerCase().endsWith('.svg')) {
+      return url
+    }
+  } catch {
+    const pathPart = url.toLowerCase().split('?')[0].split('#')[0]
+    if (pathPart.endsWith('.svg')) {
+      return url
+    }
+  }
+
+  const separator = url.includes('?') ? '&' : '?'
+  return `${url}${separator}imageMogr2/rotate/${degrees}`
+}
+
+/**
  * 获取更激进压缩的快速预览图 URL，适合列表、弹窗缩略图等场景。
  * 默认产出类似：?imageMogr2/thumbnail/x200/quality/80/format/webp/size-limit/200k!/ignore-error/1
  */

@@ -2223,6 +2223,12 @@
                                 下载
                               </div>
                               <div
+                                class="op-submenu-item"
+                                @click.stop="handleOperationCommand('download-rotated-90', row)"
+                              >
+                                下载旋转90°
+                              </div>
+                              <div
                                 v-if="isAdmin"
                                 class="op-submenu-item"
                                 @click.stop="handleOperationCommand('copy', row)"
@@ -3646,7 +3652,7 @@ import { getDesignModelList } from "@/api/designModel";
 import request from "@/config/axios";
 import VueJsonPretty from "vue-json-pretty";
 import "vue-json-pretty/lib/styles.css";
-import { getFastPreviewImageUrl, getPreviewImageUrl } from "@/utils/image";
+import { getFastPreviewImageUrl, getPreviewImageUrl, getRotatedImageUrl } from "@/utils/image";
 import {
   SIZE_SHAPE_GROUPS,
   getFullLabel,
@@ -5168,6 +5174,36 @@ async function handleDownload(row) {
   } catch (error) {
     console.error("下载失败:", error);
     ElMessage.error(`图片下载失败：${error.message}`);
+  }
+}
+
+async function handleDownloadRotated90(row) {
+  try {
+    const originalUrl = row.url || row.ossObjectName;
+    const fileName = row.name || row.imageName || `image_${row.id}.jpg`;
+
+    if (!originalUrl) {
+      ElMessage.error(`图片 ${fileName} 下载失败：缺少下载链接`);
+      return;
+    }
+
+    const rotatedUrl = getRotatedImageUrl(originalUrl, 90);
+    if (!rotatedUrl) {
+      ElMessage.error(`图片 ${fileName} 不支持旋转处理`);
+      return;
+    }
+
+    // 给文件名加上旋转标记
+    const dotIndex = fileName.lastIndexOf('.');
+    const rotatedFileName = dotIndex > 0
+      ? `${fileName.substring(0, dotIndex)}_rotated90${fileName.substring(dotIndex)}`
+      : `${fileName}_rotated90`;
+
+    await downloadImage(rotatedUrl, rotatedFileName);
+    ElNotification.success(`旋转90°图片 ${rotatedFileName} 下载成功`);
+  } catch (error) {
+    console.error("旋转下载失败:", error);
+    ElMessage.error(`旋转图片下载失败：${error.message}`);
   }
 }
 
@@ -6791,6 +6827,9 @@ async function handleOperationCommand(command: string, row: any) {
         break;
       case "download":
         await handleDownload(row);
+        break;
+      case "download-rotated-90":
+        await handleDownloadRotated90(row);
         break;
       case "ai-generate":
         await onAiTableAutoGenerate(row);
