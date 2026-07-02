@@ -135,9 +135,12 @@
         删除定时
       </el-button>
       <el-button @click="showScheduleDialog = false">取消</el-button>
-      <el-button type="primary" :loading="scheduleSaving" @click="handleSaveSchedule"
-        >保存</el-button
-      >
+      <el-button :loading="collectLoading" @click="handleQuickCollect">
+        立即采集
+      </el-button>
+      <el-button type="primary" :loading="scheduleSaving" @click="handleSaveSchedule">
+        保存
+      </el-button>
     </template>
   </el-dialog>
 
@@ -146,7 +149,7 @@
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
           <div class="list-page-filter__actions">
-            <el-button size="small" type="primary" @click="openCollectDialog"> 采集 </el-button>
+            <el-button size="small" type="primary" @click="openScheduleDialog"> 采集 </el-button>
             <el-button size="small" :loading="loading" @click="loadList">刷新</el-button>
             <el-button
               size="small"
@@ -524,91 +527,6 @@
     <el-empty v-else description="暂无详情" />
   </el-dialog>
 
-  <!-- 采集弹窗 -->
-  <el-dialog
-    v-model="showDialog"
-    title="采集热搜"
-    width="640px"
-    :close-on-click-modal="!collectLoading"
-  >
-    <div class="dialog-section">
-      <div class="dialog-section__title">执行环境</div>
-      <el-form label-position="top" size="default">
-        <el-form-item label="客户端">
-          <el-select v-model="execContext.clientId" placeholder="选择客户端" style="width: 100%">
-            <el-option v-for="c in clientList" :key="c.id" :label="c.label" :value="c.id">
-              <span style="display: flex; align-items: center; gap: 6px">
-                <span class="client-dot" :class="{ 'is-online': c.isOnline }" />
-                {{ c.label }}
-                <el-tag v-if="c.isOnline" size="small" type="success" effect="plain">在线</el-tag>
-              </span>
-            </el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="浏览器环境（可选）">
-          <el-select
-            v-model="execContext.profileId"
-            clearable
-            placeholder="留空则使用默认环境"
-            style="width: 100%"
-          >
-            <el-option
-              v-for="p in getClientProfiles(execContext.clientId)"
-              :key="p.id"
-              :label="p.label"
-              :value="p.id"
-            />
-          </el-select>
-        </el-form-item>
-      </el-form>
-    </div>
-
-    <div class="dialog-section">
-      <div class="dialog-section__title">网络环境</div>
-      <el-radio-group v-model="selectedEnv">
-        <el-radio-button value="all">全部</el-radio-button>
-        <el-radio-button value="direct">国内直连</el-radio-button>
-        <el-radio-button value="proxy">需代理</el-radio-button>
-      </el-radio-group>
-    </div>
-
-    <div class="dialog-section">
-      <div class="dialog-section__title">
-        平台
-        <el-checkbox
-          v-model="selectAll"
-          :indeterminate="isIndeterminate"
-          @change="handleSelectAll"
-          style="margin-left: 12px"
-        >
-          全选
-        </el-checkbox>
-      </div>
-      <el-checkbox-group v-model="selectedPlatforms" class="platform-grid">
-        <el-checkbox
-          v-for="p in filteredPlatforms"
-          :key="p.key"
-          :value="p.key"
-          :disabled="collectLoading"
-          border
-        >
-          {{ p.name }}
-        </el-checkbox>
-      </el-checkbox-group>
-    </div>
-
-    <template #footer>
-      <el-button @click="showDialog = false" :disabled="collectLoading">取消</el-button>
-      <el-button
-        type="primary"
-        :loading="collectLoading"
-        :disabled="!execContext.clientId || selectedPlatforms.length === 0"
-        @click="triggerCollect"
-      >
-        采集 {{ selectedPlatforms.length }} 个平台
-      </el-button>
-    </template>
-  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -934,57 +852,15 @@ const handleBatchDelete = async () => {
   }
 };
 
-// ============ 采集弹窗 ============
-const showDialog = ref(false);
+// ============ 手动采集（从定时弹窗触发） ============
 const collectLoading = ref(false);
-const execContext = ref<Record<string, any>>({ clientId: "", profileId: "", notes: "" });
-const selectedEnv = ref<"all" | "direct" | "proxy">("direct");
-const selectedPlatforms = ref<string[]>([]);
 
-const filteredPlatforms = computed(() => {
-  if (selectedEnv.value === "all") return ALL_PLATFORMS;
-  return ALL_PLATFORMS.filter((p) => p.environment === selectedEnv.value);
-});
-
-const selectAll = computed({
-  get: () =>
-    filteredPlatforms.value.length > 0 &&
-    selectedPlatforms.value.length === filteredPlatforms.value.length,
-  set: () => {},
-});
-const isIndeterminate = computed(() => {
-  const c = selectedPlatforms.value.length;
-  return c > 0 && c < filteredPlatforms.value.length;
-});
-const handleSelectAll = (val: boolean) => {
-  selectedPlatforms.value = val ? filteredPlatforms.value.map((p) => p.key) : [];
-};
-
-watch(selectedEnv, () => {
-  const validKeys = new Set(filteredPlatforms.value.map((p) => p.key));
-  selectedPlatforms.value = selectedPlatforms.value.filter((k) => validKeys.has(k));
-});
-
-const openCollectDialog = () => {
-  // 默认选中第一个客户端（让浏览器环境下拉框有选项）
-  if (!execContext.value.clientId) {
-    execContext.value.clientId = clientList.value[0]?.id || "";
-  }
-  showDialog.value = true;
-  if (!selectedPlatforms.value.length) {
-    selectedEnv.value = "direct";
-    selectedPlatforms.value = ALL_PLATFORMS.filter((p) => p.environment === "direct").map(
-      (p) => p.key,
-    );
-  }
-};
-
-const triggerCollect = async () => {
-  if (!execContext.value.clientId) {
+const handleQuickCollect = async () => {
+  if (!scheduleForm.value.clientId) {
     ElMessage.warning("请选择客户端");
     return;
   }
-  if (!selectedPlatforms.value.length) {
+  if (!scheduleForm.value.platforms.length) {
     ElMessage.warning("请选择平台");
     return;
   }
@@ -995,10 +871,10 @@ const triggerCollect = async () => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        platforms: selectedPlatforms.value,
+        platforms: scheduleForm.value.platforms,
         reportToServer: true,
-        clientId: execContext.value.clientId,
-        profileId: execContext.value.profileId || undefined,
+        clientId: scheduleForm.value.clientId,
+        profileId: scheduleForm.value.profileId || undefined,
       }),
     });
 
@@ -1006,13 +882,12 @@ const triggerCollect = async () => {
     const result = await res.json();
 
     if (result.success) {
-      const { summary } = result;
-      ElMessage.success(`采集完成: 成功 ${summary.success}, 失败 ${summary.failed}`);
-      showDialog.value = false;
-      pageNo.value = 1;
-      await loadList();
+      ElMessage.success("采集已启动，完成后自动刷新列表");
+      showScheduleDialog.value = false;
+      // 延迟刷新列表（给采集一些时间）
+      setTimeout(() => loadList(), 10000);
     } else {
-      throw new Error(result.message || "采集失败");
+      throw new Error(result.message || "启动采集失败");
     }
   } catch (e: any) {
     ElMessage.error(`采集失败: ${e.message}`);
