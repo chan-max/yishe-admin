@@ -338,6 +338,17 @@
                         {{ String(row.suffix || "FILE").toUpperCase() }} · 点击预览
                       </div>
                     </div>
+                    <div
+                      v-else-if="row.url && isExcelFile(row.suffix)"
+                      class="table-file-doc-card table-file-doc-card--excel"
+                      @click="openFilePreview(row)"
+                    >
+                      <el-icon size="24"><Document /></el-icon>
+                      <div class="table-file-doc-card__title">{{ row.name || "Excel 文件" }}</div>
+                      <div class="table-file-doc-card__tip">
+                        {{ String(row.suffix || "XLSX").toUpperCase() }} · 点击预览
+                      </div>
+                    </div>
                     <div v-else class="table-file-doc-card">
                       <el-icon size="24">
                         <component :is="getFileIcon(row.suffix)" />
@@ -1554,6 +1565,15 @@ function handleOperationCommand(command: string, row: any) {
   background: linear-gradient(
     180deg,
     var(--el-color-danger-light-9) 0%,
+    var(--el-fill-color-blank) 100%
+  );
+}
+
+.table-file-doc-card--excel {
+  cursor: pointer;
+  background: linear-gradient(
+    180deg,
+    var(--el-color-success-light-9) 0%,
     var(--el-fill-color-blank) 100%
   );
 }
