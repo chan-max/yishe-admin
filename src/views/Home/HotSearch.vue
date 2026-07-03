@@ -1388,8 +1388,6 @@ onBeforeUnmount(() => {
   color: var(--el-text-color-regular);
   margin-bottom: 4px;
   white-space: pre-wrap;
-  max-height: 200px;
-  overflow: hidden;
 }
 .analysis-cell__topics {
   display: flex;
