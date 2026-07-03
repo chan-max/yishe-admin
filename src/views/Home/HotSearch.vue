@@ -334,7 +334,7 @@
   </ContentWrap>
 
   <!-- 详情弹窗 -->
-  <el-dialog v-model="detailVisible" title="采集详情" fullscreen @closed="currentDetail = null">
+  <el-dialog v-model="detailVisible" title="采集详情" width="95%" @closed="currentDetail = null">
     <div v-if="currentDetail" class="detail-dialog">
       <section class="detail-dialog__hero">
         <div>
@@ -661,14 +661,14 @@ const gridOptions = ref<VxeGridProps<HotSearchCollectRecord>>({
   checkboxConfig: { reserve: true },
   columns: [
     { type: "checkbox", width: 40 },
-    { title: "时间", field: "fetchedAt", width: 130, slots: { default: "timeSlot" } },
+    { title: "时间", field: "fetchedAt", width: 140, slots: { default: "timeSlot" } },
     { title: "状态", field: "status", width: 70, slots: { default: "statusSlot" } },
-    { title: "平台", field: "platforms", width: 150, slots: { default: "platformsSlot" } },
+    { title: "平台", field: "platforms", width: 160, slots: { default: "platformsSlot" } },
     { title: "条目", field: "itemCount", width: 60, align: "center", slots: { default: "countSlot" } },
-    { title: "成功率", field: "successCount", width: 60, align: "center", slots: { default: "rateSlot" } },
-    { title: "热点总结", field: "analysisStatus", minWidth: 300, slots: { default: "summarySlot" } },
-    { title: "设计灵感", field: "analysisStatus", minWidth: 280, slots: { default: "designSlot" } },
-    { title: "标签", field: "analysisStatus", minWidth: 200, slots: { default: "tagsSlot" } },
+    { title: "成功率", field: "successCount", width: 65, align: "center", slots: { default: "rateSlot" } },
+    { title: "热点总结", field: "analysisStatus", minWidth: 360, slots: { default: "summarySlot" } },
+    { title: "设计灵感", field: "analysisStatus", minWidth: 340, slots: { default: "designSlot" } },
+    { title: "标签", field: "analysisStatus", minWidth: 260, slots: { default: "tagsSlot" } },
     { title: "AI", field: "analysisStatus", width: 50, align: "center", slots: { default: "aiStatusSlot" } },
     buildOperationColumn("operationSlot", 80),
   ],
@@ -1384,11 +1384,11 @@ onBeforeUnmount(() => {
 }
 .analysis-cell__summary {
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.6;
   color: var(--el-text-color-regular);
   margin-bottom: 4px;
   white-space: pre-wrap;
-  max-height: 120px;
+  max-height: 200px;
   overflow: hidden;
 }
 .analysis-cell__topics {
