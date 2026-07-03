@@ -243,21 +243,17 @@
                 <template #designSlot="{ row }">
                   <div v-if="row.analysisStatus === 'done' && row.analysis?.designElements?.length" class="analysis-cell">
                     <div v-for="(de, i) in row.analysis.designElements" :key="i" class="analysis-cell__design-row">
-                      <div class="analysis-cell__design-source">{{ de.source }}</div>
-                      <div class="analysis-cell__design-element">→ {{ de.element }}</div>
-                      <div class="analysis-cell__design-suggestion">💡 {{ de.suggestion }}</div>
-                      <div class="analysis-cell__design-products">
-                        <el-tag v-for="p in (de.products || [])" :key="typeof p === 'object' ? p.name : p" size="small" effect="plain" type="success">
+                      <span class="analysis-cell__design-source">{{ de.source }}</span>
+                      <span class="analysis-cell__design-arrow"> → </span>
+                      <span class="analysis-cell__design-element">{{ de.element }}</span>
+                      <span class="analysis-cell__design-products">
+                        <el-tag v-for="p in (de.products || []).slice(0, 3)" :key="typeof p === 'object' ? p.name : p" size="small" effect="plain" type="success">
                           {{ typeof p === 'object' ? p.name : p }}
                         </el-tag>
-                      </div>
-                      <div class="analysis-cell__design-meta">
-                        <span v-if="de.audience">受众: {{ de.audience }}</span>
-                        <el-tag size="small" :type="de.appeal === 'high' ? 'danger' : de.appeal === 'medium' ? 'warning' : 'info'">{{ de.appeal }}</el-tag>
-                      </div>
+                      </span>
                     </div>
                   </div>
-                  <span v-else-if="row.analysisStatus === 'done'" style="color: var(--el-text-color-placeholder); font-size: 12px">无设计灵感</span>
+                  <span v-else-if="row.analysisStatus === 'done'" style="color: var(--el-text-color-placeholder); font-size: 12px">-</span>
                 </template>
 
                 <!-- 标签列 -->
@@ -666,9 +662,9 @@ const gridOptions = ref<VxeGridProps<HotSearchCollectRecord>>({
     { title: "平台", field: "platforms", width: 160, slots: { default: "platformsSlot" } },
     { title: "条目", field: "itemCount", width: 60, align: "center", slots: { default: "countSlot" } },
     { title: "成功率", field: "successCount", width: 65, align: "center", slots: { default: "rateSlot" } },
-    { title: "热点总结", field: "analysisStatus", minWidth: 360, slots: { default: "summarySlot" } },
-    { title: "设计灵感", field: "analysisStatus", minWidth: 340, slots: { default: "designSlot" } },
-    { title: "标签", field: "analysisStatus", minWidth: 260, slots: { default: "tagsSlot" } },
+    { title: "热点总结", field: "analysisStatus", minWidth: 450, slots: { default: "summarySlot" } },
+    { title: "设计灵感", field: "analysisStatus", minWidth: 280, slots: { default: "designSlot" } },
+    { title: "标签", field: "analysisStatus", minWidth: 220, slots: { default: "tagsSlot" } },
     { title: "AI", field: "analysisStatus", width: 50, align: "center", slots: { default: "aiStatusSlot" } },
     buildOperationColumn("operationSlot", 80),
   ],
@@ -1398,44 +1394,28 @@ onBeforeUnmount(() => {
   max-width: 120px;
   font-size: 11px;
 }
-/* 表格内设计灵感 - 紧凑 */
+/* 表格内设计灵感 - 单行紧凑 */
 .analysis-cell__design-row {
-  padding: 4px 0;
+  padding: 3px 0;
+  font-size: 12px;
+  line-height: 1.5;
   border-bottom: 1px dashed var(--el-border-color-lighter);
   &:last-child { border-bottom: none; }
 }
 .analysis-cell__design-source {
-  font-size: 11px;
   color: var(--el-text-color-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+}
+.analysis-cell__design-arrow {
+  color: var(--el-text-color-placeholder);
 }
 .analysis-cell__design-element {
-  font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--el-color-primary);
-}
-.analysis-cell__design-suggestion {
-  font-size: 11px;
-  color: var(--el-text-color-regular);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  margin-right: 4px;
 }
 .analysis-cell__design-products {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
-  margin-top: 2px;
-}
-.analysis-cell__design-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 10px;
-  color: var(--el-text-color-secondary);
-  margin-top: 2px;
+  display: inline-flex;
+  gap: 3px;
 }
 /* 表格内标签 */
 .analysis-cell__tags {
