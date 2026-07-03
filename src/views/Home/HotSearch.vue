@@ -36,7 +36,7 @@
   <el-dialog v-model="showScheduleDialog" title="定时采集设置" width="900px">
     <el-form label-position="top" size="default">
       <el-form-item label="客户端">
-        <el-select v-model="scheduleForm.clientId" placeholder="选择客户端" style="width: 100%" :disabled="!!currentSchedule">
+        <el-select v-model="scheduleForm.clientId" placeholder="选择客户端" style="width: 100%">
           <el-option v-for="c in clientList" :key="c.id" :label="c.label" :value="c.id">
             <span style="display: flex; align-items: center; gap: 6px">
               <span class="client-dot" :class="{ 'is-online': c.isOnline }" />
