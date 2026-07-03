@@ -660,50 +660,17 @@ const gridOptions = ref<VxeGridProps<HotSearchCollectRecord>>({
   rowConfig: { ...(commonGridOptions as any).rowConfig, keyField: "id" },
   checkboxConfig: { reserve: true },
   columns: [
-    { type: "checkbox", width: 48 },
-    { title: "采集时间", field: "fetchedAt", minWidth: 200, slots: { default: "timeSlot" } },
-    { title: "状态", field: "status", width: 100, slots: { default: "statusSlot" } },
-    { title: "平台", field: "platforms", minWidth: 260, slots: { default: "platformsSlot" } },
-    {
-      title: "条目数",
-      field: "itemCount",
-      width: 90,
-      align: "center",
-      slots: { default: "countSlot" },
-    },
-    {
-      title: "成功率",
-      field: "successCount",
-      width: 80,
-      align: "center",
-      slots: { default: "rateSlot" },
-    },
-    {
-      title: "热点总结",
-      field: "analysisStatus",
-      minWidth: 280,
-      slots: { default: "summarySlot" },
-    },
-    {
-      title: "设计灵感",
-      field: "analysisStatus",
-      minWidth: 260,
-      slots: { default: "designSlot" },
-    },
-    {
-      title: "标签",
-      field: "analysisStatus",
-      minWidth: 220,
-      slots: { default: "tagsSlot" },
-    },
-    {
-      title: "AI",
-      field: "analysisStatus",
-      width: 80,
-      align: "center",
-      slots: { default: "aiStatusSlot" },
-    },
-    buildOperationColumn("operationSlot", 120),
+    { type: "checkbox", width: 40 },
+    { title: "时间", field: "fetchedAt", width: 130, slots: { default: "timeSlot" } },
+    { title: "状态", field: "status", width: 70, slots: { default: "statusSlot" } },
+    { title: "平台", field: "platforms", width: 150, slots: { default: "platformsSlot" } },
+    { title: "条目", field: "itemCount", width: 60, align: "center", slots: { default: "countSlot" } },
+    { title: "成功率", field: "successCount", width: 60, align: "center", slots: { default: "rateSlot" } },
+    { title: "热点总结", field: "analysisStatus", minWidth: 300, slots: { default: "summarySlot" } },
+    { title: "设计灵感", field: "analysisStatus", minWidth: 280, slots: { default: "designSlot" } },
+    { title: "标签", field: "analysisStatus", minWidth: 200, slots: { default: "tagsSlot" } },
+    { title: "AI", field: "analysisStatus", width: 50, align: "center", slots: { default: "aiStatusSlot" } },
+    buildOperationColumn("operationSlot", 80),
   ],
 });
 
@@ -1411,82 +1378,86 @@ onBeforeUnmount(() => {
   color: var(--el-text-color-secondary);
 }
 
-/* 表格内分析内容 */
+/* 表格内分析内容 - 紧凑 */
 .analysis-cell {
-  padding: 6px 0;
+  padding: 2px 0;
 }
 .analysis-cell__summary {
-  font-size: 13px;
-  line-height: 1.7;
+  font-size: 12px;
+  line-height: 1.5;
   color: var(--el-text-color-regular);
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   white-space: pre-wrap;
+  max-height: 120px;
+  overflow: hidden;
 }
 .analysis-cell__topics {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 3px;
 }
 .analysis-cell__topic-tag {
-  max-width: 150px;
+  max-width: 120px;
+  font-size: 11px;
 }
-/* 表格内设计灵感 */
+/* 表格内设计灵感 - 紧凑 */
 .analysis-cell__design-row {
-  padding: 8px 0;
+  padding: 4px 0;
   border-bottom: 1px dashed var(--el-border-color-lighter);
-  &:last-child {
-    border-bottom: none;
-  }
+  &:last-child { border-bottom: none; }
 }
 .analysis-cell__design-source {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--el-text-color-secondary);
-  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .analysis-cell__design-element {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--el-color-primary);
-  margin-bottom: 2px;
 }
 .analysis-cell__design-suggestion {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--el-text-color-regular);
-  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .analysis-cell__design-products {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
-  margin-bottom: 2px;
+  gap: 2px;
+  margin-top: 2px;
 }
 .analysis-cell__design-meta {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 11px;
+  font-size: 10px;
   color: var(--el-text-color-secondary);
+  margin-top: 2px;
 }
 /* 表格内标签 */
 .analysis-cell__tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 3px;
 }
 .analysis-cell__tag {
   cursor: pointer;
-  &:hover {
-    opacity: 0.8;
-  }
+  font-size: 11px;
+  &:hover { opacity: 0.8; }
 }
 .analysis-cell__more {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--el-text-color-placeholder);
 }
 .analysis-cell__status {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 .analysis-tags-wrap {
   display: flex;
