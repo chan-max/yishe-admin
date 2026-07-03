@@ -1256,8 +1256,12 @@ function isTextFile(suffix: string): boolean {
   return textSuffixes.includes(normalizeSuffix(suffix));
 }
 
+function isExcelFile(suffix: string): boolean {
+  return ['xls', 'xlsx'].includes(normalizeSuffix(suffix));
+}
+
 function isPreviewableFile(suffix: string): boolean {
-  return isVideoFile(suffix) || isAudioFile(suffix) || isImageFile(suffix) || isPdfFile(suffix) || isTextFile(suffix);
+  return isVideoFile(suffix) || isAudioFile(suffix) || isImageFile(suffix) || isPdfFile(suffix) || isTextFile(suffix) || isExcelFile(suffix);
 }
 
 // 获取文件图标
