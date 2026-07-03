@@ -82,6 +82,11 @@
         </div>
       </div>
 
+      <!-- Excel 预览 -->
+      <div v-else-if="previewType === 'excel' && fileUrl" class="preview-excel-shell">
+        <ExcelPreview :file-url="fileUrl" />
+      </div>
+
       <!-- 不支持预览的类型 -->
       <div v-else class="file-preview-empty">
         <el-icon size="48" color="var(--el-text-color-secondary)">
@@ -105,6 +110,7 @@ import { computed, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { VideoPlay, Headset, Document, Picture, Folder, DocumentCopy, Loading } from '@element-plus/icons-vue'
 import { downloadFileByElement } from '@/common/download'
+import ExcelPreview from '@/components/ExcelPreview/index.vue'
 
 const props = defineProps({
   visible: {
@@ -231,7 +237,7 @@ const normalizedSuffix = computed(() =>
     .toLowerCase()
 )
 
-const previewType = computed<'video' | 'audio' | 'image' | 'pdf' | 'text' | 'unknown'>(() => {
+const previewType = computed<'video' | 'audio' | 'image' | 'pdf' | 'text' | 'excel' | 'unknown'>(() => {
   const suffix = normalizedSuffix.value
   if (['mp4', 'mov', 'avi', 'mkv', 'wmv', 'flv', 'webm', 'm4v', '3gp', 'ogv'].includes(suffix)) {
     return 'video'
@@ -244,6 +250,9 @@ const previewType = computed<'video' | 'audio' | 'image' | 'pdf' | 'text' | 'unk
   }
   if (suffix === 'pdf') {
     return 'pdf'
+  }
+  if (['xls', 'xlsx'].includes(suffix)) {
+    return 'excel'
   }
   // 文本/代码文件
   const textSuffixes = [
@@ -445,6 +454,14 @@ function handleImageError(event: Event) {
   flex-direction: column;
   background: #1e1e1e;
   overflow: hidden;
+}
+
+.preview-excel-shell {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px;
 }
 
 .preview-text-header {

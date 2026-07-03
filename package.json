@@ -109,6 +109,7 @@
     "vxe-pc-ui": "4.4.9",
     "vxe-table": "4.11.19",
     "web-storage-cache": "^1.1.1",
+    "xlsx": "^0.18.5",
     "xml-js": "^1.6.11"
   },
   "devDependencies": {
