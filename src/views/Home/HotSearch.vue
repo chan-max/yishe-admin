@@ -226,10 +226,10 @@
                 <template #summarySlot="{ row }">
                   <div v-if="row.analysisStatus === 'done' && row.analysis" class="analysis-cell">
                     <div class="analysis-cell__summary">
-                      {{ (row.analysis.fullSummary || row.analysis.summary || '').slice(0, 150) }}{{ (row.analysis.fullSummary || row.analysis.summary || '').length > 150 ? '…' : '' }}
+                      {{ row.analysis.fullSummary || row.analysis.summary || '' }}
                     </div>
                     <div v-if="row.analysis.keyTopics?.length" class="analysis-cell__topics">
-                      <el-tag v-for="(t, i) in row.analysis.keyTopics.slice(0, 4)" :key="i" size="small" effect="plain" type="info" class="analysis-cell__topic-tag">
+                      <el-tag v-for="(t, i) in row.analysis.keyTopics" :key="i" size="small" effect="plain" :type="t.heat === 'high' ? 'danger' : t.heat === 'rising' ? 'warning' : 'info'" class="analysis-cell__topic-tag">
                         {{ t.topic }}
                       </el-tag>
                     </div>
@@ -242,15 +242,19 @@
                 <!-- 设计灵感列 -->
                 <template #designSlot="{ row }">
                   <div v-if="row.analysisStatus === 'done' && row.analysis?.designElements?.length" class="analysis-cell">
-                    <div v-for="(de, i) in row.analysis.designElements.slice(0, 3)" :key="i" class="analysis-cell__design-row">
+                    <div v-for="(de, i) in row.analysis.designElements" :key="i" class="analysis-cell__design-row">
                       <div class="analysis-cell__design-source">{{ de.source }}</div>
                       <div class="analysis-cell__design-element">→ {{ de.element }}</div>
+                      <div class="analysis-cell__design-suggestion">💡 {{ de.suggestion }}</div>
                       <div class="analysis-cell__design-products">
-                        <el-tag v-for="p in (de.products || []).slice(0, 3)" :key="p" size="small" effect="plain" type="success">{{ p }}</el-tag>
+                        <el-tag v-for="p in (de.products || [])" :key="typeof p === 'object' ? p.name : p" size="small" effect="plain" type="success">
+                          {{ typeof p === 'object' ? p.name : p }}
+                        </el-tag>
                       </div>
-                    </div>
-                    <div v-if="row.analysis.designElements.length > 3" class="analysis-cell__more">
-                      +{{ row.analysis.designElements.length - 3 }}个
+                      <div class="analysis-cell__design-meta">
+                        <span v-if="de.audience">受众: {{ de.audience }}</span>
+                        <el-tag size="small" :type="de.appeal === 'high' ? 'danger' : de.appeal === 'medium' ? 'warning' : 'info'">{{ de.appeal }}</el-tag>
+                      </div>
                     </div>
                   </div>
                   <span v-else-if="row.analysisStatus === 'done'" style="color: var(--el-text-color-placeholder); font-size: 12px">无设计灵感</span>
@@ -260,7 +264,7 @@
                 <template #tagsSlot="{ row }">
                   <div v-if="row.analysisStatus === 'done' && (row.analysis?.tags || row.analysis?.hotTags)?.length" class="analysis-cell__tags">
                     <el-tag
-                      v-for="(t, i) in (row.analysis.tags || row.analysis.hotTags || []).slice(0, 8)"
+                      v-for="(t, i) in (row.analysis.tags || row.analysis.hotTags || [])"
                       :key="i"
                       size="small"
                       effect="light"
@@ -269,9 +273,6 @@
                     >
                       #{{ t.tag }}
                     </el-tag>
-                    <span v-if="(row.analysis.tags || row.analysis.hotTags || []).length > 8" class="analysis-cell__more">
-                      +{{ (row.analysis.tags || row.analysis.hotTags || []).length - 8 }}
-                    </span>
                   </div>
                 </template>
 
@@ -1410,63 +1411,67 @@ onBeforeUnmount(() => {
   color: var(--el-text-color-secondary);
 }
 
-/* 表格内设计灵感行 */
+/* 表格内分析内容 */
+.analysis-cell {
+  padding: 6px 0;
+}
+.analysis-cell__summary {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--el-text-color-regular);
+  margin-bottom: 8px;
+  white-space: pre-wrap;
+}
+.analysis-cell__topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.analysis-cell__topic-tag {
+  max-width: 150px;
+}
+/* 表格内设计灵感 */
 .analysis-cell__design-row {
-  padding: 4px 0;
+  padding: 8px 0;
   border-bottom: 1px dashed var(--el-border-color-lighter);
   &:last-child {
     border-bottom: none;
   }
 }
 .analysis-cell__design-source {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--el-text-color-secondary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  margin-bottom: 2px;
 }
 .analysis-cell__design-element {
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--el-color-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  margin-bottom: 2px;
+}
+.analysis-cell__design-suggestion {
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+  margin-bottom: 4px;
 }
 .analysis-cell__design-products {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px;
-  margin-top: 2px;
-}
-
-/* 表格内分析内容 */
-.analysis-cell {
-  padding: 4px 0;
-}
-.analysis-cell__summary {
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--el-text-color-regular);
-  margin-bottom: 6px;
-}
-.analysis-cell__topics {
-  display: flex;
-  flex-wrap: wrap;
   gap: 4px;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
-.analysis-cell__topic-tag {
-  max-width: 120px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.analysis-cell__design-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
 }
+/* 表格内标签 */
 .analysis-cell__tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 3px;
-  align-items: center;
+  gap: 4px;
 }
 .analysis-cell__tag {
   cursor: pointer;
