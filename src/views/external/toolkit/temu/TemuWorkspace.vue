@@ -1087,29 +1087,6 @@
                 </label>
                 <el-button
                   size="small"
-                  type="primary"
-                  :disabled="
-                    !selectedOpenableJitRows.length || jitBatchSubmitting
-                  "
-                  :loading="jitBatchSubmitting"
-                  @click="submitSelectedJitRows"
-                >
-                  批量开通 JIT
-                </el-button>
-                <el-button
-                  size="small"
-                  type="success"
-                  :disabled="
-                    !selectedStockMaintainableJitRows.length ||
-                    jitBatchSubmitting
-                  "
-                  :loading="jitBatchSubmitting"
-                  @click="submitSelectedJitStockRows"
-                >
-                  批量维护库存
-                </el-button>
-                <el-button
-                  size="small"
                   type="warning"
                   :disabled="!selectedJitRows.length || jitBatchSubmitting"
                   :loading="jitBatchSubmitting"
@@ -5174,12 +5151,6 @@ const selectedJitRows = computed(() => {
     (row) => selectedKeys.has(row.rowKey) && isSelectableJitRow(row),
   );
 });
-const selectedOpenableJitRows = computed(() =>
-  selectedJitRows.value.filter((row) => isOpenableJitRow(row)),
-);
-const selectedStockMaintainableJitRows = computed(() =>
-  selectedJitRows.value.filter((row) => isStockMaintainableJitRow(row)),
-);
 const taskRunConfirmationRows = computed(() =>
   buildConfirmationPreviewRows(
     activeTaskRunDetail.value?.result as Record<string, any> | null,
@@ -5783,6 +5754,7 @@ const floatingProgressSummary = computed(() => {
 });
 let batchProgressSyncTimer: number | null = null;
 let batchProgressSyncLastAt = 0;
+const BATCH_PROGRESS_SYNC_DEBOUNCE_MS = 5000; // 5 秒防抖
 const syncFloatingBatchProgressToServer = () => {
   if (!liveFloatingBatchProgressItems.value.length) {
     return;
@@ -5792,7 +5764,7 @@ const syncFloatingBatchProgressToServer = () => {
     return;
   }
   const elapsed = now - batchProgressSyncLastAt;
-  const delay = elapsed < 1000 ? 1000 - elapsed : 0;
+  const delay = elapsed < BATCH_PROGRESS_SYNC_DEBOUNCE_MS ? BATCH_PROGRESS_SYNC_DEBOUNCE_MS - elapsed : 0;
   batchProgressSyncTimer = window.setTimeout(async () => {
     batchProgressSyncTimer = null;
     batchProgressSyncLastAt = Date.now();
@@ -5819,6 +5791,7 @@ const loadFloatingBatchProgressFromServer = async () => {
   }
 };
 let batchProgressPollTimer: number | null = null;
+const BATCH_PROGRESS_POLL_INTERVAL_MS = 10000; // 10 秒轮询间隔
 const startBatchProgressPolling = () => {
   if (batchProgressPollTimer !== null) return;
   batchProgressPollTimer = window.setInterval(async () => {
@@ -5830,7 +5803,7 @@ const startBatchProgressPolling = () => {
     if (!persistedFloatingBatchProgressItems.value.length) {
       stopBatchProgressPolling();
     }
-  }, 2000);
+  }, BATCH_PROGRESS_POLL_INTERVAL_MS);
 };
 const stopBatchProgressPolling = () => {
   if (batchProgressPollTimer !== null) {
@@ -6887,7 +6860,8 @@ const submitJitStockRows = async (
           jitBatchSuccessCount.value = successCount;
           jitBatchFailedCount.value = failedCount;
           syncJitBatchProgressToStore();
-          if (index % 5 === 4 || index === rows.length - 1) {
+          // 每处理20 个商品或最后一个时才同步到服务器
+          if (index % 20 === 19 || index === rows.length - 1) {
             syncFloatingBatchProgressToServer();
           }
         }
@@ -7128,10 +7102,6 @@ const submitJitRows = async (inputRows: JitPreviewRow[], batchMode = false) => {
   }
 };
 
-const submitSelectedJitRows = () => submitJitRows(selectedJitRows.value, true);
-const submitSelectedJitStockRows = () =>
-  submitJitStockRows(selectedStockMaintainableJitRows.value, true);
-
 const submitSelectedJitOpenAndStockRows = async () => {
   if (!requireTemuClientContext()) {
     return;
@@ -7144,13 +7114,13 @@ const submitSelectedJitOpenAndStockRows = async () => {
 
   const openRows = rows.filter((row) => isOpenableJitRow(row));
   const alreadyOpenRows = rows.filter((row) => isStockMaintainableJitRow(row));
-  resetJitBatchProgress("批量开通并维护库存", rows.length + openRows.length);
+  // Phase 1 total: openRows; will update total after phase 1 completes
+  resetJitBatchProgress("批量开通并维护库存", openRows.length);
   const batchToken = batchAbortToken.value;
   const ownerRunId = Number(activeTaskRunDetail.value?.id || 0);
   try {
     let openSuccessCount = 0;
     let openFailedCount = 0;
-    let skippedStockCount = 0;
     const openedRows: JitPreviewRow[] = [];
     const batchMarks: Array<{
       rowKey: string;
@@ -7221,21 +7191,19 @@ const submitSelectedJitOpenAndStockRows = async () => {
         jitBatchSuccessCount.value = openSuccessCount;
         jitBatchFailedCount.value = openFailedCount;
         syncJitBatchProgressToStore();
-        if (!success) {
-          skippedStockCount += 1;
-          jitBatchFinishedCount.value += 1;
-          jitBatchFailedCount.value = openFailedCount + skippedStockCount;
-          syncJitBatchProgressToStore();
-        }
-        if (index % 5 === 4 || index === openRows.length - 1) {
+        // 每处理20 个商品或最后一个时才同步到服务器
+        if (index % 20 === 19 || index === openRows.length - 1) {
           syncFloatingBatchProgressToServer();
         }
       }
     }
 
+    // Update total count for phase 2 (stock maintenance)
     const stockRows = [...alreadyOpenRows, ...openedRows].filter(
       (row) => !row.stockMaintained,
     );
+    jitBatchTotalCount.value = openRows.length + stockRows.length;
+    temuBatchProgressStore.jitBatchTotalCount = openRows.length + stockRows.length;
     let stockSuccessCount = 0;
     let stockFailedCount = 0;
     const finalNum = Math.max(0, Number(jitStockFinalNum.value || 0) || 0);
@@ -7283,10 +7251,10 @@ const submitSelectedJitOpenAndStockRows = async () => {
       } finally {
         jitBatchFinishedCount.value += 1;
         jitBatchSuccessCount.value = openSuccessCount + stockSuccessCount;
-        jitBatchFailedCount.value =
-          openFailedCount + skippedStockCount + stockFailedCount;
+        jitBatchFailedCount.value = openFailedCount + stockFailedCount;
         syncJitBatchProgressToStore();
-        if (stockIndex % 5 === 4 || stockIndex === stockRows.length - 1) {
+        // 每处理20 个商品或最后一个时才同步到服务器
+        if (stockIndex % 20 === 19 || stockIndex === stockRows.length - 1) {
           syncFloatingBatchProgressToServer();
         }
       }
@@ -7434,7 +7402,8 @@ const submitConfirmationRows = async (
     }
     if (batchMode) {
       confirmationBatchFinishedCount.value = successCount + failedCount;
-      if (i % 5 === 4 || i === validRows.length - 1) {
+      // 每处理20 个商品或最后一个时才同步到服务器
+      if (i % 20 === 19 || i === validRows.length - 1) {
         temuBatchProgressStore.confirmationBatchFinishedCount =
           confirmationBatchFinishedCount.value;
         temuBatchProgressStore.confirmationBatchSuccessCount =
@@ -7865,7 +7834,8 @@ const submitRealPictureUploadRows = async () => {
       realPictureBatchSuccessCount.value;
     temuBatchProgressStore.realPictureBatchFailedCount =
       realPictureBatchFailedCount.value;
-    if (index % 5 === 4 || index === rows.length - 1) {
+    // 每处理20 个商品或最后一个时才同步到服务器
+    if (index % 20 === 19 || index === rows.length - 1) {
       syncFloatingBatchProgressToServer();
     }
   }
@@ -8536,7 +8506,8 @@ const submitComplianceBatchRows = async () => {
         complianceBatchSuccessCount.value;
       temuBatchProgressStore.complianceBatchFailedCount =
         complianceBatchFailedCount.value;
-      if (i % 5 === 4 || i === rows.length - 1) {
+      // 每处理20 个商品或最后一个时才同步到服务器
+      if (i % 20 === 19 || i === rows.length - 1) {
         syncFloatingBatchProgressToServer();
       }
     }
@@ -8915,7 +8886,8 @@ const submitSelectedPriceReviewRows = async (
       }
       priceReviewBatchFinishedCount.value += 1;
       syncPriceReviewBatchProgressToStore();
-      if (index % 5 === 4 || index === rows.length - 1) {
+      // 每处理20 个商品或最后一个时才同步到服务器
+      if (index % 20 === 19 || index === rows.length - 1) {
         syncFloatingBatchProgressToServer();
       }
     }
@@ -9019,7 +8991,8 @@ const confirmBatchRepriceRows = async () => {
       }
       priceReviewBatchFinishedCount.value += 1;
       syncPriceReviewBatchProgressToStore();
-      if (index % 5 === 4 || index === rows.length - 1) {
+      // 每处理20 个商品或最后一个时才同步到服务器
+      if (index % 20 === 19 || index === rows.length - 1) {
         syncFloatingBatchProgressToServer();
       }
     }
@@ -9990,12 +9963,17 @@ watch(
 
 watch(
   liveFloatingBatchProgressItems,
-  (liveItems) => {
-    syncFloatingBatchProgressToServer();
-    if (!liveItems.length && persistedFloatingBatchProgressItems.value.length) {
-      startBatchProgressPolling();
+  (liveItems, oldLiveItems) => {
+    // 批量操作结束时（从有到无）才同步，避免频繁调用
+    if (!liveItems.length && oldLiveItems?.length) {
+      syncFloatingBatchProgressToServer();
+      if (persistedFloatingBatchProgressItems.value.length) {
+        startBatchProgressPolling();
+      }
     } else if (liveItems.length) {
       stopBatchProgressPolling();
+      // 批量操作进行中，延迟同步
+      syncFloatingBatchProgressToServer();
     }
   },
   { deep: true },
