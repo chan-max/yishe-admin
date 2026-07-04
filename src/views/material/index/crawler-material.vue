@@ -132,6 +132,7 @@
             <template #previewDefaultSlot="{ row }">
               <div class="flex flex-col items-center justify-center p-2">
                 <img
+                  :key="`${row.id}_p${queryParams.currentPage}`"
                   :src="row.url"
                   :alt="row.name || '素材图片'"
                   style="
@@ -212,6 +213,7 @@
                 style="display: flex; align-items: center"
               >
                 <img
+                  :key="`${row.id}_origin_p${queryParams.currentPage}`"
                   :src="row.originUrl"
                   :alt="row.name || '原始图片'"
                   style="height: 80px; object-fit: contain; cursor: pointer"
@@ -634,6 +636,7 @@ const crawlerMaterialUserTransferPreviewItems = computed(() =>
 
 function getList() {
   loading.value = true;
+  dataSource.value = []; // 清空旧数据，避免切换页数时旧图残留
   CrawlerMaterialApi.getCrawlerMaterialPage({ ...queryParams })
     .then((res) => {
       dataSource.value = res.list;

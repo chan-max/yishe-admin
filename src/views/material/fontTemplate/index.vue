@@ -51,11 +51,15 @@
               <el-button v-if="isAdmin" size="small" type="primary" @click="handleAdd" :icon="Plus">
                 新增字体
               </el-button>
-              <div v-if="isAdmin" class="batch-thumbnail-action">
+              <el-dropdown
+                v-if="isAdmin"
+                trigger="click"
+                :disabled="batchGenerateThumbnailLoading"
+                @command="handleBatchGenerateThumbnailCommand"
+              >
                 <el-button
                   size="small"
                   type="primary"
-                  @click="handleBatchGenerateThumbnail({ completeWithAi: false })"
                   :loading="batchGenerateThumbnailLoading"
                 >
                   <template v-if="batchGenerateThumbnailLoading">
@@ -64,36 +68,22 @@
                     }}
                   </template>
                   <template v-else>
-                    批量生成缩略图 {{ ids.length ? `(${ids.length})` : "" }}
+                    批量生成 {{ ids.length ? `(${ids.length})` : "" }}
                   </template>
+                  <el-icon class="el-icon--right"><ArrowDown /></el-icon>
                 </el-button>
-                <el-dropdown
-                  trigger="click"
-                  :disabled="batchGenerateThumbnailLoading"
-                  @command="handleBatchGenerateThumbnailCommand"
-                >
-                  <el-button
-                    size="small"
-                    type="primary"
-                    plain
-                    class="batch-thumbnail-action__more"
-                    :disabled="batchGenerateThumbnailLoading"
-                  >
-                    <el-icon><ArrowDown /></el-icon>
-                  </el-button>
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item command="thumbnail-only">仅生成缩略图</el-dropdown-item>
-                      <el-dropdown-item command="thumbnail-ai">
-                        生成缩略图并 AI 补全
-                      </el-dropdown-item>
-                      <el-dropdown-item command="ai-only" :disabled="!ids.length">
-                        仅 AI 补全选中项
-                      </el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
-              </div>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="thumbnail-only">仅生成缩略图</el-dropdown-item>
+                    <el-dropdown-item command="thumbnail-ai">
+                      生成缩略图并 AI 补全
+                    </el-dropdown-item>
+                    <el-dropdown-item command="ai-only" :disabled="!ids.length">
+                      仅 AI 补全选中项
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
               <el-button
                 v-if="batchGenerateThumbnailLoading"
                 size="small"
@@ -112,24 +102,29 @@
               >
                 批量删除 ({{ ids.length }})
               </el-button>
-              <el-button
+              <el-dropdown
                 v-if="isAdmin"
-                size="small"
-                type="success"
+                trigger="click"
                 :disabled="!ids.length"
-                @click="openFontTemplateUserTransferDialog('copy')"
+                @command="handleBatchActionCommand"
               >
-                分享给用户 ({{ ids.length }})
-              </el-button>
-              <el-button
-                v-if="isAdmin"
-                size="small"
-                type="warning"
-                :disabled="!ids.length"
-                @click="openFontTemplateUserTransferDialog('move')"
-              >
-                转移给用户 ({{ ids.length }})
-              </el-button>
+                <el-button size="small" type="success" :disabled="!ids.length">
+                  批量操作 ({{ ids.length }})
+                  <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="copy-to-user">
+                      <el-icon><DocumentCopy /></el-icon>
+                      <span>分享给用户</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item command="move-to-user">
+                      <el-icon><TopRight /></el-icon>
+                      <span>转移给用户</span>
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </div>
           </el-form>
         </div>
@@ -453,13 +448,13 @@
       :destroy-on-close="true"
     >
       <div style="margin-bottom: 16px; color: #888; font-size: 15px">
-        请输入你希望AI分析的内容风格或角度（如：偏艺术描述、简洁风格、突出字体特点等）
+        请输入你希望AI分析的内容维度（默认已包含字体风格、字重、适用场景、设计特点等详细分析维度，可自行修改）
       </div>
       <el-input
         v-model="aiGenPrompt"
         type="textarea"
         :rows="6"
-        placeholder="如：请用艺术化语言描述字体风格..."
+        placeholder="请从字体风格、字重、情感调性、适用场景、设计特点等维度进行分析..."
         style="font-size: 16px; min-height: 120px; width: 100%; resize: vertical"
       />
       <template #footer>
@@ -485,7 +480,7 @@
         v-model="batchAiPrompt"
         type="textarea"
         :rows="6"
-        placeholder="请输入统一的AI分析提示词（可选）..."
+        placeholder="请输入统一的AI分析提示词，已预设详细分析维度，可自行修改..."
         style="font-size: 16px; min-height: 120px; width: 100%; resize: vertical"
       />
 
@@ -529,7 +524,7 @@
         <div>• 确保选中的字体模板都有缩略图</div>
         <div>• 如果AI分析失败，可能是图片内容不清晰或格式不支持</div>
         <div>• 系统会自动重试失败的项，提高成功率</div>
-        <div>• 建议提示词示例："请分析字体风格，重点关注设计特点和适用场景"</div>
+        <div>• 默认已预设详细分析维度（风格、字重、适用场景、设计特点等），可直接使用或自定义修改</div>
       </div>
       <template #footer>
         <el-button @click="batchAiDialogVisible = false">取消</el-button>
@@ -1740,7 +1735,18 @@ const copyUrl = (url: string) => {
 function handleAiGenerate(row) {
   if (aiTableLoading.value[row.id]) return;
   aiGenRow = row;
-  aiGenPrompt.value = "";
+  aiGenPrompt.value = `请从以下维度对字体进行详细分析，并输出对应的分类信息：
+
+1. 字体风格分类：如衬线体、无衬线体、手写体、装饰体、等宽体等
+2. 字重/粗细：极细、细、常规、中等、粗、极粗、黑体等
+3. 情感调性：优雅、稳重、活泼、现代、古典、科技、可爱、力量感等
+4. 适用场景：标题、正文、品牌标识、海报、UI界面、包装、广告等
+5. 适用行业：科技、时尚、餐饮、教育、金融、娱乐、运动等
+6. 设计特点：圆角、直角、几何、有机、装饰性笔画、连笔等
+7. 推荐搭配字体：建议可与此字体搭配使用的其他类型字体
+8. 关键词建议：10-15个便于检索的风格和用途关键词
+
+请结合字体的笔画特征、结构比例、整体视觉感受进行综合分析。`;
   aiGenDialogVisible.value = true;
 }
 
@@ -1802,7 +1808,18 @@ async function handleBatchAiGenerate() {
     return;
   }
 
-  batchAiPrompt.value = "";
+  batchAiPrompt.value = `请从以下维度对字体进行详细分析，并输出对应的分类信息：
+
+1. 字体风格分类：如衬线体、无衬线体、手写体、装饰体、等宽体等
+2. 字重/粗细：极细、细、常规、中等、粗、极粗、黑体等
+3. 情感调性：优雅、稳重、活泼、现代、古典、科技、可爱、力量感等
+4. 适用场景：标题、正文、品牌标识、海报、UI界面、包装、广告等
+5. 适用行业：科技、时尚、餐饮、教育、金融、娱乐、运动等
+6. 设计特点：圆角、直角、几何、有机、装饰性笔画、连笔等
+7. 推荐搭配字体：建议可与此字体搭配使用的其他类型字体
+8. 关键词建议：10-15个便于检索的风格和用途关键词
+
+请结合字体的笔画特征、结构比例、整体视觉感受进行综合分析。`;
   batchAiDialogVisible.value = true;
 }
 
@@ -2027,6 +2044,14 @@ async function submitFrontendGenerateThumbnail() {
     ElMessage.error("前端缩略图生成失败，请稍后重试");
   } finally {
     frontendGenerateLoading.value = false;
+  }
+}
+
+function handleBatchActionCommand(command: string) {
+  if (command === "copy-to-user") {
+    openFontTemplateUserTransferDialog("copy");
+  } else if (command === "move-to-user") {
+    openFontTemplateUserTransferDialog("move");
   }
 }
 
@@ -2350,16 +2375,6 @@ function closeImagePreview() {
   padding-top: 10px;
 }
 
-.batch-thumbnail-action {
-  display: inline-flex;
-  align-items: center;
-  vertical-align: middle;
-
-  .batch-thumbnail-action__more {
-    margin-left: 1px;
-    padding: 8px;
-  }
-}
 
 .font-template-sidebar {
   min-height: 100%;

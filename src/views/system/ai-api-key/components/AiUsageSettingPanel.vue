@@ -502,6 +502,8 @@ defineExpose({
 }
 
 .ai-setting-dialog {
+  display: flex;
+  flex-direction: column;
   min-height: 100%;
   box-sizing: border-box;
   padding: 14px 16px 18px;
@@ -588,6 +590,10 @@ defineExpose({
 }
 
 .ai-setting-dialog__form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
   margin-top: 12px;
 }
 
@@ -637,6 +643,7 @@ defineExpose({
 .ai-setting-group__cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  grid-auto-rows: 1fr;
   gap: 10px;
 }
 
