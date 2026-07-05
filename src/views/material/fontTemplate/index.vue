@@ -75,6 +75,7 @@
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item command="thumbnail-only">仅生成缩略图</el-dropdown-item>
+                    <el-dropdown-item command="thumbnail-skip-existing">仅生成缺失缩略图（跳过已有）</el-dropdown-item>
                     <el-dropdown-item command="thumbnail-ai">
                       生成缩略图并 AI 补全
                     </el-dropdown-item>
@@ -1275,6 +1276,7 @@ const batchGenerateThumbnailAbortController = ref<AbortController | null>(null);
 
 type BatchGenerateThumbnailOptions = {
   completeWithAi?: boolean;
+  skipExisting?: boolean;
 };
 
 async function getList() {
@@ -2066,17 +2068,27 @@ function handleBatchGenerateThumbnailCommand(command: string) {
     return;
   }
 
+  if (command === "thumbnail-skip-existing") {
+    void handleBatchGenerateThumbnail({ completeWithAi: false, skipExisting: true });
+    return;
+  }
+
   void handleBatchGenerateThumbnail({ completeWithAi: false });
 }
 
 // 批量生成缩略图
 async function handleBatchGenerateThumbnail(options: BatchGenerateThumbnailOptions = {}) {
   const completeWithAi = options.completeWithAi === true;
+  const skipExisting = options.skipExisting === true;
   // 获取要处理的字体列表：选中的或者全部没有缩略图的
   let fontsToProcess = [];
   if (ids.value.length > 0) {
-    // 使用选中的
-    fontsToProcess = dataSource.value.filter((item) => ids.value.includes(item.id));
+    // 使用选中的，根据 skipExisting 过滤
+    fontsToProcess = dataSource.value.filter((item) => {
+      if (!ids.value.includes(item.id)) return false;
+      if (skipExisting && item.thumbnail) return false;
+      return true;
+    });
   } else {
     // 使用当前列表中没有缩略图的
     fontsToProcess = dataSource.value.filter((item) => !item.thumbnail);
