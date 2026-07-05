@@ -135,9 +135,7 @@
         删除定时
       </el-button>
       <el-button @click="showScheduleDialog = false">取消</el-button>
-      <el-button :loading="collectLoading" @click="handleQuickCollect">
-        立即采集
-      </el-button>
+      <el-button :loading="collectLoading" @click="handleQuickCollect"> 立即采集 </el-button>
       <el-button type="primary" :loading="scheduleSaving" @click="handleSaveSchedule">
         保存
       </el-button>
@@ -226,41 +224,83 @@
                 <template #summarySlot="{ row }">
                   <div v-if="row.analysisStatus === 'done' && row.analysis" class="analysis-cell">
                     <div class="analysis-cell__summary">
-                      {{ row.analysis.fullSummary || row.analysis.summary || '' }}
+                      {{ row.analysis.fullSummary || row.analysis.summary || "" }}
                     </div>
                     <div v-if="row.analysis.keyTopics?.length" class="analysis-cell__topics">
-                      <el-tag v-for="(t, i) in row.analysis.keyTopics" :key="i" size="small" effect="plain" :type="t.heat === 'high' ? 'danger' : t.heat === 'rising' ? 'warning' : 'info'" class="analysis-cell__topic-tag">
+                      <el-tag
+                        v-for="(t, i) in row.analysis.keyTopics"
+                        :key="i"
+                        size="small"
+                        effect="plain"
+                        :type="
+                          t.heat === 'high' ? 'danger' : t.heat === 'rising' ? 'warning' : 'info'
+                        "
+                        class="analysis-cell__topic-tag"
+                      >
                         {{ t.topic }}
                       </el-tag>
                     </div>
                   </div>
-                  <span v-else-if="row.analysisStatus === 'analyzing'" style="color: var(--el-color-warning); font-size: 12px">分析中...</span>
-                  <span v-else-if="row.analysisStatus === 'failed'" style="color: var(--el-color-danger); font-size: 12px">失败</span>
-                  <span v-else style="color: var(--el-text-color-placeholder); font-size: 12px">未分析</span>
+                  <span
+                    v-else-if="row.analysisStatus === 'analyzing'"
+                    style="color: var(--el-color-warning); font-size: 12px"
+                    >分析中...</span
+                  >
+                  <span
+                    v-else-if="row.analysisStatus === 'failed'"
+                    style="color: var(--el-color-danger); font-size: 12px"
+                    >失败</span
+                  >
+                  <span v-else style="color: var(--el-text-color-placeholder); font-size: 12px"
+                    >未分析</span
+                  >
                 </template>
 
                 <!-- 设计灵感列 -->
                 <template #designSlot="{ row }">
-                  <div v-if="row.analysisStatus === 'done' && row.analysis?.designElements?.length" class="analysis-cell">
-                    <div v-for="(de, i) in row.analysis.designElements" :key="i" class="analysis-cell__design-row">
+                  <div
+                    v-if="row.analysisStatus === 'done' && row.analysis?.designElements?.length"
+                    class="analysis-cell"
+                  >
+                    <div
+                      v-for="(de, i) in row.analysis.designElements"
+                      :key="i"
+                      class="analysis-cell__design-row"
+                    >
                       <span class="analysis-cell__design-source">{{ de.source }}</span>
                       <span class="analysis-cell__design-arrow"> → </span>
                       <span class="analysis-cell__design-element">{{ de.element }}</span>
                       <span class="analysis-cell__design-products">
-                        <el-tag v-for="p in (de.products || []).slice(0, 3)" :key="typeof p === 'object' ? p.name : p" size="small" effect="plain" type="success">
-                          {{ typeof p === 'object' ? p.name : p }}
+                        <el-tag
+                          v-for="p in (de.products || []).slice(0, 3)"
+                          :key="typeof p === 'object' ? p.name : p"
+                          size="small"
+                          effect="plain"
+                          type="success"
+                        >
+                          {{ typeof p === "object" ? p.name : p }}
                         </el-tag>
                       </span>
                     </div>
                   </div>
-                  <span v-else-if="row.analysisStatus === 'done'" style="color: var(--el-text-color-placeholder); font-size: 12px">-</span>
+                  <span
+                    v-else-if="row.analysisStatus === 'done'"
+                    style="color: var(--el-text-color-placeholder); font-size: 12px"
+                    >-</span
+                  >
                 </template>
 
                 <!-- 标签列 -->
                 <template #tagsSlot="{ row }">
-                  <div v-if="row.analysisStatus === 'done' && (row.analysis?.tags || row.analysis?.hotTags)?.length" class="analysis-cell__tags">
+                  <div
+                    v-if="
+                      row.analysisStatus === 'done' &&
+                      (row.analysis?.tags || row.analysis?.hotTags)?.length
+                    "
+                    class="analysis-cell__tags"
+                  >
                     <el-tag
-                      v-for="(t, i) in (row.analysis.tags || row.analysis.hotTags || [])"
+                      v-for="(t, i) in row.analysis.tags || row.analysis.hotTags || []"
                       :key="i"
                       size="small"
                       effect="light"
@@ -293,8 +333,17 @@
                   >
                     重试
                   </el-button>
-                  <el-icon v-else-if="row.analysisStatus === 'analyzing'" class="is-loading" style="color: var(--el-color-warning)"><i class="el-icon-loading" /></el-icon>
-                  <el-icon v-else-if="row.analysisStatus === 'done'" style="color: var(--el-color-success)"><span>✓</span></el-icon>
+                  <el-icon
+                    v-else-if="row.analysisStatus === 'analyzing'"
+                    class="is-loading"
+                    style="color: var(--el-color-warning)"
+                    ><i class="el-icon-loading"
+                  /></el-icon>
+                  <el-icon
+                    v-else-if="row.analysisStatus === 'done'"
+                    style="color: var(--el-color-success)"
+                    ><span>✓</span></el-icon
+                  >
                 </template>
 
                 <!-- 操作 -->
@@ -330,7 +379,7 @@
   </ContentWrap>
 
   <!-- 详情弹窗 -->
-  <el-dialog v-model="detailVisible" title="采集详情" width="95%" @closed="currentDetail = null">
+  <el-dialog v-model="detailVisible" title="采集详情" fullscreen @closed="currentDetail = null">
     <div v-if="currentDetail" class="detail-dialog">
       <section class="detail-dialog__hero">
         <div>
@@ -342,12 +391,15 @@
             >
           </div>
         </div>
-        <div style="display: flex; gap: 8px; align-items: center;">
+        <div style="display: flex; gap: 8px; align-items: center">
           <el-tag size="small" :type="statusTagType(currentDetail.status)">
             {{ statusLabel(currentDetail.status) }}
           </el-tag>
           <el-button
-            v-if="currentDetail.analysisStatus !== 'done' && currentDetail.analysisStatus !== 'analyzing'"
+            v-if="
+              currentDetail.analysisStatus !== 'done' &&
+              currentDetail.analysisStatus !== 'analyzing'
+            "
             size="small"
             type="primary"
             :loading="analyzingId === currentDetail.id"
@@ -382,7 +434,9 @@
                   :key="idx"
                   class="detail-item"
                 >
-                  <span class="detail-item__rank" :class="{ 'is-top': idx < 3 }">{{ item.rank }}</span>
+                  <span class="detail-item__rank" :class="{ 'is-top': idx < 3 }">{{
+                    item.rank
+                  }}</span>
                   <a
                     class="detail-item__title"
                     :href="item.url || undefined"
@@ -399,131 +453,220 @@
           </div>
         </el-tab-pane>
 
-      <!-- AI 分析 Tab -->
-      <el-tab-pane label="热点分析" name="analysis">
-        <div v-if="currentDetail.analysisStatus === 'done' && currentDetail.analysis" class="analysis-content">
-
-          <!-- 降级提示 -->
-          <el-alert
-            v-if="currentDetail.analysis.aiError"
-            type="warning"
-            :closable="false"
-            style="margin-bottom: 16px"
+        <!-- AI 分析 Tab -->
+        <el-tab-pane label="热点分析" name="analysis">
+          <div
+            v-if="currentDetail.analysisStatus === 'done' && currentDetail.analysis"
+            class="analysis-content"
           >
-            AI分析降级（自动提取）: {{ currentDetail.analysis.aiError }}
-          </el-alert>
+            <!-- 降级提示 -->
+            <el-alert
+              v-if="currentDetail.analysis.aiError"
+              type="warning"
+              :closable="false"
+              style="margin-bottom: 16px"
+            >
+              AI分析降级（自动提取）: {{ currentDetail.analysis.aiError }}
+            </el-alert>
 
-          <!-- 完整热点总结 -->
-          <div class="analysis-section">
-            <h4>📝 热点总结</h4>
-            <div class="analysis-summary-text">{{ currentDetail.analysis.fullSummary || currentDetail.analysis.summary || '暂无' }}</div>
-          </div>
+            <!-- 完整热点总结 -->
+            <div class="analysis-section">
+              <h4>📝 热点总结</h4>
+              <div class="analysis-summary-text">
+                {{ currentDetail.analysis.fullSummary || currentDetail.analysis.summary || "暂无" }}
+              </div>
+            </div>
 
-          <!-- 核心话题 -->
-          <div v-if="currentDetail.analysis.keyTopics?.length" class="analysis-section">
-            <h4>💡 核心话题 ({{ currentDetail.analysis.keyTopics.length }})</h4>
-            <div class="analysis-topics-grid">
-              <div v-for="(topic, i) in currentDetail.analysis.keyTopics" :key="i" class="analysis-topic-card">
-                <div class="analysis-topic-header">
-                  <span class="analysis-topic-name">{{ topic.topic }}</span>
-                  <el-tag size="small" :type="topic.heat === 'high' ? 'danger' : topic.heat === 'rising' ? 'warning' : 'info'">
-                    {{ topic.heat }}
-                  </el-tag>
-                </div>
-                <div class="analysis-topic-desc">{{ topic.description }}</div>
-                <div class="analysis-topic-platforms">
-                  <el-tag v-for="p in (topic.platforms || []).slice(0, 4)" :key="p" size="small" effect="plain" type="info">{{ p }}</el-tag>
+            <!-- 核心话题 -->
+            <div v-if="currentDetail.analysis.keyTopics?.length" class="analysis-section">
+              <h4>💡 核心话题 ({{ currentDetail.analysis.keyTopics.length }})</h4>
+              <div class="analysis-topics-grid">
+                <div
+                  v-for="(topic, i) in currentDetail.analysis.keyTopics"
+                  :key="i"
+                  class="analysis-topic-card"
+                >
+                  <div class="analysis-topic-header">
+                    <span class="analysis-topic-name">{{ topic.topic }}</span>
+                    <el-tag
+                      size="small"
+                      :type="
+                        topic.heat === 'high'
+                          ? 'danger'
+                          : topic.heat === 'rising'
+                            ? 'warning'
+                            : 'info'
+                      "
+                    >
+                      {{ topic.heat }}
+                    </el-tag>
+                  </div>
+                  <div class="analysis-topic-desc">{{ topic.description }}</div>
+                  <div class="analysis-topic-platforms">
+                    <el-tag
+                      v-for="p in (topic.platforms || []).slice(0, 4)"
+                      :key="p"
+                      size="small"
+                      effect="plain"
+                      type="info"
+                      >{{ p }}</el-tag
+                    >
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- 设计元素分析 -->
-          <div v-if="currentDetail.analysis.designElements?.length" class="analysis-section">
-            <h4>🎨 设计元素灵感 ({{ currentDetail.analysis.designElements.length }})</h4>
-            <div class="analysis-design-grid">
-              <div v-for="(de, i) in currentDetail.analysis.designElements" :key="i" class="analysis-design-card">
-                <div class="analysis-design-source">{{ de.source }}</div>
-                <div class="analysis-design-element">{{ de.element }}</div>
-                <div class="analysis-design-suggestion">💡 {{ de.suggestion }}</div>
-                <div class="analysis-design-products">
-                  <el-tag v-for="p in de.products" :key="p" size="small" effect="plain" type="success">{{ p }}</el-tag>
-                </div>
-                <div class="analysis-design-meta">
-                  <span>受众: {{ de.audience }}</span>
-                  <el-tag size="small" :type="de.appeal === 'high' ? 'danger' : de.appeal === 'medium' ? 'warning' : 'info'">
-                    {{ de.appeal }}
-                  </el-tag>
+            <!-- 设计元素分析 -->
+            <div v-if="currentDetail.analysis.designElements?.length" class="analysis-section">
+              <h4>🎨 设计元素灵感 ({{ currentDetail.analysis.designElements.length }})</h4>
+              <div class="analysis-design-grid">
+                <div
+                  v-for="(de, i) in currentDetail.analysis.designElements"
+                  :key="i"
+                  class="analysis-design-card"
+                >
+                  <div class="analysis-design-source">{{ de.source }}</div>
+                  <div class="analysis-design-element">{{ de.element }}</div>
+                  <div class="analysis-design-suggestion">💡 {{ de.suggestion }}</div>
+                  <div class="analysis-design-products">
+                    <el-tag
+                      v-for="p in de.products"
+                      :key="p"
+                      size="small"
+                      effect="plain"
+                      type="success"
+                      >{{ p }}</el-tag
+                    >
+                  </div>
+                  <div class="analysis-design-meta">
+                    <span>受众: {{ de.audience }}</span>
+                    <el-tag
+                      size="small"
+                      :type="
+                        de.appeal === 'high'
+                          ? 'danger'
+                          : de.appeal === 'medium'
+                            ? 'warning'
+                            : 'info'
+                      "
+                    >
+                      {{ de.appeal }}
+                    </el-tag>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- 各平台热搜原始内容 -->
-          <div v-if="currentDetail.analysis.platformHighlights?.length" class="analysis-section">
-            <h4>🔍 各平台热搜</h4>
-            <div v-for="(ph, i) in currentDetail.analysis.platformHighlights" :key="i" class="analysis-group">
-              <div class="analysis-group-header">
-                <span>{{ ph.platform }}</span>
-                <span v-if="ph.summary" style="font-size: 12px; color: var(--el-text-color-secondary)">{{ ph.summary }}</span>
-              </div>
-              <ul class="analysis-highlight-list">
-                <li v-for="(item, j) in (ph.items || ph.highlights || [])" :key="j">
-                  <span v-if="typeof item === 'object'">
-                    {{ item.title }}
-                    <span v-if="item.hot" style="color: var(--el-color-danger); font-size: 11px; margin-left: 4px">{{ item.hot }}</span>
-                  </span>
-                  <span v-else>{{ item }}</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <!-- 可用标签 -->
-          <div v-if="allTags.length" class="analysis-section">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px">
-              <h4 style="margin: 0">🏷️ 可用标签 ({{ allTags.length }})</h4>
-              <el-button size="small" type="primary" @click="copyAllTags(allTags)">一键复制全部</el-button>
-            </div>
-            <div class="analysis-tags-wrap">
-              <el-tag
-                v-for="(item, i) in allTags"
+            <!-- 各平台热搜原始内容 -->
+            <div v-if="currentDetail.analysis.platformHighlights?.length" class="analysis-section">
+              <h4>🔍 各平台热搜</h4>
+              <div
+                v-for="(ph, i) in currentDetail.analysis.platformHighlights"
                 :key="i"
-                size="default"
-                effect="light"
-                class="analysis-tag-item"
-                @click="copyTag(item.tag)"
+                class="analysis-group"
               >
-                #{{ item.tag }}
-                <span class="analysis-tag-meta">{{ item.category }}</span>
-              </el-tag>
+                <div class="analysis-group-header">
+                  <span>{{ ph.platform }}</span>
+                  <span
+                    v-if="ph.summary"
+                    style="font-size: 12px; color: var(--el-text-color-secondary)"
+                    >{{ ph.summary }}</span
+                  >
+                </div>
+                <ul class="analysis-highlight-list">
+                  <li v-for="(item, j) in ph.items || ph.highlights || []" :key="j">
+                    <span v-if="typeof item === 'object'">
+                      {{ item.title }}
+                      <span
+                        v-if="item.hot"
+                        style="color: var(--el-color-danger); font-size: 11px; margin-left: 4px"
+                        >{{ item.hot }}</span
+                      >
+                    </span>
+                    <span v-else>{{ item }}</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- 可用标签 -->
+            <div v-if="allTags.length" class="analysis-section">
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-bottom: 12px;
+                "
+              >
+                <h4 style="margin: 0">🏷️ 可用标签 ({{ allTags.length }})</h4>
+                <el-button size="small" type="primary" @click="copyAllTags(allTags)"
+                  >一键复制全部</el-button
+                >
+              </div>
+              <div class="analysis-tags-wrap">
+                <el-tag
+                  v-for="(item, i) in allTags"
+                  :key="i"
+                  size="default"
+                  effect="light"
+                  class="analysis-tag-item"
+                  @click="copyTag(item.tag)"
+                >
+                  #{{ item.tag }}
+                  <span class="analysis-tag-meta">{{ item.category }}</span>
+                </el-tag>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div v-else-if="currentDetail.analysisStatus === 'analyzing'" style="text-align: center; padding: 60px 0">
-          <el-icon class="is-loading" :size="32"><i class="el-icon-loading" /></el-icon>
-          <p style="margin-top: 12px; color: var(--el-text-color-secondary)">AI 正在分析中...</p>
-        </div>
+          <div
+            v-else-if="currentDetail.analysisStatus === 'analyzing'"
+            style="text-align: center; padding: 60px 0"
+          >
+            <el-icon class="is-loading" :size="32"><i class="el-icon-loading" /></el-icon>
+            <p style="margin-top: 12px; color: var(--el-text-color-secondary)">AI 正在分析中...</p>
+          </div>
 
-        <div v-else-if="currentDetail.analysisStatus === 'failed'" style="text-align: center; padding: 60px 0">
-          <p style="color: var(--el-color-danger); font-size: 16px; margin-bottom: 8px">AI 分析失败</p>
-          <p v-if="currentDetail.analysis?.error" style="color: var(--el-text-color-secondary); font-size: 13px; max-width: 600px; margin: 0 auto 16px; word-break: break-all">
-            {{ currentDetail.analysis.error }}
-          </p>
-          <el-button size="small" type="primary" @click="handleTriggerAnalysis(currentDetail)">重试</el-button>
-        </div>
+          <div
+            v-else-if="currentDetail.analysisStatus === 'failed'"
+            style="text-align: center; padding: 60px 0"
+          >
+            <p style="color: var(--el-color-danger); font-size: 16px; margin-bottom: 8px">
+              AI 分析失败
+            </p>
+            <p
+              v-if="currentDetail.analysis?.error"
+              style="
+                color: var(--el-text-color-secondary);
+                font-size: 13px;
+                max-width: 600px;
+                margin: 0 auto 16px;
+                word-break: break-all;
+              "
+            >
+              {{ currentDetail.analysis.error }}
+            </p>
+            <el-button size="small" type="primary" @click="handleTriggerAnalysis(currentDetail)"
+              >重试</el-button
+            >
+          </div>
 
-        <div v-else style="text-align: center; padding: 60px 0">
-          <p style="color: var(--el-text-color-secondary)">尚未进行 AI 分析</p>
-          <el-button size="small" type="primary" :loading="analyzingId === currentDetail.id" @click="handleTriggerAnalysis(currentDetail)">开始分析</el-button>
-        </div>
-      </el-tab-pane>
+          <div v-else style="text-align: center; padding: 60px 0">
+            <p style="color: var(--el-text-color-secondary)">尚未进行 AI 分析</p>
+            <el-button
+              size="small"
+              type="primary"
+              :loading="analyzingId === currentDetail.id"
+              @click="handleTriggerAnalysis(currentDetail)"
+              >开始分析</el-button
+            >
+          </div>
+        </el-tab-pane>
       </el-tabs>
     </div>
     <el-empty v-else description="暂无详情" />
   </el-dialog>
-
 </template>
 
 <script setup lang="ts">
@@ -658,14 +801,37 @@ const gridOptions = ref<VxeGridProps<HotSearchCollectRecord>>({
   columns: [
     { type: "checkbox", width: 40 },
     { title: "时间", field: "fetchedAt", width: 140, slots: { default: "timeSlot" } },
-    { title: "状态", field: "status", width: 70, slots: { default: "statusSlot" } },
     { title: "平台", field: "platforms", width: 160, slots: { default: "platformsSlot" } },
-    { title: "条目", field: "itemCount", width: 60, align: "center", slots: { default: "countSlot" } },
-    { title: "成功率", field: "successCount", width: 65, align: "center", slots: { default: "rateSlot" } },
-    { title: "热点总结", field: "analysisStatus", minWidth: 450, slots: { default: "summarySlot" } },
+    {
+      title: "热点总结",
+      field: "analysisStatus",
+      minWidth: 550,
+      slots: { default: "summarySlot" },
+    },
     { title: "设计灵感", field: "analysisStatus", minWidth: 280, slots: { default: "designSlot" } },
     { title: "标签", field: "analysisStatus", minWidth: 220, slots: { default: "tagsSlot" } },
-    { title: "AI", field: "analysisStatus", width: 50, align: "center", slots: { default: "aiStatusSlot" } },
+    { title: "状态", field: "status", width: 70, slots: { default: "statusSlot" } },
+    {
+      title: "条目",
+      field: "itemCount",
+      width: 60,
+      align: "center",
+      slots: { default: "countSlot" },
+    },
+    {
+      title: "成功率",
+      field: "successCount",
+      width: 65,
+      align: "center",
+      slots: { default: "rateSlot" },
+    },
+    {
+      title: "AI",
+      field: "analysisStatus",
+      width: 50,
+      align: "center",
+      slots: { default: "aiStatusSlot" },
+    },
     buildOperationColumn("operationSlot", 80),
   ],
 });
@@ -1377,18 +1543,26 @@ onBeforeUnmount(() => {
 /* 表格内分析内容 - 紧凑 */
 .analysis-cell {
   padding: 2px 0;
+  overflow: hidden;
+  max-height: 96px;
 }
 .analysis-cell__summary {
   font-size: 12px;
   line-height: 1.6;
   color: var(--el-text-color-regular);
   margin-bottom: 4px;
-  white-space: pre-wrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-all;
 }
 .analysis-cell__topics {
   display: flex;
   flex-wrap: wrap;
   gap: 3px;
+  max-height: 50px;
+  overflow: hidden;
 }
 .analysis-cell__topic-tag {
   max-width: 120px;
@@ -1400,7 +1574,9 @@ onBeforeUnmount(() => {
   font-size: 12px;
   line-height: 1.5;
   border-bottom: 1px dashed var(--el-border-color-lighter);
-  &:last-child { border-bottom: none; }
+  &:last-child {
+    border-bottom: none;
+  }
 }
 .analysis-cell__design-source {
   color: var(--el-text-color-secondary);
@@ -1422,11 +1598,15 @@ onBeforeUnmount(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 3px;
+  max-height: 52px;
+  overflow: hidden;
 }
 .analysis-cell__tag {
   cursor: pointer;
   font-size: 11px;
-  &:hover { opacity: 0.8; }
+  &:hover {
+    opacity: 0.8;
+  }
 }
 .analysis-cell__more {
   font-size: 10px;
