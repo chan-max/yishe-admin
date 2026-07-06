@@ -220,15 +220,15 @@
                   </span>
                 </template>
 
-                <!-- 热点总结列 -->
+                <!-- 热点摘要列（精简版，与通知内容一致） -->
                 <template #summarySlot="{ row }">
                   <div v-if="row.analysisStatus === 'done' && row.analysis" class="analysis-cell">
-                    <div class="analysis-cell__summary">
+                    <div class="analysis-cell__summary analysis-cell__summary--compact">
                       {{ row.analysis.fullSummary || row.analysis.summary || "" }}
                     </div>
                     <div v-if="row.analysis.keyTopics?.length" class="analysis-cell__topics">
                       <el-tag
-                        v-for="(t, i) in row.analysis.keyTopics"
+                        v-for="(t, i) in row.analysis.keyTopics.slice(0, 3)"
                         :key="i"
                         size="small"
                         effect="plain"
@@ -238,6 +238,19 @@
                         class="analysis-cell__topic-tag"
                       >
                         {{ t.topic }}
+                      </el-tag>
+                      <span v-if="row.analysis.keyTopics.length > 3" class="text-gray-400 text-xs">+{{ row.analysis.keyTopics.length - 3 }}</span>
+                    </div>
+                    <div v-if="row.analysis.tags?.length || row.analysis.hotTags?.length" class="analysis-cell__tags analysis-cell__tags--compact">
+                      <el-tag
+                        v-for="(t, i) in (row.analysis.tags || row.analysis.hotTags || []).slice(0, 5)"
+                        :key="i"
+                        size="small"
+                        effect="light"
+                        class="analysis-cell__tag"
+                        @click.stop="copyTag(t.tag)"
+                      >
+                        #{{ t.tag }}
                       </el-tag>
                     </div>
                   </div>
@@ -802,6 +815,12 @@ const gridOptions = ref<VxeGridProps<HotSearchCollectRecord>>({
     { type: "checkbox", width: 40 },
     { title: "时间", field: "fetchedAt", width: 140, slots: { default: "timeSlot" } },
     { title: "平台", field: "platforms", width: 160, slots: { default: "platformsSlot" } },
+    {
+      title: "热点摘要",
+      field: "analysisStatus",
+      minWidth: 400,
+      slots: { default: "summarySlot" },
+    },
     { title: "状态", field: "status", width: 70, slots: { default: "statusSlot" } },
     {
       title: "条目",
@@ -1548,6 +1567,10 @@ onBeforeUnmount(() => {
   -webkit-box-orient: vertical;
   overflow: hidden;
   word-break: break-all;
+}
+.analysis-cell__summary--compact {
+  -webkit-line-clamp: 2;
+  margin-bottom: 4px;
 }
 .analysis-cell__topics {
   display: flex;
