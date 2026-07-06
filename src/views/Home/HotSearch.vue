@@ -802,14 +802,6 @@ const gridOptions = ref<VxeGridProps<HotSearchCollectRecord>>({
     { type: "checkbox", width: 40 },
     { title: "时间", field: "fetchedAt", width: 140, slots: { default: "timeSlot" } },
     { title: "平台", field: "platforms", width: 160, slots: { default: "platformsSlot" } },
-    {
-      title: "热点总结",
-      field: "analysisStatus",
-      minWidth: 550,
-      slots: { default: "summarySlot" },
-    },
-    { title: "设计灵感", field: "analysisStatus", minWidth: 280, slots: { default: "designSlot" } },
-    { title: "标签", field: "analysisStatus", minWidth: 220, slots: { default: "tagsSlot" } },
     { title: "状态", field: "status", width: 70, slots: { default: "statusSlot" } },
     {
       title: "条目",
