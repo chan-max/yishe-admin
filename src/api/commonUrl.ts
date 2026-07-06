@@ -18,6 +18,7 @@ export interface CommonUrl {
   icon?: string
   sort?: number
   isActive?: boolean
+  folderId?: string | null
   userId?: string
   user?: {
     id: string
@@ -54,6 +55,7 @@ export interface UpdateCommonUrlDto {
 export interface CommonUrlPageParams {
   page: number
   pageSize: number
+  folderId?: string | null
 }
 
 export function getCommonUrlList(data: CommonUrlPageParams) {
@@ -101,5 +103,12 @@ export function getCommonUrlByCategory(category: string, data: CommonUrlPagePara
   return request.get({
     url: `/common-url/category/${category}`,
     params: data,
+  });
+}
+
+export function batchMoveCommonUrl(data: { ids: string[]; folderId: string | null }) {
+  return request.post({
+    url: '/common-url/batch-move',
+    data,
   });
 }

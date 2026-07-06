@@ -1,21 +1,91 @@
 <template>
   <ContentWrap :plain="true">
-    <ListPageLayout class="common-url-page">
+    <ListPageLayout
+      class="common-url-page"
+      :sidebar-width="folderTreeCollapsed ? '28px' : '280px'"
+    >
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
-          <div class="list-page-search-form__actions">
-            <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">新增</el-button>
-            <el-button
-              size="small"
-              type="danger"
-              :icon="Delete"
-              :disabled="!ids.length"
-              :loading="deleteLoading"
-              @click="handleDelete(null)"
-            >
-              批量删除 ({{ ids.length }})
-            </el-button>
+          <el-form :model="queryParams" label-position="top" class="list-page-search-form">
+            <el-row :gutter="12" class="list-page-search-form__row">
+              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="10" :lg="8">
+                <el-form-item label="搜索">
+                  <el-input
+                    v-model="queryParams.searchKeyword"
+                    size="small"
+                    placeholder="搜索名称、链接、描述、关键字"
+                    clearable
+                    @keyup.enter="handleSearch"
+                    @clear="handleSearch"
+                  >
+                    <template #prefix>
+                      <el-icon><Search /></el-icon>
+                    </template>
+                  </el-input>
+                </el-form-item>
+              </el-col>
+              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="8" :lg="6">
+                <el-form-item label="时间范围">
+                  <DateRangePicker
+                    @change="
+                      (val) => {
+                        queryParams.startTime = val.start;
+                        queryParams.endTime = val.end;
+                        getList();
+                      }
+                    "
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <div class="list-page-search-form__actions">
+              <el-button size="small" type="primary" @click="handleSearch" :icon="Search" :loading="loading">搜索</el-button>
+              <el-button size="small" :disabled="loading" @click="handleReset">重置</el-button>
+              <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">新增</el-button>
+              <el-button
+                size="small"
+                type="danger"
+                :icon="Delete"
+                :disabled="!ids.length"
+                :loading="deleteLoading"
+                @click="handleDelete(null)"
+              >
+                批量删除 ({{ ids.length }})
+              </el-button>
+            </div>
+          </el-form>
+        </div>
+      </template>
+
+      <template #sidebar>
+        <div
+          class="list-page-panel list-page-panel--flat list-page-sidebar common-url-sidebar folder-sidebar-shell"
+        >
+          <div class="list-page-sidebar__body folder-sidebar-body">
+            <div v-show="!folderTreeCollapsed" class="folder-sidebar-tree">
+              <FolderTree
+                v-model="selectedFolderId"
+                width="100%"
+                :folder-category="FOLDER_CATEGORY"
+                :show-count="false"
+                :drag-state="dragState"
+                @change="handleFolderChange"
+                @folder-drag-over="handleFolderDragOver"
+                @folder-drag-leave="handleFolderDragLeave"
+                @folder-drop="handleFolderDrop"
+              />
+            </div>
           </div>
+          <button
+            type="button"
+            class="folder-sidebar-toggle"
+            @click="folderTreeCollapsed = !folderTreeCollapsed"
+          >
+            <el-icon :size="14">
+              <DArrowRight v-if="folderTreeCollapsed" />
+              <DArrowLeft v-else />
+            </el-icon>
+          </button>
         </div>
       </template>
 
@@ -26,12 +96,16 @@
           <div class="list-page-table-panel__body">
             <div class="common-table">
               <vxe-grid
+                class="common-url-dnd-grid dnd-text-selectable"
                 v-bind="gridOptions"
                 :data="dataSource"
                 :loading="loading"
                 @checkbox-change="checkboxChange"
                 @checkbox-all="checkboxAllChange"
               >
+        <template #dragHandleSlot>
+          <TableRowDragHandle />
+        </template>
         <template #operationDefaultSlot="{ row }">
           <div class="flex justify-start">
             <el-dropdown class="operation-dropdown" placement="bottom-end">
@@ -217,19 +291,34 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watchEffect } from 'vue'
+import { ref, reactive, onMounted, watchEffect, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Plus } from '@element-plus/icons-vue'
-import { getCommonUrlList, createCommonUrl, updateCommonUrl, deleteCommonUrl } from '@/api/commonUrl'
+import { Delete, Plus, Search, DArrowLeft, DArrowRight } from '@element-plus/icons-vue'
+import { getCommonUrlList, createCommonUrl, updateCommonUrl, deleteCommonUrl, batchMoveCommonUrl } from '@/api/commonUrl'
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from '@/common/table'
-import { useWindowSize } from '@vueuse/core'
+import { useWindowSize, useLocalStorage } from '@vueuse/core'
 import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
 import ListPageLayout from '@/components/ListPageLayout/index.vue'
 import Pagination from '@/components/Pagination/index.vue'
+import FolderTree from '@/components/material/FolderTree.vue'
+import TableRowDragHandle from '@/components/TableRowDragHandle/index.vue'
+import DateRangePicker from '@/components/DateRangePicker.vue'
+import { useFolderRowDrag } from '@/hooks/useFolderRowDrag'
+import { FOLDER_FILTER, convertFolderIdToApiParam } from '@/constants/folder'
+import { formatTimestamp } from '@/common/date'
 
+const FOLDER_CATEGORY = 'commonurl'
+const folderTreeCollapsed = useLocalStorage('common_url_folder_collapsed', false)
+const selectedFolderId = ref<string | null>('__all__')
+
+// 查询条件
 const queryParams = reactive({
   currentPage: 1,
-  pageSize: 20
+  pageSize: 20,
+  startTime: '',
+  endTime: '',
+  searchKeyword: '',
+  folderId: null as string | null,
 })
 
 // 获取窗口尺寸
@@ -238,6 +327,16 @@ const { height } = useWindowSize()
 const gridOptions = ref({
   ...commonGridOptions,
   columns: [
+    {
+      title: '',
+      field: 'dragHandle',
+      width: 40,
+      showOverflow: false,
+      align: 'center',
+      slots: {
+        default: 'dragHandleSlot',
+      },
+    },
     { type: 'checkbox', width: 50 },
     // { title: 'ID', field: 'id', width: 80 },
     { title: '网址名称', field: 'name', minWidth: 200, slots: { default: 'nameSlot' } },
@@ -291,6 +390,95 @@ const form = ref<{
 })
 const submitLoading = ref(false)
 
+// 拖拽状态（拖网址 -> 文件夹）
+const {
+  dragState,
+  setupRowDrag,
+  handleFolderDragOver,
+  handleFolderDragLeave,
+  resetAfterDrop,
+  markExternalFolderDropHandled,
+} = useFolderRowDrag({
+  gridClass: 'common-url-dnd-grid',
+  dataSource,
+  selectedIds: ids,
+  onDropToFolder: handleFolderDrop,
+})
+
+async function getList() {
+  loading.value = true
+  try {
+    const params = {
+      page: queryParams.currentPage,
+      pageSize: queryParams.pageSize,
+      searchKeyword: queryParams.searchKeyword || undefined,
+      folderId: convertFolderIdToApiParam(queryParams.folderId) as string | null | undefined,
+      startTime: queryParams.startTime || undefined,
+      endTime: queryParams.endTime || undefined,
+    }
+    const res = await getCommonUrlList(params)
+    dataSource.value = res.list || []
+    total.value = res.total || 0
+    ids.value = []
+  } catch (error) {
+    console.error('获取列表失败:', error)
+    ElMessage.error('获取列表失败')
+  } finally {
+    loading.value = false
+    nextTick(setupRowDrag)
+  }
+}
+
+function handleSearch() {
+  queryParams.currentPage = 1
+  getList()
+}
+
+function handleReset() {
+  queryParams.searchKeyword = ''
+  queryParams.startTime = ''
+  queryParams.endTime = ''
+  queryParams.currentPage = 1
+  getList()
+}
+
+function handleFolderChange(payload: { folderId: string | null }) {
+  if (payload.folderId === '__all__') {
+    queryParams.folderId = FOLDER_FILTER.ALL
+  } else if (payload.folderId === null) {
+    queryParams.folderId = FOLDER_FILTER.NOT_GROUP
+  } else {
+    queryParams.folderId = payload.folderId
+  }
+  queryParams.currentPage = 1
+  getList()
+}
+
+async function handleFolderDrop(payload: { data: any }) {
+  markExternalFolderDropHandled()
+  if (!dragState.draggingIds.length) return
+  if (payload.data.id === FOLDER_FILTER.ALL) return
+
+  const targetFolderId =
+    payload.data.id === FOLDER_FILTER.NOT_GROUP ? FOLDER_FILTER.NOT_GROUP : payload.data.id
+  const targetPath = payload.data.path || ''
+  const movingIds = [...dragState.draggingIds]
+
+  try {
+    await batchMoveCommonUrl({
+      ids: movingIds.map(String),
+      folderId: convertFolderIdToApiParam(targetFolderId) as string,
+    })
+    ElMessage.success(`已移动 ${movingIds.length} 条网址到 ${targetPath || '未分组'}`)
+    await getList()
+    ids.value = []
+  } catch (error) {
+    ElMessage.error((error as Error).message || '移动失败')
+  } finally {
+    resetAfterDrop()
+  }
+}
+
 // 获取分类标签类型
 function getCategoryTagType(category: string) {
   const typeMap: Record<string, string> = {
@@ -321,25 +509,6 @@ function formatDateTime(dateStr: string) {
     minute: '2-digit',
     second: '2-digit'
   })
-}
-
-async function getList() {
-  loading.value = true
-  try {
-    const params = { 
-      page: queryParams.currentPage,
-      pageSize: queryParams.pageSize
-    }
-    const res = await getCommonUrlList(params)
-    dataSource.value = res.list || []
-    total.value = res.total || 0
-    ids.value = []
-  } catch (error) {
-    console.error('获取列表失败:', error)
-    ElMessage.error('获取列表失败')
-  } finally {
-    loading.value = false
-  }
 }
 
 function handleAdd() {
@@ -534,6 +703,10 @@ const submitForm = async () => {
 
 :deep(.common-url-page .list-page-table-panel__pagination--flat) {
   padding-top: 10px;
+}
+
+.common-url-sidebar {
+  min-height: 100%;
 }
 
 .text-wrap {

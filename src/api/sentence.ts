@@ -41,4 +41,11 @@ export function aiAnalyzeSentence(id: number, prompt?: string) {
     url: '/sentences/ai-analyze',
     data: { id, prompt }
   });
+}
+
+export function batchMoveSentence(data: { ids: number[]; folderId: string | null }) {
+  return request.post({
+    url: '/sentences/batch-move',
+    data,
+  });
 } 

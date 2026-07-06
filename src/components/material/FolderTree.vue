@@ -229,6 +229,10 @@ function getBindingLabel() {
       return "字体模板";
     case "psdtemplate":
       return "PSD模板";
+    case "commonurl":
+      return "网址";
+    case "sentence":
+      return "文案";
     default:
       return "素材";
   }

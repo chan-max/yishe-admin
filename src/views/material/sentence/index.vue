@@ -1,19 +1,27 @@
 <template>
   <ContentWrap :plain="true">
-    <ListPageLayout class="sentence-page">
+    <ListPageLayout
+      class="sentence-page"
+      :sidebar-width="folderTreeCollapsed ? '28px' : '280px'"
+    >
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
           <el-form :model="queryParams" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="8" :lg="6" :xl="5">
-                <el-form-item label="句子内容">
+                <el-form-item label="搜索">
                   <el-input
                     v-model="queryParams.search"
                     size="small"
-                    placeholder="请输入句子内容关键词"
+                    placeholder="搜索句子内容、描述、关键词"
                     clearable
-                    @change="(val) => { if (!val) getList(); }"
-                  />
+                    @keyup.enter="handleSearch"
+                    @clear="handleSearch"
+                  >
+                    <template #prefix>
+                      <el-icon><Search /></el-icon>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4" :xl="3">
@@ -23,7 +31,7 @@
                     size="small"
                     placeholder="请选择状态"
                     clearable
-                    @change="getList"
+                    @change="handleSearch"
                   >
                     <el-option label="全部" :value="null" />
                     <el-option label="已发布" :value="true" />
@@ -33,10 +41,9 @@
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="getList">搜索</el-button>
-              <el-button v-if="isAdmin" size="small" type="primary" :icon="Plus" @click="handleAdd">
-                添加句子
-              </el-button>
+              <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="handleSearch">搜索</el-button>
+              <el-button size="small" :disabled="loading" @click="handleReset">重置</el-button>
+              <el-button v-if="isAdmin" size="small" type="primary" :icon="Plus" @click="handleAdd">添加句子</el-button>
               <el-button v-if="isAdmin" size="small" type="warning" :loading="batchActionLoading" @click="handleBatchPublish" :disabled="!ids.length">
                 批量发布({{ ids.length }})
               </el-button>
@@ -59,17 +66,53 @@
         </div>
       </template>
 
+      <template #sidebar>
+        <div
+          class="list-page-panel list-page-panel--flat list-page-sidebar sentence-sidebar folder-sidebar-shell"
+        >
+          <div class="list-page-sidebar__body folder-sidebar-body">
+            <div v-show="!folderTreeCollapsed" class="folder-sidebar-tree">
+              <FolderTree
+                v-model="selectedFolderId"
+                width="100%"
+                :folder-category="FOLDER_CATEGORY"
+                :show-count="false"
+                :drag-state="dragState"
+                @change="handleFolderChange"
+                @folder-drag-over="handleFolderDragOver"
+                @folder-drag-leave="handleFolderDragLeave"
+                @folder-drop="handleFolderDrop"
+              />
+            </div>
+          </div>
+          <button
+            type="button"
+            class="folder-sidebar-toggle"
+            @click="folderTreeCollapsed = !folderTreeCollapsed"
+          >
+            <el-icon :size="14">
+              <DArrowRight v-if="folderTreeCollapsed" />
+              <DArrowLeft v-else />
+            </el-icon>
+          </button>
+        </div>
+      </template>
+
       <template #table>
         <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
           <div class="list-page-table-panel__body">
             <div class="common-table">
       <vxe-grid
+        class="sentence-dnd-grid dnd-text-selectable"
         v-bind="gridOptions"
         :data="dataSource"
         :loading="loading"
         @checkbox-change="checkboxChange"
         @checkbox-all="checkboxAllChange"
       >
+        <template #dragHandleSlot>
+          <TableRowDragHandle />
+        </template>
         <template #operationDefaultSlot="{ row }">
           <div class="flex items-center">
             <el-dropdown
@@ -258,7 +301,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watchEffect } from "vue";
+import { ref, reactive, onMounted, watchEffect, nextTick } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
   Search,
@@ -269,6 +312,8 @@ import {
   Upload,
   Download,
   Loading,
+  DArrowLeft,
+  DArrowRight,
 } from "@element-plus/icons-vue";
 import {
   getSentenceList,
@@ -276,20 +321,26 @@ import {
   updateSentence,
   deleteSentence,
   aiAnalyzeSentence,
+  batchMoveSentence,
 } from "@/api/sentence";
 import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import Pagination from "@/components/Pagination/index.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
-import { useWindowSize } from "@vueuse/core";
+import FolderTree from "@/components/material/FolderTree.vue";
+import TableRowDragHandle from "@/components/TableRowDragHandle/index.vue";
+import { useWindowSize, useLocalStorage } from "@vueuse/core";
 import { useUserStore } from "@/store/modules/user";
 import { computed } from "vue";
+import { useFolderRowDrag } from "@/hooks/useFolderRowDrag";
+import { FOLDER_FILTER, convertFolderIdToApiParam } from "@/constants/folder";
+
+const FOLDER_CATEGORY = "sentence";
+const folderTreeCollapsed = useLocalStorage("sentence_folder_collapsed", false);
+const selectedFolderId = ref<string | null>("__all__");
 
 const userStore = useUserStore();
-
-// 判断是否为管理员
 const isAdmin = computed(() => userStore.user?.isAdmin ?? false);
-
 const { height } = useWindowSize();
 
 const queryParams = reactive({
@@ -297,6 +348,7 @@ const queryParams = reactive({
   pageSize: 20,
   search: "",
   isPublish: null,
+  folderId: null as string | null,
 });
 
 const gridOptions = ref({
@@ -305,6 +357,14 @@ const gridOptions = ref({
   rowConfig: { keyField: "id" },
   checkboxConfig: { reserve: true },
   columns: [
+    {
+      title: "",
+      field: "dragHandle",
+      width: 40,
+      showOverflow: false,
+      align: "center",
+      slots: { default: "dragHandleSlot" },
+    },
     { type: "checkbox", width: 50, ellipsis: true, reserve: true },
     { title: "ID", field: "id", width: 80 },
     {
@@ -378,6 +438,21 @@ const deleteLoading = ref(false);
 const batchActionLoading = ref(false);
 const editId = ref<string | null>(null);
 
+// 拖拽状态（拖文案 -> 文件夹）
+const {
+  dragState,
+  setupRowDrag,
+  handleFolderDragOver,
+  handleFolderDragLeave,
+  resetAfterDrop,
+  markExternalFolderDropHandled,
+} = useFolderRowDrag({
+  gridClass: "sentence-dnd-grid",
+  dataSource,
+  selectedIds: ids,
+  onDropToFolder: handleFolderDrop,
+});
+
 // AI分析相关
 const aiAnalyzeDialogVisible = ref(false);
 const aiAnalyzePrompt = ref("");
@@ -402,7 +477,10 @@ function formatDateTime(dateStr: string) {
 async function getList() {
   loading.value = true;
   try {
-    const params = { ...queryParams };
+    const params = {
+      ...queryParams,
+      folderId: convertFolderIdToApiParam(queryParams.folderId) as string | null | undefined,
+    };
     const res = await getSentenceList(params);
     dataSource.value = res.list || [];
     total.value = res.total || 0;
@@ -412,6 +490,56 @@ async function getList() {
     ElMessage.error("获取列表失败");
   } finally {
     loading.value = false;
+    nextTick(setupRowDrag);
+  }
+}
+
+function handleSearch() {
+  queryParams.currentPage = 1;
+  getList();
+}
+
+function handleReset() {
+  queryParams.search = "";
+  queryParams.isPublish = null;
+  queryParams.currentPage = 1;
+  getList();
+}
+
+function handleFolderChange(payload: { folderId: string | null }) {
+  if (payload.folderId === "__all__") {
+    queryParams.folderId = FOLDER_FILTER.ALL;
+  } else if (payload.folderId === null) {
+    queryParams.folderId = FOLDER_FILTER.NOT_GROUP;
+  } else {
+    queryParams.folderId = payload.folderId;
+  }
+  queryParams.currentPage = 1;
+  getList();
+}
+
+async function handleFolderDrop(payload: { data: any }) {
+  markExternalFolderDropHandled();
+  if (!dragState.draggingIds.length) return;
+  if (payload.data.id === FOLDER_FILTER.ALL) return;
+
+  const targetFolderId =
+    payload.data.id === FOLDER_FILTER.NOT_GROUP ? FOLDER_FILTER.NOT_GROUP : payload.data.id;
+  const targetPath = payload.data.path || "";
+  const movingIds = [...dragState.draggingIds];
+
+  try {
+    await batchMoveSentence({
+      ids: movingIds.map(Number),
+      folderId: convertFolderIdToApiParam(targetFolderId) as string,
+    });
+    ElMessage.success(`已移动 ${movingIds.length} 条文案到 ${targetPath || "未分组"}`);
+    await getList();
+    ids.value = [];
+  } catch (error) {
+    ElMessage.error((error as Error).message || "移动失败");
+  } finally {
+    resetAfterDrop();
   }
 }
 
@@ -696,6 +824,10 @@ const submitForm = async () => {
 
 :deep(.sentence-page .list-page-table-panel__pagination--flat) {
   padding-top: 10px;
+}
+
+.sentence-sidebar {
+  min-height: 100%;
 }
 
 /* 句子内容样式优化 */
