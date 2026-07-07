@@ -124,6 +124,12 @@
                       </el-icon>
                       重命名
                     </el-dropdown-item>
+                    <el-dropdown-item command="move">
+                      <el-icon>
+                        <FolderChecked />
+                      </el-icon>
+                      移动到
+                    </el-dropdown-item>
                     <el-dropdown-item command="delete" divided>
                       <el-icon>
                         <Delete />
@@ -138,18 +144,59 @@
         </template>
       </el-tree>
     </div>
+
+    <!-- 移动文件夹对话框 -->
+    <el-dialog
+      v-model="moveDialogVisible"
+      title="移动文件夹"
+      width="560px"
+      :close-on-click-modal="false"
+      append-to-body
+    >
+      <div class="move-folder-dialog">
+        <div class="move-folder-dialog__label">选择目标位置</div>
+        <el-tree
+          :data="moveTargetTreeData"
+          :props="{ children: 'children', label: 'name' }"
+          node-key="id"
+          :expand-on-click-node="false"
+          :current-node-key="moveTargetFolderId"
+          :default-expand-all="true"
+          highlight-current
+          class="move-folder-tree"
+          @current-change="handleMoveTargetChange"
+        >
+          <template #default="{ data }">
+            <div class="move-folder-tree__node">
+              <el-icon v-if="data.isRoot" style="margin-right: 6px; color: var(--el-color-primary)">
+                <Folder />
+              </el-icon>
+              <img v-else src="/img/folder-close.svg" class="move-folder-tree__icon" alt="folder" />
+              <span>{{ data.name }}</span>
+            </div>
+          </template>
+        </el-tree>
+      </div>
+      <template #footer>
+        <el-button @click="moveDialogVisible = false">取消</el-button>
+        <el-button type="primary" :disabled="moveTargetFolderId === undefined" @click="confirmMove">
+          确定
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { FolderAdd, MoreFilled, Edit, Delete, Files, CaretRight } from "@element-plus/icons-vue";
+import { FolderAdd, MoreFilled, Edit, Delete, Files, CaretRight, FolderChecked, Folder } from "@element-plus/icons-vue";
 import {
   createStickerFolder,
   deleteStickerFolder,
   getStickerFolderTree,
   renameStickerFolder,
+  moveStickerFolder,
 } from "@/api/material";
 import { FOLDER_FILTER } from "@/constants/folder";
 
@@ -200,6 +247,12 @@ const rawTreeData = ref<any[]>([]);
 const searchKeyword = ref("");
 const lastDragOverFolderId = ref<string | null>(null);
 const isSearching = computed(() => searchKeyword.value.trim().length > 0);
+
+// 移动文件夹相关状态
+const moveDialogVisible = ref(false);
+const moveTargetFolderId = ref<string | null | undefined>(undefined);
+const movingFolderId = ref<string | null>(null);
+const movingFolderName = ref("");
 const displayTreeData = computed(() => {
   if (!isSearching.value) {
     return rawTreeData.value;
@@ -215,6 +268,25 @@ const expandedKeys = computed(() => {
 
 function getDefaultCurrentKey() {
   return props.mode === "select" ? FOLDER_FILTER.NOT_GROUP : FOLDER_FILTER.ALL;
+}
+
+// 移动目标文件夹树（排除当前文件夹及其子文件夹）
+const moveTargetTreeData = computed(() => {
+  const rootItem = { id: null as string | null, name: "根目录（顶层）", isRoot: true, children: [] as any[] };
+  // 过滤掉当前正在移动的文件夹及其子文件夹
+  const filtered = filterExcludedFolders(rawTreeData.value, movingFolderId.value);
+  rootItem.children = filtered.filter((f: any) => f.id !== FOLDER_FILTER.ALL && f.id !== FOLDER_FILTER.NOT_GROUP);
+  return [rootItem];
+});
+
+function filterExcludedFolders(nodes: FolderNode[], excludeId: string | null): FolderNode[] {
+  if (!excludeId) return nodes;
+  return nodes
+    .filter((node) => node.id !== excludeId)
+    .map((node) => ({
+      ...node,
+      children: filterExcludedFolders(node.children || [], excludeId),
+    }));
 }
 
 function getBindingLabel() {
@@ -468,6 +540,11 @@ async function handleCommand(command: string, data: any) {
     } catch (error) {
       if (error !== "cancel") console.error(error);
     }
+  } else if (command === "move") {
+    movingFolderId.value = String(data.id);
+    movingFolderName.value = data.name;
+    moveTargetFolderId.value = undefined;
+    moveDialogVisible.value = true;
   }
 }
 
@@ -494,6 +571,27 @@ function handleTreeDragLeave(evt?: DragEvent) {
 function handleFolderDrop(data: any) {
   lastDragOverFolderId.value = null;
   emit("folder-drop", { data });
+}
+
+function handleMoveTargetChange(data: any) {
+  moveTargetFolderId.value = data.id;
+}
+
+async function confirmMove() {
+  if (!movingFolderId.value || moveTargetFolderId.value === undefined) return;
+
+  try {
+    await moveStickerFolder({
+      id: movingFolderId.value,
+      parentId: moveTargetFolderId.value,
+      folderCategory: props.folderCategory,
+    });
+    ElMessage.success(`文件夹「${movingFolderName.value}」已移动`);
+    moveDialogVisible.value = false;
+    loadTree();
+  } catch (error: any) {
+    ElMessage.error(error?.message || "移动失败");
+  }
 }
 
 onMounted(loadTree);
@@ -881,6 +979,44 @@ watch(
         font-size: 12px;
       }
     }
+  }
+}
+
+.move-folder-dialog {
+  .move-folder-dialog__label {
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
+    margin-bottom: 12px;
+  }
+
+  .move-folder-tree {
+    max-height: 500px;
+    overflow-y: auto;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 8px;
+    padding: 8px;
+
+    :deep(.el-tree-node__content) {
+      height: 32px;
+      border-radius: 6px;
+    }
+
+    :deep(.el-tree-node.is-current > .el-tree-node__content) {
+      background: var(--el-color-primary-light-9);
+    }
+  }
+
+  .move-folder-tree__node {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+  }
+
+  .move-folder-tree__icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+    flex-shrink: 0;
   }
 }
 </style>

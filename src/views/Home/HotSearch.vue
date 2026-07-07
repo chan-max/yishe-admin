@@ -189,11 +189,11 @@
                 <!-- 平台列表 -->
                 <template #platformsSlot="{ row }">
                   <div class="inline-chip-list">
-                    <span v-for="p in (row.platforms || []).slice(0, 5)" :key="p" class="info-chip">
+                    <span v-for="p in (row.platforms || []).slice(0, 8)" :key="p" class="info-chip">
                       {{ platformNameMap[p] || p }}
                     </span>
-                    <span v-if="(row.platforms || []).length > 5" class="info-chip info-chip--more">
-                      +{{ row.platforms.length - 5 }}
+                    <span v-if="(row.platforms || []).length > 8" class="info-chip info-chip--more">
+                      +{{ row.platforms.length - 8 }}
                     </span>
                   </div>
                 </template>
@@ -542,14 +542,18 @@
                   <div class="analysis-design-element">{{ de.element }}</div>
                   <div class="analysis-design-suggestion">💡 {{ de.suggestion }}</div>
                   <div class="analysis-design-products">
-                    <el-tag
-                      v-for="p in de.products"
-                      :key="p"
-                      size="small"
-                      effect="plain"
-                      type="success"
-                      >{{ p }}</el-tag
+                    <el-tooltip
+                      v-for="(p, pi) in de.products"
+                      :key="pi"
+                      :content="typeof p === 'object' ? p.reason : ''"
+                      placement="top"
                     >
+                      <el-tag
+                        size="small"
+                        effect="plain"
+                        type="success"
+                      >{{ typeof p === 'object' ? p.name : p }}</el-tag>
+                    </el-tooltip>
                   </div>
                   <div class="analysis-design-meta">
                     <span>受众: {{ de.audience }}</span>
@@ -763,7 +767,6 @@ const ALL_PLATFORMS: PlatformDef[] = [
   { key: "v2ex", name: "V2EX", environment: "direct" },
   { key: "36kr", name: "36氪", environment: "direct" },
   { key: "huxiu", name: "虎嗅", environment: "direct" },
-  { key: "sspai", name: "少数派", environment: "direct" },
   { key: "ithome", name: "IT之家", environment: "direct" },
   { key: "taobao_hot", name: "淘宝热搜", environment: "direct" },
   { key: "jd_hot", name: "京东热搜", environment: "direct" },
@@ -772,26 +775,19 @@ const ALL_PLATFORMS: PlatformDef[] = [
   { key: "github", name: "GitHub", environment: "direct" },
   { key: "wikipedia", name: "维基百科", environment: "direct" },
   { key: "devto", name: "Dev.to", environment: "direct" },
-  { key: "npm_trending", name: "npm Trending", environment: "direct" },
   { key: "google_trends", name: "Google Trends", environment: "proxy" },
   { key: "hackernews", name: "Hacker News", environment: "proxy" },
-  { key: "reddit", name: "Reddit", environment: "proxy" },
-  { key: "producthunt", name: "Product Hunt", environment: "proxy" },
   { key: "bbc_news", name: "BBC News", environment: "proxy" },
   { key: "cnn", name: "CNN", environment: "proxy" },
   { key: "nytimes", name: "New York Times", environment: "proxy" },
   { key: "guardian", name: "The Guardian", environment: "proxy" },
-  { key: "reuters", name: "Reuters", environment: "proxy" },
   { key: "aljazeera", name: "Al Jazeera", environment: "proxy" },
   { key: "yahoo_news", name: "Yahoo News", environment: "proxy" },
   { key: "medium", name: "Medium", environment: "proxy" },
-  { key: "quora", name: "Quora", environment: "proxy" },
-  { key: "flipboard", name: "Flipboard", environment: "proxy" },
   // 电商平台（需代理）
   { key: "amazon_bestsellers", name: "Amazon 畅销榜", environment: "proxy" },
   { key: "aliexpress_popular", name: "AliExpress 热门", environment: "proxy" },
   { key: "ebay_trending", name: "eBay Trending", environment: "proxy" },
-  { key: "etsy_trending", name: "Etsy Trending", environment: "proxy" },
   { key: "shopify_trending", name: "Shopify Trending", environment: "proxy" },
 ];
 
@@ -813,33 +809,33 @@ const gridOptions = ref<VxeGridProps<HotSearchCollectRecord>>({
   checkboxConfig: { reserve: true },
   columns: [
     { type: "checkbox", width: 40 },
-    { title: "时间", field: "fetchedAt", width: 140, slots: { default: "timeSlot" } },
-    { title: "平台", field: "platforms", width: 160, slots: { default: "platformsSlot" } },
+    { title: "时间", field: "fetchedAt", width: 120, slots: { default: "timeSlot" } },
+    { title: "平台", field: "platforms", width: 180, slots: { default: "platformsSlot" } },
     {
       title: "热点摘要",
       field: "analysisStatus",
-      minWidth: 400,
+      minWidth: 360,
       slots: { default: "summarySlot" },
     },
     { title: "状态", field: "status", width: 70, slots: { default: "statusSlot" } },
     {
       title: "条目",
       field: "itemCount",
-      width: 60,
+      width: 55,
       align: "center",
       slots: { default: "countSlot" },
     },
     {
       title: "成功率",
       field: "successCount",
-      width: 65,
+      width: 60,
       align: "center",
       slots: { default: "rateSlot" },
     },
     {
       title: "AI",
       field: "analysisStatus",
-      width: 50,
+      width: 46,
       align: "center",
       slots: { default: "aiStatusSlot" },
     },
@@ -868,7 +864,6 @@ const formatDateTime = (v: any) => {
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
-    second: "2-digit",
   });
 };
 
@@ -883,7 +878,8 @@ const loadList = async () => {
   loading.value = true;
   try {
     const res = await pageHotsearch({ currentPage: pageNo.value, pageSize: pageSize.value });
-    tableData.value = res.list || [];
+    // 过滤掉全部失败的记录
+    tableData.value = (res.list || []).filter((r) => r.status !== "failed");
     total.value = res.total || 0;
     selectedIds.value = [];
   } catch {
@@ -1198,13 +1194,13 @@ onBeforeUnmount(() => {
 }
 
 :deep(.hotsearch-page .common-table__body-cell) {
-  padding-top: 4px !important;
-  padding-bottom: 4px !important;
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
 }
 
 :deep(.hotsearch-page .vxe-body--column .vxe-cell) {
-  padding-top: 6px;
-  padding-bottom: 6px;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 
 /* 列表操作区 */
@@ -1221,11 +1217,11 @@ onBeforeUnmount(() => {
   gap: 2px;
 }
 .primary-cell__title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
 }
 .primary-cell__meta {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--el-text-color-secondary);
   font-family: monospace;
 }
@@ -1233,14 +1229,15 @@ onBeforeUnmount(() => {
 .inline-chip-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 3px;
 }
 .info-chip {
   display: inline-block;
-  padding: 1px 8px;
-  border-radius: 4px;
+  padding: 0 6px;
+  border-radius: 3px;
   background: var(--el-fill-color-light);
-  font-size: 12px;
+  font-size: 11px;
+  line-height: 18px;
   color: var(--el-text-color-regular);
 }
 .info-chip--more {
@@ -1248,7 +1245,7 @@ onBeforeUnmount(() => {
 }
 
 .metric-badge {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--el-text-color-secondary);
 }
@@ -1259,10 +1256,12 @@ onBeforeUnmount(() => {
 .text-success {
   color: var(--el-color-success);
   font-weight: 600;
+  font-size: 12px;
 }
 .text-warning {
   color: var(--el-color-warning);
   font-weight: 600;
+  font-size: 12px;
 }
 
 .table-operation-cell__actions {
@@ -1555,33 +1554,36 @@ onBeforeUnmount(() => {
 .analysis-cell {
   padding: 2px 0;
   overflow: hidden;
-  max-height: 96px;
+  max-height: 80px;
 }
 .analysis-cell__summary {
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: 11px;
+  line-height: 1.5;
   color: var(--el-text-color-regular);
-  margin-bottom: 4px;
+  margin-bottom: 3px;
   display: -webkit-box;
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   word-break: break-all;
 }
 .analysis-cell__summary--compact {
   -webkit-line-clamp: 2;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 .analysis-cell__topics {
   display: flex;
   flex-wrap: wrap;
-  gap: 3px;
-  max-height: 50px;
+  gap: 2px;
+  max-height: 40px;
   overflow: hidden;
 }
 .analysis-cell__topic-tag {
-  max-width: 120px;
-  font-size: 11px;
+  max-width: 100px;
+  font-size: 10px;
+  padding: 0 4px;
+  height: 18px;
+  line-height: 18px;
 }
 /* 表格内设计灵感 - 单行紧凑 */
 .analysis-cell__design-row {
@@ -1612,13 +1614,16 @@ onBeforeUnmount(() => {
 .analysis-cell__tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 3px;
-  max-height: 52px;
+  gap: 2px;
+  max-height: 40px;
   overflow: hidden;
 }
 .analysis-cell__tag {
   cursor: pointer;
-  font-size: 11px;
+  font-size: 10px;
+  padding: 0 4px;
+  height: 18px;
+  line-height: 18px;
   &:hover {
     opacity: 0.8;
   }
