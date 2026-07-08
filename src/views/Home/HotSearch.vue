@@ -11,7 +11,7 @@
           <span class="schedule-bar__info">
             {{ getClientLabel(currentSchedule.clientId) }} · 每
             {{ currentSchedule.intervalMinutes }} 分钟 ·
-            {{ currentSchedule.platforms?.length || 0 }} 个平台
+            {{ getActivePlatformCount(currentSchedule.platforms) }} 个平台
           </span>
           <span v-if="currentSchedule.lastRunAt" class="schedule-bar__info">
             上次 {{ formatDateTime(currentSchedule.lastRunAt) }}
@@ -189,11 +189,11 @@
                 <!-- 平台列表 -->
                 <template #platformsSlot="{ row }">
                   <div class="inline-chip-list">
-                    <span v-for="p in (row.platforms || []).slice(0, 8)" :key="p" class="info-chip">
+                    <span v-for="p in getActivePlatforms(row.platforms).slice(0, 8)" :key="p" class="info-chip">
                       {{ platformNameMap[p] || p }}
                     </span>
-                    <span v-if="(row.platforms || []).length > 8" class="info-chip info-chip--more">
-                      +{{ row.platforms.length - 8 }}
+                    <span v-if="getActivePlatforms(row.platforms).length > 8" class="info-chip info-chip--more">
+                      +{{ getActivePlatforms(row.platforms).length - 8 }}
                     </span>
                   </div>
                 </template>
@@ -791,6 +791,18 @@ const ALL_PLATFORMS: PlatformDef[] = [
   { key: "shopify_trending", name: "Shopify Trending", environment: "proxy" },
 ];
 
+const activePlatformKeys = new Set(ALL_PLATFORMS.map((p) => p.key));
+
+// 过滤掉已移除的平台，只保留当前有效的
+function getActivePlatforms(platforms?: string[]): string[] {
+  if (!platforms) return [];
+  return platforms.filter((p) => activePlatformKeys.has(p));
+}
+
+function getActivePlatformCount(platforms?: string[]): number {
+  return getActivePlatforms(platforms).length;
+}
+
 const platformNameMap: Record<string, string> = Object.fromEntries(
   ALL_PLATFORMS.map((p) => [p.key, p.name]),
 );
@@ -951,13 +963,15 @@ const copyAllTags = (tags: { tag: string }[]) => {
 
 const getDetailPlatformOrder = (record: HotSearchCollectRecord) => {
   if (!record.data) return [];
-  return Object.keys(record.data).sort((a, b) => {
-    const order = ALL_PLATFORMS.map((p) => p.key);
-    return (
-      (order.indexOf(a) === -1 ? 999 : order.indexOf(a)) -
-      (order.indexOf(b) === -1 ? 999 : order.indexOf(b))
-    );
-  });
+  return Object.keys(record.data)
+    .filter((key) => activePlatformKeys.has(key))
+    .sort((a, b) => {
+      const order = ALL_PLATFORMS.map((p) => p.key);
+      return (
+        (order.indexOf(a) === -1 ? 999 : order.indexOf(a)) -
+        (order.indexOf(b) === -1 ? 999 : order.indexOf(b))
+      );
+    });
 };
 
 // ============ 删除 ============
@@ -1068,11 +1082,16 @@ const loadSchedules = async () => {
   try {
     const res = await getSchedules();
     // API 返回 { data: [...], code: 0 } 或直接是数组
-    schedules.value = Array.isArray(res)
+    const rawSchedules = Array.isArray(res)
       ? res
       : Array.isArray((res as any)?.data)
         ? (res as any).data
         : [];
+    // 过滤掉已移除的平台
+    schedules.value = rawSchedules.map((s: any) => ({
+      ...s,
+      platforms: (s.platforms || []).filter((p: string) => activePlatformKeys.has(p)),
+    }));
   } catch {}
 };
 
@@ -1085,7 +1104,8 @@ const openScheduleDialog = () => {
       id: s.id,
       clientId: fixedClientId,
       profileId: "",
-      platforms: s.platforms || [],
+      // 过滤掉已移除的平台
+      platforms: (s.platforms || []).filter((p: string) => activePlatformKeys.has(p)),
       intervalMinutes: s.intervalMinutes,
       environment: s.environment || "all",
       autoAnalyze: s.autoAnalyze ?? true,
