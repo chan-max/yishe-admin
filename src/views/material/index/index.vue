@@ -372,7 +372,7 @@
               </el-col>
 
               <el-col
-                v-if="!similarSearchDisabled"
+                v-if="!phashSearchDisabled"
                 class="list-page-search-form__col--full"
                 :xs="24"
                 :sm="24"
@@ -465,6 +465,16 @@
               </el-button>
               <el-button
                 size="small"
+                type="success"
+                plain
+                :icon="Picture"
+                :loading="similarImageSubmitting"
+                @click="openSimilarImageDialog()"
+              >
+                以图搜图
+              </el-button>
+              <el-button
+                size="small"
                 type="primary"
                 @click="
                   () => {
@@ -547,6 +557,27 @@
           <el-button size="small" type="primary" @click="filterDialogVisible = true"
             >筛选</el-button
           >
+        </div>
+        <div v-if="similarImageSearchStatusVisible" class="similar-image-search-status">
+          <div class="similar-image-search-status__thumb">
+            <img :src="similarImageActivePreviewUrl" alt="相似图查询图片" />
+          </div>
+          <div class="similar-image-search-status__content">
+            <div class="similar-image-search-status__line">
+              <el-tag size="small" type="success" effect="plain">相似图</el-tag>
+              <span class="similar-image-search-status__source">
+                {{ similarImageActiveSourceText }}
+              </span>
+            </div>
+          </div>
+          <div class="similar-image-search-status__actions">
+            <el-button size="small" text type="primary" @click="openSimilarImageDialog()">
+              更换图片
+            </el-button>
+            <el-button size="small" text @click="clearSimilarImageSearchResults">
+              清除
+            </el-button>
+          </div>
         </div>
         <el-dialog v-model="filterDialogVisible" title="筛选" width="90%" align-center>
           <el-form :model="queryParams" label-width="80px">
@@ -1792,15 +1823,57 @@
 
                 <template #compactNameSlot="{ row }">
                   <div class="material-compact-name">
-                    <div class="material-compact-name__title">
-                      {{ row.name || row.code || `素材 ${row.id}` }}
-                    </div>
-                    <div class="material-compact-name__meta">
-                      <span v-if="row.code">{{ row.code }}</span>
-                      <span v-if="row.code && row.id">/</span>
-                      <span v-if="row.id">#{{ row.id }}</span>
+                    <div class="material-compact-name__title material-compact-name__title--wrap">
+                      {{ row.name || `素材 ${row.id}` }}
                     </div>
                   </div>
+                </template>
+
+                <template #codeSlot="{ row }">
+                  <div v-if="row.code || row.id" class="code-cell">
+                    <span
+                      v-if="row.code"
+                      class="code-value code-clickable"
+                      @click.stop="handleCopyText(row.code, '编码')"
+                      title="点击复制编码"
+                    >{{ row.code }}</span>
+                    <span
+                      v-if="row.id"
+                      class="id-value id-clickable"
+                      @click.stop="handleCopyText(row.id, 'ID')"
+                      title="点击复制ID"
+                    >#{{ row.id }}</span>
+                  </div>
+                  <span v-else class="table-cell-empty">-</span>
+                </template>
+
+                <template #fileInfoSlot="{ row }">
+                  <div v-if="row.suffix || row.width || row.fileSize" class="file-info">
+                    <span v-if="row.suffix" class="file-info__tag">
+                      {{ String(row.suffix).toUpperCase() }}
+                    </span>
+                    <span v-if="row.fileSize" class="file-info__size">
+                      {{ formatFileSize(row.fileSize) }}
+                    </span>
+                    <span v-if="row.width && row.height" class="file-info__resolution">
+                      {{ row.width }} × {{ row.height }}
+                    </span>
+                    <span v-if="row.aspectRatio" class="file-info__ratio">
+                      {{ Number(row.aspectRatio).toFixed(2) }}
+                    </span>
+                  </div>
+                  <span v-else class="table-cell-empty">-</span>
+                </template>
+
+                <template #cutoutSlot="{ row }">
+                  <el-tag
+                    :type="row.isCutout ? 'success' : 'info'"
+                    effect="plain"
+                    size="small"
+                    class="cutout-tag"
+                  >
+                    {{ row.isCutout ? "是" : "否" }}
+                  </el-tag>
                 </template>
 
                 <template #nameBilingualSlot="{ row }">
@@ -1952,17 +2025,6 @@
                   </div>
                 </template>
 
-                <template #resolutionSlot="{ row }">
-                  <div v-if="row.resolutionWidth && row.resolutionHeight" class="table-meta-stack">
-                    <div class="table-cell-text">
-                      {{ row.resolutionWidth }} × {{ row.resolutionHeight }}
-                    </div>
-                    <div v-if="row.aspectRatio" class="table-meta-line">
-                      宽高比：{{ Number(row.aspectRatio).toFixed(2) }}
-                    </div>
-                  </div>
-                  <span v-else class="table-cell-empty">-</span>
-                </template>
                 <template #originWebSlot="{ row }">
                   <span v-if="row.originWeb" class="table-cell-text">{{ row.originWeb }}</span>
                   <span v-else class="table-cell-empty">-</span>
@@ -2242,7 +2304,7 @@
                                 复制原始链接
                               </div>
                               <div
-                                v-if="!similarSearchDisabled"
+                                v-if="!visualSimilarSearchDisabled"
                                 class="op-submenu-item"
                                 @click.stop="handleOperationCommand('find-similar', row)"
                               >
@@ -2392,6 +2454,77 @@
         </div>
       </template>
     </ListPageLayout>
+
+    <el-dialog
+      v-model="similarImageDialogVisible"
+      title="以图搜图"
+      width="560px"
+      align-center
+      :destroy-on-close="false"
+      class="similar-image-search-dialog"
+      @closed="resetSimilarImageDialog"
+    >
+      <div class="similar-image-search">
+        <el-tabs v-model="similarImageSearchTab" class="similar-image-search__tabs">
+          <el-tab-pane label="图片 URL" name="url">
+            <div class="similar-image-search__section">
+              <el-input
+                v-model="similarImageUrl"
+                placeholder="粘贴图片 URL，例如 https://example.com/image.png"
+                clearable
+                @keyup.enter="submitSimilarImageSearch"
+              />
+            </div>
+          </el-tab-pane>
+          <el-tab-pane label="本地图片" name="file">
+            <div class="similar-image-search__section">
+              <el-upload
+                class="similar-image-upload"
+                drag
+                action="#"
+                accept="image/*"
+                :auto-upload="false"
+                :show-file-list="false"
+                :on-change="handleSimilarImageUploadChange"
+              >
+                <el-icon class="similar-image-upload__icon">
+                  <UploadFilled />
+                </el-icon>
+                <div class="similar-image-upload__text">拖拽图片到这里，或点击选择</div>
+              </el-upload>
+              <div v-if="similarImageFileName" class="similar-image-file-name">
+                {{ similarImageFileName }}
+              </div>
+            </div>
+          </el-tab-pane>
+        </el-tabs>
+
+        <div class="similar-image-preview">
+          <div class="similar-image-preview__title">查询图片</div>
+          <div v-if="similarImagePreviewSrc" class="similar-image-preview__frame">
+            <img :src="similarImagePreviewSrc" alt="查询图片预览" />
+          </div>
+          <div v-else class="similar-image-preview__empty">
+            <el-icon>
+              <PictureFilled />
+            </el-icon>
+            <span>等待选择图片</span>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="similarImageDialogVisible = false">取消</el-button>
+          <el-button
+            type="primary"
+            :loading="similarImageSubmitting"
+            @click="submitSimilarImageSearch"
+          >
+            搜索相似图
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
 
     <el-dialog
       v-model="uploadModalVisible"
@@ -3586,6 +3719,7 @@ import {
   generateStickerStoryScript,
   getStickerStoryScriptList,
   deleteStickerStoryScript,
+  searchStickerByImage,
 } from "@/api/material"; // 实际接口导入
 
 import { uploadToCOS } from "@/api/cos";
@@ -3622,6 +3756,7 @@ import {
   ArrowLeft,
   Edit,
   Picture,
+  UploadFilled,
   MagicStick,
   Key,
   Document,
@@ -3673,8 +3808,10 @@ const FOLDER_CATEGORY = "sticker";
 
 // 判断是否为管理员
 const isAdmin = computed(() => userStore.user?.isAdmin ?? false);
-const similarSearchDisabled = false;
-const SIMILAR_SEARCH_DISABLED_MESSAGE = "相似匹配功能暂时禁用";
+const visualSimilarSearchDisabled = false;
+const phashSearchDisabled = true;
+const VISUAL_SIMILAR_SEARCH_DISABLED_MESSAGE = "以图搜图功能暂时禁用";
+const PHASH_SEARCH_DISABLED_MESSAGE = "pHash 相似匹配功能暂时禁用";
 
 type StickerUserTransferAction = "copy" | "move";
 type StickerUserTransferUserOption = {
@@ -3834,6 +3971,38 @@ const queryParams = reactive({
   random: false, // 是否随机
   folderId: FOLDER_FILTER.ALL as string | null | undefined, // 文件夹ID
   publishUsageConfigId: [] as string[],
+});
+
+const vectorSimilarSearchActive = ref(false);
+const similarImageDialogVisible = ref(false);
+const similarImageSearchTab = ref<"url" | "file">("url");
+const similarImageUrl = ref("");
+const similarImageFile = ref<File | null>(null);
+const similarImageFileName = ref("");
+const similarImageFilePreviewUrl = ref("");
+const similarImageSubmitting = ref(false);
+const similarImageActivePreviewUrl = ref("");
+const similarImageActiveSourceType = ref<"url" | "file" | "">("");
+const similarImageActiveSourceLabel = ref("");
+const similarImagePreviewSrc = computed(() => {
+  if (similarImageSearchTab.value === "url") {
+    return similarImageUrl.value.trim();
+  }
+  return similarImageFilePreviewUrl.value;
+});
+const similarImageSearchStatusVisible = computed(
+  () => vectorSimilarSearchActive.value && Boolean(similarImageActivePreviewUrl.value),
+);
+const similarImageActiveSourceText = computed(() => {
+  if (similarImageActiveSourceType.value === "file") {
+    return similarImageActiveSourceLabel.value
+      ? `本地图片：${similarImageActiveSourceLabel.value}`
+      : "本地图片";
+  }
+  if (similarImageActiveSourceType.value === "url") {
+    return similarImageActiveSourceLabel.value || "图片 URL";
+  }
+  return "查询图片";
 });
 
 const publishUsageConfigOptions = ref<any[]>([]);
@@ -4002,8 +4171,23 @@ function formatFileSize(bytes: number): string {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
 
+// 获取格式标签类型
+function getFormatTagType(suffix: string): string {
+  const typeMap: Record<string, string> = {
+    png: "success",
+    jpg: "",
+    jpeg: "",
+    svg: "warning",
+    gif: "info",
+    webp: "",
+    psd: "danger",
+  };
+  return typeMap[suffix?.toLowerCase()] || "info";
+}
+
 const gridOptions = computed(() => {
-  const showSimilarityColumn = Boolean(String(queryParams.phash || "").trim());
+  const showSimilarityColumn =
+    vectorSimilarSearchActive.value || Boolean(String(queryParams.phash || "").trim());
   const baseColumns = [
     {
       title: "",
@@ -4039,31 +4223,22 @@ const gridOptions = computed(() => {
       slots: { default: "compactNameSlot" },
     },
     {
-      title: "格式",
-      field: "suffix",
-      width: 76,
-      formatter: ({ cellValue }: any) => (cellValue ? String(cellValue).toUpperCase() : "-"),
+      title: "编码",
+      field: "code",
+      width: 100,
+      slots: { default: "codeSlot" },
     },
     {
-      title: "尺寸",
-      field: "resolution",
-      width: 128,
-      formatter: ({ row }: any) =>
-        row?.resolutionWidth && row?.resolutionHeight
-          ? `${row.resolutionWidth} × ${row.resolutionHeight}`
-          : "-",
-    },
-    {
-      title: "文件大小",
-      field: "fileSize",
-      width: 96,
-      formatter: ({ cellValue }: any) => (cellValue ? formatFileSize(cellValue) : "-"),
+      title: "文件信息",
+      field: "fileInfo",
+      minWidth: 200,
+      slots: { default: "fileInfoSlot" },
     },
     {
       title: "抠图",
       field: "isCutout",
       width: 72,
-      formatter: ({ cellValue }: any) => (cellValue ? "是" : "否"),
+      slots: { default: "cutoutSlot" },
     },
     {
       title: "文件夹",
@@ -4074,6 +4249,13 @@ const gridOptions = computed(() => {
     {
       title: "创建时间",
       field: "createTime",
+      width: 150,
+      className: "table-time-cell",
+      formatter: ({ cellValue }: any) => (cellValue ? formatTimestamp(cellValue) : "-"),
+    },
+    {
+      title: "修改时间",
+      field: "updateTime",
       width: 150,
       className: "table-time-cell",
       formatter: ({ cellValue }: any) => (cellValue ? formatTimestamp(cellValue) : "-"),
@@ -4714,15 +4896,19 @@ watch(uploadModalVisible, (visible) => {
 
 async function getList() {
   loading.value = true;
+  vectorSimilarSearchActive.value = false;
+  similarImageActivePreviewUrl.value = "";
+  similarImageActiveSourceType.value = "";
+  similarImageActiveSourceLabel.value = "";
   stickerDetailCache.clear();
-  if (similarSearchDisabled) {
+  if (phashSearchDisabled) {
     queryParams.phash = "";
   }
   // 立即清空旧数据，确保旧图片被销毁
   dataSource.value = [];
 
   // 构建查询参数，确保 suffix 和 sizeShape 数组格式正确传递；空字符串转为 null 以兼容后端
-  const phash = String(queryParams.phash || "").trim();
+  const phash = phashSearchDisabled ? "" : String(queryParams.phash || "").trim();
   const searchPrompt = String(queryParams.searchPrompt || "").trim();
   const searchText = String(queryParams.searchText || "").trim();
   const suffixList = Array.isArray(queryParams.suffix)
@@ -4764,7 +4950,17 @@ async function getList() {
     loading.value = false;
   });
   // 将后端返回的宽高/比例信息映射到列表行数据，便于展示
-  dataSource.value = (res.list || []).map((item) => {
+  dataSource.value = normalizeMaterialListRows(res.list || []);
+  total.value = res.total;
+
+  cacheSelectedMaterialRows(dataSource.value.filter((item) => ids.value.includes(String(item.id))));
+
+  // 列表渲染完成后挂载拖拽
+  nextTick(setupRowDrag);
+}
+
+function normalizeMaterialListRows(items: any[]) {
+  return (items || []).map((item) => {
     const width = item.width;
     const height = item.height;
     const aspectRatio = item.aspectRatio || (width && height ? width / height : undefined);
@@ -4776,6 +4972,13 @@ async function getList() {
           ? "宽图"
           : "正方图"
       : "";
+    const rawScore = Number(item._score ?? item.score ?? 0);
+    const similarity =
+      item.similarity !== undefined
+        ? Number(item.similarity)
+        : rawScore > 0
+          ? Math.min(100, Math.max(0, rawScore * 100))
+          : undefined;
 
     return {
       ...item,
@@ -4783,15 +4986,224 @@ async function getList() {
       resolutionHeight: height ?? item.resolutionHeight,
       aspectRatio,
       shapeLabel,
+      similarity,
       _imageError: false,
     };
   });
-  total.value = res.total;
+}
 
-  cacheSelectedMaterialRows(dataSource.value.filter((item) => ids.value.includes(String(item.id))));
+async function loadVectorSimilarResults(imageUrl: string): Promise<boolean> {
+  if (!imageUrl) {
+    ElMessage.warning("该图片暂无可搜索的图片地址");
+    return false;
+  }
 
-  // 列表渲染完成后挂载拖拽
-  nextTick(setupRowDrag);
+  loading.value = true;
+  stickerDetailCache.clear();
+  dataSource.value = [];
+  try {
+    const result = await searchStickerByImage({
+      imageUrl,
+      mode: "visual",
+      limit: Math.max(queryParams.pageSize, 20),
+    });
+    const items = normalizeMaterialListRows(result?.results || []);
+    dataSource.value = items;
+    total.value = result?.total || items.length;
+    queryParams.currentPage = 1;
+    queryParams.phash = "";
+    vectorSimilarSearchActive.value = true;
+    cacheSelectedMaterialRows(dataSource.value.filter((item) => ids.value.includes(String(item.id))));
+    nextTick(setupRowDrag);
+    return true;
+  } catch (error: any) {
+    vectorSimilarSearchActive.value = false;
+    ElMessage.error(error?.message || "以图搜图失败");
+    return false;
+  } finally {
+    loading.value = false;
+  }
+}
+
+function openSimilarImageDialog(defaultImageUrl = "") {
+  if (visualSimilarSearchDisabled) {
+    ElMessage.warning(VISUAL_SIMILAR_SEARCH_DISABLED_MESSAGE);
+    return;
+  }
+  if (defaultImageUrl) {
+    similarImageSearchTab.value = "url";
+    similarImageUrl.value = defaultImageUrl;
+  }
+  similarImageDialogVisible.value = true;
+}
+
+function setSimilarImageActiveStatus(options: {
+  previewUrl: string;
+  sourceType: "url" | "file";
+  sourceLabel?: string;
+}) {
+  similarImageActivePreviewUrl.value = options.previewUrl;
+  similarImageActiveSourceType.value = options.sourceType;
+  similarImageActiveSourceLabel.value = options.sourceLabel || "";
+}
+
+async function clearSimilarImageSearchResults() {
+  vectorSimilarSearchActive.value = false;
+  similarImageActivePreviewUrl.value = "";
+  similarImageActiveSourceType.value = "";
+  similarImageActiveSourceLabel.value = "";
+  await getList();
+}
+
+function releaseSimilarImagePreviewUrl() {
+  if (similarImageFilePreviewUrl.value) {
+    URL.revokeObjectURL(similarImageFilePreviewUrl.value);
+    similarImageFilePreviewUrl.value = "";
+  }
+}
+
+function resetSimilarImageDialog() {
+  similarImageUrl.value = "";
+  similarImageFile.value = null;
+  similarImageFileName.value = "";
+  similarImageSearchTab.value = "url";
+  releaseSimilarImagePreviewUrl();
+}
+
+function handleSimilarImageUploadChange(uploadFile: any) {
+  const file = uploadFile?.raw as File | undefined;
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    ElMessage.warning("请选择图片文件");
+    return;
+  }
+
+  releaseSimilarImagePreviewUrl();
+  similarImageFile.value = file;
+  similarImageFileName.value = file.name || "本地图片";
+  similarImageFilePreviewUrl.value = URL.createObjectURL(file);
+  similarImageSearchTab.value = "file";
+}
+
+function isValidRemoteImageUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+async function submitSimilarImageSearch() {
+  if (visualSimilarSearchDisabled) {
+    ElMessage.warning(VISUAL_SIMILAR_SEARCH_DISABLED_MESSAGE);
+    return;
+  }
+
+  similarImageSubmitting.value = true;
+  try {
+    let imageUrl = "";
+    let activePreviewUrl = "";
+    let activeSourceType: "url" | "file" = "url";
+    let activeSourceLabel = "";
+    if (similarImageSearchTab.value === "url") {
+      imageUrl = similarImageUrl.value.trim();
+      if (!imageUrl) {
+        ElMessage.warning("请输入图片 URL");
+        return;
+      }
+      if (!isValidRemoteImageUrl(imageUrl)) {
+        ElMessage.warning("请输入 http 或 https 开头的图片 URL");
+        return;
+      }
+      activePreviewUrl = imageUrl;
+      activeSourceType = "url";
+      activeSourceLabel = "图片 URL";
+    } else {
+      const file = similarImageFile.value;
+      if (!file) {
+        ElMessage.warning("请选择本地图片");
+        return;
+      }
+      imageUrl = await readImageFileAsSearchDataUrl(file);
+      activePreviewUrl = imageUrl;
+      activeSourceType = "file";
+      activeSourceLabel = file.name || similarImageFileName.value || "本地图片";
+    }
+
+    const success = await loadVectorSimilarResults(imageUrl);
+    if (success) {
+      setSimilarImageActiveStatus({
+        previewUrl: activePreviewUrl,
+        sourceType: activeSourceType,
+        sourceLabel: activeSourceLabel,
+      });
+      similarImageDialogVisible.value = false;
+    }
+  } catch (error: any) {
+    ElMessage.error(error?.message || "读取图片失败");
+  } finally {
+    similarImageSubmitting.value = false;
+  }
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error || new Error("读取图片失败"));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function readImageFileAsSearchDataUrl(file: File): Promise<string> {
+  const fallback = () => readFileAsDataUrl(file);
+
+  if (!file.type.startsWith("image/") || file.type.includes("svg")) {
+    return fallback();
+  }
+
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("图片解码失败"));
+      img.src = objectUrl;
+    });
+
+    const maxSide = 1024;
+    const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
+    const width = Math.max(1, Math.round(image.naturalWidth * scale));
+    const height = Math.max(1, Math.round(image.naturalHeight * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return fallback();
+    ctx.drawImage(image, 0, 0, width, height);
+
+    return await new Promise<string>((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error("图片压缩失败"));
+            return;
+          }
+          readFileAsDataUrl(new File([blob], file.name || "search-image.jpg", { type: blob.type }))
+            .then(resolve)
+            .catch(reject);
+        },
+        "image/jpeg",
+        0.86,
+      );
+    });
+  } catch {
+    return fallback();
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
 }
 
 function normalizeStickerDetailResponse(res: any) {
@@ -4832,12 +5244,13 @@ onUnmounted(() => {
   hideAllOperationSubmenus();
   operationDropdownRefs.clear();
   resetAfterDrop();
+  releaseSimilarImagePreviewUrl();
 });
 
 // phash相似图片搜索
 async function handlePhashSearch() {
-  if (similarSearchDisabled) {
-    ElMessage.warning(SIMILAR_SEARCH_DISABLED_MESSAGE);
+  if (phashSearchDisabled) {
+    ElMessage.warning(PHASH_SEARCH_DISABLED_MESSAGE);
     return;
   }
   // 去除phash值的前后空格
@@ -4856,7 +5269,7 @@ async function handlePhashSearch() {
 
 // phash输入框失去焦点时自动trim
 function onPhashInputBlur() {
-  if (similarSearchDisabled) {
+  if (phashSearchDisabled) {
     return;
   }
   queryParams.phash = queryParams.phash.trim();
@@ -6477,30 +6890,25 @@ async function handleAiAutoGenerate(row, cb, prompt, aiGenerateRawInfo) {
   }
 }
 
-// 查找相似图：将当前行的 phash 带入搜索
+// 查找相似图：使用视觉向量搜索当前图片的近似素材
 async function handleFindSimilar(row) {
-  if (similarSearchDisabled) {
-    ElMessage.warning(SIMILAR_SEARCH_DISABLED_MESSAGE);
+  if (visualSimilarSearchDisabled) {
+    ElMessage.warning(VISUAL_SIMILAR_SEARCH_DISABLED_MESSAGE);
     return;
   }
-  let detail = row;
-  if (!detail?.phash) {
-    try {
-      detail = await fetchStickerDetail(row);
-    } catch (error: any) {
-      ElMessage.error(error?.message || "获取素材详情失败");
-      return;
-    }
-  }
-  if (!detail?.phash) {
-    ElMessage.warning("该图片暂无 phash，请先生成后再搜索相似图");
+  const imageUrl = String(row?.url || row?.originUrl || "").trim();
+  if (!imageUrl) {
+    ElMessage.warning("该图片暂无可搜索的图片地址");
     return;
   }
-  queryParams.phash = (detail.phash || "").trim();
-  queryParams.currentPage = 1;
-  // 精确匹配更快，行内查找优先用精确模式；可根据需要再切换
-  queryParams.phashMode = "exact";
-  await getList();
+  const success = await loadVectorSimilarResults(imageUrl);
+  if (success) {
+    setSimilarImageActiveStatus({
+      previewUrl: imageUrl,
+      sourceType: "url",
+      sourceLabel: row?.name || row?.code || "当前素材",
+    });
+  }
 }
 
 // 处理宽度变化
@@ -7408,6 +7816,78 @@ async function handleUrlUpload() {
   white-space: nowrap;
 }
 
+.material-compact-name__title--wrap {
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* 编码列 */
+.code-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.code-value {
+  color: var(--el-text-color-regular);
+  font-family: "Courier New", "Consolas", monospace;
+  font-size: 11px;
+}
+
+.code-clickable {
+  cursor: pointer;
+  padding: 1px 4px;
+  border-radius: 3px;
+  transition: background-color 0.2s;
+}
+
+.code-clickable:hover {
+  background-color: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+}
+
+.id-value {
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+}
+
+.id-clickable {
+  cursor: pointer;
+  padding: 1px 4px;
+  border-radius: 3px;
+  transition: background-color 0.2s;
+}
+
+.id-clickable:hover {
+  background-color: var(--el-color-info-light-9);
+  color: var(--el-color-info);
+}
+
+/* 文件信息合并列 */
+.file-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 2px 0;
+}
+
+.file-info__tag,
+.file-info__size,
+.file-info__resolution,
+.file-info__ratio {
+  font-size: 10px;
+  line-height: 14px;
+  color: var(--el-text-color-secondary);
+  background: var(--el-fill-color-lighter);
+  padding: 0 4px;
+  border-radius: 2px;
+  width: fit-content;
+  font-family: "Courier New", "Consolas", monospace;
+  letter-spacing: 0.3px;
+}
+
 .material-compact-name__meta {
   display: flex;
   min-width: 0;
@@ -7418,6 +7898,11 @@ async function handleUrlUpload() {
   line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* 抠图标签 */
+.cutout-tag {
+  font-size: 11px;
 }
 
 .material-compact-badge {
@@ -10524,6 +11009,160 @@ h1 {
   justify-content: flex-start;
 }
 
+.similar-image-search-status {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 3px 6px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 4px;
+  background: var(--el-fill-color-extra-light);
+}
+
+.similar-image-search-status__thumb {
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  overflow: hidden;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 3px;
+  background: var(--el-bg-color);
+}
+
+.similar-image-search-status__thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.similar-image-search-status__content {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.similar-image-search-status__line {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.similar-image-search-status__source {
+  min-width: 0;
+  max-width: 280px;
+  overflow: hidden;
+  color: var(--el-text-color-regular);
+  font-size: 12px;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.similar-image-search-status__actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0;
+}
+
+.similar-image-search-status__actions :deep(.el-button) {
+  height: 22px;
+  padding: 0 4px;
+  font-size: 12px;
+}
+
+.similar-image-search {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.similar-image-search__tabs {
+  width: 100%;
+}
+
+.similar-image-search__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.similar-image-upload {
+  width: 100%;
+}
+
+.similar-image-upload :deep(.el-upload) {
+  width: 100%;
+}
+
+.similar-image-upload :deep(.el-upload-dragger) {
+  width: 100%;
+  padding: 24px 16px;
+}
+
+.similar-image-upload__icon {
+  margin-bottom: 8px;
+  font-size: 32px;
+  color: var(--el-color-primary);
+}
+
+.similar-image-upload__text {
+  color: var(--el-text-color-regular);
+  font-size: 14px;
+}
+
+.similar-image-file-name {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 18px;
+  word-break: break-all;
+}
+
+.similar-image-preview {
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  background: var(--el-fill-color-extra-light);
+  padding: 12px;
+}
+
+.similar-image-preview__title {
+  margin-bottom: 10px;
+  color: var(--el-text-color-regular);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.similar-image-preview__frame,
+.similar-image-preview__empty {
+  display: flex;
+  min-height: 180px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: var(--el-bg-color);
+}
+
+.similar-image-preview__frame img {
+  display: block;
+  max-width: 100%;
+  max-height: 260px;
+  object-fit: contain;
+}
+
+.similar-image-preview__empty {
+  flex-direction: column;
+  gap: 8px;
+  color: var(--el-text-color-placeholder);
+  font-size: 13px;
+}
+
+.similar-image-preview__empty .el-icon {
+  font-size: 32px;
+}
+
 .material-index-phash__row {
   display: flex;
   flex-wrap: wrap;
@@ -10802,6 +11441,21 @@ h1 {
         }
       }
     }
+  }
+}
+
+@media (max-width: 640px) {
+  .similar-image-search-status {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .similar-image-search-status__source {
+    max-width: 180px;
+  }
+
+  .similar-image-search-status__actions {
+    margin-left: auto;
   }
 }
 

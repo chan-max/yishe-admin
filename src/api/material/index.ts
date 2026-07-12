@@ -287,6 +287,27 @@ export function calculatePhash(data) {
   })
 }
 
+/**
+ * Search similar stickers by image URL or data URL.
+ */
+export function searchStickerByImage(data: {
+  imageUrl?: string
+  imageBase64?: string
+  mode?: 'semantic' | 'visual' | 'hybrid'
+  limit?: number
+  userId?: string
+}) {
+  return request.post<{
+    results: any[]
+    mode: string
+    imageDescription?: string
+    total: number
+  }>({
+    url: '/sticker/search-by-image',
+    data
+  })
+}
+
 // Removed: AI infringement check was merged into the ai-generate-info API
 // /**
 //  * AI check whether the sticker is infringing
@@ -480,4 +501,3 @@ export function getStickerStoryScriptDetail(id: string) {
     url: `/sticker/story-script/${id}`
   })
 }
-

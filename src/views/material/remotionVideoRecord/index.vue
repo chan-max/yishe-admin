@@ -1956,10 +1956,9 @@ watch(
 }
 
 .remotion-step-content {
-  flex: 1 1 auto;
+  flex: 1;
   min-height: 0;
-  max-height: none;
-  overflow: visible;
+  overflow: auto;
 }
 
 .remotion-step-panel {
@@ -2260,14 +2259,13 @@ watch(
 .params-panel {
   display: flex;
   flex-direction: column;
-  height: 100%;
   min-height: 0;
   gap: 10px;
-  overflow: hidden;
 }
 
 .params-header {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: space-between;
   padding-bottom: 12px;
@@ -2284,18 +2282,14 @@ watch(
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
   gap: 14px;
-  flex: 1 1 auto;
   min-height: 0;
-  max-height: calc(100vh - 150px);
   padding: 2px 6px 6px;
   align-items: start;
-  overflow: visible;
   box-sizing: border-box;
 }
 
 .params-form {
   min-width: 0;
-  height: 100%;
   min-height: 0;
   overflow: auto;
   padding: 4px 8px 10px 4px;
@@ -2330,11 +2324,10 @@ watch(
 
 .params-json {
   min-width: 0;
-  height: 100%;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow: visible;
+  overflow: auto;
   padding: 4px 6px 10px 4px;
   box-sizing: border-box;
 }
@@ -2449,7 +2442,7 @@ watch(
 :deep(.remotion-create-dialog .el-dialog__body) {
   padding: 0 24px 18px;
   height: calc(100vh - 70px);
-  overflow: visible;
+  overflow: auto;
   display: flex;
   flex-direction: column;
 }
@@ -2462,7 +2455,7 @@ watch(
 .remotion-step-content {
   flex: 1;
   min-height: 0;
-  overflow: visible;
+  overflow: auto;
 }
 
 /* 全屏模式下模板网格自适应 */
@@ -2698,8 +2691,8 @@ watch(
 
   .params-form,
   .params-json {
-    height: auto;
-    overflow: visible;
+    min-height: 0;
+    overflow: auto;
   }
 
   .json-editor {

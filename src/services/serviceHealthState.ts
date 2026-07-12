@@ -2,8 +2,9 @@ import { reactive } from "vue";
 import { getCodeScriptSandboxHealth } from "@/api/codeScript";
 import { getImageProcessingHealth } from "@/api/image-processing-record";
 import { getRemotionVideoHealth } from "@/api/remotion-video-record";
+import { getModelServiceHealth } from "@/api/vector-search";
 
-export type ServiceHealthKey = "sandbox" | "videoTemplate" | "images";
+export type ServiceHealthKey = "sandbox" | "videoTemplate" | "images" | "modelService";
 export type ServiceHealthTone = "available" | "offline";
 
 export interface ServiceHealthSnapshot {
@@ -167,12 +168,28 @@ const serviceHealthDefinitions: Record<ServiceHealthKey, ServiceHealthDefinition
       timestamp: new Date().toISOString(),
     }),
   },
+  modelService: {
+    label: "模型服务",
+    request: getModelServiceHealth,
+    mapSuccess: (payload) => ({
+      available: !!payload?.available,
+      baseUrl: String(payload?.baseUrl || ""),
+      message: String(payload?.message || ""),
+      timestamp: String(payload?.timestamp || ""),
+    }),
+    mapError: (error) => ({
+      available: false,
+      message: normalizeGenericErrorMessage(error, "模型服务检测失败"),
+      timestamp: new Date().toISOString(),
+    }),
+  },
 };
 
 export const serviceHealthStates = reactive<Record<ServiceHealthKey, ServiceHealthSnapshot>>({
   sandbox: createDefaultSnapshot("sandbox", serviceHealthDefinitions.sandbox.label),
   videoTemplate: createDefaultSnapshot("videoTemplate", serviceHealthDefinitions.videoTemplate.label),
   images: createDefaultSnapshot("images", serviceHealthDefinitions.images.label),
+  modelService: createDefaultSnapshot("modelService", serviceHealthDefinitions.modelService.label),
 });
 
 const initializedKeys = new Set<ServiceHealthKey>();

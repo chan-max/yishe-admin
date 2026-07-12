@@ -1,8 +1,5 @@
 import { Layout } from "@/utils/routerHelper";
-import {
-  ROUTE_MENU_KEY_MAP,
-  ROUTE_MENU_LEGACY_KEY_MAP,
-} from "@/constants/access-control";
+import { ROUTE_MENU_KEY_MAP, ROUTE_MENU_LEGACY_KEY_MAP } from "@/constants/access-control";
 
 const { t } = useI18n();
 /**
@@ -94,6 +91,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "Statistics",
         meta: {
           title: "数据统计",
+        },
+      },
+      {
+        path: "vector-search",
+        component: () => import("@/views/vector-search/Index.vue"),
+        name: "VectorSearch",
+        meta: {
+          title: "向量知识库",
+          menuKey: "home.vector-search",
         },
       },
     ],
@@ -304,6 +310,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: "AI提示词管理",
         },
       },
+      {
+        path: "model-service",
+        component: () => import("@/views/ai/model-service/index.vue"),
+        name: "AiModelService",
+        meta: {
+          title: "模型服务",
+          serviceStatusKey: "modelService",
+        },
+      },
     ],
   },
   // ── 4. 内容与自动化 ───────────────────────────────────────────────────
@@ -333,8 +348,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: "code-script-schedule",
-        component: () =>
-          import("@/views/material/codeScriptSchedule/index.vue"),
+        component: () => import("@/views/material/codeScriptSchedule/index.vue"),
         name: "CodeScriptSchedule",
         meta: {
           canTo: true,
@@ -345,8 +359,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: "remotion-video-record",
-        component: () =>
-          import("@/views/material/remotionVideoRecord/index.vue"),
+        component: () => import("@/views/material/remotionVideoRecord/index.vue"),
         name: "RemotionVideoRecord",
         meta: {
           canTo: true,
@@ -358,8 +371,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: "image-processing-record",
-        component: () =>
-          import("@/views/material/imageProcessingRecord/index.vue"),
+        component: () => import("@/views/material/imageProcessingRecord/index.vue"),
         name: "ImageProcessingRecord",
         meta: {
           canTo: true,
@@ -406,8 +418,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: "browser-automation",
-        component: () =>
-          import("@/views/external/browser-automation/index.vue"),
+        component: () => import("@/views/external/browser-automation/index.vue"),
         name: "ExternalBrowserAutomation",
         meta: {
           title: "浏览器自动化",
@@ -497,8 +508,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: "kuaishou-shop",
-        component: () =>
-          import("@/views/external/toolkit/kuaishou-shop/index.vue"),
+        component: () => import("@/views/external/toolkit/kuaishou-shop/index.vue"),
         name: "OperationToolkitKuaishouShop",
         meta: {
           title: "快手小店",
@@ -516,8 +526,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: "alibaba-1688",
-        component: () =>
-          import("@/views/external/toolkit/alibaba-1688/index.vue"),
+        component: () => import("@/views/external/toolkit/alibaba-1688/index.vue"),
         name: "OperationToolkitAlibaba1688",
         meta: {
           title: "1688",
@@ -559,8 +568,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: "generation-template",
-        component: () =>
-          import("@/views/product/generation-template/index.vue"),
+        component: () => import("@/views/product/generation-template/index.vue"),
         name: "ProductGenerationTemplate",
         meta: {
           title: "商品生成模板",
@@ -666,8 +674,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     children: [
       {
         path: "capabilities",
-        component: () =>
-          import("@/views/operation/ecom-platform-collect/capabilities.vue"),
+        component: () => import("@/views/operation/ecom-platform-collect/capabilities.vue"),
         name: "EcomPlatformCollectCapabilityPage",
         meta: {
           title: "平台能力",
@@ -676,8 +683,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: "tasks",
-        component: () =>
-          import("@/views/operation/ecom-platform-collect/index.vue"),
+        component: () => import("@/views/operation/ecom-platform-collect/index.vue"),
         name: "EcomPlatformCollectTaskPage",
         meta: {
           title: "采集任务",
@@ -686,8 +692,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: "runs",
-        component: () =>
-          import("@/views/operation/ecom-platform-collect/runs.vue"),
+        component: () => import("@/views/operation/ecom-platform-collect/runs.vue"),
         name: "EcomPlatformCollectRunPage",
         meta: {
           title: "采集运行",
@@ -696,8 +701,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: "raw-records",
-        component: () =>
-          import("@/views/operation/ecom-platform-collect/raw-records.vue"),
+        component: () => import("@/views/operation/ecom-platform-collect/raw-records.vue"),
         name: "EcomPlatformCollectRawPage",
         meta: {
           title: "原始数据",
@@ -706,8 +710,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: "selection-analysis/tasks",
-        component: () =>
-          import("@/views/operation/ecom-selection-analysis/index.vue"),
+        component: () => import("@/views/operation/ecom-selection-analysis/index.vue"),
         name: "EcomSelectionAnalysisTaskPage",
         meta: {
           title: "选品分析任务",
@@ -716,8 +719,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: "selection-analysis/runs",
-        component: () =>
-          import("@/views/operation/ecom-selection-analysis/runs.vue"),
+        component: () => import("@/views/operation/ecom-selection-analysis/runs.vue"),
         name: "EcomSelectionAnalysisRunPage",
         meta: {
           title: "选品分析运行",
@@ -726,8 +728,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: "selection-analysis/results",
-        component: () =>
-          import("@/views/operation/ecom-selection-analysis/results.vue"),
+        component: () => import("@/views/operation/ecom-selection-analysis/results.vue"),
         name: "EcomSelectionAnalysisResultPage",
         meta: {
           title: "选品分析结果",
@@ -736,8 +737,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: "supply-match/tasks",
-        component: () =>
-          import("@/views/operation/ecom-selection-supply-match/index.vue"),
+        component: () => import("@/views/operation/ecom-selection-supply-match/index.vue"),
         name: "EcomSelectionSupplyMatchTaskPage",
         meta: {
           title: "找同款任务",
@@ -746,8 +746,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: "supply-match/runs",
-        component: () =>
-          import("@/views/operation/ecom-selection-supply-match/runs.vue"),
+        component: () => import("@/views/operation/ecom-selection-supply-match/runs.vue"),
         name: "EcomSelectionSupplyMatchRunPage",
         meta: {
           title: "找同款运行",
@@ -756,8 +755,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: "supply-match/items",
-        component: () =>
-          import("@/views/operation/ecom-selection-supply-match/items.vue"),
+        component: () => import("@/views/operation/ecom-selection-supply-match/items.vue"),
         name: "EcomSelectionSupplyMatchItemPage",
         meta: {
           title: "找同款结果",
@@ -766,8 +764,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: "extension-collect",
-        component: () =>
-          import("@/views/operation/extension-collect/index.vue"),
+        component: () => import("@/views/operation/extension-collect/index.vue"),
         name: "ExtensionCollectIndex",
         meta: {
           title: "插件采集",
@@ -1413,9 +1410,7 @@ function attachMenuKeys(routes: AppRouteRecordRaw[]): AppRouteRecordRaw[] {
   return routes.map((route) => {
     const routeName = route.name ? String(route.name) : "";
     const menuKey = routeName ? ROUTE_MENU_KEY_MAP[routeName] : "";
-    const legacyMenuKeys = routeName
-      ? ROUTE_MENU_LEGACY_KEY_MAP[routeName]
-      : [];
+    const legacyMenuKeys = routeName ? ROUTE_MENU_LEGACY_KEY_MAP[routeName] : [];
     return {
       ...route,
       meta: menuKey
@@ -1425,9 +1420,7 @@ function attachMenuKeys(routes: AppRouteRecordRaw[]): AppRouteRecordRaw[] {
             ...(legacyMenuKeys?.length ? { legacyMenuKeys } : {}),
           }
         : route.meta,
-      children: route.children
-        ? attachMenuKeys(route.children)
-        : route.children,
+      children: route.children ? attachMenuKeys(route.children) : route.children,
     };
   });
 }
