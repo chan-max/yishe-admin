@@ -20,30 +20,6 @@
                 :lg="6"
                 :xl="6"
               >
-                <el-form-item label="提示词">
-                  <el-input
-                    v-model="queryParams.searchPrompt"
-                    size="small"
-                    placeholder="AI提示词"
-                    clearable
-                    @change="
-                      (val) => {
-                        if (!val) getList();
-                      }
-                    "
-                    @keyup.enter="getList"
-                  />
-                </el-form-item>
-              </el-col>
-
-              <el-col
-                class="list-page-search-form__col--wide"
-                :xs="24"
-                :sm="12"
-                :md="12"
-                :lg="6"
-                :xl="6"
-              >
                 <el-form-item label="搜索">
                   <el-input
                     v-model="queryParams.searchText"
@@ -57,27 +33,6 @@
                     "
                     @keyup.enter="getList"
                   />
-                </el-form-item>
-              </el-col>
-
-              <el-col
-                class="list-page-search-form__col--narrow"
-                :xs="24"
-                :sm="12"
-                :md="8"
-                :lg="4"
-                :xl="3"
-              >
-                <el-form-item label="模式">
-                  <el-select
-                    v-model="queryParams.searchMode"
-                    size="small"
-                    placeholder="模式"
-                    @change="getList"
-                  >
-                    <el-option label="AND" value="AND" />
-                    <el-option label="OR" value="OR" />
-                  </el-select>
                 </el-form-item>
               </el-col>
 
@@ -471,7 +426,7 @@
                 :loading="similarImageSubmitting"
                 @click="openSimilarImageDialog()"
               >
-                以图搜图
+                模糊搜索
               </el-button>
               <el-button
                 size="small"
@@ -559,12 +514,17 @@
           >
         </div>
         <div v-if="similarImageSearchStatusVisible" class="similar-image-search-status">
-          <div class="similar-image-search-status__thumb">
+          <div v-if="similarImageActiveSourceType === 'text'" class="similar-image-search-status__thumb similar-image-search-status__thumb--text">
+            <el-icon :size="18" color="#67c23a"><Search /></el-icon>
+          </div>
+          <div v-else class="similar-image-search-status__thumb">
             <img :src="similarImageActivePreviewUrl" alt="相似图查询图片" />
           </div>
           <div class="similar-image-search-status__content">
             <div class="similar-image-search-status__line">
-              <el-tag size="small" type="success" effect="plain">相似图</el-tag>
+              <el-tag size="small" type="success" effect="plain">
+                {{ similarImageActiveSourceType === 'text' ? '文字搜索' : '相似图' }}
+              </el-tag>
               <span class="similar-image-search-status__source">
                 {{ similarImageActiveSourceText }}
               </span>
@@ -572,7 +532,7 @@
           </div>
           <div class="similar-image-search-status__actions">
             <el-button size="small" text type="primary" @click="openSimilarImageDialog()">
-              更换图片
+              {{ similarImageActiveSourceType === 'text' ? '重新搜索' : '更换图片' }}
             </el-button>
             <el-button size="small" text @click="clearSimilarImageSearchResults">
               清除
@@ -581,25 +541,12 @@
         </div>
         <el-dialog v-model="filterDialogVisible" title="筛选" width="90%" align-center>
           <el-form :model="queryParams" label-width="80px">
-            <el-form-item label="提示词">
-              <el-input
-                v-model="queryParams.searchPrompt"
-                placeholder="输入AI提示词，自动解析搜索条件"
-                clearable
-              />
-            </el-form-item>
             <el-form-item label="搜索">
               <el-input
                 v-model="queryParams.searchText"
                 placeholder="请输入名称、描述或关键词（空格分隔，支持引号精确匹配）"
                 clearable
               />
-            </el-form-item>
-            <el-form-item label="搜索模式">
-              <el-select v-model="queryParams.searchMode" placeholder="请选择模式">
-                <el-option label="AND（全部包含）" value="AND" />
-                <el-option label="OR（任意包含）" value="OR" />
-              </el-select>
             </el-form-item>
             <el-form-item label="排序">
               <el-select v-model="queryParams.sortingFields" placeholder="请选择排序方式">
@@ -2457,7 +2404,7 @@
 
     <el-dialog
       v-model="similarImageDialogVisible"
-      title="以图搜图"
+      title="模糊搜索"
       width="560px"
       align-center
       :destroy-on-close="false"
@@ -2466,6 +2413,16 @@
     >
       <div class="similar-image-search">
         <el-tabs v-model="similarImageSearchTab" class="similar-image-search__tabs">
+          <el-tab-pane label="文字搜索" name="text">
+            <div class="similar-image-search__section">
+              <el-input
+                v-model="similarImageSearchText"
+                placeholder="输入文字描述，例如：可爱的猫咪、樱花树下的少女"
+                clearable
+                @keyup.enter="submitSimilarImageSearch"
+              />
+            </div>
+          </el-tab-pane>
           <el-tab-pane label="图片 URL" name="url">
             <div class="similar-image-search__section">
               <el-input
@@ -2499,7 +2456,7 @@
           </el-tab-pane>
         </el-tabs>
 
-        <div class="similar-image-preview">
+        <div v-if="similarImageSearchTab !== 'text'" class="similar-image-preview">
           <div class="similar-image-preview__title">查询图片</div>
           <div v-if="similarImagePreviewSrc" class="similar-image-preview__frame">
             <img :src="similarImagePreviewSrc" alt="查询图片预览" />
@@ -2520,7 +2477,7 @@
             :loading="similarImageSubmitting"
             @click="submitSimilarImageSearch"
           >
-            搜索相似图
+            搜索
           </el-button>
         </div>
       </template>
@@ -3720,6 +3677,7 @@ import {
   getStickerStoryScriptList,
   deleteStickerStoryScript,
   searchStickerByImage,
+  searchStickerByText,
 } from "@/api/material"; // 实际接口导入
 
 import { uploadToCOS } from "@/api/cos";
@@ -3810,7 +3768,7 @@ const FOLDER_CATEGORY = "sticker";
 const isAdmin = computed(() => userStore.user?.isAdmin ?? false);
 const visualSimilarSearchDisabled = false;
 const phashSearchDisabled = true;
-const VISUAL_SIMILAR_SEARCH_DISABLED_MESSAGE = "以图搜图功能暂时禁用";
+const VISUAL_SIMILAR_SEARCH_DISABLED_MESSAGE = "模糊搜索功能暂时禁用";
 const PHASH_SEARCH_DISABLED_MESSAGE = "pHash 相似匹配功能暂时禁用";
 
 type StickerUserTransferAction = "copy" | "move";
@@ -3953,9 +3911,7 @@ const queryParams = reactive({
   currentPage: 1,
   pageSize: 10,
   keyword: "",
-  searchPrompt: "", // AI 提示词（最高优先级，解析为结构化搜索）
   searchText: "", // 多字段搜索（名称、描述、关键词等）
-  searchMode: "AND", // 搜索模式：AND（所有关键词必须都出现，默认）| OR（任意关键词出现即可）
   sortingFields: "createTime DESC", // 排序字段
   startTime: "",
   endTime: "",
@@ -3975,23 +3931,30 @@ const queryParams = reactive({
 
 const vectorSimilarSearchActive = ref(false);
 const similarImageDialogVisible = ref(false);
-const similarImageSearchTab = ref<"url" | "file">("url");
+const similarImageSearchTab = ref<"url" | "file" | "text">("url");
 const similarImageUrl = ref("");
 const similarImageFile = ref<File | null>(null);
 const similarImageFileName = ref("");
 const similarImageFilePreviewUrl = ref("");
 const similarImageSubmitting = ref(false);
 const similarImageActivePreviewUrl = ref("");
-const similarImageActiveSourceType = ref<"url" | "file" | "">("");
+const similarImageActiveSourceType = ref<"url" | "file" | "text" | "">("");
 const similarImageActiveSourceLabel = ref("");
+const similarImageSearchText = ref("");
 const similarImagePreviewSrc = computed(() => {
   if (similarImageSearchTab.value === "url") {
     return similarImageUrl.value.trim();
   }
+  if (similarImageSearchTab.value === "text") {
+    return "";
+  }
   return similarImageFilePreviewUrl.value;
 });
 const similarImageSearchStatusVisible = computed(
-  () => vectorSimilarSearchActive.value && Boolean(similarImageActivePreviewUrl.value),
+  () =>
+    vectorSimilarSearchActive.value &&
+    (Boolean(similarImageActivePreviewUrl.value) ||
+      similarImageActiveSourceType.value === "text"),
 );
 const similarImageActiveSourceText = computed(() => {
   if (similarImageActiveSourceType.value === "file") {
@@ -4001,6 +3964,9 @@ const similarImageActiveSourceText = computed(() => {
   }
   if (similarImageActiveSourceType.value === "url") {
     return similarImageActiveSourceLabel.value || "图片 URL";
+  }
+  if (similarImageActiveSourceType.value === "text") {
+    return `文字搜索：${similarImageActiveSourceLabel.value}`;
   }
   return "查询图片";
 });
@@ -4909,7 +4875,6 @@ async function getList() {
 
   // 构建查询参数，确保 suffix 和 sizeShape 数组格式正确传递；空字符串转为 null 以兼容后端
   const phash = phashSearchDisabled ? "" : String(queryParams.phash || "").trim();
-  const searchPrompt = String(queryParams.searchPrompt || "").trim();
   const searchText = String(queryParams.searchText || "").trim();
   const suffixList = Array.isArray(queryParams.suffix)
     ? queryParams.suffix
@@ -4926,9 +4891,7 @@ async function getList() {
     listMode: "compact",
     includeRelations: false,
     keyword: undefined,
-    searchPrompt: searchPrompt || undefined,
     searchText: searchText || undefined,
-    searchMode: searchText ? queryParams.searchMode : undefined,
     id: String(queryParams.id || "").trim() || undefined,
     phash: phash || undefined,
     phashMode: phash ? queryParams.phashMode : undefined,
@@ -5018,7 +4981,39 @@ async function loadVectorSimilarResults(imageUrl: string): Promise<boolean> {
     return true;
   } catch (error: any) {
     vectorSimilarSearchActive.value = false;
-    ElMessage.error(error?.message || "以图搜图失败");
+    ElMessage.error(error?.message || "搜索失败");
+    return false;
+  } finally {
+    loading.value = false;
+  }
+}
+
+async function loadVectorSimilarTextResults(text: string): Promise<boolean> {
+  if (!text?.trim()) {
+    ElMessage.warning("请输入搜索文本");
+    return false;
+  }
+
+  loading.value = true;
+  stickerDetailCache.clear();
+  dataSource.value = [];
+  try {
+    const result = await searchStickerByText({
+      text: text.trim(),
+      limit: Math.max(queryParams.pageSize, 20),
+    });
+    const items = normalizeMaterialListRows(result?.results || []);
+    dataSource.value = items;
+    total.value = result?.total || items.length;
+    queryParams.currentPage = 1;
+    queryParams.phash = "";
+    vectorSimilarSearchActive.value = true;
+    cacheSelectedMaterialRows(dataSource.value.filter((item) => ids.value.includes(String(item.id))));
+    nextTick(setupRowDrag);
+    return true;
+  } catch (error: any) {
+    vectorSimilarSearchActive.value = false;
+    ElMessage.error(error?.message || "文字搜索失败");
     return false;
   } finally {
     loading.value = false;
@@ -5067,6 +5062,7 @@ function resetSimilarImageDialog() {
   similarImageFile.value = null;
   similarImageFileName.value = "";
   similarImageSearchTab.value = "url";
+  similarImageSearchText.value = "";
   releaseSimilarImagePreviewUrl();
 }
 
@@ -5103,6 +5099,25 @@ async function submitSimilarImageSearch() {
 
   similarImageSubmitting.value = true;
   try {
+    // Handle text search
+    if (similarImageSearchTab.value === "text") {
+      const searchText = similarImageSearchText.value.trim();
+      if (!searchText) {
+        ElMessage.warning("请输入搜索文本");
+        return;
+      }
+      const success = await loadVectorSimilarTextResults(searchText);
+      if (success) {
+        setSimilarImageActiveStatus({
+          previewUrl: "",
+          sourceType: "text",
+          sourceLabel: searchText,
+        });
+        similarImageDialogVisible.value = false;
+      }
+      return;
+    }
+
     let imageUrl = "";
     let activePreviewUrl = "";
     let activeSourceType: "url" | "file" = "url";
@@ -11036,6 +11051,13 @@ h1 {
   width: 100%;
   height: 100%;
   object-fit: contain;
+}
+
+.similar-image-search-status__thumb--text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--el-color-success-light-9);
 }
 
 .similar-image-search-status__content {

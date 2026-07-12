@@ -308,6 +308,23 @@ export function searchStickerByImage(data: {
   })
 }
 
+/**
+ * Search stickers by text description using CLIP text encoder.
+ */
+export function searchStickerByText(data: {
+  text: string
+  limit?: number
+  userId?: string
+}) {
+  return request.post<{
+    results: any[]
+    total: number
+  }>({
+    url: '/sticker/search-by-text',
+    data
+  })
+}
+
 // Removed: AI infringement check was merged into the ai-generate-info API
 // /**
 //  * AI check whether the sticker is infringing
