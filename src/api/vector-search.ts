@@ -161,6 +161,108 @@ export interface ContentVectorBuildResult {
   >;
 }
 
+export type BaseVectorBuildJobStatus =
+  | "idle"
+  | "pending"
+  | "running"
+  | "stale"
+  | "paused"
+  | "completed"
+  | "failed"
+  | "canceled";
+
+export interface BaseVectorBuildJobItem {
+  collection: string;
+  label: string;
+  status: BaseVectorBuildJobStatus;
+  total: number;
+  processed: number;
+  indexed: number;
+  skipped: number;
+  failed: number;
+  message?: string;
+  extra?: Record<string, any>;
+}
+
+export interface BaseVectorBuildJob {
+  id: string;
+  status: BaseVectorBuildJobStatus;
+  trigger: "manual" | "scheduled";
+  batchSize: number;
+  dryRun: boolean;
+  force: boolean;
+  collections: string[];
+  filters: Record<string, any>;
+  createdAt: string;
+  startedAt?: string;
+  finishedAt?: string;
+  updatedAt: string;
+  progress: number;
+  total: number;
+  processed: number;
+  indexed: number;
+  skipped: number;
+  failed: number;
+  message?: string;
+  error?: string;
+  items: BaseVectorBuildJobItem[];
+  errors: string[];
+}
+
+export interface CreateBaseVectorBuildJobResult {
+  accepted: boolean;
+  job: BaseVectorBuildJob;
+  message?: string;
+}
+
+export const createBaseVectorBuildJob = (data: {
+  batchSize?: number;
+  dryRun?: boolean;
+  force?: boolean;
+  collections?: string[];
+  filters?: {
+    isCustom?: boolean;
+    userId?: string;
+    updatedAfter?: string;
+    updatedBefore?: string;
+  };
+}) => {
+  return request.post<CreateBaseVectorBuildJobResult>({
+    url: "/sticker/vector-build-jobs",
+    data,
+  });
+};
+
+export const getLatestBaseVectorBuildJob = () => {
+  return request.get<BaseVectorBuildJob | null>({
+    url: "/sticker/vector-build-jobs/latest",
+  });
+};
+
+export const pauseBaseVectorBuildJob = (id: string) => {
+  return request.post<BaseVectorBuildJob | null>({
+    url: `/sticker/vector-build-jobs/${id}/pause`,
+  });
+};
+
+export const resumeBaseVectorBuildJob = (id: string) => {
+  return request.post<BaseVectorBuildJob | null>({
+    url: `/sticker/vector-build-jobs/${id}/resume`,
+  });
+};
+
+export const cancelBaseVectorBuildJob = (id: string) => {
+  return request.post<BaseVectorBuildJob | null>({
+    url: `/sticker/vector-build-jobs/${id}/cancel`,
+  });
+};
+
+export const retryBaseVectorBuildJob = (id: string) => {
+  return request.post<CreateBaseVectorBuildJobResult | null>({
+    url: `/sticker/vector-build-jobs/${id}/retry`,
+  });
+};
+
 export const reindexStickerVectors = (data: {
   batchSize?: number;
   dryRun?: boolean;

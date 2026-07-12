@@ -451,10 +451,14 @@ $prefix-cls: #{$namespace}-tags-view;
   &__tool {
     position: relative;
     color: var(--tags-view-tool-color);
+    border-radius: 7px;
+    transform-origin: center;
     transition:
       color 0.2s ease,
       background-color 0.2s ease,
+      box-shadow 0.2s ease,
       transform 0.18s ease;
+    will-change: transform;
 
     &::before {
       position: absolute;
@@ -467,9 +471,22 @@ $prefix-cls: #{$namespace}-tags-view;
     }
 
     &:hover {
+      z-index: 3;
       color: var(--tags-view-tool-hover-color);
       background: color-mix(in srgb, var(--tags-view-tool-hover-bg) 56%, transparent 44%);
-      transform: scale(1.06);
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+      transform: translateY(-1px) scale(1.12);
+    }
+
+    &:active {
+      box-shadow: none;
+      transform: translateY(0) scale(0.96);
+      transition-duration: 0.08s;
+    }
+
+    &:focus-visible {
+      outline: 2px solid color-mix(in srgb, var(--el-color-primary) 42%, transparent 58%);
+      outline-offset: -2px;
     }
 
     &--first {
@@ -503,12 +520,14 @@ $prefix-cls: #{$namespace}-tags-view;
     border: 1px solid transparent;
     border-radius: 8px;
     box-sizing: border-box;
+    transform-origin: center;
     transition:
       color 0.2s ease,
       background-color 0.2s ease,
       border-color 0.2s ease,
       box-shadow 0.2s ease,
       transform 0.18s ease;
+    will-change: transform;
 
     &--close {
       position: absolute;
@@ -528,19 +547,27 @@ $prefix-cls: #{$namespace}-tags-view;
         background-color 0.18s ease;
     }
 
-    &:not(.#{$prefix-cls}__item--affix):hover {
+    &:hover {
+      z-index: 3;
       color: var(--tags-view-item-hover-color);
       background: color-mix(in srgb, var(--tags-view-item-hover-bg) 70%, transparent 30%);
       border-color: color-mix(in srgb, var(--tags-view-item-border-color) 42%, transparent 58%);
-      transform: scale(1.02);
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+      transform: translateY(-1px) scale(1.045);
 
-      .#{$prefix-cls}__item--close {
+      &:not(.#{$prefix-cls}__item--affix) .#{$prefix-cls}__item--close {
         opacity: 1;
       }
 
       .#{$prefix-cls}__item--close:hover {
         background: color-mix(in srgb, var(--tags-view-tool-hover-bg) 52%, transparent 48%);
       }
+    }
+
+    &:active {
+      box-shadow: none;
+      transform: translateY(0) scale(0.98);
+      transition-duration: 0.08s;
     }
   }
 

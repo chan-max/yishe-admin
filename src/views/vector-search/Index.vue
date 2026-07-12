@@ -57,7 +57,7 @@
                 查询
               </el-button>
               <el-button size="small" type="success" @click="openCreateDialog">新增</el-button>
-              <el-button size="small" plain @click="openOperationsDialog">更多操作</el-button>
+              <el-button size="small" plain @click="openOperationsDialog">构建操作</el-button>
               <el-button
                 size="small"
                 type="danger"
@@ -67,6 +67,26 @@
                 删除选中 ({{ selectedIds.length }})
               </el-button>
             </div>
+            <button
+              type="button"
+              class="vector-build-status"
+              @click="openBuildBaseDialog"
+            >
+              <el-tag size="small" :type="getBuildJobTagType(currentBuildStatus)" effect="plain">
+                {{ getBuildJobStatusText(currentBuildStatus) }}
+              </el-tag>
+              <span class="vector-build-status__title">向量索引</span>
+              <span class="vector-build-status__meta">
+                {{ buildJob?.processed || 0 }}/{{ buildJob?.total || 0 }}
+              </span>
+              <el-progress
+                class="vector-build-status__progress"
+                :percentage="buildJob?.progress || 0"
+                :show-text="false"
+                :stroke-width="5"
+              />
+              <span class="vector-build-status__link">详情</span>
+            </button>
           </el-form>
         </div>
       </template>
@@ -178,42 +198,59 @@
     </el-dialog>
 
     <!-- 详情弹窗 -->
-    <el-dialog v-model="detailVisible" title="记录详情" width="560px" destroy-on-close>
+    <el-dialog v-model="detailVisible" title="记录详情" width="760px" destroy-on-close>
       <template v-if="detailRecord">
-        <el-descriptions :column="2" border size="small">
-          <el-descriptions-item label="ID">{{ detailRecord.id }}</el-descriptions-item>
-          <el-descriptions-item label="分类">
-            {{ getCollectionLabel(detailRecord.collection) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="Source ID">{{ detailRecord.sourceId }}</el-descriptions-item>
-          <el-descriptions-item label="状态">
-            <el-tag :type="detailRecord.status === 'active' ? 'success' : 'info'" size="small">
-              {{ detailRecord.status }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="User ID">{{
-            detailRecord.userId || "-"
-          }}</el-descriptions-item>
-          <el-descriptions-item label="索引时间">{{
-            formatTime(detailRecord.indexedAt)
-          }}</el-descriptions-item>
-          <el-descriptions-item label="Embedding Hash" :span="2">
-            <span class="mono-text">{{ detailRecord.embeddingHash }}</span>
-          </el-descriptions-item>
-          <el-descriptions-item label="摘要" :span="2">{{
-            detailRecord.summary
-          }}</el-descriptions-item>
-          <el-descriptions-item label="Embedding Text" :span="2">
-            <div class="embedding-text">{{ detailRecord.embeddingText }}</div>
-          </el-descriptions-item>
-        </el-descriptions>
+        <div class="record-detail">
+          <div class="record-detail__grid">
+            <div class="record-detail__field">
+              <span class="record-detail__label">ID</span>
+              <span class="record-detail__value">{{ detailRecord.id }}</span>
+            </div>
+            <div class="record-detail__field">
+              <span class="record-detail__label">分类</span>
+              <span class="record-detail__value">{{ getCollectionLabel(detailRecord.collection) }}</span>
+            </div>
+            <div class="record-detail__field">
+              <span class="record-detail__label">Source ID</span>
+              <span class="record-detail__value mono-text">{{ detailRecord.sourceId }}</span>
+            </div>
+            <div class="record-detail__field">
+              <span class="record-detail__label">状态</span>
+              <span class="record-detail__value">
+                <el-tag :type="detailRecord.status === 'active' ? 'success' : 'info'" size="small">
+                  {{ detailRecord.status }}
+                </el-tag>
+              </span>
+            </div>
+            <div class="record-detail__field">
+              <span class="record-detail__label">User ID</span>
+              <span class="record-detail__value">{{ detailRecord.userId || "-" }}</span>
+            </div>
+            <div class="record-detail__field">
+              <span class="record-detail__label">索引时间</span>
+              <span class="record-detail__value">{{ formatTime(detailRecord.indexedAt) }}</span>
+            </div>
+          </div>
+          <div class="record-detail__field record-detail__field--full">
+            <span class="record-detail__label">Embedding Hash</span>
+            <span class="record-detail__value mono-text">{{ detailRecord.embeddingHash || "-" }}</span>
+          </div>
+          <div class="record-detail__field record-detail__field--full">
+            <span class="record-detail__label">摘要</span>
+            <span class="record-detail__value">{{ detailRecord.summary || "-" }}</span>
+          </div>
+          <div class="record-detail__field record-detail__field--full">
+            <span class="record-detail__label">Embedding Text</span>
+            <div class="embedding-text">{{ detailRecord.embeddingText || "-" }}</div>
+          </div>
+        </div>
       </template>
     </el-dialog>
 
     <el-dialog
       v-model="buildBaseVisible"
-      title="构建基础模块索引"
-      width="680px"
+      title="向量索引维护"
+      width="760px"
       destroy-on-close
     >
       <el-form :model="buildBaseForm" label-width="96px" class="build-sticker-vector-form">
@@ -248,26 +285,75 @@
         </el-form-item>
       </el-form>
 
-      <div v-if="buildBaseResult" class="build-sticker-vector-result">
+      <div v-if="buildJob" class="build-sticker-vector-result">
         <div class="build-sticker-vector-result__summary">
-          <el-tag size="small" type="success" effect="plain">构建结果</el-tag>
-          <span>扫描 {{ buildBaseResult.total }} 条</span>
-          <span>构建 {{ buildBaseResult.indexed }} 条</span>
-          <span>跳过 {{ buildBaseResult.skipped }} 条</span>
-          <span>失败 {{ buildBaseResult.failed }} 条</span>
+          <el-tag size="small" :type="getBuildJobTagType(currentBuildStatus)" effect="plain">
+            {{ getBuildJobStatusText(currentBuildStatus) }}
+          </el-tag>
+          <span>进度 {{ buildJob.processed }}/{{ buildJob.total || 0 }}</span>
+          <span>构建 {{ buildJob.indexed }}</span>
+          <span>跳过 {{ buildJob.skipped }}</span>
+          <span>失败 {{ buildJob.failed }}</span>
         </div>
+        <el-progress
+          class="build-sticker-vector-progress"
+          :percentage="buildJob.progress || 0"
+          :status="buildJob.status === 'failed' ? 'exception' : buildJob.status === 'completed' ? 'success' : undefined"
+        />
         <div class="build-sticker-vector-result__details">
           <div
             v-for="item in baseVectorResultDetails"
             :key="item.collection"
+            class="build-sticker-vector-result__item"
           >
-            {{ item.label }}：构建 {{ item.indexed }}，跳过 {{ item.skipped }}，失败 {{ item.failed }}
+            <span>{{ item.label }}</span>
+            <span>{{ item.processed }}/{{ item.total || 0 }}</span>
+            <span>构建 {{ item.indexed }}</span>
+            <span>跳过 {{ item.skipped }}</span>
+            <span>失败 {{ item.failed }}</span>
           </div>
+        </div>
+        <div v-if="buildJob.error" class="build-sticker-vector-error">
+          {{ buildJob.error }}
+        </div>
+        <div v-else-if="currentBuildStatus === 'stale'" class="build-sticker-vector-error">
+          任务长时间没有进度更新，可能是服务重启或队列中断，可以点击继续恢复。
         </div>
       </div>
 
       <template #footer>
         <el-button @click="buildBaseVisible = false">关闭</el-button>
+        <el-button
+          v-if="buildJob?.status === 'running'"
+          :loading="buildBaseLoading"
+          @click="handlePauseBuildJob"
+        >
+          暂停
+        </el-button>
+        <el-button
+          v-if="buildJob?.status === 'paused' || currentBuildStatus === 'stale'"
+          type="primary"
+          :loading="buildBaseLoading"
+          @click="handleResumeBuildJob"
+        >
+          继续
+        </el-button>
+        <el-button
+          v-if="buildJob && ['pending', 'running', 'paused'].includes(buildJob.status)"
+          type="danger"
+          plain
+          :loading="buildBaseLoading"
+          @click="handleCancelBuildJob"
+        >
+          取消
+        </el-button>
+        <el-button
+          v-if="buildJob && ['failed', 'canceled'].includes(buildJob.status)"
+          :loading="buildBaseLoading"
+          @click="handleRetryBuildJob"
+        >
+          重试
+        </el-button>
         <el-button type="primary" :loading="buildBaseLoading" @click="handleBuildBaseVectors">
           开始构建
         </el-button>
@@ -340,7 +426,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, onMounted, onUnmounted, reactive, ref } from "vue";
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from "element-plus";
 import type { VxeGridProps } from "vxe-table";
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
@@ -353,11 +439,15 @@ import {
   getVectorRecord,
   deleteVectorRecord,
   indexVectorRecord,
-  reindexContentVectors,
-  reindexStickerVectors,
+  createBaseVectorBuildJob,
+  getLatestBaseVectorBuildJob,
+  pauseBaseVectorBuildJob,
+  resumeBaseVectorBuildJob,
+  cancelBaseVectorBuildJob,
+  retryBaseVectorBuildJob,
+  type BaseVectorBuildJob,
+  type BaseVectorBuildJobStatus,
   type CollectionDefinition,
-  type ContentVectorBuildResult,
-  type StickerVectorReindexResult,
   type VectorRecord,
 } from "@/api/vector-search";
 
@@ -424,6 +514,7 @@ const gridOptions = computed<VxeGridProps>(() => ({
     { field: "id", title: "ID", width: 70 },
     { field: "summary", title: "摘要", minWidth: 260, slots: { default: "summarySlot" } },
     { field: "collection", title: "分类", width: 120, slots: { default: "collectionSlot" } },
+    { field: "userId", title: "User ID", width: 100 },
     { field: "status", title: "状态", width: 90, slots: { default: "statusSlot" } },
     buildTimeColumn("索引时间", "indexedAt", 170),
     buildOperationColumn(),
@@ -554,14 +645,8 @@ async function handleViewDetail(row: VectorRecord) {
 const operationsVisible = ref(false);
 const buildBaseVisible = ref(false);
 const buildBaseLoading = ref(false);
-const buildBaseResult = ref<{
-  total: number;
-  indexed: number;
-  skipped: number;
-  failed: number;
-  sticker?: StickerVectorReindexResult;
-  content?: ContentVectorBuildResult;
-} | null>(null);
+const buildJob = ref<BaseVectorBuildJob | null>(null);
+let buildJobPollTimer: number | undefined;
 
 const buildBaseForm = reactive({
   collections: ["sticker-images", "fonts", "sentences", "psd-templates", "text-documents"] as string[],
@@ -578,31 +663,28 @@ const baseVectorLabels: Record<string, string> = {
   "text-documents": "文本文档",
 };
 
-const contentCollections = ["fonts", "sentences", "psd-templates", "text-documents"];
+const buildJobStaleMs = 2 * 60 * 1000;
+
+const currentBuildStatus = computed<BaseVectorBuildJobStatus>(() => {
+  if (!buildJob.value) return "idle";
+  if (buildJob.value.status === "running" && isBuildJobStale(buildJob.value)) return "stale";
+  return buildJob.value.status;
+});
 
 const baseVectorResultDetails = computed(() =>
-  buildBaseForm.collections.map((collection) => {
-    if (collection === "sticker-images") {
-      const detail = buildBaseResult.value?.sticker?.details?.stickerImages;
-      return {
-        collection,
-        label: baseVectorLabels[collection],
-        indexed: detail?.indexed || 0,
-        skipped: detail?.skipped || 0,
-        failed: detail?.failed || 0,
-      };
-    }
-
-    const contentDetails = buildBaseResult.value?.content?.details;
-    const detail = contentDetails?.[collection as keyof NonNullable<ContentVectorBuildResult["details"]>];
-    return {
-      collection,
-      label: baseVectorLabels[collection] || collection,
-      indexed: detail?.indexed || 0,
-      skipped: detail?.skipped || 0,
-      failed: detail?.failed || 0,
-    };
-  }),
+  (buildJob.value?.items || buildBaseForm.collections.map((collection) => ({
+    collection,
+    label: baseVectorLabels[collection] || collection,
+    status: "pending" as BaseVectorBuildJobStatus,
+    total: 0,
+    processed: 0,
+    indexed: 0,
+    skipped: 0,
+    failed: 0,
+  }))).map((item) => ({
+    ...item,
+    label: item.label || baseVectorLabels[item.collection] || item.collection,
+  })),
 );
 
 function openOperationsDialog() {
@@ -611,28 +693,77 @@ function openOperationsDialog() {
 
 function openBuildBaseDialog() {
   operationsVisible.value = false;
-  buildBaseResult.value = null;
   buildBaseVisible.value = true;
+  void loadLatestBuildJob();
+  startBuildJobPolling();
 }
 
-function buildStickerVectorPayload(collections: string[]) {
+function buildBaseVectorPayload() {
   return {
     batchSize: buildBaseForm.batchSize,
     dryRun: false,
     force: buildBaseForm.force,
-    collections,
+    collections: buildBaseForm.collections,
     filters: buildBaseForm.onlyCustom ? { isCustom: true } : {},
   };
 }
 
-function buildContentVectorPayload(collections: string[]) {
+function getBuildJobStatusText(status: BaseVectorBuildJobStatus) {
   return {
-    batchSize: buildBaseForm.batchSize,
-    dryRun: false,
-    force: buildBaseForm.force,
-    collections,
-    filters: {},
-  };
+    idle: "未执行",
+    pending: "等待中",
+    running: "构建中",
+    stale: "待恢复",
+    paused: "已暂停",
+    completed: "已完成",
+    failed: "失败",
+    canceled: "已取消",
+  }[status];
+}
+
+function getBuildJobTagType(status: BaseVectorBuildJobStatus) {
+  if (status === "completed") return "success";
+  if (status === "failed" || status === "canceled") return "danger";
+  if (status === "paused" || status === "stale") return "warning";
+  if (status === "idle") return "info";
+  return "primary";
+}
+
+function isBuildJobActive(job = buildJob.value) {
+  return !!job && ["pending", "running", "paused"].includes(job.status);
+}
+
+function isBuildJobStale(job: BaseVectorBuildJob) {
+  const updatedAt = new Date(job.updatedAt || job.startedAt || job.createdAt).getTime();
+  if (!Number.isFinite(updatedAt)) return false;
+  return Date.now() - updatedAt > buildJobStaleMs;
+}
+
+async function loadLatestBuildJob() {
+  try {
+    buildJob.value = await getLatestBaseVectorBuildJob();
+    if (isBuildJobActive()) startBuildJobPolling();
+  } catch {
+    buildJob.value = null;
+  }
+}
+
+function startBuildJobPolling() {
+  if (buildJobPollTimer) return;
+  buildJobPollTimer = window.setInterval(async () => {
+    await loadLatestBuildJob();
+    if (!isBuildJobActive()) {
+      stopBuildJobPolling();
+      if (buildJob.value?.status === "completed") await loadRecords();
+    }
+  }, 1500);
+}
+
+function stopBuildJobPolling() {
+  if (buildJobPollTimer) {
+    window.clearInterval(buildJobPollTimer);
+    buildJobPollTimer = undefined;
+  }
 }
 
 async function handleBuildBaseVectors() {
@@ -657,49 +788,62 @@ async function handleBuildBaseVectors() {
     return;
   }
 
-  const stickerCollections = buildBaseForm.collections.filter((collection) => collection === "sticker-images");
-  const selectedContentCollections = buildBaseForm.collections.filter((collection) =>
-    contentCollections.includes(collection),
-  );
-
   buildBaseLoading.value = true;
   try {
-    let sticker: StickerVectorReindexResult | undefined;
-    let content: ContentVectorBuildResult | undefined;
-    const errors: string[] = [];
-    if (stickerCollections.length) {
-      try {
-        sticker = await reindexStickerVectors(buildStickerVectorPayload(stickerCollections));
-      } catch (error: any) {
-        errors.push(`贴纸图片：${error?.message || "构建失败"}`);
-      }
-    }
-    if (selectedContentCollections.length) {
-      try {
-        content = await reindexContentVectors(buildContentVectorPayload(selectedContentCollections));
-      } catch (error: any) {
-        errors.push(`内容资源：${error?.message || "构建失败"}`);
-      }
-    }
-    if (!sticker && !content && errors.length) {
-      throw new Error(errors.join("；"));
-    }
-    buildBaseResult.value = {
-      total: (sticker?.total || 0) + (content?.total || 0),
-      indexed: (sticker?.indexed || 0) + (content?.indexed || 0),
-      skipped: (sticker?.skipped || 0) + (content?.skipped || 0),
-      failed: (sticker?.failed || 0) + (content?.failed || 0),
-      sticker,
-      content,
-    };
-    if (errors.length) {
-      ElMessage.warning(`部分构建失败：${errors.join("；")}`);
+    const result = await createBaseVectorBuildJob(buildBaseVectorPayload());
+    buildJob.value = result.job;
+    if (result.accepted) {
+      ElMessage.success("构建任务已开始");
     } else {
-      ElMessage.success("构建完成");
+      ElMessage.warning(result.message || "已有构建任务在运行");
     }
-    await loadRecords();
+    startBuildJobPolling();
   } catch (error: any) {
-    ElMessage.error(error?.message || "构建失败");
+    ElMessage.error(error?.message || "创建构建任务失败");
+  } finally {
+    buildBaseLoading.value = false;
+  }
+}
+
+async function handlePauseBuildJob() {
+  if (!buildJob.value) return;
+  buildBaseLoading.value = true;
+  try {
+    buildJob.value = await pauseBaseVectorBuildJob(buildJob.value.id);
+  } finally {
+    buildBaseLoading.value = false;
+  }
+}
+
+async function handleResumeBuildJob() {
+  if (!buildJob.value) return;
+  buildBaseLoading.value = true;
+  try {
+    buildJob.value = await resumeBaseVectorBuildJob(buildJob.value.id);
+    startBuildJobPolling();
+  } finally {
+    buildBaseLoading.value = false;
+  }
+}
+
+async function handleCancelBuildJob() {
+  if (!buildJob.value) return;
+  buildBaseLoading.value = true;
+  try {
+    buildJob.value = await cancelBaseVectorBuildJob(buildJob.value.id);
+    stopBuildJobPolling();
+  } finally {
+    buildBaseLoading.value = false;
+  }
+}
+
+async function handleRetryBuildJob() {
+  if (!buildJob.value) return;
+  buildBaseLoading.value = true;
+  try {
+    const result = await retryBaseVectorBuildJob(buildJob.value.id);
+    buildJob.value = result?.job || null;
+    startBuildJobPolling();
   } finally {
     buildBaseLoading.value = false;
   }
@@ -792,6 +936,11 @@ onMounted(async () => {
     // 静默失败
   }
   await loadRecords();
+  await loadLatestBuildJob();
+});
+
+onUnmounted(() => {
+  stopBuildJobPolling();
 });
 </script>
 
@@ -866,6 +1015,54 @@ onMounted(async () => {
   color: var(--el-text-color-secondary);
   font-size: 11px;
   line-height: 15px;
+}
+
+.vector-build-status {
+  display: grid;
+  width: min(520px, 100%);
+  grid-template-columns: auto auto auto minmax(90px, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 6px;
+  background: var(--el-fill-color-lighter);
+  color: var(--el-text-color-regular);
+  cursor: pointer;
+}
+
+.vector-build-status__title {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.vector-build-status__meta,
+.vector-build-status__link {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.vector-build-status__link {
+  color: var(--el-color-primary);
+}
+
+.vector-build-status__progress {
+  min-width: 90px;
+}
+
+@media (max-width: 640px) {
+  .vector-build-status {
+    grid-template-columns: auto 1fr auto;
+  }
+
+  .vector-build-status__progress {
+    grid-column: 1 / -1;
+  }
 }
 
 .create-form-tip {
@@ -971,19 +1168,88 @@ onMounted(async () => {
   line-height: 18px;
 }
 
+.build-sticker-vector-progress {
+  margin-top: 8px;
+}
+
+.build-sticker-vector-result__item {
+  display: grid;
+  grid-template-columns: minmax(92px, 1fr) repeat(4, minmax(64px, auto));
+  gap: 8px;
+  align-items: center;
+}
+
+.build-sticker-vector-error {
+  margin-top: 8px;
+  color: var(--el-color-danger);
+  font-size: 12px;
+  line-height: 18px;
+  word-break: break-word;
+}
+
 .mono-text {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 12px;
   word-break: break-all;
 }
 
+.record-detail {
+  max-height: min(68vh, 640px);
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.record-detail__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+}
+
+.record-detail__field {
+  min-width: 0;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.record-detail__field--full {
+  margin-top: 4px;
+}
+
+.record-detail__label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.record-detail__value {
+  display: block;
+  min-width: 0;
+  color: var(--el-text-color-primary);
+  font-size: 13px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
 .embedding-text {
-  max-height: 200px;
-  overflow-y: auto;
+  max-height: 280px;
+  overflow: auto;
+  padding: 8px 10px;
+  border-radius: 4px;
+  background: var(--el-fill-color-lighter);
   white-space: pre-wrap;
   font-size: 13px;
-  line-height: 1.7;
+  line-height: 1.6;
   color: var(--el-text-color-regular);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .record-detail__grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
 }
 </style>
 
