@@ -151,7 +151,7 @@ export interface ContentVectorBuildResult {
   dryRun: boolean;
   force: boolean;
   details?: Record<
-    "fonts" | "sentences" | "psd-templates" | "text-documents",
+    "fonts" | "sentences" | "psd-templates" | "text-documents" | "design-knowledge",
     {
       total: number;
       indexed: number;
@@ -236,6 +236,36 @@ export const createBaseVectorBuildJob = (data: {
 export const getLatestBaseVectorBuildJob = () => {
   return request.get<BaseVectorBuildJob | null>({
     url: "/sticker/vector-build-jobs/latest",
+  });
+};
+
+export const getCollectionLastFinishedTimes = () => {
+  return request.get<Record<string, string>>({
+    url: "/sticker/vector-build-jobs/last-finished-by-collection",
+  });
+};
+
+export interface VectorBuildSchedulerStatus {
+  enabled: boolean;
+  running: boolean;
+  disabledReason: string | null;
+  cron: string;
+  cronDescription: string;
+  timezone: string;
+  windowHours: number;
+  batchSize: number;
+  stickerBuildEnabled: boolean;
+  contentBuildEnabled: boolean;
+  stickerCollections: string[];
+  contentCollections: string[];
+  scheduledCollections: string[];
+  nextRunAt: string | null;
+  summary: string;
+}
+
+export const getVectorBuildSchedulerStatus = () => {
+  return request.get<VectorBuildSchedulerStatus>({
+    url: "/sticker/vector-build-scheduler/status",
   });
 };
 

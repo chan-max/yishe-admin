@@ -28,6 +28,7 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   ToolsIndex: "home.tools",
   Statistics: "home.statistics",
   VectorSearch: "home.vector-search",
+  DesignKnowledge: "home.design-knowledge",
   CrawlerMaterial: "resource.crawler-material",
   Material: "resource.material",
   FileResource: FILE_RESOURCE_MENU_KEY,

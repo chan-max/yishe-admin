@@ -102,6 +102,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
           menuKey: "home.vector-search",
         },
       },
+      {
+        path: "design-knowledge",
+        component: () => import("@/views/design-knowledge/index.vue"),
+        name: "DesignKnowledge",
+        meta: {
+          title: "设计知识库",
+          menuKey: "home.design-knowledge",
+        },
+      },
     ],
   },
   {
