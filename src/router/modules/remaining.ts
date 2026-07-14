@@ -293,6 +293,14 @@ const remainingRouter: AppRouteRecordRaw[] = [
         },
       },
       {
+        path: "mcp",
+        component: () => import("@/views/ai/mcp/index.vue"),
+        name: "McpConsole",
+        meta: {
+          title: "MCP 管理",
+        },
+      },
+      {
         path: "tti",
         component: () => import("@/views/ai/tti.vue"),
         name: "AiTti",

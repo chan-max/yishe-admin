@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ContentWrap :plain="true">
     <ListPageLayout
       class="material-index-page"
@@ -527,6 +527,9 @@
               </el-tag>
               <span class="similar-image-search-status__source">
                 {{ similarImageActiveSourceText }}
+              </span>
+              <span v-if="similarImageSearchMeta" class="similar-image-search-status__meta">
+                （耗时: {{ similarImageSearchMeta.searchTimeMs }}ms | 最匹配: {{ similarImageSearchMeta.scoreRange?.max ? (similarImageSearchMeta.scoreRange.max * 100).toFixed(1) + '%' : '-' }}）
               </span>
             </div>
           </div>
@@ -2396,7 +2399,7 @@
             v-model:page="queryParams.currentPage"
             v-model:limit="queryParams.pageSize"
             :total="total"
-            @pagination="getList"
+            @pagination="handlePagination"
           />
         </div>
       </template>
@@ -2455,6 +2458,20 @@
             </div>
           </el-tab-pane>
         </el-tabs>
+
+        <div class="similar-image-search__options">
+          <div class="similar-image-search__option-item">
+            <span class="similar-image-search__option-label">检索数量：</span>
+            <el-input-number
+              v-model="similarImageSearchLimit"
+              size="small"
+              :min="1"
+              :max="200"
+              controls-position="right"
+              style="width: 100px"
+            />
+          </div>
+        </div>
 
         <div v-if="similarImageSearchTab !== 'text'" class="similar-image-preview">
           <div class="similar-image-preview__title">查询图片</div>
@@ -3909,7 +3926,7 @@ watchEffect(() => {
 
 const queryParams = reactive({
   currentPage: 1,
-  pageSize: 10,
+  pageSize: 20,
   keyword: "",
   searchText: "", // 多字段搜索（名称、描述、关键词等）
   sortingFields: "createTime DESC", // 排序字段
@@ -3930,6 +3947,8 @@ const queryParams = reactive({
 });
 
 const vectorSimilarSearchActive = ref(false);
+const similarImageSearchMeta = ref<any>(null);
+const similarImageSearchLimit = ref(10); // 检索数量默认 10
 const similarImageDialogVisible = ref(false);
 const similarImageSearchTab = ref<"url" | "file" | "text">("url");
 const similarImageUrl = ref("");
@@ -4955,7 +4974,7 @@ function normalizeMaterialListRows(items: any[]) {
   });
 }
 
-async function loadVectorSimilarResults(imageUrl: string): Promise<boolean> {
+async function loadVectorSimilarResults(imageUrl: string, resetPage = true): Promise<boolean> {
   if (!imageUrl) {
     ElMessage.warning("该图片暂无可搜索的图片地址");
     return false;
@@ -4964,16 +4983,22 @@ async function loadVectorSimilarResults(imageUrl: string): Promise<boolean> {
   loading.value = true;
   stickerDetailCache.clear();
   dataSource.value = [];
+  if (resetPage) {
+    queryParams.currentPage = 1;
+    queryParams.pageSize = similarImageSearchLimit.value;
+  }
   try {
+    const offset = (queryParams.currentPage - 1) * queryParams.pageSize;
     const result = await searchStickerByImage({
       imageUrl,
       mode: "visual",
-      limit: Math.max(queryParams.pageSize, 20),
+      limit: queryParams.pageSize,
+      offset,
     });
     const items = normalizeMaterialListRows(result?.results || []);
     dataSource.value = items;
     total.value = result?.total || items.length;
-    queryParams.currentPage = 1;
+    similarImageSearchMeta.value = result?.meta || null;
     queryParams.phash = "";
     vectorSimilarSearchActive.value = true;
     cacheSelectedMaterialRows(dataSource.value.filter((item) => ids.value.includes(String(item.id))));
@@ -4981,6 +5006,7 @@ async function loadVectorSimilarResults(imageUrl: string): Promise<boolean> {
     return true;
   } catch (error: any) {
     vectorSimilarSearchActive.value = false;
+    similarImageSearchMeta.value = null;
     ElMessage.error(error?.message || "搜索失败");
     return false;
   } finally {
@@ -4988,7 +5014,7 @@ async function loadVectorSimilarResults(imageUrl: string): Promise<boolean> {
   }
 }
 
-async function loadVectorSimilarTextResults(text: string): Promise<boolean> {
+async function loadVectorSimilarTextResults(text: string, resetPage = true): Promise<boolean> {
   if (!text?.trim()) {
     ElMessage.warning("请输入搜索文本");
     return false;
@@ -4997,15 +5023,21 @@ async function loadVectorSimilarTextResults(text: string): Promise<boolean> {
   loading.value = true;
   stickerDetailCache.clear();
   dataSource.value = [];
+  if (resetPage) {
+    queryParams.currentPage = 1;
+    queryParams.pageSize = similarImageSearchLimit.value;
+  }
   try {
+    const offset = (queryParams.currentPage - 1) * queryParams.pageSize;
     const result = await searchStickerByText({
       text: text.trim(),
-      limit: Math.max(queryParams.pageSize, 20),
+      limit: queryParams.pageSize,
+      offset,
     });
     const items = normalizeMaterialListRows(result?.results || []);
     dataSource.value = items;
     total.value = result?.total || items.length;
-    queryParams.currentPage = 1;
+    similarImageSearchMeta.value = result?.meta || null;
     queryParams.phash = "";
     vectorSimilarSearchActive.value = true;
     cacheSelectedMaterialRows(dataSource.value.filter((item) => ids.value.includes(String(item.id))));
@@ -5013,6 +5045,7 @@ async function loadVectorSimilarTextResults(text: string): Promise<boolean> {
     return true;
   } catch (error: any) {
     vectorSimilarSearchActive.value = false;
+    similarImageSearchMeta.value = null;
     ElMessage.error(error?.message || "文字搜索失败");
     return false;
   } finally {
@@ -5047,7 +5080,22 @@ async function clearSimilarImageSearchResults() {
   similarImageActivePreviewUrl.value = "";
   similarImageActiveSourceType.value = "";
   similarImageActiveSourceLabel.value = "";
+  similarImageSearchMeta.value = null;
+  queryParams.currentPage = 1;
+  queryParams.pageSize = 20; // 恢复默认分页大小
   await getList();
+}
+
+async function handlePagination() {
+  if (vectorSimilarSearchActive.value) {
+    if (similarImageActiveSourceType.value === "text") {
+      await loadVectorSimilarTextResults(similarImageActiveSourceLabel.value, false);
+    } else {
+      await loadVectorSimilarResults(similarImageActivePreviewUrl.value, false);
+    }
+  } else {
+    await getList();
+  }
 }
 
 function releaseSimilarImagePreviewUrl() {
@@ -11083,6 +11131,14 @@ h1 {
   white-space: nowrap;
 }
 
+.similar-image-search-status__meta {
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+  line-height: 16px;
+  white-space: nowrap;
+  opacity: 0.8;
+}
+
 .similar-image-search-status__actions {
   display: flex;
   flex: 0 0 auto;
@@ -11110,6 +11166,23 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.similar-image-search__options {
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+}
+
+.similar-image-search__option-item {
+  display: flex;
+  align-items: center;
+}
+
+.similar-image-search__option-label {
+  font-size: 13px;
+  color: var(--el-text-color-regular);
+  margin-right: 8px;
 }
 
 .similar-image-upload {

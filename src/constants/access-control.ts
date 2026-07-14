@@ -64,6 +64,7 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   AiAgentConsole: "ai.agent",
   AiModelService: "ai.model-service",
   Prompt: "ai.prompt",
+  McpConsole: "ai.mcp",
   ProductCategory: "product.category",
   ProductIndex: "product.index",
   ProductGenerationTemplate: "product.generation-template",

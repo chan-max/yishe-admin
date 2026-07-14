@@ -27,7 +27,6 @@
               <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
               <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
               <el-button type="primary" :icon="Plus" @click="handleAdd">新增</el-button>
-              <el-button :icon="RefreshRight" :loading="reindexLoading" @click="handleReindex">重建索引</el-button>
               <el-button type="danger" :icon="Delete" :disabled="!ids.length" @click="handleDelete(null)">批量删除</el-button>
             </div>
           </el-form>
@@ -182,7 +181,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Refresh, Plus, Delete, RefreshRight } from '@element-plus/icons-vue'
+import { Search, Refresh, Plus, Delete } from '@element-plus/icons-vue'
 import { ContentWrap } from '@/components/ContentWrap'
 import ListPageLayout from '@/components/ListPageLayout/index.vue'
 import Pagination from '@/components/Pagination/index.vue'
@@ -192,7 +191,6 @@ import {
   createDesignKnowledge,
   updateDesignKnowledge,
   deleteDesignKnowledge,
-  reindexDesignKnowledge,
   type DesignKnowledge
 } from '@/api/design-knowledge'
 
@@ -207,7 +205,6 @@ const queryParams = reactive({
 // 列表数据
 const dataSource = ref<DesignKnowledge[]>([])
 const loading = ref(false)
-const reindexLoading = ref(false)
 const ids = ref<string[]>([])
 const total = ref(0)
 
@@ -347,31 +344,6 @@ async function handleSubmit() {
   }
 }
 
-// 重建向量索引
-async function handleReindex() {
-  try {
-    await ElMessageBox.confirm(
-      '确认重建设计知识库的向量索引吗？数据量大时可能需要一些时间。',
-      '重建索引',
-      { type: 'warning' },
-    )
-  } catch {
-    return
-  }
-
-  reindexLoading.value = true
-  try {
-    const res = await reindexDesignKnowledge()
-    const indexed = res?.indexed ?? 0
-    const failed = res?.failed ?? 0
-    const totalCount = res?.total ?? 0
-    ElMessage.success(`索引重建完成：共 ${totalCount} 条，成功 ${indexed}，失败 ${failed}`)
-  } catch (error) {
-    ElMessage.error('重建索引失败')
-  } finally {
-    reindexLoading.value = false
-  }
-}
 
 // 删除
 function handleDelete(id: string | null) {

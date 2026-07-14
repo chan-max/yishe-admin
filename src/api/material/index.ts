@@ -295,6 +295,8 @@ export function searchStickerByImage(data: {
   imageBase64?: string
   mode?: 'semantic' | 'visual' | 'hybrid'
   limit?: number
+  offset?: number
+  scoreThreshold?: number
   userId?: string
 }) {
   return request.post<{
@@ -302,6 +304,15 @@ export function searchStickerByImage(data: {
     mode: string
     imageDescription?: string
     total: number
+    meta?: {
+      mode: string
+      searchTimeMs: number
+      scoreRange: { min: number; max: number }
+      scoreThreshold?: number
+      appliedLimit: number;
+      offset: number;
+      sources: { semantic: number; visual: number }
+    }
   }>({
     url: '/sticker/search-by-image',
     data
@@ -314,11 +325,20 @@ export function searchStickerByImage(data: {
 export function searchStickerByText(data: {
   text: string
   limit?: number
+  offset?: number
+  scoreThreshold?: number
   userId?: string
 }) {
   return request.post<{
     results: any[]
     total: number
+    meta?: {
+      searchTimeMs: number
+      scoreRange: { min: number; max: number }
+      scoreThreshold?: number
+      appliedLimit: number
+      offset: number
+    }
   }>({
     url: '/sticker/search-by-text',
     data
