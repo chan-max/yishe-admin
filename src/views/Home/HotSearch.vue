@@ -216,7 +216,7 @@
                       'text-warning': row.failCount > 0,
                     }"
                   >
-                    {{ row.successCount }}/{{ row.platformCount }}
+                    {{ row.successCount }}/{{ getActivePlatformCount(row.platforms) }}
                   </span>
                 </template>
 
@@ -766,11 +766,7 @@ const ALL_PLATFORMS: PlatformDef[] = [
   { key: "kuaishou", name: "快手", environment: "direct" },
   { key: "v2ex", name: "V2EX", environment: "direct" },
   { key: "36kr", name: "36氪", environment: "direct" },
-  { key: "huxiu", name: "虎嗅", environment: "direct" },
   { key: "ithome", name: "IT之家", environment: "direct" },
-  { key: "taobao_hot", name: "淘宝热搜", environment: "direct" },
-  { key: "jd_hot", name: "京东热搜", environment: "direct" },
-  { key: "pdd_hot", name: "拼多多热搜", environment: "direct" },
   // 国际新闻/趋势（需代理）
   { key: "github", name: "GitHub", environment: "direct" },
   { key: "wikipedia", name: "维基百科", environment: "direct" },
@@ -780,13 +776,8 @@ const ALL_PLATFORMS: PlatformDef[] = [
   { key: "bbc_news", name: "BBC News", environment: "proxy" },
   { key: "cnn", name: "CNN", environment: "proxy" },
   { key: "nytimes", name: "New York Times", environment: "proxy" },
-  { key: "guardian", name: "The Guardian", environment: "proxy" },
   { key: "aljazeera", name: "Al Jazeera", environment: "proxy" },
-  { key: "yahoo_news", name: "Yahoo News", environment: "proxy" },
-  { key: "medium", name: "Medium", environment: "proxy" },
   // 电商平台（需代理）
-  { key: "amazon_bestsellers", name: "Amazon 畅销榜", environment: "proxy" },
-  { key: "aliexpress_popular", name: "AliExpress 热门", environment: "proxy" },
   { key: "ebay_trending", name: "eBay Trending", environment: "proxy" },
   { key: "shopify_trending", name: "Shopify Trending", environment: "proxy" },
 ];
@@ -1087,11 +1078,46 @@ const loadSchedules = async () => {
       : Array.isArray((res as any)?.data)
         ? (res as any).data
         : [];
-    // 过滤掉已移除的平台
-    schedules.value = rawSchedules.map((s: any) => ({
-      ...s,
-      platforms: (s.platforms || []).filter((p: string) => activePlatformKeys.has(p)),
-    }));
+    
+    // 先直接在本地过滤掉已移除的平台，并立即更新本地状态（这样页面会先显示正确数量）
+    const processedSchedules = rawSchedules.map((s: any) => {
+      const originalPlatforms = s.platforms || [];
+      const filteredPlatforms = originalPlatforms.filter((p: string) => activePlatformKeys.has(p));
+      return {
+        ...s,
+        platforms: filteredPlatforms,
+        needsUpdate: filteredPlatforms.length !== originalPlatforms.length
+      };
+    });
+    
+    // 立即更新本地状态，让页面先显示正确的数量
+    schedules.value = processedSchedules.map(s => {
+      const { needsUpdate, ...rest } = s;
+      return rest;
+    });
+    
+    // 异步保存需要更新的定时任务（不阻塞页面显示）
+    (async () => {
+      for (const schedule of processedSchedules) {
+        if (schedule.needsUpdate && schedule.id) {
+          try {
+            await saveSchedule({
+              id: schedule.id,
+              clientId: schedule.clientId,
+              platforms: schedule.platforms,
+              intervalMinutes: schedule.intervalMinutes,
+              enabled: schedule.enabled,
+              environment: schedule.environment,
+              autoAnalyze: schedule.autoAnalyze,
+              analysisPrompt: schedule.analysisPrompt,
+              analysisStyle: schedule.analysisStyle
+            });
+          } catch {
+            // 单个更新失败时不阻止其他操作
+          }
+        }
+      }
+    })();
   } catch {}
 };
 
