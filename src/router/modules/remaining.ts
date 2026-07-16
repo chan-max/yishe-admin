@@ -98,7 +98,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/vector-search/Index.vue"),
         name: "VectorSearch",
         meta: {
-          title: "向量知识库",
+          title: "向量库",
           menuKey: "home.vector-search",
         },
       },
