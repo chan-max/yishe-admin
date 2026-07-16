@@ -269,6 +269,17 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: "文档库",
         },
       },
+      {
+        path: "common-url",
+        component: () => import("@/views/material/commonUrl/index.vue"),
+        name: "CommonUrlIndex",
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: "网址管理",
+        },
+      },
     ],
   },
   // ── 3. AI创作 ─────────────────────────────────────────────────────
@@ -835,14 +846,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: "供应商商品",
         },
       },
-      {
-        path: "common-url",
-        component: () => import("@/views/material/commonUrl/index.vue"),
-        name: "CommonUrlIndex",
-        meta: {
-          title: "网址管理",
-        },
-      },
     ],
   },
   // ── 12. 个人设置 ────────────────────────────────────────────────────
@@ -1170,7 +1173,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
   },
   {
     path: "/common-url",
-    redirect: "/operation/common-url",
+    redirect: "/resource/common-url",
     name: "CommonUrlCompat",
     meta: {
       hidden: true,
@@ -1179,7 +1182,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
   },
   {
     path: "/common-url/index",
-    redirect: "/operation/common-url",
+    redirect: "/resource/common-url",
     name: "CommonUrlIndexCompat",
     meta: {
       hidden: true,
@@ -1296,7 +1299,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
   },
   {
     path: "/operation/tools/common-url",
-    redirect: "/operation/common-url",
+    redirect: "/resource/common-url",
     name: "OperationToolsCommonUrlCompat",
     meta: {
       hidden: true,
