@@ -39,6 +39,7 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   StoryScript: "resource.story-script",
   Sentence: "resource.sentence",
   TextDocument: "resource.text-document",
+  DesignInspiration: "resource.design-inspiration",
   CodeScript: "content.code-script",
   CodeScriptSchedule: "content.code-script-schedule",
   RemotionVideoRecord: "content.remotion-video-record",

@@ -1,7 +1,8 @@
 <script lang="tsx">
 import type { VNode } from "vue";
 import { Icon } from "@/components/Icon";
-import { ElTooltip } from "element-plus";
+import { ElInput, ElTooltip } from "element-plus";
+import { Search } from "@element-plus/icons-vue";
 import { useDesign } from "@/hooks/web/useDesign";
 import { usePermissionStore } from "@/store/modules/permission";
 import { useAppStore } from "@/store/modules/app";
@@ -38,10 +39,48 @@ export default defineComponent({
     const { push, currentRoute } = useRouter();
     const closeMobileMenu = inject<() => void>("closeMobileMenu", () => {});
     const logo = computed(() => appStore.logo);
+    const menuKeyword = ref("");
 
     const routers = computed(() =>
       permissionStore.getRouters.filter((route) => !route.meta?.hidden),
     );
+    const normalizeMenuText = (value: unknown) =>
+      String(value ?? "")
+        .trim()
+        .toLowerCase();
+    const menuSearchText = computed(() => normalizeMenuText(menuKeyword.value));
+    const getRouteSearchText = (route: AppRouteRecordRaw, routePath: string) =>
+      normalizeMenuText(
+        [route.meta?.title, route.name, route.path, routePath].filter(Boolean).join(" "),
+      );
+    const filterMenuRoutes = (
+      routeList: AppRouteRecordRaw[],
+      keyword: string,
+      parentPath = "/",
+    ): AppRouteRecordRaw[] => {
+      if (!keyword) {
+        return routeList;
+      }
+
+      return routeList
+        .map((route) => {
+          const routePath = getRoutePath(route, parentPath);
+          const children = getVisibleChildren(route);
+          const matched = getRouteSearchText(route, routePath).includes(keyword);
+          const filteredChildren = filterMenuRoutes(children, keyword, routePath);
+
+          if (!matched && !filteredChildren.length) {
+            return null;
+          }
+
+          return {
+            ...route,
+            children: matched ? children : filteredChildren,
+          };
+        })
+        .filter(Boolean) as AppRouteRecordRaw[];
+    };
+    const visibleRouters = computed(() => filterMenuRoutes(routers.value, menuSearchText.value));
     const activeMenu = computed(
       () => (currentRoute.value.meta.activeMenu as string) || currentRoute.value.path,
     );
@@ -499,11 +538,30 @@ export default defineComponent({
         value.forEach((route) => {
           const routePath = getRoutePath(route);
           nextExpanded[routePath] =
-            expandedMenus.value[routePath] ?? getVisibleChildren(route).length > 0;
+            !!menuSearchText.value ||
+            (expandedMenus.value[routePath] ?? getVisibleChildren(route).length > 0);
         });
         expandedMenus.value = nextExpanded;
       },
       { immediate: true, deep: true },
+    );
+
+    watch(
+      [visibleRouters, menuSearchText],
+      ([value, keyword]) => {
+        if (!keyword) {
+          return;
+        }
+        const nextExpanded = { ...expandedMenus.value };
+        value.forEach((route) => {
+          const routePath = getRoutePath(route);
+          if (getVisibleChildren(route).length) {
+            nextExpanded[routePath] = true;
+          }
+        });
+        expandedMenus.value = nextExpanded;
+      },
+      { immediate: true },
     );
 
     watch(
@@ -540,106 +598,121 @@ export default defineComponent({
             </div>
           ) : undefined}
 
-          {routers.value.map((route) => {
-            const routePath = getRoutePath(route);
-            const children = getVisibleChildren(route);
-            const sectionActive = isRouteActive(route);
-            const expanded = expandedMenus.value[routePath];
+          <div class={`${prefixCls}__search`}>
+            <ElInput
+              v-model={menuKeyword.value}
+              size="small"
+              clearable
+              placeholder="搜索菜单"
+              prefixIcon={Search}
+            />
+          </div>
 
-            if (!children.length) {
+          {visibleRouters.value.length ? (
+            visibleRouters.value.map((route) => {
+              const routePath = getRoutePath(route);
+              const children = getVisibleChildren(route);
+              const sectionActive = isRouteActive(route);
+              const expanded = menuSearchText.value ? true : expandedMenus.value[routePath];
+
+              if (!children.length) {
+                return (
+                  <button
+                    type="button"
+                    key={routePath}
+                    class={[
+                      `${prefixCls}__section`,
+                      `${prefixCls}__section--leaf`,
+                      { [`${prefixCls}__section--active`]: sectionActive },
+                    ]}
+                    onClick={() => selectMenu(routePath)}
+                  >
+                    <div class={`${prefixCls}__section-head`}>
+                      <div class={`${prefixCls}__section-label`}>
+                        {route.meta?.icon ? (
+                          <Icon class={`${prefixCls}__section-icon`} icon={route.meta.icon} />
+                        ) : undefined}
+                        <span class={`${prefixCls}__section-title`}>{route.meta?.title}</span>
+                      </div>
+                      {renderMessagePushBadge(routePath) ||
+                        renderServiceHealthDot(route, routePath)}
+                    </div>
+                  </button>
+                );
+              }
+
               return (
-                <button
-                  type="button"
+                <section
                   key={routePath}
                   class={[
                     `${prefixCls}__section`,
-                    `${prefixCls}__section--leaf`,
                     { [`${prefixCls}__section--active`]: sectionActive },
                   ]}
-                  onClick={() => selectMenu(routePath)}
                 >
-                  <div class={`${prefixCls}__section-head`}>
+                  <button
+                    type="button"
+                    class={`${prefixCls}__section-head`}
+                    onClick={() => toggleSection(routePath)}
+                  >
                     <div class={`${prefixCls}__section-label`}>
                       {route.meta?.icon ? (
                         <Icon class={`${prefixCls}__section-icon`} icon={route.meta.icon} />
                       ) : undefined}
                       <span class={`${prefixCls}__section-title`}>{route.meta?.title}</span>
                     </div>
-                    {renderMessagePushBadge(routePath) || renderServiceHealthDot(route, routePath)}
-                  </div>
-                </button>
+                    <Icon
+                      class={`${prefixCls}__section-arrow`}
+                      icon={expanded ? "ep:arrow-up" : "ep:arrow-down"}
+                    />
+                  </button>
+
+                  {expanded ? (
+                    <div class={`${prefixCls}__links`}>
+                      {children.map((child) => {
+                        const childPath = getRoutePath(child, routePath);
+                        return (
+                          <button
+                            type="button"
+                            key={childPath}
+                            title={String(child.meta?.title ?? "")}
+                            class={[
+                              `${prefixCls}__link`,
+                              {
+                                [`${prefixCls}__link--active`]: childPath === activeMenu.value,
+                                [`${prefixCls}__link--warning`]:
+                                  childPath === "/system/ai-api-key" &&
+                                  aiConfigState.initialized &&
+                                  !aiConfigState.loading &&
+                                  aiConfigState.missing,
+                                [`${prefixCls}__link--running`]: isMenuLinkRunning(childPath),
+                                [`${prefixCls}__link--running-psd`]:
+                                  isPsdSetRoute(childPath) && isAnyPsdSetProcessing.value,
+                                [`${prefixCls}__link--running-queue`]:
+                                  isQueueRoute(childPath) && !!routeRunningMap.value[childPath],
+                                [`${prefixCls}__link--running-video`]:
+                                  isRemotionRoute(childPath) && !!routeRunningMap.value[childPath],
+                              },
+                            ]}
+                            onClick={() => selectMenu(childPath)}
+                          >
+                            <span class={`${prefixCls}__link-text`}>{child.meta?.title}</span>
+                            {renderAiConfigBadge(childPath) ||
+                              renderMessagePushBadge(childPath) ||
+                              renderPsdSetAutoDot(childPath) ||
+                              renderPublishTaskAutoBadge(childPath) ||
+                              renderServiceHealthDot(child, childPath) ||
+                              renderStatusDot(childPath)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : undefined}
+                </section>
               );
-            }
-
-            return (
-              <section
-                key={routePath}
-                class={[
-                  `${prefixCls}__section`,
-                  { [`${prefixCls}__section--active`]: sectionActive },
-                ]}
-              >
-                <button
-                  type="button"
-                  class={`${prefixCls}__section-head`}
-                  onClick={() => toggleSection(routePath)}
-                >
-                  <div class={`${prefixCls}__section-label`}>
-                    {route.meta?.icon ? (
-                      <Icon class={`${prefixCls}__section-icon`} icon={route.meta.icon} />
-                    ) : undefined}
-                    <span class={`${prefixCls}__section-title`}>{route.meta?.title}</span>
-                  </div>
-                  <Icon
-                    class={`${prefixCls}__section-arrow`}
-                    icon={expanded ? "ep:arrow-up" : "ep:arrow-down"}
-                  />
-                </button>
-
-                {expanded ? (
-                  <div class={`${prefixCls}__links`}>
-                    {children.map((child) => {
-                      const childPath = getRoutePath(child, routePath);
-                      return (
-                        <button
-                          type="button"
-                          key={childPath}
-                          title={String(child.meta?.title ?? "")}
-                          class={[
-                            `${prefixCls}__link`,
-                            {
-                              [`${prefixCls}__link--active`]: childPath === activeMenu.value,
-                              [`${prefixCls}__link--warning`]:
-                                childPath === "/system/ai-api-key" &&
-                                aiConfigState.initialized &&
-                                !aiConfigState.loading &&
-                                aiConfigState.missing,
-                              [`${prefixCls}__link--running`]: isMenuLinkRunning(childPath),
-                              [`${prefixCls}__link--running-psd`]:
-                                isPsdSetRoute(childPath) && isAnyPsdSetProcessing.value,
-                              [`${prefixCls}__link--running-queue`]:
-                                isQueueRoute(childPath) && !!routeRunningMap.value[childPath],
-                              [`${prefixCls}__link--running-video`]:
-                                isRemotionRoute(childPath) && !!routeRunningMap.value[childPath],
-                            },
-                          ]}
-                          onClick={() => selectMenu(childPath)}
-                        >
-                          <span class={`${prefixCls}__link-text`}>{child.meta?.title}</span>
-                          {renderAiConfigBadge(childPath) ||
-                            renderMessagePushBadge(childPath) ||
-                            renderPsdSetAutoDot(childPath) ||
-                            renderPublishTaskAutoBadge(childPath) ||
-                            renderServiceHealthDot(child, childPath) ||
-                            renderStatusDot(childPath)}
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : undefined}
-              </section>
-            );
-          })}
+            })
+          ) : (
+            <div class={`${prefixCls}__empty`}>没有匹配的菜单</div>
+          )}
         </div>
       </nav>
     );
@@ -698,6 +771,47 @@ $prefix-cls: #{$namespace}-menu;
   &__logo-inner {
     width: 100%;
     border: 0 !important;
+  }
+
+  &__search {
+    position: sticky;
+    top: var(--left-menu-search-sticky-top, 64px);
+    z-index: 2;
+    padding: 6px 0 8px;
+    border-bottom: 1px solid var(--left-menu-divider-color);
+    background: var(--left-menu-bg-color, #141414);
+  }
+
+  &__search :deep(.el-input__wrapper) {
+    min-height: 30px;
+    border-radius: 8px;
+    background: rgb(255 255 255 / 6%);
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 8%) inset;
+  }
+
+  &__search :deep(.el-input__wrapper.is-focus) {
+    box-shadow: 0 0 0 1px rgb(64 158 255 / 52%) inset;
+  }
+
+  &__search :deep(.el-input__inner) {
+    color: var(--left-menu-title-color);
+    font-size: 12px;
+  }
+
+  &__search :deep(.el-input__inner::placeholder) {
+    color: rgb(203 213 225 / 42%);
+  }
+
+  &__search :deep(.el-input__prefix),
+  &__search :deep(.el-input__clear) {
+    color: rgb(203 213 225 / 56%);
+  }
+
+  &__empty {
+    padding: 22px 8px;
+    color: rgb(203 213 225 / 56%);
+    font-size: 12px;
+    text-align: center;
   }
 
   &__section {
@@ -1264,6 +1378,11 @@ $prefix-cls: #{$namespace}-menu;
     padding: 10px 0 12px;
   }
 
+  .#{$prefix-cls}__search {
+    top: 54px;
+    padding-bottom: 7px;
+  }
+
   .#{$prefix-cls}__section {
     padding: 7px 0 9px;
   }
@@ -1305,6 +1424,11 @@ $prefix-cls: #{$namespace}-menu;
   .#{$prefix-cls}__logo {
     padding: 8px 0 10px;
     margin-bottom: 2px;
+  }
+
+  .#{$prefix-cls}__search {
+    top: 50px;
+    padding: 5px 0 7px;
   }
 
   .#{$prefix-cls}__section {

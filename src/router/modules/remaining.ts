@@ -280,6 +280,18 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: "网址管理",
         },
       },
+      {
+        path: "design-inspiration",
+        component: () => import("@/views/material/designInspiration/index.vue"),
+        name: "DesignInspiration",
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: "设计灵感",
+          menuKey: "resource.design-inspiration",
+        },
+      },
     ],
   },
   // ── 3. AI创作 ─────────────────────────────────────────────────────
