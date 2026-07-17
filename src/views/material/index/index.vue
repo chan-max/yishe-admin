@@ -500,7 +500,8 @@
                 size="small"
                 type="danger"
                 :icon="Delete"
-                :disabled="loading"
+                :loading="deleteLoading"
+                :disabled="loading || !ids.length"
                 @click="handleDelete(null)"
               >
                 批量删除({{ ids.length }})
@@ -4276,6 +4277,7 @@ const dataSource = ref([]);
 const stickerDetailCache = new Map<string, any>();
 const selectedMaterialCache = reactive<Record<string, any>>({});
 const loading = ref(false);
+const deleteLoading = ref(false);
 const activeOperationRowId = ref("");
 const operationCommandLoadingId = ref("");
 const operationDropdownRefs = new Map<string, any>();
@@ -5590,6 +5592,7 @@ async function handleDelete(row?) {
       type: "error",
     });
     delIds = delIds.map((id) => String(id));
+    deleteLoading.value = true;
     await deleteAssetLibrary({ ids: delIds });
     ElNotification.success("删除成功");
     resetCheckStatus(ids);
@@ -5600,6 +5603,8 @@ async function handleDelete(row?) {
     }
     console.error("删除失败:", error);
     ElMessage.error(error?.message || "删除失败");
+  } finally {
+    deleteLoading.value = false;
   }
 }
 function checkboxChange(e) {
