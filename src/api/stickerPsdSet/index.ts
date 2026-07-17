@@ -43,6 +43,10 @@ export const stickerPsdSetApi = {
   }) => request.post({ url: "/sticker-psd-set/batch", data }),
   batchCreateByPublishConfig: (data: { stickerIds: string[]; publishConfigIds: string[] }) =>
     request.post({ url: "/sticker-psd-set/batch-by-publish-config", data }),
+  batchCreateByProductGenerationTemplate: (data: {
+    stickerIds: string[];
+    productGenerationTemplateIds: string[];
+  }) => request.post({ url: "/sticker-psd-set/batch-by-product-generation-template", data }),
   generateProduct: (data: { id: string; productGenerationTemplateId?: string | null; promptId?: number | null }) =>
     request.post({ url: "/sticker-psd-set/generate-product", data }),
   generateProductBatch: (data: { ids: string[]; productGenerationTemplateIds: string[] }) =>

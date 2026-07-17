@@ -571,6 +571,13 @@
           <div class="generate-product-panel-title">基础配置</div>
           <el-form label-position="top">
             <el-form-item label="商品生成模板">
+              <el-alert
+                :type="generateProductTargetTemplateAlert.type"
+                :title="generateProductTargetTemplateAlert.title"
+                :closable="false"
+                show-icon
+                class="generate-product-template-alert"
+              />
               <div class="generate-product-template-toolbar">
                 <el-input
                   v-model="generateProductTemplateSearchText"
@@ -594,7 +601,8 @@
                 :columns="generateProductTemplateColumns"
                 :max-height="360"
                 :row-config="{ keyField: 'id', isHover: true }"
-                :checkbox-config="{ checkRowKeys: generateProductSelectedTemplateIds }"
+                :row-class-name="generateProductTemplateRowClassName"
+                :checkbox-config="generateProductTemplateCheckboxConfig"
                 @checkbox-change="handleGenerateProductTemplateCheckboxChange"
                 @checkbox-all="handleGenerateProductTemplateCheckboxChange"
               />
@@ -1071,6 +1079,7 @@ const generateProductDialogVisible = ref(false);
 const generateProductDialogLoading = ref(false);
 const generateProductSubmitting = ref(false);
 const generateProductTargetIds = ref<string[]>([]);
+const generateProductTargetRows = ref<any[]>([]);
 const generateProductTemplateOptions = ref<any[]>([]);
 const generateProductSelectedTemplateIds = ref<string[]>([]);
 const generateProductTemplateSearchText = ref("");
@@ -1089,6 +1098,49 @@ const generateProductFailedItems = computed(() =>
 const generateProductExpectedCount = computed(
   () => generateProductTargetIds.value.length * generateProductSelectedTemplateIds.value.length,
 );
+const generateProductTargetTemplateIds = computed(() =>
+  Array.from(
+    new Set(
+      generateProductTargetRows.value
+        .map((item) => getPsdSetTemplateId(item))
+        .filter(Boolean),
+    ),
+  ),
+);
+const generateProductTargetTemplateMode = computed(() => {
+  const hasMissingTemplate = generateProductTargetRows.value.some(
+    (item) => !getPsdSetTemplateId(item),
+  );
+  if (generateProductTargetTemplateIds.value.length === 1 && !hasMissingTemplate) {
+    return "single";
+  }
+  if (generateProductTargetTemplateIds.value.length > 1) return "multiple";
+  return "unknown";
+});
+const generateProductTargetTemplateAlert = computed(() => {
+  if (generateProductTargetTemplateMode.value === "single") {
+    return {
+      type: "success" as const,
+      title: `当前套图使用同一个 PSD 模板（${generateProductTargetTemplateIds.value[0]}），只能选择绑定该模板的商品生成模板。`,
+    };
+  }
+  if (generateProductTargetTemplateMode.value === "multiple") {
+    return {
+      type: "warning" as const,
+      title: `当前选择包含 ${generateProductTargetTemplateIds.value.length} 个 PSD 模板，请按 PSD 模板分批生成商品。`,
+    };
+  }
+  return {
+    type: "warning" as const,
+    title: "当前套图缺少 PSD 模板信息，无法匹配商品生成模板。",
+  };
+});
+const generateProductTemplateCheckboxConfig = computed(() => ({
+  checkRowKeys: generateProductSelectedTemplateIds.value,
+  highlight: true,
+  trigger: "row" as const,
+  checkMethod: ({ row }: any) => isGenerateProductTemplateSelectable(row),
+}));
 const SEO_DESCRIPTION_SAFE_LENGTH = 240;
 const getTextLength = (value: unknown) => String(value || "").length;
 const isSeoDescriptionTooLongError = (error: any) =>
@@ -1111,6 +1163,19 @@ const generateProductTemplateColumns: any[] = [
   { type: "checkbox", width: 48 },
   { field: "name", title: "模板名称", minWidth: 180, showOverflow: true },
   { field: "productType", title: "商品类型", width: 120, showOverflow: true },
+  {
+    field: "psdTemplateId",
+    title: "绑定PSD模板",
+    minWidth: 190,
+    showOverflow: true,
+    formatter: ({ cellValue }) => String(cellValue || "").trim() || "未绑定",
+  },
+  {
+    field: "matchStatus",
+    title: "匹配状态",
+    width: 130,
+    formatter: ({ row }) => getGenerateProductTemplateMatchInfo(row).label,
+  },
   {
     field: "imagePolicy",
     title: "图片",
@@ -1652,6 +1717,50 @@ function normalizePsdSetId(value: unknown) {
 
 function getPsdSetTemplateId(row: any) {
   return String(row?.psdTemplateId || row?.psdTemplate?.id || "").trim();
+}
+
+function getProductGenerationTemplatePsdId(template: any) {
+  return String(template?.psdTemplateId || "").trim();
+}
+
+function getGenerateProductTemplateMatchInfo(template: any) {
+  const boundTemplateId = getProductGenerationTemplatePsdId(template);
+  if (!boundTemplateId) {
+    return {
+      selectable: false,
+      label: "未绑定模板",
+      reason: "该商品生成模板未绑定 PSD 模板",
+    };
+  }
+  if (generateProductTargetTemplateMode.value === "multiple") {
+    return {
+      selectable: false,
+      label: "需分批生成",
+      reason: "所选套图包含多个 PSD 模板，请按 PSD 模板分批生成商品",
+    };
+  }
+  if (generateProductTargetTemplateMode.value !== "single") {
+    return {
+      selectable: false,
+      label: "套图模板缺失",
+      reason: "当前套图缺少 PSD 模板信息，无法校验商品生成模板",
+    };
+  }
+
+  const matched = boundTemplateId === generateProductTargetTemplateIds.value[0];
+  return {
+    selectable: matched,
+    label: matched ? "模板匹配" : "模板不一致",
+    reason: matched ? "" : "商品生成模板绑定的 PSD 模板与当前套图模板不一致",
+  };
+}
+
+function isGenerateProductTemplateSelectable(template: any) {
+  return getGenerateProductTemplateMatchInfo(template).selectable;
+}
+
+function generateProductTemplateRowClassName({ row }: any) {
+  return isGenerateProductTemplateSelectable(row) ? "" : "is-template-mismatch";
 }
 
 function getPublishConfigBoundTemplateId(config: any) {
@@ -3604,7 +3713,20 @@ async function openGenerateProductDialog(ids: string[]) {
     return ElMessage.warning("请选择需要生成产品的套图");
   }
 
+  const selectedRowMap = new Map<string, any>();
+  selectedPsdSetRows.value.forEach((item) => {
+    const id = normalizePsdSetId(item?.id);
+    if (id) selectedRowMap.set(id, item);
+  });
+  dataSource.value.forEach((item) => {
+    const id = normalizePsdSetId(item?.id);
+    if (id && !selectedRowMap.has(id)) selectedRowMap.set(id, item);
+  });
+
   generateProductTargetIds.value = normalizedIds;
+  generateProductTargetRows.value = normalizedIds.map(
+    (id) => selectedRowMap.get(id) || { id },
+  );
   generateProductSelectedTemplateIds.value = [];
   generateProductTemplateSearchText.value = "";
   generateProductTemplateOptions.value = [];
@@ -3625,6 +3747,7 @@ async function openGenerateProductDialog(ids: string[]) {
 function handleCloseGenerateProductDialog() {
   generateProductDialogVisible.value = false;
   generateProductTargetIds.value = [];
+  generateProductTargetRows.value = [];
   generateProductSelectedTemplateIds.value = [];
   generateProductTemplateSearchText.value = "";
   generateProductTemplateOptions.value = [];
@@ -3636,7 +3759,13 @@ function handleCloseGenerateProductDialog() {
 }
 
 function handleGenerateProductTemplateCheckboxChange(event: any) {
+  if (event?.checked && event?.row && !isGenerateProductTemplateSelectable(event.row)) {
+    ElMessage.warning(
+      getGenerateProductTemplateMatchInfo(event.row).reason || "商品生成模板与套图模板不匹配",
+    );
+  }
   generateProductSelectedTemplateIds.value = (event?.records || [])
+    .filter((item: any) => isGenerateProductTemplateSelectable(item))
     .map((item: any) => String(item?.id || "").trim())
     .filter(Boolean);
 }
@@ -3771,6 +3900,24 @@ async function handleSubmitGenerateProduct() {
   }
   if (!generateProductSelectedTemplateIds.value.length) {
     return ElMessage.warning("请选择商品生成模板");
+  }
+
+  const invalidSelectedTemplates = generateProductSelectedTemplateIds.value
+    .map((id) => generateProductTemplateOptions.value.find((item: any) => String(item.id) === id))
+    .filter((item) => item && !isGenerateProductTemplateSelectable(item));
+  if (invalidSelectedTemplates.length) {
+    generateProductSelectedTemplateIds.value = generateProductSelectedTemplateIds.value.filter(
+      (id) => {
+        const template = generateProductTemplateOptions.value.find(
+          (item: any) => String(item.id) === id,
+        );
+        return template && isGenerateProductTemplateSelectable(template);
+      },
+    );
+    return ElMessage.warning(
+      getGenerateProductTemplateMatchInfo(invalidSelectedTemplates[0]).reason ||
+        "商品生成模板与套图模板不匹配",
+    );
   }
 
   const expectedCount = generateProductExpectedCount.value;
@@ -5385,6 +5532,15 @@ getList();
   gap: 10px;
   margin-bottom: 10px;
   flex-wrap: wrap;
+}
+
+.generate-product-template-alert {
+  margin-bottom: 10px;
+}
+
+.generate-product-template-grid :deep(.is-template-mismatch .vxe-body--column) {
+  color: var(--el-text-color-secondary);
+  background: var(--el-fill-color-lighter);
 }
 
 .generate-product-template-toolbar .el-input {

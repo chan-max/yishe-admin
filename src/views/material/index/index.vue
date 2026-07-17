@@ -498,6 +498,16 @@
               </el-button>
               <el-button
                 size="small"
+                type="primary"
+                plain
+                :icon="MagicStick"
+                :disabled="loading || !ids.length"
+                @click="openMaterialProductConfigDialog"
+              >
+                生成独立站商品({{ ids.length }})
+              </el-button>
+              <el-button
+                size="small"
                 type="danger"
                 :icon="Delete"
                 :loading="deleteLoading"
@@ -927,6 +937,231 @@
                   @click="handleCreatePsdSetsByPublishConfig"
                 >
                   创建发布任务
+                </el-button>
+              </div>
+            </div>
+          </template>
+        </el-dialog>
+
+        <el-dialog
+          v-model="materialProductConfigDialogVisible"
+          fullscreen
+          align-center
+          :destroy-on-close="false"
+          class="material-publish-config-dialog"
+          @close="handleCloseMaterialProductConfigDialog"
+        >
+          <template #header>
+            <div class="material-publish-config-dialog__header">
+              <div class="material-publish-config-dialog__header-main">
+                <div class="material-publish-config-dialog__header-title">
+                  生成独立站商品
+                </div>
+              </div>
+
+              <div class="material-publish-config-dialog__header-chips">
+                <span class="material-publish-config-dialog__header-chip">
+                  素材 {{ selectedMaterialsForPublishConfig.length }} 张
+                </span>
+                <span class="material-publish-config-dialog__header-chip">
+                  可用配置 {{ materialProductConfigUsableCount }} 个
+                </span>
+              </div>
+            </div>
+          </template>
+
+          <div
+            v-loading="materialProductConfigLoading"
+            class="material-publish-config-dialog__body"
+          >
+            <div
+              class="material-publish-config-dialog__panel material-publish-config-dialog__panel--materials"
+            >
+              <div class="material-publish-config-dialog__section-head">
+                <div>
+                  <div class="material-publish-config-dialog__section-eyebrow">步骤 1</div>
+                  <div class="material-publish-config-dialog__section-title">已选图片</div>
+                  <div class="material-publish-config-dialog__section-desc">
+                    当前共 {{ selectedMaterialsForPublishConfig.length }} 张素材
+                  </div>
+                </div>
+                <div class="material-publish-config-dialog__tag-list">
+                  <el-tag
+                    :type="hasInvalidFormatMaterials ? 'warning' : 'success'"
+                    effect="plain"
+                  >
+                    {{
+                      hasInvalidFormatMaterials
+                        ? `${invalidFormatMaterialsList.length} 张格式需处理`
+                        : "格式检查通过"
+                    }}
+                  </el-tag>
+                  <el-tag type="info" effect="plain">
+                    允许格式：{{ psdSetAllowedFormats.join("、") }}
+                  </el-tag>
+                </div>
+              </div>
+
+              <el-alert
+                v-if="hasInvalidFormatMaterials"
+                type="warning"
+                :closable="false"
+                show-icon
+                class="material-publish-config-dialog__warning"
+              >
+                <template #title>
+                  所选素材中有 {{ invalidFormatMaterialsList.length }} 张图片格式不符合要求：{{
+                    invalidFormatMaterialsList.map((item) => item.name).join("、")
+                  }}
+                </template>
+              </el-alert>
+
+              <div class="material-publish-config-dialog__material-list">
+                <div
+                  v-for="material in selectedMaterialsForPublishConfig"
+                  :key="material.id"
+                  class="material-publish-config-dialog__material-item"
+                  :class="{
+                    'material-publish-config-dialog__material-item--invalid':
+                      isMaterialFormatInvalid(material.id),
+                  }"
+                >
+                  <button
+                    type="button"
+                    class="material-publish-config-dialog__material-remove"
+                    title="移除该图片"
+                    @click.stop="removeSelectedMaterial(material.id)"
+                  >
+                    ×
+                  </button>
+                  <div class="material-publish-config-dialog__material-preview">
+                    <img
+                      v-if="getMaterialPreviewSource(material)"
+                      :src="getFastPreviewImageUrl(getMaterialPreviewSource(material), { width: 220 })"
+                      :alt="material.name || `素材${material.id}`"
+                      :title="material.name || `素材${material.id}`"
+                    />
+                    <div v-else class="material-publish-config-dialog__material-placeholder">
+                      暂无预览
+                    </div>
+                  </div>
+
+                  <div class="material-publish-config-dialog__material-meta">
+                    <span class="material-publish-config-dialog__material-name">
+                      {{ material.name || `素材${material.id}` }}
+                    </span>
+                    <span class="material-publish-config-dialog__material-suffix">
+                      {{ getMaterialSuffix(material.id) || "未知格式" }}
+                    </span>
+                  </div>
+                </div>
+
+                <el-empty
+                  v-if="!selectedMaterialsForPublishConfig.length"
+                  description="请先选择图片素材"
+                  :image-size="84"
+                />
+              </div>
+            </div>
+
+            <div
+              class="material-publish-config-dialog__panel material-publish-config-dialog__panel--configs"
+            >
+              <div
+                class="material-publish-config-dialog__section-head material-publish-config-dialog__section-head--configs"
+              >
+                <div>
+                  <div class="material-publish-config-dialog__section-eyebrow">步骤 2</div>
+                  <div class="material-publish-config-dialog__section-title">
+                    独立站商品配置
+                  </div>
+                  <div class="material-publish-config-dialog__section-desc">
+                    未绑定 PSD 模板的商品配置不可用于图片直达商品流程
+                  </div>
+                </div>
+                <div class="material-publish-config-dialog__section-tools">
+                  <el-tag type="success" effect="plain">
+                    可用 {{ materialProductConfigUsableCount }} /
+                    {{ filteredMaterialProductConfigs.length }}
+                  </el-tag>
+                  <div class="material-publish-config-dialog__search">
+                    <el-input
+                      v-model="materialProductConfigSearchText"
+                      clearable
+                      placeholder="搜索配置名称、商品类型或标签"
+                      @input="materialProductConfigCurrentPage = 1"
+                    >
+                      <template #prefix>
+                        <el-icon>
+                          <Search />
+                        </el-icon>
+                      </template>
+                    </el-input>
+                  </div>
+                </div>
+              </div>
+
+              <div class="common-table material-publish-config-dialog__table">
+                <vxe-grid
+                  ref="materialProductConfigGridRef"
+                  v-bind="materialProductConfigGridOptions"
+                  :data="materialProductConfigDataSource"
+                  @checkbox-change="handleMaterialProductConfigCheckboxChange"
+                  @checkbox-all="handleMaterialProductConfigCheckboxAllChange"
+                />
+              </div>
+
+              <div
+                v-if="filteredMaterialProductConfigs.length > 0"
+                class="material-publish-config-dialog__pagination"
+              >
+                <pagination
+                  v-model:page="materialProductConfigCurrentPage"
+                  v-model:limit="materialProductConfigPageSize"
+                  :total="filteredMaterialProductConfigs.length"
+                />
+              </div>
+            </div>
+          </div>
+
+          <template #footer>
+            <div class="material-publish-config-dialog__footer">
+              <div class="material-publish-config-dialog__footer-info">
+                <span class="material-publish-config-dialog__footer-chip">
+                  素材 {{ ids.length }} 张
+                </span>
+                <span class="material-publish-config-dialog__footer-chip">
+                  商品配置 {{ materialProductConfigSelectedIds.length }} 个
+                </span>
+                <span class="material-publish-config-dialog__footer-chip">
+                  预计生成 {{ materialProductConfigTaskCount }} 个独立站商品
+                </span>
+                <span
+                  v-if="hasInvalidFormatMaterials"
+                  class="material-publish-config-dialog__footer-tip"
+                >
+                  当前存在格式不兼容素材，请处理后再创建任务
+                </span>
+                <span
+                  v-else
+                  class="material-publish-config-dialog__footer-tip material-publish-config-dialog__footer-tip--muted"
+                >
+                  套图完成后将自动生成商品信息、SEO和价格
+                </span>
+              </div>
+              <div class="material-publish-config-dialog__footer-actions">
+                <el-button @click="handleCloseMaterialProductConfigDialog">取消</el-button>
+                <el-button
+                  type="primary"
+                  :loading="materialProductConfigSubmitting"
+                  :disabled="
+                    !ids.length ||
+                    !materialProductConfigSelectedIds.length ||
+                    hasInvalidFormatMaterials
+                  "
+                  @click="handleCreatePsdSetsByProductConfig"
+                >
+                  创建商品任务
                 </el-button>
               </div>
             </div>
@@ -4558,6 +4793,15 @@ const materialPublishConfigPageSize = ref(10);
 const materialPublishConfigOptions = ref<any[]>([]);
 const materialPublishConfigSelectedIds = ref<string[]>([]);
 const materialPublishConfigGridRef = ref<any>(null);
+const materialProductConfigDialogVisible = ref(false);
+const materialProductConfigLoading = ref(false);
+const materialProductConfigSubmitting = ref(false);
+const materialProductConfigSearchText = ref("");
+const materialProductConfigCurrentPage = ref(1);
+const materialProductConfigPageSize = ref(10);
+const materialProductConfigOptions = ref<any[]>([]);
+const materialProductConfigSelectedIds = ref<string[]>([]);
+const materialProductConfigGridRef = ref<any>(null);
 const psdSetMergeSticker = ref(false);
 const psdSetTemplateSearchText = ref("");
 const psdSetAutomationDialogVisible = ref(false);
@@ -4732,6 +4976,76 @@ const materialPublishConfigGridOptions = computed(() => ({
         isMaterialPublishConfigUsable(row) ? "可用" : "未配置PSD模板，无法使用",
     },
     { field: "description", title: "备注说明", minWidth: 220, showOverflow: true },
+  ],
+}));
+const filteredMaterialProductConfigs = computed(() => {
+  const keyword = materialProductConfigSearchText.value.trim().toLowerCase();
+  return materialProductConfigOptions.value
+    .filter((item: any) => item?.isActive !== false)
+    .filter((item: any) => {
+      if (!keyword) return true;
+      return [item?.name, item?.productType, item?.tags]
+        .map((value) => String(value || "").toLowerCase())
+        .some((value) => value.includes(keyword));
+    });
+});
+const materialProductConfigDataSource = computed(() => {
+  const start = (materialProductConfigCurrentPage.value - 1) * materialProductConfigPageSize.value;
+  return filteredMaterialProductConfigs.value.slice(
+    start,
+    start + materialProductConfigPageSize.value,
+  );
+});
+const materialProductConfigTaskCount = computed(
+  () => ids.value.length * materialProductConfigSelectedIds.value.length,
+);
+const materialProductConfigUsableCount = computed(
+  () =>
+    filteredMaterialProductConfigs.value.filter((item: any) =>
+      isMaterialProductConfigUsable(item),
+    ).length,
+);
+const materialProductConfigGridOptions = computed(() => ({
+  ...commonGridOptions,
+  loading: false,
+  rowConfig: { isHover: true, keyField: "id" },
+  rowClassName: ({ row }: any) =>
+    isMaterialProductConfigUsable(row) ? "" : "material-publish-config-dialog__row--disabled",
+  columnConfig: { resizable: true },
+  checkboxConfig: {
+    checkRowKeys: materialProductConfigSelectedIds.value,
+    highlight: true,
+    trigger: "row" as const,
+    checkMethod: ({ row }: any) => isMaterialProductConfigUsable(row),
+  },
+  columns: [
+    { type: "checkbox" as any, width: 60, align: "center" as any },
+    { field: "name", title: "商品配置", minWidth: 180, showOverflow: true },
+    {
+      field: "productType",
+      title: "商品类型",
+      width: 140,
+      formatter: ({ cellValue }: any) => String(cellValue || "").trim() || "AI 自动识别",
+    },
+    {
+      field: "pricingMode",
+      title: "价格策略",
+      width: 110,
+      formatter: ({ cellValue }: any) => (cellValue === "ai" ? "AI 生成" : "固定价格"),
+    },
+    {
+      field: "psdTemplateId",
+      title: "PSD模板",
+      width: 170,
+      formatter: ({ row }: any) =>
+        isMaterialProductConfigUsable(row) ? "已绑定" : "未绑定，无法使用",
+    },
+    {
+      field: "autoPublish",
+      title: "生成后发布",
+      width: 110,
+      formatter: ({ cellValue }: any) => (cellValue === false ? "否" : "是"),
+    },
   ],
 }));
 const filteredPsdSetAutomationPublishConfigs = computed(() => {
@@ -6025,6 +6339,49 @@ async function openMaterialPublishConfigDialog() {
   await loadPublishConfigsForMaterialPublishDialog();
 }
 
+async function openMaterialProductConfigDialog() {
+  if (!ids.value.length) {
+    ElMessage.warning("请选择要处理的素材");
+    return;
+  }
+
+  clearMaterialProductConfigSelection();
+  materialProductConfigDialogVisible.value = true;
+  materialProductConfigSearchText.value = "";
+  materialProductConfigCurrentPage.value = 1;
+  await ensureSelectedMaterialPreviews();
+  await loadProductConfigsForMaterialDialog();
+}
+
+function handleCloseMaterialProductConfigDialog() {
+  materialProductConfigDialogVisible.value = false;
+  clearMaterialProductConfigSelection();
+  materialProductConfigSearchText.value = "";
+  materialProductConfigCurrentPage.value = 1;
+}
+
+function clearMaterialProductConfigSelection() {
+  materialProductConfigSelectedIds.value = [];
+  materialProductConfigGridRef.value?.clearCheckboxRow?.();
+}
+
+async function loadProductConfigsForMaterialDialog() {
+  materialProductConfigLoading.value = true;
+  try {
+    const res: any = await productGenerationTemplateApi.getList({
+      currentPage: 1,
+      pageSize: 1000,
+      isActive: true,
+    });
+    materialProductConfigOptions.value = Array.isArray(res?.list) ? res.list : [];
+  } catch (error) {
+    console.error("加载独立站商品配置失败:", error);
+    ElMessage.error("加载独立站商品配置失败");
+  } finally {
+    materialProductConfigLoading.value = false;
+  }
+}
+
 function handleCloseMaterialPublishConfigDialog() {
   materialPublishConfigDialogVisible.value = false;
   clearMaterialPublishConfigSelection();
@@ -6059,6 +6416,10 @@ function isMaterialPublishConfigUsable(row: any) {
   return Boolean(String(row?.configData?.templateBinding?.psdTemplateId || "").trim());
 }
 
+function isMaterialProductConfigUsable(row: any) {
+  return row?.isActive !== false && Boolean(String(row?.psdTemplateId || "").trim());
+}
+
 function handleMaterialPublishConfigCheckboxChange({ checked, row }) {
   if (!isMaterialPublishConfigUsable(row)) {
     return;
@@ -6086,6 +6447,37 @@ function handleMaterialPublishConfigCheckboxAllChange({ checked }) {
     });
   } else {
     materialPublishConfigSelectedIds.value = materialPublishConfigSelectedIds.value.filter(
+      (id) => !currentPageIds.includes(id),
+    );
+  }
+}
+
+function handleMaterialProductConfigCheckboxChange({ checked, row }) {
+  if (!isMaterialProductConfigUsable(row)) return;
+  const rowId = String(row.id);
+  if (checked) {
+    if (!materialProductConfigSelectedIds.value.includes(rowId)) {
+      materialProductConfigSelectedIds.value.push(rowId);
+    }
+  } else {
+    materialProductConfigSelectedIds.value = materialProductConfigSelectedIds.value.filter(
+      (id) => id !== rowId,
+    );
+  }
+}
+
+function handleMaterialProductConfigCheckboxAllChange({ checked }) {
+  const currentPageIds = materialProductConfigDataSource.value
+    .filter((item: any) => isMaterialProductConfigUsable(item))
+    .map((item: any) => String(item.id));
+  if (checked) {
+    currentPageIds.forEach((id) => {
+      if (!materialProductConfigSelectedIds.value.includes(id)) {
+        materialProductConfigSelectedIds.value.push(id);
+      }
+    });
+  } else {
+    materialProductConfigSelectedIds.value = materialProductConfigSelectedIds.value.filter(
       (id) => !currentPageIds.includes(id),
     );
   }
@@ -6128,6 +6520,39 @@ async function handleCreatePsdSetsByPublishConfig() {
     ElMessage.error(error?.message || "按发布配置创建套图失败");
   } finally {
     materialPublishConfigSubmitting.value = false;
+  }
+}
+
+async function handleCreatePsdSetsByProductConfig() {
+  if (!ids.value.length) {
+    return ElMessage.warning("请先勾选素材");
+  }
+  if (!materialProductConfigSelectedIds.value.length) {
+    return ElMessage.warning("请选择独立站商品配置");
+  }
+
+  const formatCheckResult = checkMaterialFormats();
+  if (!formatCheckResult || !formatCheckResult.valid) {
+    ElMessage.warning(formatCheckResult?.message || "素材格式检查异常，请重试");
+    return;
+  }
+
+  materialProductConfigSubmitting.value = true;
+  try {
+    const res: any = await stickerPsdSetApi.batchCreateByProductGenerationTemplate({
+      stickerIds: ids.value.map((id) => String(id)),
+      productGenerationTemplateIds: [...materialProductConfigSelectedIds.value],
+    });
+    const productTotal = Number(res?.productTotal || materialProductConfigTaskCount.value);
+    const psdSetTotal = Array.isArray(res?.list) ? res.list.length : Number(res?.total || 0);
+    ElMessage.success(`已创建 ${psdSetTotal} 条套图任务，完成后生成 ${productTotal} 个独立站商品`);
+    handleCloseMaterialProductConfigDialog();
+    resetCheckStatus(ids);
+  } catch (error: any) {
+    console.error("按独立站商品配置创建套图失败:", error);
+    ElMessage.error(error?.message || "创建独立站商品任务失败");
+  } finally {
+    materialProductConfigSubmitting.value = false;
   }
 }
 
@@ -10367,11 +10792,12 @@ h1 {
 }
 
 .psd-template-list-container {
-  flex: 1;
+  flex: 1 1 0;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  overflow: hidden;
 }
 
 .psd-set-materials .format-tip {
@@ -10543,6 +10969,7 @@ h1 {
 }
 
 .psd-set-template-toolbar {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -10576,9 +11003,8 @@ h1 {
 }
 
 .psd-set-templates .template-list-wrapper {
-  flex: 1;
+  flex: 1 1 0;
   min-height: 0;
-  max-height: calc(100vh - 320px);
   display: flex;
   flex-direction: column;
   gap: 8px;

@@ -84,6 +84,16 @@ export const PRODUCT_CATEGORIES: ProductCategory[] = [
   },
 ];
 
+export function normalizeProductType(value: unknown): string {
+  const productType = String(value || '').trim();
+  if (!productType) return '';
+
+  const compactType = productType.replace(/\s+/g, '');
+  if (/测试|模版|模板/i.test(compactType)) return '';
+  if (/^(PSD套图|PSD|套图|商品|产品|POD)$/i.test(compactType)) return '';
+  return productType;
+}
+
 /**
  * 根据分类值获取分类信息
  */
@@ -97,4 +107,3 @@ export function getCategoryByValue(value: string): ProductCategory | undefined {
 export function getCategoryImage(category: ProductCategory): string {
   return category.image || '/product-categories/default.jpg';
 }
-

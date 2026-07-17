@@ -662,12 +662,18 @@
                 </template>
 
                 <template #typeSlot="{ row }">
-                  <span v-if="row.type" class="table-cell-text">{{ row.type }}</span>
-                  <span v-else class="table-cell-empty">未设置</span>
+                  <span v-if="normalizeProductType(row.type)" class="table-cell-text">
+                    {{ normalizeProductType(row.type) }}
+                  </span>
+                  <el-tag v-else type="warning" size="small" effect="plain">待识别</el-tag>
                 </template>
 
                 <template #publishStatusSlot="{ row }">
-                  <el-tag :type="row.isPublish ? 'success' : 'info'" size="small">
+                  <el-tag
+                    :type="row.isPublish ? 'success' : 'warning'"
+                    size="small"
+                    effect="plain"
+                  >
                     {{ row.isPublish ? "已发布" : "未发布" }}
                   </el-tag>
                 </template>
@@ -2156,7 +2162,9 @@
               </div>
               <div class="product-info-item">
                 <div class="product-info-label">商品类型</div>
-                <div class="product-info-value">{{ productDetail.type || "未设置" }}</div>
+                <div class="product-info-value">
+                  {{ normalizeProductType(productDetail.type) || "待识别" }}
+                </div>
               </div>
               <div class="product-info-item">
                 <div class="product-info-label">原价</div>
@@ -2603,7 +2611,7 @@ import { getDraftList } from "@/api/draft";
 import { createTask } from "@/api/system/queue";
 import { getDesignModel } from "@/api/designModel";
 import request from "@/config/axios";
-import { PRODUCT_CATEGORIES } from "@/config/product-categories";
+import { PRODUCT_CATEGORIES, normalizeProductType } from "@/config/product-categories";
 import { getPreviewImageUrl } from "@/utils/image";
 import FolderTree from "@/components/material/FolderTree.vue";
 import TableRowDragHandle from "@/components/TableRowDragHandle/index.vue";
@@ -2929,18 +2937,6 @@ const gridOptions = computed(() => ({
       return "is-dragging-row";
     }
     return "";
-  },
-  rowStyle: ({ row }) => {
-    if (!row) return {};
-    return row.isPublish
-      ? { backgroundColor: "#f0f9eb" }
-      : { backgroundColor: "#fdf6ec" };
-  },
-  cellStyle: ({ row }) => {
-    if (!row) return {};
-    return row.isPublish
-      ? { backgroundColor: "#f0f9eb" }
-      : { backgroundColor: "#fdf6ec" };
   },
   rowConfig: {
     isHover: true,
@@ -4013,6 +4009,7 @@ function handleEdit(row) {
   const detailImages = Array.isArray(row.detailImages) ? row.detailImages : [];
   form.value = {
     ...row,
+    type: normalizeProductType(row.type),
     images,
     videos,
     detailImages,
@@ -4465,12 +4462,20 @@ async function submitAiGenDialog() {
     if (resultData && resultData.name) {
       aiGenRow.value.name = resultData.name;
       aiGenRow.value.enName = resultData.enName;
+      aiGenRow.value.type = resultData.type;
       aiGenRow.value.description = resultData.description;
       aiGenRow.value.enDescription = resultData.enDescription;
+      aiGenRow.value.tags = resultData.tags;
       aiGenRow.value.keywords = resultData.keywords;
       aiGenRow.value.enKeywords = resultData.enKeywords;
       aiGenRow.value.searchKeywords = resultData.searchKeywords;
       aiGenRow.value.enSearchKeywords = resultData.enSearchKeywords;
+      aiGenRow.value.slug = resultData.slug;
+      aiGenRow.value.seoTitle = resultData.seoTitle;
+      aiGenRow.value.seoDescription = resultData.seoDescription;
+      aiGenRow.value.price = resultData.price;
+      aiGenRow.value.salePrice = resultData.salePrice;
+      aiGenRow.value.compareAtPrice = resultData.compareAtPrice;
       ElMessage.success("AI自动生成内容成功");
       getList();
     } else {
@@ -6884,5 +6889,4 @@ function getPublishTaskType(platform: string) {
   }
 }
 
-/* 商品表格：发布/未发布颜色区分（由 rowStyle + cellStyle 内联样式控制，无需 CSS） */
 </style>
