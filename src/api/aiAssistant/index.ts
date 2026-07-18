@@ -171,6 +171,14 @@ export interface AiAssistantRunListResult {
   items: AiAssistantRun[];
 }
 
+export interface AiAssistantRuntimeStatus {
+  available: boolean;
+  configured: boolean;
+  runningCount: number;
+  message: string;
+  timestamp: string;
+}
+
 type StreamHandlers = {
   signal?: AbortSignal;
   onEvent: (event: AiAssistantChatStreamEvent) => void;
@@ -187,11 +195,7 @@ function authHeaders() {
   };
 }
 
-async function postSse(
-  url: string,
-  body: Record<string, any>,
-  handlers: StreamHandlers,
-) {
+async function postSse(url: string, body: Record<string, any>, handlers: StreamHandlers) {
   const { fetchEventSource } = await import("@microsoft/fetch-event-source");
   await fetchEventSource(`${config.base_url}${url}`, {
     method: "POST",
@@ -239,6 +243,12 @@ function normalizeMessageParams(
 }
 
 export const AiAssistantApi = {
+  getStatus: async () => {
+    return request.get<AiAssistantRuntimeStatus>({
+      url: "/ai-assistant/status",
+    });
+  },
+
   getConversations: async () => {
     return request.get<AiAssistantConversation[]>({
       url: "/ai-assistant/conversations",
@@ -255,20 +265,14 @@ export const AiAssistantApi = {
     arg?: string | { title?: string; personaKey?: string },
     personaKey?: string,
   ) => {
-    const data =
-      typeof arg === "object" && arg !== null
-        ? arg
-        : { title: arg, personaKey };
+    const data = typeof arg === "object" && arg !== null ? arg : { title: arg, personaKey };
     return request.post<AiAssistantConversation>({
       url: "/ai-assistant/conversations",
       data,
     });
   },
 
-  updateConversationPersona: async (
-    conversationId: number,
-    personaKey: string,
-  ) => {
+  updateConversationPersona: async (conversationId: number, personaKey: string) => {
     return request.patch<AiAssistantConversation>({
       url: `/ai-assistant/conversations/${conversationId}/persona`,
       data: { personaKey },
@@ -291,11 +295,8 @@ export const AiAssistantApi = {
     });
   },
 
-  clearMessages: async (
-    arg?: number | null | { conversationId?: number | null },
-  ) => {
-    const conversationId =
-      typeof arg === "object" && arg !== null ? arg.conversationId : arg;
+  clearMessages: async (arg?: number | null | { conversationId?: number | null }) => {
+    const conversationId = typeof arg === "object" && arg !== null ? arg.conversationId : arg;
     return request.delete({
       url: "/ai-assistant/messages",
       params: { conversationId: conversationId || undefined },
@@ -370,8 +371,7 @@ export const AiAssistantApi = {
 
   chatStream: async (...args: any[]) => {
     const first = args[0];
-    const isObjectCall =
-      first && typeof first === "object" && !Array.isArray(first);
+    const isObjectCall = first && typeof first === "object" && !Array.isArray(first);
     const body = isObjectCall
       ? first
       : {
@@ -471,11 +471,7 @@ export const AiAssistantApi = {
     });
   },
 
-  getRunEvents: async (
-    runId: string,
-    conversationId?: number | null,
-    limit = 100,
-  ) => {
+  getRunEvents: async (runId: string, conversationId?: number | null, limit = 100) => {
     return request.get<AiAssistantRunEventsResult>({
       url: `/ai-assistant/runs/${runId}/events`,
       params: {
@@ -485,11 +481,7 @@ export const AiAssistantApi = {
     });
   },
 
-  getRuns: async (params?: {
-    conversationId?: number | null;
-    status?: string;
-    limit?: number;
-  }) => {
+  getRuns: async (params?: { conversationId?: number | null; status?: string; limit?: number }) => {
     return request.get<AiAssistantRunListResult>({
       url: "/ai-assistant/runs",
       params: {

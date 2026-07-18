@@ -1,10 +1,11 @@
 import { reactive } from "vue";
 import { getCodeScriptSandboxHealth } from "@/api/codeScript";
 import { getImageProcessingHealth } from "@/api/image-processing-record";
+import { McpApi } from "@/api/mcp";
 import { getRemotionVideoHealth } from "@/api/remotion-video-record";
 import { getModelServiceHealth } from "@/api/vector-search";
 
-export type ServiceHealthKey = "sandbox" | "videoTemplate" | "images" | "modelService";
+export type ServiceHealthKey = "sandbox" | "videoTemplate" | "images" | "modelService" | "mcp";
 export type ServiceHealthTone = "available" | "offline";
 
 export interface ServiceHealthSnapshot {
@@ -102,7 +103,11 @@ const normalizeImagesErrorMessage = (error: any, fallback: string) => {
   if (lower.includes("not found")) {
     return "接口不存在";
   }
-  if (lower.includes("images") || lower.includes("image-tool") || lower.includes("image processing")) {
+  if (
+    lower.includes("images") ||
+    lower.includes("image-tool") ||
+    lower.includes("image processing")
+  ) {
     return "图片处理能力异常";
   }
   return raw;
@@ -183,13 +188,34 @@ const serviceHealthDefinitions: Record<ServiceHealthKey, ServiceHealthDefinition
       timestamp: new Date().toISOString(),
     }),
   },
+  mcp: {
+    label: "MCP 管理服务",
+    pollIntervalMs: 60_000,
+    request: McpApi.getSessions,
+    mapSuccess: (payload) => ({
+      available: payload?.success === true,
+      baseUrl: "/system/mcp",
+      message: payload?.success === true ? "MCP 管理服务可用" : "MCP 管理服务不可用",
+      timestamp: new Date().toISOString(),
+    }),
+    mapError: (error) => ({
+      available: false,
+      baseUrl: "/system/mcp",
+      message: normalizeGenericErrorMessage(error, "MCP 管理服务检测失败"),
+      timestamp: new Date().toISOString(),
+    }),
+  },
 };
 
 export const serviceHealthStates = reactive<Record<ServiceHealthKey, ServiceHealthSnapshot>>({
   sandbox: createDefaultSnapshot("sandbox", serviceHealthDefinitions.sandbox.label),
-  videoTemplate: createDefaultSnapshot("videoTemplate", serviceHealthDefinitions.videoTemplate.label),
+  videoTemplate: createDefaultSnapshot(
+    "videoTemplate",
+    serviceHealthDefinitions.videoTemplate.label,
+  ),
   images: createDefaultSnapshot("images", serviceHealthDefinitions.images.label),
   modelService: createDefaultSnapshot("modelService", serviceHealthDefinitions.modelService.label),
+  mcp: createDefaultSnapshot("mcp", serviceHealthDefinitions.mcp.label),
 });
 
 const initializedKeys = new Set<ServiceHealthKey>();

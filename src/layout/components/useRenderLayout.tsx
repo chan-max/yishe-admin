@@ -14,6 +14,7 @@ const appStore = useAppStore();
 const tagsView = computed(() => appStore.getTagsView);
 const fixedHeader = computed(() => appStore.getFixedHeader);
 const mobile = computed(() => appStore.getMobile);
+const collapse = computed(() => appStore.getCollapse);
 
 interface RenderLayoutOptions {
   mobileMenuOpen: Ref<boolean>;
@@ -40,11 +41,17 @@ export const useRenderLayout = ({
             {
               "z-[30] shadow-[var(--left-menu-shadow)]": !mobile.value,
               "z-[1401]": mobile.value,
-              "w-[var(--left-menu-max-width)]": !mobile.value,
+              "w-[var(--left-menu-max-width)] transition-all duration-200 ease-out":
+                !mobile.value,
               "w-[min(80vw,var(--left-menu-mobile-max-width,var(--left-menu-max-width)))] shadow-2xl transition-transform duration-200":
                 mobile.value,
-              "translate-x-0": !mobile.value || mobileMenuOpen.value,
-              "-translate-x-full": mobile.value && !mobileMenuOpen.value,
+              "translate-x-0 opacity-100":
+                (!mobile.value && !collapse.value) ||
+                (mobile.value && mobileMenuOpen.value),
+              "-translate-x-full":
+                (!mobile.value && collapse.value) ||
+                (mobile.value && !mobileMenuOpen.value),
+              "pointer-events-none opacity-0": !mobile.value && collapse.value,
             },
           ]}
         >
@@ -54,11 +61,11 @@ export const useRenderLayout = ({
         <main
           class={[
             `${prefixCls}-content`,
-            "absolute top-0 h-full border-l border-[var(--app-content-border-color)]",
+            "absolute top-0 h-full border-l border-[var(--app-content-border-color)] transition-all duration-200 ease-out",
             {
               "left-[var(--left-menu-max-width)] w-[calc(100%-var(--left-menu-max-width))]":
-                !mobile.value,
-              "!left-0 !w-full !border-l-0": mobile.value,
+                !mobile.value && !collapse.value,
+              "!left-0 !w-full !border-l-0": mobile.value || collapse.value,
             },
           ]}
         >
@@ -75,9 +82,11 @@ export const useRenderLayout = ({
               class={[
                 {
                   "fixed top-0 z-10 left-[var(--left-menu-max-width)] w-[calc(100%-var(--left-menu-max-width))]":
-                    fixedHeader.value && !mobile.value,
+                    fixedHeader.value && !mobile.value && !collapse.value,
                   "!fixed top-0 !left-0 !w-full":
-                    fixedHeader.value && mobile.value,
+                    fixedHeader.value && (mobile.value || collapse.value),
+                  "transition-all duration-200 ease-out":
+                    fixedHeader.value && !mobile.value,
                 },
               ]}
             >

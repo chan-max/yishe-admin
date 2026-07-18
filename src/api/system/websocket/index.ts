@@ -106,7 +106,16 @@ export interface WebsocketClientInfo {
     profileId?: string;
     profileName?: string;
     machineCode?: string;
+    workspaceId?: string;
     launchedAt?: string;
+  };
+  designWorker?: {
+    workerId?: string;
+    workspaceId?: string;
+    capacity?: number;
+    activeRequestId?: string | null;
+    state?: "idle" | "busy" | "cancelling" | string;
+    updatedAt?: string;
   };
   workspaceDirectory?: string;
   app?: {
@@ -336,7 +345,16 @@ export interface OpenDesignToolDTO {
   toolUrl?: string;
   prompt?: string;
   tenantId?: string;
+  workspaceId?: string;
 }
+
+const createDesignWorkspaceId = () => {
+  const random =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+  return `workspace-${random}`;
+};
 
 export const openDesignToolOnClient = (data: OpenDesignToolDTO) => {
   const url = new URL(data.toolUrl || window.location.origin);
@@ -345,6 +363,7 @@ export const openDesignToolOnClient = (data: OpenDesignToolDTO) => {
   url.searchParams.set("launchSource", "admin-design-tool");
   url.searchParams.set("launchClientId", data.clientId);
   url.searchParams.set("launchProfileId", data.profileId);
+  url.searchParams.set("workspaceId", data.workspaceId || createDesignWorkspaceId());
   if (data.profileName) url.searchParams.set("launchProfileName", data.profileName);
   if (data.machineCode) url.searchParams.set("launchMachineCode", data.machineCode);
   if (data.prompt) url.searchParams.set("prompt", data.prompt);

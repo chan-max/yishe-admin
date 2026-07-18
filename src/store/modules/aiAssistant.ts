@@ -12,6 +12,10 @@ import type {
   InteractionPayload,
   InteractionSubmitResult,
 } from "@/components/AiAssistant/interactions/types";
+import {
+  markAiAssistantRuntimeIdle,
+  markAiAssistantRuntimeRunning,
+} from "@/services/aiAssistantRuntimeState";
 
 // ========== Internal Types ==========
 
@@ -478,6 +482,7 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
         runtimeStatus.value = "idle";
         thinkingText.value = "";
       }
+      markAiAssistantRuntimeIdle();
       await loadConversations();
       if (currentConversationId.value) await loadMessages();
     }
@@ -496,6 +501,7 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
     thinkingText.value = "正在连接...";
     currentRunId.value = "";
     pendingInteraction.value = null;
+    markAiAssistantRuntimeRunning();
 
     messages.value.push(createLocalMessage({ role: "user", content: message }));
 
@@ -521,6 +527,7 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
 
     loading.value = true;
     runtimeStatus.value = "thinking";
+    markAiAssistantRuntimeRunning();
 
     await consumeStream((handlers) =>
       AiAssistantApi.resumeRunStream(

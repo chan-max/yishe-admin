@@ -22,6 +22,11 @@
       </div>
     </div>
 
+    <ParallelDesignControl
+      :workers="toolConnections"
+      @control="(worker) => worker && openControlPanel(worker)"
+    />
+
     <!-- 表格 -->
     <el-table
       v-if="toolConnections.length > 0 || initialLoading"
@@ -60,6 +65,7 @@
       <el-table-column label="状态" width="80" align="center">
         <template #default="{ row }">
           <span v-if="isStreaming(row)" class="cell-status cell-status--active">● 共享中</span>
+          <span v-else-if="isDesigning(row)" class="cell-status cell-status--active">● 制作中</span>
           <span v-else class="cell-status cell-status--idle">空闲</span>
         </template>
       </el-table-column>
@@ -218,7 +224,7 @@
               </div>
               <div v-if="targetResults.length" class="cp-results">
                 <div v-for="r in targetResults" :key="r.requestId" class="cp-result" :class="r.success ? 'cp-result--ok' : 'cp-result--err'">
-                  <el-tag :type="r.success ? 'success' : 'danger'" size="small" effect="plain">{{ r.success ? '完成' : '失败' }}</el-tag>
+                  <el-tag :type="remoteResultTagType(r)" size="small" effect="plain">{{ remoteResultLabel(r) }}</el-tag>
                   <span v-if="r.message" class="cp-result__msg">{{ r.message }}</span>
                   <span v-if="r.error" class="cp-result__err">{{ r.error }}</span>
                   <span class="cp-result__time">{{ formatAgentTime(r.reportedAt) }}</span>
@@ -356,6 +362,7 @@ import { ElMessage } from "element-plus";
 import { useClientNodeStore } from "@/store/modules/clientNode";
 import { normalizeBrowserAutomationProfilesPayload } from "@/services/browserAutomationExecutionContext";
 import { resolveDesignToolUrl } from "@/config/toolRegistry";
+import ParallelDesignControl from "./components/ParallelDesignControl.vue";
 
 defineOptions({ name: "DesignToolConnection" });
 
@@ -793,6 +800,12 @@ const formatDateTime = (v?: string | null) => (v ? formatDate(new Date(v), "YYYY
 
 const getAgent = (r: WebsocketConnectionVO) => (r.clientInfo as any)?.agent || null;
 
+const isDesigning = (r: WebsocketConnectionVO) => {
+  const workerState = r.clientInfo?.designWorker?.state;
+  const agentState = getAgent(r)?.agentState;
+  return workerState === "busy" || workerState === "cancelling" || ["thinking", "executing", "waiting_user"].includes(agentState);
+};
+
 const agentLabel = (s: string) =>
   ({ idle: "空闲", thinking: "思考中", executing: "执行中", waiting_user: "等待用户", error: "异常" }[s] || s);
 
@@ -842,7 +855,21 @@ const remoteResults = ref<Array<{
   error?: string;
   connectionId?: string;
   reportedAt?: string;
+  phase?: string;
 }>>([]);
+
+const remoteResultLabel = (result: { success: boolean; phase?: string }) => {
+  if (result.phase === "accepted" || result.phase === "dispatching") return "执行中";
+  if (result.phase === "rejected") return "未接收";
+  if (result.phase === "cancelled") return "已停止";
+  return result.success ? "完成" : "失败";
+};
+
+const remoteResultTagType = (result: { success: boolean; phase?: string }): TagType => {
+  if (result.phase === "accepted" || result.phase === "dispatching") return "primary";
+  if (result.phase === "cancelled") return "info";
+  return result.success ? "success" : "danger";
+};
 
 const openControlPanel = async (row: WebsocketConnectionVO) => {
   // 关闭旧面板
@@ -1062,6 +1089,7 @@ const sendRemoteCommand = async () => {
     remoteResults.value.unshift({
       requestId,
       success: true,
+      phase: "dispatching",
       message: "命令已发送，Agent 正在处理...",
       connectionId: controlTarget.value.id,
       reportedAt: new Date().toISOString(),
@@ -1232,15 +1260,27 @@ const resultHandler = (data: any) => {
     return;
   }
 
-  remoteResults.value.unshift({
+  const nextResult = {
     requestId: data?.requestId || "unknown",
     success: data?.success,
+    phase: data?.phase,
     message: data?.message,
     agentResponse: data?.agentResponse,
     error: data?.error,
     connectionId: data?.connectionId,
     reportedAt: data?.reportedAt,
-  });
+  };
+  const existingIndex = remoteResults.value.findIndex(
+    (item) => item.requestId === nextResult.requestId,
+  );
+  if (existingIndex >= 0) {
+    remoteResults.value[existingIndex] = {
+      ...remoteResults.value[existingIndex],
+      ...nextResult,
+    };
+  } else {
+    remoteResults.value.unshift(nextResult);
+  }
   if (remoteResults.value.length > 20) remoteResults.value.length = 20;
 };
 

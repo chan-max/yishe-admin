@@ -267,6 +267,7 @@ export interface AdminMessageEvent {
 export interface RemoteResultEvent {
   requestId: string;
   success: boolean;
+  phase?: "accepted" | "completed" | "failed" | "rejected" | "cancelled" | string;
   message?: string;
   agentResponse?: string;
   error?: string;

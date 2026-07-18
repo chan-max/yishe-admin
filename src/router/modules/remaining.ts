@@ -321,6 +321,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "McpConsole",
         meta: {
           title: "MCP 管理",
+          serviceStatusKey: "mcp",
         },
       },
       {

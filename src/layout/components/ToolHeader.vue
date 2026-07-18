@@ -12,6 +12,7 @@ import GlobalNotificationToastStack from "@/layout/components/GlobalNotification
 import ToolLauncherDropdown from "@/components/ToolWindowHost/ToolLauncherDropdown.vue";
 import { useAppStore } from "@/store/modules/app";
 import { useDesign } from "@/hooks/web/useDesign";
+import { ElTooltip } from "element-plus";
 
 export default defineComponent({
   name: "ToolHeader",
@@ -22,7 +23,9 @@ export default defineComponent({
     const breadcrumb = computed(() => appStore.getBreadcrumb);
     const screenfull = computed(() => appStore.getScreenfull);
     const mobile = computed(() => appStore.getMobile);
-    const openMobileMenu = inject<() => void>("openMobileMenu", () => { });
+    const collapse = computed(() => appStore.getCollapse);
+    const openMobileMenu = inject<() => void>("openMobileMenu", () => {});
+    const expandDesktopMenu = () => appStore.setCollapse(false);
 
     return () => (
       <header
@@ -33,11 +36,23 @@ export default defineComponent({
           {mobile.value ? (
             <button
               type="button"
-              class="flex h-[var(--top-header-action-size)] w-[var(--top-header-action-size)] items-center justify-center rounded-[var(--top-header-action-radius)] border border-[var(--left-menu-border-color)] bg-[var(--top-header-hover-color)] text-[var(--top-header-text-color)]"
+              class="tool-header-menu-toggle"
+              aria-label="打开菜单"
               onClick={openMobileMenu}
             >
               <Icon icon="ep:menu" />
             </button>
+          ) : collapse.value ? (
+            <ElTooltip content="展开菜单" placement="bottom" effect="light" showAfter={300}>
+              <button
+                type="button"
+                class="tool-header-menu-toggle"
+                aria-label="展开菜单"
+                onClick={expandDesktopMenu}
+              >
+                <Icon icon="ep:expand" />
+              </button>
+            </ElTooltip>
           ) : undefined}
           {breadcrumb.value ? (
             <Breadcrumb class="header-breadcrumb min-w-0 lt-md:hidden" />
@@ -95,13 +110,38 @@ $prefix-cls: #{$namespace}-tool-header;
   gap: 8px;
 }
 
+.tool-header-menu-toggle {
+  display: inline-flex;
+  width: var(--top-header-action-size);
+  height: var(--top-header-action-size);
+  flex: 0 0 var(--top-header-action-size);
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--left-menu-border-color);
+  border-radius: var(--top-header-action-radius);
+  background: transparent;
+  color: var(--top-header-text-color);
+  cursor: pointer;
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease;
+}
+
+.tool-header-menu-toggle:hover,
+.tool-header-menu-toggle:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--el-color-primary) 36%, var(--left-menu-border-color));
+  background: var(--top-header-hover-color);
+}
+
 .tool-header-right {
   gap: 10px;
   overflow: visible;
   padding-left: 10px;
 }
 
-.tool-header-right>* {
+.tool-header-right > * {
   display: flex;
   min-height: var(--top-header-action-size);
   align-items: center;

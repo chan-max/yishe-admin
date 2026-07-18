@@ -23,6 +23,17 @@ import {
   serviceHealthStates,
 } from "@/services/serviceHealthState";
 import {
+  ensureAiAssistantRuntimeInitialized,
+  resolveAiAssistantRuntimeTone,
+  resolveAiAssistantRuntimeTooltip,
+} from "@/services/aiAssistantRuntimeState";
+import {
+  designToolRuntimeState,
+  ensureDesignToolRuntimeInitialized,
+  resolveDesignToolRuntimeTone,
+  resolveDesignToolRuntimeTooltip,
+} from "@/services/designToolRuntimeState";
+import {
   getClientServiceRuntime,
   type ClientPluginKey,
   useClientNodeStore,
@@ -39,7 +50,12 @@ export default defineComponent({
     const { push, currentRoute } = useRouter();
     const closeMobileMenu = inject<() => void>("closeMobileMenu", () => {});
     const logo = computed(() => appStore.logo);
+    const mobile = computed(() => appStore.getMobile);
     const menuKeyword = ref("");
+
+    const collapseMenu = () => {
+      appStore.setCollapse(true);
+    };
 
     const routers = computed(() =>
       permissionStore.getRouters.filter((route) => !route.meta?.hidden),
@@ -457,6 +473,63 @@ export default defineComponent({
       });
     };
 
+    const renderAiAssistantRuntimeBadge = (routePath: string) => {
+      if (routePath !== "/ai/assistant") {
+        return undefined;
+      }
+
+      ensureAiAssistantRuntimeInitialized();
+      const tone = resolveAiAssistantRuntimeTone();
+      const title = resolveAiAssistantRuntimeTooltip();
+
+      if (tone === "running") {
+        return renderRunningStatusDot(title);
+      }
+
+      if (tone === "checking") {
+        return renderMenuStatusHint(<span class={`${prefixCls}__status-loader`} />, title);
+      }
+
+      return renderMenuStatusHint(
+        <span
+          class={[
+            `${prefixCls}__status-dot`,
+            tone === "available"
+              ? `${prefixCls}__status-dot--available`
+              : `${prefixCls}__status-dot--offline`,
+          ]}
+        />,
+        title,
+      );
+    };
+
+    const renderDesignToolRuntimeBadge = (routePath: string) => {
+      if (routePath !== "/external/design-tool") {
+        return undefined;
+      }
+
+      ensureDesignToolRuntimeInitialized();
+      const tone = resolveDesignToolRuntimeTone();
+      const title = resolveDesignToolRuntimeTooltip();
+
+      if (tone === "checking") {
+        return renderMenuStatusHint(<span class={`${prefixCls}__status-loader`} />, title);
+      }
+
+      return renderMenuStatusHint(
+        <span
+          class={[
+            `${prefixCls}__design-tool-badge`,
+            `${prefixCls}__design-tool-badge--${tone}`,
+          ]}
+        >
+          <span class={`${prefixCls}__design-tool-badge-dot`} />
+          <span>{designToolRuntimeState.onlineCount}</span>
+        </span>,
+        title,
+      );
+    };
+
     const isMenuLinkRunning = (routePath: string) => {
       if (isPsdSetRoute(routePath)) {
         return isAnyPsdSetProcessing.value;
@@ -469,6 +542,9 @@ export default defineComponent({
       }
       if (isImageProcessingRoute(routePath)) {
         return !!routeRunningMap.value[routePath];
+      }
+      if (routePath === "/external/design-tool") {
+        return designToolRuntimeState.runningCount > 0;
       }
       return false;
     };
@@ -500,6 +576,10 @@ export default defineComponent({
     };
 
     const shouldTrackAiConfig = computed(() => hasRoutePath(routers.value, "/system/ai-api-key"));
+    const shouldTrackAiAssistant = computed(() => hasRoutePath(routers.value, "/ai/assistant"));
+    const shouldTrackDesignTool = computed(() =>
+      hasRoutePath(routers.value, "/external/design-tool"),
+    );
     const shouldTrackMessagePush = computed(() =>
       hasRoutePath(routers.value, "/system/message-push"),
     );
@@ -565,6 +645,26 @@ export default defineComponent({
     );
 
     watch(
+      shouldTrackAiAssistant,
+      (enabled) => {
+        if (enabled) {
+          ensureAiAssistantRuntimeInitialized();
+        }
+      },
+      { immediate: true },
+    );
+
+    watch(
+      shouldTrackDesignTool,
+      (enabled) => {
+        if (enabled) {
+          ensureDesignToolRuntimeInitialized();
+        }
+      },
+      { immediate: true },
+    );
+
+    watch(
       shouldTrackAiConfig,
       (enabled) => {
         if (enabled) {
@@ -600,12 +700,25 @@ export default defineComponent({
 
           <div class={`${prefixCls}__search`}>
             <ElInput
+              class={`${prefixCls}__search-input`}
               v-model={menuKeyword.value}
               size="small"
               clearable
               placeholder="搜索菜单"
               prefixIcon={Search}
             />
+            {!mobile.value ? (
+              <ElTooltip content="收起菜单" placement="right" effect="light" showAfter={300}>
+                <button
+                  type="button"
+                  class={`${prefixCls}__collapse-button`}
+                  aria-label="收起菜单"
+                  onClick={collapseMenu}
+                >
+                  <Icon icon="ep:fold" />
+                </button>
+              </ElTooltip>
+            ) : undefined}
           </div>
 
           {visibleRouters.value.length ? (
@@ -696,7 +809,9 @@ export default defineComponent({
                             onClick={() => selectMenu(childPath)}
                           >
                             <span class={`${prefixCls}__link-text`}>{child.meta?.title}</span>
-                            {renderAiConfigBadge(childPath) ||
+                            {renderDesignToolRuntimeBadge(childPath) ||
+                              renderAiAssistantRuntimeBadge(childPath) ||
+                              renderAiConfigBadge(childPath) ||
                               renderMessagePushBadge(childPath) ||
                               renderPsdSetAutoDot(childPath) ||
                               renderPublishTaskAutoBadge(childPath) ||
@@ -777,34 +892,73 @@ $prefix-cls: #{$namespace}-menu;
     position: sticky;
     top: var(--left-menu-search-sticky-top, 64px);
     z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 4px;
     padding: 6px 0 8px;
     border-bottom: 1px solid var(--left-menu-divider-color);
     background: var(--left-menu-bg-color, #141414);
   }
 
-  &__search :deep(.el-input__wrapper) {
+  &__search-input {
+    min-width: 0;
+    flex: 1;
+  }
+
+  &__search-input :deep(.el-input__wrapper) {
     min-height: 30px;
-    border-radius: 8px;
-    background: rgb(255 255 255 / 6%);
-    box-shadow: 0 0 0 1px rgb(255 255 255 / 8%) inset;
+    padding-inline: 4px;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: inset 0 -1px 0 transparent;
+    transition: box-shadow 0.16s ease;
   }
 
-  &__search :deep(.el-input__wrapper.is-focus) {
-    box-shadow: 0 0 0 1px rgb(64 158 255 / 52%) inset;
+  &__search-input :deep(.el-input__wrapper:hover) {
+    box-shadow: inset 0 -1px 0 var(--left-menu-divider-color);
   }
 
-  &__search :deep(.el-input__inner) {
+  &__search-input :deep(.el-input__wrapper.is-focus) {
+    box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--el-color-primary) 68%, transparent);
+  }
+
+  &__search-input :deep(.el-input__inner) {
     color: var(--left-menu-title-color);
     font-size: 12px;
   }
 
-  &__search :deep(.el-input__inner::placeholder) {
-    color: rgb(203 213 225 / 42%);
+  &__search-input :deep(.el-input__inner::placeholder) {
+    color: color-mix(in srgb, var(--left-menu-title-color) 44%, transparent);
   }
 
-  &__search :deep(.el-input__prefix),
-  &__search :deep(.el-input__clear) {
-    color: rgb(203 213 225 / 56%);
+  &__search-input :deep(.el-input__prefix),
+  &__search-input :deep(.el-input__clear) {
+    color: color-mix(in srgb, var(--left-menu-title-color) 58%, transparent);
+  }
+
+  &__collapse-button {
+    display: inline-flex;
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: color-mix(in srgb, var(--left-menu-title-color) 62%, transparent);
+    cursor: pointer;
+    transition:
+      color 0.16s ease,
+      background-color 0.16s ease;
+  }
+
+  &__collapse-button:hover,
+  &__collapse-button:focus-visible {
+    outline: none;
+    background: var(--left-menu-hover-color);
+    color: var(--left-menu-text-active-color);
   }
 
   &__empty {
@@ -1094,6 +1248,53 @@ $prefix-cls: #{$namespace}-menu;
     color: rgb(203 213 225 / 56%);
   }
 
+  &__design-tool-badge {
+    display: inline-flex;
+    min-width: 30px;
+    height: 18px;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 0 6px;
+    margin-left: var(--left-menu-status-dot-margin-left);
+    border: 1px solid rgb(148 163 184 / 20%);
+    border-radius: 999px;
+    background: rgb(148 163 184 / 9%);
+    color: rgb(203 213 225 / 72%);
+    font-size: 9px;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  &__design-tool-badge-dot {
+    width: 5px;
+    height: 5px;
+    flex: 0 0 5px;
+    border-radius: 50%;
+    background: currentcolor;
+  }
+
+  &__design-tool-badge--available {
+    border-color: rgb(52 211 153 / 24%);
+    background: rgb(52 211 153 / 10%);
+    color: rgb(110 231 183 / 94%);
+  }
+
+  &__design-tool-badge--running {
+    border-color: rgb(245 158 11 / 30%);
+    background: rgb(245 158 11 / 14%);
+    color: rgb(251 191 36 / 96%);
+  }
+
+  &__design-tool-badge--running &__design-tool-badge-dot {
+    animation: design-tool-runtime-pulse 1.2s ease-in-out infinite;
+  }
+
+  &__design-tool-badge--offline {
+    opacity: 0.58;
+  }
+
   &__link--running {
     background: linear-gradient(
       90deg,
@@ -1156,6 +1357,17 @@ $prefix-cls: #{$namespace}-menu;
     border-radius: 999px;
     background: var(--el-text-color-placeholder);
     box-shadow: 0 0 0 1px rgb(255 255 255 / 10%);
+  }
+
+  &__status-loader {
+    width: 10px;
+    height: 10px;
+    flex: 0 0 10px;
+    margin-left: var(--left-menu-status-dot-margin-left);
+    border: 1.5px solid color-mix(in srgb, var(--left-menu-title-color) 20%, transparent);
+    border-top-color: color-mix(in srgb, var(--el-color-primary) 82%, white 18%);
+    border-radius: 999px;
+    animation: menu-status-loader-spin 0.72s linear infinite;
   }
 
   &__status-dot::before,
@@ -1282,6 +1494,26 @@ $prefix-cls: #{$namespace}-menu;
 
   .#{$prefix-cls}__link--running-psd {
     --menu-running-text-color: rgb(250 204 21 / 98%);
+  }
+}
+
+@keyframes menu-status-loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes design-tool-runtime-pulse {
+  0%,
+  100% {
+    opacity: 0.65;
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgb(245 158 11 / 0%);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.25);
+    box-shadow: 0 0 0 3px rgb(245 158 11 / 16%);
   }
 }
 
@@ -1465,6 +1697,24 @@ $prefix-cls: #{$namespace}-menu;
   background: rgb(241 245 249 / 98%) !important;
   color: rgb(51 65 85 / 98%) !important;
   box-shadow: none !important;
+}
+
+:global(html.light .v-menu__design-tool-badge) {
+  border-color: rgb(100 116 139 / 30%) !important;
+  background: rgb(248 250 252 / 96%) !important;
+  color: rgb(71 85 105 / 92%) !important;
+}
+
+:global(html.light .v-menu__design-tool-badge--available) {
+  border-color: rgb(5 150 105 / 30%) !important;
+  background: rgb(236 253 245 / 96%) !important;
+  color: rgb(5 150 105 / 96%) !important;
+}
+
+:global(html.light .v-menu__design-tool-badge--running) {
+  border-color: rgb(217 119 6 / 34%) !important;
+  background: rgb(255 247 237 / 98%) !important;
+  color: rgb(194 65 12 / 96%) !important;
 }
 
 :global(html.light .v-menu__auto-badge--enabled) {

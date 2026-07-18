@@ -214,7 +214,7 @@ defineExpose({ scrollToBottom, focusInput: () => inputRef.value?.focus?.() });
           v-for="msg in messages"
           :key="msg.id"
           class="message-item"
-          :class="[`message-${msg.role}`]"
+          :class="[`message-role-${msg.role}`]"
         >
           <!-- 用户消息 -->
           <div v-if="msg.role === 'user'" class="message-content message-content--user">
@@ -235,8 +235,10 @@ defineExpose({ scrollToBottom, focusInput: () => inputRef.value?.focus?.() });
           <div v-else class="message-content message-content--tool">
             <div class="message-tool" :class="toolMessageClass(msg)">
               <span class="tool-dot" />
-              <span class="tool-title">{{ msg.toolLabel || msg.toolKey || "工具" }}</span>
-              <span class="tool-result">{{ msg.content }}</span>
+              <div class="tool-copy">
+                <span class="tool-title">{{ msg.toolLabel || msg.toolKey || "工具" }}</span>
+                <span class="tool-result">{{ msg.content }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -468,19 +470,19 @@ defineExpose({ scrollToBottom, focusInput: () => inputRef.value?.focus?.() });
 
 /* 工具消息 */
 .message-content--tool {
-  padding-left: 36px;
+  padding-left: 28px;
 }
 
 .message-tool {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  padding: 6px 12px;
+  gap: 9px;
+  max-width: min(720px, 88%);
+  padding: 7px 10px;
   border-radius: 6px;
   background: var(--el-fill-color-light);
   font-size: 12px;
-  line-height: 1.5;
-  max-width: min(640px, 85%);
+  line-height: 1.45;
 }
 
 .message-tool.is-running {
@@ -509,7 +511,7 @@ defineExpose({ scrollToBottom, focusInput: () => inputRef.value?.focus?.() });
   height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
-  margin-top: 5px;
+  margin-top: 6px;
 }
 
 @keyframes toolPulse {
@@ -517,15 +519,33 @@ defineExpose({ scrollToBottom, focusInput: () => inputRef.value?.focus?.() });
   50% { opacity: 1; }
 }
 
+.tool-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .tool-title {
-  font-weight: 500;
+  font-weight: 600;
   color: var(--el-text-color-regular);
-  flex-shrink: 0;
+  line-height: 18px;
 }
 
 .tool-result {
   color: var(--el-text-color-secondary);
+  line-height: 18px;
   word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.assistant-chat--compact .message-content--tool {
+  padding-left: 18px;
+}
+
+.assistant-chat--compact .message-tool {
+  max-width: 94%;
 }
 
 /* 交互区域 */
