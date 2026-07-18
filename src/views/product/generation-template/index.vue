@@ -8,7 +8,7 @@ import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { productGenerationTemplateApi } from "@/api/product-generation-template";
 import { psdTemplateApi } from "@/api/psdTemplate";
-import { PRODUCT_CATEGORIES, normalizeProductType } from "@/config/product-categories";
+import { normalizeProductType } from "@/utils/product-type";
 
 const loading = ref(false);
 const submitLoading = ref(false);
@@ -235,7 +235,7 @@ const gridOptions = computed(() => ({
       field: "productType",
       title: "商品类型",
       minWidth: 120,
-      formatter: ({ cellValue }) => normalizeProductType(cellValue) || "AI 自动识别",
+      formatter: ({ cellValue }) => normalizeProductType(cellValue),
     },
     {
       field: "pricingMode",
@@ -552,22 +552,12 @@ onMounted(() => {
           </el-col>
           <el-col :span="12">
             <el-form-item label="商品类型">
-              <el-select
+              <el-input
                 v-model="form.productType"
                 clearable
-                filterable
-                allow-create
-                default-first-option
-                placeholder="AI 自动识别"
+                placeholder="输入商品类型"
                 style="width: 100%"
-              >
-                <el-option
-                  v-for="category in PRODUCT_CATEGORIES"
-                  :key="category.value"
-                  :label="category.label"
-                  :value="category.value"
-                />
-              </el-select>
+              />
             </el-form-item>
           </el-col>
           <el-col :span="24">
