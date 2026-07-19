@@ -46,12 +46,8 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
     conversations.value.find((item) => item.id === currentConversationId.value),
   );
 
-  const activePersonaName = computed(
-    () => activeConversation.value?.persona?.name || "",
-  );
-
   const activeConversationTitle = computed(
-    () => activeConversation.value?.title || "智能助手",
+    () => activeConversation.value?.title || "新会话",
   );
 
   const statusText = computed(() => {
@@ -65,7 +61,7 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
       const d = activeConversation.value.lastMessageAt;
       return `最近更新 ${formatRelativeTime(d)}`;
     }
-    return "准备就绪";
+    return "";
   });
 
   const senderPlaceholder = computed(() => {
@@ -73,12 +69,6 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
       return "可以先输入下一条消息，完成上方交互后再发送";
     if (loading.value) return "智能助手正在处理";
     return "输入你的目标或问题";
-  });
-
-  const inputHintText = computed(() => {
-    if (pendingInteraction.value) return "当前需先完成上方交互，输入内容会保留";
-    if (loading.value) return "正在处理，请稍候";
-    return "Enter 发送，Shift+Enter 换行";
   });
 
   const canSend = computed(() => !loading.value && !pendingInteraction.value);
@@ -93,9 +83,9 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
   );
 
   const promptItems = [
-    { key: "page", label: "分析当前页面" },
-    { key: "plan", label: "先拆解任务" },
-    { key: "confirm", label: "先问我问题" },
+    { key: "page", label: "分析当前页" },
+    { key: "plan", label: "拆解任务" },
+    { key: "confirm", label: "确认需求" },
   ];
 
   // ========== Internal Helpers ==========
@@ -580,11 +570,9 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
     pendingInteraction,
     // Computed
     activeConversation,
-    activePersonaName,
     activeConversationTitle,
     statusText,
     senderPlaceholder,
-    inputHintText,
     canSend,
     hasPendingAssistantMessage,
     promptItems,

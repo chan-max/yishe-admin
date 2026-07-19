@@ -199,6 +199,7 @@ type BatchItemStatus =
   | "skipped";
 
 interface BatchRuntimeSnapshot {
+  requestId?: string | null;
   status: "idle" | "preparing" | "running" | "paused" | "stopped" | "done";
   current: number;
   total: number;
@@ -206,7 +207,11 @@ interface BatchRuntimeSnapshot {
   succeeded: number;
   failed: number;
   skipped: number;
+  description?: string;
   error?: string;
+  startedAt?: number;
+  finishedAt?: number;
+  updatedAt?: string;
   items?: Array<{
     index: number;
     title: string;
@@ -256,18 +261,12 @@ const runs = ref<ProductionRun[]>([]);
 const batchWorkers = ref<WorkerSnapshot[]>([]);
 let activeBatchId = "";
 
-const getAgent = (worker: WebsocketConnectionVO) =>
-  (worker.clientInfo as any)?.agent || null;
-
 const getDesignWorker = (worker: WebsocketConnectionVO) =>
   worker.clientInfo?.designWorker || null;
 
 const isWorkerIdle = (worker: WebsocketConnectionVO) => {
   if (worker.isOnline === false) return false;
-  const agent = getAgent(worker);
-  if (isDesignToolConnectionRunning(worker)) return false;
-  if (agent?.available === false) return false;
-  return !agent?.agentState || agent.agentState === "idle";
+  return !isDesignToolConnectionRunning(worker);
 };
 
 const selectedReadyWorkers = computed(() =>
@@ -531,12 +530,48 @@ const controlBatch = async (
 
 const stopRun = (run: ProductionRun) => controlBatch(run, "stop");
 
+const applyTerminalBatchState = (
+  run: ProductionRun,
+  batch?: BatchRuntimeSnapshot,
+) => {
+  if (!batch) return false;
+  if (batch.status === "done") {
+    const total = Number(batch.total || 0);
+    const succeeded = Number(batch.succeeded || 0);
+    const failed = Number(batch.failed || 0);
+    const skipped = Number(batch.skipped || 0);
+    const notUploaded = Math.max(total - succeeded, failed + skipped);
+    const allUploaded =
+      total > 0 && failed === 0 && skipped === 0 && succeeded === total;
+    run.phase = allUploaded ? "completed" : "failed";
+    run.error = allUploaded
+      ? undefined
+      : `有 ${notUploaded} 张未成功上传图库`;
+    run.message = allUploaded
+      ? `${succeeded}/${total} 已上传图库`
+      : run.error;
+    return true;
+  }
+  if (batch.status === "stopped") {
+    run.phase = batch.error ? "failed" : "cancelled";
+    run.error = batch.error;
+    run.message = batch.error || `批次已停止 · ${batch.completed}/${batch.total}`;
+    return true;
+  }
+  return false;
+};
+
 const handleRemoteResult = (event: RemoteResultEvent) => {
   const run = runs.value.find((item) => item.requestId === event.requestId);
   if (!run) return;
 
   const phase = String(event.phase || "");
   if (event.batch) run.batch = event.batch as BatchRuntimeSnapshot;
+  if (applyTerminalBatchState(run, run.batch)) {
+    if (event.message) run.message = event.message;
+    if (event.error) run.error = event.error;
+    return;
+  }
   if (phase === "progress") {
     run.phase = "accepted";
     run.message = event.message;
@@ -558,28 +593,31 @@ watch(
       requestId: getDesignWorker(worker)?.activeRequestId || null,
       workerState: getDesignWorker(worker)?.state || null,
       batch: getDesignWorker(worker)?.batch || null,
-      agentState: getAgent(worker)?.agentState || null,
-      lastError: getAgent(worker)?.lastError || "",
     })),
   (snapshots) => {
     snapshots.forEach((snapshot) => {
       const requestRun = snapshot.requestId
         ? runs.value.find((run) => run.requestId === snapshot.requestId)
         : null;
-      const connectionRun = runs.value.find(
-        (run) => run.connectionId === snapshot.connectionId,
-      );
+      const connectionRun = [...runs.value]
+        .reverse()
+        .find(
+          (run) =>
+            run.connectionId === snapshot.connectionId &&
+            !terminalPhases.has(run.phase),
+        );
       let run = requestRun || connectionRun;
-      if (
-        !run &&
+      const recoverableBatch =
         snapshot.batch &&
-        ["preparing", "running", "paused"].includes(snapshot.batch.status)
-      ) {
+        snapshot.batch.status !== "idle" &&
+        Number(snapshot.batch.total || 0) > 0;
+      if (!run && recoverableBatch) {
         const worker = findWorker(snapshot.connectionId);
         const assignedCount = Math.max(1, Number(snapshot.batch.total) || 1);
         run = {
           requestId:
             snapshot.requestId ||
+            snapshot.batch.requestId ||
             `recovered-batch-${snapshot.connectionId}-${Date.now()}`,
           itemIndex: runs.value.length,
           connectionId: snapshot.connectionId,
@@ -589,10 +627,20 @@ watch(
           rangeEnd: assignedCount,
           phase: "accepted",
           batch: snapshot.batch as BatchRuntimeSnapshot,
-          message: "已恢复设计端自动制作状态",
+          message: "已从设计端恢复自动制作状态",
         };
         runs.value.push(run);
-        if (!batchWorkers.value.some((item) => item.id === snapshot.connectionId)) {
+        activeBatchId = activeBatchId || `recovered-${Date.now()}`;
+        if (!prompt.value.trim() && snapshot.batch.description) {
+          prompt.value = snapshot.batch.description;
+        }
+        quantity.value = Math.max(
+          1,
+          runs.value.reduce((total, item) => total + item.assignedCount, 0),
+        );
+        if (
+          !batchWorkers.value.some((item) => item.id === snapshot.connectionId)
+        ) {
           batchWorkers.value.push({
             id: snapshot.connectionId,
             name: run.workerName,
@@ -603,20 +651,14 @@ watch(
         run.batch = snapshot.batch as BatchRuntimeSnapshot;
         if (["preparing", "running", "paused"].includes(run.batch.status)) {
           run.phase = "accepted";
-        } else if (run.batch.status === "done") {
-          run.phase = "completed";
-        } else if (run.batch.status === "stopped") {
-          run.phase = run.batch.error ? "failed" : "cancelled";
-          run.error = run.batch.error;
+        } else if (applyTerminalBatchState(run, run.batch)) {
+          return;
         }
       }
       if (
         run &&
         !terminalPhases.has(run.phase) &&
-        (snapshot.workerState === "busy" ||
-          ["thinking", "executing", "waiting_user"].includes(
-            snapshot.agentState || "",
-          ))
+        (snapshot.workerState === "busy" || snapshot.workerState === "cancelling")
       ) {
         run.phase = "accepted";
         run.message = "设计端自动制作中";
@@ -627,17 +669,19 @@ watch(
           run.connectionId === snapshot.connectionId &&
           run.phase === "accepted",
       );
-      const workerIsIdle =
-        snapshot.workerState === "idle" &&
-        (!snapshot.agentState || snapshot.agentState === "idle");
+      const workerIsIdle = snapshot.workerState === "idle";
       if (!activeRun || !workerIsIdle) return;
 
-      activeRun.phase = snapshot.lastError ? "failed" : "completed";
-      activeRun.error = snapshot.lastError || undefined;
-      activeRun.message = snapshot.lastError || "设计实例已完成并恢复空闲";
+      if (applyTerminalBatchState(activeRun, snapshot.batch as BatchRuntimeSnapshot)) {
+        return;
+      }
+
+      activeRun.phase = "failed";
+      activeRun.error = "设计实例已结束，但未收到完整的批次结果";
+      activeRun.message = activeRun.error;
     });
   },
-  { deep: true },
+  { deep: true, immediate: true },
 );
 
 onMounted(() => {

@@ -181,11 +181,26 @@ html.light {
   --transition-time-02: 0.2s;
 }
 
+@media only screen and (max-width: 767px) {
+  :root,
+  html.light,
+  html.dark {
+    --top-tool-height: 46px;
+    --app-content-padding: 8px;
+    --app-form-label-size: 12px;
+    --app-form-item-margin: 14px;
+    --app-form-item-top-margin: 12px;
+    --app-form-error-font-size: 11px;
+    --el-font-size-base: 14px;
+  }
+}
+
 @media only screen and (max-width: 480px) {
   :root,
   html.light,
   html.dark {
     --left-menu-mobile-max-width: 216px;
+    --app-content-padding: 6px;
   }
 }
 

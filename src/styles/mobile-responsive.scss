@@ -1,0 +1,403 @@
+@media (min-width: 768px) and (max-width: 1180px),
+  (min-width: 1181px) and (max-width: 1366px) and (any-pointer: coarse) {
+  .el-dialog:not(.is-fullscreen) {
+    display: flex;
+    max-width: calc(100vw - 32px) !important;
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
+    box-sizing: border-box;
+    flex-direction: column;
+    margin: 16px auto !important;
+  }
+
+  .el-dialog__header,
+  .el-dialog__footer,
+  .el-drawer__header,
+  .el-drawer__footer {
+    flex: 0 0 auto;
+  }
+
+  .el-dialog__body,
+  .el-drawer__body {
+    min-width: 0;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  :is(.el-dialog__footer, .el-drawer__footer) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+
+    .el-button + .el-button {
+      margin-left: 0;
+    }
+  }
+
+  :where(#app-view-main, .el-dialog, .el-drawer) {
+    .el-form {
+      :is(.el-input, .el-select, .el-cascader, .el-input-number, .el-date-editor, .el-tree-select) {
+        max-width: 100%;
+      }
+
+      :is(.el-input__wrapper, .el-select__wrapper, .el-date-editor.el-input__wrapper) {
+        min-height: 36px;
+      }
+    }
+
+    :is(.el-radio-group, .el-checkbox-group) {
+      display: flex;
+      max-width: 100%;
+      flex-wrap: wrap;
+      gap: 6px 10px;
+    }
+  }
+
+  :is(.el-dialog, .el-drawer) .el-button {
+    min-height: 34px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1180px) {
+  .el-dialog:not(.is-fullscreen) {
+    min-width: min(520px, calc(100vw - 32px));
+  }
+
+  :is(.el-dialog, .el-drawer) .el-form .el-row > [class*="el-col-"] {
+    max-width: 50% !important;
+    flex: 0 0 50% !important;
+  }
+
+  :is(.el-dialog, .el-drawer)
+    .el-form
+    .el-row
+    > :is(
+      .el-col-13,
+      .el-col-14,
+      .el-col-15,
+      .el-col-16,
+      .el-col-17,
+      .el-col-18,
+      .el-col-19,
+      .el-col-20,
+      .el-col-21,
+      .el-col-22,
+      .el-col-23,
+      .el-col-24
+    ) {
+    max-width: 100% !important;
+    flex-basis: 100% !important;
+  }
+
+  .el-drawer.ltr,
+  .el-drawer.rtl {
+    width: min(72vw, 560px) !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1366px) and (any-pointer: coarse) {
+  :is(.el-input__inner, .el-select__input, .el-textarea__inner, .el-range-input) {
+    font-size: 16px !important;
+  }
+}
+
+@media (max-width: 767px) {
+  html,
+  body,
+  #app {
+    min-width: 0;
+    min-height: 100%;
+  }
+
+  #app-view-main {
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  .el-overlay-dialog {
+    padding: 0;
+    overscroll-behavior: contain;
+  }
+
+  .el-dialog {
+    display: flex;
+    box-sizing: border-box;
+    flex-direction: column;
+
+    &:not(.is-fullscreen) {
+      width: calc(100vw - 12px) !important;
+      max-width: calc(100vw - 12px) !important;
+      max-height: calc(100vh - 12px);
+      max-height: calc(100dvh - 12px);
+      margin: 6px auto !important;
+      border-radius: 8px;
+    }
+
+    &.is-fullscreen {
+      width: 100vw !important;
+      max-width: none !important;
+      height: 100vh;
+      height: 100dvh;
+      max-height: none;
+      margin: 0 !important;
+      border: 0;
+      border-radius: 0;
+    }
+
+    &__header {
+      min-height: 48px;
+      box-sizing: border-box;
+      flex: 0 0 auto;
+      padding: 12px 44px 10px 12px;
+    }
+
+    &__title {
+      display: block;
+      overflow: hidden;
+      font-size: 15px;
+      line-height: 24px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &__headerbtn {
+      top: 2px;
+      right: 2px;
+      width: 44px;
+      height: 44px;
+    }
+
+    &__body {
+      min-width: 0;
+      min-height: 0;
+      flex: 1 1 auto;
+      padding: 12px !important;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    &.com-dialog {
+      .el-dialog__header {
+        height: 48px;
+        min-height: 48px;
+        padding: 0;
+
+        > div {
+          height: 48px !important;
+          padding-right: 12px !important;
+          padding-left: 12px !important;
+        }
+      }
+
+      .el-dialog__body {
+        padding: 12px !important;
+      }
+    }
+  }
+
+  :is(.el-dialog__footer, .el-drawer__footer) {
+    display: flex;
+    min-width: 0;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 10px 12px max(10px, env(safe-area-inset-bottom));
+
+    > * {
+      max-width: 100%;
+    }
+
+    > .el-button {
+      min-width: 0;
+      flex: 1 1 120px;
+      margin: 0 !important;
+    }
+
+    .el-button + .el-button {
+      margin-left: 0;
+    }
+
+    [class*="__footer"] {
+      display: flex;
+      width: 100%;
+      min-width: 0;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+
+      .el-button {
+        margin: 0;
+      }
+    }
+  }
+
+  .el-drawer {
+    &.ltr,
+    &.rtl {
+      width: min(92vw, 420px) !important;
+    }
+
+    &.ttb,
+    &.btt {
+      height: min(88vh, 720px) !important;
+      height: min(88dvh, 720px) !important;
+    }
+
+    &__header {
+      min-height: 48px;
+      box-sizing: border-box;
+      flex: 0 0 auto;
+      padding: 12px;
+      margin-bottom: 0;
+    }
+
+    &__body {
+      min-width: 0;
+      min-height: 0;
+      padding: 12px;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+
+  :where(#app-view-main, .el-dialog, .el-drawer) {
+    .el-form {
+      &--inline {
+        display: block;
+        width: 100%;
+      }
+
+      .el-form-item {
+        display: block;
+
+        > :is(.el-form-item__label, .el-form-item__label-wrap) {
+          width: 100% !important;
+          min-height: 0;
+          margin-left: 0 !important;
+          padding: 0 0 6px;
+          justify-content: flex-start;
+          line-height: 1.4;
+          text-align: left;
+        }
+
+        .el-form-item__label-wrap > .el-form-item__label {
+          width: 100% !important;
+          min-height: 0;
+          padding: 0;
+          justify-content: flex-start;
+          line-height: 1.4;
+        }
+
+        > .el-form-item__content {
+          width: 100%;
+          min-width: 0;
+          margin-left: 0 !important;
+        }
+      }
+
+      .el-row > [class*="el-col-"] {
+        max-width: 100% !important;
+        flex: 0 0 100% !important;
+      }
+
+      :is(.el-input, .el-select, .el-cascader, .el-input-number, .el-date-editor, .el-tree-select) {
+        width: 100% !important;
+        max-width: 100%;
+      }
+
+      :is(.el-input__wrapper, .el-select__wrapper, .el-date-editor.el-input__wrapper) {
+        min-height: 38px;
+      }
+
+      .el-textarea__inner {
+        min-height: 96px;
+      }
+    }
+
+    :is(.el-radio-group, .el-checkbox-group) {
+      display: flex;
+      max-width: 100%;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 10px;
+    }
+
+    :is(.el-radio, .el-checkbox) {
+      min-height: 32px;
+      margin-right: 0;
+    }
+
+    :is(.el-upload, .el-upload-dragger) {
+      width: 100%;
+      max-width: 100%;
+    }
+  }
+
+  :is(.el-dialog, .el-drawer, .list-page-filter) .el-button {
+    min-height: 36px;
+  }
+
+  :is(.el-dialog__body, .el-drawer__body) {
+    :is(img, video, canvas) {
+      max-width: 100%;
+    }
+
+    :is(pre, code) {
+      max-width: 100%;
+      overflow-x: auto;
+    }
+  }
+
+  .el-message-box {
+    width: calc(100vw - 24px) !important;
+    max-width: 420px;
+    padding: 14px;
+  }
+
+  .el-message {
+    left: 12px !important;
+    width: calc(100vw - 24px);
+    min-width: 0;
+    max-width: none;
+    box-sizing: border-box;
+    transform: none;
+  }
+
+  .el-notification {
+    right: 12px !important;
+    width: calc(100vw - 24px) !important;
+    max-width: none;
+    box-sizing: border-box;
+  }
+
+  :is(.el-popper, .el-select-dropdown, .el-cascader__dropdown, .el-picker-panel) {
+    max-width: calc(100vw - 16px);
+  }
+
+  :is(.el-cascader-panel, .el-picker-panel__body-wrapper) {
+    max-width: calc(100vw - 16px);
+    overflow-x: auto;
+  }
+
+  :is(.el-tabs__nav-wrap, .el-tabs__content) {
+    max-width: 100%;
+  }
+
+  @supports (-webkit-touch-callout: none) {
+    :is(.el-input__inner, .el-select__input, .el-textarea__inner, .el-range-input) {
+      font-size: 16px !important;
+    }
+  }
+}

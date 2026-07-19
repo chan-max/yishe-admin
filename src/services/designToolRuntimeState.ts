@@ -51,7 +51,7 @@ const isDesignToolConnection = (connection?: WebsocketConnectionVO | null) => {
 
 const ACTIVE_BATCH_STATES = new Set(["preparing", "running", "paused"]);
 const TERMINAL_BATCH_STATES = new Set(["done", "stopped"]);
-const ACTIVE_AGENT_STATES = new Set(["thinking", "executing", "waiting_user"]);
+const TERMINAL_REMOTE_PHASES = new Set(["completed", "failed", "cancelled"]);
 
 const parseTimestamp = (value: unknown) => {
   const timestamp = Date.parse(String(value || ""));
@@ -61,35 +61,35 @@ const parseTimestamp = (value: unknown) => {
 export const isDesignToolConnectionRunning = (
   connection: WebsocketConnectionVO,
 ) => {
-  const workerState = String(connection.clientInfo?.designWorker?.state || "").trim();
-  const agentState = String((connection.clientInfo as any)?.agent?.agentState || "").trim();
-  const batch = connection.clientInfo?.designWorker?.batch as
+  const designWorker = connection.clientInfo?.designWorker;
+  const workerState = String(designWorker?.state || "").trim();
+  const activeRequestId = String(designWorker?.activeRequestId || "").trim();
+  const batch = designWorker?.batch as
     | Record<string, any>
     | null
     | undefined;
   const batchStatus = String(batch?.status || "").trim();
-  const agentIsActive = ACTIVE_AGENT_STATES.has(agentState);
-  const workerIsActive = workerState === "busy" || workerState === "cancelling";
 
-  if (ACTIVE_BATCH_STATES.has(batchStatus)) return true;
-
+  if (ACTIVE_BATCH_STATES.has(batchStatus)) {
+    return (
+      workerState === "busy" || workerState === "cancelling" || !!activeRequestId
+    );
+  }
   if (TERMINAL_BATCH_STATES.has(batchStatus)) {
+    const workerUpdatedAt = parseTimestamp(designWorker?.updatedAt);
     const batchUpdatedAt = parseTimestamp(batch?.updatedAt);
-    const workerUpdatedAt = parseTimestamp(
-      connection.clientInfo?.designWorker?.updatedAt,
-    );
-    const agentUpdatedAt = parseTimestamp(
-      (connection.clientInfo as any)?.agent?.updatedAt,
-    );
-    if (batchUpdatedAt) {
-      if (workerIsActive && workerUpdatedAt > batchUpdatedAt) return true;
-      if (agentIsActive && agentUpdatedAt > batchUpdatedAt) return true;
-      return false;
-    }
-    if (!agentIsActive) return false;
+    const workerStartedAfterBatch =
+      !!activeRequestId &&
+      (workerState === "busy" || workerState === "cancelling") &&
+      !!batchUpdatedAt &&
+      workerUpdatedAt > batchUpdatedAt;
+    return workerStartedAfterBatch;
   }
 
-  return workerIsActive || agentIsActive;
+  return (
+    (workerState === "busy" || workerState === "cancelling") &&
+    !!activeRequestId
+  );
 };
 
 const normalizeRows = (payload: unknown): WebsocketConnectionVO[] => {
@@ -138,34 +138,28 @@ const handleRuntimeConnectionChanged = (event: RuntimeConnectionChangedEvent) =>
 
 const handleRemoteResult = (event: RemoteResultEvent) => {
   const connectionId = String(event?.connectionId || "").trim();
+  const requestId = String(event?.requestId || "").trim();
   const batch = event?.batch as Record<string, any> | null | undefined;
   const batchStatus = String(batch?.status || "").trim();
-  if (!connectionId || !TERMINAL_BATCH_STATES.has(batchStatus)) return;
+  const phase = String(event?.phase || "").trim();
+  const isTerminal =
+    TERMINAL_BATCH_STATES.has(batchStatus) || TERMINAL_REMOTE_PHASES.has(phase);
+  if (!connectionId || !isTerminal) return;
 
   const connection = connections.get(connectionId);
   if (!connection?.clientInfo?.designWorker) return;
 
-  const batchUpdatedAt = parseTimestamp(batch?.updatedAt);
-  const workerUpdatedAt = parseTimestamp(connection.clientInfo.designWorker.updatedAt);
-  const agent = (connection.clientInfo as any)?.agent;
-  const agentUpdatedAt = parseTimestamp(agent?.updatedAt);
-  const now = new Date().toISOString();
+  const activeRequestId = String(
+    connection.clientInfo.designWorker.activeRequestId || "",
+  ).trim();
+  if (activeRequestId && requestId && activeRequestId !== requestId) return;
 
-  connection.clientInfo.designWorker.batch = batch;
-  if (!batchUpdatedAt || workerUpdatedAt <= batchUpdatedAt) {
-    Object.assign(connection.clientInfo.designWorker, {
-      state: "idle",
-      activeRequestId: null,
-      updatedAt: now,
-    });
-  }
-  if (agent && (!batchUpdatedAt || agentUpdatedAt <= batchUpdatedAt)) {
-    Object.assign(agent, {
-      available: true,
-      agentState: "idle",
-      updatedAt: now,
-    });
-  }
+  Object.assign(connection.clientInfo.designWorker, {
+    state: "idle",
+    activeRequestId: null,
+    ...(batch ? { batch } : {}),
+    updatedAt: new Date().toISOString(),
+  });
   syncSnapshot();
 };
 

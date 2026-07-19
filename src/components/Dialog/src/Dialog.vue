@@ -1,9 +1,12 @@
 <script lang="ts" setup>
 import { propTypes } from '@/utils/propTypes'
 import { isNumber } from '@/utils/is'
+import { useAppStore } from '@/store/modules/app'
 defineOptions({ name: 'Dialog' })
 
 const slots = useSlots()
+const appStore = useAppStore()
+const mobile = computed(() => appStore.getMobile)
 
 const props = defineProps({
   modelValue: propTypes.bool.def(false),
@@ -28,6 +31,7 @@ const getBindValue = computed(() => {
 })
 
 const isFullscreen = ref(props.initialFullscreen)
+const effectiveFullscreen = computed(() => mobile.value || isFullscreen.value)
 
 const toggleFull = () => {
   isFullscreen.value = !unref(isFullscreen)
@@ -45,7 +49,7 @@ watch(
 const dialogHeight = ref(isNumber(props.maxHeight) ? `${props.maxHeight}px` : props.maxHeight)
 
 watch(
-  () => isFullscreen.value,
+  () => effectiveFullscreen.value,
   async (val: boolean) => {
     await nextTick()
     if (val) {
@@ -71,7 +75,7 @@ const dialogStyle = computed(() => {
   <ElDialog
     v-bind="getBindValue"
     :close-on-click-modal="true"
-    :fullscreen="isFullscreen"
+    :fullscreen="effectiveFullscreen"
     :width="width"
     destroy-on-close
     lock-scroll
@@ -88,7 +92,7 @@ const dialogStyle = computed(() => {
           class="absolute right-15px top-[50%] h-54px flex translate-y-[-50%] items-center justify-between"
         >
           <Icon
-            v-if="fullscreen"
+            v-if="fullscreen && !mobile"
             class="is-hover mr-10px cursor-pointer"
             :icon="isFullscreen ? 'radix-icons:exit-full-screen' : 'radix-icons:enter-full-screen'"
             color="var(--el-color-info)"

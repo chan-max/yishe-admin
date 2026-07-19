@@ -36,6 +36,7 @@ import { setupFormCreate } from '@/plugins/formCreate'
 
 // 引入全局样式
 import '@/styles/index.scss'
+import '@/styles/mobile-responsive.scss'
 
 // 引入动画
 import '@/plugins/animate.css'

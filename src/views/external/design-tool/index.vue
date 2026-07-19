@@ -844,10 +844,7 @@ const runningToolCount = computed(
 
 const isSelectableWorker = (worker: WebsocketConnectionVO) => {
   if (worker.isOnline === false) return false;
-  const agent = getAgent(worker);
-  if (isDesigning(worker)) return false;
-  if (agent?.available === false) return false;
-  return !agent?.agentState || agent.agentState === "idle";
+  return !isDesigning(worker);
 };
 
 const handleWorkerSelectionChange = (workers: WebsocketConnectionVO[]) => {

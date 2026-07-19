@@ -4,7 +4,7 @@
       <div class="sidebar-header">
         <div class="sidebar-title">
           <span>会话</span>
-          <el-tag size="small" effect="plain" round>{{ store.conversations.length }}</el-tag>
+          <span class="sidebar-count">{{ store.conversations.length }}</span>
         </div>
         <div class="sidebar-actions">
           <el-button size="small" text :icon="Refresh" @click="handleRefresh" />
@@ -15,56 +15,68 @@
       </div>
 
       <el-scrollbar class="conversation-list">
-        <button
+        <div
           v-for="conv in store.conversations"
           :key="conv.id"
           class="conversation-item"
           :class="{ active: store.currentConversationId === conv.id }"
+          role="button"
+          tabindex="0"
           @click="store.selectConversation(conv.id)"
+          @keydown.enter="store.selectConversation(conv.id)"
+          @keydown.space.prevent="store.selectConversation(conv.id)"
         >
           <span class="conversation-title">{{ conv.title || "未命名会话" }}</span>
-          <span class="conversation-meta">
-            <el-tag size="small" effect="plain">{{ conv.persona?.name || "默认助手" }}</el-tag>
-            <el-button
-              class="delete-btn"
-              size="small"
-              text
-              :icon="Delete"
-              @click.stop="store.deleteConversation(conv.id)"
-            />
-          </span>
-        </button>
+          <el-button
+            class="delete-btn"
+            size="small"
+            text
+            :icon="Delete"
+            aria-label="删除会话"
+            @click.stop="store.deleteConversation(conv.id)"
+          />
+        </div>
         <el-empty v-if="!store.conversations.length" description="暂无会话" :image-size="54" />
       </el-scrollbar>
     </el-aside>
 
     <el-main class="ai-assistant__main">
       <header class="assistant-toolbar">
-        <div class="assistant-heading">
-          <div class="assistant-title">
-            <el-avatar :size="28" class="assistant-title__avatar">
-              <el-icon><ChatDotRound /></el-icon>
-            </el-avatar>
-            <div>
-              <strong>{{ store.activeConversationTitle }}</strong>
-              <span>{{ store.statusText }}</span>
-            </div>
-          </div>
+        <div class="assistant-title">
+          <strong>{{ store.activeConversationTitle }}</strong>
+          <span v-if="store.loading || store.pendingInteraction" class="assistant-status">
+            <i />
+            {{ store.statusText }}
+          </span>
         </div>
         <div class="toolbar-actions">
-          <span v-if="store.activePersonaName" class="persona-pill">{{ store.activePersonaName }}</span>
           <el-tooltip v-if="store.currentRunId" :content="store.currentRunId" placement="bottom">
             <span class="run-tag">
               Run {{ store.currentRunId.slice(-8) }}
             </span>
           </el-tooltip>
-          <el-button size="small" plain @click="handleOpenToolDialog">
-            <el-icon><Grid /></el-icon>
-            查看工具
-          </el-button>
-          <el-button v-if="store.messages.length" size="small" plain @click="store.clearMessages()">
-            清空记录
-          </el-button>
+          <el-tooltip content="查看工具" placement="bottom">
+            <el-button
+              class="toolbar-icon-button"
+              size="small"
+              text
+              circle
+              :icon="Grid"
+              aria-label="查看工具"
+              @click="handleOpenToolDialog"
+            />
+          </el-tooltip>
+          <el-tooltip v-if="store.messages.length" content="清空记录" placement="bottom">
+            <el-button
+              class="toolbar-icon-button"
+              size="small"
+              text
+              circle
+              :icon="Delete"
+              aria-label="清空记录"
+              @click="store.clearMessages()"
+            />
+          </el-tooltip>
         </div>
       </header>
 
@@ -75,7 +87,6 @@
         :thinking-text="store.thinkingText"
         :pending-interaction="store.pendingInteraction"
         :input-placeholder="store.senderPlaceholder"
-        :input-hint="store.inputHintText"
         :can-send="store.canSend"
         :prompt-items="store.promptItems"
         :has-pending-assistant-message="store.hasPendingAssistantMessage"
@@ -172,7 +183,6 @@ import { computed, nextTick, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { ElMessage } from "element-plus";
 import {
-  ChatDotRound,
   Delete,
   Grid,
   Loading,
@@ -473,6 +483,11 @@ onMounted(() => {
   font-size: 12px;
 }
 
+.sidebar-count {
+  color: var(--el-text-color-placeholder);
+  font-variant-numeric: tabular-nums;
+}
+
 .sidebar-actions,
 .toolbar-actions {
   display: flex;
@@ -491,8 +506,12 @@ onMounted(() => {
 }
 
 .conversation-item {
+  display: flex;
   width: 100%;
-  padding: 10px 12px;
+  min-height: 36px;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 8px 7px 10px;
   border: 0;
   border-radius: 6px;
   cursor: pointer;
@@ -518,22 +537,14 @@ onMounted(() => {
 
 .conversation-title {
   display: block;
+  min-width: 0;
+  flex: 1;
   font-size: 12px;
   line-height: 16px;
-  margin-bottom: 4px;
   font-weight: 400;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.conversation-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: var(--el-text-color-placeholder);
 }
 
 .delete-btn {
@@ -565,47 +576,52 @@ onMounted(() => {
 }
 
 .assistant-toolbar {
-  min-height: 54px;
-  padding: 10px 18px;
+  min-height: 48px;
+  padding: 8px 14px 8px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   background: transparent;
-}
-
-.assistant-heading {
-  min-width: 0;
+  border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
 .assistant-title {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
   min-width: 0;
 }
 
 .assistant-title strong {
   display: block;
+  min-width: 0;
+  overflow: hidden;
   font-size: 14px;
   line-height: 18px;
   font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.assistant-title span {
-  display: block;
-  margin-top: 1px;
+.assistant-status {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
   color: var(--el-text-color-secondary);
-  font-size: 12px;
-  line-height: 16px;
+  font-size: 11px;
+  line-height: 18px;
 }
 
-.assistant-title__avatar {
-  background: transparent;
-  color: var(--el-color-primary);
+.assistant-status i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--el-color-warning);
+  animation: assistant-status-pulse 1.2s ease-in-out infinite;
 }
 
-.persona-pill,
 .run-tag {
   display: inline-flex;
   align-items: center;
@@ -621,6 +637,82 @@ onMounted(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+.toolbar-icon-button {
+  width: 28px;
+  height: 28px;
+}
+
+@keyframes assistant-status-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .ai-assistant__sidebar {
+    width: 220px;
+    flex-basis: 220px;
+  }
+
+  .assistant-toolbar {
+    padding-right: 10px;
+    padding-left: 12px;
+  }
+}
+
+@media (max-width: 767px) {
+  .ai-assistant {
+    flex-direction: column;
+  }
+
+  .ai-assistant__sidebar {
+    width: 100%;
+    height: 94px;
+    flex: 0 0 94px;
+    border-right: 0;
+    border-bottom: 1px solid var(--el-border-color-light);
+  }
+
+  .sidebar-header {
+    min-height: 42px;
+    padding: 6px 8px 4px 10px;
+  }
+
+  .conversation-list :deep(.el-scrollbar__view) {
+    display: flex;
+    gap: 4px;
+    padding: 4px 8px 8px;
+  }
+
+  .conversation-item {
+    width: min(62vw, 220px);
+    flex: 0 0 min(62vw, 220px);
+    margin-bottom: 0;
+  }
+
+  .conversation-item .delete-btn {
+    opacity: 1;
+  }
+
+  .assistant-toolbar {
+    min-height: 44px;
+    padding: 6px 8px 6px 10px;
+  }
+
+  .assistant-title {
+    gap: 6px;
+  }
+
+  .run-tag {
+    display: none;
+  }
 }
 
 /* ── 工具弹窗 ── */

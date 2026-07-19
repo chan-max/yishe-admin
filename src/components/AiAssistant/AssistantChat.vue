@@ -19,7 +19,6 @@ const props = withDefaults(
     pendingInteraction: InteractionPayload | null;
     thinkingText?: string;
     inputPlaceholder?: string;
-    inputHint?: string;
     canSend?: boolean;
     promptItems?: Array<{ key: string; label: string }>;
     hasPendingAssistantMessage?: boolean;
@@ -27,7 +26,6 @@ const props = withDefaults(
   }>(),
   {
     inputPlaceholder: "输入你的目标或问题",
-    inputHint: "Enter 发送，Shift+Enter 换行",
     canSend: false,
     thinkingText: "",
     promptItems: () => [],
@@ -48,6 +46,17 @@ const messageListRef = ref<HTMLElement>();
 const messageScrollbarRef = ref<ScrollbarInstance>();
 const inputRef = ref<{ focus?: () => void }>();
 const commandPopupRef = ref<InstanceType<typeof CommandPopup>>();
+
+const visibleMessages = computed(() =>
+  props.messages.filter((message) => {
+    const content = String(message.content || "");
+    return !(
+      message.role === "assistant" &&
+      content.includes("你好！我是你的全能型业务助手") &&
+      content.includes("我可以帮你处理很多后台管理工作")
+    );
+  }),
+);
 
 // ── Slash Command Popup ──
 const slashCommands = ref<CommandItem[]>([]);
@@ -193,9 +202,8 @@ defineExpose({ scrollToBottom, focusInput: () => inputRef.value?.focus?.() });
     <el-scrollbar ref="messageScrollbarRef" class="chat-scrollbar">
       <div ref="messageListRef" class="message-list">
         <!-- 空状态 -->
-        <div v-if="!messages.length && !loading" class="empty-state">
-          <div class="empty-state__title">智能助手</div>
-          <div class="empty-state__desc">告诉我你要完成的事，我会结合当前页面和工具能力来处理。</div>
+        <div v-if="!visibleMessages.length && !loading" class="empty-state">
+          <div class="empty-state__title">你想先处理什么？</div>
           <div v-if="promptItems.length" class="prompt-list">
             <button
               v-for="prompt in promptItems"
@@ -211,7 +219,7 @@ defineExpose({ scrollToBottom, focusInput: () => inputRef.value?.focus?.() });
 
         <!-- 消息列表 -->
         <div
-          v-for="msg in messages"
+          v-for="msg in visibleMessages"
           :key="msg.id"
           class="message-item"
           :class="[`message-role-${msg.role}`]"
@@ -291,7 +299,6 @@ defineExpose({ scrollToBottom, focusInput: () => inputRef.value?.focus?.() });
         @input="handleInputChange"
       />
       <div class="input-actions">
-        <span class="input-hint">{{ inputHint }} · 输入 / 触发命令</span>
         <el-button
           type="primary"
           :icon="Promotion"
@@ -336,42 +343,39 @@ defineExpose({ scrollToBottom, focusInput: () => inputRef.value?.focus?.() });
   min-height: calc(100% - 12px);
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: center;
-  max-width: 560px;
+  max-width: 440px;
   margin: 0 auto;
   padding: 24px 12px;
   color: var(--el-text-color-secondary);
+  text-align: center;
 }
 
 .empty-state__title {
   color: var(--el-text-color-primary);
-  font-size: 20px;
-  font-weight: 650;
-  line-height: 28px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
 }
 
 .assistant-chat--compact .empty-state__title {
-  font-size: 16px;
-  line-height: 22px;
-}
-
-.empty-state__desc {
-  margin-top: 6px;
-  font-size: 13px;
-  line-height: 22px;
+  font-size: 14px;
+  line-height: 20px;
 }
 
 .prompt-list {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 8px;
-  margin-top: 18px;
+  margin-top: 14px;
 }
 
 .prompt-item {
-  height: 34px;
-  padding: 0 12px;
-  border: 0;
+  height: 32px;
+  padding: 0 11px;
+  border: 1px solid var(--el-border-color-light);
   border-radius: 6px;
   background: transparent;
   color: var(--el-text-color-regular);
@@ -383,7 +387,8 @@ defineExpose({ scrollToBottom, focusInput: () => inputRef.value?.focus?.() });
 }
 
 .prompt-item:hover {
-  background: transparent;
+  border-color: color-mix(in srgb, var(--el-color-primary) 32%, var(--el-border-color-light));
+  background: var(--el-color-primary-light-9);
   color: var(--el-color-primary);
 }
 
@@ -568,12 +573,7 @@ defineExpose({ scrollToBottom, focusInput: () => inputRef.value?.focus?.() });
 .input-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   margin-top: 6px;
-}
-
-.input-hint {
-  font-size: 12px;
-  color: var(--el-text-color-placeholder);
 }
 </style>
