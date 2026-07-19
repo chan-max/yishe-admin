@@ -115,6 +115,7 @@ export interface WebsocketClientInfo {
     capacity?: number;
     activeRequestId?: string | null;
     state?: "idle" | "busy" | "cancelling" | string;
+    batch?: Record<string, any> | null;
     updatedAt?: string;
   };
   workspaceDirectory?: string;

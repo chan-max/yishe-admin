@@ -1,41 +1,54 @@
 <template>
   <div class="dt-page">
-    <!-- 紧凑工具栏 -->
     <div class="dt-toolbar">
       <div class="dt-toolbar__left">
-        <span class="dt-toolbar__title">设计工具连接</span>
-        <el-tag :type="adminWsStatusTag.type" size="small" effect="plain">
-          {{ adminWsStatusTag.text }}
-        </el-tag>
-        <span class="dt-toolbar__count">{{ toolConnections.length }} 台在线</span>
-        <span v-if="browserDistributionText !== '-'" class="dt-toolbar__meta">{{ browserDistributionText }}</span>
+        <div class="dt-toolbar__identity">
+          <div class="dt-toolbar__title-row">
+            <span class="dt-toolbar__title">设计工具</span>
+            <span class="dt-connection-state" :class="`dt-connection-state--${adminWsStatusTag.type}`">
+              <span class="dt-connection-state__dot" />
+              {{ adminWsStatusTag.text }}
+            </span>
+          </div>
+          <div class="dt-toolbar__summary">
+            <span><b>{{ toolConnections.length }}</b> 在线</span>
+            <span v-if="runningToolCount"><b>{{ runningToolCount }}</b> 制作中</span>
+            <span v-if="browserDistributionText !== '-'">{{ browserDistributionText }}</span>
+          </div>
+        </div>
       </div>
       <div class="dt-toolbar__right">
-        <span class="dt-toolbar__time">{{ lastRefreshText }}</span>
-        <el-button size="small" type="primary" @click="openLaunchDialog">
-          打开设计工具
+        <ParallelDesignControl
+          :workers="toolConnections"
+          :selected-workers="selectedToolConnections"
+          @control="(worker) => worker && openControlPanel(worker)"
+          @started="clearWorkerSelection"
+        />
+        <el-button size="small" @click="openLaunchDialog">
+          <Icon icon="ep:plus" />
+          打开实例
         </el-button>
-        <el-switch v-model="autoRefresh" size="small" inline-prompt active-text="自动" inactive-text="手动" />
-        <el-button size="small" :loading="refreshing" @click="refreshConnections" circle>
-          <Icon icon="ep:refresh" />
-        </el-button>
+        <el-tooltip :content="`最近更新 ${lastRefreshText}`" placement="bottom">
+          <el-button size="small" :loading="refreshing" @click="refreshConnections" circle aria-label="刷新连接">
+            <Icon icon="ep:refresh" />
+          </el-button>
+        </el-tooltip>
       </div>
     </div>
 
-    <ParallelDesignControl
-      :workers="toolConnections"
-      @control="(worker) => worker && openControlPanel(worker)"
-    />
-
     <!-- 表格 -->
     <el-table
+      ref="toolTableRef"
       v-if="toolConnections.length > 0 || initialLoading"
       :data="toolConnections"
       v-loading="initialLoading"
       class="dt-table"
       size="small"
+      row-key="id"
       :row-class-name="tableRowClass"
+      @selection-change="handleWorkerSelectionChange"
     >
+      <el-table-column type="selection" width="42" :selectable="isSelectableWorker" reserve-selection />
       <el-table-column label="实例" min-width="220" show-overflow-tooltip>
         <template #default="{ row }">
           <div class="cell-instance">
@@ -62,10 +75,16 @@
         </template>
       </el-table-column>
 
-      <el-table-column label="状态" width="80" align="center">
+      <el-table-column label="状态" width="108" align="center">
         <template #default="{ row }">
           <span v-if="isStreaming(row)" class="cell-status cell-status--active">● 共享中</span>
-          <span v-else-if="isDesigning(row)" class="cell-status cell-status--active">● 制作中</span>
+          <span
+            v-else-if="isDesigning(row)"
+            class="cell-status cell-status--active"
+            :title="formatBatchStatus(row)"
+          >
+            ● {{ formatBatchStatus(row) }}
+          </span>
           <span v-else class="cell-status cell-status--idle">空闲</span>
         </template>
       </el-table-column>
@@ -343,7 +362,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch, nextTick } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { Loading } from "@element-plus/icons-vue";
 import {
   getMyOnlineRuntimeConnectionViews,
@@ -362,19 +381,25 @@ import { ElMessage } from "element-plus";
 import { useClientNodeStore } from "@/store/modules/clientNode";
 import { normalizeBrowserAutomationProfilesPayload } from "@/services/browserAutomationExecutionContext";
 import { resolveDesignToolUrl } from "@/config/toolRegistry";
+import { isDesignToolConnectionRunning } from "@/services/designToolRuntimeState";
 import ParallelDesignControl from "./components/ParallelDesignControl.vue";
 
 defineOptions({ name: "DesignToolConnection" });
 
 const DESIGN_TOOL_SOURCES = new Set(["设计工具", "设计端"]);
 const CLIENT_SOURCES = new Set(["客户端"]);
-const AUTO_REFRESH_INTERVAL_MS = 60_000; // WebSocket 实时推送为主，60s 轮询为兆底
+const AUTO_REFRESH_INTERVAL_MS = 60_000; // WebSocket 实时推送为主，60s 轮询兜底
 type TagType = "success" | "warning" | "danger" | "info" | "primary";
 
 const initialLoading = ref(true);
 const refreshing = ref(false);
-const autoRefresh = ref(true);
 const toolConnections = ref<WebsocketConnectionVO[]>([]);
+const toolTableRef = ref<any>(null);
+const selectedWorkerIds = ref<string[]>([]);
+const selectedToolConnections = computed(() => {
+  const selected = new Set(selectedWorkerIds.value);
+  return toolConnections.value.filter((worker) => selected.has(worker.id));
+});
 const refreshTimer = ref<number | null>(null);
 const lastRefreshAt = ref<string | null>(null);
 const launchDialogVisible = ref(false);
@@ -800,10 +825,38 @@ const formatDateTime = (v?: string | null) => (v ? formatDate(new Date(v), "YYYY
 
 const getAgent = (r: WebsocketConnectionVO) => (r.clientInfo as any)?.agent || null;
 
-const isDesigning = (r: WebsocketConnectionVO) => {
-  const workerState = r.clientInfo?.designWorker?.state;
-  const agentState = getAgent(r)?.agentState;
-  return workerState === "busy" || workerState === "cancelling" || ["thinking", "executing", "waiting_user"].includes(agentState);
+const isDesigning = (r: WebsocketConnectionVO) =>
+  isDesignToolConnectionRunning(r);
+
+const formatBatchStatus = (r: WebsocketConnectionVO) => {
+  const batch = r.clientInfo?.designWorker?.batch as any;
+  if (!batch || !["preparing", "running", "paused"].includes(batch.status)) {
+    return "制作中";
+  }
+  if (batch.status === "preparing") return "准备中";
+  const progress = `${Number(batch.completed || 0)}/${Number(batch.total || 0)}`;
+  return batch.status === "paused" ? `${progress} 已暂停` : `${progress} 制作中`;
+};
+
+const runningToolCount = computed(
+  () => toolConnections.value.filter(isDesigning).length,
+);
+
+const isSelectableWorker = (worker: WebsocketConnectionVO) => {
+  if (worker.isOnline === false) return false;
+  const agent = getAgent(worker);
+  if (isDesigning(worker)) return false;
+  if (agent?.available === false) return false;
+  return !agent?.agentState || agent.agentState === "idle";
+};
+
+const handleWorkerSelectionChange = (workers: WebsocketConnectionVO[]) => {
+  selectedWorkerIds.value = workers.map((worker) => worker.id);
+};
+
+const clearWorkerSelection = () => {
+  selectedWorkerIds.value = [];
+  toolTableRef.value?.clearSelection?.();
 };
 
 const agentLabel = (s: string) =>
@@ -842,7 +895,10 @@ const onRuntimeConnectionChanged = (evt: RuntimeConnectionChangedEvent) => {
   }
   lastRefreshAt.value = new Date().toISOString();
 };
-const startTimer = () => { stopTimer(); if (autoRefresh.value) refreshTimer.value = window.setInterval(() => refreshConnections(), AUTO_REFRESH_INTERVAL_MS); };
+const startTimer = () => {
+  stopTimer();
+  refreshTimer.value = window.setInterval(() => refreshConnections(), AUTO_REFRESH_INTERVAL_MS);
+};
 
 // ── 远程命令 ──
 const remoteMessage = ref("");
@@ -1316,11 +1372,13 @@ onBeforeUnmount(() => {
 /* ── Toolbar ── */
 .dt-toolbar {
   display: flex;
+  min-height: 54px;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
-  padding: 4px 0;
+  gap: 12px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  background: var(--el-bg-color);
 }
 
 /* ── Control Panel (fullscreen) ── */
@@ -1488,37 +1546,112 @@ onBeforeUnmount(() => {
 
 .dt-toolbar__left {
   display: flex;
+  min-width: 0;
   align-items: center;
+}
+
+.dt-toolbar__identity {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dt-toolbar__title-row,
+.dt-toolbar__summary,
+.dt-connection-state {
+  display: flex;
+  align-items: center;
+}
+
+.dt-toolbar__title-row {
   gap: 8px;
-  flex-wrap: wrap;
 }
 
 .dt-toolbar__title {
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 650;
   color: var(--el-text-color-primary);
 }
 
-.dt-toolbar__count {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--el-color-primary);
+.dt-toolbar__summary {
+  min-width: 0;
+  gap: 0;
+  overflow: hidden;
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+  white-space: nowrap;
 }
 
-.dt-toolbar__meta {
-  font-size: 11px;
+.dt-toolbar__summary span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dt-toolbar__summary span + span::before {
+  margin: 0 7px;
+  color: var(--el-border-color);
+  content: "\00b7";
+}
+
+.dt-toolbar__summary b {
+  color: var(--el-text-color-primary);
+  font-weight: 650;
+}
+
+.dt-connection-state {
+  gap: 4px;
   color: var(--el-text-color-secondary);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.dt-connection-state__dot {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  border-radius: 50%;
+  background: var(--el-text-color-placeholder);
+}
+
+.dt-connection-state--success .dt-connection-state__dot {
+  background: var(--el-color-success);
+}
+
+.dt-connection-state--warning .dt-connection-state__dot {
+  background: var(--el-color-warning);
+}
+
+.dt-connection-state--danger .dt-connection-state__dot {
+  background: var(--el-color-danger);
 }
 
 .dt-toolbar__right {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
-.dt-toolbar__time {
-  font-size: 11px;
-  color: var(--el-text-color-placeholder);
+@media (max-width: 640px) {
+  .dt-page {
+    padding: 6px;
+  }
+
+  .dt-toolbar {
+    min-height: 0;
+    align-items: flex-start;
+    padding: 7px 4px 9px;
+  }
+
+  .dt-toolbar__summary span:last-child {
+    display: none;
+  }
+
+  .dt-toolbar__right {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
 }
 
 /* ── Table ── */
