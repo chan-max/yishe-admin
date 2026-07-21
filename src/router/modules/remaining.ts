@@ -652,6 +652,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
           order: 5,
         },
       },
+      {
+        path: "user-behavior-log",
+        component: () => import("@/views/independent-site/user-behavior-log/index.vue"),
+        name: "IndependentSiteUserBehaviorLog",
+        meta: {
+          title: "开放用户行为日志",
+          order: 6,
+        },
+      },
     ],
   },
   // ── 9. 商品与发布 ────────────────────────────────────────────────────

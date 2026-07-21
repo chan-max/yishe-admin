@@ -41,6 +41,7 @@ const ALWAYS_ALLOW_ROUTE_NAMES = new Set([
   "UserProfileCompat",
   "IndependentSite",
   "IndependentSiteOpenDocs",
+  "IndependentSiteUserBehaviorLog",
 ]);
 
 export function hasRouteMenuAccess(route: AppRouteRecordRaw, user: any) {
