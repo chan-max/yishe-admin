@@ -167,9 +167,37 @@ function handlePromptClick(key: string) {
   emit("prompt-click", key);
 }
 
+function formatToolContent(message: AiAssistantMessage) {
+  const content = message.content;
+  if (!content) return "执行完成";
+  if (typeof content === "object") {
+    const obj = content as Record<string, any>;
+    if (obj._note) return String(obj._note);
+    if (obj.message) return String(obj.message);
+    if (obj.now) return `系统时间: ${obj.now}`;
+    if (obj.total !== undefined) return `共 ${obj.total} 条数据`;
+    try {
+      return JSON.stringify(obj);
+    } catch {
+      return "执行完成";
+    }
+  }
+  const str = String(content);
+  if (str === "[object Object]") {
+    const res = (message.toolResult?.data || message.toolResult || {}) as Record<string, any>;
+    if (res._note) return String(res._note);
+    if (res.message) return String(res.message);
+    if (res.now) return `系统时间: ${res.now}`;
+    if (res.total !== undefined) return `共 ${res.total} 条数据`;
+    return "执行完成";
+  }
+  return str;
+}
+
 function toolMessageClass(message: AiAssistantMessage) {
   if (message.toolResult?.success === false) return "is-error";
-  if (message.content === "执行中..." || message.content.startsWith("准备调用")) {
+  const str = String(message.content || "");
+  if (str === "执行中..." || str.startsWith("准备调用")) {
     return "is-running";
   }
   return "is-done";
@@ -250,7 +278,7 @@ defineExpose({ scrollToBottom, focusInput: () => inputRef.value?.focus?.() });
               <span class="tool-dot" />
               <div class="tool-copy">
                 <span class="tool-title">{{ msg.toolLabel || msg.toolKey || "工具" }}</span>
-                <span class="tool-result">{{ msg.content }}</span>
+                <span class="tool-result">{{ formatToolContent(msg) }}</span>
               </div>
             </div>
           </div>
