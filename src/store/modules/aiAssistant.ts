@@ -424,20 +424,29 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
         break;
       case "run.completed":
         if (data?.reply) {
-          if (context.assistantMsg && !context.assistantMsg.content) {
+          if (context.assistantMsg) {
             context.assistantMsg.content = data.reply;
-          } else if (!context.assistantMsg) {
+          } else {
             messages.value.push(
               createLocalMessage({ role: "assistant", content: data.reply }),
             );
           }
+        } else if (context.assistantMsg && !context.assistantMsg.content) {
+          context.assistantMsg.content = "已为您处理完成。";
         }
+        loading.value = false;
         runtimeStatus.value = "idle";
+        thinkingText.value = "";
         break;
       case "run.error":
       case "error":
         ElMessage.error(data?.error || "智能助手执行失败");
+        loading.value = false;
         runtimeStatus.value = "idle";
+        thinkingText.value = "";
+        if (context.assistantMsg && !context.assistantMsg.content) {
+          context.assistantMsg.content = "执行出现异常，请重试。";
+        }
         break;
     }
   }
@@ -558,6 +567,14 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
     }
   }
 
+  function resetLoadingState() {
+    loading.value = false;
+    runtimeStatus.value = "idle";
+    thinkingText.value = "";
+    pendingInteraction.value = null;
+    markAiAssistantRuntimeIdle();
+  }
+
   return {
     // State
     conversations,
@@ -586,5 +603,6 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
     sendMessage,
     resumeInteraction,
     clearMessages,
+    resetLoadingState,
   };
 });

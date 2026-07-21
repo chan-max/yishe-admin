@@ -50,6 +50,17 @@
           </span>
         </div>
         <div class="toolbar-actions">
+          <el-tooltip v-if="store.loading" content="解封/恢复发送" placement="bottom">
+            <el-button
+              class="toolbar-icon-button"
+              size="small"
+              text
+              circle
+              :icon="Refresh"
+              aria-label="解封/恢复发送"
+              @click="store.resetLoadingState()"
+            />
+          </el-tooltip>
           <el-tooltip content="查看工具" placement="bottom">
             <el-button
               class="toolbar-icon-button"
