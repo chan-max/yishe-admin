@@ -8646,32 +8646,35 @@ async function handleUrlUpload() {
   grid-column: 1 / -1;
 }
 
-.psd-set-dialog {
-  :deep(.el-dialog) {
-    height: 100vh;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    background: var(--el-dialog-bg-color, var(--el-bg-color));
-  }
+:global(.psd-set-dialog.el-dialog) {
+  --psd-set-workbench-min-height: 560px;
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 760px;
+  flex-direction: column;
+  margin: 0;
+  overflow: hidden;
+  background: var(--el-dialog-bg-color, var(--el-bg-color));
+}
 
-  :deep(.el-dialog__header) {
-    flex-shrink: 0;
-    margin-right: 0;
-    padding: 14px 16px 12px;
-  }
+:global(.psd-set-dialog.el-dialog .el-dialog__header) {
+  flex: 0 0 auto;
+  margin-right: 0;
+  padding: 14px 16px 12px;
+}
 
-  :deep(.el-dialog__body) {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    min-height: 0;
-    padding: 0 16px 16px;
-    overflow: hidden;
-    background: var(--el-bg-color-page);
-  }
+:global(.psd-set-dialog.el-dialog .el-dialog__body) {
+  flex: 1 1 0;
+  display: grid;
+  grid-template-rows: minmax(var(--psd-set-workbench-min-height), 1fr) auto;
+  gap: 10px;
+  height: 0;
+  min-height: 0;
+  padding: 0 16px 16px;
+  overflow: auto;
+  background: var(--el-bg-color-page);
 }
 
 .psd-set-dialog__header {
@@ -10720,8 +10723,8 @@ h1 {
 }
 
 .psd-set-body {
-  flex: 1;
-  min-height: 0;
+  height: 100%;
+  min-height: var(--psd-set-workbench-min-height);
   display: grid;
   grid-template-columns: minmax(260px, 0.88fr) minmax(0, 1.72fr);
   gap: 14px;
@@ -11174,6 +11177,32 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+@media (max-width: 960px) {
+  :global(.psd-set-dialog.el-dialog) {
+    --psd-set-workbench-min-height: 440px;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  :global(.psd-set-dialog.el-dialog .el-dialog__body) {
+    display: block;
+    overflow-y: auto;
+  }
+
+  .psd-set-body {
+    height: auto;
+    min-height: 0;
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .psd-set-materials,
+  .psd-set-templates {
+    min-height: 440px;
+    max-height: none;
+  }
 }
 
 /* PSD模板详情弹窗样式 */

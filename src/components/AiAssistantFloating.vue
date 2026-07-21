@@ -170,15 +170,22 @@ onBeforeUnmount(() => {
   height: min(600px, calc(100vh - 72px));
   overflow: hidden;
   border: 1px solid var(--el-border-color-lighter, #e5e7eb);
-  border-radius: 8px;
-  background: var(--el-bg-color, #fff);
+  border-radius: 10px;
+  background: var(--el-bg-color-overlay, var(--el-bg-color, #ffffff));
   box-shadow:
-    0 18px 44px rgba(31, 35, 41, 0.16),
-    0 2px 8px rgba(31, 35, 41, 0.06);
+    0 18px 44px rgba(0, 0, 0, 0.16),
+    0 2px 8px rgba(0, 0, 0, 0.06);
   transition:
     box-shadow 0.2s ease,
     opacity 0.2s ease;
   animation: aiAssistantSlideUp 0.16s ease;
+}
+
+:global(html.dark) .ai-assistant-popper {
+  border-color: var(--el-border-color-darker, #363637);
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.5),
+    0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 @keyframes aiAssistantSlideUp {
@@ -189,10 +196,16 @@ onBeforeUnmount(() => {
 .ai-assistant-popper.dragging {
   opacity: 0.96;
   box-shadow:
-    0 24px 54px rgba(31, 35, 41, 0.2),
-    0 4px 12px rgba(31, 35, 41, 0.08);
+    0 24px 54px rgba(0, 0, 0, 0.25),
+    0 4px 12px rgba(0, 0, 0, 0.12);
   transition: none;
   user-select: none;
+}
+
+:global(html.dark) .ai-assistant-popper.dragging {
+  box-shadow:
+    0 24px 54px rgba(0, 0, 0, 0.65),
+    0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .popper-header {
@@ -202,9 +215,18 @@ onBeforeUnmount(() => {
   min-height: 44px;
   padding: 0 12px;
   border-bottom: 1px solid var(--el-border-color-lighter, #f0f0f0);
-  background: linear-gradient(180deg, #fff 0%, #fafcff 100%);
-  cursor: move;
+  background: var(--el-bg-color-overlay, #ffffff);
+  cursor: grab;
   flex-shrink: 0;
+}
+
+.ai-assistant-popper.dragging .popper-header {
+  cursor: grabbing;
+}
+
+:global(html.dark) .popper-header {
+  border-bottom-color: var(--el-border-color-darker, #363637);
+  background: var(--el-bg-color-overlay, #1d1e1f);
 }
 
 .header-title {
@@ -223,6 +245,10 @@ onBeforeUnmount(() => {
   border-radius: 50%;
   background: var(--el-color-primary, #1677ff);
   box-shadow: 0 0 0 3px rgba(22, 119, 255, 0.12);
+}
+
+:global(html.dark) .header-title::before {
+  box-shadow: 0 0 0 3px rgba(22, 119, 255, 0.25);
 }
 
 .header-actions {
@@ -247,6 +273,11 @@ onBeforeUnmount(() => {
 .icon-btn:hover {
   background: var(--el-fill-color-light, #f5f7fa);
   color: var(--el-text-color-primary, #1f2329);
+}
+
+:global(html.dark) .icon-btn:hover {
+  background: var(--el-fill-color-dark, #262727);
+  color: var(--el-text-color-primary, #e5eaf3);
 }
 
 .floating-btn {

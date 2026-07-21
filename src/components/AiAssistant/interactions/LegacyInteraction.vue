@@ -1,15 +1,11 @@
 <template>
   <section class="interaction-panel">
-    <div class="interaction-main">
-      <span class="interaction-badge">{{ tag }}</span>
-      <div>
-        <div class="interaction-title">{{ payload.label || "需要用户参与" }}</div>
-        <div class="interaction-tip">{{ hint }}</div>
-        <pre class="interaction-question">{{ payload.question }}</pre>
-      </div>
+    <!-- 问题描述/问题引导 -->
+    <div v-if="payload.question" class="interaction-question">
+      {{ payload.question }}
     </div>
 
-    <!-- choice -->
+    <!-- choice 选项 -->
     <template v-if="payload.type === 'choice'">
       <div class="choice-list">
         <button
@@ -29,7 +25,7 @@
       </div>
     </template>
 
-    <!-- form -->
+    <!-- form 表单 -->
     <template v-else-if="payload.type === 'form'">
       <el-form label-position="top" class="interaction-form">
         <el-form-item
@@ -38,10 +34,7 @@
           :label="field.label"
           :required="field.required"
         >
-          <el-switch
-            v-if="field.type === 'boolean'"
-            v-model="formData[field.name]"
-          />
+          <el-switch v-if="field.type === 'boolean'" v-model="formData[field.name]" />
           <el-select
             v-else-if="field.type === 'select'"
             v-model="formData[field.name]"
@@ -62,11 +55,7 @@
             :placeholder="field.placeholder || '请选择时间'"
             value-format="YYYY-MM-DD HH:mm:ss"
           />
-          <el-input-number
-            v-else-if="field.type === 'number'"
-            v-model="formData[field.name]"
-            controls-position="right"
-          />
+          <el-input-number v-else-if="field.type === 'number'" v-model="formData[field.name]" controls-position="right" />
           <el-input
             v-else
             v-model="formData[field.name]"
@@ -78,9 +67,9 @@
       </el-form>
     </template>
 
-    <!-- feedback -->
+    <!-- feedback 反馈 -->
     <template v-else-if="payload.type === 'feedback'">
-      <div class="feedback-actions">
+      <div v-if="normalizedOptions.length" class="feedback-actions">
         <button
           v-for="option in normalizedOptions"
           :key="option.value"
@@ -96,7 +85,7 @@
         v-model="feedbackText"
         type="textarea"
         :rows="2"
-        placeholder="可选：补充反馈"
+        placeholder="补充说明（可选）"
       />
     </template>
 
@@ -106,18 +95,19 @@
         v-model="textInput"
         type="textarea"
         :rows="2"
-        :placeholder="payload.placeholder || '请输入'"
+        :placeholder="payload.placeholder || '请输入说明或答案'"
       />
     </template>
 
-    <!-- confirm -->
+    <!-- confirm 备注 -->
     <el-input
       v-if="payload.type === 'confirm'"
       v-model="confirmReason"
       size="small"
-      placeholder="可选：给这次确认补充一句备注"
+      placeholder="补充说明（可选）"
     />
 
+    <!-- 极简操作按钮 -->
     <div class="interaction-actions">
       <el-button size="small" text @click="$emit('reject', { confirmed: false, input: buildRejectInput(), reason: '' })">
         {{ payload.type === "confirm" ? "取消" : "跳过" }}
@@ -157,7 +147,6 @@ const choiceValue = ref("");
 const choiceList = ref<string[]>([]);
 const formData = ref<Record<string, any>>({});
 
-// 初始化
 function init() {
   textInput.value = String(props.payload.defaultValue ?? "");
   const opts = normalizedOptions.value;
@@ -200,27 +189,6 @@ const normalizedFields = computed<InteractionField[]>(() =>
     };
   }).filter(Boolean) as InteractionField[],
 );
-
-const tag = computed(() => {
-  switch (props.payload.type) {
-    case "choice": return "请选择";
-    case "form": return "请填写";
-    case "feedback": return "请反馈";
-    case "input":
-    case "clarify": return "请补充";
-    default: return "需要确认";
-  }
-});
-
-const hint = computed(() => {
-  switch (props.payload.type) {
-    case "choice": return props.payload.multiple ? "可多选，选择完成后提交。" : "请选择一个选项后继续。";
-    case "form": return "补齐必要信息后，助手会继续执行。";
-    case "feedback": return "选择一个反馈，也可以补充说明。";
-    case "confirm": return "确认后继续执行，取消会终止这一步。";
-    default: return "补充信息后，助手会接着处理。";
-  }
-});
 
 const submitLabel = computed(() => {
   switch (props.payload.type) {
@@ -311,14 +279,35 @@ init();
 </script>
 
 <style scoped>
+.interaction-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--el-bg-color-overlay, var(--el-bg-color, #ffffff));
+  border: 1px solid var(--el-border-color-lighter, #e4e7ed);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+  max-width: min(680px, 94%);
+}
+
+:global(html.dark) .interaction-panel {
+  background: var(--el-bg-color-overlay, #1d1e1f);
+  border-color: var(--el-border-color-darker, #363637);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
 .interaction-question {
-  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--el-text-color-primary, #303133);
   white-space: pre-wrap;
   word-break: break-word;
-  font-family: inherit;
-  font-size: 12px;
-  line-height: 1.55;
-  color: var(--el-text-color-regular);
+}
+
+:global(html.dark) .interaction-question {
+  color: var(--el-text-color-primary, #e5eaf3);
 }
 
 .choice-list {
@@ -334,19 +323,30 @@ init();
   width: 100%;
   min-height: 36px;
   padding: 8px 10px;
-  border: 0;
+  border: 1px solid var(--el-border-color-lighter, #e4e7ed);
   border-radius: 6px;
-  background: transparent;
+  background: var(--el-fill-color-blank, #ffffff);
   color: var(--el-text-color-primary);
   text-align: left;
   cursor: pointer;
-  transition: background-color 0.16s, color 0.16s;
+  transition: all 0.16s ease;
+}
+
+:global(html.dark) .choice-option {
+  background: var(--el-fill-color-dark, #262727);
+  border-color: var(--el-border-color-darker, #363637);
 }
 
 .choice-option:hover,
 .choice-option.active {
-  background: transparent;
+  border-color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9, #ecf5ff);
   color: var(--el-color-primary);
+}
+
+:global(html.dark) .choice-option:hover,
+:global(html.dark) .choice-option.active {
+  background: rgba(64, 158, 255, 0.15);
 }
 
 .choice-indicator {
@@ -403,17 +403,43 @@ init();
 .feedback-option {
   min-height: 30px;
   padding: 0 10px;
-  border: 0;
+  border: 1px solid var(--el-border-color-lighter, #e4e7ed);
   border-radius: 6px;
-  background: transparent;
+  background: var(--el-fill-color-blank, #ffffff);
   color: var(--el-text-color-regular);
   font-size: 12px;
   cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+:global(html.dark) .feedback-option {
+  background: var(--el-fill-color-dark, #262727);
+  border-color: var(--el-border-color-darker, #363637);
 }
 
 .feedback-option:hover,
 .feedback-option.active {
-  background: transparent;
+  border-color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9, #ecf5ff);
   color: var(--el-color-primary);
+}
+
+:global(html.dark) .feedback-option:hover,
+:global(html.dark) .feedback-option.active {
+  background: rgba(64, 158, 255, 0.15);
+}
+
+.interaction-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--el-border-color-extra-light, #f2f6fc);
+}
+
+:global(html.dark) .interaction-actions {
+  border-top-color: var(--el-border-color-darker, #363637);
 }
 </style>

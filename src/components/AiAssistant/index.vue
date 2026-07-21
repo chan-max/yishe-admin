@@ -50,11 +50,6 @@
           </span>
         </div>
         <div class="toolbar-actions">
-          <el-tooltip v-if="store.currentRunId" :content="store.currentRunId" placement="bottom">
-            <span class="run-tag">
-              Run {{ store.currentRunId.slice(-8) }}
-            </span>
-          </el-tooltip>
           <el-tooltip content="查看工具" placement="bottom">
             <el-button
               class="toolbar-icon-button"

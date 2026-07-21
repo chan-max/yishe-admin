@@ -316,6 +316,14 @@ const remainingRouter: AppRouteRecordRaw[] = [
         },
       },
       {
+        path: "skills",
+        component: () => import("@/views/ai/skills/index.vue"),
+        name: "AiSkills",
+        meta: {
+          title: "Skills",
+        },
+      },
+      {
         path: "mcp",
         component: () => import("@/views/ai/mcp/index.vue"),
         name: "McpConsole",
@@ -633,6 +641,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: "开放用户管理",
           requiresAdmin: true,
           order: 4,
+        },
+      },
+      {
+        path: "open-docs",
+        component: () => import("@/views/independent-site/open-docs/index.vue"),
+        name: "IndependentSiteOpenDocs",
+        meta: {
+          title: "开放文档",
+          order: 5,
         },
       },
     ],

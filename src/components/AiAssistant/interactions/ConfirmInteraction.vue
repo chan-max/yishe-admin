@@ -1,15 +1,11 @@
 <template>
   <section class="interaction-panel">
-    <div class="interaction-main">
-      <span class="interaction-badge">{{ tag }}</span>
-      <div>
-        <div class="interaction-title">{{ payload.label || "需要确认" }}</div>
-        <div class="interaction-tip">{{ hint }}</div>
-        <pre class="interaction-question">{{ payload.question }}</pre>
-      </div>
+    <!-- 问题/提示问句 -->
+    <div v-if="payload.question" class="interaction-question">
+      {{ payload.question }}
     </div>
 
-    <!-- impact_preview: 预览表格 -->
+    <!-- impact_preview: 预览表格（仅在有 preview 时显示） -->
     <div v-if="hasPreview" class="impact-preview">
       <div v-if="preview.summary" class="impact-summary">{{ preview.summary }}</div>
       <div v-if="preview.riskLevel" class="impact-risk" :class="`risk-${preview.riskLevel}`">
@@ -29,7 +25,7 @@
     <el-input
       v-model="reason"
       size="small"
-      placeholder="可选：补充备注"
+      placeholder="补充说明（可选）"
     />
 
     <div class="interaction-actions">
@@ -70,14 +66,6 @@ const hasPreview = computed(() => {
   return p.summary || p.rows?.length || p.riskLevel;
 });
 
-const tag = computed(() => hasPreview.value ? "操作预览" : "需要确认");
-
-const hint = computed(() => {
-  if (preview.value.riskLevel === "high") return "此操作风险较高，请仔细确认后继续。";
-  if (preview.value.riskLevel === "medium") return "请确认以下操作内容。";
-  return "确认后继续执行，取消会终止这一步。";
-});
-
 const riskLabel = computed(() => {
   const map: Record<string, string> = { low: "低风险", medium: "中风险", high: "高风险" };
   return map[preview.value.riskLevel || "low"] || "";
@@ -85,26 +73,64 @@ const riskLabel = computed(() => {
 </script>
 
 <style scoped>
+.interaction-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--el-bg-color-overlay, var(--el-bg-color, #ffffff));
+  border: 1px solid var(--el-border-color-lighter, #e4e7ed);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+  max-width: min(680px, 94%);
+}
+
+:global(html.dark) .interaction-panel {
+  background: var(--el-bg-color-overlay, #1d1e1f);
+  border-color: var(--el-border-color-darker, #363637);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.interaction-question {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--el-text-color-primary, #303133);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+:global(html.dark) .interaction-question {
+  color: var(--el-text-color-primary, #e5eaf3);
+}
+
 .impact-preview {
-  background: var(--el-fill-color-lighter);
+  background: var(--el-fill-color-lighter, #fafafa);
+  border: 1px solid var(--el-border-color-extra-light, #f0f0f0);
   border-radius: 6px;
-  padding: 10px 12px;
+  padding: 8px 10px;
+  margin-top: 4px;
+}
+
+:global(html.dark) .impact-preview {
+  background: var(--el-fill-color-dark, #262727);
+  border-color: var(--el-border-color-darker, #363637);
 }
 
 .impact-summary {
   font-size: 12px;
   color: var(--el-text-color-regular);
-  margin-bottom: 8px;
-  line-height: 1.5;
+  margin-bottom: 6px;
+  line-height: 1.45;
 }
 
 .impact-risk {
   display: inline-block;
   font-size: 11px;
   font-weight: 600;
-  padding: 2px 8px;
+  padding: 2px 6px;
   border-radius: 4px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .risk-low { background: var(--el-color-success-light-9); color: var(--el-color-success); }
@@ -118,7 +144,7 @@ const riskLabel = computed(() => {
 }
 
 .impact-table td {
-  padding: 4px 0;
+  padding: 3px 0;
   vertical-align: top;
 }
 
@@ -138,13 +164,17 @@ const riskLabel = computed(() => {
 .tone-negative { color: var(--el-color-danger); }
 .tone-neutral { color: var(--el-text-color-regular); }
 
-.interaction-question {
-  margin: 0;
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-family: inherit;
-  font-size: 12px;
-  line-height: 1.55;
-  color: var(--el-text-color-regular);
+.interaction-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 2px;
+  padding-top: 6px;
+  border-top: 1px solid var(--el-border-color-extra-light, #f2f6fc);
+}
+
+:global(html.dark) .interaction-actions {
+  border-top-color: var(--el-border-color-darker, #363637);
 }
 </style>

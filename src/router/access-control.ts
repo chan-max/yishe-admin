@@ -39,6 +39,8 @@ const ALWAYS_ALLOW_ROUTE_NAMES = new Set([
   "NoFound",
   "Error",
   "UserProfileCompat",
+  "IndependentSite",
+  "IndependentSiteOpenDocs",
 ]);
 
 export function hasRouteMenuAccess(route: AppRouteRecordRaw, user: any) {
@@ -82,9 +84,5 @@ export function hasRouteMenuAccess(route: AppRouteRecordRaw, user: any) {
     return false;
   }
 
-  if (!isAdmin && route.meta?.requiresAdmin) {
-    return false;
-  }
-
-  return Array.isArray(route.children) && route.children.length > 0;
+  return true;
 }

@@ -194,6 +194,11 @@ watch(
   () => nextTick(() => scrollToBottom()),
 );
 
+watch(
+  () => props.pendingInteraction,
+  () => nextTick(() => scrollToBottom()),
+);
+
 defineExpose({ scrollToBottom, focusInput: () => inputRef.value?.focus?.() });
 </script>
 
@@ -264,18 +269,18 @@ defineExpose({ scrollToBottom, focusInput: () => inputRef.value?.focus?.() });
             </div>
           </div>
         </div>
+
+        <!-- 交互区域（跟随消息列表一并滚动） -->
+        <div v-if="pendingInteraction" class="interaction-wrapper">
+          <InteractionRenderer
+            :payload="pendingInteraction"
+            :loading="loading"
+            @submit="handleInteractionSubmit"
+            @reject="handleInteractionReject"
+          />
+        </div>
       </div>
     </el-scrollbar>
-
-    <!-- 交互区域 -->
-    <section v-if="pendingInteraction" class="interaction-wrapper">
-      <InteractionRenderer
-        :payload="pendingInteraction"
-        :loading="loading"
-        @submit="handleInteractionSubmit"
-        @reject="handleInteractionReject"
-      />
-    </section>
 
     <!-- 输入区域 -->
     <footer class="input-area">
@@ -555,8 +560,9 @@ defineExpose({ scrollToBottom, focusInput: () => inputRef.value?.focus?.() });
 
 /* 交互区域 */
 .interaction-wrapper {
-  flex-shrink: 0;
-  padding: 0 18px 8px;
+  margin-top: 12px;
+  margin-bottom: 8px;
+  width: 100%;
 }
 
 /* 输入区域 */
