@@ -96,6 +96,7 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   User: "system.user",
   Company: "system.company",
   PublicUser: "system.public-user",
+  PublicUserBehaviorLog: "system.public-user-behavior-log",
   IndependentSiteDesignRequest: "independent-site.design-request",
   IndependentSiteOpenDocs: "independent-site.open-docs",
   IndependentSiteUserBehaviorLog: "independent-site.user-behavior-log",
