@@ -41,6 +41,12 @@
                 </el-menu-item>
               </el-menu-item-group>
 
+              <el-menu-item-group title="行为数据上报">
+                <el-menu-item index="collect-behavior-log">
+                  <span>用户行为日志上报</span>
+                </el-menu-item>
+              </el-menu-item-group>
+
               <el-menu-item-group title="通用规范">
                 <el-menu-item index="status-codes">
                   <span>状态码与响应说明</span>
@@ -196,7 +202,63 @@
               </div>
             </div>
 
-            <!-- 5. 状态码与响应说明 -->
+            <!-- 5. 独立站开放用户行为日志上报 -->
+            <div v-else-if="activeApiId === 'collect-behavior-log'" class="api-detail-block">
+              <div class="detail-header-row">
+                <h3 class="detail-title">独立站开放用户行为日志上报</h3>
+                <div class="api-meta-clean">
+                  <el-tag type="warning" size="small">POST</el-tag>
+                  <code class="endpoint-text">/api/user-behavior-log/collect</code>
+                </div>
+              </div>
+              <p class="section-desc">用于独立站客户端或 API 接入方上报开放用户的浏览、商品查看、搜索与交互行为日志。携带 x-app-key 可自动归属管理账号数据隔离。</p>
+
+              <div class="table-block">
+                <div class="table-title">Request Body 请求参数</div>
+                <el-table :data="collectBehaviorLogParams" size="small" style="width: 100%">
+                  <el-table-column prop="name" label="字段名" width="180">
+                    <template #default="{ row }">
+                      <code class="param-code">{{ row.name }}</code>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="type" label="类型" width="120" />
+                  <el-table-column prop="required" label="必填" width="100">
+                    <template #default="{ row }">
+                      <el-tag :type="row.required ? 'danger' : 'info'" size="small">
+                        {{ row.required ? '是' : '否' }}
+                      </el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="desc" label="说明" />
+                </el-table>
+              </div>
+
+              <div class="code-example-block">
+                <div class="example-header">
+                  <span class="example-title">cURL 上报示例</span>
+                  <el-button size="small" type="primary" link @click="handleCopy(collectBehaviorLogCurl)">
+                    {{ copiedText === collectBehaviorLogCurl ? '已复制 ✓' : '复制 cURL' }}
+                  </el-button>
+                </div>
+                <div class="code-clean-box">
+                  <pre class="code-text"><code>{{ collectBehaviorLogCurl }}</code></pre>
+                </div>
+              </div>
+
+              <div class="code-example-block">
+                <div class="example-header">
+                  <span class="example-title">JSON 响应示例</span>
+                  <el-button size="small" type="primary" link @click="handleCopy(collectBehaviorLogJsonResponse)">
+                    {{ copiedText === collectBehaviorLogJsonResponse ? '已复制 ✓' : '复制 JSON' }}
+                  </el-button>
+                </div>
+                <div class="code-clean-box">
+                  <pre class="code-text"><code>{{ collectBehaviorLogJsonResponse }}</code></pre>
+                </div>
+              </div>
+            </div>
+
+            <!-- 6. 状态码与响应说明 -->
             <div v-else-if="activeApiId === 'status-codes'" class="api-detail-block">
               <h3 class="detail-title">状态码与响应说明</h3>
               <p class="section-desc">系统接口统一采用 HTTP 状态码搭配 JSON code 字段标识请求状态。</p>
@@ -263,6 +325,44 @@ const getProductsParams = [
 const getProductDetailParams = [
   { name: 'id', type: 'string', required: true, desc: '商品记录 ID（例如 prod_1001）' }
 ]
+
+const collectBehaviorLogParams = [
+  { name: 'action', type: 'string', required: true, desc: '行为动作 (page_view / product_view / product_search / design_request_submit)' },
+  { name: 'publicUserId', type: 'string', required: false, desc: '独立站开放用户的唯一账号或 ID' },
+  { name: 'publicUserName', type: 'string', required: false, desc: '独立站开放用户的显示姓名或名称' },
+  { name: 'targetId', type: 'string', required: false, desc: '关联目标 ID (如商品 ID、页面 URL)' },
+  { name: 'targetName', type: 'string', required: false, desc: '关联目标标题/商品名称' },
+  { name: 'referrer', type: 'string', required: false, desc: '来源页面 Referrer' },
+  { name: 'metadata', type: 'object', required: false, desc: 'JSON 扩展元数据 (如搜索关键词、选色等)' }
+]
+
+const collectBehaviorLogCurl = computed(() => {
+  return `curl -X POST "https://design.1s.com/api/user-behavior-log/collect" \\
+  -H "x-app-key: ${testKey.value || 'YOUR_APP_KEY'}" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "publicUserId": "user_10028",
+    "publicUserName": "开放测试用户",
+    "action": "product_view",
+    "targetId": "prod_1001",
+    "targetName": "印花宠物地垫 POD商品",
+    "metadata": { "type": "印花地垫" }
+  }'`
+})
+
+const collectBehaviorLogJsonResponse = `{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "id": "log_9921a8b0",
+    "publicUserId": "user_10028",
+    "publicUserName": "开放测试用户",
+    "action": "product_view",
+    "targetId": "prod_1001",
+    "targetName": "印花宠物地垫 POD商品",
+    "createTime": "2026-07-22T00:40:00.000Z"
+  }
+}`
 
 const productsJsonResponse = `{
   "code": 200,
