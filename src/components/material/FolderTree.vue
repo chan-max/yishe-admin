@@ -301,6 +301,8 @@ function getBindingLabel() {
       return "字体模板";
     case "psdtemplate":
       return "PSD模板";
+    case "imagegroup":
+      return "组图";
     case "commonurl":
       return "网址";
     case "sentence":
@@ -511,7 +513,11 @@ async function handleCommand(command: string, data: any) {
         inputErrorMessage: "文件夹名称不能为空",
       });
 
-      await renameStickerFolder({ id: data.id, name: value });
+      await renameStickerFolder({
+        id: data.id,
+        name: value,
+        folderCategory: props.folderCategory,
+      });
       ElMessage.success("重命名成功");
       loadTree();
     } catch (error) {
@@ -529,7 +535,9 @@ async function handleCommand(command: string, data: any) {
         },
       );
 
-      await deleteStickerFolder(String(data.id));
+      await deleteStickerFolder(String(data.id), true, {
+        folderCategory: props.folderCategory,
+      });
       ElMessage.success("删除成功");
       // 如果删除的是当前选中的文件夹，重置选中状态
       if (props.modelValue === data.id) {

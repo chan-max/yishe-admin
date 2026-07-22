@@ -1,6 +1,17 @@
 <template>
   <ContentWrap :plain="true">
+    <el-tabs v-model="materialViewMode" class="material-view-mode-tabs" style="margin-bottom: 8px;">
+      <el-tab-pane label="单图列表" name="single" />
+      <el-tab-pane label="按组查看" name="group" />
+    </el-tabs>
+
+    <ImageGroupView
+      v-if="materialViewMode === 'group'"
+      @add-stickers="handleGroupAddStickers"
+    />
+
     <ListPageLayout
+      v-else
       class="material-index-page"
       :sidebar-width="folderTreeCollapsed ? '28px' : '280px'"
     >
@@ -505,6 +516,15 @@
                 @click="openMaterialProductConfigDialog"
               >
                 生成独立站商品({{ ids.length }})
+              </el-button>
+              <el-button
+                size="small"
+                type="success"
+                plain
+                :disabled="loading || !ids.length"
+                @click="openBatchAddToGroupDialog"
+              >
+                添加到组图({{ ids.length }})
               </el-button>
               <el-button
                 size="small"
@@ -2642,6 +2662,72 @@
     </ListPageLayout>
 
     <el-dialog
+      v-model="addToGroupDialogVisible"
+      title="添加到组图"
+      width="520px"
+      append-to-body
+      destroy-on-close
+    >
+      <el-form label-width="88px" @submit.prevent="submitBatchAddToGroup">
+        <el-form-item label="已选素材">
+          <el-tag type="info" effect="plain">{{ selectedGroupStickerIds.length }} 张</el-tag>
+        </el-form-item>
+
+        <el-form-item label="目标组图" required>
+          <el-select
+            v-model="targetGroupValue"
+            :loading="availableGroupsLoading"
+            placeholder="选择组图，或输入新组图名称"
+            allow-create
+            filterable
+            clearable
+            style="width: 100%"
+          >
+            <el-option
+              v-for="group in availableGroupList"
+              :key="group.id"
+              :label="`${group.name} (${group.stickersCount || 0})`"
+              :value="group.id"
+            />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item v-if="selectedTargetGroup" label="已有图片">
+          <div class="add-to-group-preview">
+            <div v-if="selectedTargetGroup.stickers.length" class="add-to-group-preview__grid">
+              <el-image
+                v-for="sticker in selectedTargetGroup.stickers"
+                :key="sticker.id"
+                :src="sticker.url || ''"
+                fit="cover"
+                class="add-to-group-preview__image"
+                :preview-src-list="getGroupPreviewUrls(selectedTargetGroup)"
+                preview-teleported
+              />
+            </div>
+            <span v-else class="table-cell-empty">暂无图片</span>
+          </div>
+        </el-form-item>
+
+        <el-form-item label="槽位标识">
+          <el-input v-model="batchSlotType" maxlength="64" placeholder="选填，如 front / back" />
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="addToGroupDialogVisible = false">取消</el-button>
+        <el-button
+          type="primary"
+          :loading="addingToGroup"
+          :disabled="!targetGroupValue || !selectedGroupStickerIds.length"
+          @click="submitBatchAddToGroup"
+        >
+          添加 {{ selectedGroupStickerIds.length }} 张
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog
       v-model="similarImageDialogVisible"
       title="模糊搜索"
       width="560px"
@@ -4010,6 +4096,8 @@ import RelatedPsdSetDialog from "./RelatedPsdSetDialog.vue";
 import FolderTree from "@/components/material/FolderTree.vue";
 import TableRowDragHandle from "@/components/TableRowDragHandle/index.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
+import ImageGroupView from "../imageGroup/index.vue";
+import { imageGroupApi, type ImageGroupItem } from "@/api/imageGroup";
 import { FOLDER_FILTER } from "@/constants/folder";
 import { derivePublishTaskTypeByPlatform, getTaskTypeLabel } from "@/config/task-types";
 
@@ -4186,7 +4274,10 @@ const vectorSimilarSearchActive = ref(false);
 const similarImageSearchMeta = ref<any>(null);
 const similarImageSearchLimit = ref(10); // 检索数量默认 10
 const similarImageDialogVisible = ref(false);
-const similarImageSearchTab = ref<"url" | "file" | "text">("url");
+const similarImageSearchTab = useLocalStorage<"url" | "file" | "text">(
+  "material_similar_image_search_tab",
+  "url",
+);
 const similarImageUrl = ref("");
 const similarImageFile = ref<File | null>(null);
 const similarImageFileName = ref("");
@@ -4519,6 +4610,105 @@ const operationDropdownRefs = new Map<string, any>();
 const open = ref(false);
 const title = ref("");
 const ids = ref<string[]>([]);
+const materialViewMode = useLocalStorage<"single" | "group">(
+  "material_view_mode",
+  "single",
+);
+const addToGroupDialogVisible = ref(false);
+const availableGroupsLoading = ref(false);
+const addingToGroup = ref(false);
+const targetGroupValue = ref("");
+const batchSlotType = ref("");
+const availableGroupList = ref<ImageGroupItem[]>([]);
+const selectedGroupStickerIds = ref<string[]>([]);
+const preferredTargetGroup = ref<ImageGroupItem | null>(null);
+const selectedTargetGroup = computed(
+  () => availableGroupList.value.find((group) => group.id === targetGroupValue.value) || null,
+);
+
+function handleGroupAddStickers(group: ImageGroupItem) {
+  preferredTargetGroup.value = group;
+  materialViewMode.value = "single";
+  ElMessage.info(`目标组图已设为“${group.name}”`);
+}
+
+function getGroupPreviewUrls(group: ImageGroupItem) {
+  return group.stickers.map((item) => item.url).filter((url): url is string => Boolean(url));
+}
+
+async function openBatchAddToGroupDialog() {
+  if (!ids.value.length) {
+    ElMessage.warning("请先勾选需要添加到组图的素材");
+    return;
+  }
+  if (ids.value.length > 200) {
+    ElMessage.warning("单次最多添加 200 张素材");
+    return;
+  }
+
+  selectedGroupStickerIds.value = [...ids.value];
+  targetGroupValue.value = preferredTargetGroup.value?.id || "";
+  batchSlotType.value = "";
+  addToGroupDialogVisible.value = true;
+  availableGroupsLoading.value = true;
+
+  try {
+    const result = await imageGroupApi.page({ pageNo: 1, pageSize: 100 });
+    availableGroupList.value = result.list || [];
+    if (
+      preferredTargetGroup.value &&
+      !availableGroupList.value.some((group) => group.id === preferredTargetGroup.value?.id)
+    ) {
+      availableGroupList.value.unshift(preferredTargetGroup.value);
+    }
+  } catch (error: any) {
+    availableGroupList.value = preferredTargetGroup.value ? [preferredTargetGroup.value] : [];
+    ElMessage.error(error?.message || "加载组图列表失败");
+  } finally {
+    availableGroupsLoading.value = false;
+  }
+}
+
+async function submitBatchAddToGroup() {
+  const targetValue = targetGroupValue.value.trim();
+  if (!targetValue) {
+    ElMessage.warning("请选择目标组图或输入新组图名称");
+    return;
+  }
+  if (!selectedGroupStickerIds.value.length) {
+    ElMessage.warning("没有待添加的素材");
+    return;
+  }
+
+  const stickers = selectedGroupStickerIds.value.map((stickerId) => ({
+    stickerId,
+    slotType: batchSlotType.value.trim() || undefined,
+  }));
+  const existingGroup = availableGroupList.value.find((group) => group.id === targetValue);
+
+  addingToGroup.value = true;
+  try {
+    if (existingGroup) {
+      await imageGroupApi.addStickers(existingGroup.id, { stickers });
+    } else {
+      await imageGroupApi.create({
+        name: targetValue,
+        stickers,
+      });
+    }
+    ElMessage.success(`已添加 ${stickers.length} 张素材`);
+    addToGroupDialogVisible.value = false;
+    preferredTargetGroup.value = null;
+    selectedGroupStickerIds.value = [];
+    resetCheckStatus(ids);
+    await getList();
+  } catch (error: any) {
+    ElMessage.error(error?.message || "添加到组图失败");
+  } finally {
+    addingToGroup.value = false;
+  }
+}
+
 const {
   dragState,
   setupRowDrag,
@@ -5425,7 +5615,6 @@ function resetSimilarImageDialog() {
   similarImageUrl.value = "";
   similarImageFile.value = null;
   similarImageFileName.value = "";
-  similarImageSearchTab.value = "url";
   similarImageSearchText.value = "";
   releaseSimilarImagePreviewUrl();
 }
@@ -12063,5 +12252,48 @@ h1 {
       }
     }
   }
+}
+
+:deep(.material-view-mode-tabs) {
+  .el-tabs__nav-wrap::after {
+    display: none !important;
+  }
+  .el-tabs__active-bar {
+    display: none !important;
+  }
+  .el-tabs__item {
+    padding: 0 6px !important;
+    font-size: 14px;
+    font-weight: 500;
+    color: #606266;
+  }
+  .el-tabs__item:first-child {
+    padding-left: 0 !important;
+  }
+  .el-tabs__item.is-active {
+    color: #303133;
+    font-weight: 700;
+  }
+  .el-tabs__header {
+    margin-bottom: 6px !important;
+  }
+}
+
+.add-to-group-preview {
+  width: 100%;
+}
+
+.add-to-group-preview__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 56px);
+  gap: 8px;
+  width: 100%;
+}
+
+.add-to-group-preview__image {
+  width: 56px;
+  height: 56px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 4px;
 }
 </style>
