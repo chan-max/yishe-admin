@@ -178,7 +178,7 @@ import { commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { useWindowSize } from "@vueuse/core";
 import { Search, Refresh } from "@element-plus/icons-vue";
-import { UserBehaviorLogApi, type UserBehaviorLogItem } from "@/api/user-behavior-log";
+import { getUserBehaviorLogPage, type UserBehaviorLogVO } from "@/api/system/user-behavior-log";
 import Pagination from "@/components/Pagination/index.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
@@ -186,7 +186,7 @@ import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 defineOptions({ name: "IndependentSiteUserBehaviorLog" });
 
 const loading = ref(false);
-const dataSource = ref<UserBehaviorLogItem[]>([]);
+const dataSource = ref<UserBehaviorLogVO[]>([]);
 const total = ref(0);
 const gridRef = ref();
 
@@ -258,7 +258,7 @@ function getActionTagType(action: string) {
 async function getList() {
   loading.value = true;
   try {
-    const res = await UserBehaviorLogApi.getPage({
+    const res = await getUserBehaviorLogPage({
       currentPage: queryParams.currentPage,
       pageSize: queryParams.pageSize,
       action: queryParams.action || undefined,
