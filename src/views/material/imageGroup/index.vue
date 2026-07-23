@@ -146,36 +146,67 @@
               </template>
 
               <template #stickersSlot="{ row }">
-                <div v-if="row.stickers?.length" class="image-group-members-grid">
-                  <div
-                    v-for="(sticker, index) in row.stickers"
-                    :key="sticker.id"
-                    class="image-group-member"
-                    :title="sticker.name || `图片 ${index + 1}`"
-                  >
-                    <span class="image-group-member__order">#{{ index + 1 }}</span>
-                    <el-image
-                      v-if="sticker.url"
-                      :src="sticker.url"
-                      fit="cover"
-                      class="image-group-member__image"
-                      :preview-src-list="getPreviewUrls(row)"
-                      :initial-index="index"
-                      preview-teleported
-                    />
-                    <div v-else class="image-group-member__placeholder">
-                      <el-icon><Picture /></el-icon>
+                <VueDraggable
+                  v-if="row.stickers?.length"
+                  :list="row.stickers"
+                  item-key="id"
+                  :group="{ name: `image-group-members-${row.id}`, pull: false, put: false }"
+                  class="image-group-members-grid"
+                  :class="{ 'is-saving': isMemberSortSaving(row.id) }"
+                  :disabled="row.stickers.length < 2 || isMemberSortSaving(row.id)"
+                  :animation="180"
+                  :force-fallback="true"
+                  :fallback-on-body="true"
+                  :fallback-tolerance="4"
+                  :delay="120"
+                  :delay-on-touch-only="true"
+                  :touch-start-threshold="4"
+                  filter=".image-group-member__remove"
+                  :prevent-on-filter="false"
+                  ghost-class="image-group-member--ghost"
+                  chosen-class="image-group-member--chosen"
+                  drag-class="image-group-member--dragging"
+                  @start="handleMemberDragStart(row)"
+                  @end="handleMemberDragEnd(row, $event)"
+                >
+                  <template #item="{ element: sticker, index }">
+                    <div
+                      class="image-group-member"
+                      :class="{ 'is-sortable': row.stickers.length > 1 }"
+                      :title="getMemberTitle(sticker, index, row.stickers.length)"
+                    >
+                      <span class="image-group-member__order">#{{ index + 1 }}</span>
+                      <el-image
+                        v-if="sticker.url"
+                        :src="sticker.url"
+                        fit="contain"
+                        class="image-group-member__image"
+                        :preview-src-list="getPreviewUrls(row)"
+                        :initial-index="index"
+                        preview-teleported
+                      />
+                      <div v-else class="image-group-member__placeholder">
+                        <el-icon><Picture /></el-icon>
+                      </div>
+                      <span
+                        v-if="row.stickers.length > 1"
+                        class="image-group-member__drag-indicator"
+                        aria-hidden="true"
+                      >
+                        <el-icon><Rank /></el-icon>
+                      </span>
+                      <el-button
+                        class="image-group-member__remove"
+                        type="danger"
+                        circle
+                        :icon="CloseBold"
+                        :disabled="isMemberSortSaving(row.id)"
+                        title="从组图移除"
+                        @click.stop="handleRemoveSticker(row, sticker)"
+                      />
                     </div>
-                    <el-button
-                      class="image-group-member__remove"
-                      type="danger"
-                      circle
-                      :icon="CloseBold"
-                      title="从组图移除"
-                      @click.stop="handleRemoveSticker(row, sticker)"
-                    />
-                  </div>
-                </div>
+                  </template>
+                </VueDraggable>
                 <span v-else class="table-cell-empty">暂无图片</span>
               </template>
 
@@ -279,11 +310,13 @@ import {
   MagicStick,
   Picture,
   Plus,
+  Rank,
   Refresh,
   Search,
 } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import type { VxeGridInstance, VxeGridProps } from "vxe-table";
+import VueDraggable from "vuedraggable";
 import { imageGroupApi, type ImageGroupItem, type ImageGroupSticker } from "@/api/imageGroup";
 import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import FolderTree from "@/components/material/FolderTree.vue";
@@ -306,6 +339,8 @@ const saving = ref(false);
 const dataSource = ref<ImageGroupItem[]>([]);
 const total = ref(0);
 const selectedIds = ref<string[]>([]);
+const memberSortSavingIds = ref<Set<string>>(new Set());
+const memberSortSnapshots = new Map<string, ImageGroupSticker[]>();
 const selectedFolderId = ref<string | null>(FOLDER_FILTER.ALL);
 const folderTreeCollapsed = useLocalStorage("material_folder_collapsed", false);
 const {
@@ -388,6 +423,70 @@ function getErrorMessage(error: unknown, fallback: string) {
 
 function getPreviewUrls(group: ImageGroupItem) {
   return group.stickers.map((sticker) => sticker.url).filter((url): url is string => Boolean(url));
+}
+
+function getMemberTitle(sticker: ImageGroupSticker, index: number, memberCount: number) {
+  const name = sticker.name || `图片 ${index + 1}`;
+  return memberCount > 1 ? `${name}，拖动调整顺序` : name;
+}
+
+function isMemberSortSaving(groupId: string) {
+  return memberSortSavingIds.value.has(String(groupId));
+}
+
+function setMemberSortSaving(groupId: string, saving: boolean) {
+  const nextIds = new Set(memberSortSavingIds.value);
+  if (saving) {
+    nextIds.add(String(groupId));
+  } else {
+    nextIds.delete(String(groupId));
+  }
+  memberSortSavingIds.value = nextIds;
+}
+
+function handleMemberDragStart(group: ImageGroupItem) {
+  memberSortSnapshots.set(String(group.id), [...group.stickers]);
+}
+
+async function handleMemberDragEnd(
+  group: ImageGroupItem,
+  event: { oldIndex?: number; newIndex?: number },
+) {
+  const groupId = String(group.id);
+  const snapshot = memberSortSnapshots.get(groupId);
+  memberSortSnapshots.delete(groupId);
+
+  if (
+    !snapshot ||
+    event.oldIndex === undefined ||
+    event.newIndex === undefined ||
+    event.oldIndex === event.newIndex
+  ) {
+    return;
+  }
+
+  const reorderedStickers = group.stickers.map((sticker, index) => ({
+    ...sticker,
+    sortOrder: index,
+  }));
+  group.stickers = reorderedStickers;
+  setMemberSortSaving(groupId, true);
+
+  try {
+    const updatedGroup = await imageGroupApi.addStickers(groupId, {
+      stickers: reorderedStickers.map((sticker, index) => ({
+        stickerId: sticker.id,
+        sortOrder: index,
+      })),
+    });
+    Object.assign(group, updatedGroup);
+    ElMessage.success("图片顺序已更新");
+  } catch (error) {
+    group.stickers = snapshot;
+    ElMessage.error(getErrorMessage(error, "保存图片顺序失败，已恢复原顺序"));
+  } finally {
+    setMemberSortSaving(groupId, false);
+  }
 }
 
 async function copyText(value: string) {
@@ -674,6 +773,15 @@ onMounted(loadGroups);
   white-space: normal;
 }
 
+.image-group-members-grid.is-saving {
+  cursor: progress;
+}
+
+.image-group-members-grid.is-saving .image-group-member {
+  pointer-events: none;
+  opacity: 0.68;
+}
+
 .image-group-member {
   position: relative;
   width: 60px;
@@ -682,6 +790,19 @@ onMounted(loadGroups);
   border: 1px solid var(--el-border-color);
   border-radius: 6px;
   background: var(--el-fill-color-light);
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    opacity 140ms ease;
+}
+
+.image-group-member.is-sortable {
+  cursor: grab;
+  user-select: none;
+}
+
+.image-group-member.is-sortable:active {
+  cursor: grabbing;
 }
 
 .image-group-member__image,
@@ -714,6 +835,51 @@ onMounted(loadGroups);
   font-weight: 600;
   line-height: 14px;
   text-align: center;
+}
+
+.image-group-member__drag-indicator {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  z-index: 2;
+  display: grid;
+  width: 17px;
+  height: 17px;
+  place-items: center;
+  border-radius: 3px;
+  color: #fff;
+  background: rgb(0 0 0 / 62%);
+  font-size: 12px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.image-group-member:hover .image-group-member__drag-indicator,
+.image-group-member--chosen .image-group-member__drag-indicator {
+  opacity: 1;
+}
+
+.image-group-member--ghost {
+  border-color: var(--el-color-primary) !important;
+  border-style: dashed !important;
+  background: var(--el-color-primary-light-9) !important;
+  box-shadow: inset 0 0 0 1px var(--el-color-primary-light-7);
+}
+
+.image-group-member--ghost > * {
+  opacity: 0 !important;
+}
+
+.image-group-member--chosen {
+  border-color: var(--el-color-primary);
+  box-shadow: 0 0 0 2px var(--el-color-primary-light-7);
+}
+
+.image-group-member--dragging {
+  cursor: grabbing !important;
+  opacity: 0.96 !important;
+  box-shadow: var(--el-box-shadow-light);
 }
 
 .image-group-member__remove {
@@ -783,6 +949,10 @@ onMounted(loadGroups);
 
   .image-group-member__remove {
     opacity: 1;
+  }
+
+  .image-group-member__drag-indicator {
+    opacity: 0.82;
   }
 }
 </style>
