@@ -715,13 +715,29 @@
 
                 <!-- 配置内容 - 更大，占据更多空间 -->
                 <el-col :span="12">
-                  <el-form-item label="配置内容" prop="psdTemplateConfig">
+                  <el-form-item prop="psdTemplateConfig">
+                    <template #label>
+                      <span class="psd-config-label">
+                        <span>配置内容</span>
+                        <el-tooltip content="查看多图与智能对象匹配教程" placement="top">
+                          <el-button
+                            link
+                            type="primary"
+                            class="psd-config-help-button"
+                            aria-label="查看配置教程"
+                            @click="psdTemplateConfigGuideVisible = true"
+                          >
+                            <el-icon><InfoFilled /></el-icon>
+                          </el-button>
+                        </el-tooltip>
+                      </span>
+                    </template>
                     <el-input
                       v-model="form.psdTemplateConfigText"
                       type="textarea"
                       :rows="16"
                       :autosize="{ minRows: 16, maxRows: 24 }"
-                      placeholder='支持 JSON 格式，如：{"images": [], "description": ""}'
+                      placeholder='填写 smart_objects 配置；点击“配置内容”旁的信息图标查看教程'
                     />
                   </el-form-item>
                 </el-col>
@@ -740,6 +756,59 @@
             </el-button>
           </div>
         </div>
+      </template>
+    </el-dialog>
+
+    <el-dialog
+      v-model="psdTemplateConfigGuideVisible"
+      title="PSD 模板配置教程"
+      width="760px"
+      append-to-body
+      destroy-on-close
+      class="psd-config-guide-dialog"
+    >
+      <div class="psd-config-guide">
+        <section class="psd-config-guide__section">
+          <h3>匹配方式</h3>
+          <p>
+            图片按照组图序号依次绑定 <code>smart_objects</code> 配置；
+            <code>smart_object_name</code> 用于将该配置匹配到 PSD 中的实际智能对象。
+          </p>
+          <div class="psd-config-guide__flow">
+            <span>组图第 N 张</span>
+            <el-icon><DArrowRight /></el-icon>
+            <span>配置第 N 项</span>
+            <el-icon><DArrowRight /></el-icon>
+            <span>指定名称的智能对象</span>
+          </div>
+        </section>
+
+        <section class="psd-config-guide__section">
+          <h3>顺序示例</h3>
+          <p>PSD 中有智能对象 <code>a</code>、<code>b</code>、<code>c</code>，需要按以下方式放图：</p>
+          <div class="psd-config-guide__mapping">
+            <div><strong>第 1 张图</strong><span>智能对象 b</span></div>
+            <div><strong>第 2 张图</strong><span>智能对象 c</span></div>
+            <div><strong>第 3 张图</strong><span>智能对象 a</span></div>
+          </div>
+        </section>
+
+        <section class="psd-config-guide__section">
+          <h3>配置示例</h3>
+          <pre class="psd-config-guide__code"><code>{{ psdTemplateConfigGuideExample }}</code></pre>
+          <p class="psd-config-guide__note">
+            不需要填写 <code>image_path</code>，制作套图时会按组图顺序自动注入。智能对象名称会先精确匹配，
+            再尝试包含匹配；仍未命中时才按 PSD 智能对象发现顺序兜底。
+          </p>
+        </section>
+      </div>
+
+      <template #footer>
+        <el-button :icon="DocumentCopy" @click="copyPsdTemplateConfigGuideExample">
+          复制示例
+        </el-button>
+        <el-button type="primary" @click="applyPsdTemplateConfigGuideExample">填入配置</el-button>
+        <el-button @click="psdTemplateConfigGuideVisible = false">关闭</el-button>
       </template>
     </el-dialog>
 
@@ -923,6 +992,7 @@ import {
   Delete,
   Edit,
   InfoFilled,
+  DocumentCopy,
   DArrowLeft,
   DArrowRight,
 } from "@element-plus/icons-vue";
@@ -958,6 +1028,22 @@ const cutoutModeOptions = [
   { label: "抠图", value: "CUTOUT" },
   { label: "非抠图", value: "NON_CUTOUT" },
 ];
+const psdTemplateConfigGuideExample = JSON.stringify(
+  {
+    defaults: {
+      resize_mode: "contain",
+      tile_size: 512,
+    },
+    smart_objects: [
+      { smart_object_name: "b", resize_mode: "contain" },
+      { smart_object_name: "c", resize_mode: "contain" },
+      { smart_object_name: "a", resize_mode: "contain" },
+    ],
+    verbose: true,
+  },
+  null,
+  2,
+);
 
 const getCutoutModeLabel = (mode: string) => {
   const map = {
@@ -1571,6 +1657,7 @@ const psdInfoDialogVisible = ref(false);
 const currentPsdInfoRow = ref<any>(null);
 const psdFileInfoDialogVisible = ref(false);
 const currentPsdFileInfoRow = ref<any>(null);
+const psdTemplateConfigGuideVisible = ref(false);
 
 const rules = {
   name: [{ required: true, message: "请输入模板名称", trigger: "blur" }],
@@ -1581,6 +1668,7 @@ const rules = {
 
 const dialogClose = () => {
   dialogVisible.value = false;
+  psdTemplateConfigGuideVisible.value = false;
   resetSelectedFileState();
   resetThumbnailLocalState();
   submitLoading.value = false;
@@ -2158,6 +2246,39 @@ function stringifyPsdTemplateConfig(config: any) {
   return JSON.stringify(config, null, 2);
 }
 
+async function copyPsdTemplateConfigGuideExample() {
+  try {
+    await navigator.clipboard.writeText(psdTemplateConfigGuideExample);
+    ElMessage.success("配置示例已复制");
+  } catch {
+    ElMessage.error("复制失败");
+  }
+}
+
+async function applyPsdTemplateConfigGuideExample() {
+  const currentText = String(form.value.psdTemplateConfigText || "").trim();
+  const defaultText = stringifyPsdTemplateConfig(createDefaultPsdTemplateConfig()).trim();
+  if (
+    currentText &&
+    currentText !== defaultText &&
+    currentText !== psdTemplateConfigGuideExample.trim()
+  ) {
+    try {
+      await ElMessageBox.confirm("填入示例会覆盖当前配置内容，是否继续？", "覆盖配置", {
+        confirmButtonText: "继续",
+        cancelButtonText: "取消",
+        type: "warning",
+      });
+    } catch {
+      return;
+    }
+  }
+
+  form.value.psdTemplateConfigText = psdTemplateConfigGuideExample;
+  psdTemplateConfigGuideVisible.value = false;
+  ElMessage.success("示例已填入配置内容");
+}
+
 // 查看psd模板配置
 function handleViewPsdInfo(row: any) {
   currentPsdInfoRow.value = row;
@@ -2436,6 +2557,119 @@ function handleCutoutModesChange(values: string[]) {
   flex-shrink: 0;
 }
 
+.psd-config-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.psd-config-help-button {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  font-size: 15px;
+}
+
+.psd-config-guide {
+  color: var(--el-text-color-regular);
+}
+
+.psd-config-guide__section {
+  padding: 0 0 18px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+
+  &:last-child {
+    padding-bottom: 0;
+    margin-bottom: 0;
+    border-bottom: 0;
+  }
+
+  h3 {
+    margin: 0 0 8px;
+    color: var(--el-text-color-primary);
+    font-size: 15px;
+    line-height: 1.4;
+  }
+
+  p {
+    margin: 0 0 10px;
+    line-height: 1.7;
+  }
+
+  code {
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: var(--el-color-primary);
+    background: var(--el-fill-color-light);
+    font-family: Monaco, Menlo, Consolas, monospace;
+  }
+}
+
+.psd-config-guide__flow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--el-text-color-primary);
+  font-weight: 500;
+
+  .el-icon {
+    color: var(--el-text-color-placeholder);
+  }
+}
+
+.psd-config-guide__mapping {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid var(--el-border-color-lighter);
+  border-bottom: 1px solid var(--el-border-color-lighter);
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    padding: 10px 12px;
+    border-right: 1px solid var(--el-border-color-lighter);
+
+    &:last-child {
+      border-right: 0;
+    }
+  }
+
+  span {
+    color: var(--el-text-color-secondary);
+  }
+}
+
+.psd-config-guide__code {
+  max-height: 360px;
+  padding: 14px;
+  margin: 0 0 10px;
+  overflow: auto;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  color: var(--el-text-color-primary);
+  background: var(--el-fill-color-extra-light);
+  font-family: Monaco, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre;
+
+  code {
+    padding: 0;
+    color: inherit;
+    background: transparent;
+  }
+}
+
+.psd-config-guide__note {
+  margin-bottom: 0 !important;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+}
+
 .dialog-section-config {
   flex: 1;
   min-height: 300px;
@@ -2642,6 +2876,19 @@ function handleCutoutModesChange(values: string[]) {
 
   .psd-template-dialog-main {
     height: auto;
+  }
+
+  .psd-config-guide__mapping {
+    grid-template-columns: 1fr;
+
+    > div {
+      border-right: 0;
+      border-bottom: 1px solid var(--el-border-color-lighter);
+
+      &:last-child {
+        border-bottom: 0;
+      }
+    }
   }
 }
 
