@@ -4,8 +4,10 @@ export interface ImageGroupSticker {
   id: string;
   url?: string | null;
   name?: string | null;
+  suffix?: string | null;
+  aspectRatio?: number | null;
+  isCutout?: boolean | null;
   groupId?: string | null;
-  slotType?: string | null;
   sortOrder?: number | null;
 }
 
@@ -26,7 +28,6 @@ export interface ImageGroupItem {
 
 export interface ImageGroupMemberInput {
   stickerId: string;
-  slotType?: string;
   sortOrder?: number;
 }
 

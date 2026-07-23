@@ -98,7 +98,12 @@
             </div>
 
             <div
-              v-if="data.id !== FOLDER_FILTER.NOT_GROUP && mode === 'manage'"
+              v-if="
+                !data.isAll &&
+                data.id !== FOLDER_FILTER.ALL &&
+                data.id !== FOLDER_FILTER.NOT_GROUP &&
+                mode === 'manage'
+              "
               class="sticker-folder-node-actions"
             >
               <el-dropdown

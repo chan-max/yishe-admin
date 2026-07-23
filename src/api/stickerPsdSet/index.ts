@@ -41,6 +41,15 @@ export const stickerPsdSetApi = {
     }>;
     meta?: any;
   }) => request.post({ url: "/sticker-psd-set/batch", data }),
+  batchCreateByImageGroup: (data: {
+    imageGroupIds: string[];
+    psdTemplateIds: string[];
+    templateConfigs?: Array<{
+      psdTemplateId: string;
+      psdTemplateConfig?: any;
+    }>;
+    meta?: Record<string, any>;
+  }) => request.post({ url: "/sticker-psd-set/batch-by-image-group", data }),
   batchCreateByPublishConfig: (data: { stickerIds: string[]; publishConfigIds: string[] }) =>
     request.post({ url: "/sticker-psd-set/batch-by-publish-config", data }),
   batchCreateByProductGenerationTemplate: (data: {

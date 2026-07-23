@@ -56,6 +56,16 @@
               </el-button>
               <el-button
                 size="small"
+                type="warning"
+                plain
+                :icon="MagicStick"
+                :disabled="!selectedIds.length"
+                @click="handleCreatePsdSets"
+              >
+                多图套图 ({{ selectedIds.length }})
+              </el-button>
+              <el-button
+                size="small"
                 type="danger"
                 plain
                 :icon="Delete"
@@ -156,9 +166,6 @@
                     <div v-else class="image-group-member__placeholder">
                       <el-icon><Picture /></el-icon>
                     </div>
-                    <span v-if="sticker.slotType" class="image-group-member__slot">
-                      {{ sticker.slotType }}
-                    </span>
                     <el-button
                       class="image-group-member__remove"
                       type="danger"
@@ -269,6 +276,7 @@ import {
   DArrowRight,
   Delete,
   Edit,
+  MagicStick,
   Picture,
   Plus,
   Refresh,
@@ -287,6 +295,7 @@ import TableRowDragHandle from "@/components/TableRowDragHandle/index.vue";
 
 const emit = defineEmits<{
   addStickers: [group: ImageGroupItem];
+  createPsdSets: [groups: ImageGroupItem[]];
 }>();
 
 const IMAGE_GROUP_FOLDER_CATEGORY = "imagegroup";
@@ -345,8 +354,6 @@ const gridOptions = computed<VxeGridProps<ImageGroupItem>>(() => ({
       slots: { default: "dragHandleSlot" },
     },
     { type: "checkbox", width: 42, align: "center" },
-    { title: "ID", field: "id", width: 150, slots: { default: "idSlot" } },
-    { title: "组图名称", field: "name", minWidth: 170 },
     {
       title: "图片成员",
       field: "stickers",
@@ -355,6 +362,7 @@ const gridOptions = computed<VxeGridProps<ImageGroupItem>>(() => ({
       className: "image-group-members-cell",
       slots: { default: "stickersSlot" },
     },
+    { title: "组图名称", field: "name", minWidth: 170 },
     {
       title: "数量",
       field: "stickersCount",
@@ -368,6 +376,7 @@ const gridOptions = computed<VxeGridProps<ImageGroupItem>>(() => ({
       minWidth: 130,
       slots: { default: "folderSlot" },
     },
+    { title: "ID", field: "id", width: 150, slots: { default: "idSlot" } },
     { title: "创建时间", field: "createTime", width: 160, className: "table-time-cell" },
     buildOperationColumn("actionSlot", 86),
   ],
@@ -393,6 +402,23 @@ async function copyText(value: string) {
 function onSelectionChange() {
   const records = gridRef.value?.getCheckboxRecords() || [];
   selectedIds.value = records.map((record) => record.id);
+}
+
+function handleCreatePsdSets() {
+  const selectedIdSet = new Set(selectedIds.value.map(String));
+  const groups = dataSource.value.filter((group) => selectedIdSet.has(String(group.id)));
+  if (!groups.length) {
+    ElMessage.warning("请选择要制作套图的组图");
+    return;
+  }
+
+  const emptyGroups = groups.filter((group) => !group.stickers?.length);
+  if (emptyGroups.length) {
+    ElMessage.warning(`组图“${emptyGroups.map((group) => group.name).join("、")}”没有图片成员`);
+    return;
+  }
+
+  emit("createPsdSets", groups);
 }
 
 async function loadGroups() {
@@ -671,8 +697,7 @@ onMounted(loadGroups);
   font-size: 28px;
 }
 
-.image-group-member__order,
-.image-group-member__slot {
+.image-group-member__order {
   position: absolute;
   z-index: 2;
   color: #fff;
@@ -691,34 +716,22 @@ onMounted(loadGroups);
   text-align: center;
 }
 
-.image-group-member__slot {
-  right: 0;
-  bottom: 0;
-  left: 0;
-  overflow: hidden;
-  padding: 3px 6px;
-  font-size: 10px;
-  line-height: 16px;
-  text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .image-group-member__remove {
   position: absolute;
-  top: 2px;
-  right: 2px;
+  top: 0;
+  right: 0;
   z-index: 3;
-  flex: 0 0 22px;
-  width: 22px !important;
-  min-width: 22px !important;
-  max-width: 22px;
-  height: 22px !important;
-  min-height: 22px !important;
-  max-height: 22px;
+  flex: 0 0 18px;
+  width: 18px !important;
+  min-width: 18px !important;
+  max-width: 18px;
+  height: 18px !important;
+  min-height: 18px !important;
+  max-height: 18px;
   padding: 0 !important;
   border-radius: 50%;
-  line-height: 22px;
+  font-size: 10px;
+  line-height: 18px;
   opacity: 0;
   transition: opacity 120ms ease;
 }

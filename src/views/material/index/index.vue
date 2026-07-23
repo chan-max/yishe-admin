@@ -5,13 +5,16 @@
       <el-tab-pane label="按组查看" name="group" />
     </el-tabs>
 
-    <ImageGroupView
-      v-if="materialViewMode === 'group'"
-      @add-stickers="handleGroupAddStickers"
-    />
+    <KeepAlive>
+      <ImageGroupView
+        v-if="materialViewMode === 'group'"
+        @add-stickers="handleGroupAddStickers"
+        @create-psd-sets="openImageGroupPsdSetDialog"
+      />
+    </KeepAlive>
 
     <ListPageLayout
-      v-else
+      v-show="materialViewMode === 'single'"
       class="material-index-page"
       :sidebar-width="folderTreeCollapsed ? '28px' : '280px'"
     >
@@ -491,15 +494,6 @@
               </el-button>
               <el-button
                 size="small"
-                type="warning"
-                plain
-                :disabled="loading || !ids.length"
-                @click="() => openPsdSetDialog(true)"
-              >
-                多图套图({{ ids.length }})
-              </el-button>
-              <el-button
-                size="small"
                 type="success"
                 plain
                 :disabled="loading || !ids.length"
@@ -522,9 +516,10 @@
                 type="success"
                 plain
                 :disabled="loading || !ids.length"
+                :title="addToGroupButtonTitle"
                 @click="openBatchAddToGroupDialog"
               >
-                添加到组图({{ ids.length }})
+                {{ addToGroupButtonText }}({{ ids.length }})
               </el-button>
               <el-button
                 size="small"
@@ -1192,6 +1187,7 @@
           v-model="psdSetDialogVisible"
           fullscreen
           align-center
+          append-to-body
           :destroy-on-close="true"
           class="psd-set-dialog"
           @close="resetPsdSetState"
@@ -1202,7 +1198,12 @@
                 <div class="psd-set-dialog__header-title">{{ psdSetDialogTitle }}</div>
               </div>
               <div class="psd-set-dialog__header-chips">
-                <span class="psd-set-dialog__header-chip">素材 {{ ids.length }} 张</span>
+                <span v-if="isImageGroupPsdSet" class="psd-set-dialog__header-chip">
+                  组图 {{ psdSetImageGroups.length }} 个
+                </span>
+                <span class="psd-set-dialog__header-chip">
+                  素材 {{ psdSetSelectedMaterialIds.length }} 张
+                </span>
                 <span class="psd-set-dialog__header-chip">
                   模板 {{ selectedPsdTemplateIds.length }} 个
                 </span>
@@ -1218,9 +1219,16 @@
               <div class="psd-set-panel__head">
                 <div>
                   <div class="psd-set-panel__eyebrow">步骤 1</div>
-                  <div class="section-title">已选择素材 ({{ ids.length }})</div>
+                  <div class="section-title">
+                    {{ isImageGroupPsdSet ? "已选择组图" : "已选择素材" }}
+                    ({{ isImageGroupPsdSet ? psdSetImageGroups.length : psdSetSelectedMaterialIds.length }})
+                  </div>
                   <div class="psd-set-panel__desc">
-                    可直接按当前素材的尺寸和抠图属性筛选模板。
+                    {{
+                      isImageGroupPsdSet
+                        ? "每个组图会按图片序号独立创建套图任务。"
+                        : "可直接按当前素材的尺寸和抠图属性筛选模板。"
+                    }}
                   </div>
                 </div>
                 <div class="psd-set-panel__tags">
@@ -1249,9 +1257,37 @@
                   }}
                 </template>
               </el-alert>
-              <div class="thumbs">
+              <div v-if="isImageGroupPsdSet" class="psd-set-source-groups">
                 <div
-                  v-for="id in ids"
+                  v-for="group in psdSetImageGroups"
+                  :key="group.id"
+                  class="psd-set-source-group"
+                >
+                  <div class="psd-set-source-group__head">
+                    <span class="psd-set-source-group__name">{{ group.name }}</span>
+                    <el-tag size="small" type="info" effect="plain">
+                      {{ group.stickers.length }} 张
+                    </el-tag>
+                  </div>
+                  <div class="psd-set-source-group__members">
+                    <div
+                      v-for="(sticker, index) in group.stickers"
+                      :key="sticker.id"
+                      class="psd-set-source-group__member"
+                    >
+                      <span class="psd-set-source-group__order">#{{ index + 1 }}</span>
+                      <img
+                        :src="getFastPreviewImageUrl(getMaterialPreviewSource(sticker), { width: 120 })"
+                        :alt="sticker.name || `图片 ${index + 1}`"
+                        loading="lazy"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="thumbs">
+                <div
+                  v-for="id in psdSetSelectedMaterialIds"
                   :key="id"
                   class="thumb"
                   :class="{ 'thumb-invalid-format': isMaterialFormatInvalid(id) }"
@@ -1484,7 +1520,7 @@
                                 <div class="template-title">{{ tpl.name || "未命名模板" }}</div>
                                 <el-link
                                   type="primary"
-                                  :underline="false"
+                                  underline="never"
                                   class="template-detail-link"
                                   @click.stop="openTemplateDetail(tpl)"
                                 >
@@ -1565,7 +1601,9 @@
                 <div class="psd-set-info-content">
                   <span class="psd-set-info-chip">
                     {{
-                      psdSetMergeSticker
+                      isImageGroupPsdSet
+                        ? `将生成 ${psdSetImageGroups.length} 个组图 × ${selectedPsdTemplateIds.length} 个模板 = ${psdSetTaskCount} 条套图任务`
+                        : psdSetMergeSticker
                         ? `合并生成，每个模板各生成 1 条，共 ${psdSetTaskCount} 条套图任务`
                         : `将生成 ${ids.length} × ${selectedPsdTemplateIds.length} = ${psdSetTaskCount} 条套图任务`
                     }}
@@ -1584,7 +1622,13 @@
               <div class="psd-set-mode-inline">
                 <span class="psd-set-mode-label">生成方式:</span>
                 <el-tag :type="psdSetMergeSticker ? 'success' : 'primary'" size="large">
-                  {{ psdSetMergeSticker ? "合并素材 × 模板" : "单素材 × 模板" }}
+                  {{
+                    isImageGroupPsdSet
+                      ? "组图 × 模板"
+                      : psdSetMergeSticker
+                        ? "合并素材 × 模板"
+                        : "单素材 × 模板"
+                  }}
                 </el-tag>
               </div>
 
@@ -1596,7 +1640,7 @@
                 <el-button
                   type="info"
                   plain
-                  :disabled="!ids.length || !selectedPsdTemplateIds.length"
+                  :disabled="!psdSetSelectedMaterialIds.length || !selectedPsdTemplateIds.length"
                   @click="showPsdSetParams"
                   >查看发送参数</el-button
                 >
@@ -1608,7 +1652,9 @@
                   <el-button
                     type="primary"
                     :disabled="
-                      !ids.length || !selectedPsdTemplateIds.length || hasInvalidFormatMaterials
+                      !psdSetSelectedMaterialIds.length ||
+                      !selectedPsdTemplateIds.length ||
+                      hasInvalidFormatMaterials
                     "
                     :loading="psdSetSubmitting"
                     @click="handleCreatePsdSets"
@@ -1619,7 +1665,7 @@
                 <el-button
                   v-else
                   type="primary"
-                  :disabled="!ids.length || !selectedPsdTemplateIds.length"
+                  :disabled="!psdSetSelectedMaterialIds.length || !selectedPsdTemplateIds.length"
                   :loading="psdSetSubmitting"
                   @click="handleCreatePsdSets"
                 >
@@ -1634,6 +1680,7 @@
           v-model="psdSetAutomationDialogVisible"
           fullscreen
           align-center
+          append-to-body
           class="psd-set-automation-dialog"
         >
           <template #header>
@@ -1769,6 +1816,7 @@
           v-model="batchDetailConfigDialogVisible"
           title="详细配置 - 选中的模板"
           fullscreen
+          append-to-body
           :destroy-on-close="true"
         >
           <div class="batch-detail-config-content">
@@ -1865,6 +1913,7 @@
           title="PSD模板详情"
           fullscreen
           align-center
+          append-to-body
           :destroy-on-close="true"
         >
           <div v-if="currentPsdTemplate" class="psd-template-detail">
@@ -1924,7 +1973,7 @@
                       :href="currentPsdTemplate.url"
                       target="_blank"
                       type="primary"
-                      :underline="false"
+                      underline="never"
                     >
                       {{ currentPsdTemplate.url }}
                     </el-link>
@@ -2335,7 +2384,7 @@
                     :href="row.originUrl"
                     target="_blank"
                     type="primary"
-                    :underline="false"
+                    underline="never"
                     class="table-cell-link"
                   >
                     {{
@@ -2353,7 +2402,7 @@
                     :href="row.source"
                     target="_blank"
                     type="primary"
-                    :underline="false"
+                    underline="never"
                     class="table-cell-link"
                   >
                     {{ row.source.length > 50 ? row.source.substring(0, 50) + "..." : row.source }}
@@ -2673,12 +2722,18 @@
           <el-tag type="info" effect="plain">{{ selectedGroupStickerIds.length }} 张</el-tag>
         </el-form-item>
 
-        <el-form-item label="目标组图" required>
+        <el-form-item label="添加方式">
+          <el-radio-group v-model="addToGroupMode">
+            <el-radio-button value="existing">已有组图</el-radio-button>
+            <el-radio-button value="new">新建组图</el-radio-button>
+          </el-radio-group>
+        </el-form-item>
+
+        <el-form-item v-if="addToGroupMode === 'existing'" label="目标组图" required>
           <el-select
             v-model="targetGroupValue"
             :loading="availableGroupsLoading"
-            placeholder="选择组图，或输入新组图名称"
-            allow-create
+            placeholder="选择已有组图"
             filterable
             clearable
             style="width: 100%"
@@ -2692,7 +2747,21 @@
           </el-select>
         </el-form-item>
 
-        <el-form-item v-if="selectedTargetGroup" label="已有图片">
+        <el-form-item v-else label="组图名称" required>
+          <el-input
+            v-model="newGroupName"
+            maxlength="255"
+            show-word-limit
+            clearable
+            placeholder="输入新组图名称"
+            @keyup.enter="submitBatchAddToGroup"
+          />
+        </el-form-item>
+
+        <el-form-item
+          v-if="addToGroupMode === 'existing' && selectedTargetGroup"
+          label="已有图片"
+        >
           <div class="add-to-group-preview">
             <div v-if="selectedTargetGroup.stickers.length" class="add-to-group-preview__grid">
               <el-image
@@ -2709,9 +2778,6 @@
           </div>
         </el-form-item>
 
-        <el-form-item label="槽位标识">
-          <el-input v-model="batchSlotType" maxlength="64" placeholder="选填，如 front / back" />
-        </el-form-item>
       </el-form>
 
       <template #footer>
@@ -2719,10 +2785,10 @@
         <el-button
           type="primary"
           :loading="addingToGroup"
-          :disabled="!targetGroupValue || !selectedGroupStickerIds.length"
+          :disabled="!canSubmitAddToGroup"
           @click="submitBatchAddToGroup"
         >
-          添加 {{ selectedGroupStickerIds.length }} 张
+          {{ addToGroupMode === "new" ? "创建组图" : `添加 ${selectedGroupStickerIds.length} 张` }}
         </el-button>
       </template>
     </el-dialog>
@@ -4610,6 +4676,15 @@ const operationDropdownRefs = new Map<string, any>();
 const open = ref(false);
 const title = ref("");
 const ids = ref<string[]>([]);
+const psdSetImageGroups = ref<ImageGroupItem[]>([]);
+const isImageGroupPsdSet = computed(() => psdSetImageGroups.value.length > 0);
+const psdSetSelectedMaterialIds = computed(() =>
+  isImageGroupPsdSet.value
+    ? psdSetImageGroups.value.flatMap((group) =>
+        (group.stickers || []).map((sticker) => String(sticker.id)),
+      )
+    : ids.value.map(String),
+);
 const materialViewMode = useLocalStorage<"single" | "group">(
   "material_view_mode",
   "single",
@@ -4617,13 +4692,32 @@ const materialViewMode = useLocalStorage<"single" | "group">(
 const addToGroupDialogVisible = ref(false);
 const availableGroupsLoading = ref(false);
 const addingToGroup = ref(false);
+const addToGroupMode = ref<"existing" | "new">("existing");
 const targetGroupValue = ref("");
-const batchSlotType = ref("");
+const newGroupName = ref("");
 const availableGroupList = ref<ImageGroupItem[]>([]);
 const selectedGroupStickerIds = ref<string[]>([]);
 const preferredTargetGroup = ref<ImageGroupItem | null>(null);
+const addToGroupButtonText = computed(() => {
+  const name = preferredTargetGroup.value?.name?.trim();
+  if (!name) return "添加到组图";
+  const displayName = name.length > 10 ? `${name.slice(0, 10)}...` : name;
+  return `添加到「${displayName}」`;
+});
+const addToGroupButtonTitle = computed(() =>
+  preferredTargetGroup.value?.name
+    ? `已选择组图：${preferredTargetGroup.value.name}`
+    : "添加到组图",
+);
 const selectedTargetGroup = computed(
   () => availableGroupList.value.find((group) => group.id === targetGroupValue.value) || null,
+);
+const canSubmitAddToGroup = computed(
+  () =>
+    selectedGroupStickerIds.value.length > 0 &&
+    (addToGroupMode.value === "new"
+      ? Boolean(newGroupName.value.trim())
+      : Boolean(targetGroupValue.value)),
 );
 
 function handleGroupAddStickers(group: ImageGroupItem) {
@@ -4647,8 +4741,9 @@ async function openBatchAddToGroupDialog() {
   }
 
   selectedGroupStickerIds.value = [...ids.value];
+  addToGroupMode.value = "existing";
   targetGroupValue.value = preferredTargetGroup.value?.id || "";
-  batchSlotType.value = "";
+  newGroupName.value = "";
   addToGroupDialogVisible.value = true;
   availableGroupsLoading.value = true;
 
@@ -4670,36 +4765,48 @@ async function openBatchAddToGroupDialog() {
 }
 
 async function submitBatchAddToGroup() {
-  const targetValue = targetGroupValue.value.trim();
-  if (!targetValue) {
-    ElMessage.warning("请选择目标组图或输入新组图名称");
-    return;
-  }
   if (!selectedGroupStickerIds.value.length) {
     ElMessage.warning("没有待添加的素材");
     return;
   }
 
-  const stickers = selectedGroupStickerIds.value.map((stickerId) => ({
+  const isCreatingGroup = addToGroupMode.value === "new";
+  const targetValue = targetGroupValue.value.trim();
+  const normalizedNewGroupName = newGroupName.value.trim();
+  if (isCreatingGroup && !normalizedNewGroupName) {
+    ElMessage.warning("请输入新组图名称");
+    return;
+  }
+  if (!isCreatingGroup && !targetValue) {
+    ElMessage.warning("请选择目标组图");
+    return;
+  }
+
+  const stickers = selectedGroupStickerIds.value.map((stickerId, index) => ({
     stickerId,
-    slotType: batchSlotType.value.trim() || undefined,
+    ...(isCreatingGroup ? { sortOrder: index } : {}),
   }));
   const existingGroup = availableGroupList.value.find((group) => group.id === targetValue);
 
   addingToGroup.value = true;
   try {
-    if (existingGroup) {
-      await imageGroupApi.addStickers(existingGroup.id, { stickers });
-    } else {
+    if (isCreatingGroup) {
       await imageGroupApi.create({
-        name: targetValue,
+        name: normalizedNewGroupName,
         stickers,
       });
+      ElMessage.success(`已创建组图“${normalizedNewGroupName}”，包含 ${stickers.length} 张素材`);
+    } else if (existingGroup) {
+      await imageGroupApi.addStickers(existingGroup.id, { stickers });
+      ElMessage.success(`已添加 ${stickers.length} 张素材`);
+    } else {
+      ElMessage.warning("目标组图不存在，请重新选择");
+      return;
     }
-    ElMessage.success(`已添加 ${stickers.length} 张素材`);
     addToGroupDialogVisible.value = false;
     preferredTargetGroup.value = null;
     selectedGroupStickerIds.value = [];
+    newGroupName.value = "";
     resetCheckStatus(ids);
     await getList();
   } catch (error: any) {
@@ -5060,9 +5167,11 @@ const isAllPsdTemplatesSelected = computed(() => {
 });
 
 const psdSetTaskCount = computed(() =>
-  psdSetMergeSticker.value
-    ? selectedPsdTemplateIds.value.length
-    : ids.value.length * selectedPsdTemplateIds.value.length,
+  isImageGroupPsdSet.value
+    ? psdSetImageGroups.value.length * selectedPsdTemplateIds.value.length
+    : psdSetMergeSticker.value
+      ? selectedPsdTemplateIds.value.length
+      : ids.value.length * selectedPsdTemplateIds.value.length,
 );
 function cacheSelectedMaterialRows(rows: any[] = []) {
   rows.forEach((row) => {
@@ -5315,12 +5424,12 @@ const allowedFormatsForSelectedTemplates = computed(() => {
 
 // 检查是否有不符合格式的素材
 const hasInvalidFormatMaterials = computed(() => {
-  if (!ids.value.length) return false;
+  if (!psdSetSelectedMaterialIds.value.length) return false;
 
   const allowedFormatsSet = new Set(psdSetAllowedFormats);
 
-  return ids.value.some((id) => {
-    const material = dataSource.value.find((item) => String(item.id) === String(id));
+  return psdSetSelectedMaterialIds.value.some((id) => {
+    const material = getMaterialById(id);
     if (!material) return false;
 
     const materialSuffix = (material.suffix || "").toLowerCase().replace(/^\./, "");
@@ -5335,8 +5444,8 @@ const invalidFormatMaterialsList = computed(() => {
   const allowedFormatsSet = new Set(psdSetAllowedFormats);
   const invalidList: Array<{ name: string; suffix: string }> = [];
 
-  ids.value.forEach((id) => {
-    const material = dataSource.value.find((item) => String(item.id) === String(id));
+  psdSetSelectedMaterialIds.value.forEach((id) => {
+    const material = getMaterialById(id);
     if (!material) return;
 
     const materialSuffix = (material.suffix || "").toLowerCase().replace(/^\./, "");
@@ -5351,7 +5460,11 @@ const invalidFormatMaterialsList = computed(() => {
   return invalidList;
 });
 const psdSetDialogTitle = computed(() =>
-  psdSetMergeSticker.value ? "多图套图工作台" : "PS 套图工作台",
+  isImageGroupPsdSet.value
+    ? "组图套图工作台"
+    : psdSetMergeSticker.value
+      ? "多图套图工作台"
+      : "PS 套图工作台",
 );
 
 // 处理上传
@@ -6514,6 +6627,32 @@ async function openPsdSetDialog(mergeMode?: boolean | any) {
   await loadPsdTemplatesForPsdSet();
 }
 
+async function openImageGroupPsdSetDialog(groups: ImageGroupItem[]) {
+  const selectedGroups = Array.isArray(groups)
+    ? groups.filter((group) => group?.id && group.stickers?.length)
+    : [];
+  if (!selectedGroups.length) {
+    ElMessage.warning("请选择包含图片成员的组图");
+    return;
+  }
+
+  resetPsdSetState();
+  psdSetImageGroups.value = selectedGroups.map((group) => ({
+    ...group,
+    stickers: [...(group.stickers || [])].sort(
+      (a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0),
+    ),
+  }));
+  cacheSelectedMaterialRows(
+    psdSetImageGroups.value.flatMap((group) => group.stickers || []),
+  );
+  psdSetMergeSticker.value = true;
+  psdSetTemplatePageParams.currentPage = 1;
+  psdSetDialogVisible.value = true;
+  loadPsdFolderTree();
+  await loadPsdTemplatesForPsdSet();
+}
+
 async function openMaterialPublishConfigDialog() {
   if (!ids.value.length) {
     ElMessage.warning("请选择要处理的素材");
@@ -6776,8 +6915,8 @@ function getMatchedMaterialId(configIndex: number): string | number | null {
   }
 
   // 合并模式：显示第一个素材作为参考（实际上所有素材都会合并）
-  if (ids.value.length > 0) {
-    return ids.value[0];
+  if (psdSetSelectedMaterialIds.value.length > 0) {
+    return psdSetSelectedMaterialIds.value[0];
   }
 
   return null;
@@ -6855,6 +6994,7 @@ function handleSaveConfigToMemory() {
 
 // 重置状态
 function resetPsdSetState() {
+  psdSetImageGroups.value = [];
   selectedPsdTemplateIds.value = [];
   psdSetTemplates.value = [];
   templateConfigList.value = [];
@@ -7259,6 +7399,18 @@ function buildPsdSetParams() {
 
   const automationConfig = buildPsdSetAutomationConfig();
 
+  if (isImageGroupPsdSet.value) {
+    return {
+      imageGroupIds: psdSetImageGroups.value.map((group) => String(group.id)),
+      psdTemplateIds: [...selectedPsdTemplateIds.value],
+      templateConfigs: configBindings.map((binding) => ({
+        psdTemplateId: binding.psdTemplateId,
+        psdTemplateConfig: binding.psdTemplateConfig,
+      })),
+      meta: automationConfig ? { automations: automationConfig } : undefined,
+    };
+  }
+
   return {
     stickerIds: ids.value.map((id) => String(id)),
     psdTemplateIds: [...selectedPsdTemplateIds.value],
@@ -7276,8 +7428,8 @@ function showPsdSetParams() {
 }
 
 async function handleCreatePsdSets() {
-  if (!ids.value.length) {
-    return ElMessage.warning("请先勾选素材");
+  if (!psdSetSelectedMaterialIds.value.length) {
+    return ElMessage.warning(isImageGroupPsdSet.value ? "请先勾选组图" : "请先勾选素材");
   }
   if (!selectedPsdTemplateIds.value.length) {
     return ElMessage.warning("请选择PSD模板");
@@ -7299,7 +7451,10 @@ async function handleCreatePsdSets() {
   try {
     const params = buildPsdSetParams();
     console.log("[PSD 套图] 发送参数:", JSON.stringify(params, null, 2));
-    const res = await stickerPsdSetApi.batchCreate(params);
+    const createdFromImageGroups = isImageGroupPsdSet.value;
+    const res = createdFromImageGroups
+      ? await stickerPsdSetApi.batchCreateByImageGroup(params as any)
+      : await stickerPsdSetApi.batchCreate(params as any);
     console.log("[PSD 套图] 后端响应:", res);
     const createdList = (res as any)?.list;
     const createdCount = Array.isArray(createdList)
@@ -7314,7 +7469,9 @@ async function handleCreatePsdSets() {
     }
     psdSetDialogVisible.value = false;
     resetPsdSetState();
-    resetCheckStatus(ids);
+    if (!createdFromImageGroups) {
+      resetCheckStatus(ids);
+    }
   } catch (error: any) {
     console.error("创建套图失败:", error);
     ElMessage.error(error?.message || "创建套图失败");
@@ -7412,8 +7569,8 @@ function checkMaterialFormats() {
   // 检查所有选中素材的格式
   const invalidMaterials: Array<{ id: string | number; name: string; suffix: string }> = [];
 
-  ids.value.forEach((id) => {
-    const material = dataSource.value.find((item) => String(item.id) === String(id));
+  psdSetSelectedMaterialIds.value.forEach((id) => {
+    const material = getMaterialById(id);
     if (!material) return;
 
     const materialSuffix = (material.suffix || "").toLowerCase().replace(/^\./, "");
@@ -11008,6 +11165,78 @@ h1 {
 .psd-set-materials .format-tip .el-icon {
   color: var(--el-color-primary);
   font-size: 14px;
+}
+
+.psd-set-source-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.psd-set-source-group {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.psd-set-source-group:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.psd-set-source-group__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.psd-set-source-group__name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--el-text-color-primary);
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.psd-set-source-group__members {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 60px);
+  gap: 8px;
+}
+
+.psd-set-source-group__member {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  overflow: hidden;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 6px;
+  background: var(--el-fill-color-light);
+}
+
+.psd-set-source-group__member img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.psd-set-source-group__order {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  min-width: 18px;
+  padding: 1px 3px;
+  color: #fff;
+  background: rgb(0 0 0 / 70%);
+  font-size: 9px;
+  line-height: 14px;
+  text-align: center;
 }
 
 .psd-set-materials .thumbs {

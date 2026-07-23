@@ -160,7 +160,7 @@
                   <el-tag :type="getStickersCount(row) > 1 ? 'success' : 'info'" size="small" effect="plain"
                     class="material-association-tag">
                     <span class="tag-text">{{
-                      getStickersCount(row) === 1 ? "单素材" : `多素材(${getStickersCount(row)})`
+                      getStickersCount(row) > 1 ? `多素材(${getStickersCount(row)})` : "单素材"
                       }}</span>
                   </el-tag>
                 </div>
