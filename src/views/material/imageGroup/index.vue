@@ -322,7 +322,7 @@ import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import FolderTree from "@/components/material/FolderTree.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import { FOLDER_FILTER } from "@/constants/folder";
-import { useLocalStorage } from "@vueuse/core";
+import { useLocalStorage, useWindowSize } from "@vueuse/core";
 import { useFolderRowDrag } from "@/hooks/useFolderRowDrag";
 import TableRowDragHandle from "@/components/TableRowDragHandle/index.vue";
 
@@ -332,6 +332,9 @@ const emit = defineEmits<{
 }>();
 
 const IMAGE_GROUP_FOLDER_CATEGORY = "imagegroup";
+
+const { height } = useWindowSize();
+const maxHeight = computed(() => Math.max(height.value - 260, 360));
 
 const gridRef = ref<VxeGridInstance<ImageGroupItem>>();
 const loading = ref(false);
@@ -374,6 +377,7 @@ const groupForm = reactive({
 
 const gridOptions = computed<VxeGridProps<ImageGroupItem>>(() => ({
   ...commonGridOptions,
+  maxHeight: maxHeight.value,
   pagerConfig: { enabled: false },
   rowConfig: {
     ...commonGridOptions.rowConfig,
@@ -768,8 +772,9 @@ onMounted(loadGroups);
   align-items: start;
   gap: 8px;
   width: 100%;
+  max-height: 144px;
   padding: 6px 0;
-  overflow: visible;
+  overflow-y: auto;
   white-space: normal;
 }
 
@@ -920,8 +925,8 @@ onMounted(loadGroups);
 :deep(.image-group-members-cell .vxe-cell),
 :deep(.image-group-members-cell .vxe-cell--wrapper),
 :deep(.image-group-members-cell .vxe-cell--label) {
-  max-height: none !important;
-  overflow: visible !important;
+  max-height: 152px !important;
+  overflow-y: auto !important;
   white-space: normal !important;
 }
 

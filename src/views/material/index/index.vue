@@ -6,90 +6,39 @@
     </el-tabs>
 
     <KeepAlive>
-      <ImageGroupView
-        v-if="materialViewMode === 'group'"
-        @add-stickers="handleGroupAddStickers"
-        @create-psd-sets="openImageGroupPsdSetDialog"
-      />
+      <ImageGroupView v-if="materialViewMode === 'group'" @add-stickers="handleGroupAddStickers"
+        @create-psd-sets="openImageGroupPsdSetDialog" />
     </KeepAlive>
 
-    <ListPageLayout
-      v-show="materialViewMode === 'single'"
-      class="material-index-page"
-      :sidebar-width="folderTreeCollapsed ? '28px' : '280px'"
-    >
+    <ListPageLayout v-show="materialViewMode === 'single'" class="material-index-page"
+      :sidebar-width="folderTreeCollapsed ? '28px' : '280px'">
       <template #filter>
         <div v-if="!isMobile" class="list-page-filter list-page-filter--flat material-index-filter">
-          <el-form
-            :model="queryParams"
-            label-position="top"
-            class="list-page-search-form material-index-search-form"
-          >
+          <el-form :model="queryParams" label-position="top" class="list-page-search-form material-index-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
-              <el-col
-                class="list-page-search-form__col--wide"
-                :xs="24"
-                :sm="12"
-                :md="12"
-                :lg="6"
-                :xl="6"
-              >
+              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
                 <el-form-item label="搜索">
-                  <el-input
-                    v-model="queryParams.searchText"
-                    size="small"
-                    placeholder="名称、描述、关键词"
-                    clearable
-                    @change="
-                      (val) => {
-                        if (!val) getList();
-                      }
-                    "
-                    @keyup.enter="getList"
-                  />
+                  <el-input v-model="queryParams.searchText" size="small" placeholder="名称、描述、关键词" clearable @change="
+                    (val) => {
+                      if (!val) getList();
+                    }
+                  " @keyup.enter="getList" />
                 </el-form-item>
               </el-col>
 
-              <el-col
-                class="list-page-search-form__col--narrow"
-                :xs="24"
-                :sm="12"
-                :md="8"
-                :lg="4"
-                :xl="3"
-              >
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4" :xl="3">
                 <el-form-item label="排序">
-                  <el-select
-                    v-model="queryParams.sortingFields"
-                    size="small"
-                    placeholder="排序"
-                    @change="getList"
-                  >
+                  <el-select v-model="queryParams.sortingFields" size="small" placeholder="排序" @change="getList">
                     <el-option label="创建时间倒序" value="createTime DESC" />
                     <el-option label="创建时间正序" value="createTime ASC" />
                   </el-select>
                 </el-form-item>
               </el-col>
 
-              <el-col
-                class="list-page-search-form__col--wide"
-                :xs="24"
-                :sm="12"
-                :md="12"
-                :lg="5"
-                :xl="4"
-              >
+              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="12" :lg="5" :xl="4">
                 <el-form-item label="后缀">
-                  <el-select
-                    v-model="queryParams.suffix"
-                    size="small"
-                    placeholder="后缀"
-                    multiple
-                    clearable
-                    collapse-tags
-                    collapse-tags-tooltip
-                    @change="getList"
-                  >
+                  <el-select v-model="queryParams.suffix" size="small" placeholder="后缀" multiple clearable collapse-tags
+                    collapse-tags-tooltip @change="getList">
                     <el-option label="jpg" value="jpg" />
                     <el-option label="jpeg" value="jpeg" />
                     <el-option label="png" value="png" />
@@ -102,45 +51,19 @@
                 </el-form-item>
               </el-col>
 
-              <el-col
-                class="list-page-search-form__col--narrow"
-                :xs="24"
-                :sm="12"
-                :md="8"
-                :lg="3"
-                :xl="2"
-              >
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3" :xl="2">
                 <el-form-item label="ID">
-                  <el-input
-                    v-model="queryParams.id"
-                    size="small"
-                    placeholder="ID"
-                    clearable
-                    @change="
-                      (val) => {
-                        if (!val) getList();
-                      }
-                    "
-                  />
+                  <el-input v-model="queryParams.id" size="small" placeholder="ID" clearable @change="
+                    (val) => {
+                      if (!val) getList();
+                    }
+                  " />
                 </el-form-item>
               </el-col>
 
-              <el-col
-                class="list-page-search-form__col--narrow"
-                :xs="24"
-                :sm="12"
-                :md="8"
-                :lg="3"
-                :xl="3"
-              >
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3" :xl="3">
                 <el-form-item label="自定义">
-                  <el-select
-                    v-model="queryParams.isCustom"
-                    size="small"
-                    placeholder="自定义"
-                    clearable
-                    @change="getList"
-                  >
+                  <el-select v-model="queryParams.isCustom" size="small" placeholder="自定义" clearable @change="getList">
                     <el-option label="全部" value="" />
                     <el-option label="是" :value="true" />
                     <el-option label="否" :value="false" />
@@ -148,22 +71,10 @@
                 </el-form-item>
               </el-col>
 
-              <el-col
-                class="list-page-search-form__col--narrow"
-                :xs="24"
-                :sm="12"
-                :md="8"
-                :lg="3"
-                :xl="3"
-              >
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3" :xl="3">
                 <el-form-item label="侵权">
-                  <el-select
-                    v-model="queryParams.isInfringement"
-                    size="small"
-                    placeholder="侵权"
-                    clearable
-                    @change="getList"
-                  >
+                  <el-select v-model="queryParams.isInfringement" size="small" placeholder="侵权" clearable
+                    @change="getList">
                     <el-option label="全部" value="" />
                     <el-option label="侵权" :value="true" />
                     <el-option label="非侵权" :value="false" />
@@ -171,22 +82,9 @@
                 </el-form-item>
               </el-col>
 
-              <el-col
-                class="list-page-search-form__col--narrow"
-                :xs="24"
-                :sm="12"
-                :md="8"
-                :lg="3"
-                :xl="3"
-              >
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3" :xl="3">
                 <el-form-item label="抠图">
-                  <el-select
-                    v-model="queryParams.isCutout"
-                    size="small"
-                    placeholder="抠图"
-                    clearable
-                    @change="getList"
-                  >
+                  <el-select v-model="queryParams.isCutout" size="small" placeholder="抠图" clearable @change="getList">
                     <el-option label="全部" value="" />
                     <el-option label="是" :value="true" />
                     <el-option label="否" :value="false" />
@@ -194,22 +92,9 @@
                 </el-form-item>
               </el-col>
 
-              <el-col
-                class="list-page-search-form__col--narrow"
-                :xs="24"
-                :sm="12"
-                :md="8"
-                :lg="3"
-                :xl="3"
-              >
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3" :xl="3">
                 <el-form-item label="无缝">
-                  <el-select
-                    v-model="queryParams.seamless"
-                    size="small"
-                    placeholder="无缝"
-                    clearable
-                    @change="getList"
-                  >
+                  <el-select v-model="queryParams.seamless" size="small" placeholder="无缝" clearable @change="getList">
                     <el-option label="全部" value="" />
                     <el-option label="是" :value="true" />
                     <el-option label="否" :value="false" />
@@ -217,84 +102,44 @@
                 </el-form-item>
               </el-col>
 
-              <el-col
-                class="list-page-search-form__col--wide"
-                :xs="24"
-                :sm="12"
-                :md="12"
-                :lg="7"
-                :xl="6"
-              >
+              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="12" :lg="7" :xl="6">
                 <el-form-item label="尺寸">
-                  <el-select
-                    v-model="queryParams.sizeShape"
-                    size="small"
-                    placeholder="尺寸形状"
-                    clearable
-                    multiple
-                    collapse-tags
-                    collapse-tags-tooltip
-                    @change="getList"
-                    :teleported="false"
-                  >
+                  <el-select v-model="queryParams.sizeShape" size="small" placeholder="尺寸形状" clearable multiple
+                    collapse-tags collapse-tags-tooltip @change="getList" :teleported="false">
                     <el-option-group label="正方形">
-                      <el-option
-                        v-for="config in sizeShapeGroups.square"
-                        :key="config.key"
-                        :value="config.key"
-                        :label="getFullLabel(config)"
-                      >
+                      <el-option v-for="config in sizeShapeGroups.square" :key="config.key" :value="config.key"
+                        :label="getFullLabel(config)">
                         <div class="size-option">
-                          <div
-                            class="size-thumb"
-                            :class="`${config.key}-thumb`"
-                            :style="{
-                              width: `${config.thumbWidth}px`,
-                              height: `${config.thumbHeight}px`,
-                            }"
-                          ></div>
+                          <div class="size-thumb" :class="`${config.key}-thumb`" :style="{
+                            width: `${config.thumbWidth}px`,
+                            height: `${config.thumbHeight}px`,
+                          }"></div>
                           <span class="size-label">{{ config.label }} ({{ config.ratio }})</span>
                           <span class="size-key">[{{ config.key }}]</span>
                         </div>
                       </el-option>
                     </el-option-group>
                     <el-option-group label="横图 (宽>高)">
-                      <el-option
-                        v-for="config in sizeShapeGroups.landscape"
-                        :key="config.key"
-                        :value="config.key"
-                        :label="getFullLabel(config)"
-                      >
+                      <el-option v-for="config in sizeShapeGroups.landscape" :key="config.key" :value="config.key"
+                        :label="getFullLabel(config)">
                         <div class="size-option">
-                          <div
-                            class="size-thumb"
-                            :class="`${config.key}-thumb`"
-                            :style="{
-                              width: `${config.thumbWidth}px`,
-                              height: `${config.thumbHeight}px`,
-                            }"
-                          ></div>
+                          <div class="size-thumb" :class="`${config.key}-thumb`" :style="{
+                            width: `${config.thumbWidth}px`,
+                            height: `${config.thumbHeight}px`,
+                          }"></div>
                           <span class="size-label">{{ config.label }} ({{ config.ratio }})</span>
                           <span class="size-key">[{{ config.key }}]</span>
                         </div>
                       </el-option>
                     </el-option-group>
                     <el-option-group label="竖图 (高>宽)">
-                      <el-option
-                        v-for="config in sizeShapeGroups.portrait"
-                        :key="config.key"
-                        :value="config.key"
-                        :label="getFullLabel(config)"
-                      >
+                      <el-option v-for="config in sizeShapeGroups.portrait" :key="config.key" :value="config.key"
+                        :label="getFullLabel(config)">
                         <div class="size-option">
-                          <div
-                            class="size-thumb"
-                            :class="`${config.key}-thumb`"
-                            :style="{
-                              width: `${config.thumbWidth}px`,
-                              height: `${config.thumbHeight}px`,
-                            }"
-                          ></div>
+                          <div class="size-thumb" :class="`${config.key}-thumb`" :style="{
+                            width: `${config.thumbWidth}px`,
+                            height: `${config.thumbHeight}px`,
+                          }"></div>
                           <span class="size-label">{{ config.label }} ({{ config.ratio }})</span>
                           <span class="size-key">[{{ config.key }}]</span>
                         </div>
@@ -304,14 +149,7 @@
                 </el-form-item>
               </el-col>
 
-              <el-col
-                class="list-page-search-form__col--narrow"
-                :xs="24"
-                :sm="12"
-                :md="8"
-                :lg="2"
-                :xl="2"
-              >
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="2" :xl="2">
                 <el-form-item label="随机">
                   <div class="material-index-search-form__switch">
                     <el-switch v-model="queryParams.random" size="small" @change="getList" />
@@ -319,101 +157,52 @@
                 </el-form-item>
               </el-col>
 
-              <el-col
-                class="list-page-search-form__col--wide"
-                :xs="24"
-                :sm="12"
-                :md="12"
-                :lg="5"
-                :xl="5"
-              >
+              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="12" :lg="5" :xl="5">
                 <el-form-item label="时间">
-                  <DateRangePicker
-                    @change="
-                      (val) => {
-                        queryParams.startTime = val.start;
-                        queryParams.endTime = val.end;
-                        getList();
-                      }
-                    "
-                  />
+                  <DateRangePicker @change="
+                    (val) => {
+                      queryParams.startTime = val.start;
+                      queryParams.endTime = val.end;
+                      getList();
+                    }
+                  " />
                 </el-form-item>
               </el-col>
 
-              <el-col
-                v-if="!phashSearchDisabled"
-                class="list-page-search-form__col--full"
-                :xs="24"
-                :sm="24"
-                :md="24"
-                :lg="24"
-                :xl="24"
-              >
+              <el-col v-if="!phashSearchDisabled" class="list-page-search-form__col--full" :xs="24" :sm="24" :md="24"
+                :lg="24" :xl="24">
                 <el-form-item label="相似搜索">
                   <div class="material-index-phash">
                     <div class="material-index-phash__row">
-                      <el-input
-                        v-model="queryParams.phash"
-                        size="small"
-                        placeholder="输入 phash 或图片地址"
-                        clearable
-                        @blur="onPhashInputBlur"
-                      />
+                      <el-input v-model="queryParams.phash" size="small" placeholder="输入 phash 或图片地址" clearable
+                        @blur="onPhashInputBlur" />
                       <div class="material-index-phash__modes">
-                        <el-check-tag
-                          :checked="queryParams.phashMode === 'range'"
-                          @change="() => (queryParams.phashMode = 'range')"
-                        >
+                        <el-check-tag :checked="queryParams.phashMode === 'range'"
+                          @change="() => (queryParams.phashMode = 'range')">
                           相似匹配
                         </el-check-tag>
-                        <el-tooltip
-                          content="只找 phash 完全一致，速度最快，需已有 phash。"
-                          placement="top"
-                        >
-                          <el-check-tag
-                            :checked="queryParams.phashMode === 'exact'"
-                            @change="() => (queryParams.phashMode = 'exact')"
-                          >
+                        <el-tooltip content="只找 phash 完全一致，速度最快，需已有 phash。" placement="top">
+                          <el-check-tag :checked="queryParams.phashMode === 'exact'"
+                            @change="() => (queryParams.phashMode = 'exact')">
                             精确匹配
                           </el-check-tag>
                         </el-tooltip>
                       </div>
                       <div class="material-index-phash__actions">
-                        <el-button size="small" type="primary" @click="handlePhashSearch"
-                          >搜索相似图片</el-button
-                        >
+                        <el-button size="small" type="primary" @click="handlePhashSearch">搜索相似图片</el-button>
                         <el-button size="small" @click="clearPhashSearch">清空</el-button>
                       </div>
                     </div>
                   </div>
                 </el-form-item>
               </el-col>
-              <el-col
-                class="list-page-search-form__col--wide"
-                :xs="24"
-                :sm="12"
-                :md="12"
-                :lg="6"
-                :xl="6"
-              >
+              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
                 <el-form-item label="查重配置">
                   <div class="flex items-center gap-2" style="min-width: 0">
-                    <el-select
-                      v-model="queryParams.publishUsageConfigId"
-                      size="small"
-                      placeholder="选择后标记已用图片"
-                      clearable
-                      filterable
-                      multiple
-                      style="min-width: 200px"
-                      @change="handlePublishUsageViewChange"
-                    >
-                      <el-option
-                        v-for="item in publishUsageConfigOptions"
-                        :key="item.id"
-                        :label="formatPublishUsageConfigLabel(item)"
-                        :value="item.id"
-                      />
+                    <el-select v-model="queryParams.publishUsageConfigId" size="small" placeholder="选择后标记已用图片" clearable
+                      filterable multiple style="min-width: 200px" @change="handlePublishUsageViewChange">
+                      <el-option v-for="item in publishUsageConfigOptions" :key="item.id"
+                        :label="formatPublishUsageConfigLabel(item)" :value="item.id" />
                     </el-select>
                     <el-button size="small" @click="toggleSelectAll">
                       {{ isAllSelected ? "取消全选" : "全选" }}
@@ -423,125 +212,70 @@
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions material-index-search-form__actions">
-              <el-button
-                size="small"
-                type="primary"
-                :icon="Search"
-                :loading="loading"
-                @click="getList"
-              >
+              <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="getList">
                 搜索
               </el-button>
-              <el-button
-                size="small"
-                type="success"
-                plain
-                :icon="Picture"
-                :loading="similarImageSubmitting"
-                @click="openSimilarImageDialog()"
-              >
+              <el-button size="small" type="success" plain :icon="Picture" :loading="similarImageSubmitting"
+                @click="openSimilarImageDialog()">
                 模糊搜索
               </el-button>
-              <el-button
-                size="small"
-                type="primary"
-                @click="
-                  () => {
-                    uploadModalVisible = true;
-                  }
-                "
-              >
+              <el-button size="small" type="primary" @click="
+                () => {
+                  uploadModalVisible = true;
+                }
+              ">
                 上传
               </el-button>
-              <el-button
-                v-if="isAdmin"
-                size="small"
-                @click="
-                  () => {
-                    urlUploadModalVisible = true;
-                  }
-                "
-              >
+              <el-button v-if="isAdmin" size="small" @click="
+                () => {
+                  urlUploadModalVisible = true;
+                }
+              ">
                 URL上传
               </el-button>
               <el-button size="small" @click="handleMultiDownload">
                 下载 ({{ ids.length }})
               </el-button>
-              <el-button
-                size="small"
-                type="success"
-                :disabled="loading || !ids.length"
-                @click="() => openStickerUserTransferDialog('copy')"
-              >
+              <el-button size="small" type="success" :disabled="loading || !ids.length"
+                @click="() => openStickerUserTransferDialog('copy')">
                 分享给用户({{ ids.length }})
               </el-button>
-              <el-button
-                size="small"
-                type="warning"
-                :disabled="loading || !ids.length"
-                @click="() => openStickerUserTransferDialog('move')"
-              >
+              <el-button size="small" type="warning" :disabled="loading || !ids.length"
+                @click="() => openStickerUserTransferDialog('move')">
                 转移给用户({{ ids.length }})
               </el-button>
-              <el-button
-                size="small"
-                type="primary"
-                plain
-                :disabled="loading || !ids.length"
-                @click="() => openPsdSetDialog(false)"
-              >
+              <el-button size="small" type="primary" plain :disabled="loading || !ids.length"
+                @click="() => openPsdSetDialog(false)">
                 制作PS套图({{ ids.length }})
               </el-button>
-              <el-button
-                size="small"
-                type="success"
-                plain
-                :disabled="loading || !ids.length"
-                @click="openMaterialPublishConfigDialog"
-              >
+              <el-button size="small" type="success" plain :disabled="loading || !ids.length"
+                @click="openMaterialPublishConfigDialog">
                 选择发布配置({{ ids.length }})
               </el-button>
-              <el-button
-                size="small"
-                type="primary"
-                plain
-                :icon="MagicStick"
-                :disabled="loading || !ids.length"
-                @click="openMaterialProductConfigDialog"
-              >
+              <el-button size="small" type="primary" plain :icon="MagicStick" :disabled="loading || !ids.length"
+                @click="openMaterialProductConfigDialog">
                 生成独立站商品({{ ids.length }})
               </el-button>
-              <el-button
-                size="small"
-                type="success"
-                plain
-                :disabled="loading || !ids.length"
-                :title="addToGroupButtonTitle"
-                @click="openBatchAddToGroupDialog"
-              >
+              <el-button size="small" type="success" plain :disabled="loading || !ids.length"
+                :title="addToGroupButtonTitle" @click="openBatchAddToGroupDialog">
                 {{ addToGroupButtonText }}({{ ids.length }})
               </el-button>
-              <el-button
-                size="small"
-                type="danger"
-                :icon="Delete"
-                :loading="deleteLoading"
-                :disabled="loading || !ids.length"
-                @click="handleDelete(null)"
-              >
+              <el-button size="small" type="danger" :icon="Delete" :loading="deleteLoading"
+                :disabled="loading || !ids.length" @click="handleDelete(null)">
                 批量删除({{ ids.length }})
               </el-button>
             </div>
           </el-form>
         </div>
         <div v-else class="material-index-mobile-filter">
-          <el-button size="small" type="primary" @click="filterDialogVisible = true"
-            >筛选</el-button
-          >
+          <el-button size="small" type="primary" @click="filterDialogVisible = true">筛选</el-button>
         </div>
         <div v-if="similarImageSearchStatusVisible" class="similar-image-search-status">
-          <div v-if="similarImageActiveSourceType === 'text'" class="similar-image-search-status__thumb similar-image-search-status__thumb--text">
-            <el-icon :size="18" color="#67c23a"><Search /></el-icon>
+          <div v-if="similarImageActiveSourceType === 'text'"
+            class="similar-image-search-status__thumb similar-image-search-status__thumb--text">
+            <el-icon :size="18" color="#67c23a">
+              <Search />
+            </el-icon>
           </div>
           <div v-else class="similar-image-search-status__thumb">
             <img :src="similarImageActivePreviewUrl" alt="相似图查询图片" />
@@ -555,7 +289,8 @@
                 {{ similarImageActiveSourceText }}
               </span>
               <span v-if="similarImageSearchMeta" class="similar-image-search-status__meta">
-                （耗时: {{ similarImageSearchMeta.searchTimeMs }}ms | 最匹配: {{ similarImageSearchMeta.scoreRange?.max ? (similarImageSearchMeta.scoreRange.max * 100).toFixed(1) + '%' : '-' }}）
+                （耗时: {{ similarImageSearchMeta.searchTimeMs }}ms | 最匹配: {{ similarImageSearchMeta.scoreRange?.max ?
+                  (similarImageSearchMeta.scoreRange.max * 100).toFixed(1) + '%' : '-' }}）
               </span>
             </div>
           </div>
@@ -571,11 +306,7 @@
         <el-dialog v-model="filterDialogVisible" title="筛选" width="90%" align-center>
           <el-form :model="queryParams" label-width="80px">
             <el-form-item label="搜索">
-              <el-input
-                v-model="queryParams.searchText"
-                placeholder="请输入名称、描述或关键词（空格分隔，支持引号精确匹配）"
-                clearable
-              />
+              <el-input v-model="queryParams.searchText" placeholder="请输入名称、描述或关键词（空格分隔，支持引号精确匹配）" clearable />
             </el-form-item>
             <el-form-item label="排序">
               <el-select v-model="queryParams.sortingFields" placeholder="请选择排序方式">
@@ -612,12 +343,7 @@
               </el-select>
             </el-form-item>
             <el-form-item label="尺寸形状">
-              <el-select
-                v-model="queryParams.sizeShape"
-                placeholder="请选择尺寸形状"
-                clearable
-                multiple
-              >
+              <el-select v-model="queryParams.sizeShape" placeholder="请选择尺寸形状" clearable multiple>
                 <el-option-group label="常用">
                   <el-option value="landscape" label="横图">
                     <div class="size-option">
@@ -694,22 +420,10 @@
             </el-form-item>
             <el-form-item label="查重配置">
               <div class="flex items-center gap-2">
-                <el-select
-                  v-model="queryParams.publishUsageConfigId"
-                  placeholder="选择后标记已用图片"
-                  clearable
-                  filterable
-                  multiple
-                  collapse-tags
-                  collapse-tags-tooltip
-                  style="min-width: 200px"
-                >
-                  <el-option
-                    v-for="item in publishUsageConfigOptions"
-                    :key="item.id"
-                    :label="formatPublishUsageConfigLabel(item)"
-                    :value="item.id"
-                  />
+                <el-select v-model="queryParams.publishUsageConfigId" placeholder="选择后标记已用图片" clearable filterable
+                  multiple collapse-tags collapse-tags-tooltip style="min-width: 200px">
+                  <el-option v-for="item in publishUsageConfigOptions" :key="item.id"
+                    :label="formatPublishUsageConfigLabel(item)" :value="item.id" />
                 </el-select>
                 <el-button size="small" @click="toggleSelectAll">
                   {{ isAllSelected ? "取消全选" : "全选" }}
@@ -720,14 +434,12 @@
               <el-switch v-model="queryParams.random" active-text="随机" inactive-text="默认" />
             </el-form-item>
             <el-form-item label="按时间查询">
-              <DateRangePicker
-                @change="
-                  (val) => {
-                    queryParams.startTime = val.start;
-                    queryParams.endTime = val.end;
-                  }
-                "
-              />
+              <DateRangePicker @change="
+                (val) => {
+                  queryParams.startTime = val.start;
+                  queryParams.endTime = val.end;
+                }
+              " />
             </el-form-item>
           </el-form>
           <template #footer>
@@ -738,14 +450,8 @@
         <!-- PC 顶部筛选栅格布局样式 -->
         <!--（放在这里是为了避免全局影响，保持只作用于本页） -->
 
-        <el-dialog
-          v-model="materialPublishConfigDialogVisible"
-          fullscreen
-          align-center
-          :destroy-on-close="false"
-          class="material-publish-config-dialog"
-          @close="handleCloseMaterialPublishConfigDialog"
-        >
+        <el-dialog v-model="materialPublishConfigDialogVisible" fullscreen align-center :destroy-on-close="false"
+          class="material-publish-config-dialog" @close="handleCloseMaterialPublishConfigDialog">
           <template #header>
             <div class="material-publish-config-dialog__header">
               <div class="material-publish-config-dialog__header-main">
@@ -763,13 +469,8 @@
             </div>
           </template>
 
-          <div
-            v-loading="materialPublishConfigLoading"
-            class="material-publish-config-dialog__body"
-          >
-            <div
-              class="material-publish-config-dialog__panel material-publish-config-dialog__panel--materials"
-            >
+          <div v-loading="materialPublishConfigLoading" class="material-publish-config-dialog__body">
+            <div class="material-publish-config-dialog__panel material-publish-config-dialog__panel--materials">
               <div class="material-publish-config-dialog__section-head">
                 <div>
                   <div class="material-publish-config-dialog__section-eyebrow">步骤 1</div>
@@ -779,10 +480,7 @@
                   </div>
                 </div>
                 <div class="material-publish-config-dialog__tag-list">
-                  <el-tag
-                    :type="hasInvalidFormatMaterials ? 'warning' : 'success'"
-                    effect="plain"
-                  >
+                  <el-tag :type="hasInvalidFormatMaterials ? 'warning' : 'success'" effect="plain">
                     {{
                       hasInvalidFormatMaterials
                         ? `${invalidFormatMaterialsList.length} 张格式需处理`
@@ -795,13 +493,8 @@
                 </div>
               </div>
 
-              <el-alert
-                v-if="hasInvalidFormatMaterials"
-                type="warning"
-                :closable="false"
-                show-icon
-                class="material-publish-config-dialog__warning"
-              >
+              <el-alert v-if="hasInvalidFormatMaterials" type="warning" :closable="false" show-icon
+                class="material-publish-config-dialog__warning">
                 <template #title>
                   所选素材中有 {{ invalidFormatMaterialsList.length }} 张图片格式不符合要求：{{
                     invalidFormatMaterialsList.map((item) => item.name).join("、")
@@ -810,30 +503,19 @@
               </el-alert>
 
               <div class="material-publish-config-dialog__material-list">
-                <div
-                  v-for="material in selectedMaterialsForPublishConfig"
-                  :key="material.id"
-                  class="material-publish-config-dialog__material-item"
-                  :class="{
+                <div v-for="material in selectedMaterialsForPublishConfig" :key="material.id"
+                  class="material-publish-config-dialog__material-item" :class="{
                     'material-publish-config-dialog__material-item--invalid':
                       isMaterialFormatInvalid(material.id),
-                  }"
-                >
-                  <button
-                    type="button"
-                    class="material-publish-config-dialog__material-remove"
-                    title="移除该图片"
-                    @click.stop="removeSelectedMaterial(material.id)"
-                  >
+                  }">
+                  <button type="button" class="material-publish-config-dialog__material-remove" title="移除该图片"
+                    @click.stop="removeSelectedMaterial(material.id)">
                     ×
                   </button>
                   <div class="material-publish-config-dialog__material-preview">
-                    <img
-                      v-if="getMaterialPreviewSource(material)"
+                    <img v-if="getMaterialPreviewSource(material)"
                       :src="getFastPreviewImageUrl(getMaterialPreviewSource(material), { width: 220 })"
-                      :alt="material.name || `素材${material.id}`"
-                      :title="material.name || `素材${material.id}`"
-                    />
+                      :alt="material.name || `素材${material.id}`" :title="material.name || `素材${material.id}`" />
                     <div v-else class="material-publish-config-dialog__material-placeholder">
                       暂无预览
                     </div>
@@ -849,20 +531,13 @@
                   </div>
                 </div>
 
-                <el-empty
-                  v-if="!selectedMaterialsForPublishConfig.length"
-                  description="请先选择图片素材"
-                  :image-size="84"
-                />
+                <el-empty v-if="!selectedMaterialsForPublishConfig.length" description="请先选择图片素材" :image-size="84" />
               </div>
             </div>
 
-            <div
-              class="material-publish-config-dialog__panel material-publish-config-dialog__panel--configs"
-            >
+            <div class="material-publish-config-dialog__panel material-publish-config-dialog__panel--configs">
               <div
-                class="material-publish-config-dialog__section-head material-publish-config-dialog__section-head--configs"
-              >
+                class="material-publish-config-dialog__section-head material-publish-config-dialog__section-head--configs">
                 <div>
                   <div class="material-publish-config-dialog__section-eyebrow">步骤 2</div>
                   <div class="material-publish-config-dialog__section-title">发布配置</div>
@@ -875,12 +550,8 @@
                     可用 {{ materialPublishConfigUsableCount }} / {{ filteredMaterialPublishConfigs.length }}
                   </el-tag>
                   <div class="material-publish-config-dialog__search">
-                    <el-input
-                      v-model="materialPublishConfigSearchText"
-                      clearable
-                      placeholder="搜索配置名称、任务类型或平台"
-                      @input="materialPublishConfigCurrentPage = 1"
-                    >
+                    <el-input v-model="materialPublishConfigSearchText" clearable placeholder="搜索配置名称、任务类型或平台"
+                      @input="materialPublishConfigCurrentPage = 1">
                       <template #prefix>
                         <el-icon>
                           <Search />
@@ -892,24 +563,14 @@
               </div>
 
               <div class="common-table material-publish-config-dialog__table">
-                <vxe-grid
-                  ref="materialPublishConfigGridRef"
-                  v-bind="materialPublishConfigGridOptions"
-                  :data="materialPublishConfigDataSource"
-                  @checkbox-change="handleMaterialPublishConfigCheckboxChange"
-                  @checkbox-all="handleMaterialPublishConfigCheckboxAllChange"
-                />
+                <vxe-grid ref="materialPublishConfigGridRef" v-bind="materialPublishConfigGridOptions"
+                  :data="materialPublishConfigDataSource" @checkbox-change="handleMaterialPublishConfigCheckboxChange"
+                  @checkbox-all="handleMaterialPublishConfigCheckboxAllChange" />
               </div>
 
-              <div
-                v-if="filteredMaterialPublishConfigs.length > 0"
-                class="material-publish-config-dialog__pagination"
-              >
-                <pagination
-                  v-model:page="materialPublishConfigCurrentPage"
-                  v-model:limit="materialPublishConfigPageSize"
-                  :total="filteredMaterialPublishConfigs.length"
-                />
+              <div v-if="filteredMaterialPublishConfigs.length > 0" class="material-publish-config-dialog__pagination">
+                <pagination v-model:page="materialPublishConfigCurrentPage"
+                  v-model:limit="materialPublishConfigPageSize" :total="filteredMaterialPublishConfigs.length" />
               </div>
             </div>
           </div>
@@ -926,31 +587,20 @@
                 <span class="material-publish-config-dialog__footer-chip">
                   预计生成 {{ materialPublishConfigTaskCount }} 条套图任务
                 </span>
-                <span
-                  v-if="hasInvalidFormatMaterials"
-                  class="material-publish-config-dialog__footer-tip"
-                >
+                <span v-if="hasInvalidFormatMaterials" class="material-publish-config-dialog__footer-tip">
                   当前存在格式不兼容素材，请处理后再开始制作
                 </span>
-                <span
-                  v-else
-                  class="material-publish-config-dialog__footer-tip material-publish-config-dialog__footer-tip--muted"
-                >
+                <span v-else
+                  class="material-publish-config-dialog__footer-tip material-publish-config-dialog__footer-tip--muted">
                   选好配置后即可直接创建任务，业务逻辑与原流程保持一致
                 </span>
               </div>
               <div class="material-publish-config-dialog__footer-actions">
                 <el-button @click="handleCloseMaterialPublishConfigDialog">取消</el-button>
-                <el-button
-                  type="primary"
-                  :loading="materialPublishConfigSubmitting"
-                  :disabled="
-                    !ids.length ||
-                    !materialPublishConfigSelectedIds.length ||
-                    hasInvalidFormatMaterials
-                  "
-                  @click="handleCreatePsdSetsByPublishConfig"
-                >
+                <el-button type="primary" :loading="materialPublishConfigSubmitting" :disabled="!ids.length ||
+                  !materialPublishConfigSelectedIds.length ||
+                  hasInvalidFormatMaterials
+                  " @click="handleCreatePsdSetsByPublishConfig">
                   创建发布任务
                 </el-button>
               </div>
@@ -958,14 +608,8 @@
           </template>
         </el-dialog>
 
-        <el-dialog
-          v-model="materialProductConfigDialogVisible"
-          fullscreen
-          align-center
-          :destroy-on-close="false"
-          class="material-publish-config-dialog"
-          @close="handleCloseMaterialProductConfigDialog"
-        >
+        <el-dialog v-model="materialProductConfigDialogVisible" fullscreen align-center :destroy-on-close="false"
+          class="material-publish-config-dialog" @close="handleCloseMaterialProductConfigDialog">
           <template #header>
             <div class="material-publish-config-dialog__header">
               <div class="material-publish-config-dialog__header-main">
@@ -985,13 +629,8 @@
             </div>
           </template>
 
-          <div
-            v-loading="materialProductConfigLoading"
-            class="material-publish-config-dialog__body"
-          >
-            <div
-              class="material-publish-config-dialog__panel material-publish-config-dialog__panel--materials"
-            >
+          <div v-loading="materialProductConfigLoading" class="material-publish-config-dialog__body">
+            <div class="material-publish-config-dialog__panel material-publish-config-dialog__panel--materials">
               <div class="material-publish-config-dialog__section-head">
                 <div>
                   <div class="material-publish-config-dialog__section-eyebrow">步骤 1</div>
@@ -1001,10 +640,7 @@
                   </div>
                 </div>
                 <div class="material-publish-config-dialog__tag-list">
-                  <el-tag
-                    :type="hasInvalidFormatMaterials ? 'warning' : 'success'"
-                    effect="plain"
-                  >
+                  <el-tag :type="hasInvalidFormatMaterials ? 'warning' : 'success'" effect="plain">
                     {{
                       hasInvalidFormatMaterials
                         ? `${invalidFormatMaterialsList.length} 张格式需处理`
@@ -1017,13 +653,8 @@
                 </div>
               </div>
 
-              <el-alert
-                v-if="hasInvalidFormatMaterials"
-                type="warning"
-                :closable="false"
-                show-icon
-                class="material-publish-config-dialog__warning"
-              >
+              <el-alert v-if="hasInvalidFormatMaterials" type="warning" :closable="false" show-icon
+                class="material-publish-config-dialog__warning">
                 <template #title>
                   所选素材中有 {{ invalidFormatMaterialsList.length }} 张图片格式不符合要求：{{
                     invalidFormatMaterialsList.map((item) => item.name).join("、")
@@ -1032,30 +663,19 @@
               </el-alert>
 
               <div class="material-publish-config-dialog__material-list">
-                <div
-                  v-for="material in selectedMaterialsForPublishConfig"
-                  :key="material.id"
-                  class="material-publish-config-dialog__material-item"
-                  :class="{
+                <div v-for="material in selectedMaterialsForPublishConfig" :key="material.id"
+                  class="material-publish-config-dialog__material-item" :class="{
                     'material-publish-config-dialog__material-item--invalid':
                       isMaterialFormatInvalid(material.id),
-                  }"
-                >
-                  <button
-                    type="button"
-                    class="material-publish-config-dialog__material-remove"
-                    title="移除该图片"
-                    @click.stop="removeSelectedMaterial(material.id)"
-                  >
+                  }">
+                  <button type="button" class="material-publish-config-dialog__material-remove" title="移除该图片"
+                    @click.stop="removeSelectedMaterial(material.id)">
                     ×
                   </button>
                   <div class="material-publish-config-dialog__material-preview">
-                    <img
-                      v-if="getMaterialPreviewSource(material)"
+                    <img v-if="getMaterialPreviewSource(material)"
                       :src="getFastPreviewImageUrl(getMaterialPreviewSource(material), { width: 220 })"
-                      :alt="material.name || `素材${material.id}`"
-                      :title="material.name || `素材${material.id}`"
-                    />
+                      :alt="material.name || `素材${material.id}`" :title="material.name || `素材${material.id}`" />
                     <div v-else class="material-publish-config-dialog__material-placeholder">
                       暂无预览
                     </div>
@@ -1071,20 +691,13 @@
                   </div>
                 </div>
 
-                <el-empty
-                  v-if="!selectedMaterialsForPublishConfig.length"
-                  description="请先选择图片素材"
-                  :image-size="84"
-                />
+                <el-empty v-if="!selectedMaterialsForPublishConfig.length" description="请先选择图片素材" :image-size="84" />
               </div>
             </div>
 
-            <div
-              class="material-publish-config-dialog__panel material-publish-config-dialog__panel--configs"
-            >
+            <div class="material-publish-config-dialog__panel material-publish-config-dialog__panel--configs">
               <div
-                class="material-publish-config-dialog__section-head material-publish-config-dialog__section-head--configs"
-              >
+                class="material-publish-config-dialog__section-head material-publish-config-dialog__section-head--configs">
                 <div>
                   <div class="material-publish-config-dialog__section-eyebrow">步骤 2</div>
                   <div class="material-publish-config-dialog__section-title">
@@ -1100,12 +713,8 @@
                     {{ filteredMaterialProductConfigs.length }}
                   </el-tag>
                   <div class="material-publish-config-dialog__search">
-                    <el-input
-                      v-model="materialProductConfigSearchText"
-                      clearable
-                      placeholder="搜索配置名称、商品类型或标签"
-                      @input="materialProductConfigCurrentPage = 1"
-                    >
+                    <el-input v-model="materialProductConfigSearchText" clearable placeholder="搜索配置名称、商品类型或标签"
+                      @input="materialProductConfigCurrentPage = 1">
                       <template #prefix>
                         <el-icon>
                           <Search />
@@ -1117,24 +726,14 @@
               </div>
 
               <div class="common-table material-publish-config-dialog__table">
-                <vxe-grid
-                  ref="materialProductConfigGridRef"
-                  v-bind="materialProductConfigGridOptions"
-                  :data="materialProductConfigDataSource"
-                  @checkbox-change="handleMaterialProductConfigCheckboxChange"
-                  @checkbox-all="handleMaterialProductConfigCheckboxAllChange"
-                />
+                <vxe-grid ref="materialProductConfigGridRef" v-bind="materialProductConfigGridOptions"
+                  :data="materialProductConfigDataSource" @checkbox-change="handleMaterialProductConfigCheckboxChange"
+                  @checkbox-all="handleMaterialProductConfigCheckboxAllChange" />
               </div>
 
-              <div
-                v-if="filteredMaterialProductConfigs.length > 0"
-                class="material-publish-config-dialog__pagination"
-              >
-                <pagination
-                  v-model:page="materialProductConfigCurrentPage"
-                  v-model:limit="materialProductConfigPageSize"
-                  :total="filteredMaterialProductConfigs.length"
-                />
+              <div v-if="filteredMaterialProductConfigs.length > 0" class="material-publish-config-dialog__pagination">
+                <pagination v-model:page="materialProductConfigCurrentPage"
+                  v-model:limit="materialProductConfigPageSize" :total="filteredMaterialProductConfigs.length" />
               </div>
             </div>
           </div>
@@ -1151,31 +750,20 @@
                 <span class="material-publish-config-dialog__footer-chip">
                   预计生成 {{ materialProductConfigTaskCount }} 个独立站商品
                 </span>
-                <span
-                  v-if="hasInvalidFormatMaterials"
-                  class="material-publish-config-dialog__footer-tip"
-                >
+                <span v-if="hasInvalidFormatMaterials" class="material-publish-config-dialog__footer-tip">
                   当前存在格式不兼容素材，请处理后再创建任务
                 </span>
-                <span
-                  v-else
-                  class="material-publish-config-dialog__footer-tip material-publish-config-dialog__footer-tip--muted"
-                >
+                <span v-else
+                  class="material-publish-config-dialog__footer-tip material-publish-config-dialog__footer-tip--muted">
                   套图完成后将自动生成商品信息、SEO和价格
                 </span>
               </div>
               <div class="material-publish-config-dialog__footer-actions">
                 <el-button @click="handleCloseMaterialProductConfigDialog">取消</el-button>
-                <el-button
-                  type="primary"
-                  :loading="materialProductConfigSubmitting"
-                  :disabled="
-                    !ids.length ||
-                    !materialProductConfigSelectedIds.length ||
-                    hasInvalidFormatMaterials
-                  "
-                  @click="handleCreatePsdSetsByProductConfig"
-                >
+                <el-button type="primary" :loading="materialProductConfigSubmitting" :disabled="!ids.length ||
+                  !materialProductConfigSelectedIds.length ||
+                  hasInvalidFormatMaterials
+                  " @click="handleCreatePsdSetsByProductConfig">
                   创建商品任务
                 </el-button>
               </div>
@@ -1183,15 +771,8 @@
           </template>
         </el-dialog>
 
-        <el-dialog
-          v-model="psdSetDialogVisible"
-          fullscreen
-          align-center
-          append-to-body
-          :destroy-on-close="true"
-          class="psd-set-dialog"
-          @close="resetPsdSetState"
-        >
+        <el-dialog v-model="psdSetDialogVisible" fullscreen align-center append-to-body :destroy-on-close="true"
+          class="psd-set-dialog" @close="resetPsdSetState">
           <template #header>
             <div class="psd-set-dialog__header">
               <div class="psd-set-dialog__header-main">
@@ -1232,10 +813,7 @@
                   </div>
                 </div>
                 <div class="psd-set-panel__tags">
-                  <el-tag
-                    :type="hasInvalidFormatMaterials ? 'warning' : 'success'"
-                    effect="plain"
-                  >
+                  <el-tag :type="hasInvalidFormatMaterials ? 'warning' : 'success'" effect="plain">
                     {{
                       hasInvalidFormatMaterials
                         ? `${invalidFormatMaterialsList.length} 张格式需处理`
@@ -1244,13 +822,8 @@
                   </el-tag>
                 </div>
               </div>
-              <el-alert
-                v-if="hasInvalidFormatMaterials"
-                type="warning"
-                :closable="false"
-                show-icon
-                class="psd-set-panel__alert"
-              >
+              <el-alert v-if="hasInvalidFormatMaterials" type="warning" :closable="false" show-icon
+                class="psd-set-panel__alert">
                 <template #title>
                   当前有 {{ invalidFormatMaterialsList.length }} 张素材格式不兼容：{{
                     invalidFormatMaterialsList.map((item) => item.name).join("、")
@@ -1258,11 +831,7 @@
                 </template>
               </el-alert>
               <div v-if="isImageGroupPsdSet" class="psd-set-source-groups">
-                <div
-                  v-for="group in psdSetImageGroups"
-                  :key="group.id"
-                  class="psd-set-source-group"
-                >
+                <div v-for="group in psdSetImageGroups" :key="group.id" class="psd-set-source-group">
                   <div class="psd-set-source-group__head">
                     <span class="psd-set-source-group__name">{{ group.name }}</span>
                     <el-tag size="small" type="info" effect="plain">
@@ -1270,48 +839,27 @@
                     </el-tag>
                   </div>
                   <div class="psd-set-source-group__members">
-                    <div
-                      v-for="(sticker, index) in group.stickers"
-                      :key="sticker.id"
-                      class="psd-set-source-group__member"
-                    >
+                    <div v-for="(sticker, index) in group.stickers" :key="sticker.id"
+                      class="psd-set-source-group__member">
                       <span class="psd-set-source-group__order">#{{ index + 1 }}</span>
-                      <img
-                        :src="getFastPreviewImageUrl(getMaterialPreviewSource(sticker), { width: 120 })"
-                        :alt="sticker.name || `图片 ${index + 1}`"
-                        loading="lazy"
-                      />
+                      <img :src="getFastPreviewImageUrl(getMaterialPreviewSource(sticker), { width: 120 })"
+                        :alt="sticker.name || `图片 ${index + 1}`" loading="lazy" />
                     </div>
                   </div>
                 </div>
               </div>
               <div v-else class="thumbs">
-                <div
-                  v-for="id in psdSetSelectedMaterialIds"
-                  :key="id"
-                  class="thumb"
-                  :class="{ 'thumb-invalid-format': isMaterialFormatInvalid(id) }"
-                >
-                  <button
-                    type="button"
-                    class="thumb-remove"
-                    title="移除该图片"
-                    @click.stop="removeSelectedMaterial(id)"
-                  >
+                <div v-for="id in psdSetSelectedMaterialIds" :key="id" class="thumb"
+                  :class="{ 'thumb-invalid-format': isMaterialFormatInvalid(id) }">
+                  <button type="button" class="thumb-remove" title="移除该图片" @click.stop="removeSelectedMaterial(id)">
                     ×
                   </button>
                   <div class="thumb-image-wrapper">
-                    <img
-                      :src="
-                        getFastPreviewImageUrl(
-                          getMaterialPreviewSource(getMaterialById(id)),
-                          { width: 150 },
-                        )
-                      "
-                      class="thumb-img"
-                      alt="素材预览"
-                      loading="lazy"
-                    />
+                    <img :src="getFastPreviewImageUrl(
+                      getMaterialPreviewSource(getMaterialById(id)),
+                      { width: 150 },
+                    )
+                      " class="thumb-img" alt="素材预览" loading="lazy" />
                     <div v-if="isMaterialFormatInvalid(id)" class="thumb-format-badge">
                       <el-icon>
                         <Warning />
@@ -1323,31 +871,18 @@
                     </div>
                   </div>
                   <div class="thumb-info-row">
-                    <el-tag
-                      v-if="getMaterialShapeLabel(id)"
-                      size="small"
-                      type="info"
-                      class="thumb-info-tag"
-                    >
+                    <el-tag v-if="getMaterialShapeLabel(id)" size="small" type="info" class="thumb-info-tag">
                       {{ getMaterialShapeLabel(id) }}
                     </el-tag>
-                    <el-tag
-                      v-if="getMaterialCutoutStatus(id) !== null"
-                      size="small"
-                      :type="getMaterialCutoutStatus(id) ? 'success' : 'info'"
-                      class="thumb-info-tag"
-                    >
+                    <el-tag v-if="getMaterialCutoutStatus(id) !== null" size="small"
+                      :type="getMaterialCutoutStatus(id) ? 'success' : 'info'" class="thumb-info-tag">
                       {{ getMaterialCutoutStatus(id) ? "抠图" : "非抠图" }}
                     </el-tag>
                   </div>
                   <div class="thumb-action-row">
-                    <el-button
-                      size="small"
-                      type="primary"
-                      link
+                    <el-button size="small" type="primary" link
                       :disabled="!getMaterialShapeKey(id) && !getMaterialCutoutMode(id)"
-                      @click="applyMaterialFilters(id)"
-                    >
+                      @click="applyMaterialFilters(id)">
                       用当前图筛选模板
                     </el-button>
                   </div>
@@ -1379,34 +914,21 @@
               <div class="psd-set-content-container">
                 <div class="psd-template-folder-filter">
                   <span class="psd-template-folder-filter__label">文件夹</span>
-                  <el-cascader
-                    v-model="selectedPsdFolderId"
-                    :options="psdFolderTreeData"
-                    :props="{
-                      value: 'id',
-                      label: 'name',
-                      children: 'children',
-                      checkStrictly: true,
-                      emitPath: false,
-                    }"
-                    placeholder="选择模板文件夹"
-                    filterable
-                    clearable
-                    :show-all-levels="false"
-                    popper-class="psd-template-folder-cascader-popper"
-                    class="psd-template-folder-filter__cascader"
-                    @change="handlePsdFolderChange"
-                  />
+                  <el-cascader v-model="selectedPsdFolderId" :options="psdFolderTreeData" :props="{
+                    value: 'id',
+                    label: 'name',
+                    children: 'children',
+                    checkStrictly: true,
+                    emitPath: false,
+                  }" placeholder="选择模板文件夹" filterable clearable :show-all-levels="false"
+                    popper-class="psd-template-folder-cascader-popper" class="psd-template-folder-filter__cascader"
+                    @change="handlePsdFolderChange" />
                 </div>
 
                 <div class="psd-template-list-container">
                   <div class="psd-set-template-toolbar">
-                    <el-input
-                      v-model="psdSetTemplateSearchText"
-                      placeholder="搜索"
-                      clearable
-                      class="psd-set-template-toolbar__search"
-                    >
+                    <el-input v-model="psdSetTemplateSearchText" placeholder="搜索" clearable
+                      class="psd-set-template-toolbar__search">
                       <template #prefix>
                         <el-icon>
                           <Search />
@@ -1415,76 +937,44 @@
                     </el-input>
 
                     <!-- 尺寸过滤 -->
-                    <el-select
-                      v-model="psdSetTemplatePageParams.suitableSizesArray"
-                      placeholder="尺寸"
-                      clearable
-                      multiple
-                      style="max-width: 200px"
-                      @change="
+                    <el-select v-model="psdSetTemplatePageParams.suitableSizesArray" placeholder="尺寸" clearable multiple
+                      style="max-width: 200px" @change="
                         () => {
                           psdSetTemplatePageParams.currentPage = 1;
                           loadPsdTemplatesForPsdSet();
                         }
-                      "
-                    >
+                      ">
                       <el-option-group label="正方形">
-                        <el-option
-                          v-for="config in SIZE_SHAPE_GROUPS.square"
-                          :key="config.key"
-                          :label="config.label"
-                          :value="config.key"
-                        />
+                        <el-option v-for="config in SIZE_SHAPE_GROUPS.square" :key="config.key" :label="config.label"
+                          :value="config.key" />
                       </el-option-group>
                       <el-option-group label="横图">
-                        <el-option
-                          v-for="config in SIZE_SHAPE_GROUPS.landscape"
-                          :key="config.key"
-                          :label="config.label"
-                          :value="config.key"
-                        />
+                        <el-option v-for="config in SIZE_SHAPE_GROUPS.landscape" :key="config.key" :label="config.label"
+                          :value="config.key" />
                       </el-option-group>
                       <el-option-group label="竖图">
-                        <el-option
-                          v-for="config in SIZE_SHAPE_GROUPS.portrait"
-                          :key="config.key"
-                          :label="config.label"
-                          :value="config.key"
-                        />
+                        <el-option v-for="config in SIZE_SHAPE_GROUPS.portrait" :key="config.key" :label="config.label"
+                          :value="config.key" />
                       </el-option-group>
                     </el-select>
 
                     <!-- 抠图过滤 -->
-                    <el-select
-                      v-model="psdSetTemplatePageParams.cutoutModesArray"
-                      placeholder="抠图支持"
-                      clearable
-                      multiple
-                      style="max-width: 200px"
-                      @change="
+                    <el-select v-model="psdSetTemplatePageParams.cutoutModesArray" placeholder="抠图支持" clearable multiple
+                      style="max-width: 200px" @change="
                         () => {
                           psdSetTemplatePageParams.currentPage = 1;
                           loadPsdTemplatesForPsdSet();
                         }
-                      "
-                    >
+                      ">
                       <el-option label="抠图" value="CUTOUT" />
                       <el-option label="非抠图" value="NON_CUTOUT" />
                     </el-select>
 
-                    <el-button
-                      size="default"
-                      class="psd-template-toolbar-button"
-                      @click="handlePsdTemplateSelectAll"
-                    >
+                    <el-button size="default" class="psd-template-toolbar-button" @click="handlePsdTemplateSelectAll">
                       {{ isAllPsdTemplatesSelected ? "取消全选" : "全选" }}
                     </el-button>
-                    <el-button
-                      size="default"
-                      :icon="Edit"
-                      class="psd-template-toolbar-button"
-                      @click="handlePsdTemplateDetailConfig"
-                    >
+                    <el-button size="default" :icon="Edit" class="psd-template-toolbar-button"
+                      @click="handlePsdTemplateDetailConfig">
                       详细配置
                     </el-button>
                     <span class="selected-count" v-if="selectedPsdTemplateIds.length > 0">
@@ -1493,37 +983,21 @@
                   </div>
                   <div class="template-list-wrapper">
                     <div class="template-list" v-loading="psdSetTemplatesLoading">
-                      <div
-                        v-for="tpl in filteredPsdSetTemplates"
-                        :key="tpl.id"
-                        class="template-item"
-                        :class="{ 'is-checked': selectedPsdTemplateIds.includes(String(tpl.id)) }"
-                      >
+                      <div v-for="tpl in filteredPsdSetTemplates" :key="tpl.id" class="template-item"
+                        :class="{ 'is-checked': selectedPsdTemplateIds.includes(String(tpl.id)) }">
                         <div class="template-content-wrapper" @click="togglePsdTemplate(tpl.id)">
-                          <img
-                            v-if="tpl.thumbnail || tpl.preview || tpl.image"
-                            :src="
-                              getFastPreviewImageUrl(tpl.thumbnail || tpl.preview || tpl.image, {
-                                width: 200,
-                              })
-                            "
-                            :alt="tpl.name || '模板缩略图'"
-                            class="template-thumbnail"
-                            loading="lazy"
-                            title="点击预览"
+                          <img v-if="tpl.thumbnail || tpl.preview || tpl.image" :src="getFastPreviewImageUrl(tpl.thumbnail || tpl.preview || tpl.image, {
+                            width: 200,
+                          })
+                            " :alt="tpl.name || '模板缩略图'" class="template-thumbnail" loading="lazy" title="点击预览"
                             @click.stop="openImagePreview(tpl.thumbnail || tpl.preview || tpl.image, tpl.name)"
-                            @error="handleTemplateImageError"
-                          />
+                            @error="handleTemplateImageError" />
                           <div class="template-info">
                             <div class="template-header">
                               <div class="template-title-row">
                                 <div class="template-title">{{ tpl.name || "未命名模板" }}</div>
-                                <el-link
-                                  type="primary"
-                                  underline="never"
-                                  class="template-detail-link"
-                                  @click.stop="openTemplateDetail(tpl)"
-                                >
+                                <el-link type="primary" underline="never" class="template-detail-link"
+                                  @click.stop="openTemplateDetail(tpl)">
                                   查看详情
                                 </el-link>
                               </div>
@@ -1531,21 +1005,14 @@
                             <div class="template-paths">
                               <div class="path-row">
                                 <span class="path-label">适用尺寸：</span>
-                                <div
-                                  v-if="tpl.suitableSizes && tpl.suitableSizes.length > 0"
-                                  class="suitable-sizes-wrap"
-                                >
-                                  <el-tag
-                                    v-for="sizeKey in tpl.suitableSizes"
-                                    :key="sizeKey"
-                                    size="small"
-                                    :style="{
-                                      backgroundColor: getSizeShapeUiConfig(sizeKey)?.color + '20',
-                                      borderColor: getSizeShapeUiConfig(sizeKey)?.color,
-                                      color: getSizeShapeUiConfig(sizeKey)?.color,
-                                      marginRight: '4px',
-                                    }"
-                                  >
+                                <div v-if="tpl.suitableSizes && tpl.suitableSizes.length > 0"
+                                  class="suitable-sizes-wrap">
+                                  <el-tag v-for="sizeKey in tpl.suitableSizes" :key="sizeKey" size="small" :style="{
+                                    backgroundColor: getSizeShapeUiConfig(sizeKey)?.color + '20',
+                                    borderColor: getSizeShapeUiConfig(sizeKey)?.color,
+                                    color: getSizeShapeUiConfig(sizeKey)?.color,
+                                    marginRight: '4px',
+                                  }">
                                     {{ getSizeShapeUiConfig(sizeKey)?.label || sizeKey }}
                                   </el-tag>
                                 </div>
@@ -1553,17 +1020,9 @@
                               </div>
                               <div class="path-row">
                                 <span class="path-label">适用抠图：</span>
-                                <div
-                                  v-if="tpl.cutoutModes && tpl.cutoutModes.length > 0"
-                                  class="suitable-cutout-wrap"
-                                >
-                                  <el-tag
-                                    v-for="mode in tpl.cutoutModes"
-                                    :key="mode"
-                                    size="small"
-                                    type="info"
-                                    style="margin-right: 4px"
-                                  >
+                                <div v-if="tpl.cutoutModes && tpl.cutoutModes.length > 0" class="suitable-cutout-wrap">
+                                  <el-tag v-for="mode in tpl.cutoutModes" :key="mode" size="small" type="info"
+                                    style="margin-right: 4px">
                                     {{ getCutoutModeLabel(mode) }}
                                   </el-tag>
                                 </div>
@@ -1573,19 +1032,14 @@
                           </div>
                         </div>
                       </div>
-                      <el-empty
-                        v-if="!filteredPsdSetTemplates.length && !psdSetTemplatesLoading"
-                        :description="psdSetTemplateSearchText ? '未找到匹配的模板' : '暂无PSD模板'"
-                      />
+                      <el-empty v-if="!filteredPsdSetTemplates.length && !psdSetTemplatesLoading"
+                        :description="psdSetTemplateSearchText ? '未找到匹配的模板' : '暂无PSD模板'" />
                     </div>
                     <!-- PSD模板分页 -->
                     <div class="template-pagination" v-if="psdSetTemplatePageParams.total > 0">
-                      <pagination
-                        v-model:page="psdSetTemplatePageParams.currentPage"
-                        v-model:limit="psdSetTemplatePageParams.pageSize"
-                        :total="psdSetTemplatePageParams.total"
-                        @pagination="loadPsdTemplatesForPsdSet"
-                      />
+                      <pagination v-model:page="psdSetTemplatePageParams.currentPage"
+                        v-model:limit="psdSetTemplatePageParams.pageSize" :total="psdSetTemplatePageParams.total"
+                        @pagination="loadPsdTemplatesForPsdSet" />
                     </div>
                   </div>
                 </div>
@@ -1602,10 +1056,11 @@
                   <span class="psd-set-info-chip">
                     {{
                       isImageGroupPsdSet
-                        ? `将生成 ${psdSetImageGroups.length} 个组图 × ${selectedPsdTemplateIds.length} 个模板 = ${psdSetTaskCount} 条套图任务`
+                        ? `将生成 ${psdSetImageGroups.length} 个组图 × ${selectedPsdTemplateIds.length} 个模板 = ${psdSetTaskCount}
+                    条套图任务`
                         : psdSetMergeSticker
-                        ? `合并生成，每个模板各生成 1 条，共 ${psdSetTaskCount} 条套图任务`
-                        : `将生成 ${ids.length} × ${selectedPsdTemplateIds.length} = ${psdSetTaskCount} 条套图任务`
+                          ? `合并生成，每个模板各生成 1 条，共 ${psdSetTaskCount} 条套图任务`
+                          : `将生成 ${ids.length} × ${selectedPsdTemplateIds.length} = ${psdSetTaskCount} 条套图任务`
                     }}
                   </span>
                   <span class="psd-set-info-chip psd-set-info-chip--subtle">
@@ -1637,38 +1092,22 @@
                 <el-button plain @click="psdSetAutomationDialogVisible = true">
                   完成后动作{{ enabledPsdSetAutomationCount ? `(${enabledPsdSetAutomationCount})` : "" }}
                 </el-button>
-                <el-button
-                  type="info"
-                  plain
+                <el-button type="info" plain
                   :disabled="!psdSetSelectedMaterialIds.length || !selectedPsdTemplateIds.length"
-                  @click="showPsdSetParams"
-                  >查看发送参数</el-button
-                >
-                <el-tooltip
-                  v-if="hasInvalidFormatMaterials"
+                  @click="showPsdSetParams">查看发送参数</el-button>
+                <el-tooltip v-if="hasInvalidFormatMaterials"
                   :content="`所选素材中包含不符合格式要求的图片（${invalidFormatMaterialsList.map((m) => m.name).join('、')}），请移除后重试`"
-                  placement="top"
-                >
-                  <el-button
-                    type="primary"
-                    :disabled="
-                      !psdSetSelectedMaterialIds.length ||
-                      !selectedPsdTemplateIds.length ||
-                      hasInvalidFormatMaterials
-                    "
-                    :loading="psdSetSubmitting"
-                    @click="handleCreatePsdSets"
-                  >
+                  placement="top">
+                  <el-button type="primary" :disabled="!psdSetSelectedMaterialIds.length ||
+                    !selectedPsdTemplateIds.length ||
+                    hasInvalidFormatMaterials
+                    " :loading="psdSetSubmitting" @click="handleCreatePsdSets">
                     开始制作
                   </el-button>
                 </el-tooltip>
-                <el-button
-                  v-else
-                  type="primary"
+                <el-button v-else type="primary"
                   :disabled="!psdSetSelectedMaterialIds.length || !selectedPsdTemplateIds.length"
-                  :loading="psdSetSubmitting"
-                  @click="handleCreatePsdSets"
-                >
+                  :loading="psdSetSubmitting" @click="handleCreatePsdSets">
                   开始制作
                 </el-button>
               </div>
@@ -1676,13 +1115,8 @@
           </div>
         </el-dialog>
 
-        <el-dialog
-          v-model="psdSetAutomationDialogVisible"
-          fullscreen
-          align-center
-          append-to-body
-          class="psd-set-automation-dialog"
-        >
+        <el-dialog v-model="psdSetAutomationDialogVisible" fullscreen align-center append-to-body
+          class="psd-set-automation-dialog">
           <template #header>
             <div class="psd-set-automation-dialog__header">
               <div>
@@ -1698,12 +1132,8 @@
             <div class="psd-set-automation-dialog__intro">
               勾选需要的动作即可，只有启用后的字段会参与提交。
             </div>
-            <div
-              v-for="action in psdSetAutomationActions"
-              :key="action.key"
-              class="psd-set-automation-item"
-              :class="{ 'is-active': action.enabled }"
-            >
+            <div v-for="action in psdSetAutomationActions" :key="action.key" class="psd-set-automation-item"
+              :class="{ 'is-active': action.enabled }">
               <div class="psd-set-automation-head">
                 <el-checkbox v-model="action.enabled">
                   {{ action.label }}
@@ -1715,93 +1145,51 @@
               </div>
               <div class="psd-set-automation-desc">{{ action.description }}</div>
               <div v-if="action.enabled && action.fields?.length" class="psd-set-automation-config">
-                <div
-                  v-for="field in action.fields"
-                  :key="`${action.key}-${field.key}`"
-                  class="psd-set-automation-field"
-                >
+                <div v-for="field in action.fields" :key="`${action.key}-${field.key}`"
+                  class="psd-set-automation-field">
                   <div class="psd-set-automation-field-title">
                     <span>{{ field.label }}</span>
                     <span class="psd-set-automation-field-key">{{ field.key }}</span>
                   </div>
-                  <el-input
-                    v-if="field.component === 'textarea'"
-                    v-model="action.params[field.key]"
-                    type="textarea"
-                    :rows="field.rows || 2"
-                    :placeholder="field.placeholder"
-                  />
-                  <div
-                    v-else-if="field.component === 'product-template-list'"
-                    class="psd-set-automation-list"
-                  >
+                  <el-input v-if="field.component === 'textarea'" v-model="action.params[field.key]" type="textarea"
+                    :rows="field.rows || 2" :placeholder="field.placeholder" />
+                  <div v-else-if="field.component === 'product-template-list'" class="psd-set-automation-list">
                     <div class="psd-set-automation-list__toolbar">
-                      <el-input
-                        v-model="psdSetAutomationProductTemplateSearchText"
-                        size="small"
-                        clearable
-                        placeholder="搜索模板名称/商品类型/标签"
-                      />
+                      <el-input v-model="psdSetAutomationProductTemplateSearchText" size="small" clearable
+                        placeholder="搜索模板名称/商品类型/标签" />
                       <el-tag size="small" type="info">
                         已选 {{ action.params[field.key]?.length || 0 }} 个模板
                       </el-tag>
                     </div>
-                    <vxe-grid
-                      class="psd-set-automation-list__grid"
-                      border
-                      size="mini"
+                    <vxe-grid class="psd-set-automation-list__grid" border size="mini"
                       :loading="psdSetAutomationProductTemplatesLoading"
-                      :data="filteredPsdSetAutomationProductTemplates"
-                      :columns="psdSetAutomationProductTemplateColumns"
-                      :max-height="360"
-                      :row-config="{ keyField: 'id', isHover: true }"
-                      :checkbox-config="{ checkRowKeys: action.params[field.key] || [] }"
-                      @checkbox-change="
+                      :data="filteredPsdSetAutomationProductTemplates" :columns="psdSetAutomationProductTemplateColumns"
+                      :max-height="360" :row-config="{ keyField: 'id', isHover: true }"
+                      :checkbox-config="{ checkRowKeys: action.params[field.key] || [] }" @checkbox-change="
                         (event) => handlePsdSetAutomationListCheckboxChange(action, field.key, event)
-                      "
-                      @checkbox-all="
+                      " @checkbox-all="
                         (event) => handlePsdSetAutomationListCheckboxChange(action, field.key, event)
-                      "
-                    />
+                      " />
                   </div>
-                  <div
-                    v-else-if="field.component === 'publish-config-list'"
-                    class="psd-set-automation-list"
-                  >
+                  <div v-else-if="field.component === 'publish-config-list'" class="psd-set-automation-list">
                     <div class="psd-set-automation-list__toolbar">
-                      <el-input
-                        v-model="psdSetAutomationPublishConfigSearchText"
-                        size="small"
-                        clearable
-                        placeholder="搜索任务配置名称、任务类型或平台"
-                      />
+                      <el-input v-model="psdSetAutomationPublishConfigSearchText" size="small" clearable
+                        placeholder="搜索任务配置名称、任务类型或平台" />
                       <el-tag size="small" type="info">
                         已选 {{ action.params[field.key]?.length || 0 }} 个配置
                       </el-tag>
                     </div>
-                    <vxe-grid
-                      class="psd-set-automation-list__grid"
-                      border
-                      size="mini"
-                      :loading="psdSetAutomationPublishConfigsLoading"
-                      :data="filteredPsdSetAutomationPublishConfigs"
-                      :columns="psdSetAutomationPublishConfigColumns"
-                      :max-height="360"
+                    <vxe-grid class="psd-set-automation-list__grid" border size="mini"
+                      :loading="psdSetAutomationPublishConfigsLoading" :data="filteredPsdSetAutomationPublishConfigs"
+                      :columns="psdSetAutomationPublishConfigColumns" :max-height="360"
                       :row-config="{ keyField: 'id', isHover: true }"
-                      :checkbox-config="{ checkRowKeys: action.params[field.key] || [] }"
-                      @checkbox-change="
+                      :checkbox-config="{ checkRowKeys: action.params[field.key] || [] }" @checkbox-change="
                         (event) => handlePsdSetAutomationListCheckboxChange(action, field.key, event)
-                      "
-                      @checkbox-all="
+                      " @checkbox-all="
                         (event) => handlePsdSetAutomationListCheckboxChange(action, field.key, event)
-                      "
-                    />
+                      " />
                   </div>
-                  <el-input
-                    v-else
-                    v-model="action.params[field.key]"
-                    :placeholder="field.placeholder"
-                  />
+                  <el-input v-else v-model="action.params[field.key]" :placeholder="field.placeholder" />
                 </div>
               </div>
             </div>
@@ -1812,13 +1200,8 @@
         </el-dialog>
 
         <!-- 批量详细配置全屏弹窗（选中的PSD模板） -->
-        <el-dialog
-          v-model="batchDetailConfigDialogVisible"
-          title="详细配置 - 选中的模板"
-          fullscreen
-          append-to-body
-          :destroy-on-close="true"
-        >
+        <el-dialog v-model="batchDetailConfigDialogVisible" title="详细配置 - 选中的模板" fullscreen append-to-body
+          :destroy-on-close="true">
           <div class="batch-detail-config-content">
             <div class="batch-detail-config-header">
               <div class="batch-detail-config-title">
@@ -1826,11 +1209,7 @@
               </div>
             </div>
             <div class="batch-detail-config-body">
-              <div
-                v-for="(template, index) in templateConfigList"
-                :key="template.id"
-                class="template-config-row"
-              >
+              <div v-for="(template, index) in templateConfigList" :key="template.id" class="template-config-row">
                 <div class="template-config-left">
                   <div class="template-config-header-row">
                     <span class="template-name">{{ template.name || `模板 ${index + 1}` }}</span>
@@ -1844,23 +1223,14 @@
                       <div class="config-image-wrapper">
                         <template v-if="template.materialId !== undefined">
                           <!-- 单素材模式：显示单个匹配的素材图 -->
-                          <img
-                            v-if="getMatchedMaterialId(index)"
-                            :src="getMaterialImageUrl(getMatchedMaterialId(index))"
-                            :alt="'素材'"
-                            class="config-image"
-                          />
+                          <img v-if="getMatchedMaterialId(index)"
+                            :src="getMaterialImageUrl(getMatchedMaterialId(index))" :alt="'素材'" class="config-image" />
                           <span v-else class="config-image-placeholder">无匹配素材</span>
                         </template>
                         <template v-else>
                           <!-- 合并模式：显示所有素材图 -->
-                          <img
-                            v-for="materialId in ids"
-                            :key="materialId"
-                            :src="getMaterialImageUrl(materialId)"
-                            :alt="'素材'"
-                            class="config-image"
-                          />
+                          <img v-for="materialId in ids" :key="materialId" :src="getMaterialImageUrl(materialId)"
+                            :alt="'素材'" class="config-image" />
                           <span v-if="!ids.length" class="config-image-placeholder">无素材</span>
                         </template>
                       </div>
@@ -1868,12 +1238,8 @@
                     <div class="config-image-item">
                       <div class="config-image-label">模板配置图</div>
                       <div class="config-image-wrapper">
-                        <img
-                          v-if="template.thumbnail"
-                          :src="getFastPreviewImageUrl(template.thumbnail, { width: 200 })"
-                          :alt="template.name"
-                          class="config-image"
-                        />
+                        <img v-if="template.thumbnail" :src="getFastPreviewImageUrl(template.thumbnail, { width: 200 })"
+                          :alt="template.name" class="config-image" />
                         <span v-else class="config-image-placeholder">无缩略图</span>
                       </div>
                     </div>
@@ -1881,22 +1247,13 @@
                 </div>
                 <div class="template-config-right">
                   <div class="config-editor-toolbar">
-                    <el-button
-                      @click="handleResetConfigForTemplate(index)"
-                      type="warning"
-                      :icon="RefreshLeft"
-                      size="small"
-                    >
+                    <el-button @click="handleResetConfigForTemplate(index)" type="warning" :icon="RefreshLeft"
+                      size="small">
                       重置为默认
                     </el-button>
                   </div>
-                  <el-input
-                    v-model="template.configText"
-                    type="textarea"
-                    :rows="18"
-                    placeholder='请输入JSON配置（例如：{"key1": "value1", "key2": "value2"}）'
-                    class="config-textarea"
-                  />
+                  <el-input v-model="template.configText" type="textarea" :rows="18"
+                    placeholder='请输入JSON配置（例如：{"key1": "value1", "key2": "value2"}）' class="config-textarea" />
                 </div>
               </div>
             </div>
@@ -1908,36 +1265,23 @@
         </el-dialog>
 
         <!-- PSD模板详情弹窗 -->
-        <el-dialog
-          v-model="psdTemplateDetailDialogVisible"
-          title="PSD模板详情"
-          fullscreen
-          align-center
-          append-to-body
-          :destroy-on-close="true"
-        >
+        <el-dialog v-model="psdTemplateDetailDialogVisible" title="PSD模板详情" fullscreen align-center append-to-body
+          :destroy-on-close="true">
           <div v-if="currentPsdTemplate" class="psd-template-detail">
             <div class="detail-layout">
               <div class="detail-left">
                 <div class="detail-thumbnail">
-                  <img
-                    v-if="
+                  <img v-if="
+                    currentPsdTemplate.thumbnail ||
+                    currentPsdTemplate.preview ||
+                    currentPsdTemplate.image
+                  " :src="getPreviewImageUrl(
                       currentPsdTemplate.thumbnail ||
                       currentPsdTemplate.preview ||
-                      currentPsdTemplate.image
-                    "
-                    :src="
-                      getPreviewImageUrl(
-                        currentPsdTemplate.thumbnail ||
-                          currentPsdTemplate.preview ||
-                          currentPsdTemplate.image,
-                        { width: 600, quality: 90, format: 'webp' },
-                      )
-                    "
-                    :alt="currentPsdTemplate.name || '模板缩略图'"
-                    class="detail-thumbnail-img"
-                    loading="lazy"
-                  />
+                      currentPsdTemplate.image,
+                      { width: 600, quality: 90, format: 'webp' },
+                    )
+                      " :alt="currentPsdTemplate.name || '模板缩略图'" class="detail-thumbnail-img" loading="lazy" />
                   <div v-else class="detail-thumbnail-placeholder">暂无缩略图</div>
                 </div>
               </div>
@@ -1968,13 +1312,8 @@
                 <div class="detail-item">
                   <span class="detail-label">远程链接：</span>
                   <div class="detail-value">
-                    <el-link
-                      v-if="currentPsdTemplate.url"
-                      :href="currentPsdTemplate.url"
-                      target="_blank"
-                      type="primary"
-                      underline="never"
-                    >
+                    <el-link v-if="currentPsdTemplate.url" :href="currentPsdTemplate.url" target="_blank" type="primary"
+                      underline="never">
                       {{ currentPsdTemplate.url }}
                     </el-link>
                     <span v-else class="detail-empty">暂无</span>
@@ -1985,7 +1324,7 @@
                   <span class="detail-label">本地路径：</span>
                   <span class="detail-value">{{
                     currentPsdTemplate.windowsLocalPath || "暂无"
-                  }}</span>
+                    }}</span>
                 </div>
               </div>
             </div>
@@ -1998,31 +1337,17 @@
 
       <template #sidebar>
         <div
-          class="list-page-panel list-page-panel--flat list-page-sidebar material-index-sidebar folder-sidebar-shell"
-        >
+          class="list-page-panel list-page-panel--flat list-page-sidebar material-index-sidebar folder-sidebar-shell">
           <div class="list-page-sidebar__body material-index-sidebar__body folder-sidebar-body">
-            <div
-              v-show="!folderTreeCollapsed"
-              class="material-index-sidebar__tree folder-sidebar-tree"
-            >
-              <FolderTree
-                v-model="selectedStickerFolderId"
-                width="100%"
-                :folder-category="FOLDER_CATEGORY"
-                :drag-state="dragState"
-                @change="handleStickerFolderChange"
-                @reloaded="loadStickerFolderTree"
-                @folder-drag-over="handleFolderDragOver"
-                @folder-drag-leave="handleFolderDragLeave"
-                @folder-drop="handleFolderDrop"
-              />
+            <div v-show="!folderTreeCollapsed" class="material-index-sidebar__tree folder-sidebar-tree">
+              <FolderTree v-model="selectedStickerFolderId" width="100%" :folder-category="FOLDER_CATEGORY"
+                :drag-state="dragState" @change="handleStickerFolderChange" @reloaded="loadStickerFolderTree"
+                @folder-drag-over="handleFolderDragOver" @folder-drag-leave="handleFolderDragLeave"
+                @folder-drop="handleFolderDrop" />
             </div>
           </div>
-          <button
-            type="button"
-            class="material-index-sidebar__toggle folder-sidebar-toggle"
-            @click="folderTreeCollapsed = !folderTreeCollapsed"
-          >
+          <button type="button" class="material-index-sidebar__toggle folder-sidebar-toggle"
+            @click="folderTreeCollapsed = !folderTreeCollapsed">
             <el-icon :size="14">
               <DArrowRight v-if="folderTreeCollapsed" />
               <DArrowLeft v-else />
@@ -2032,45 +1357,27 @@
       </template>
 
       <template #table>
-        <div
-          class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat"
-        >
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
           <div class="list-page-table-panel__body material-index-table-panel__body">
             <div class="common-table">
-              <vxe-grid
-                class="material-dnd-grid dnd-text-selectable"
-                ref="gridRef"
-                v-bind="gridOptions"
-                :data="dataSource"
-                :loading="loading"
-                :row-class-name="materialRowClassName"
-                @cell-click="handleMaterialCellClick"
-                @checkbox-change="checkboxChange"
-                @checkbox-all="checkboxAllChange"
-              >
+              <vxe-grid class="material-dnd-grid dnd-text-selectable" ref="gridRef" v-bind="gridOptions"
+                :data="dataSource" :loading="loading" :row-class-name="materialRowClassName"
+                @cell-click="handleMaterialCellClick" @checkbox-change="checkboxChange"
+                @checkbox-all="checkboxAllChange">
                 <template #dragHandleSlot>
                   <TableRowDragHandle />
                 </template>
                 <template #previewDefaultSlot="{ row }">
-                  <div
-                    class="material-compact-preview"
-                    :class="{ 'material-compact-preview--custom': isCustomMaterial(row) }"
-                  >
+                  <div class="material-compact-preview"
+                    :class="{ 'material-compact-preview--custom': isCustomMaterial(row) }">
                     <span v-if="isCustomMaterial(row)" class="material-compact-preview__corner">
                       定制
                     </span>
                     <div class="material-compact-preview__image-wrap">
-                      <img
-                        v-if="row.url && !row._imageError"
-                        :key="`preview-${row.id}-${row.url}`"
-                        :src="getFastPreviewImageUrl(row.url, { width: 160 })"
-                        :alt="row.name || '素材图片'"
-                        class="material-compact-preview__image"
-                        loading="lazy"
-                        decoding="async"
-                        @error="row._imageError = true"
-                        @click="openImagePreview(row.url, row.name)"
-                      />
+                      <img v-if="row.url && !row._imageError" :key="`preview-${row.id}-${row.url}`"
+                        :src="getFastPreviewImageUrl(row.url, { width: 160 })" :alt="row.name || '素材图片'"
+                        class="material-compact-preview__image" loading="lazy" decoding="async"
+                        @error="row._imageError = true" @click="openImagePreview(row.url, row.name)" />
                       <div v-else class="material-compact-preview__empty">无图</div>
                     </div>
                   </div>
@@ -2086,18 +1393,10 @@
 
                 <template #codeSlot="{ row }">
                   <div v-if="row.code || row.id" class="code-cell">
-                    <span
-                      v-if="row.code"
-                      class="code-value code-clickable"
-                      @click.stop="handleCopyText(row.code, '编码')"
-                      title="点击复制编码"
-                    >{{ row.code }}</span>
-                    <span
-                      v-if="row.id"
-                      class="id-value id-clickable"
-                      @click.stop="handleCopyText(row.id, 'ID')"
-                      title="点击复制ID"
-                    >#{{ row.id }}</span>
+                    <span v-if="row.code" class="code-value code-clickable" @click.stop="handleCopyText(row.code, '编码')"
+                      title="点击复制编码">{{ row.code }}</span>
+                    <span v-if="row.id" class="id-value id-clickable" @click.stop="handleCopyText(row.id, 'ID')"
+                      title="点击复制ID">#{{ row.id }}</span>
                   </div>
                   <span v-else class="table-cell-empty">-</span>
                 </template>
@@ -2121,54 +1420,30 @@
                 </template>
 
                 <template #cutoutSlot="{ row }">
-                  <el-tag
-                    :type="row.isCutout ? 'success' : 'info'"
-                    effect="plain"
-                    size="small"
-                    class="cutout-tag"
-                  >
+                  <el-tag :type="row.isCutout ? 'success' : 'info'" effect="plain" size="small" class="cutout-tag">
                     {{ row.isCutout ? "是" : "否" }}
                   </el-tag>
                 </template>
 
                 <template #nameBilingualSlot="{ row }">
                   <div class="table-bilingual-cell">
-                    <div
-                      class="table-bilingual-cell__item"
-                      :class="{ 'table-bilingual-cell__item--empty': !row.name }"
-                      @click.stop="handleCopyText(row.name, '中文名称')"
-                      role="button"
-                    >
+                    <div class="table-bilingual-cell__item" :class="{ 'table-bilingual-cell__item--empty': !row.name }"
+                      @click.stop="handleCopyText(row.name, '中文名称')" role="button">
                       <span class="table-bilingual-cell__label">中：</span>
-                      <el-tooltip
-                        :content="row.name || '-'"
-                        placement="top"
-                        effect="light"
-                        :show-after="500"
-                        :disabled="!(row.name && row.name.length > 0)"
-                        popper-class="text-cell-tooltip"
-                      >
+                      <el-tooltip :content="row.name || '-'" placement="top" effect="light" :show-after="500"
+                        :disabled="!(row.name && row.name.length > 0)" popper-class="text-cell-tooltip">
                         <span class="table-bilingual-cell__content">{{ row.name || "-" }}</span>
                       </el-tooltip>
                       <el-icon v-if="row.name" class="table-bilingual-cell__icon">
                         <DocumentCopy />
                       </el-icon>
                     </div>
-                    <div
-                      class="table-bilingual-cell__item"
+                    <div class="table-bilingual-cell__item"
                       :class="{ 'table-bilingual-cell__item--empty': !row.nameEn }"
-                      @click.stop="handleCopyText(row.nameEn, '英文名称')"
-                      role="button"
-                    >
+                      @click.stop="handleCopyText(row.nameEn, '英文名称')" role="button">
                       <span class="table-bilingual-cell__label">En:</span>
-                      <el-tooltip
-                        :content="row.nameEn || '-'"
-                        placement="top"
-                        effect="light"
-                        :show-after="500"
-                        :disabled="!(row.nameEn && row.nameEn.length > 0)"
-                        popper-class="text-cell-tooltip"
-                      >
+                      <el-tooltip :content="row.nameEn || '-'" placement="top" effect="light" :show-after="500"
+                        :disabled="!(row.nameEn && row.nameEn.length > 0)" popper-class="text-cell-tooltip">
                         <span class="table-bilingual-cell__content">{{ row.nameEn || "-" }}</span>
                       </el-tooltip>
                       <el-icon v-if="row.nameEn" class="table-bilingual-cell__icon">
@@ -2180,21 +1455,12 @@
 
                 <template #descriptionBilingualSlot="{ row }">
                   <div class="table-bilingual-cell">
-                    <div
-                      class="table-bilingual-cell__item table-bilingual-cell__item--multiline"
+                    <div class="table-bilingual-cell__item table-bilingual-cell__item--multiline"
                       :class="{ 'table-bilingual-cell__item--empty': !row.description }"
-                      @click.stop="handleCopyText(row.description, '中文描述')"
-                      role="button"
-                    >
+                      @click.stop="handleCopyText(row.description, '中文描述')" role="button">
                       <span class="table-bilingual-cell__label">中：</span>
-                      <el-tooltip
-                        :content="row.description || '-'"
-                        placement="top"
-                        effect="light"
-                        :show-after="500"
-                        :disabled="!(row.description && row.description.length > 0)"
-                        popper-class="text-cell-tooltip"
-                      >
+                      <el-tooltip :content="row.description || '-'" placement="top" effect="light" :show-after="500"
+                        :disabled="!(row.description && row.description.length > 0)" popper-class="text-cell-tooltip">
                         <span class="table-bilingual-cell__content">
                           {{ row.description || "-" }}
                         </span>
@@ -2203,21 +1469,13 @@
                         <DocumentCopy />
                       </el-icon>
                     </div>
-                    <div
-                      class="table-bilingual-cell__item table-bilingual-cell__item--multiline"
+                    <div class="table-bilingual-cell__item table-bilingual-cell__item--multiline"
                       :class="{ 'table-bilingual-cell__item--empty': !row.descriptionEn }"
-                      @click.stop="handleCopyText(row.descriptionEn, '英文描述')"
-                      role="button"
-                    >
+                      @click.stop="handleCopyText(row.descriptionEn, '英文描述')" role="button">
                       <span class="table-bilingual-cell__label">En:</span>
-                      <el-tooltip
-                        :content="row.descriptionEn || '-'"
-                        placement="top"
-                        effect="light"
-                        :show-after="500"
+                      <el-tooltip :content="row.descriptionEn || '-'" placement="top" effect="light" :show-after="500"
                         :disabled="!(row.descriptionEn && row.descriptionEn.length > 0)"
-                        popper-class="text-cell-tooltip"
-                      >
+                        popper-class="text-cell-tooltip">
                         <span class="table-bilingual-cell__content">
                           {{ row.descriptionEn || "-" }}
                         </span>
@@ -2231,21 +1489,12 @@
 
                 <template #keywordsBilingualSlot="{ row }">
                   <div class="table-bilingual-cell">
-                    <div
-                      class="table-bilingual-cell__item table-bilingual-cell__item--multiline"
+                    <div class="table-bilingual-cell__item table-bilingual-cell__item--multiline"
                       :class="{ 'table-bilingual-cell__item--empty': !row.keywords }"
-                      @click.stop="handleCopyText(row.keywords, '中文关键词')"
-                      role="button"
-                    >
+                      @click.stop="handleCopyText(row.keywords, '中文关键词')" role="button">
                       <span class="table-bilingual-cell__label">中：</span>
-                      <el-tooltip
-                        :content="row.keywords || '-'"
-                        placement="top"
-                        effect="light"
-                        :show-after="500"
-                        :disabled="!(row.keywords && row.keywords.length > 0)"
-                        popper-class="text-cell-tooltip"
-                      >
+                      <el-tooltip :content="row.keywords || '-'" placement="top" effect="light" :show-after="500"
+                        :disabled="!(row.keywords && row.keywords.length > 0)" popper-class="text-cell-tooltip">
                         <span class="table-bilingual-cell__content">
                           {{ row.keywords || "-" }}
                         </span>
@@ -2254,21 +1503,12 @@
                         <DocumentCopy />
                       </el-icon>
                     </div>
-                    <div
-                      class="table-bilingual-cell__item table-bilingual-cell__item--multiline"
+                    <div class="table-bilingual-cell__item table-bilingual-cell__item--multiline"
                       :class="{ 'table-bilingual-cell__item--empty': !row.keywordsEn }"
-                      @click.stop="handleCopyText(row.keywordsEn, '英文关键词')"
-                      role="button"
-                    >
+                      @click.stop="handleCopyText(row.keywordsEn, '英文关键词')" role="button">
                       <span class="table-bilingual-cell__label">En:</span>
-                      <el-tooltip
-                        :content="row.keywordsEn || '-'"
-                        placement="top"
-                        effect="light"
-                        :show-after="500"
-                        :disabled="!(row.keywordsEn && row.keywordsEn.length > 0)"
-                        popper-class="text-cell-tooltip"
-                      >
+                      <el-tooltip :content="row.keywordsEn || '-'" placement="top" effect="light" :show-after="500"
+                        :disabled="!(row.keywordsEn && row.keywordsEn.length > 0)" popper-class="text-cell-tooltip">
                         <span class="table-bilingual-cell__content">
                           {{ row.keywordsEn || "-" }}
                         </span>
@@ -2287,7 +1527,7 @@
                 <template #sizeSlot="{ row }">
                   <span v-if="row.size" class="table-cell-text table-time-cell">{{
                     (row.size / 1024).toFixed(1) + " KB"
-                  }}</span>
+                    }}</span>
                   <span v-else class="table-cell-empty">-</span>
                 </template>
 
@@ -2324,26 +1564,15 @@
 
                 <template #suitableForSlot="{ row }">
                   <div v-if="row.suitableFor" class="table-tag-list">
-                    <el-tag
-                      v-for="(item, index) in (row.suitableFor || '').split(',').slice(0, 2)"
-                      :key="index"
-                      size="small"
-                      type="info"
-                    >
+                    <el-tag v-for="(item, index) in (row.suitableFor || '').split(',').slice(0, 2)" :key="index"
+                      size="small" type="info">
                       {{ item.trim() }}
                     </el-tag>
-                    <el-tooltip
-                      v-if="(row.suitableFor || '').split(',').length > 2"
-                      :content="
-                        (row.suitableFor || '')
-                          .split(',')
-                          .map((item) => item.trim())
-                          .join('、')
-                      "
-                      placement="top"
-                      effect="dark"
-                      :show-after="200"
-                    >
+                    <el-tooltip v-if="(row.suitableFor || '').split(',').length > 2" :content="(row.suitableFor || '')
+                        .split(',')
+                        .map((item) => item.trim())
+                        .join('、')
+                      " placement="top" effect="dark" :show-after="200">
                       <el-tag size="small" type="info">
                         +{{ (row.suitableFor || "").split(",").length - 2 }}
                       </el-tag>
@@ -2353,13 +1582,8 @@
                 </template>
 
                 <template #similaritySlot="{ row }">
-                  <el-tag
-                    v-if="row.similarity !== undefined"
-                    :type="
-                      row.similarity >= 90 ? 'success' : row.similarity >= 70 ? 'warning' : 'info'
-                    "
-                    size="small"
-                  >
+                  <el-tag v-if="row.similarity !== undefined" :type="row.similarity >= 90 ? 'success' : row.similarity >= 70 ? 'warning' : 'info'
+                    " size="small">
                     {{ row.similarity.toFixed(1) }}%
                   </el-tag>
                   <span v-else class="table-cell-empty">-</span>
@@ -2367,26 +1591,15 @@
 
                 <template #colorPaletteSlot="{ row }">
                   <div v-if="row.colorPalette" class="table-color-palette">
-                    <div
-                      v-for="(color, index) in row.colorPalette.split(',').slice(0, 10)"
-                      :key="index"
-                      class="table-color-swatch"
-                      :style="{ backgroundColor: color.trim() }"
-                      :title="color.trim()"
-                    />
+                    <div v-for="(color, index) in row.colorPalette.split(',').slice(0, 10)" :key="index"
+                      class="table-color-swatch" :style="{ backgroundColor: color.trim() }" :title="color.trim()" />
                   </div>
                   <span v-else class="table-cell-empty">-</span>
                 </template>
 
                 <template #originUrlSlot="{ row }">
-                  <el-link
-                    v-if="row.originUrl"
-                    :href="row.originUrl"
-                    target="_blank"
-                    type="primary"
-                    underline="never"
-                    class="table-cell-link"
-                  >
+                  <el-link v-if="row.originUrl" :href="row.originUrl" target="_blank" type="primary" underline="never"
+                    class="table-cell-link">
                     {{
                       row.originUrl.length > 50
                         ? row.originUrl.substring(0, 50) + "..."
@@ -2397,19 +1610,13 @@
                 </template>
 
                 <template #sourceSlot="{ row }">
-                  <el-link
-                    v-if="row.source && /^https?:\/\//i.test(row.source)"
-                    :href="row.source"
-                    target="_blank"
-                    type="primary"
-                    underline="never"
-                    class="table-cell-link"
-                  >
+                  <el-link v-if="row.source && /^https?:\/\//i.test(row.source)" :href="row.source" target="_blank"
+                    type="primary" underline="never" class="table-cell-link">
                     {{ row.source.length > 50 ? row.source.substring(0, 50) + "..." : row.source }}
                   </el-link>
                   <span v-else-if="row.source" class="table-cell-text table-cell-text--secondary">{{
                     row.source.length > 50 ? row.source.substring(0, 50) + "..." : row.source
-                  }}</span>
+                    }}</span>
                   <span v-else class="table-cell-empty">-</span>
                 </template>
 
@@ -2425,232 +1632,132 @@
 
                 <template #operationDefaultSlot="{ row }">
                   <div class="flex items-center gap-1">
-                    <el-dropdown
-                      :ref="(el) => setOperationDropdownRef(row.id, el)"
-                      class="operation-dropdown"
-                      popper-class="operation-dropdown-popper"
-                      placement="bottom-end"
-                      trigger="click"
-                      @visible-change="(visible) => handleOperationDropdownVisibleChange(visible, row)"
-                    >
-                      <el-button
-                        type="primary"
-                        link
-                        size="small"
-                        class="operation-trigger-button"
-                        :loading="operationCommandLoadingId === String(row.id)"
-                        >操作</el-button
-                      >
+                    <el-dropdown :ref="(el) => setOperationDropdownRef(row.id, el)" class="operation-dropdown"
+                      popper-class="operation-dropdown-popper" placement="bottom-end" trigger="click"
+                      @visible-change="(visible) => handleOperationDropdownVisibleChange(visible, row)">
+                      <el-button type="primary" link size="small" class="operation-trigger-button"
+                        :loading="operationCommandLoadingId === String(row.id)">操作</el-button>
                       <template #dropdown>
                         <div class="op-menu" @click.stop>
                           <!-- 内容相关（仅管理员） -->
-                          <div
-                            class="op-menu-item has-submenu"
-                            @mouseenter="handleSubmenuEnter"
-                            @mouseleave="handleSubmenuLeave"
-                          >
+                          <div class="op-menu-item has-submenu" @mouseenter="handleSubmenuEnter"
+                            @mouseleave="handleSubmenuLeave">
                             <el-icon class="op-menu-arrow">
                               <ArrowLeft />
                             </el-icon>
                             <span class="op-menu-label">内容相关</span>
-                            <div
-                              class="op-submenu"
-                              data-submenu="content"
-                              @mouseenter="handleSubmenuKeepVisible"
-                              @mouseleave="handleSubmenuHide"
-                            >
-                              <div
-                                class="op-submenu-item"
-                                @click.stop="handleOperationCommand('ai-generate', row)"
-                              >
+                            <div class="op-submenu" data-submenu="content" @mouseenter="handleSubmenuKeepVisible"
+                              @mouseleave="handleSubmenuHide">
+                              <div class="op-submenu-item" @click.stop="handleOperationCommand('ai-generate', row)">
                                 AI自动生成内容
                               </div>
-                              <div
-                                class="op-submenu-item"
-                                @click.stop="handleOperationCommand('generate-image-info', row)"
-                              >
+                              <div class="op-submenu-item"
+                                @click.stop="handleOperationCommand('generate-image-info', row)">
                                 生成图片信息
                               </div>
-                              <div
-                                class="op-submenu-item"
-                                @click.stop="handleOperationCommand('story-script', row)"
-                              >
+                              <div class="op-submenu-item" @click.stop="handleOperationCommand('story-script', row)">
                                 生成故事脚本
                               </div>
-                              <div
-                                class="op-submenu-item"
-                                @click.stop="handleOperationCommand('view-meta', row)"
-                              >
+                              <div class="op-submenu-item" @click.stop="handleOperationCommand('view-meta', row)">
                                 查看元数据
                               </div>
                             </div>
                           </div>
 
                           <!-- 制作操作 -->
-                          <div
-                            class="op-menu-item has-submenu"
-                            @mouseenter="handleSubmenuEnter"
-                            @mouseleave="handleSubmenuLeave"
-                          >
+                          <div class="op-menu-item has-submenu" @mouseenter="handleSubmenuEnter"
+                            @mouseleave="handleSubmenuLeave">
                             <el-icon class="op-menu-arrow">
                               <ArrowLeft />
                             </el-icon>
                             <span class="op-menu-label">制作</span>
-                            <div
-                              class="op-submenu"
-                              data-submenu="design"
-                              @mouseenter="handleSubmenuKeepVisible"
-                              @mouseleave="handleSubmenuHide"
-                            >
-                              <div
-                                class="op-submenu-item"
-                                @click.stop="handleOperationCommand('create-ps-set', row)"
-                              >
+                            <div class="op-submenu" data-submenu="design" @mouseenter="handleSubmenuKeepVisible"
+                              @mouseleave="handleSubmenuHide">
+                              <div class="op-submenu-item" @click.stop="handleOperationCommand('create-ps-set', row)">
                                 制作PS套图
                               </div>
-                              <div
-                                class="op-submenu-item"
-                                @click.stop="handleOperationCommand('view-ps-sets', row)"
-                              >
+                              <div class="op-submenu-item" @click.stop="handleOperationCommand('view-ps-sets', row)">
                                 查看该素材套图
                               </div>
                             </div>
                           </div>
 
                           <!-- 图片操作 -->
-                          <div
-                            class="op-menu-item has-submenu"
-                            @mouseenter="handleSubmenuEnter"
-                            @mouseleave="handleSubmenuLeave"
-                          >
+                          <div class="op-menu-item has-submenu" @mouseenter="handleSubmenuEnter"
+                            @mouseleave="handleSubmenuLeave">
                             <el-icon class="op-menu-arrow">
                               <ArrowLeft />
                             </el-icon>
                             <span class="op-menu-label">图片操作</span>
-                            <div
-                              class="op-submenu"
-                              data-submenu="image"
-                              @mouseenter="handleSubmenuKeepVisible"
-                              @mouseleave="handleSubmenuHide"
-                            >
-                              <div
-                                class="op-submenu-item"
-                                @click.stop="handleOperationCommand('download', row)"
-                              >
+                            <div class="op-submenu" data-submenu="image" @mouseenter="handleSubmenuKeepVisible"
+                              @mouseleave="handleSubmenuHide">
+                              <div class="op-submenu-item" @click.stop="handleOperationCommand('download', row)">
                                 下载
                               </div>
-                              <div
-                                class="op-submenu-item"
-                                @click.stop="handleOperationCommand('download-rotated-90', row)"
-                              >
+                              <div class="op-submenu-item"
+                                @click.stop="handleOperationCommand('download-rotated-90', row)">
                                 下载旋转90°
                               </div>
-                              <div
-                                v-if="isAdmin"
-                                class="op-submenu-item"
-                                @click.stop="handleOperationCommand('copy', row)"
-                              >
+                              <div v-if="isAdmin" class="op-submenu-item"
+                                @click.stop="handleOperationCommand('copy', row)">
                                 复制
                               </div>
-                              <div
-                                class="op-submenu-item"
-                                @click.stop="handleOperationCommand('copy-origin-url', row)"
-                              >
+                              <div class="op-submenu-item" @click.stop="handleOperationCommand('copy-origin-url', row)">
                                 复制原始链接
                               </div>
-                              <div
-                                v-if="!visualSimilarSearchDisabled"
-                                class="op-submenu-item"
-                                @click.stop="handleOperationCommand('find-similar', row)"
-                              >
+                              <div v-if="!visualSimilarSearchDisabled" class="op-submenu-item"
+                                @click.stop="handleOperationCommand('find-similar', row)">
                                 找相似图
                               </div>
-                              <div
-                                class="op-submenu-item"
-                                @click.stop="handleOperationCommand('view-publish-usage', row)"
-                              >
+                              <div class="op-submenu-item"
+                                @click.stop="handleOperationCommand('view-publish-usage', row)">
                                 查看发布绑定
                               </div>
-                              <div
-                                v-if="isAdmin && (row.suffix || '').toLowerCase() === 'png'"
-                                class="op-submenu-item"
-                                @click.stop="handleOperationCommand('trim-png', row)"
-                              >
+                              <div v-if="isAdmin && (row.suffix || '').toLowerCase() === 'png'" class="op-submenu-item"
+                                @click.stop="handleOperationCommand('trim-png', row)">
                                 生成无空白PNG
                               </div>
-                              <div
-                                v-if="isAdmin && (row.suffix || '').toLowerCase() === 'svg'"
-                                class="op-submenu-item"
-                                @click.stop="handleOperationCommand('svg-to-png', row)"
-                              >
+                              <div v-if="isAdmin && (row.suffix || '').toLowerCase() === 'svg'" class="op-submenu-item"
+                                @click.stop="handleOperationCommand('svg-to-png', row)">
                                 SVG转PNG
                               </div>
                             </div>
                           </div>
 
-                          <div
-                            v-if="isAdmin"
-                            class="op-menu-item has-submenu"
-                            @mouseenter="handleSubmenuEnter"
-                            @mouseleave="handleSubmenuLeave"
-                          >
+                          <div v-if="isAdmin" class="op-menu-item has-submenu" @mouseenter="handleSubmenuEnter"
+                            @mouseleave="handleSubmenuLeave">
                             <el-icon class="op-menu-arrow">
                               <ArrowLeft />
                             </el-icon>
                             <span class="op-menu-label">归属操作</span>
-                            <div
-                              class="op-submenu"
-                              data-submenu="ownership"
-                              @mouseenter="handleSubmenuKeepVisible"
-                              @mouseleave="handleSubmenuHide"
-                            >
-                              <div
-                                class="op-submenu-item"
-                                @click.stop="handleOperationCommand('copy-to-user', row)"
-                              >
+                            <div class="op-submenu" data-submenu="ownership" @mouseenter="handleSubmenuKeepVisible"
+                              @mouseleave="handleSubmenuHide">
+                              <div class="op-submenu-item" @click.stop="handleOperationCommand('copy-to-user', row)">
                                 分享给用户
                               </div>
-                              <div
-                                class="op-submenu-item"
-                                @click.stop="handleOperationCommand('move-to-user', row)"
-                              >
+                              <div class="op-submenu-item" @click.stop="handleOperationCommand('move-to-user', row)">
                                 转移给用户
                               </div>
                             </div>
                           </div>
 
                           <!-- 图片裂变和视频制作 -->
-                          <div
-                            class="op-menu-item has-submenu"
-                            @mouseenter="handleSubmenuEnter"
-                            @mouseleave="handleSubmenuLeave"
-                          >
+                          <div class="op-menu-item has-submenu" @mouseenter="handleSubmenuEnter"
+                            @mouseleave="handleSubmenuLeave">
                             <el-icon class="op-menu-arrow">
                               <ArrowLeft />
                             </el-icon>
                             <span class="op-menu-label">制作工具</span>
-                            <div
-                              class="op-submenu"
-                              data-submenu="production"
-                              @mouseenter="handleSubmenuKeepVisible"
-                              @mouseleave="handleSubmenuHide"
-                            >
-                              <div
-                                class="op-submenu-item"
-                                @click.stop="handleOperationCommand('image-process', row)"
-                              >
+                            <div class="op-submenu" data-submenu="production" @mouseenter="handleSubmenuKeepVisible"
+                              @mouseleave="handleSubmenuHide">
+                              <div class="op-submenu-item" @click.stop="handleOperationCommand('image-process', row)">
                                 图片处理
                               </div>
-                              <div
-                                class="op-submenu-item"
-                                @click.stop="handleOperationCommand('image-split', row)"
-                              >
+                              <div class="op-submenu-item" @click.stop="handleOperationCommand('image-split', row)">
                                 图片裂变
                               </div>
-                              <div
-                                class="op-submenu-item"
-                                @click.stop="handleOperationCommand('video-production', row)"
-                              >
+                              <div class="op-submenu-item"
+                                @click.stop="handleOperationCommand('video-production', row)">
                                 视频制作
                               </div>
                             </div>
@@ -2663,19 +1770,12 @@
                           </div>
 
                           <div v-if="isAdmin" class="op-divider"></div>
-                          <div
-                            v-if="isAdmin"
-                            class="op-menu-item"
-                            @click.stop="handleOperationCommand('edit', row)"
-                          >
+                          <div v-if="isAdmin" class="op-menu-item" @click.stop="handleOperationCommand('edit', row)">
                             <span class="op-menu-arrow-placeholder"></span>
                             <span class="op-menu-label">编辑</span>
                           </div>
-                          <div
-                            v-if="isAdmin"
-                            class="op-menu-item danger"
-                            @click.stop="handleOperationCommand('delete', row)"
-                          >
+                          <div v-if="isAdmin" class="op-menu-item danger"
+                            @click.stop="handleOperationCommand('delete', row)">
                             <span class="op-menu-arrow-placeholder"></span>
                             <span class="op-menu-label">删除</span>
                           </div>
@@ -2683,11 +1783,8 @@
                       </template>
                     </el-dropdown>
 
-                    <el-icon
-                      v-if="aiTableLoading?.[row?.id]"
-                      class="is-loading ml-2"
-                      style="color: #409eff; font-size: 18px"
-                    />
+                    <el-icon v-if="aiTableLoading?.[row?.id]" class="is-loading ml-2"
+                      style="color: #409eff; font-size: 18px" />
                   </div>
                 </template>
               </vxe-grid>
@@ -2698,25 +1795,14 @@
 
       <template #pagination>
         <div
-          class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat material-index-pagination"
-        >
-          <pagination
-            v-model:page="queryParams.currentPage"
-            v-model:limit="queryParams.pageSize"
-            :total="total"
-            @pagination="handlePagination"
-          />
+          class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat material-index-pagination">
+          <pagination v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize" :total="total"
+            @pagination="handlePagination" />
         </div>
       </template>
     </ListPageLayout>
 
-    <el-dialog
-      v-model="addToGroupDialogVisible"
-      title="添加到组图"
-      width="520px"
-      append-to-body
-      destroy-on-close
-    >
+    <el-dialog v-model="addToGroupDialogVisible" title="添加到组图" width="520px" append-to-body destroy-on-close>
       <el-form label-width="88px" @submit.prevent="submitBatchAddToGroup">
         <el-form-item label="已选素材">
           <el-tag type="info" effect="plain">{{ selectedGroupStickerIds.length }} 张</el-tag>
@@ -2730,49 +1816,24 @@
         </el-form-item>
 
         <el-form-item v-if="addToGroupMode === 'existing'" label="目标组图" required>
-          <el-select
-            v-model="targetGroupValue"
-            :loading="availableGroupsLoading"
-            placeholder="选择已有组图"
-            filterable
-            clearable
-            style="width: 100%"
-          >
-            <el-option
-              v-for="group in availableGroupList"
-              :key="group.id"
-              :label="`${group.name} (${group.stickersCount || 0})`"
-              :value="group.id"
-            />
+          <el-select v-model="targetGroupValue" :loading="availableGroupsLoading" placeholder="选择已有组图" filterable
+            clearable style="width: 100%">
+            <el-option v-for="group in availableGroupList" :key="group.id"
+              :label="`${group.name} (${group.stickersCount || 0})`" :value="group.id" />
           </el-select>
         </el-form-item>
 
         <el-form-item v-else label="组图名称" required>
-          <el-input
-            v-model="newGroupName"
-            maxlength="255"
-            show-word-limit
-            clearable
-            placeholder="输入新组图名称"
-            @keyup.enter="submitBatchAddToGroup"
-          />
+          <el-input v-model="newGroupName" maxlength="255" show-word-limit clearable placeholder="输入新组图名称"
+            @keyup.enter="submitBatchAddToGroup" />
         </el-form-item>
 
-        <el-form-item
-          v-if="addToGroupMode === 'existing' && selectedTargetGroup"
-          label="已有图片"
-        >
+        <el-form-item v-if="addToGroupMode === 'existing' && selectedTargetGroup" label="已有图片">
           <div class="add-to-group-preview">
             <div v-if="selectedTargetGroup.stickers.length" class="add-to-group-preview__grid">
-              <el-image
-                v-for="sticker in selectedTargetGroup.stickers"
-                :key="sticker.id"
-                :src="sticker.url || ''"
-                fit="cover"
-                class="add-to-group-preview__image"
-                :preview-src-list="getGroupPreviewUrls(selectedTargetGroup)"
-                preview-teleported
-              />
+              <el-image v-for="sticker in selectedTargetGroup.stickers" :key="sticker.id" :src="sticker.url || ''"
+                fit="cover" class="add-to-group-preview__image"
+                :preview-src-list="getGroupPreviewUrls(selectedTargetGroup)" preview-teleported />
             </div>
             <span v-else class="table-cell-empty">暂无图片</span>
           </div>
@@ -2782,59 +1843,33 @@
 
       <template #footer>
         <el-button @click="addToGroupDialogVisible = false">取消</el-button>
-        <el-button
-          type="primary"
-          :loading="addingToGroup"
-          :disabled="!canSubmitAddToGroup"
-          @click="submitBatchAddToGroup"
-        >
+        <el-button type="primary" :loading="addingToGroup" :disabled="!canSubmitAddToGroup"
+          @click="submitBatchAddToGroup">
           {{ addToGroupMode === "new" ? "创建组图" : `添加 ${selectedGroupStickerIds.length} 张` }}
         </el-button>
       </template>
     </el-dialog>
 
-    <el-dialog
-      v-model="similarImageDialogVisible"
-      title="模糊搜索"
-      width="560px"
-      align-center
-      :destroy-on-close="false"
-      class="similar-image-search-dialog"
-      @closed="resetSimilarImageDialog"
-    >
+    <el-dialog v-model="similarImageDialogVisible" title="模糊搜索" width="560px" align-center :destroy-on-close="false"
+      class="similar-image-search-dialog" @closed="resetSimilarImageDialog">
       <div class="similar-image-search">
         <el-tabs v-model="similarImageSearchTab" class="similar-image-search__tabs">
           <el-tab-pane label="文字搜索" name="text">
             <div class="similar-image-search__section">
-              <el-input
-                v-model="similarImageSearchText"
-                placeholder="输入文字描述，例如：可爱的猫咪、樱花树下的少女"
-                clearable
-                @keyup.enter="submitSimilarImageSearch"
-              />
+              <el-input v-model="similarImageSearchText" placeholder="输入文字描述，例如：可爱的猫咪、樱花树下的少女" clearable
+                @keyup.enter="submitSimilarImageSearch" />
             </div>
           </el-tab-pane>
           <el-tab-pane label="图片 URL" name="url">
             <div class="similar-image-search__section">
-              <el-input
-                v-model="similarImageUrl"
-                placeholder="粘贴图片 URL，例如 https://example.com/image.png"
-                clearable
-                @keyup.enter="submitSimilarImageSearch"
-              />
+              <el-input v-model="similarImageUrl" placeholder="粘贴图片 URL，例如 https://example.com/image.png" clearable
+                @keyup.enter="submitSimilarImageSearch" />
             </div>
           </el-tab-pane>
           <el-tab-pane label="本地图片" name="file">
             <div class="similar-image-search__section">
-              <el-upload
-                class="similar-image-upload"
-                drag
-                action="#"
-                accept="image/*"
-                :auto-upload="false"
-                :show-file-list="false"
-                :on-change="handleSimilarImageUploadChange"
-              >
+              <el-upload class="similar-image-upload" drag action="#" accept="image/*" :auto-upload="false"
+                :show-file-list="false" :on-change="handleSimilarImageUploadChange">
                 <el-icon class="similar-image-upload__icon">
                   <UploadFilled />
                 </el-icon>
@@ -2850,14 +1885,8 @@
         <div class="similar-image-search__options">
           <div class="similar-image-search__option-item">
             <span class="similar-image-search__option-label">检索数量：</span>
-            <el-input-number
-              v-model="similarImageSearchLimit"
-              size="small"
-              :min="1"
-              :max="200"
-              controls-position="right"
-              style="width: 100px"
-            />
+            <el-input-number v-model="similarImageSearchLimit" size="small" :min="1" :max="200"
+              controls-position="right" style="width: 100px" />
           </div>
         </div>
 
@@ -2877,27 +1906,15 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="similarImageDialogVisible = false">取消</el-button>
-          <el-button
-            type="primary"
-            :loading="similarImageSubmitting"
-            @click="submitSimilarImageSearch"
-          >
+          <el-button type="primary" :loading="similarImageSubmitting" @click="submitSimilarImageSearch">
             搜索
           </el-button>
         </div>
       </template>
     </el-dialog>
 
-    <el-dialog
-      v-model="uploadModalVisible"
-      title="素材上传"
-      width="calc(100vw - 32px)"
-      top="16px"
-      :footer="false"
-      :destroy-on-close="false"
-      class="material-upload-dialog"
-      @close="uploadModalClose"
-    >
+    <el-dialog v-model="uploadModalVisible" title="素材上传" width="calc(100vw - 32px)" top="16px" :footer="false"
+      :destroy-on-close="false" class="material-upload-dialog" @close="uploadModalClose">
       <template #header="{ titleId, titleClass }">
         <div class="material-upload-dialog__header">
           <span :id="titleId" :class="titleClass">素材上传</span>
@@ -2907,63 +1924,30 @@
         </div>
       </template>
       <div class="material-upload-dialog__content">
-        <list-upload
-          ref="uploadListRef"
-          :current-upload-info="currentUploadInfo"
-          @single-file-uploaded="singleFileUploaded"
-        />
+        <list-upload ref="uploadListRef" :current-upload-info="currentUploadInfo"
+          @single-file-uploaded="singleFileUploaded" />
       </div>
     </el-dialog>
 
     <!-- URL上传弹窗 -->
-    <el-dialog
-      v-model="urlUploadModalVisible"
-      title="URL上传素材"
-      width="500px"
-      align-center
-      :destroy-on-close="true"
-      @close="resetUrlUploadForm"
-    >
-      <el-form
-        ref="urlUploadFormRef"
-        :model="urlUploadForm"
-        :rules="urlUploadFormRules"
-        label-width="80px"
-      >
+    <el-dialog v-model="urlUploadModalVisible" title="URL上传素材" width="500px" align-center :destroy-on-close="true"
+      @close="resetUrlUploadForm">
+      <el-form ref="urlUploadFormRef" :model="urlUploadForm" :rules="urlUploadFormRules" label-width="80px">
         <el-form-item label="图片URL" prop="url">
-          <el-input
-            v-model="urlUploadForm.url"
-            placeholder="请输入图片的完整URL地址"
-            style="width: 100%"
-            clearable
-          />
+          <el-input v-model="urlUploadForm.url" placeholder="请输入图片的完整URL地址" style="width: 100%" clearable />
         </el-form-item>
         <el-form-item label="文件名" prop="name">
-          <el-input
-            v-model="urlUploadForm.name"
-            placeholder="请输入文件名"
-            style="width: 100%"
-            clearable
-          />
+          <el-input v-model="urlUploadForm.name" placeholder="请输入文件名" style="width: 100%" clearable />
         </el-form-item>
         <el-form-item label="AI生成">
           <el-switch v-model="urlUploadForm.useAiGenerate" active-text="使用AI自动生成补全内容" />
         </el-form-item>
         <el-form-item label="文件夹">
-          <el-select
-            v-model="urlUploadForm.folderId"
-            placeholder="请选择文件夹（留空为根目录）"
-            clearable
-            filterable
-            style="width: 100%"
-          >
+          <el-select v-model="urlUploadForm.folderId" placeholder="请选择文件夹（留空为根目录）" clearable filterable
+            style="width: 100%">
             <el-option label="根目录" :value="null" />
-            <el-option
-              v-for="folder in stickerFolderSelectOptions"
-              :key="folder.value || 'root'"
-              :label="folder.label"
-              :value="folder.value"
-            />
+            <el-option v-for="folder in stickerFolderSelectOptions" :key="folder.value || 'root'" :label="folder.label"
+              :value="folder.value" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -2972,18 +1956,10 @@
       <div class="preview-section">
         <div class="preview-label">图片预览</div>
         <div v-if="urlUploadForm.url && urlPreviewVisible" class="image-preview">
-          <img
-            :src="urlUploadForm.url"
-            alt="预览图片"
-            class="preview-image"
-            loading="lazy"
-            @error="handlePreviewError"
-            @load="handlePreviewLoad"
-          />
+          <img :src="urlUploadForm.url" alt="预览图片" class="preview-image" loading="lazy" @error="handlePreviewError"
+            @load="handlePreviewLoad" />
           <div v-if="imageInfo" class="image-info">
-            <el-tag size="small" type="info"
-              >尺寸: {{ imageInfo.width }} × {{ imageInfo.height }}</el-tag
-            >
+            <el-tag size="small" type="info">尺寸: {{ imageInfo.width }} × {{ imageInfo.height }}</el-tag>
           </div>
         </div>
         <div v-else-if="urlUploadForm.url && !urlPreviewVisible" class="preview-error">
@@ -3004,29 +1980,17 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="urlUploadModalVisible = false">取消</el-button>
-          <el-button type="primary" :loading="urlUploadLoading" @click="handleUrlUpload"
-            >上传</el-button
-          >
+          <el-button type="primary" :loading="urlUploadLoading" @click="handleUrlUpload">上传</el-button>
         </div>
       </template>
     </el-dialog>
 
     <!-- 制作设计模型弹窗 -->
 
-    <el-dialog
-      v-model="editDialogVisible"
-      title="编辑素材信息"
-      fullscreen
-      :destroy-on-close="true"
-      class="edit-material-dialog"
-    >
+    <el-dialog v-model="editDialogVisible" title="编辑素材信息" fullscreen :destroy-on-close="true"
+      class="edit-material-dialog">
       <div class="edit-material-body">
-        <el-form
-          :model="editForm"
-          label-position="top"
-          size="small"
-          class="edit-form material-index-search-form"
-        >
+        <el-form :model="editForm" label-position="top" size="small" class="edit-form material-index-search-form">
           <section class="edit-section">
             <div class="edit-section-title">基础信息</div>
             <el-row :gutter="12">
@@ -3042,53 +2006,30 @@
               </el-col>
               <el-col :xs="24">
                 <el-form-item label="描述">
-                  <el-input
-                    v-model="editForm.description"
-                    type="textarea"
-                    :rows="4"
-                    placeholder="请输入描述"
-                    maxlength="1000"
-                    show-word-limit
-                  />
+                  <el-input v-model="editForm.description" type="textarea" :rows="4" placeholder="请输入描述"
+                    maxlength="1000" show-word-limit />
                 </el-form-item>
               </el-col>
               <el-col :xs="24">
                 <el-form-item label="英文描述">
-                  <el-input
-                    v-model="editForm.descriptionEn"
-                    type="textarea"
-                    :rows="4"
-                    placeholder="请输入英文描述"
-                    maxlength="1000"
-                    show-word-limit
-                  />
+                  <el-input v-model="editForm.descriptionEn" type="textarea" :rows="4" placeholder="请输入英文描述"
+                    maxlength="1000" show-word-limit />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :md="12">
                 <el-form-item label="关键字">
-                  <el-input
-                    v-model="editForm.keywords"
-                    placeholder="请输入关键字（逗号分隔）"
-                    clearable
-                  />
+                  <el-input v-model="editForm.keywords" placeholder="请输入关键字（逗号分隔）" clearable />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :md="12">
                 <el-form-item label="英文关键字">
-                  <el-input
-                    v-model="editForm.keywordsEn"
-                    placeholder="请输入英文关键字（逗号分隔）"
-                    clearable
-                  />
+                  <el-input v-model="editForm.keywordsEn" placeholder="请输入英文关键字（逗号分隔）" clearable />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :md="12">
                 <el-form-item label="适用场景">
-                  <el-input
-                    v-model="editForm.suitableFor"
-                    placeholder="请输入适用场景（逗号分隔，如：phone_case,tshirt,mug）"
-                    clearable
-                  />
+                  <el-input v-model="editForm.suitableFor" placeholder="请输入适用场景（逗号分隔，如：phone_case,tshirt,mug）"
+                    clearable />
                 </el-form-item>
               </el-col>
             </el-row>
@@ -3099,61 +2040,32 @@
             <el-row :gutter="12">
               <el-col :xs="12" :sm="8" :lg="4">
                 <el-form-item label="自定义贴纸">
-                  <el-switch
-                    v-model="editForm.isCustom"
-                    size="small"
-                    active-text="是"
-                    inactive-text="否"
-                  />
+                  <el-switch v-model="editForm.isCustom" size="small" active-text="是" inactive-text="否" />
                 </el-form-item>
               </el-col>
               <el-col :xs="12" :sm="8" :lg="4">
                 <el-form-item label="是否公开">
-                  <el-switch
-                    v-model="editForm.isPublic"
-                    size="small"
-                    active-text="是"
-                    inactive-text="否"
-                  />
+                  <el-switch v-model="editForm.isPublic" size="small" active-text="是" inactive-text="否" />
                 </el-form-item>
               </el-col>
               <el-col :xs="12" :sm="8" :lg="4">
                 <el-form-item label="是否为材质">
-                  <el-switch
-                    v-model="editForm.isTexture"
-                    size="small"
-                    active-text="是"
-                    inactive-text="否"
-                  />
+                  <el-switch v-model="editForm.isTexture" size="small" active-text="是" inactive-text="否" />
                 </el-form-item>
               </el-col>
               <el-col :xs="12" :sm="8" :lg="4">
                 <el-form-item label="抠图素材">
-                  <el-switch
-                    v-model="editForm.isCutout"
-                    size="small"
-                    active-text="是"
-                    inactive-text="否"
-                  />
+                  <el-switch v-model="editForm.isCutout" size="small" active-text="是" inactive-text="否" />
                 </el-form-item>
               </el-col>
               <el-col :xs="12" :sm="8" :lg="4">
                 <el-form-item label="无缝贴图">
-                  <el-switch
-                    v-model="editForm.seamless"
-                    size="small"
-                    active-text="是"
-                    inactive-text="否"
-                  />
+                  <el-switch v-model="editForm.seamless" size="small" active-text="是" inactive-text="否" />
                 </el-form-item>
               </el-col>
               <el-col :xs="12" :sm="8" :lg="4">
                 <el-form-item label="侵权状态">
-                  <el-select
-                    v-model="editForm.isInfringement"
-                    placeholder="请选择"
-                    style="width: 100%"
-                  >
+                  <el-select v-model="editForm.isInfringement" placeholder="请选择" style="width: 100%">
                     <el-option label="非侵权" :value="false" />
                     <el-option label="侵权" :value="true" />
                   </el-select>
@@ -3161,31 +2073,17 @@
               </el-col>
               <el-col :xs="24" :md="12">
                 <el-form-item label="素材编码">
-                  <el-input
-                    v-model="editForm.code"
-                    placeholder="格式：3-6位随机字母+2-7位数字，如 abc123"
-                    clearable
-                    maxlength="14"
-                  >
+                  <el-input v-model="editForm.code" placeholder="格式：3-6位随机字母+2-7位数字，如 abc123" clearable maxlength="14">
                     <template #append>
-                      <el-button
-                        size="small"
-                        :loading="generatingCode"
-                        @click="handleGenerateMaterialCode"
-                        >生成编码</el-button
-                      >
+                      <el-button size="small" :loading="generatingCode"
+                        @click="handleGenerateMaterialCode">生成编码</el-button>
                     </template>
                   </el-input>
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :md="12">
                 <el-form-item label="文件后缀">
-                  <el-input
-                    v-model="editForm.suffix"
-                    placeholder="如：png, jpg, svg"
-                    clearable
-                    maxlength="20"
-                  />
+                  <el-input v-model="editForm.suffix" placeholder="如：png, jpg, svg" clearable maxlength="20" />
                 </el-form-item>
               </el-col>
             </el-row>
@@ -3196,30 +2094,20 @@
             <el-row :gutter="12">
               <el-col :xs="24" :sm="12" :lg="8">
                 <el-form-item label="图片尺寸">
-                  <el-input
-                    :value="
-                      editForm.width && editForm.height
-                        ? `${editForm.width} × ${editForm.height}`
-                        : '-'
-                    "
-                    disabled
-                  />
+                  <el-input :value="editForm.width && editForm.height
+                      ? `${editForm.width} × ${editForm.height}`
+                      : '-'
+                    " disabled />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :lg="8">
                 <el-form-item label="宽高比">
-                  <el-input
-                    :value="editForm.aspectRatio ? editForm.aspectRatio.toFixed(4) : '-'"
-                    disabled
-                  />
+                  <el-input :value="editForm.aspectRatio ? editForm.aspectRatio.toFixed(4) : '-'" disabled />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :lg="8">
                 <el-form-item label="文件大小">
-                  <el-input
-                    :value="editForm.fileSize ? formatFileSize(editForm.fileSize) : '-'"
-                    disabled
-                  />
+                  <el-input :value="editForm.fileSize ? formatFileSize(editForm.fileSize) : '-'" disabled />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :md="12">
@@ -3245,11 +2133,7 @@
               </el-col>
               <el-col :xs="24">
                 <el-form-item label="来源">
-                  <el-input
-                    v-model="editForm.source"
-                    placeholder="请输入来源（文字介绍或链接）"
-                    clearable
-                  />
+                  <el-input v-model="editForm.source" placeholder="请输入来源（文字介绍或链接）" clearable />
                 </el-form-item>
               </el-col>
             </el-row>
@@ -3259,35 +2143,20 @@
       <template #footer>
         <div class="edit-dialog-footer">
           <el-button size="small" @click="editDialogVisible = false">取消</el-button>
-          <el-button size="small" type="primary" :loading="editLoading" @click="submitEdit"
-            >保存</el-button
-          >
+          <el-button size="small" type="primary" :loading="editLoading" @click="submitEdit">保存</el-button>
         </div>
       </template>
     </el-dialog>
 
-    <el-dialog
-      v-model="detailDialogVisible"
-      title="素材详情"
-      fullscreen
-      :destroy-on-close="true"
-      class="material-detail-dialog"
-    >
+    <el-dialog v-model="detailDialogVisible" title="素材详情" fullscreen :destroy-on-close="true"
+      class="material-detail-dialog">
       <div v-loading="detailDialogLoading" class="material-detail-body">
-        <el-empty
-          v-if="!stickerDetailCurrent && !detailDialogLoading"
-          description="暂无素材详情"
-        />
+        <el-empty v-if="!stickerDetailCurrent && !detailDialogLoading" description="暂无素材详情" />
         <template v-else-if="stickerDetailCurrent">
           <section class="material-detail-hero">
             <div class="material-detail-preview">
-              <el-image
-                v-if="stickerDetailCurrent.url"
-                :src="stickerDetailCurrent.url"
-                fit="contain"
-                :preview-src-list="[stickerDetailCurrent.url]"
-                :preview-teleported="true"
-              >
+              <el-image v-if="stickerDetailCurrent.url" :src="stickerDetailCurrent.url" fit="contain"
+                :preview-src-list="[stickerDetailCurrent.url]" :preview-teleported="true">
                 <template #error>
                   <div class="material-detail-preview__empty">图片加载失败</div>
                 </template>
@@ -3308,41 +2177,28 @@
                 <el-tag v-if="stickerDetailCurrent.suffix" size="small" type="info" effect="plain">
                   {{ stickerDetailCurrent.suffix }}
                 </el-tag>
-                <el-tag
-                  v-if="stickerDetailCurrent.isInfringement"
-                  size="small"
-                  type="danger"
-                  effect="plain"
-                >
+                <el-tag v-if="stickerDetailCurrent.isInfringement" size="small" type="danger" effect="plain">
                   侵权
                 </el-tag>
                 <el-tag v-if="stickerDetailCurrent.isCutout" size="small" type="success" effect="plain">
                   抠图
                 </el-tag>
-                <el-tag v-if="normalizeBooleanValue(stickerDetailCurrent.seamless)" size="small" type="warning" effect="plain">
+                <el-tag v-if="normalizeBooleanValue(stickerDetailCurrent.seamless)" size="small" type="warning"
+                  effect="plain">
                   无缝
                 </el-tag>
               </div>
               <div class="material-detail-actions">
-                <el-button
-                  size="small"
-                  :disabled="!stickerDetailCurrent.url"
-                  @click="handleCopyText(stickerDetailCurrent.url || '', '图片链接')"
-                >
+                <el-button size="small" :disabled="!stickerDetailCurrent.url"
+                  @click="handleCopyText(stickerDetailCurrent.url || '', '图片链接')">
                   复制图片链接
                 </el-button>
-                <el-button
-                  size="small"
-                  :disabled="!stickerDetailCurrent.phash"
-                  @click="handleCopyText(stickerDetailCurrent.phash || '', '感知哈希')"
-                >
+                <el-button size="small" :disabled="!stickerDetailCurrent.phash"
+                  @click="handleCopyText(stickerDetailCurrent.phash || '', '感知哈希')">
                   复制感知哈希
                 </el-button>
-                <el-button
-                  size="small"
-                  :disabled="!stickerDetailCurrent.originUrl"
-                  @click="handleCopyText(stickerDetailCurrent.originUrl || '', '原始地址')"
-                >
+                <el-button size="small" :disabled="!stickerDetailCurrent.originUrl"
+                  @click="handleCopyText(stickerDetailCurrent.originUrl || '', '原始地址')">
                   复制原始地址
                 </el-button>
               </div>
@@ -3382,7 +2238,8 @@
               </div>
               <div class="material-detail-field">
                 <span class="material-detail-label">文件夹路径</span>
-                <span class="material-detail-value">{{ formatDetailValue(stickerDetailCurrent.folder || stickerDetailCurrent.folderEntity?.path) }}</span>
+                <span class="material-detail-value">{{ formatDetailValue(stickerDetailCurrent.folder ||
+                  stickerDetailCurrent.folderEntity?.path) }}</span>
               </div>
             </div>
           </section>
@@ -3400,23 +2257,28 @@
               </div>
               <div class="material-detail-field material-detail-field--wide">
                 <span class="material-detail-label">描述</span>
-                <span class="material-detail-value material-detail-value--multiline">{{ formatDetailValue(stickerDetailCurrent.description) }}</span>
+                <span class="material-detail-value material-detail-value--multiline">{{
+                  formatDetailValue(stickerDetailCurrent.description) }}</span>
               </div>
               <div class="material-detail-field material-detail-field--wide">
                 <span class="material-detail-label">英文描述</span>
-                <span class="material-detail-value material-detail-value--multiline">{{ formatDetailValue(stickerDetailCurrent.descriptionEn) }}</span>
+                <span class="material-detail-value material-detail-value--multiline">{{
+                  formatDetailValue(stickerDetailCurrent.descriptionEn) }}</span>
               </div>
               <div class="material-detail-field material-detail-field--wide">
                 <span class="material-detail-label">关键词</span>
-                <span class="material-detail-value material-detail-value--multiline">{{ formatDetailValue(stickerDetailCurrent.keywords) }}</span>
+                <span class="material-detail-value material-detail-value--multiline">{{
+                  formatDetailValue(stickerDetailCurrent.keywords) }}</span>
               </div>
               <div class="material-detail-field material-detail-field--wide">
                 <span class="material-detail-label">英文关键词</span>
-                <span class="material-detail-value material-detail-value--multiline">{{ formatDetailValue(stickerDetailCurrent.keywordsEn) }}</span>
+                <span class="material-detail-value material-detail-value--multiline">{{
+                  formatDetailValue(stickerDetailCurrent.keywordsEn) }}</span>
               </div>
               <div class="material-detail-field material-detail-field--wide">
                 <span class="material-detail-label">适用场景</span>
-                <span class="material-detail-value material-detail-value--multiline">{{ formatDetailValue(stickerDetailCurrent.suitableFor) }}</span>
+                <span class="material-detail-value material-detail-value--multiline">{{
+                  formatDetailValue(stickerDetailCurrent.suitableFor) }}</span>
               </div>
             </div>
           </section>
@@ -3446,32 +2308,32 @@
                 <span class="material-detail-label">色系</span>
                 <span class="material-detail-value">
                   <span v-if="stickerDetailCurrent.colorPalette" class="material-detail-palette">
-                    <span
-                      v-for="color in stickerDetailCurrent.colorPalette.split(',').slice(0, 12)"
-                      :key="color"
-                      class="material-detail-swatch"
-                      :style="{ backgroundColor: color.trim() }"
-                      :title="color.trim()"
-                    />
+                    <span v-for="color in stickerDetailCurrent.colorPalette.split(',').slice(0, 12)" :key="color"
+                      class="material-detail-swatch" :style="{ backgroundColor: color.trim() }" :title="color.trim()" />
                   </span>
                   <span v-else>-</span>
                 </span>
               </div>
               <div class="material-detail-field material-detail-field--wide">
                 <span class="material-detail-label">图片链接</span>
-                <span class="material-detail-value material-detail-value--break">{{ formatDetailValue(stickerDetailCurrent.url) }}</span>
+                <span class="material-detail-value material-detail-value--break">{{
+                  formatDetailValue(stickerDetailCurrent.url)
+                  }}</span>
               </div>
               <div class="material-detail-field material-detail-field--wide">
                 <span class="material-detail-label">原始地址</span>
-                <span class="material-detail-value material-detail-value--break">{{ formatDetailValue(stickerDetailCurrent.originUrl) }}</span>
+                <span class="material-detail-value material-detail-value--break">{{
+                  formatDetailValue(stickerDetailCurrent.originUrl) }}</span>
               </div>
               <div class="material-detail-field material-detail-field--wide">
                 <span class="material-detail-label">来源</span>
-                <span class="material-detail-value material-detail-value--break">{{ formatDetailValue(stickerDetailCurrent.source) }}</span>
+                <span class="material-detail-value material-detail-value--break">{{
+                  formatDetailValue(stickerDetailCurrent.source) }}</span>
               </div>
               <div class="material-detail-field material-detail-field--wide">
                 <span class="material-detail-label">感知哈希</span>
-                <span class="material-detail-value material-detail-value--break">{{ formatDetailValue(stickerDetailCurrent.phash) }}</span>
+                <span class="material-detail-value material-detail-value--break">{{
+                  formatDetailValue(stickerDetailCurrent.phash) }}</span>
               </div>
             </div>
           </section>
@@ -3493,7 +2355,8 @@
               </div>
               <div class="material-detail-field">
                 <span class="material-detail-label">侵权</span>
-                <span class="material-detail-value">{{ formatBooleanDetail(stickerDetailCurrent.isInfringement) }}</span>
+                <span class="material-detail-value">{{ formatBooleanDetail(stickerDetailCurrent.isInfringement)
+                  }}</span>
               </div>
               <div class="material-detail-field">
                 <span class="material-detail-label">抠图</span>
@@ -3533,62 +2396,33 @@
       </template>
     </el-dialog>
 
-    <el-dialog
-      v-model="aiGenDialogVisible"
-      title="AI自动生成内容"
-      width="1000px"
-      align-center
-      :destroy-on-close="true"
-    >
+    <el-dialog v-model="aiGenDialogVisible" title="AI自动生成内容" width="1000px" align-center :destroy-on-close="true">
       <div class="ai-gen-form">
         <div class="form-section">
           <label class="section-label">原始信息（可选）</label>
           <div class="section-desc">粘贴网页内容或其他原始信息，帮助AI更好地理解图片内容</div>
-          <el-input
-            v-model="aiGenerateRawInfo"
-            type="textarea"
-            :rows="10"
-            placeholder="如：网页上关于这张图片的描述、产品介绍等..."
-            style="font-size: 14px; min-height: 200px; width: 100%; resize: vertical"
-          />
+          <el-input v-model="aiGenerateRawInfo" type="textarea" :rows="10" placeholder="如：网页上关于这张图片的描述、产品介绍等..."
+            style="font-size: 14px; min-height: 200px; width: 100%; resize: vertical" />
         </div>
 
         <div class="form-section">
           <label class="section-label">分析风格（可选）</label>
           <div class="section-desc">请输入你希望AI分析的内容风格或角度</div>
-          <el-input
-            v-model="aiGenPrompt"
-            type="textarea"
-            :rows="10"
-            placeholder="如：请用艺术化语言描述图片内容、突出色彩特点等..."
-            style="font-size: 14px; min-height: 200px; width: 100%; resize: vertical"
-          />
+          <el-input v-model="aiGenPrompt" type="textarea" :rows="10" placeholder="如：请用艺术化语言描述图片内容、突出色彩特点等..."
+            style="font-size: 14px; min-height: 200px; width: 100%; resize: vertical" />
         </div>
       </div>
       <template #footer>
         <el-button @click="aiGenDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="aiGenDialogLoading" @click="submitAiGenDialog"
-          >确定</el-button
-        >
+        <el-button type="primary" :loading="aiGenDialogLoading" @click="submitAiGenDialog">确定</el-button>
       </template>
     </el-dialog>
 
-    <el-dialog
-      v-model="metaDialogVisible"
-      fullscreen
-      title="元数据详情"
-      :close-on-click-modal="false"
-    >
+    <el-dialog v-model="metaDialogVisible" fullscreen title="元数据详情" :close-on-click-modal="false">
       <div v-if="metaDialogContent">
         <vue-json-pretty v-if="parsedMetaData" :data="parsedMetaData" />
         <div v-else class="meta-error">
-          <el-alert
-            type="warning"
-            :closable="false"
-            show-icon
-            title="元数据格式错误"
-            description="无法解析元数据，请检查数据格式。"
-          />
+          <el-alert type="warning" :closable="false" show-icon title="元数据格式错误" description="无法解析元数据，请检查数据格式。" />
           <div class="meta-raw-content">
             <pre>{{ metaDialogContent }}</pre>
           </div>
@@ -3599,42 +2433,21 @@
       </div>
     </el-dialog>
 
-    <el-dialog
-      v-model="stickerUserTransferDialogVisible"
-      :title="stickerUserTransferDialogTitle"
-      width="560px"
-      align-center
-      :close-on-click-modal="false"
-      @closed="resetStickerUserTransferDialog"
-    >
+    <el-dialog v-model="stickerUserTransferDialogVisible" :title="stickerUserTransferDialogTitle" width="560px"
+      align-center :close-on-click-modal="false" @closed="resetStickerUserTransferDialog">
       <div class="sticker-user-transfer-dialog">
-        <el-alert
-          :type="stickerUserTransferAction === 'copy' ? 'success' : 'warning'"
-          :closable="false"
-          show-icon
-          :title="
-            stickerUserTransferAction === 'copy'
+        <el-alert :type="stickerUserTransferAction === 'copy' ? 'success' : 'warning'" :closable="false" show-icon
+          :title="stickerUserTransferAction === 'copy'
               ? '复制素材并分享给目标用户，原素材会保留。'
               : '转移素材给目标用户，会变更素材归属并同步调整 COS 路径。'
-          "
-        />
+            " />
 
         <el-form label-width="96px" class="sticker-user-transfer-form">
           <el-form-item label="目标用户" required>
-            <el-select
-              v-model="stickerUserTransferTargetUserId"
-              class="sticker-user-transfer-form__select"
-              filterable
-              clearable
-              :loading="stickerUserTransferUsersLoading"
-              placeholder="请选择目标用户"
-            >
-              <el-option
-                v-for="item in stickerUserTransferUserOptions"
-                :key="item.id"
-                :label="item.label"
-                :value="item.id"
-              >
+            <el-select v-model="stickerUserTransferTargetUserId" class="sticker-user-transfer-form__select" filterable
+              clearable :loading="stickerUserTransferUsersLoading" placeholder="请选择目标用户">
+              <el-option v-for="item in stickerUserTransferUserOptions" :key="item.id" :label="item.label"
+                :value="item.id">
                 <div class="sticker-user-transfer-option">
                   <div class="sticker-user-transfer-option__main">
                     <span>{{ item.name || item.account || `用户 #${item.id}` }}</span>
@@ -3654,18 +2467,11 @@
 
           <el-form-item label="选中素材">
             <div class="sticker-user-transfer-preview">
-              <el-tag
-                v-for="item in stickerUserTransferPreviewItems"
-                :key="item.id"
-                size="small"
-                effect="plain"
-              >
+              <el-tag v-for="item in stickerUserTransferPreviewItems" :key="item.id" size="small" effect="plain">
                 {{ item.label }}
               </el-tag>
-              <span
-                v-if="stickerUserTransferIds.length > stickerUserTransferPreviewItems.length"
-                class="sticker-user-transfer-preview__more"
-              >
+              <span v-if="stickerUserTransferIds.length > stickerUserTransferPreviewItems.length"
+                class="sticker-user-transfer-preview__more">
                 等 {{ stickerUserTransferIds.length }} 条
               </span>
             </div>
@@ -3675,31 +2481,19 @@
 
       <template #footer>
         <el-button @click="stickerUserTransferDialogVisible = false">取消</el-button>
-        <el-button
-          type="primary"
-          :loading="stickerUserTransferSubmitting"
-          @click="submitStickerUserTransfer"
-        >
+        <el-button type="primary" :loading="stickerUserTransferSubmitting" @click="submitStickerUserTransfer">
           {{ stickerUserTransferSubmitText }}
         </el-button>
       </template>
     </el-dialog>
 
     <!-- SVG转PNG尺寸设置弹窗 -->
-    <el-dialog
-      v-model="svgToPngDialogVisible"
-      title="SVG转PNG - 设置输出尺寸"
-      width="500px"
-      align-center
-      :destroy-on-close="true"
-    >
+    <el-dialog v-model="svgToPngDialogVisible" title="SVG转PNG - 设置输出尺寸" width="500px" align-center
+      :destroy-on-close="true">
       <div class="svg-to-png-form">
         <div class="form-section">
           <h4 class="section-title">输出尺寸设置</h4>
-          <div
-            class="original-info"
-            v-if="svgToPngForm.originalWidth && svgToPngForm.originalHeight"
-          >
+          <div class="original-info" v-if="svgToPngForm.originalWidth && svgToPngForm.originalHeight">
             <el-tag type="info" size="small">
               原始尺寸: {{ svgToPngForm.originalWidth }} ×
               {{ svgToPngForm.originalHeight }} (宽高比: {{ svgToPngForm.aspectRatio.toFixed(2) }})
@@ -3707,15 +2501,8 @@
           </div>
           <el-form :model="svgToPngForm" label-width="120px">
             <el-form-item label="输出宽度 (px)">
-              <el-input-number
-                v-model="svgToPngForm.width"
-                :min="64"
-                :max="4096"
-                :step="64"
-                controls-position="right"
-                style="width: 200px"
-                @change="handleWidthChange"
-              />
+              <el-input-number v-model="svgToPngForm.width" :min="64" :max="4096" :step="64" controls-position="right"
+                style="width: 200px" @change="handleWidthChange" />
             </el-form-item>
             <el-form-item label="自动计算高度">
               <el-tag type="info" size="large"> {{ svgToPngForm.height }} px </el-tag>
@@ -3729,12 +2516,7 @@
         <div class="preset-section">
           <h4 class="section-title">常用尺寸预设</h4>
           <div class="preset-buttons">
-            <el-button
-              v-for="preset in sizePresets"
-              :key="preset.name"
-              size="small"
-              @click="applyPreset(preset)"
-            >
+            <el-button v-for="preset in sizePresets" :key="preset.name" size="small" @click="applyPreset(preset)">
               {{ preset.name }}<br />
               <span class="preset-size">{{ preset.width }}px</span>
             </el-button>
@@ -3762,16 +2544,10 @@
     </el-dialog>
 
     <RelatedPsdSetDialog ref="relatedPsdSetDialogRef" />
-    <el-dialog
-      v-model="storyScriptDialogVisible"
-      fullscreen
-      destroy-on-close
-      class="story-script-dialog"
-      :title="`故事脚本 - ${storyScriptCurrentSticker?.name || '素材图'}`"
-    >
+    <el-dialog v-model="storyScriptDialogVisible" fullscreen destroy-on-close class="story-script-dialog"
+      :title="`故事脚本 - ${storyScriptCurrentSticker?.name || '素材图'}`">
       <div
-        class="grid h-[calc(100vh-96px)] min-h-0 grid-cols-1 gap-4 overflow-hidden lg:grid-cols-[320px_minmax(0,1fr)]"
-      >
+        class="grid h-[calc(100vh-96px)] min-h-0 grid-cols-1 gap-4 overflow-hidden lg:grid-cols-[320px_minmax(0,1fr)]">
         <aside class="min-h-0 overflow-hidden rounded-2xl border shadow-sm">
           <div class="flex h-full min-h-0 flex-col overflow-hidden">
             <div class="border-b px-5 py-4">
@@ -3792,22 +2568,16 @@
               </div>
             </div>
 
-            <div
-              v-if="!storyScriptList.length && !storyScriptListLoading"
-              class="flex flex-1 items-center justify-center px-4"
-            >
+            <div v-if="!storyScriptList.length && !storyScriptListLoading"
+              class="flex flex-1 items-center justify-center px-4">
               <el-empty description="暂无脚本" :image-size="88" />
             </div>
 
             <div v-else class="flex-1 overflow-y-auto p-3">
-              <button
-                v-for="item in storyScriptList"
-                :key="item.id"
-                type="button"
+              <button v-for="item in storyScriptList" :key="item.id" type="button"
                 class="mb-3 block w-full rounded-xl border px-4 py-3 text-left transition last:mb-0"
                 :class="selectedStoryScript?.id === item.id ? 'border-primary' : ''"
-                @click="selectedStoryScriptId = item.id"
-              >
+                @click="selectedStoryScriptId = item.id">
                 <div class="flex items-center justify-between gap-3">
                   <div class="min-w-0 truncate text-sm font-medium">
                     {{ item.title || `版本 ${item.versionNo}` }}
@@ -3825,10 +2595,7 @@
           </div>
         </aside>
 
-        <section
-          class="min-h-0 overflow-hidden rounded-2xl border shadow-sm"
-          v-loading="storyScriptListLoading"
-        >
+        <section class="min-h-0 overflow-hidden rounded-2xl border shadow-sm" v-loading="storyScriptListLoading">
           <div class="flex h-full min-h-0 flex-col overflow-hidden">
             <div class="grid min-h-0 flex-1 grid-cols-1 xl:grid-cols-[minmax(0,1fr)_380px]">
               <div class="min-h-0 px-6 py-5 xl:border-r">
@@ -3845,7 +2612,7 @@
                         </h3>
                         <el-tag effect="plain">{{
                           selectedStoryScript.status || "generated"
-                        }}</el-tag>
+                          }}</el-tag>
                       </div>
                       <div class="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-xs opacity-70">
                         <span>版本 v{{ selectedStoryScript.versionNo }}</span>
@@ -3859,26 +2626,13 @@
                     </div>
 
                     <div class="flex flex-wrap gap-2">
-                      <el-button
-                        size="small"
-                        @click="handleCopyStoryScript(selectedStoryScript.content, '正文')"
-                        >复制正文</el-button
-                      >
-                      <el-button
-                        v-if="selectedStoryScript.subtitleContent"
-                        size="small"
-                        @click="
-                          handleCopyStoryScript(selectedStoryScript.subtitleContent, '字幕稿')
-                        "
-                        >复制字幕</el-button
-                      >
-                      <el-button
-                        size="small"
-                        type="danger"
-                        plain
-                        @click="handleDeleteStoryScript(selectedStoryScript)"
-                        >删除</el-button
-                      >
+                      <el-button size="small"
+                        @click="handleCopyStoryScript(selectedStoryScript.content, '正文')">复制正文</el-button>
+                      <el-button v-if="selectedStoryScript.subtitleContent" size="small" @click="
+                        handleCopyStoryScript(selectedStoryScript.subtitleContent, '字幕稿')
+                        ">复制字幕</el-button>
+                      <el-button size="small" type="danger" plain
+                        @click="handleDeleteStoryScript(selectedStoryScript)">删除</el-button>
                     </div>
                   </div>
 
@@ -3892,10 +2646,7 @@
                       </div>
                     </div>
 
-                    <div
-                      v-if="selectedStoryScript.subtitleContent"
-                      class="mt-4 rounded-2xl border p-4"
-                    >
+                    <div v-if="selectedStoryScript.subtitleContent" class="mt-4 rounded-2xl border p-4">
                       <div class="mb-2 text-xs font-medium uppercase tracking-wide opacity-60">
                         字幕稿
                       </div>
@@ -3904,10 +2655,7 @@
                       }}</pre>
                     </div>
 
-                    <div
-                      v-if="selectedStoryScript.hashtags"
-                      class="mt-4 rounded-2xl border p-4 text-sm"
-                    >
+                    <div v-if="selectedStoryScript.hashtags" class="mt-4 rounded-2xl border p-4 text-sm">
                       <div class="mb-2 text-xs font-medium uppercase tracking-wide opacity-60">
                         标签
                       </div>
@@ -3935,46 +2683,25 @@
                       </el-select>
                     </el-form-item>
                     <el-form-item label="风格要求">
-                      <el-input
-                        v-model="storyScriptForm.stylePrompt"
-                        type="textarea"
-                        :rows="4"
-                        resize="vertical"
-                      />
+                      <el-input v-model="storyScriptForm.stylePrompt" type="textarea" :rows="4" resize="vertical" />
                     </el-form-item>
                     <el-form-item label="语气要求">
-                      <el-input
-                        v-model="storyScriptForm.tonePrompt"
-                        type="textarea"
-                        :rows="4"
-                        resize="vertical"
-                      />
+                      <el-input v-model="storyScriptForm.tonePrompt" type="textarea" :rows="4" resize="vertical" />
                     </el-form-item>
                     <el-form-item label="长度要求">
                       <el-input v-model="storyScriptForm.lengthPrompt" />
                     </el-form-item>
                     <el-form-item label="补充要求">
-                      <el-input
-                        v-model="storyScriptForm.extraPrompt"
-                        type="textarea"
-                        :rows="8"
-                        resize="vertical"
-                      />
+                      <el-input v-model="storyScriptForm.extraPrompt" type="textarea" :rows="8" resize="vertical" />
                     </el-form-item>
                   </el-form>
 
                   <div class="mt-4 flex flex-col gap-3">
-                    <el-button
-                      type="primary"
-                      class="!ml-0 w-full"
-                      :loading="storyScriptSubmitting"
-                      @click="handleGenerateStoryScript"
-                    >
+                    <el-button type="primary" class="!ml-0 w-full" :loading="storyScriptSubmitting"
+                      @click="handleGenerateStoryScript">
                       生成故事脚本
                     </el-button>
-                    <el-button class="!ml-0 w-full" @click="refreshStoryScriptList"
-                      >刷新列表</el-button
-                    >
+                    <el-button class="!ml-0 w-full" @click="refreshStoryScriptList">刷新列表</el-button>
                   </div>
                 </div>
               </div>
@@ -3985,46 +2712,27 @@
     </el-dialog>
 
     <!-- PSD套图参数查看弹窗 -->
-    <el-dialog
-      v-model="psdSetParamsDialogVisible"
-      title="PSD套图发送参数"
-      width="80%"
-      :destroy-on-close="true"
-      align-center
-    >
+    <el-dialog v-model="psdSetParamsDialogVisible" title="PSD套图发送参数" width="80%" :destroy-on-close="true" align-center>
       <div class="psd-params-viewer">
         <pre class="params-content">{{ psdSetParamsContent }}</pre>
       </div>
       <template #footer>
         <el-button @click="psdSetParamsDialogVisible = false">关闭</el-button>
-        <el-button
-          type="primary"
-          @click="() => { (navigator as any).clipboard.writeText(psdSetParamsContent); ElMessage.success('已复制到剪贴板') }"
-          >复制参数</el-button
-        >
+        <el-button type="primary"
+          @click="() => { (navigator as any).clipboard.writeText(psdSetParamsContent); ElMessage.success('已复制到剪贴板') }">复制参数</el-button>
       </template>
     </el-dialog>
 
     <!-- 图片预览弹窗 -->
-    <ImagePreview
-      :visible="imagePreviewVisible"
-      :image-url="currentImageUrl"
-      @close="closeImagePreview"
-    />
+    <ImagePreview :visible="imagePreviewVisible" :image-url="currentImageUrl" @close="closeImagePreview" />
 
     <el-dialog v-model="publishUsageDialogVisible" title="图片发布绑定" width="920px" :destroy-on-close="true">
       <div v-loading="publishUsageLoading" class="publish-usage-dialog">
         <el-empty v-if="!publishUsageLoading && !publishUsageRecords.length" description="暂无发布绑定" />
         <vxe-grid v-else v-bind="publishUsageGridOptions" :data="publishUsageRecords">
           <template #usageImageSlot="{ row }">
-            <el-image
-              v-if="row.imageUrl"
-              :src="row.imageUrl"
-              fit="cover"
-              class="publish-usage-image"
-              :preview-src-list="[row.imageUrl]"
-              :preview-teleported="true"
-            />
+            <el-image v-if="row.imageUrl" :src="row.imageUrl" fit="cover" class="publish-usage-image"
+              :preview-src-list="[row.imageUrl]" :preview-teleported="true" />
           </template>
           <template #usageConfigSlot="{ row }">
             <div class="publish-usage-config-cell">
@@ -4640,13 +3348,13 @@ const gridOptions = computed(() => {
     },
     ...(showSimilarityColumn
       ? [
-          {
-            title: "相似度",
-            field: "similarity",
-            width: 80,
-            slots: { default: "similaritySlot" },
-          },
-        ]
+        {
+          title: "相似度",
+          field: "similarity",
+          width: 80,
+          slots: { default: "similaritySlot" },
+        },
+      ]
       : []),
   ];
 
@@ -4681,8 +3389,8 @@ const isImageGroupPsdSet = computed(() => psdSetImageGroups.value.length > 0);
 const psdSetSelectedMaterialIds = computed(() =>
   isImageGroupPsdSet.value
     ? psdSetImageGroups.value.flatMap((group) =>
-        (group.stickers || []).map((sticker) => String(sticker.id)),
-      )
+      (group.stickers || []).map((sticker) => String(sticker.id)),
+    )
     : ids.value.map(String),
 );
 const materialViewMode = useLocalStorage<"single" | "group">(
@@ -6940,7 +5648,7 @@ function handleResetConfigForTemplate(templateIndex: number) {
       }
       ElMessage.success("已重置为默认配置");
     })
-    .catch(() => {});
+    .catch(() => { });
 }
 
 // 验证配置文本格式（在生成套图前调用）
@@ -7156,9 +5864,9 @@ async function loadPsdTemplatesForPsdSet() {
         try {
           item.suitableSizes = item.suitableSizes
             ? item.suitableSizes
-                .split(",")
-                .map((s) => s.trim())
-                .filter(Boolean)
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
             : [];
         } catch (e) {
           item.suitableSizes = [];
@@ -7168,9 +5876,9 @@ async function loadPsdTemplatesForPsdSet() {
         try {
           item.cutoutModes = item.cutoutModes
             ? item.cutoutModes
-                .split(",")
-                .map((mode) => mode.trim())
-                .filter(Boolean)
+              .split(",")
+              .map((mode) => mode.trim())
+              .filter(Boolean)
             : [];
         } catch (e) {
           item.cutoutModes = [];
@@ -7507,13 +6215,13 @@ function getMaterialById(materialId: string | number) {
 function getMaterialPreviewSource(material: any): string {
   return String(
     material?.url ||
-      material?.previewUrl ||
-      material?.preview ||
-      material?.thumbnail ||
-      material?.imageUrl ||
-      material?.image ||
-      material?.ossObjectName ||
-      "",
+    material?.previewUrl ||
+    material?.preview ||
+    material?.thumbnail ||
+    material?.imageUrl ||
+    material?.image ||
+    material?.ossObjectName ||
+    "",
   ).trim();
 }
 
@@ -9395,24 +8103,20 @@ async function handleUrlUpload() {
   background: rgba(34, 197, 94, 0.08) !important;
 }
 
-.material-dnd-grid
-  :deep(.vxe-table--body tbody tr.is-publish-usage-occupied:hover .vxe-body--column) {
+.material-dnd-grid :deep(.vxe-table--body tbody tr.is-publish-usage-occupied:hover .vxe-body--column) {
   background: rgba(245, 158, 11, 0.16) !important;
 }
 
-.material-dnd-grid
-  :deep(.vxe-table--body tbody tr.is-publish-usage-available:hover .vxe-body--column) {
+.material-dnd-grid :deep(.vxe-table--body tbody tr.is-publish-usage-available:hover .vxe-body--column) {
   background: rgba(34, 197, 94, 0.13) !important;
 }
 
-.material-dnd-grid
-  :deep(.vxe-table--body tbody tr.has-publish-usage-badge .vxe-body--column:first-child) {
+.material-dnd-grid :deep(.vxe-table--body tbody tr.has-publish-usage-badge .vxe-body--column:first-child) {
   position: relative;
   cursor: pointer;
 }
 
-.material-dnd-grid
-  :deep(.vxe-table--body tbody tr.has-publish-usage-badge .vxe-body--column:first-child::before) {
+.material-dnd-grid :deep(.vxe-table--body tbody tr.has-publish-usage-badge .vxe-body--column:first-child::before) {
   position: absolute;
   top: 2px;
   left: 2px;
@@ -9429,14 +8133,12 @@ async function handleUrlUpload() {
   pointer-events: none;
 }
 
-.material-dnd-grid
-  :deep(.vxe-table--body tbody tr.is-publish-usage-occupied .vxe-body--column:first-child::before) {
+.material-dnd-grid :deep(.vxe-table--body tbody tr.is-publish-usage-occupied .vxe-body--column:first-child::before) {
   content: "已用";
   background: rgba(217, 119, 6, 0.94);
 }
 
-.material-dnd-grid
-  :deep(.vxe-table--body tbody tr.is-publish-usage-available .vxe-body--column:first-child::before) {
+.material-dnd-grid :deep(.vxe-table--body tbody tr.is-publish-usage-available .vxe-body--column:first-child::before) {
   content: "未用";
   background: rgba(22, 163, 74, 0.94);
 }
@@ -9454,8 +8156,8 @@ async function handleUrlUpload() {
   align-items: center;
 }
 
-.flex.pb-4 > *,
-.search-bar > * {
+.flex.pb-4>*,
+.search-bar>* {
   margin-bottom: 0;
 }
 
@@ -9533,7 +8235,7 @@ async function handleUrlUpload() {
   font-size: 13px;
 }
 
-.search-field > :not(.search-label) {
+.search-field> :not(.search-label) {
   flex: 1;
   min-width: 0;
   max-width: 100%;
@@ -9548,7 +8250,7 @@ async function handleUrlUpload() {
   white-space: nowrap;
 }
 
-.search-bar-form :deep(.el-form-item__content) > * {
+.search-bar-form :deep(.el-form-item__content)>* {
   width: 100%;
 }
 
@@ -9697,6 +8399,7 @@ async function handleUrlUpload() {
 }
 
 @media (max-width: 1366px) {
+
   /* 在较小分辨率下进一步缩小避免溢出 */
   .search-bar-form :deep(.el-col) {
     /* 保持栅格布局，不再通过 flex-basis/min-width 干预 */
@@ -9758,6 +8461,7 @@ async function handleUrlUpload() {
 }
 
 @media (max-width: 600px) {
+
   .flex.pb-4,
   .search-bar {
     flex-direction: column !important;
@@ -9766,8 +8470,8 @@ async function handleUrlUpload() {
     padding-bottom: 8px !important;
   }
 
-  .flex.pb-4 > *,
-  .search-bar > * {
+  .flex.pb-4>*,
+  .search-bar>* {
     width: 100% !important;
     min-width: 0 !important;
     margin-right: 0 !important;
@@ -9896,7 +8600,7 @@ h1 {
   justify-content: center;
   border: 1px solid #e4e7ed;
   border-radius: 6px;
-  background-color: #fafafa;
+  /* background-color: #fafafa; */
   padding: 16px;
   min-height: 200px;
 }
@@ -10300,26 +9004,21 @@ h1 {
   min-height: 0;
 }
 
-.material-publish-config-dialog__table
-  :deep(.material-publish-config-dialog__row--disabled .vxe-body--column) {
+.material-publish-config-dialog__table :deep(.material-publish-config-dialog__row--disabled .vxe-body--column) {
   background: var(--el-fill-color-light);
 }
 
 .material-publish-config-dialog__table :deep(.material-publish-config-dialog__row--disabled .vxe-cell),
-.material-publish-config-dialog__table
-  :deep(.material-publish-config-dialog__row--disabled .vxe-cell--wrapper),
-.material-publish-config-dialog__table
-  :deep(.material-publish-config-dialog__row--disabled .vxe-cell--label) {
+.material-publish-config-dialog__table :deep(.material-publish-config-dialog__row--disabled .vxe-cell--wrapper),
+.material-publish-config-dialog__table :deep(.material-publish-config-dialog__row--disabled .vxe-cell--label) {
   opacity: 0.58;
 }
 
-.material-publish-config-dialog__table
-  :deep(.material-publish-config-dialog__row--disabled:hover .vxe-body--column) {
+.material-publish-config-dialog__table :deep(.material-publish-config-dialog__row--disabled:hover .vxe-body--column) {
   background: var(--el-fill-color);
 }
 
-.material-publish-config-dialog__table
-  :deep(.material-publish-config-dialog__row--disabled .vxe-cell--checkbox.is--disabled) {
+.material-publish-config-dialog__table :deep(.material-publish-config-dialog__row--disabled .vxe-cell--checkbox.is--disabled) {
   opacity: 0.5;
 }
 
@@ -10730,7 +9429,7 @@ h1 {
   align-items: center;
 }
 
-.edit-form :deep(.el-form-item__content) > * {
+.edit-form :deep(.el-form-item__content)>* {
   width: 100%;
 }
 
@@ -10944,6 +9643,7 @@ h1 {
 }
 
 @media (max-width: 1200px) {
+
   .edit-material-body,
   .material-detail-body {
     padding: 16px;
@@ -11434,7 +10134,7 @@ h1 {
 
 .psd-set-templates .template-list {
   flex: 1;
-  padding:1em;
+  padding: 1em;
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
@@ -12143,7 +10843,7 @@ h1 {
   gap: 8px;
 }
 
-.material-index-phash__row > :first-child {
+.material-index-phash__row> :first-child {
   flex: 1 1 280px;
   min-width: 220px;
 }
@@ -12240,33 +10940,20 @@ h1 {
     opacity 0.2s ease;
 }
 
-.material-index-page
-  :deep(.table-bilingual-cell__item:not(.table-bilingual-cell__item--empty):hover) {
+.material-index-page :deep(.table-bilingual-cell__item:not(.table-bilingual-cell__item--empty):hover) {
   background: var(--material-copy-hover-bg);
   box-shadow: inset 0 0 0 1px var(--material-copy-hover-border);
 }
 
-.material-index-page
-  :deep(
-    .table-bilingual-cell__item:not(.table-bilingual-cell__item--empty):hover
-      .table-bilingual-cell__content
-  ) {
+.material-index-page :deep(.table-bilingual-cell__item:not(.table-bilingual-cell__item--empty):hover .table-bilingual-cell__content) {
   color: var(--material-copy-hover-text);
 }
 
-.material-index-page
-  :deep(
-    .table-bilingual-cell__item:not(.table-bilingual-cell__item--empty):hover
-      .table-bilingual-cell__label
-  ) {
+.material-index-page :deep(.table-bilingual-cell__item:not(.table-bilingual-cell__item--empty):hover .table-bilingual-cell__label) {
   color: var(--material-copy-hover-label);
 }
 
-.material-index-page
-  :deep(
-    .table-bilingual-cell__item:not(.table-bilingual-cell__item--empty):hover
-      .table-bilingual-cell__icon
-  ) {
+.material-index-page :deep(.table-bilingual-cell__item:not(.table-bilingual-cell__item--empty):hover .table-bilingual-cell__icon) {
   color: var(--material-copy-hover-icon);
 }
 
@@ -12431,7 +11118,6 @@ h1 {
     margin-left: auto;
   }
 }
-
 </style>
 
 <style lang="less">
@@ -12487,22 +11173,27 @@ h1 {
   .el-tabs__nav-wrap::after {
     display: none !important;
   }
+
   .el-tabs__active-bar {
     display: none !important;
   }
+
   .el-tabs__item {
     padding: 0 6px !important;
     font-size: 14px;
     font-weight: 500;
     color: #606266;
   }
+
   .el-tabs__item:first-child {
     padding-left: 0 !important;
   }
+
   .el-tabs__item.is-active {
     color: #303133;
     font-weight: 700;
   }
+
   .el-tabs__header {
     margin-bottom: 6px !important;
   }
