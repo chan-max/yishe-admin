@@ -607,6 +607,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
     },
     children: [
       {
+        path: "category",
+        component: () => import("@/views/product/category/index.vue"),
+        name: "ProductCategory",
+        meta: {
+          title: "商品分类",
+          order: 0.5,
+        },
+      },
+      {
         path: "product",
         component: () => import("@/views/product/index/index.vue"),
         name: "ProductIndex",
@@ -672,28 +681,19 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
     ],
   },
-  // ── 9. 独立站与商品管理 ────────────────────────────────────────────────────
+  // ── 9. 商品发布 ────────────────────────────────────────────────────
   {
-    path: "/product",
+    path: "/product-publish",
     component: Layout,
-    name: "Product",
-    redirect: "/product/category",
+    name: "ProductPublishGroup",
+    redirect: "/product-publish/psd-set",
     meta: {
-      title: "独立站管理",
+      title: "商品发布",
       icon: "ep:shopping-bag",
       order: 9,
       alwaysShow: true,
     },
     children: [
-      {
-        path: "category",
-        component: () => import("@/views/product/category/index.vue"),
-        name: "ProductCategory",
-        meta: {
-          title: "商品分类",
-          order: 1,
-        },
-      },
       {
         path: "psd-set",
         component: () => import("@/views/material/psdSet/index.vue"),
