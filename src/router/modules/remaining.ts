@@ -672,15 +672,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
     ],
   },
-  // ── 9. 商品与发布 ────────────────────────────────────────────────────
+  // ── 9. 独立站与商品管理 ────────────────────────────────────────────────────
   {
     path: "/product",
     component: Layout,
     name: "Product",
     redirect: "/product/category",
     meta: {
-      title: "商品与发布",
-      icon: "ep:goods",
+      title: "独立站管理",
+      icon: "ep:shopping-bag",
       order: 9,
       alwaysShow: true,
     },
@@ -690,7 +690,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/product/category/index.vue"),
         name: "ProductCategory",
         meta: {
-          title: "商品种类",
+          title: "商品分类",
           order: 1,
         },
       },
