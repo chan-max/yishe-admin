@@ -39,3 +39,18 @@ export const getUserBehaviorLogStats = () => {
     url: '/user-behavior-log/stats',
   });
 };
+
+// 删除独立站开放用户行为日志 (DELETE)
+export const deleteUserBehaviorLog = (id: string | number) => {
+  return request.delete<boolean>({
+    url: `/user-behavior-log/${id}`,
+  });
+};
+
+// 批量删除独立站开放用户行为日志 (POST)
+export const deleteUserBehaviorLogBatch = (ids: (string | number)[]) => {
+  return request.post<{ success: boolean; count: number }>({
+    url: '/user-behavior-log/delete-batch',
+    data: { ids },
+  });
+};

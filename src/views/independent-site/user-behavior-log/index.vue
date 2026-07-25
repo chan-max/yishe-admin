@@ -85,6 +85,16 @@
               >
                 重置
               </el-button>
+              <el-button
+                size="small"
+                type="danger"
+                plain
+                :icon="Delete"
+                :disabled="!ids.length"
+                @click="handleBatchDelete"
+              >
+                批量删除 ({{ ids.length }})
+              </el-button>
             </div>
           </el-form>
         </div>
@@ -96,7 +106,14 @@
         >
           <div class="list-page-table-panel__body">
             <div class="common-table">
-              <vxe-grid ref="gridRef" v-bind="gridOptions" :data="dataSource" :loading="loading">
+              <vxe-grid
+                ref="gridRef"
+                v-bind="gridOptions"
+                :data="dataSource"
+                :loading="loading"
+                @checkbox-change="checkboxChange"
+                @checkbox-all="checkboxAllChange"
+              >
                 <template #actionSlot="{ row }">
                   <el-tag :type="getActionTagType(row.action)" size="small">
                     {{ formatActionLabel(row.action) }}
@@ -104,18 +121,18 @@
                 </template>
 
                 <template #userSlot="{ row }">
-                  <div class="font-medium text-sm">
-                    {{ row.publicUserName || row.publicUserId || '匿名开放用户' }}
-                    <span v-if="row.publicUserId" class="text-gray-400 text-xs ml-1">
+                  <div>
+                    <span>{{ row.publicUserName || row.publicUserId || '匿名开放用户' }}</span>
+                    <span v-if="row.publicUserId" class="text-gray-400 ml-1">
                       ({{ row.publicUserId }})
                     </span>
                   </div>
                 </template>
 
                 <template #targetSlot="{ row }">
-                  <div class="break-all text-sm leading-6">
-                    <span v-if="row.targetName" class="mr-1 font-normal">{{ row.targetName }}</span>
-                    <code v-if="row.targetId" class="text-xs bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-blue-600">
+                  <div class="break-all">
+                    <span v-if="row.targetName" class="mr-1">{{ row.targetName }}</span>
+                    <code v-if="row.targetId" class="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-blue-600">
                       {{ row.targetId }}
                     </code>
                     <span v-if="!row.targetName && !row.targetId" class="text-gray-400">-</span>
@@ -137,6 +154,17 @@
 
                 <template #createTimeSlot="{ row }">
                   {{ formatTimestamp(row.createTime) }}
+                </template>
+
+                <template #opSlot="{ row }">
+                  <el-button
+                    size="small"
+                    type="danger"
+                    link
+                    @click="handleDelete(row)"
+                  >
+                    删除
+                  </el-button>
                 </template>
               </vxe-grid>
             </div>
@@ -177,8 +205,14 @@ import { ref, reactive, onMounted, computed, watchEffect } from "vue";
 import { commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { useWindowSize } from "@vueuse/core";
-import { Search, Refresh } from "@element-plus/icons-vue";
-import { getUserBehaviorLogPage, type UserBehaviorLogVO } from "@/api/system/user-behavior-log";
+import { Search, Refresh, Delete } from "@element-plus/icons-vue";
+import { ElMessage, ElMessageBox } from "element-plus";
+import {
+  getUserBehaviorLogPage,
+  deleteUserBehaviorLog,
+  deleteUserBehaviorLogBatch,
+  type UserBehaviorLogVO,
+} from "@/api/system/user-behavior-log";
 import Pagination from "@/components/Pagination/index.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
@@ -189,6 +223,7 @@ const loading = ref(false);
 const dataSource = ref<UserBehaviorLogVO[]>([]);
 const total = ref(0);
 const gridRef = ref();
+const ids = ref<any[]>([]);
 
 const queryParams = reactive({
   currentPage: 1,
@@ -206,24 +241,34 @@ const formattedMetadata = computed(() => {
   return JSON.stringify(currentMetadata.value, null, 2);
 });
 
-const gridOptions = reactive({
+const gridOptions = ref({
   ...commonGridOptions,
   columns: [
-    { field: "action", title: "行为动作", width: 180, slots: { default: "actionSlot" } },
+    { type: "checkbox", width: 50 },
+    { field: "action", title: "行为动作", width: 170, slots: { default: "actionSlot" } },
     { field: "publicUser", title: "独立站开放用户", width: 220, slots: { default: "userSlot" } },
-    { field: "target", title: "关联目标/访问路径", minWidth: 220, slots: { default: "targetSlot" } },
-    { field: "ip", title: "IP 地址", width: 140 },
-    { field: "metadata", title: "附加元数据", width: 120, slots: { default: "metadataSlot" } },
-    { field: "createTime", title: "记录时间", width: 170, slots: { default: "createTimeSlot" } },
+    { field: "target", title: "关联目标/访问路径", minWidth: 200, slots: { default: "targetSlot" } },
+    { field: "ip", title: "IP 地址", width: 130 },
+    { field: "metadata", title: "附加元数据", width: 110, slots: { default: "metadataSlot" } },
+    { field: "createTime", title: "记录时间", width: 160, slots: { default: "createTimeSlot" } },
+    { field: "operation", title: "操作", width: 90, slots: { default: "opSlot" }, fixed: "right" },
   ],
 });
 
 const { height } = useWindowSize();
 watchEffect(() => {
-  if (gridOptions) {
-    gridOptions.maxHeight = height.value - 240;
+  if (gridOptions.value) {
+    gridOptions.value.maxHeight = height.value - 240;
   }
 });
+
+function checkboxChange(e: any) {
+  ids.value = e.records.map((item: any) => item.id);
+}
+
+function checkboxAllChange(e: any) {
+  ids.value = e.records.map((item: any) => item.id);
+}
 
 function formatActionLabel(action: string) {
   switch (action) {
@@ -267,6 +312,7 @@ async function getList() {
     });
     dataSource.value = res.list || [];
     total.value = res.total || 0;
+    ids.value = [];
   } finally {
     loading.value = false;
   }
@@ -285,9 +331,45 @@ function resetQuery() {
   getList();
 }
 
-function openMetadataDialog(row: UserBehaviorLogItem) {
+function openMetadataDialog(row: UserBehaviorLogVO) {
   currentMetadata.value = row.metadata || null;
   metadataDialogVisible.value = true;
+}
+
+async function handleDelete(row: UserBehaviorLogVO) {
+  try {
+    await ElMessageBox.confirm("确定要删除这条开放用户行为日志吗？", "提示", {
+      type: "warning",
+      confirmButtonText: "确定删除",
+      cancelButtonText: "取消",
+    });
+    await deleteUserBehaviorLog(row.id);
+    ElMessage.success("删除成功");
+    getList();
+  } catch (err) {
+    // 用户取消或失败静默忽略
+  }
+}
+
+async function handleBatchDelete() {
+  if (!ids.value.length) return;
+  try {
+    await ElMessageBox.confirm(
+      `确认删除选中的 ${ids.value.length} 条独立站开放用户行为日志吗？`,
+      "提示",
+      {
+        type: "warning",
+        confirmButtonText: "确认删除",
+        cancelButtonText: "取消",
+      }
+    );
+    await deleteUserBehaviorLogBatch(ids.value);
+    ElMessage.success(`成功删除 ${ids.value.length} 条行为日志`);
+    ids.value = [];
+    getList();
+  } catch (err) {
+    // 用户取消或失败静默忽略
+  }
 }
 
 onMounted(() => {

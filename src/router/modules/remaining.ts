@@ -661,6 +661,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
           order: 6,
         },
       },
+      {
+        path: "comment",
+        component: () => import("@/views/independent-site/comment/index.vue"),
+        name: "IndependentSiteComment",
+        meta: {
+          title: "独立站商品评论",
+          order: 7,
+        },
+      },
     ],
   },
   // ── 9. 商品与发布 ────────────────────────────────────────────────────
