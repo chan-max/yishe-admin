@@ -1,153 +1,9 @@
 <template>
-  <!-- 定时采集状态栏 -->
-  <ContentWrap plain>
-    <div class="schedule-bar">
-      <div class="schedule-bar__left">
-        <span class="schedule-bar__label">定时采集</span>
-        <template v-if="currentSchedule">
-          <el-tag size="small" :type="currentSchedule.enabled ? 'success' : 'info'" effect="light">
-            {{ currentSchedule.enabled ? "已开启" : "已关闭" }}
-          </el-tag>
-          <span class="schedule-bar__info">
-            {{ getClientLabel(currentSchedule.clientId) }} · 每
-            {{ currentSchedule.intervalMinutes }} 分钟 ·
-            {{ getActivePlatformCount(currentSchedule.platforms) }} 个平台
-          </span>
-          <span v-if="currentSchedule.lastRunAt" class="schedule-bar__info">
-            上次 {{ formatDateTime(currentSchedule.lastRunAt) }}
-          </span>
-        </template>
-        <span v-else class="schedule-bar__info">未配置</span>
-      </div>
-      <div class="schedule-bar__right">
-        <el-switch
-          v-if="currentSchedule"
-          :model-value="currentSchedule.enabled"
-          @change="(val: boolean) => handleToggleSchedule(currentSchedule!.id, val)"
-        />
-        <el-button v-if="!currentSchedule" size="small" @click="openScheduleDialog">
-          设置
-        </el-button>
-      </div>
-    </div>
-  </ContentWrap>
-
-  <!-- 定时任务设置弹窗 -->
-  <el-dialog v-model="showScheduleDialog" title="定时采集设置" width="900px">
-    <el-form label-position="top" size="default">
-      <el-form-item label="客户端">
-        <el-select v-model="scheduleForm.clientId" placeholder="选择客户端" style="width: 100%">
-          <el-option v-for="c in clientList" :key="c.id" :label="c.label" :value="c.id">
-            <span style="display: flex; align-items: center; gap: 6px">
-              <span class="client-dot" :class="{ 'is-online': c.isOnline }" />
-              {{ c.label }}
-              <el-tag v-if="c.isOnline" size="small" type="success" effect="plain">在线</el-tag>
-            </span>
-          </el-option>
-        </el-select>
-      </el-form-item>
-      <el-form-item label="浏览器环境（可选）">
-        <el-select
-          v-model="scheduleForm.profileId"
-          clearable
-          placeholder="留空则使用默认环境"
-          style="width: 100%"
-        >
-          <el-option
-            v-for="p in getClientProfiles(scheduleForm.clientId)"
-            :key="p.id"
-            :label="p.label"
-            :value="p.id"
-          />
-        </el-select>
-      </el-form-item>
-
-      <el-row :gutter="16">
-        <el-col :span="12">
-          <el-form-item label="采集间隔">
-            <el-input-number
-              v-model="scheduleForm.intervalMinutes"
-              :min="1"
-              :max="1440"
-              style="width: 100%"
-            />
-            <div class="form-tip">分钟</div>
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="网络环境">
-            <el-select v-model="scheduleForm.environment" style="width: 100%">
-              <el-option label="全部" value="all" />
-              <el-option label="国内直连" value="direct" />
-              <el-option label="需代理" value="proxy" />
-            </el-select>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-form-item label="采集平台">
-        <el-checkbox
-          v-model="scheduleSelectAll"
-          :indeterminate="scheduleIndeterminate"
-          @change="handleScheduleSelectAll"
-          style="margin-bottom: 8px"
-        >
-          全选
-        </el-checkbox>
-        <el-checkbox-group v-model="scheduleForm.platforms">
-          <el-checkbox v-for="p in ALL_PLATFORMS" :key="p.key" :value="p.key" border>
-            {{ p.name }}
-          </el-checkbox>
-        </el-checkbox-group>
-      </el-form-item>
-
-      <!-- AI 分析设置 -->
-      <el-divider content-position="left">AI 分析设置</el-divider>
-      <el-form-item label="采集后自动 AI 分析">
-        <el-switch v-model="scheduleForm.autoAnalyze" />
-      </el-form-item>
-      <template v-if="scheduleForm.autoAnalyze">
-        <el-form-item label="分析风格">
-          <el-select v-model="scheduleForm.analysisStyle" style="width: 100%">
-            <el-option label="专业分析" value="professional" />
-            <el-option label="轻松解读" value="casual" />
-            <el-option label="详尽深入" value="detailed" />
-            <el-option label="创意设计" value="creative" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="自定义提示词（可选）">
-          <el-input
-            v-model="scheduleForm.analysisPrompt"
-            type="textarea"
-            :rows="3"
-            placeholder="例如：重点关注跨境电商市场、特别分析东南亚地区趋势、推荐适合女性用户的设计元素..."
-          />
-        </el-form-item>
-      </template>
-    </el-form>
-    <template #footer>
-      <el-button
-        v-if="currentSchedule"
-        type="danger"
-        text
-        @click="handleDeleteSchedule"
-        style="float: left"
-      >
-        删除定时
-      </el-button>
-      <el-button @click="showScheduleDialog = false">取消</el-button>
-      <el-button :loading="collectLoading" @click="handleQuickCollect"> 立即采集 </el-button>
-      <el-button type="primary" :loading="scheduleSaving" @click="handleSaveSchedule">
-        保存
-      </el-button>
-    </template>
-  </el-dialog>
-
   <ContentWrap :plain="true">
     <ListPageLayout class="hotsearch-page">
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
           <div class="list-page-filter__actions">
-            <el-button size="small" type="primary" @click="openScheduleDialog"> 采集 </el-button>
             <el-button size="small" :loading="loading" @click="loadList">刷新</el-button>
             <el-button
               size="small"
@@ -220,7 +76,7 @@
                   </span>
                 </template>
 
-                <!-- 热点摘要列（精简版，与通知内容一致） -->
+                <!-- 热点摘要列 -->
                 <template #summarySlot="{ row }">
                   <div v-if="row.analysisStatus === 'done' && row.analysis" class="analysis-cell">
                     <div class="analysis-cell__summary analysis-cell__summary--compact">
@@ -267,62 +123,6 @@
                   <span v-else style="color: var(--el-text-color-placeholder); font-size: 12px"
                     >未分析</span
                   >
-                </template>
-
-                <!-- 设计灵感列 -->
-                <template #designSlot="{ row }">
-                  <div
-                    v-if="row.analysisStatus === 'done' && row.analysis?.designElements?.length"
-                    class="analysis-cell"
-                  >
-                    <div
-                      v-for="(de, i) in row.analysis.designElements"
-                      :key="i"
-                      class="analysis-cell__design-row"
-                    >
-                      <span class="analysis-cell__design-source">{{ de.source }}</span>
-                      <span class="analysis-cell__design-arrow"> → </span>
-                      <span class="analysis-cell__design-element">{{ de.element }}</span>
-                      <span class="analysis-cell__design-products">
-                        <el-tag
-                          v-for="p in (de.products || []).slice(0, 3)"
-                          :key="typeof p === 'object' ? p.name : p"
-                          size="small"
-                          effect="plain"
-                          type="success"
-                        >
-                          {{ typeof p === "object" ? p.name : p }}
-                        </el-tag>
-                      </span>
-                    </div>
-                  </div>
-                  <span
-                    v-else-if="row.analysisStatus === 'done'"
-                    style="color: var(--el-text-color-placeholder); font-size: 12px"
-                    >-</span
-                  >
-                </template>
-
-                <!-- 标签列 -->
-                <template #tagsSlot="{ row }">
-                  <div
-                    v-if="
-                      row.analysisStatus === 'done' &&
-                      (row.analysis?.tags || row.analysis?.hotTags)?.length
-                    "
-                    class="analysis-cell__tags"
-                  >
-                    <el-tag
-                      v-for="(t, i) in row.analysis.tags || row.analysis.hotTags || []"
-                      :key="i"
-                      size="small"
-                      effect="light"
-                      class="analysis-cell__tag"
-                      @click.stop="copyTag(t.tag)"
-                    >
-                      #{{ t.tag }}
-                    </el-tag>
-                  </div>
                 </template>
 
                 <!-- AI状态列 -->
@@ -687,7 +487,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import type { VxeGridProps } from "vxe-table";
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
@@ -696,57 +496,12 @@ import Pagination from "@/components/Pagination/index.vue";
 import {
   pageHotsearch,
   deleteHotsearch,
-  getSchedules,
-  saveSchedule,
-  toggleSchedule,
-  deleteSchedule,
   triggerAnalysis,
 } from "@/api/hotsearch-data";
-import type { HotSearchCollectRecord, HotsearchSchedule } from "@/api/hotsearch-data";
-import { useClientNodeState } from "@/services/clientNodeState";
-import { getClientServiceRuntime } from "@/store/modules/clientNode";
+import type { HotSearchCollectRecord } from "@/api/hotsearch-data";
 import { buildOperationColumn, commonGridOptions } from "@/common/table";
 
 defineOptions({ name: "HotSearch" });
-
-// ============ 客户端列表 ============
-const { clients } = useClientNodeState();
-const clientList = computed(() =>
-  clients.value
-    .filter((c: any) => c.clientInfo?.deviceKey) // 只显示有 deviceKey 的客户端
-    .map((c: any) => ({
-      id: c.clientInfo.deviceKey, // 用 deviceKey 作为 ID，和客户端轮询一致
-      label:
-        c.clientInfo?.machine?.code ||
-        c.clientInfo?.machine?.platform ||
-        c.clientInfo.deviceKey.slice(0, 16),
-      isOnline: c.isOnline,
-    })),
-);
-const getClientLabel = (clientId: string) => {
-  return clientList.value.find((c) => c.id === clientId)?.label || clientId.slice(0, 16);
-};
-
-// 从客户端 runtime 中提取浏览器 Profile 列表
-const getClientProfiles = (clientId: string) => {
-  if (!clientId) return [];
-  // clientId 现在是 deviceKey，需要从 clients 中匹配
-  const client = clients.value.find((c: any) => c.clientInfo?.deviceKey === clientId);
-  if (!client) return [];
-  const runtime = getClientServiceRuntime(client, "browser-automation");
-  const details = runtime?.details || runtime || {};
-  const items = Array.isArray(details.items)
-    ? details.items
-    : Array.isArray(details.profiles)
-      ? details.profiles
-      : [];
-  return items
-    .filter((p: any) => p?.id)
-    .map((p: any) => ({
-      id: p.id,
-      label: p.name || p.label || p.id,
-    }));
-};
 
 // ============ 平台定义 ============
 interface PlatformDef {
@@ -756,7 +511,6 @@ interface PlatformDef {
 }
 
 const ALL_PLATFORMS: PlatformDef[] = [
-  // 国内直连
   { key: "weibo", name: "微博", environment: "direct" },
   { key: "douyin", name: "抖音", environment: "direct" },
   { key: "bilibili", name: "哔哩哔哩", environment: "direct" },
@@ -767,7 +521,6 @@ const ALL_PLATFORMS: PlatformDef[] = [
   { key: "v2ex", name: "V2EX", environment: "direct" },
   { key: "36kr", name: "36氪", environment: "direct" },
   { key: "ithome", name: "IT之家", environment: "direct" },
-  // 国际新闻/趋势（需代理）
   { key: "github", name: "GitHub", environment: "direct" },
   { key: "wikipedia", name: "维基百科", environment: "direct" },
   { key: "devto", name: "Dev.to", environment: "direct" },
@@ -777,14 +530,12 @@ const ALL_PLATFORMS: PlatformDef[] = [
   { key: "cnn", name: "CNN", environment: "proxy" },
   { key: "nytimes", name: "New York Times", environment: "proxy" },
   { key: "aljazeera", name: "Al Jazeera", environment: "proxy" },
-  // 电商平台（需代理）
   { key: "ebay_trending", name: "eBay Trending", environment: "proxy" },
   { key: "shopify_trending", name: "Shopify Trending", environment: "proxy" },
 ];
 
 const activePlatformKeys = new Set(ALL_PLATFORMS.map((p) => p.key));
 
-// 过滤掉已移除的平台，只保留当前有效的
 function getActivePlatforms(platforms?: string[]): string[] {
   if (!platforms) return [];
   return platforms.filter((p) => activePlatformKeys.has(p));
@@ -881,7 +632,6 @@ const loadList = async () => {
   loading.value = true;
   try {
     const res = await pageHotsearch({ currentPage: pageNo.value, pageSize: pageSize.value });
-    // 过滤掉全部失败的记录
     tableData.value = (res.list || []).filter((r) => r.status !== "failed");
     total.value = res.total || 0;
     selectedIds.value = [];
@@ -898,12 +648,10 @@ const currentDetail = ref<HotSearchCollectRecord | null>(null);
 const detailTab = ref("data");
 const analyzingId = ref<number | null>(null);
 
-// 合并所有标签（兼容新旧格式）
 const allTags = computed(() => {
   const analysis = currentDetail.value?.analysis;
   if (!analysis) return [];
   const tags = analysis.tags || analysis.hotTags || [];
-  // 去重
   const seen = new Set<string>();
   return tags.filter((t: any) => {
     if (!t?.tag || seen.has(t.tag)) return false;
@@ -923,7 +671,6 @@ const handleTriggerAnalysis = async (row: HotSearchCollectRecord) => {
   try {
     await triggerAnalysis(row.id);
     ElMessage.success("AI 分析已触发，完成后将推送通知");
-    // 更新本地状态
     row.analysisStatus = "analyzing";
   } catch (e: any) {
     ElMessage.error(`触发失败: ${e?.message || "未知错误"}`);
@@ -935,13 +682,6 @@ const handleTriggerAnalysis = async (row: HotSearchCollectRecord) => {
 const copyTag = (tag: string) => {
   navigator.clipboard.writeText(`#${tag}`).then(() => {
     ElMessage.success(`已复制 #${tag}`);
-  });
-};
-
-const copyTags = (tags: string[]) => {
-  const text = tags.map((t) => `#${t}`).join(" ");
-  navigator.clipboard.writeText(text).then(() => {
-    ElMessage.success(`已复制 ${tags.length} 个标签`);
   });
 };
 
@@ -994,225 +734,8 @@ const handleBatchDelete = async () => {
   }
 };
 
-// ============ 手动采集（从定时弹窗触发） ============
-const collectLoading = ref(false);
-
-const handleQuickCollect = async () => {
-  if (!scheduleForm.value.clientId) {
-    ElMessage.warning("请选择客户端");
-    return;
-  }
-  if (!scheduleForm.value.platforms.length) {
-    ElMessage.warning("请选择平台");
-    return;
-  }
-
-  collectLoading.value = true;
-  try {
-    const res = await fetch("http://localhost:1519/api/hotsearch/fetch", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        platforms: scheduleForm.value.platforms,
-        reportToServer: true,
-        clientId: scheduleForm.value.clientId,
-        profileId: scheduleForm.value.profileId || undefined,
-      }),
-    });
-
-    if (!res.ok) throw new Error(`客户端响应异常: ${res.status}`);
-    const result = await res.json();
-
-    if (result.success) {
-      ElMessage.success("采集已启动，完成后自动刷新列表");
-      showScheduleDialog.value = false;
-      // 延迟刷新列表（给采集一些时间）
-      setTimeout(() => loadList(), 10000);
-    } else {
-      throw new Error(result.message || "启动采集失败");
-    }
-  } catch (e: any) {
-    ElMessage.error(`采集失败: ${e.message}`);
-  } finally {
-    collectLoading.value = false;
-  }
-};
-
-// ============ 定时任务管理 ============
-const schedules = ref<HotsearchSchedule[]>([]);
-const showScheduleDialog = ref(false);
-const scheduleSaving = ref(false);
-const scheduleForm = ref({
-  id: undefined as number | undefined,
-  clientId: "",
-  profileId: "",
-  platforms: [] as string[],
-  intervalMinutes: 60,
-  environment: "all",
-  autoAnalyze: true,
-  analysisPrompt: "",
-  analysisStyle: "professional",
-});
-
-const currentSchedule = computed(() => schedules.value[0] || null);
-
-const scheduleSelectAll = computed({
-  get: () =>
-    ALL_PLATFORMS.length > 0 && scheduleForm.value.platforms.length === ALL_PLATFORMS.length,
-  set: () => {},
-});
-const scheduleIndeterminate = computed(() => {
-  const c = scheduleForm.value.platforms.length;
-  return c > 0 && c < ALL_PLATFORMS.length;
-});
-const handleScheduleSelectAll = (val: boolean) => {
-  scheduleForm.value.platforms = val ? ALL_PLATFORMS.map((p) => p.key) : [];
-};
-
-const loadSchedules = async () => {
-  try {
-    const res = await getSchedules();
-    // API 返回 { data: [...], code: 0 } 或直接是数组
-    const rawSchedules = Array.isArray(res)
-      ? res
-      : Array.isArray((res as any)?.data)
-        ? (res as any).data
-        : [];
-    
-    // 先直接在本地过滤掉已移除的平台，并立即更新本地状态（这样页面会先显示正确数量）
-    const processedSchedules = rawSchedules.map((s: any) => {
-      const originalPlatforms = s.platforms || [];
-      const filteredPlatforms = originalPlatforms.filter((p: string) => activePlatformKeys.has(p));
-      return {
-        ...s,
-        platforms: filteredPlatforms,
-        needsUpdate: filteredPlatforms.length !== originalPlatforms.length
-      };
-    });
-    
-    // 立即更新本地状态，让页面先显示正确的数量
-    schedules.value = processedSchedules.map(s => {
-      const { needsUpdate, ...rest } = s;
-      return rest;
-    });
-    
-    // 异步保存需要更新的定时任务（不阻塞页面显示）
-    (async () => {
-      for (const schedule of processedSchedules) {
-        if (schedule.needsUpdate && schedule.id) {
-          try {
-            await saveSchedule({
-              id: schedule.id,
-              clientId: schedule.clientId,
-              platforms: schedule.platforms,
-              intervalMinutes: schedule.intervalMinutes,
-              enabled: schedule.enabled,
-              environment: schedule.environment,
-              autoAnalyze: schedule.autoAnalyze,
-              analysisPrompt: schedule.analysisPrompt,
-              analysisStyle: schedule.analysisStyle
-            });
-          } catch {
-            // 单个更新失败时不阻止其他操作
-          }
-        }
-      }
-    })();
-  } catch {}
-};
-
-const openScheduleDialog = () => {
-  const s = currentSchedule.value;
-  // clientId 始终使用当前连接的客户端（保证一致）
-  const fixedClientId = clientList.value[0]?.id || s?.clientId || "";
-  if (s) {
-    scheduleForm.value = {
-      id: s.id,
-      clientId: fixedClientId,
-      profileId: "",
-      // 过滤掉已移除的平台
-      platforms: (s.platforms || []).filter((p: string) => activePlatformKeys.has(p)),
-      intervalMinutes: s.intervalMinutes,
-      environment: s.environment || "all",
-      autoAnalyze: s.autoAnalyze ?? true,
-      analysisPrompt: s.analysisPrompt || "",
-      analysisStyle: s.analysisStyle || "professional",
-    };
-  } else {
-    scheduleForm.value = {
-      id: undefined,
-      clientId: fixedClientId,
-      profileId: "",
-      platforms: ALL_PLATFORMS.map((p) => p.key),
-      intervalMinutes: 60,
-      environment: "all",
-      autoAnalyze: true,
-      analysisPrompt: "",
-      analysisStyle: "professional",
-    };
-  }
-  showScheduleDialog.value = true;
-};
-
-const handleSaveSchedule = async () => {
-  if (!scheduleForm.value.clientId) {
-    ElMessage.warning("请选择客户端");
-    return;
-  }
-  if (!scheduleForm.value.platforms.length) {
-    ElMessage.warning("请选择平台");
-    return;
-  }
-  scheduleSaving.value = true;
-  try {
-    await saveSchedule(scheduleForm.value);
-    ElMessage.success("已保存");
-    showScheduleDialog.value = false;
-    await loadSchedules();
-  } catch {
-    ElMessage.error("保存失败");
-  } finally {
-    scheduleSaving.value = false;
-  }
-};
-
-const handleToggleSchedule = async (id: number, enabled: boolean) => {
-  try {
-    await toggleSchedule(id, enabled);
-    ElMessage.success(enabled ? "已开启" : "已关闭");
-    await loadSchedules();
-  } catch {
-    ElMessage.error("操作失败");
-  }
-};
-
-const handleDeleteSchedule = async () => {
-  if (!currentSchedule.value) return;
-  try {
-    await ElMessageBox.confirm("确定删除定时采集配置？", "确认", { type: "warning" });
-    await deleteSchedule(currentSchedule.value.id);
-    ElMessage.success("已删除");
-    showScheduleDialog.value = false;
-    await loadSchedules();
-  } catch (e: any) {
-    if (e !== "cancel") ElMessage.error("删除失败");
-  }
-};
-
-// 定时轮询 schedules（和客户端保持同步）
-let schedulePollTimer: ReturnType<typeof setInterval> | null = null;
-
 onMounted(() => {
   loadList();
-  loadSchedules();
-  schedulePollTimer = setInterval(loadSchedules, 15000);
-});
-
-onBeforeUnmount(() => {
-  if (schedulePollTimer) {
-    clearInterval(schedulePollTimer);
-    schedulePollTimer = null;
-  }
 });
 </script>
 
@@ -1249,14 +772,12 @@ onBeforeUnmount(() => {
   padding-bottom: 4px;
 }
 
-/* 列表操作区 */
 .list-page-filter__actions {
   display: flex;
   gap: 8px;
   padding: 0 0 12px;
 }
 
-/* 表格单元格 */
 .primary-cell {
   display: flex;
   flex-direction: column;
@@ -1315,7 +836,6 @@ onBeforeUnmount(() => {
   gap: 4px;
 }
 
-/* 详情弹窗 */
 .detail-dialog__hero {
   display: flex;
   align-items: flex-start;
@@ -1418,76 +938,6 @@ onBeforeUnmount(() => {
   color: var(--el-color-danger);
 }
 
-/* 弹窗 */
-.dialog-section {
-  margin-bottom: 20px;
-}
-.dialog-section__title {
-  display: flex;
-  align-items: center;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-  margin-bottom: 10px;
-}
-/* 注: 不再隐藏最后一个 el-form-item，否则浏览器环境和采集平台会被隐藏 */
-.platform-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.platform-grid .el-checkbox {
-  margin-right: 0;
-}
-
-/* 定时采集状态栏 */
-.schedule-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-.schedule-bar__left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  min-width: 0;
-}
-.schedule-bar__label {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-}
-.schedule-bar__info {
-  font-size: 13px;
-  color: var(--el-text-color-secondary);
-}
-.schedule-bar__right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
-}
-
-.form-tip {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  margin-top: 4px;
-}
-
-.client-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--el-text-color-placeholder);
-  flex-shrink: 0;
-  &.is-online {
-    background: var(--el-color-success);
-  }
-}
-
-/* AI 分析 */
 .analysis-content {
   padding: 0 4px;
 }
@@ -1556,7 +1006,6 @@ onBeforeUnmount(() => {
   }
 }
 
-/* 设计元素 */
 .analysis-design-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -1596,7 +1045,6 @@ onBeforeUnmount(() => {
   color: var(--el-text-color-secondary);
 }
 
-/* 表格内分析内容 - 紧凑 */
 .analysis-cell {
   padding: 2px 0;
   overflow: hidden;
@@ -1631,32 +1079,6 @@ onBeforeUnmount(() => {
   height: 18px;
   line-height: 18px;
 }
-/* 表格内设计灵感 - 单行紧凑 */
-.analysis-cell__design-row {
-  padding: 3px 0;
-  font-size: 12px;
-  line-height: 1.5;
-  border-bottom: 1px dashed var(--el-border-color-lighter);
-  &:last-child {
-    border-bottom: none;
-  }
-}
-.analysis-cell__design-source {
-  color: var(--el-text-color-secondary);
-}
-.analysis-cell__design-arrow {
-  color: var(--el-text-color-placeholder);
-}
-.analysis-cell__design-element {
-  font-weight: 500;
-  color: var(--el-color-primary);
-  margin-right: 4px;
-}
-.analysis-cell__design-products {
-  display: inline-flex;
-  gap: 3px;
-}
-/* 表格内标签 */
 .analysis-cell__tags {
   display: flex;
   flex-wrap: wrap;
@@ -1674,15 +1096,7 @@ onBeforeUnmount(() => {
     opacity: 0.8;
   }
 }
-.analysis-cell__more {
-  font-size: 10px;
-  color: var(--el-text-color-placeholder);
-}
-.analysis-cell__status {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
+
 .analysis-tags-wrap {
   display: flex;
   flex-wrap: wrap;
@@ -1713,20 +1127,5 @@ onBeforeUnmount(() => {
   margin-bottom: 8px;
   font-weight: 600;
   font-size: 14px;
-}
-.analysis-mix {
-  margin-bottom: 12px;
-  padding: 10px 12px;
-  background: var(--el-fill-color-lighter);
-  border-radius: 8px;
-}
-.analysis-mix-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--el-text-color-secondary);
 }
 </style>

@@ -1,8 +1,8 @@
 {
   "mcpServers": {
-    "yishe-mcp": {
+    "yishe-server": {
       "type": "sse",
-      "url": "http://localhost:1520/api/sse?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NSwiYWNjb3VudCI6ImphY2tpZSIsInRlcm1pbmFsVHlwZSI6ImFkbWluIiwidG9rZW5JZCI6ImI0YmQ2NjI0LTZmZmItNGI0MC1iNGZiLTFiMWRmNTQzN2FkYiIsImlhdCI6MTc4Mzc2NTAzOCwiZXhwIjoyMDk5MzQxMDM4fQ.jGSBX-8HCx_MjNM1pihMl6RtliaAJRwuU1s5ylKcPMo"
+      "url": "http://localhost:1520/api/sse?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NSwiYWNjb3VudCI6ImphY2tpZSIsInRlcm1pbmFsVHlwZSI6ImFkbWluIiwidG9rZW5JZCI6IjdjYmI0ZGRjLWNlYWYtNDRlZi1iNDg5LWVhYWUxMDA4NDNjOCIsImlhdCI6MTc4NTA1NDk2MCwiZXhwIjoyMTAwNjMwOTYwfQ.s7NJCzJRnVW8iqQlrhM1mWKf7vdbF3Em6g5nPXpzpqM"
     }
   }
 }

@@ -28,38 +28,40 @@ const { push, back } = router
   align-items: center;
   justify-content: center;
   padding: 32px 20px;
-  background: linear-gradient(180deg, #fff 0%, #f7f8fa 100%);
+  background: var(--app-content-bg-color, #f5f7fa);
 }
 
 .error-404-card {
-  width: min(100%, 520px);
-  padding: 40px 28px;
+  width: min(100%, 480px);
+  padding: 48px 32px 40px;
   border: 1px solid var(--el-border-color-lighter);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.96);
+  border-radius: 12px;
+  background: var(--el-bg-color, #fff);
   text-align: center;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
 
 .error-404-code {
-  margin-bottom: 10px;
-  font-size: clamp(56px, 10vw, 88px);
-  font-weight: 700;
+  margin-bottom: 8px;
+  font-size: clamp(64px, 12vw, 96px);
+  font-weight: 800;
   line-height: 1;
   letter-spacing: -0.04em;
   color: var(--el-text-color-primary);
+  opacity: 0.12;
 }
 
 .error-404-title {
   margin: 0;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 600;
-  line-height: 1.3;
+  line-height: 1.4;
   color: var(--el-text-color-primary);
 }
 
 .error-404-desc {
-  margin: 10px auto 0;
-  max-width: 360px;
+  margin: 8px auto 0;
+  max-width: 320px;
   font-size: 14px;
   line-height: 1.7;
   color: var(--el-text-color-secondary);
@@ -69,7 +71,7 @@ const { push, back } = router
   display: flex;
   justify-content: center;
   gap: 12px;
-  margin-top: 28px;
+  margin-top: 32px;
 }
 
 @media (max-width: 640px) {
@@ -78,12 +80,12 @@ const { push, back } = router
   }
 
   .error-404-card {
-    padding: 32px 20px;
-    border-radius: 12px;
+    padding: 36px 20px 32px;
+    border-radius: 10px;
   }
 
   .error-404-title {
-    font-size: 20px;
+    font-size: 18px;
   }
 
   .error-404-actions {
