@@ -150,14 +150,14 @@ const shortcuts: ShortcutItem[] = [
     key: "queue",
     title: "任务中心",
     description: "发布任务与执行日志",
-    route: "/product/queue",
+    route: "/product-publish/queue",
     icon: "ep:data-analysis",
   },
   {
     key: "psd-set",
     title: "套图制作",
     description: "PS 自动制作流程",
-    route: "/product/psd-set",
+    route: "/product-publish/psd-set",
     icon: "ep:picture",
   },
   {
@@ -222,7 +222,7 @@ const modules: ModuleItem[] = [
     features: [
       { name: "MCP 工具", desc: "模型上下文协议", route: "/ai/mcp" },
       { name: "Skills", desc: "AI 技能管理", route: "/ai/skills" },
-      { name: "AI 配置", desc: "模型与参数设置", route: "/ai/config" },
+      { name: "AI 配置", desc: "模型与参数设置", route: "/ai/model-service" },
     ],
   },
   {
@@ -233,8 +233,8 @@ const modules: ModuleItem[] = [
     route: "/independent-site/product",
     features: [
       { name: "商品管理", desc: "独立站商品", route: "/independent-site/product" },
-      { name: "商品分类", desc: "分类体系维护", route: "/independent-site/product-category" },
-      { name: "店铺管理", desc: "店铺配置", route: "/independent-site/store" },
+      { name: "商品分类", desc: "分类体系维护", route: "/independent-site/category" },
+      { name: "商品生成模板", desc: "模板配置", route: "/independent-site/generation-template" },
     ],
   },
   {
@@ -242,11 +242,11 @@ const modules: ModuleItem[] = [
     title: "商品发布",
     description: "发布任务与套图流程",
     icon: "ep:shopping-bag",
-    route: "/product-publish/list",
+    route: "/product-publish/queue",
     features: [
-      { name: "发布任务", desc: "任务列表管理", route: "/product-publish/list" },
-      { name: "发布队列", desc: "队列状态监控", route: "/product/queue" },
-      { name: "套图制作", desc: "PS 自动制作", route: "/product/psd-set" },
+      { name: "发布队列", desc: "任务列表管理", route: "/product-publish/queue" },
+      { name: "发布配置", desc: "队列状态监控", route: "/product-publish/publish-config" },
+      { name: "套图制作", desc: "PS 自动制作", route: "/product-publish/psd-set" },
     ],
   },
   {
@@ -257,7 +257,7 @@ const modules: ModuleItem[] = [
     route: "/external/browser-automation",
     features: [
       { name: "浏览器自动化", desc: "环境与调试", route: "/external/browser-automation" },
-      { name: "文件下载", desc: "远程文件下载", route: "/client/file-download" },
+      { name: "PS 自动化", desc: "PS 远程控制", route: "/external/ps-automation" },
       { name: "客户端管理", desc: "节点状态", route: "/external/client-management" },
     ],
   },
@@ -270,7 +270,7 @@ const modules: ModuleItem[] = [
     features: [
       { name: "链接导航", desc: "常用平台入口", route: "/operation/link-navigation" },
       { name: "工具集", desc: "平台业务工具", route: "/operation/toolkit" },
-      { name: "电商数据", desc: "数据链路管理", route: "/ecom-platform-collect/data-chain" },
+      { name: "电商数据", desc: "数据链路管理", route: "/ecom-platform-collect/tasks" },
     ],
   },
 ];
