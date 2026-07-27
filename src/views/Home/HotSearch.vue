@@ -2,9 +2,27 @@
   <ContentWrap :plain="true">
     <ListPageLayout class="hotsearch-page">
       <template #filter>
-        <div class="list-page-filter list-page-filter--flat">
-          <div class="list-page-filter__actions">
-            <el-button size="small" :loading="loading" @click="loadList">刷新</el-button>
+        <el-form :model="queryParams" label-position="top" class="list-page-search-form" @submit.prevent="loadList">
+          <el-row :gutter="12" class="list-page-search-form__row">
+            <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="6">
+              <el-form-item label="时间范围">
+                <el-date-picker
+                  v-model="dateRange"
+                  type="daterange"
+                  range-separator="至"
+                  start-placeholder="开始日期"
+                  end-placeholder="结束日期"
+                  size="small"
+                  value-format="YYYY-MM-DD"
+                  :shortcuts="dateShortcuts"
+                  style="width: 100%"
+                  @change="handleDateChange"
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <div class="list-page-search-form__actions">
+            <el-button size="small" type="primary" :loading="loading" @click="loadList">刷新</el-button>
             <el-button
               size="small"
               type="danger"
@@ -14,7 +32,7 @@
               批量删除 ({{ selectedIds.length }})
             </el-button>
           </div>
-        </div>
+        </el-form>
       </template>
 
       <template #table>
@@ -556,6 +574,41 @@ const total = ref(0);
 const pageNo = ref(1);
 const pageSize = ref(20);
 const selectedIds = ref<number[]>([]);
+const dateRange = ref<[string, string] | null>(null);
+
+const dateShortcuts = [
+  {
+    text: '今天',
+    value: () => {
+      const start = new Date();
+      const end = new Date();
+      return [start.toISOString().slice(0, 10), end.toISOString().slice(0, 10)];
+    },
+  },
+  {
+    text: '最近7天',
+    value: () => {
+      const start = new Date();
+      start.setDate(start.getDate() - 7);
+      const end = new Date();
+      return [start.toISOString().slice(0, 10), end.toISOString().slice(0, 10)];
+    },
+  },
+  {
+    text: '最近30天',
+    value: () => {
+      const start = new Date();
+      start.setDate(start.getDate() - 30);
+      const end = new Date();
+      return [start.toISOString().slice(0, 10), end.toISOString().slice(0, 10)];
+    },
+  },
+];
+
+const handleDateChange = () => {
+  pageNo.value = 1;
+  loadList();
+};
 
 const gridOptions = ref<VxeGridProps<HotSearchCollectRecord>>({
   ...(commonGridOptions as VxeGridProps<HotSearchCollectRecord>),
@@ -631,7 +684,12 @@ const formatHot = (hot: string | number) => {
 const loadList = async () => {
   loading.value = true;
   try {
-    const res = await pageHotsearch({ currentPage: pageNo.value, pageSize: pageSize.value });
+    const params: any = { currentPage: pageNo.value, pageSize: pageSize.value };
+    if (dateRange.value) {
+      params.startDate = dateRange.value[0];
+      params.endDate = dateRange.value[1];
+    }
+    const res = await pageHotsearch(params);
     tableData.value = (res.list || []).filter((r) => r.status !== "failed");
     total.value = res.total || 0;
     selectedIds.value = [];
