@@ -111,6 +111,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
           menuKey: "home.design-knowledge",
         },
       },
+      {
+        path: "design-prompt",
+        component: () => import("@/views/design-prompt/index.vue"),
+        name: "DesignPrompt",
+        meta: {
+          title: "设计提示词",
+          menuKey: "home.design-prompt",
+        },
+      },
     ],
   },
   {
@@ -1492,10 +1501,10 @@ function attachMenuKeys(routes: AppRouteRecordRaw[]): AppRouteRecordRaw[] {
       ...route,
       meta: menuKey
         ? {
-            ...(route.meta || {}),
-            menuKey,
-            ...(legacyMenuKeys?.length ? { legacyMenuKeys } : {}),
-          }
+          ...(route.meta || {}),
+          menuKey,
+          ...(legacyMenuKeys?.length ? { legacyMenuKeys } : {}),
+        }
         : route.meta,
       children: route.children ? attachMenuKeys(route.children) : route.children,
     };
