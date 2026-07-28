@@ -140,7 +140,7 @@ export default defineComponent({
             pluginKey as keyof typeof clientNodeStore.pluginStatusMap
           ] || "offline";
       });
-      result["/product/queue"] = publishTaskMenuStatusTone.value;
+      result["/product-publish/queue"] = publishTaskMenuStatusTone.value;
       return result;
     });
 
@@ -158,7 +158,7 @@ export default defineComponent({
           return isClientServiceRuntimeBusy(serviceRuntime);
         });
       });
-      result["/product/queue"] = isAnyPublishTaskRunning.value;
+      result["/product-publish/queue"] = isAnyPublishTaskRunning.value;
 
       return result;
     });
@@ -316,14 +316,14 @@ export default defineComponent({
           available: "视频模板可用",
           offline: "视频模板不可用",
         },
-        "/product/queue": {
+        "/product-publish/queue": {
           available: "发布任务可执行",
           offline: "发布任务暂不可执行",
         },
       };
 
       const title =
-        routePath === "/product/queue"
+        routePath === "/product-publish/queue"
           ? publishTaskTooltipText.value
           : routePath === "/external/browser-automation" ||
               routePath === "/operation/toolkit" ||
@@ -338,7 +338,7 @@ export default defineComponent({
       if (running) {
         return renderRunningStatusDot(
           title || "当前有任务正在执行",
-          routePath === "/product/queue"
+          routePath === "/product-publish/queue"
             ? "queue"
             : isRemotionRoute(routePath)
               ? "video"
@@ -377,8 +377,8 @@ export default defineComponent({
       );
     };
 
-    const isPsdSetRoute = (routePath: string) => routePath === "/product/psd-set";
-    const isQueueRoute = (routePath: string) => routePath === "/product/queue";
+    const isPsdSetRoute = (routePath: string) => routePath === "/product-publish/psd-set";
+    const isQueueRoute = (routePath: string) => routePath === "/product-publish/queue";
     const isImageProcessingRoute = (routePath: string) =>
       routePath === "/content/image-processing-record";
     const isRemotionRoute = (routePath: string) => routePath === "/content/remotion-video-record";
