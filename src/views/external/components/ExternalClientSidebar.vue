@@ -1,30 +1,29 @@
 <template>
-  <aside class="external-sidebar card">
-    <div class="external-sidebar__title">{{ sectionTitle }}</div>
-    <el-empty v-if="!items.length && !loading" :description="emptyText" />
-    <div v-else class="external-sidebar__list">
+  <aside class="sidebar">
+    <div class="sidebar__title">{{ sectionTitle }}</div>
+    <el-empty v-if="!items.length && !loading" :description="emptyText" :image-size="48" />
+    <div v-else class="sidebar__list">
       <button
         v-for="item in items"
         :key="item.connectionId"
         type="button"
-        class="external-sidebar__item"
-        :class="{ 'is-active': item.connectionId === selectedClientId }"
+        class="sidebar__item"
+        :class="{
+          'is-active': item.connectionId === selectedClientId,
+          'is-offline': item.isOnline === false,
+        }"
         @click="$emit('select', item.connectionId)"
       >
-        <div class="external-sidebar__head">
-          <span class="external-sidebar__name">{{ item.name }}</span>
-          <span class="external-sidebar__time-label">连接时间</span>
+        <div class="sidebar__item-head">
+          <span class="sidebar__name">{{ item.name }}</span>
+          <span
+            v-if="item.isOnline !== undefined"
+            :class="['sidebar__badge', item.isOnline ? 'sidebar__badge--on' : 'sidebar__badge--off']"
+          />
         </div>
-        <div class="external-sidebar__meta-row external-sidebar__meta-row--time">
-          <span class="external-sidebar__meta">连接时间</span>
-          <span class="external-sidebar__time">{{ item.time || '-' }}</span>
-        </div>
-        <div class="external-sidebar__meta-row">
-          <span class="external-sidebar__meta">{{ item.metaLeft || '-' }}</span>
-          <span class="external-sidebar__meta">{{ item.metaRight || '-' }}</span>
-        </div>
-        <div v-if="item.detail" class="external-sidebar__detail" :title="item.detail">
-          {{ item.detail }}
+        <div class="sidebar__meta" v-if="item.metaLeft || item.metaRight">
+          <span>{{ item.metaLeft }}</span>
+          <span>{{ item.metaRight }}</span>
         </div>
       </button>
     </div>
@@ -32,11 +31,6 @@
 </template>
 
 <script setup lang="ts">
-export interface ClientNodeBadge {
-  text: string
-  tone: 'success' | 'warning' | 'muted' | 'info' | 'danger'
-}
-
 export interface ClientNodeItem {
   connectionId: string
   name: string
@@ -44,9 +38,10 @@ export interface ClientNodeItem {
   metaLeft?: string
   metaRight?: string
   detail?: string
+  isOnline?: boolean
 }
 
-const props = withDefaults(defineProps<{
+withDefaults(defineProps<{
   items: ClientNodeItem[]
   loading?: boolean
   selectedClientId?: string
@@ -62,120 +57,92 @@ const props = withDefaults(defineProps<{
 defineEmits<{
   select: [clientId: string]
 }>()
-
-const sectionTitle = props.sectionTitle
-const emptyText = props.emptyText
 </script>
 
 <style scoped>
-.external-sidebar {
+.sidebar {
   display: flex;
   flex-direction: column;
-  padding: 12px;
-  border: 1px solid var(--el-border-color);
-  border-radius: 12px;
-  background: var(--el-bg-color);
+  padding: 12px 8px;
 }
 
-.external-sidebar__title {
-  margin-bottom: 10px;
-  font-size: 14px;
+.sidebar__title {
+  padding: 0 8px 8px;
+  font-size: 13px;
   font-weight: 600;
-  line-height: 1.2;
+  color: var(--el-text-color-secondary);
 }
 
-.external-sidebar__list {
+.sidebar__list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 2px;
 }
 
-.external-sidebar__item {
+.sidebar__item {
   width: 100%;
-  min-height: 92px;
-  padding: 12px;
-  border: 1px solid var(--el-border-color);
-  border-radius: 10px;
-  background: var(--el-bg-color);
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
   text-align: left;
-  transition:
-    border-color .18s ease,
-    background-color .18s ease,
-    transform .18s ease;
+  cursor: pointer;
+  transition: background-color .15s;
 }
 
-.external-sidebar__item.is-active {
-  border-color: var(--el-color-primary);
+.sidebar__item:hover {
   background: var(--el-fill-color-light);
 }
 
-.external-sidebar__item:hover {
-  transform: translateY(-1px);
-  border-color: var(--el-color-primary-light-5);
+.sidebar__item.is-active {
+  background: var(--el-fill-color);
 }
 
-.external-sidebar__head,
-.external-sidebar__meta-row {
+.sidebar__item.is-offline {
+  opacity: .55;
+}
+
+.sidebar__item.is-offline.is-active {
+  opacity: 1;
+}
+
+.sidebar__item-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
 }
 
-.external-sidebar__head {
-  min-height: 22px;
-}
-
-.external-sidebar__meta-row {
-  margin-top: 6px;
-  min-height: 18px;
-}
-
-.external-sidebar__meta-row--time {
-  margin-top: 4px;
-}
-
-.external-sidebar__name {
-  min-width: 0;
-  font-weight: 600;
+.sidebar__name {
   font-size: 13px;
-  line-height: 1.4;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.external-sidebar__time,
-.external-sidebar__meta {
-  min-width: 0;
-  font-size: 12px;
-  line-height: 1.4;
-  color: var(--el-text-color-secondary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.external-sidebar__time-label {
+.sidebar__badge {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
   flex-shrink: 0;
+}
+
+.sidebar__badge--on {
+  background: var(--el-color-success);
+}
+
+.sidebar__badge--off {
+  background: var(--el-color-info);
+}
+
+.sidebar__meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 3px;
   font-size: 11px;
-  line-height: 1.2;
   color: var(--el-text-color-secondary);
-}
-
-.external-sidebar__detail {
-  margin-top: 6px;
-  font-size: 12px;
-  line-height: 1.4;
-  color: var(--el-text-color-regular);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-@media (max-width: 1200px) {
-  .external-sidebar__item {
-    min-height: auto;
-  }
+  line-height: 1.3;
 }
 </style>
