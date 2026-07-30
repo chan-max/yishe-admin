@@ -1,20 +1,32 @@
 import request from "@/config/axios";
 
+const LOCAL_CLIENT_SERVER = "http://localhost:1519";
+
+// 获取本地服务密钥（用于调用敏感接口）
+async function getLocalClientSecret(): Promise<string> {
+  try {
+    const res = await fetch(`${LOCAL_CLIENT_SERVER}/api/client-secret`);
+    const data = await res.json();
+    return data.secret || "";
+  } catch {
+    return "";
+  }
+}
+
 // 客户端授权：将 token 传递给 electron 客户端
-export function saveTokenToClient(token: string): Promise<boolean> {
-  // 通过 HTTP POST 发送 token 到本地客户端
-  return fetch("http://localhost:1519/api/saveToken", {
+export async function saveTokenToClient(token: string): Promise<boolean> {
+  const secret = await getLocalClientSecret();
+  const res = await fetch(`${LOCAL_CLIENT_SERVER}/api/saveToken`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      "X-Local-Secret": secret,
     },
     body: JSON.stringify({ token }),
-  })
-    .then((res) => res.json())
-    .then((data) => {
-      if (data.success) return true;
-      return Promise.reject(new Error(data.message || "授权失败"));
-    });
+  });
+  const data = await res.json();
+  if (data.success) return true;
+  throw new Error(data.message || "授权失败");
 }
 
 export function isClientAuthorized(): Promise<boolean> {
