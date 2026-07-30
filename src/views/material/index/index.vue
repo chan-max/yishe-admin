@@ -2874,6 +2874,7 @@ import ImageGroupView from "../imageGroup/index.vue";
 import { imageGroupApi, type ImageGroupItem } from "@/api/imageGroup";
 import { FOLDER_FILTER } from "@/constants/folder";
 import { derivePublishTaskTypeByPlatform, getTaskTypeLabel } from "@/config/task-types";
+import { useServiceHealthState } from "@/services/serviceHealthState";
 
 const userStore = useUserStore();
 const router = useRouter();
@@ -2885,6 +2886,9 @@ const visualSimilarSearchDisabled = false;
 const phashSearchDisabled = true;
 const VISUAL_SIMILAR_SEARCH_DISABLED_MESSAGE = "模糊搜索功能暂时禁用";
 const PHASH_SEARCH_DISABLED_MESSAGE = "pHash 相似匹配功能暂时禁用";
+
+// 模型服务健康状态检查
+const modelServiceHealth = useServiceHealthState("modelService");
 
 type StickerUserTransferAction = "copy" | "move";
 type StickerUserTransferUserOption = {
@@ -4334,7 +4338,19 @@ async function loadVectorSimilarResults(imageUrl: string, resetPage = true): Pro
   } catch (error: any) {
     vectorSimilarSearchActive.value = false;
     similarImageSearchMeta.value = null;
-    ElMessage.error(error?.message || "搜索失败");
+    const errorMsg = error?.message || "";
+    const lowerMsg = errorMsg.toLowerCase();
+    // 检测模型服务不可用的错误
+    if (
+      lowerMsg.includes("connection refused") ||
+      lowerMsg.includes("econnrefused") ||
+      lowerMsg.includes("model service") ||
+      lowerMsg.includes("模型服务")
+    ) {
+      ElMessage.error("模型服务未启动，请先启动 yishe-models 服务");
+    } else {
+      ElMessage.error(errorMsg || "搜索失败");
+    }
     return false;
   } finally {
     loading.value = false;
@@ -4373,7 +4389,19 @@ async function loadVectorSimilarTextResults(text: string, resetPage = true): Pro
   } catch (error: any) {
     vectorSimilarSearchActive.value = false;
     similarImageSearchMeta.value = null;
-    ElMessage.error(error?.message || "文字搜索失败");
+    const errorMsg = error?.message || "";
+    const lowerMsg = errorMsg.toLowerCase();
+    // 检测模型服务不可用的错误
+    if (
+      lowerMsg.includes("connection refused") ||
+      lowerMsg.includes("econnrefused") ||
+      lowerMsg.includes("model service") ||
+      lowerMsg.includes("模型服务")
+    ) {
+      ElMessage.error("模型服务未启动，请先启动 yishe-models 服务");
+    } else {
+      ElMessage.error(errorMsg || "文字搜索失败");
+    }
     return false;
   } finally {
     loading.value = false;
@@ -4468,6 +4496,12 @@ function isValidRemoteImageUrl(value: string) {
 async function submitSimilarImageSearch() {
   if (visualSimilarSearchDisabled) {
     ElMessage.warning(VISUAL_SIMILAR_SEARCH_DISABLED_MESSAGE);
+    return;
+  }
+
+  // 检查模型服务是否可用
+  if (modelServiceHealth.checked && !modelServiceHealth.available) {
+    ElMessage.warning("模型服务未启动，请先启动 yishe-models 服务");
     return;
   }
 

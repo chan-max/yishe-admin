@@ -377,6 +377,14 @@ const remainingRouter: AppRouteRecordRaw[] = [
           serviceStatusKey: "modelService",
         },
       },
+      {
+        path: "image-analysis",
+        component: () => import("@/views/ai/image-analysis/index.vue"),
+        name: "AiImageAnalysis",
+        meta: {
+          title: "AI图片分析",
+        },
+      },
     ],
   },
   // ── 4. 内容与自动化 ───────────────────────────────────────────────────

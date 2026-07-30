@@ -29,6 +29,9 @@
               <el-button size="small" :disabled="loading" @click="openUsageSettingDialog()">
                 AI 使用设置
               </el-button>
+              <el-button size="small" :disabled="loading" @click="openVisionConfigDialog()">
+                图片分析配置
+              </el-button>
               <el-button size="small" :disabled="loading" @click="handleSearch">查询</el-button>
               <el-button
                 size="small"
@@ -186,6 +189,7 @@
     <AiApiKeyDialog ref="dialogRef" @success="handleDialogSuccess" />
     <AiApiKeyShareDialog ref="shareDialogRef" @success="handleDialogSuccess" />
     <AiUsageSettingPanel ref="usageSettingDialogRef" @saved="handleUsageSettingSaved" />
+    <AiVisionConfigDialog ref="visionConfigDialogRef" @saved="handleUsageSettingSaved" />
   </ContentWrap>
 </template>
 
@@ -205,6 +209,7 @@ import { useUserStore } from "@/store/modules/user";
 import AiApiKeyDialog from "./components/AiApiKeyDialog.vue";
 import AiApiKeyShareDialog from "./components/AiApiKeyShareDialog.vue";
 import AiUsageSettingPanel from "./components/AiUsageSettingPanel.vue";
+import AiVisionConfigDialog from "./components/AiVisionConfigDialog.vue";
 import { refreshAiConfigState } from "@/services/aiConfigState";
 
 const userStore = useUserStore();
@@ -222,6 +227,7 @@ const mineTotal = ref(0);
 const dialogRef = ref();
 const shareDialogRef = ref();
 const usageSettingDialogRef = ref();
+const visionConfigDialogRef = ref();
 const revealedApiKeyMap = reactive<Record<number, boolean>>({});
 const plainApiKeyMap = reactive<Record<number, string>>({});
 const queryParams = reactive({
@@ -393,6 +399,10 @@ const openShareDialog = (row: AiApiKeyConfig) => {
 
 const openUsageSettingDialog = () => {
   usageSettingDialogRef.value?.open();
+};
+
+const openVisionConfigDialog = () => {
+  visionConfigDialogRef.value?.open();
 };
 
 const handleToggleEnabled = async (row: AiApiKeyConfig, enabled: boolean) => {
