@@ -63,7 +63,6 @@
                 class="!ml-0"
                 type="danger"
                 plain
-                :disabled="!ids.length || loading"
                 @click="handleDelete()"
               >
                 批量删除 ({{ ids.length }})

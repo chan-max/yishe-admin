@@ -35,7 +35,7 @@
               <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
               <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
               <el-button type="primary" :icon="Plus" @click="handleAdd">新增</el-button>
-              <el-button type="danger" :icon="Delete" :disabled="!ids.length" @click="handleDelete(null)">批量删除</el-button>
+              <el-button type="danger" :icon="Delete" @click="handleDelete(null)">批量删除</el-button>
             </div>
           </el-form>
         </div>

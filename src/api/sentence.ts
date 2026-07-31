@@ -48,4 +48,31 @@ export function batchMoveSentence(data: { ids: number[]; folderId: string | null
     url: '/sentences/batch-move',
     data,
   });
-} 
+}
+
+export function shareSentenceToUser(data: { ids: (number | string)[]; targetUserId: number | string }) {
+  return request.post({
+    url: '/sentences/share-to-user',
+    data,
+  });
+}
+
+export function getSentenceSharedRecords(id: number | string) {
+  return request.get({
+    url: `/sentences/${id}/shared-records`,
+  });
+}
+
+export function copySentenceToUser(data: { ids: (number | string)[]; targetUserId: number | string }) {
+  return request.post({
+    url: '/sentences/copy-to-user',
+    data,
+  });
+}
+
+export function moveSentenceToUser(data: { ids: (number | string)[]; targetUserId: number | string }) {
+  return request.post({
+    url: '/sentences/move-to-user',
+    data,
+  });
+}

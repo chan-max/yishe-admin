@@ -393,6 +393,25 @@ export function copyStickersToUser(data: { ids: string[] | string; targetUserId:
 }
 
 /**
+ * Share stickers to target user (shared COS)
+ */
+export function shareStickersToUser(data: { ids: string[] | string; targetUserId: string }) {
+  return request.post({
+    url: '/sticker/share-to-user',
+    data
+  })
+}
+
+/**
+ * Get shared records for a sticker
+ */
+export function getStickerSharedRecords(id: string) {
+  return request.get({
+    url: `/sticker/${id}/shared-records`
+  })
+}
+
+/**
  * Move stickers to target user
  */
 export function moveStickersToUser(data: { ids: string[] | string; targetUserId: string }) {

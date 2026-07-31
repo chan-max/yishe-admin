@@ -1,4 +1,4 @@
-﻿import type { App } from 'vue'
+import type { App } from 'vue'
 import { CACHE_KEY, useCache } from '@/hooks/web/useCache'
 
 function resolveAdminStatus(): boolean | null {
@@ -47,40 +47,9 @@ export function adminOnly(app: App<Element>) {
     }
   })
 
+  // 全局屏蔽已按需求禁用：普通用户与管理员用户均可查看和操作删除相关功能
   const hideSensitiveElements = () => {
-    if (!shouldHideForNonAdmin()) return
-
-    const keywords = ['删除', '移除', '删除项', '移除项', '删除记录']
-    const classes = [/btn-?delete/i, /delete/i, /del/i, /remove/i]
-    const elements = Array.from(document.querySelectorAll('button, a, span, i'))
-
-    elements.forEach((el) => {
-      try {
-        const text = (el.textContent || '').trim()
-        if (text && keywords.some((keyword) => text.includes(keyword))) {
-          ;(el as HTMLElement).style.display = 'none'
-          return
-        }
-
-        const className = el.getAttribute?.('class') || ''
-        if (className && classes.some((rule) => rule.test(className))) {
-          ;(el as HTMLElement).style.display = 'none'
-        }
-      } catch {
-        // ignore
-      }
-    })
-  }
-
-  if (typeof window !== 'undefined') {
-    setTimeout(hideSensitiveElements, 500)
-    try {
-      const observer = new MutationObserver(() => {
-        hideSensitiveElements()
-      })
-      observer.observe(document.body, { childList: true, subtree: true })
-    } catch {
-      // ignore
-    }
+    // 允许所有用户查看与操作删除相关按钮
+    return
   }
 }

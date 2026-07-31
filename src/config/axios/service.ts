@@ -252,19 +252,6 @@ service.interceptors.request.use(
     }
 
     const method = config.method?.toUpperCase();
-    // 全局拦截：阻止非管理员发起“删除/移除”类操作（额外以 URL 关键字检测）
-    try {
-      const isDeleteLike =
-        (config.method && config.method.toLowerCase() === "delete") ||
-        /\/delete|\/remove|\/del|\/destroy|\/trash|\/batchDelete/i.test(url);
-      if (!isAdmin && isDeleteLike) {
-        ElMessage.warning("无权限：删除/移除操作仅限管理员");
-        return Promise.reject(new Error("无权限删除"));
-      }
-    } catch (e) {
-      // 如果 store 未就绪或检查失败，继续按原逻辑处理（避免阻塞正常请求）
-      console.warn("权限检查失败，跳过删除拦截", e);
-    }
     // 防止 GET 请求缓存
     if (method === "GET") {
       config.headers["Cache-Control"] = "no-cache";

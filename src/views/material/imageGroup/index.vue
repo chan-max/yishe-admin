@@ -69,7 +69,6 @@
                 type="danger"
                 plain
                 :icon="Delete"
-                :disabled="!selectedIds.length"
                 @click="handleBatchDelete"
               >
                 批量删除 ({{ selectedIds.length }})

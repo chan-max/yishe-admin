@@ -226,7 +226,7 @@
               ">
                 上传
               </el-button>
-              <el-button v-if="isAdmin" size="small" @click="
+              <el-button size="small" @click="
                 () => {
                   urlUploadModalVisible = true;
                 }
@@ -236,34 +236,77 @@
               <el-button size="small" @click="handleMultiDownload">
                 下载 ({{ ids.length }})
               </el-button>
-              <el-button size="small" type="success" :disabled="loading || !ids.length"
-                @click="() => openStickerUserTransferDialog('copy')">
-                分享给用户({{ ids.length }})
+              <el-button size="small" type="danger" :loading="deleteLoading" @click="handleDelete(null)">
+                <el-icon><Delete /></el-icon>
+                <span>批量删除({{ ids.length }})</span>
               </el-button>
-              <el-button size="small" type="warning" :disabled="loading || !ids.length"
-                @click="() => openStickerUserTransferDialog('move')">
-                转移给用户({{ ids.length }})
-              </el-button>
-              <el-button size="small" type="primary" plain :disabled="loading || !ids.length"
-                @click="() => openPsdSetDialog(false)">
-                制作PS套图({{ ids.length }})
-              </el-button>
-              <el-button size="small" type="success" plain :disabled="loading || !ids.length"
-                @click="openMaterialPublishConfigDialog">
-                选择发布配置({{ ids.length }})
-              </el-button>
-              <el-button size="small" type="primary" plain :icon="MagicStick" :disabled="loading || !ids.length"
-                @click="openMaterialProductConfigDialog">
-                生成独立站商品({{ ids.length }})
-              </el-button>
-              <el-button size="small" type="success" plain :disabled="loading || !ids.length"
-                :title="addToGroupButtonTitle" @click="openBatchAddToGroupDialog">
-                {{ addToGroupButtonText }}({{ ids.length }})
-              </el-button>
-              <el-button size="small" type="danger" :icon="Delete" :loading="deleteLoading"
-                :disabled="loading || !ids.length" @click="handleDelete(null)">
-                批量删除({{ ids.length }})
-              </el-button>
+              <el-dropdown trigger="click"
+                @command="(cmd: StickerUserTransferAction) => openStickerUserTransferDialog(cmd)">
+                <el-button size="small" type="success" :disabled="loading || !ids.length">
+                  分享 ({{ ids.length }})
+                  <el-icon class="el-icon--right">
+                    <ArrowDown />
+                  </el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="share">
+                      <el-icon>
+                        <Share />
+                      </el-icon>
+                      <span>共享</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item command="copy">
+                      <el-icon>
+                        <DocumentCopy />
+                      </el-icon>
+                      <span>转存副本</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item command="move">
+                      <el-icon>
+                        <TopRight />
+                      </el-icon>
+                      <span>移交所有人</span>
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+              <el-dropdown trigger="click" :disabled="loading || !ids.length">
+                <el-button size="small" type="primary" plain :disabled="loading || !ids.length">
+                  制作工具 ({{ ids.length }})
+                  <el-icon class="el-icon--right">
+                    <ArrowDown />
+                  </el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item @click="() => openPsdSetDialog(false)">
+                      <el-icon>
+                        <Picture />
+                      </el-icon>
+                      <span>制作PS套图</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item @click="openMaterialPublishConfigDialog">
+                      <el-icon>
+                        <Setting />
+                      </el-icon>
+                      <span>选择发布配置</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item @click="openMaterialProductConfigDialog">
+                      <el-icon>
+                        <MagicStick />
+                      </el-icon>
+                      <span>生成独立站商品</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item :title="addToGroupButtonTitle" @click="openBatchAddToGroupDialog">
+                      <el-icon>
+                        <FolderAdd />
+                      </el-icon>
+                      <span>{{ addToGroupButtonText }}</span>
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </div>
           </el-form>
         </div>
@@ -1276,12 +1319,12 @@
                     currentPsdTemplate.preview ||
                     currentPsdTemplate.image
                   " :src="getPreviewImageUrl(
-                      currentPsdTemplate.thumbnail ||
-                      currentPsdTemplate.preview ||
-                      currentPsdTemplate.image,
-                      { width: 600, quality: 90, format: 'webp' },
-                    )
-                      " :alt="currentPsdTemplate.name || '模板缩略图'" class="detail-thumbnail-img" loading="lazy" />
+                    currentPsdTemplate.thumbnail ||
+                    currentPsdTemplate.preview ||
+                    currentPsdTemplate.image,
+                    { width: 600, quality: 90, format: 'webp' },
+                  )
+                    " :alt="currentPsdTemplate.name || '模板缩略图'" class="detail-thumbnail-img" loading="lazy" />
                   <div v-else class="detail-thumbnail-placeholder">暂无缩略图</div>
                 </div>
               </div>
@@ -1386,9 +1429,23 @@
                 <template #compactNameSlot="{ row }">
                   <div class="material-compact-name">
                     <div class="material-compact-name__title material-compact-name__title--wrap">
-                      {{ row.name || `素材 ${row.id}` }}
+                      <span>{{ row.name || `素材 ${row.id}` }}</span>
                     </div>
                   </div>
+                </template>
+
+                <template #shareTypeSlot="{ row }">
+                  <el-tooltip v-if="row.shareType === 'shared'" content="这是共享快捷引用，请将资源转存副本备份，防止源文件删除导致丢失"
+                    placement="top">
+                    <el-tag type="warning" size="small" effect="light" style="cursor: help">
+                      {{ (row.sourceUserId && String(row.sourceUserId) !== String(row.userId)) ? `由【${row.sourceUser?.name || row.sourceUser?.account || ('用户' + row.sourceUserId)}】共享` : '共享' }}
+                    </el-tag>
+                  </el-tooltip>
+                  <el-tag v-else-if="row.shareType === 'copy' || (row.sourceUserId && String(row.sourceUserId) !== String(row.userId))"
+                    type="success" size="small" effect="light">
+                    {{ (row.sourceUserId && String(row.sourceUserId) !== String(row.userId)) ? `由【${row.sourceUser?.name || row.sourceUser?.account || ('用户' + row.sourceUserId)}】转存` : '转存副本' }}
+                  </el-tag>
+                  <el-tag v-else type="info" size="small" effect="plain">我上传的</el-tag>
                 </template>
 
                 <template #codeSlot="{ row }">
@@ -1569,9 +1626,9 @@
                       {{ item.trim() }}
                     </el-tag>
                     <el-tooltip v-if="(row.suitableFor || '').split(',').length > 2" :content="(row.suitableFor || '')
-                        .split(',')
-                        .map((item) => item.trim())
-                        .join('、')
+                      .split(',')
+                      .map((item) => item.trim())
+                      .join('、')
                       " placement="top" effect="dark" :show-after="200">
                       <el-tag size="small" type="info">
                         +{{ (row.suitableFor || "").split(",").length - 2 }}
@@ -1724,7 +1781,7 @@
                             </div>
                           </div>
 
-                          <div v-if="isAdmin" class="op-menu-item has-submenu" @mouseenter="handleSubmenuEnter"
+                          <div class="op-menu-item has-submenu" @mouseenter="handleSubmenuEnter"
                             @mouseleave="handleSubmenuLeave">
                             <el-icon class="op-menu-arrow">
                               <ArrowLeft />
@@ -1732,13 +1789,23 @@
                             <span class="op-menu-label">归属操作</span>
                             <div class="op-submenu" data-submenu="ownership" @mouseenter="handleSubmenuKeepVisible"
                               @mouseleave="handleSubmenuHide">
+                              <div class="op-submenu-item" @click.stop="handleOperationCommand('share-to-user', row)">
+                                ⚡ 共享
+                              </div>
                               <div class="op-submenu-item" @click.stop="handleOperationCommand('copy-to-user', row)">
-                                分享给用户
+                                📄 转存副本
                               </div>
                               <div class="op-submenu-item" @click.stop="handleOperationCommand('move-to-user', row)">
-                                转移给用户
+                                移交所有人
                               </div>
                             </div>
+                          </div>
+
+                          <div class="op-menu-item" @click.stop="handleOperationCommand('view-shared', row)">
+                            <el-icon>
+                              <Connection />
+                            </el-icon>
+                            <span>查看分享</span>
                           </div>
 
                           <!-- 图片裂变和视频制作 -->
@@ -1769,13 +1836,12 @@
                             <span class="op-menu-label">查看详情</span>
                           </div>
 
-                          <div v-if="isAdmin" class="op-divider"></div>
-                          <div v-if="isAdmin" class="op-menu-item" @click.stop="handleOperationCommand('edit', row)">
+                          <div class="op-divider"></div>
+                          <div class="op-menu-item" @click.stop="handleOperationCommand('edit', row)">
                             <span class="op-menu-arrow-placeholder"></span>
                             <span class="op-menu-label">编辑</span>
                           </div>
-                          <div v-if="isAdmin" class="op-menu-item danger"
-                            @click.stop="handleOperationCommand('delete', row)">
+                          <div class="op-menu-item danger" @click.stop="handleOperationCommand('delete', row)">
                             <span class="op-menu-arrow-placeholder"></span>
                             <span class="op-menu-label">删除</span>
                           </div>
@@ -2095,8 +2161,8 @@
               <el-col :xs="24" :sm="12" :lg="8">
                 <el-form-item label="图片尺寸">
                   <el-input :value="editForm.width && editForm.height
-                      ? `${editForm.width} × ${editForm.height}`
-                      : '-'
+                    ? `${editForm.width} × ${editForm.height}`
+                    : '-'
                     " disabled />
                 </el-form-item>
               </el-col>
@@ -2436,10 +2502,13 @@
     <el-dialog v-model="stickerUserTransferDialogVisible" :title="stickerUserTransferDialogTitle" width="560px"
       align-center :close-on-click-modal="false" @closed="resetStickerUserTransferDialog">
       <div class="sticker-user-transfer-dialog">
-        <el-alert :type="stickerUserTransferAction === 'copy' ? 'success' : 'warning'" :closable="false" show-icon
-          :title="stickerUserTransferAction === 'copy'
-              ? '复制素材并分享给目标用户，原素材会保留。'
-              : '转移素材给目标用户，会变更素材归属并同步调整 COS 路径。'
+        <el-alert
+          :type="stickerUserTransferAction === 'share' ? 'info' : stickerUserTransferAction === 'copy' ? 'success' : 'warning'"
+          :closable="false" show-icon :title="stickerUserTransferAction === 'share'
+            ? '快捷共享素材给目标用户，0 额外存储空间开销，极速完成。'
+            : stickerUserTransferAction === 'copy'
+              ? '复制物理副本素材给目标用户，生成独立文件存储。'
+              : '转移素材给目标用户，会变更素材归属。'
             " />
 
         <el-form label-width="96px" class="sticker-user-transfer-form">
@@ -2748,6 +2817,33 @@
         </vxe-grid>
       </div>
     </el-dialog>
+
+    <!-- 查看分享记录弹窗 -->
+    <el-dialog v-model="shareRecordsDialogVisible" :title="`分享记录 - ${shareRecordsResourceName}`" width="600px"
+      destroy-on-close>
+      <div v-loading="shareRecordsLoading">
+        <el-empty v-if="!shareRecordsLoading && shareRecordsList.length === 0" description="暂无分享记录" />
+        <el-table v-else :data="shareRecordsList" style="width: 100%">
+          <el-table-column prop="userName" label="分享给" min-width="120">
+            <template #default="{ row }">
+              <span>{{ row.userName || row.userId }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="shareType" label="分享类型" width="120">
+            <template #default="{ row }">
+              <el-tag v-if="row.shareType === 'shared'" type="warning" size="small" effect="light">快捷共享</el-tag>
+              <el-tag v-else-if="row.shareType === 'copy'" type="success" size="small" effect="light">物理副本</el-tag>
+              <el-tag v-else type="info" size="small" effect="plain">{{ row.shareType || '-' }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="createTime" label="分享时间" width="180">
+            <template #default="{ row }">
+              {{ formatTimestamp(row.createTime) }}
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </el-dialog>
   </ContentWrap>
 </template>
 
@@ -2782,6 +2878,7 @@ import {
   uploadMaterialFile,
   copyStickers,
   copyStickersToUser,
+  shareStickersToUser,
   moveStickersToUser,
   getStickerById,
   trimPng,
@@ -2791,6 +2888,7 @@ import {
   deleteStickerStoryScript,
   searchStickerByImage,
   searchStickerByText,
+  getStickerSharedRecords,
 } from "@/api/material"; // 实际接口导入
 
 import { uploadToCOS } from "@/api/cos";
@@ -2839,6 +2937,10 @@ import {
   Files,
   DArrowLeft,
   DArrowRight,
+  Share,
+  TopRight,
+  ArrowDown,
+  Connection,
 } from "@element-plus/icons-vue";
 import tree from "./tree.vue";
 import { materialStatusOptions } from ".";
@@ -2890,7 +2992,7 @@ const PHASH_SEARCH_DISABLED_MESSAGE = "pHash 相似匹配功能暂时禁用";
 // 模型服务健康状态检查
 const modelServiceHealth = useServiceHealthState("modelService");
 
-type StickerUserTransferAction = "copy" | "move";
+type StickerUserTransferAction = "share" | "copy" | "move";
 type StickerUserTransferUserOption = {
   id: string;
   name: string;
@@ -3099,6 +3201,13 @@ const publishUsageConfigOptions = ref<any[]>([]);
 const publishUsageDialogVisible = ref(false);
 const publishUsageLoading = ref(false);
 const publishUsageRecords = ref<any[]>([]);
+
+// 查看分享记录
+const shareRecordsDialogVisible = ref(false);
+const shareRecordsLoading = ref(false);
+const shareRecordsList = ref<any[]>([]);
+const shareRecordsTotal = ref(0);
+const shareRecordsResourceName = ref('');
 
 const publishPlatformNameMap: Record<string, string> = {
   douyin: "抖音",
@@ -3311,6 +3420,12 @@ const gridOptions = computed(() => {
       minWidth: 220,
       className: "font-bold",
       slots: { default: "compactNameSlot" },
+    },
+    {
+      title: "资源类型",
+      field: "shareType",
+      width: 200,
+      slots: { default: "shareTypeSlot" },
     },
     {
       title: "编码",
@@ -3710,17 +3825,21 @@ const stickerUserTransferDialogVisible = ref(false);
 const stickerUserTransferSubmitting = ref(false);
 const stickerUserTransferUsersLoading = ref(false);
 const stickerUserTransferUsersLoaded = ref(false);
-const stickerUserTransferAction = ref<StickerUserTransferAction>("copy");
+const stickerUserTransferAction = ref<StickerUserTransferAction>("share");
 const stickerUserTransferIds = ref<string[]>([]);
 const stickerUserTransferTargetUserId = ref("");
 const stickerUserTransferUserOptions = ref<StickerUserTransferUserOption[]>([]);
 
-const stickerUserTransferDialogTitle = computed(() =>
-  stickerUserTransferAction.value === "copy" ? "分享素材给用户" : "转移素材给用户",
-);
-const stickerUserTransferSubmitText = computed(() =>
-  stickerUserTransferAction.value === "copy" ? "确认分享" : "确认转移",
-);
+const stickerUserTransferDialogTitle = computed(() => {
+  if (stickerUserTransferAction.value === "share") return "快捷共享素材给用户";
+  if (stickerUserTransferAction.value === "copy") return "复制副本素材给用户";
+  return "转移素材给用户";
+});
+const stickerUserTransferSubmitText = computed(() => {
+  if (stickerUserTransferAction.value === "share") return "确认快捷共享";
+  if (stickerUserTransferAction.value === "copy") return "确认复制副本";
+  return "确认转移";
+});
 const stickerUserTransferPreviewItems = computed(() => {
   return stickerUserTransferIds.value.slice(0, 5).map((id) => {
     const row = dataSource.value.find((item) => String(item.id) === String(id));
@@ -4239,7 +4358,7 @@ async function getList() {
   const params = {
     ...queryParams,
     listMode: "compact",
-    includeRelations: false,
+    includeRelations: true,
     keyword: undefined,
     searchText: searchText || undefined,
     id: String(queryParams.id || "").trim() || undefined,
@@ -5117,6 +5236,22 @@ async function openStickerUserTransferDialog(action: StickerUserTransferAction, 
   stickerUserTransferDialogVisible.value = true;
 }
 
+async function openShareRecordsDialog(row: any) {
+  shareRecordsResourceName.value = row.name || `ID: ${row.id}`;
+  shareRecordsDialogVisible.value = true;
+  shareRecordsLoading.value = true;
+  shareRecordsList.value = [];
+  try {
+    const res = await getStickerSharedRecords(String(row.id));
+    shareRecordsList.value = res?.list || [];
+    shareRecordsTotal.value = res?.total || 0;
+  } catch (e: any) {
+    ElMessage.error(e?.message || '获取分享记录失败');
+  } finally {
+    shareRecordsLoading.value = false;
+  }
+}
+
 async function submitStickerUserTransfer() {
   if (!ensureStickerAdminOperation()) {
     return;
@@ -5133,7 +5268,12 @@ async function submitStickerUserTransfer() {
   }
 
   stickerUserTransferSubmitting.value = true;
-  const actionLabel = stickerUserTransferAction.value === "copy" ? "分享" : "转移";
+  const actionLabel =
+    stickerUserTransferAction.value === "share"
+      ? "快捷共享"
+      : stickerUserTransferAction.value === "copy"
+        ? "复制副本"
+        : "转移";
 
   try {
     const payload = {
@@ -5141,9 +5281,11 @@ async function submitStickerUserTransfer() {
       targetUserId: stickerUserTransferTargetUserId.value,
     };
     const res =
-      stickerUserTransferAction.value === "copy"
-        ? await copyStickersToUser(payload)
-        : await moveStickersToUser(payload);
+      stickerUserTransferAction.value === "share"
+        ? await shareStickersToUser(payload)
+        : stickerUserTransferAction.value === "copy"
+          ? await copyStickersToUser(payload)
+          : await moveStickersToUser(payload);
     const result = res || {};
 
     const successCount = Array.isArray(result?.list)
@@ -6850,8 +6992,14 @@ async function handleOperationCommand(command: string, row: any) {
       case "copy-to-user":
         openStickerUserTransferDialog("copy", row);
         break;
+      case "share-to-user":
+        openStickerUserTransferDialog("share", row);
+        break;
       case "move-to-user":
         openStickerUserTransferDialog("move", row);
+        break;
+      case "view-shared":
+        openShareRecordsDialog(row);
         break;
       case "create-ps-set":
         openPsdSetDialog(row);
@@ -9248,6 +9396,10 @@ h1 {
   outline: none;
 }
 
+.op-menu-item.danger {
+  color: var(--el-color-danger);
+}
+
 .op-menu-item.danger:hover,
 .op-menu-item.danger:focus-visible {
   background: var(--el-color-danger-light-9);
@@ -9277,6 +9429,7 @@ h1 {
   flex: 1;
   min-width: 0;
   white-space: nowrap;
+  display: inline-block !important;
 }
 
 .op-divider {

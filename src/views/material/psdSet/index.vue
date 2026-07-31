@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ContentWrap :plain="true" class="psd-set-page">
     <ListPageLayout class="psd-set-page__layout">
       <template #filter>
@@ -87,8 +87,7 @@
                 @click="handleBatchCreatePublishTask">
                 生成发布任务 ({{ selectedIds.length }})
               </el-button>
-              <el-button size="small" type="danger" @click="handleBatchDelete"
-                :disabled="!selectedIds.length || loading">
+              <el-button size="small" type="danger" @click="handleBatchDelete">
                 批量删除 ({{ selectedIds.length }})
               </el-button>
               <div class="psd-set-page__auto-dispatch-row">

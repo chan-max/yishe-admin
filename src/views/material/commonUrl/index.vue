@@ -46,7 +46,6 @@
                 size="small"
                 type="danger"
                 :icon="Delete"
-                :disabled="!ids.length"
                 :loading="deleteLoading"
                 @click="handleDelete(null)"
               >

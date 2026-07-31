@@ -45,7 +45,6 @@
                 size="small"
                 type="danger"
                 plain
-                :disabled="!ids.length || loading"
                 @click="handleDelete(null)"
               >
                 批量删除 ({{ ids.length }})

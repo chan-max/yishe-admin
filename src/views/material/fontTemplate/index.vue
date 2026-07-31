@@ -48,7 +48,7 @@
                 >搜索</el-button
               >
               <el-button size="small" :disabled="loading" @click="handleReset">重置</el-button>
-              <el-button v-if="isAdmin" size="small" type="primary" @click="handleAdd" :icon="Plus">
+              <el-button size="small" type="primary" @click="handleAdd" :icon="Plus">
                 新增字体
               </el-button>
               <el-dropdown
@@ -94,34 +94,35 @@
                 取消生成
               </el-button>
               <el-button
-                v-if="isAdmin"
                 size="small"
                 type="danger"
                 @click="handleBatchDelete"
-                :disabled="!ids.length"
                 :loading="batchDeleteLoading"
               >
                 批量删除 ({{ ids.length }})
               </el-button>
               <el-dropdown
-                v-if="isAdmin"
                 trigger="click"
                 :disabled="!ids.length"
                 @command="handleBatchActionCommand"
               >
                 <el-button size="small" type="success" :disabled="!ids.length">
-                  批量操作 ({{ ids.length }})
+                  分享 ({{ ids.length }})
                   <el-icon class="el-icon--right"><ArrowDown /></el-icon>
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item command="copy-to-user">
+                    <el-dropdown-item command="share">
+                      <el-icon><Share /></el-icon>
+                      <span>共享</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item command="copy">
                       <el-icon><DocumentCopy /></el-icon>
-                      <span>分享给用户</span>
+                      <span>转存副本</span>
                     </el-dropdown-item>
                     <el-dropdown-item command="move-to-user">
                       <el-icon><TopRight /></el-icon>
-                      <span>转移给用户</span>
+                      <span>移交所有人</span>
                     </el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
@@ -210,6 +211,28 @@
                     </div>
                   </template>
 
+                  <template #nameDefaultSlot="{ row }">
+                    <div class="flex items-center gap-2">
+                      <span class="truncate">{{ row.name }}</span>
+                    </div>
+                  </template>
+
+                  <template #shareTypeSlot="{ row }">
+                    <el-tooltip
+                      v-if="row.shareType === 'shared'"
+                      content="这是共享快捷引用，请将资源转存副本备份，防止源文件删除导致丢失"
+                      placement="top"
+                    >
+                      <el-tag type="warning" size="small" effect="light" style="cursor: help">
+                        由【{{ row.sourceUser?.name || row.sourceUser?.account || ('用户' + row.sourceUserId) }}】共享
+                      </el-tag>
+                    </el-tooltip>
+                    <el-tag v-else-if="row.shareType === 'copy' || (row.sourceUserId && row.sourceUserId !== row.userId)" type="success" size="small" effect="light">
+                      由【{{ row.sourceUser?.name || row.sourceUser?.account || ('用户' + row.sourceUserId) }}】转存
+                    </el-tag>
+                    <el-tag v-else type="info" size="small" effect="plain">我上传的</el-tag>
+                  </template>
+
                   <template #languagesSlot="{ row }">
                     <div class="flex flex-wrap gap-1">
                       <el-tag
@@ -250,7 +273,7 @@
                         >
                         <template #dropdown>
                           <el-dropdown-menu class="operation-menu-compact">
-                            <el-dropdown-item v-if="isAdmin" command="edit">
+                            <el-dropdown-item command="edit">
                               <el-icon>
                                 <Edit />
                               </el-icon>
@@ -280,20 +303,29 @@
                               </el-icon>
                               <span>AI生成内容</span>
                             </el-dropdown-item>
-                            <el-dropdown-item v-if="isAdmin" command="copy-to-user">
+                            <el-dropdown-item command="share-to-user">
+                              <el-icon>
+                                <Share />
+                              </el-icon>
+                              <span>共享</span>
+                            </el-dropdown-item>
+                            <el-dropdown-item command="copy-to-user">
                               <el-icon>
                                 <DocumentCopy />
                               </el-icon>
-                              <span>分享给用户</span>
+                              <span>转存副本</span>
                             </el-dropdown-item>
                             <el-dropdown-item v-if="isAdmin" command="move-to-user">
                               <el-icon>
                                 <TopRight />
                               </el-icon>
-                              <span>转移给用户</span>
+                              <span>移交所有人</span>
+                            </el-dropdown-item>
+                            <el-dropdown-item command="view-shared">
+                              <el-icon><Connection /></el-icon>
+                              <span>查看分享</span>
                             </el-dropdown-item>
                             <el-dropdown-item
-                              v-if="isAdmin"
                               command="delete"
                               divided
                               class="operation-menu-item--danger"
@@ -833,13 +865,15 @@
     >
       <div class="sticker-user-transfer-dialog">
         <el-alert
-          :type="fontTemplateUserTransferAction === 'copy' ? 'success' : 'warning'"
+          :type="fontTemplateUserTransferAction === 'share' ? 'info' : fontTemplateUserTransferAction === 'copy' ? 'success' : 'warning'"
           :closable="false"
           show-icon
           :title="
-            fontTemplateUserTransferAction === 'copy'
-              ? '复制字体模板并分享给目标用户，原模板会保留。'
-              : '转移字体模板给目标用户，会变更模板归属并同步调整 COS 路径。'
+            fontTemplateUserTransferAction === 'share'
+              ? '快捷共享字体模板给目标用户，0 额外存储空间开销，极速完成。'
+              : fontTemplateUserTransferAction === 'copy'
+              ? '复制物理副本字体模板给目标用户，生成独立文件存储。'
+              : '转移字体模板给目标用户，会变更模板归属。'
           "
         />
 
@@ -910,6 +944,37 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <!-- 查看分享记录弹窗 -->
+    <el-dialog
+      v-model="shareRecordsDialogVisible"
+      :title="`分享记录 - ${shareRecordsResourceName}`"
+      width="600px"
+      destroy-on-close
+    >
+      <div v-loading="shareRecordsLoading">
+        <el-empty v-if="!shareRecordsLoading && shareRecordsList.length === 0" description="暂无分享记录" />
+        <el-table v-else :data="shareRecordsList" style="width: 100%">
+          <el-table-column prop="userName" label="分享给" min-width="120">
+            <template #default="{ row }">
+              <span>{{ row.userName || row.userId }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="shareType" label="分享类型" width="120">
+            <template #default="{ row }">
+              <el-tag v-if="row.shareType === 'shared'" type="warning" size="small" effect="light">快捷共享</el-tag>
+              <el-tag v-else-if="row.shareType === 'copy'" type="success" size="small" effect="light">物理副本</el-tag>
+              <el-tag v-else type="info" size="small" effect="plain">{{ row.shareType || '-' }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="createTime" label="分享时间" width="180">
+            <template #default="{ row }">
+              {{ formatTimestamp(row.createTime) }}
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </el-dialog>
   </ContentWrap>
 </template>
 
@@ -938,6 +1003,8 @@ import {
   DArrowLeft,
   DArrowRight,
   ArrowDown,
+  Share,
+  Connection,
 } from "@element-plus/icons-vue";
 import { useWindowSize, useLocalStorage } from "@vueuse/core";
 
@@ -1063,7 +1130,13 @@ const gridOptions = ref({
         default: "thumbnailDefaultSlot",
       },
     },
-    { title: "字体名称", field: "name", width: 240, showOverflow: true },
+    { title: "字体名称", field: "name", width: 260, showOverflow: true, slots: { default: "nameDefaultSlot" } },
+    {
+      title: "资源类型",
+      field: "shareType",
+      width: 200,
+      slots: { default: "shareTypeSlot" },
+    },
     { title: "描述", field: "description", minWidth: 200, showOverflow: true },
     { title: "关键字", field: "keywords", minWidth: 160, showOverflow: true },
     { title: "分类", field: "category", width: 120, showOverflow: true },
@@ -1125,7 +1198,15 @@ const currentRow = ref<{
   name?: string;
 }>({});
 const submitLoading = ref(false);
-type FontTemplateUserTransferAction = "copy" | "move";
+
+// 查看分享记录
+const shareRecordsDialogVisible = ref(false);
+const shareRecordsLoading = ref(false);
+const shareRecordsList = ref<any[]>([]);
+const shareRecordsTotal = ref(0);
+const shareRecordsResourceName = ref('');
+
+type FontTemplateUserTransferAction = "share" | "copy" | "move";
 type FontTemplateUserTransferUserOption = {
   id: string;
   name?: string;
@@ -1137,16 +1218,20 @@ const fontTemplateUserTransferDialogVisible = ref(false);
 const fontTemplateUserTransferSubmitting = ref(false);
 const fontTemplateUserTransferUsersLoading = ref(false);
 const fontTemplateUserTransferUsersLoaded = ref(false);
-const fontTemplateUserTransferAction = ref<FontTemplateUserTransferAction>("copy");
+const fontTemplateUserTransferAction = ref<FontTemplateUserTransferAction>("share");
 const fontTemplateUserTransferIds = ref<string[]>([]);
 const fontTemplateUserTransferTargetUserId = ref("");
 const fontTemplateUserTransferUserOptions = ref<FontTemplateUserTransferUserOption[]>([]);
-const fontTemplateUserTransferDialogTitle = computed(() =>
-  fontTemplateUserTransferAction.value === "copy" ? "分享字体模板给用户" : "转移字体模板给用户",
-);
-const fontTemplateUserTransferSubmitText = computed(() =>
-  fontTemplateUserTransferAction.value === "copy" ? "确认分享" : "确认转移",
-);
+const fontTemplateUserTransferDialogTitle = computed(() => {
+  if (fontTemplateUserTransferAction.value === "share") return "快捷共享字体模板给用户";
+  if (fontTemplateUserTransferAction.value === "copy") return "复制副本字体模板给用户";
+  return "转移字体模板给用户";
+});
+const fontTemplateUserTransferSubmitText = computed(() => {
+  if (fontTemplateUserTransferAction.value === "share") return "确认快捷共享";
+  if (fontTemplateUserTransferAction.value === "copy") return "确认复制副本";
+  return "确认转移";
+});
 const fontTemplateUserTransferPreviewItems = computed(() =>
   fontTemplateUserTransferIds.value.slice(0, 5).map((id) => {
     const row = dataSource.value.find((item: any) => String(item.id) === String(id));
@@ -1384,7 +1469,12 @@ async function submitFontTemplateUserTransfer() {
   }
 
   fontTemplateUserTransferSubmitting.value = true;
-  const actionLabel = fontTemplateUserTransferAction.value === "copy" ? "分享" : "转移";
+  const actionLabel =
+    fontTemplateUserTransferAction.value === "share"
+      ? "快捷共享"
+      : fontTemplateUserTransferAction.value === "copy"
+      ? "复制副本"
+      : "转移";
 
   try {
     const payload = {
@@ -1392,7 +1482,9 @@ async function submitFontTemplateUserTransfer() {
       targetUserId: fontTemplateUserTransferTargetUserId.value,
     };
     const res =
-      fontTemplateUserTransferAction.value === "copy"
+      fontTemplateUserTransferAction.value === "share"
+        ? await fontTemplateApi.shareToUser(payload)
+        : fontTemplateUserTransferAction.value === "copy"
         ? await fontTemplateApi.copyToUser(payload)
         : await fontTemplateApi.moveToUser(payload);
     const result = res || {};
@@ -2050,7 +2142,9 @@ async function submitFrontendGenerateThumbnail() {
 }
 
 function handleBatchActionCommand(command: string) {
-  if (command === "copy-to-user") {
+  if (command === "share-to-user") {
+    openFontTemplateUserTransferDialog("share");
+  } else if (command === "copy-to-user") {
     openFontTemplateUserTransferDialog("copy");
   } else if (command === "move-to-user") {
     openFontTemplateUserTransferDialog("move");
@@ -2308,6 +2402,22 @@ async function loadFontForPreview() {
   }
 }
 
+async function openShareRecordsDialog(row: any) {
+  shareRecordsResourceName.value = row.name || `ID: ${row.id}`;
+  shareRecordsDialogVisible.value = true;
+  shareRecordsLoading.value = true;
+  shareRecordsList.value = [];
+  try {
+    const res = await fontTemplateApi.getSharedRecords(String(row.id));
+    shareRecordsList.value = res?.list || [];
+    shareRecordsTotal.value = res?.total || 0;
+  } catch (e: any) {
+    ElMessage.error(e?.message || '获取分享记录失败');
+  } finally {
+    shareRecordsLoading.value = false;
+  }
+}
+
 // 处理dropdown操作命令
 function handleOperationCommand(command: string, row: any) {
   switch (command) {
@@ -2329,11 +2439,17 @@ function handleOperationCommand(command: string, row: any) {
     case "ai-generate":
       handleAiGenerate(row);
       break;
+    case "share-to-user":
+      openFontTemplateUserTransferDialog("share", row);
+      break;
     case "copy-to-user":
       openFontTemplateUserTransferDialog("copy", row);
       break;
     case "move-to-user":
       openFontTemplateUserTransferDialog("move", row);
+      break;
+    case "view-shared":
+      openShareRecordsDialog(row);
       break;
     case "delete":
       handleDelete(row);

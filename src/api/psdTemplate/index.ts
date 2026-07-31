@@ -63,6 +63,19 @@ export const psdTemplateApi = {
     });
   },
 
+  shareToUser: async (data: { ids: string[] | string; targetUserId: string }) => {
+    return await request.post({
+      url: `/psd-template/share-to-user`,
+      data,
+    });
+  },
+
+  getSharedRecords: async (id: string) => {
+    return await request.get({
+      url: `/psd-template/${id}/shared-records`,
+    });
+  },
+
   moveToUser: async (data: { ids: string[] | string; targetUserId: string }) => {
     return await request.post({
       url: `/psd-template/move-to-user`,

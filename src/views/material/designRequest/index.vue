@@ -24,7 +24,6 @@
                 type="danger"
                 plain
                 :icon="Delete"
-                :disabled="!ids.length"
                 :loading="deleteLoading"
                 @click="handleDelete(null)"
               >

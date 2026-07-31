@@ -89,7 +89,6 @@
                 size="small"
                 type="danger"
                 :icon="Delete"
-                :disabled="loading"
                 @click="handleBatchDelete"
               >
                 批量删除({{ selectedRows.length }})

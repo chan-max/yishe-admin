@@ -42,16 +42,14 @@
               >
                 搜索
               </el-button>
-              <el-button v-if="isAdmin" size="small" type="primary" :icon="Plus" @click="handleAdd">
+              <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">
                 添加提示词
               </el-button>
               <el-button
-                v-if="isAdmin"
                 size="small"
                 type="danger"
                 :icon="Delete"
                 :loading="deleteLoading"
-                :disabled="!ids.length"
                 @click="handleDelete(null)"
               >
                 批量删除({{ ids.length }})
@@ -121,14 +119,14 @@
                       </el-button>
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
-                          <el-dropdown-item v-if="isAdmin" command="edit">编辑</el-dropdown-item>
+                          <el-dropdown-item command="edit">编辑</el-dropdown-item>
                           <el-dropdown-item
-                            v-if="isAdmin"
                             command="delete"
                             divided
                             class="operation-menu-item--danger"
                           >
-                            删除
+                            <el-icon><Delete /></el-icon>
+                            <span>删除</span>
                           </el-dropdown-item>
                         </el-dropdown-menu>
                       </template>

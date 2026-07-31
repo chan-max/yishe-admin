@@ -71,6 +71,19 @@ export const fontTemplateApi = {
     })
   },
 
+  shareToUser: async (data: { ids: string[] | string; targetUserId: string }) => {
+    return await request.post({
+      url: `/font-template/share-to-user`,
+      data,
+    })
+  },
+
+  getSharedRecords: async (id: string) => {
+    return await request.get({
+      url: `/font-template/${id}/shared-records`,
+    })
+  },
+
   moveToUser: async (data: { ids: string[] | string; targetUserId: string }) => {
     return await request.post({
       url: `/font-template/move-to-user`,

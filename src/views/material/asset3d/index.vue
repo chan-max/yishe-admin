@@ -40,9 +40,34 @@
               >
               <el-button size="small" type="primary" @click="handleCreate">上传</el-button>
               <el-button size="small" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
-              <el-button size="small" type="danger" :disabled="!ids.length" @click="handleDelete()">
+              <el-button size="small" type="danger" @click="handleDelete()">
                 批量删除 ({{ ids.length }})
               </el-button>
+              <el-dropdown
+                trigger="click"
+                @command="(cmd: Asset3dUserTransferAction) => openAsset3dUserTransferDialog(cmd)"
+              >
+                <el-button size="small" type="success" :disabled="!ids.length">
+                  分享 ({{ ids.length }})
+                  <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="share">
+                      <el-icon><Share /></el-icon>
+                      <span>共享</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item command="copy">
+                      <el-icon><DocumentCopy /></el-icon>
+                      <span>转存副本</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item command="move">
+                      <el-icon><TopRight /></el-icon>
+                      <span>移交所有人</span>
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
               <el-button v-if="isMobile" size="small" @click="filterDialogVisible = true">筛选</el-button>
             </div>
           </el-form>
@@ -123,6 +148,22 @@
                             <el-icon><MagicStick /></el-icon>
                             <span>AI生成内容</span>
                           </el-dropdown-item>
+                          <el-dropdown-item v-if="isAdmin" command="share-to-user">
+                            <el-icon><Share /></el-icon>
+                            <span>共享</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item v-if="isAdmin" command="copy-to-user">
+                            <el-icon><DocumentCopy /></el-icon>
+                            <span>转存副本</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item v-if="isAdmin" command="move-to-user">
+                            <el-icon><User /></el-icon>
+                            <span>移交所有人</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item command="view-shared">
+                            <el-icon><Connection /></el-icon>
+                            <span>查看分享</span>
+                          </el-dropdown-item>
                           <el-dropdown-item command="delete" divided class="operation-menu-item--danger">
                             <el-icon><Delete /></el-icon>
                             <span>删除</span>
@@ -134,7 +175,25 @@
                 </template>
 
         <template #nameSlot="{ row }">
-          <div class="asset3d-name">{{ row.name || "-" }}</div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <span>{{ row.name || `3D 资源 #${row.id}` }}</span>
+          </div>
+        </template>
+
+        <template #shareTypeSlot="{ row }">
+          <el-tooltip
+            v-if="row.shareType === 'shared'"
+            content="这是共享快捷引用，请将资源转存副本备份，防止源文件删除导致丢失"
+            placement="top"
+          >
+            <el-tag type="warning" size="small" effect="light" style="cursor: help">
+              由【{{ row.sourceUser?.name || row.sourceUser?.account || ('用户' + row.sourceUserId) }}】共享
+            </el-tag>
+          </el-tooltip>
+          <el-tag v-else-if="row.shareType === 'copy' || (row.sourceUserId && row.sourceUserId !== row.userId)" type="success" size="small" effect="light">
+            由【{{ row.sourceUser?.name || row.sourceUser?.account || ('用户' + row.sourceUserId) }}】转存
+          </el-tag>
+          <el-tag v-else type="info" size="small" effect="plain">我上传的</el-tag>
         </template>
 
         <template #descriptionSlot="{ row }">
@@ -278,6 +337,128 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <!-- 用户转移/共享3D资源对话框 -->
+    <el-dialog
+      v-model="asset3dUserTransferDialogVisible"
+      :title="asset3dUserTransferDialogTitle"
+      width="560px"
+      align-center
+      :close-on-click-modal="false"
+      @closed="resetAsset3dUserTransferDialog"
+    >
+      <div class="sticker-user-transfer-dialog">
+        <el-alert
+          :type="asset3dUserTransferAction === 'share' ? 'info' : asset3dUserTransferAction === 'copy' ? 'success' : 'warning'"
+          :closable="false"
+          show-icon
+          :title="
+            asset3dUserTransferAction === 'share'
+              ? '快捷共享 3D 资源给目标用户，0 额外存储空间开销，极速完成。'
+              : asset3dUserTransferAction === 'copy'
+              ? '复制物理副本 3D 资源给目标用户，生成独立文件存储。'
+              : '转移 3D 资源给目标用户，会变更资源归属。'
+          "
+        />
+
+        <el-form label-width="96px" class="sticker-user-transfer-form">
+          <el-form-item label="目标用户" required>
+            <el-select
+              v-model="asset3dUserTransferTargetUserId"
+              class="sticker-user-transfer-form__select"
+              filterable
+              clearable
+              :loading="asset3dUserTransferUsersLoading"
+              placeholder="请选择目标用户"
+            >
+              <el-option
+                v-for="item in asset3dUserTransferUserOptions"
+                :key="item.id"
+                :label="item.label"
+                :value="item.id"
+              >
+                <div class="sticker-user-transfer-option">
+                  <div class="sticker-user-transfer-option__main">
+                    <span>{{ item.name || item.account || `用户 #${item.id}` }}</span>
+                    <el-tag v-if="item.isAdmin" size="small" type="warning">管理员</el-tag>
+                  </div>
+                  <span class="sticker-user-transfer-option__meta">
+                    {{ item.account || `ID ${item.id}` }}
+                  </span>
+                </div>
+              </el-option>
+            </el-select>
+          </el-form-item>
+
+          <el-form-item label="共享选项">
+            <div class="sticker-user-transfer-summary">
+              已选
+              <el-tag type="info">{{ asset3dUserTransferIds.length }}</el-tag>
+              项 3D 资源
+            </div>
+            <div v-if="asset3dUserTransferPreviewItems.length" class="sticker-user-transfer-previews">
+              <div
+                v-for="item in asset3dUserTransferPreviewItems"
+                :key="item.id"
+                class="sticker-user-transfer-preview-item"
+              >
+                <span class="sticker-user-transfer-preview-item__name">
+                  {{ item.name || item.id }}
+                </span>
+              </div>
+              <div
+                v-if="asset3dUserTransferIds.length > asset3dUserTransferPreviewItems.length"
+                class="sticker-user-transfer-preview-more"
+              >
+                等 {{ asset3dUserTransferIds.length }} 条
+              </div>
+            </div>
+          </el-form-item>
+        </el-form>
+      </div>
+
+      <template #footer>
+        <el-button @click="asset3dUserTransferDialogVisible = false">取消</el-button>
+        <el-button
+          type="primary"
+          :loading="asset3dUserTransferSubmitting"
+          @click="submitAsset3dUserTransfer"
+        >
+          {{ asset3dUserTransferSubmitText }}
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 查看分享记录弹窗 -->
+    <el-dialog
+      v-model="shareRecordsDialogVisible"
+      :title="`分享记录 - ${shareRecordsResourceName}`"
+      width="600px"
+      destroy-on-close
+    >
+      <div v-loading="shareRecordsLoading">
+        <el-empty v-if="!shareRecordsLoading && shareRecordsList.length === 0" description="暂无分享记录" />
+        <el-table v-else :data="shareRecordsList" style="width: 100%">
+          <el-table-column prop="userName" label="分享给" min-width="120">
+            <template #default="{ row }">
+              <span>{{ row.userName || row.userId }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="shareType" label="分享类型" width="120">
+            <template #default="{ row }">
+              <el-tag v-if="row.shareType === 'shared'" type="warning" size="small" effect="light">快捷共享</el-tag>
+              <el-tag v-else-if="row.shareType === 'copy'" type="success" size="small" effect="light">物理副本</el-tag>
+              <el-tag v-else type="info" size="small" effect="plain">{{ row.shareType || '-' }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="createTime" label="分享时间" width="180">
+            <template #default="{ row }">
+              {{ formatTimestamp(row.createTime) }}
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </el-dialog>
   </ContentWrap>
 </template>
 
@@ -286,19 +467,25 @@ import { computed, reactive, ref, onMounted, watchEffect } from "vue";
 import { useWindowSize } from "@vueuse/core";
 import { ElMessage, ElMessageBox } from "element-plus";
 import type { UploadFile } from "element-plus";
-import { Box, Delete, DocumentCopy, Download, Edit, MagicStick, Search } from "@element-plus/icons-vue";
+import { Box, Connection, Delete, DocumentCopy, Download, Edit, MagicStick, Search, Share, ArrowDown, User, TopRight } from "@element-plus/icons-vue";
 import {
   batchDeleteAsset3d,
   createAsset3d,
   deleteAsset3d,
   getAsset3dPage,
+  getAsset3dSharedRecords,
   updateAsset3d,
+  shareAsset3dToUser,
+  copyAsset3dToUser,
+  moveAsset3dToUser,
 } from "@/api/asset3d";
+import { getUserList } from "@/api/user";
 import { uploadToCOS, initCOS } from "@/api/cos";
 import { useUserStore } from "@/store/modules/user";
 import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import request from "@/config/axios";
 import { isQueuedAiTaskResult, notifyQueuedAiTask, unwrapAiTaskResult } from "@/utils/aiTask";
+import { formatTimestamp } from "@/common/date";
 
 const userStore = useUserStore();
 const { height } = useWindowSize();
@@ -331,6 +518,12 @@ const gridOptions = ref({
       slots: { default: "previewDefaultSlot" },
     },
     { title: "资源名称", field: "name", minWidth: 180, className: "font-bold", slots: { default: "nameSlot" } },
+    {
+      title: "资源类型",
+      field: "shareType",
+      width: 200,
+      slots: { default: "shareTypeSlot" },
+    },
     {
       title: "描述",
       field: "description",
@@ -367,6 +560,167 @@ const submitLoading = ref(false);
 const modelFile = ref<File | null>(null);
 const thumbnailFile = ref<File | null>(null);
 
+const isAdmin = computed(() => !!userStore.userInfo?.isAdmin);
+
+// 用户转移/共享对话框状态
+type Asset3dUserTransferAction = "share" | "copy" | "move";
+type Asset3dUserTransferUserOption = {
+  id: string;
+  name?: string;
+  account?: string;
+  label: string;
+  isAdmin?: boolean;
+};
+
+const asset3dUserTransferDialogVisible = ref(false);
+const asset3dUserTransferSubmitting = ref(false);
+const asset3dUserTransferUsersLoading = ref(false);
+const asset3dUserTransferUsersLoaded = ref(false);
+const asset3dUserTransferAction = ref<Asset3dUserTransferAction>("share");
+const asset3dUserTransferIds = ref<string[]>([]);
+const asset3dUserTransferTargetUserId = ref("");
+const asset3dUserTransferUserOptions = ref<Asset3dUserTransferUserOption[]>([]);
+
+const asset3dUserTransferDialogTitle = computed(() => {
+  if (asset3dUserTransferAction.value === "share") return "快捷共享 3D 资源给用户";
+  if (asset3dUserTransferAction.value === "copy") return "复制副本 3D 资源给用户";
+  return "转移 3D 资源给用户";
+});
+
+const asset3dUserTransferSubmitText = computed(() => {
+  if (asset3dUserTransferAction.value === "share") return "确认快捷共享";
+  if (asset3dUserTransferAction.value === "copy") return "确认复制副本";
+  return "确认转移";
+});
+
+const asset3dUserTransferPreviewItems = computed(() =>
+  asset3dUserTransferIds.value.slice(0, 5).map((id) => {
+    const row = dataSource.value.find((item: any) => String(item.id) === String(id));
+    return {
+      id: String(id),
+      name: row?.name || `3D 资源 #${id}`,
+    };
+  }),
+);
+
+async function loadAsset3dTransferUserOptions() {
+  if (asset3dUserTransferUsersLoaded.value || asset3dUserTransferUsersLoading.value) {
+    return;
+  }
+  asset3dUserTransferUsersLoading.value = true;
+  try {
+    const res: any = await getUserList({ currentPage: 1, pageSize: 1000 });
+    const list = Array.isArray(res?.list)
+      ? res.list
+      : Array.isArray(res?.data)
+      ? res.data
+      : Array.isArray(res)
+      ? res
+      : [];
+
+    asset3dUserTransferUserOptions.value = list.map((item: any) => ({
+      id: String(item.id),
+      name: item.name || item.account || "",
+      account: item.account || "",
+      label: `${item.name || item.account || `用户 #${item.id}`} (${item.account || `ID:${item.id}`})`,
+      isAdmin: Boolean(item.isAdmin || item.role === "admin"),
+    }));
+    asset3dUserTransferUsersLoaded.value = true;
+  } catch (error) {
+    console.error("获取用户列表失败", error);
+  } finally {
+    asset3dUserTransferUsersLoading.value = false;
+  }
+}
+
+function resetAsset3dUserTransferDialog() {
+  asset3dUserTransferSubmitting.value = false;
+  asset3dUserTransferAction.value = "share";
+  asset3dUserTransferIds.value = [];
+  asset3dUserTransferTargetUserId.value = "";
+}
+
+async function openAsset3dUserTransferDialog(
+  action: Asset3dUserTransferAction,
+  row?: any,
+) {
+  const targetIds = row?.id
+    ? [String(row.id)]
+    : ids.value.map((id) => String(id));
+
+  if (!targetIds.length) {
+    ElMessage.warning(
+      action === "share"
+        ? "请选择要共享的 3D 资源"
+        : action === "copy"
+        ? "请选择要复制的 3D 资源"
+        : "请选择要转移的 3D 资源",
+    );
+    return;
+  }
+
+  asset3dUserTransferAction.value = action;
+  asset3dUserTransferIds.value = Array.from(new Set(targetIds));
+  asset3dUserTransferTargetUserId.value = "";
+  await loadAsset3dTransferUserOptions();
+  asset3dUserTransferDialogVisible.value = true;
+}
+
+async function submitAsset3dUserTransfer() {
+  if (!asset3dUserTransferIds.value.length) {
+    ElMessage.warning("请选择 3D 资源");
+    return;
+  }
+  if (!asset3dUserTransferTargetUserId.value) {
+    ElMessage.warning("请选择目标用户");
+    return;
+  }
+
+  asset3dUserTransferSubmitting.value = true;
+  const actionLabel =
+    asset3dUserTransferAction.value === "share"
+      ? "快捷共享"
+      : asset3dUserTransferAction.value === "copy"
+      ? "复制副本"
+      : "转移";
+
+  try {
+    const payload = {
+      ids: asset3dUserTransferIds.value,
+      targetUserId: asset3dUserTransferTargetUserId.value,
+    };
+    const res =
+      asset3dUserTransferAction.value === "share"
+        ? await shareAsset3dToUser(payload)
+        : asset3dUserTransferAction.value === "copy"
+        ? await copyAsset3dToUser(payload)
+        : await moveAsset3dToUser(payload);
+    const result = res || {};
+
+    const successCount = Array.isArray(result?.list)
+      ? result.list.length
+      : Number(result?.total || 0);
+    const failedCount = Array.isArray(result?.failed) ? result.failed.length : 0;
+
+    if (successCount > 0) {
+      ElNotification.success(
+        `${actionLabel}成功 ${successCount} 条${failedCount ? `，失败 ${failedCount} 条` : ""}`,
+      );
+      asset3dUserTransferDialogVisible.value = false;
+      ids.value = [];
+      await getList();
+    } else {
+      const errorMsg =
+        result?.failed?.[0]?.message || `${actionLabel}失败，未产生有效操作`;
+      ElMessage.error(errorMsg);
+    }
+  } catch (error: any) {
+    ElMessage.error(error?.message || `${actionLabel}失败`);
+  } finally {
+    asset3dUserTransferSubmitting.value = false;
+  }
+}
+
 const form = ref({
   id: "",
   name: "",
@@ -399,6 +753,13 @@ const aiGenDialogVisible = ref(false);
 const aiGenPrompt = ref("");
 const aiGenDialogLoading = ref(false);
 let aiGenRow: any = null;
+
+// 查看分享记录
+const shareRecordsDialogVisible = ref(false);
+const shareRecordsLoading = ref(false);
+const shareRecordsList = ref<any[]>([]);
+const shareRecordsTotal = ref(0);
+const shareRecordsResourceName = ref('');
 
 function resetForm() {
   form.value = {
@@ -700,6 +1061,22 @@ async function submitAiGenDialog() {
   }
 }
 
+async function openShareRecordsDialog(row: any) {
+  shareRecordsResourceName.value = row.name || `ID: ${row.id}`;
+  shareRecordsDialogVisible.value = true;
+  shareRecordsLoading.value = true;
+  shareRecordsList.value = [];
+  try {
+    const res = await getAsset3dSharedRecords(String(row.id));
+    shareRecordsList.value = res?.list || [];
+    shareRecordsTotal.value = res?.total || 0;
+  } catch (e: any) {
+    ElMessage.error(e?.message || '获取分享记录失败');
+  } finally {
+    shareRecordsLoading.value = false;
+  }
+}
+
 function handleOperationCommand(command: string, row: any) {
   switch (command) {
     case "edit":
@@ -713,6 +1090,18 @@ function handleOperationCommand(command: string, row: any) {
       break;
     case "ai-generate":
       onAiTableAutoGenerate(row);
+      break;
+    case "share-to-user":
+      openAsset3dUserTransferDialog("share", row);
+      break;
+    case "copy-to-user":
+      openAsset3dUserTransferDialog("copy", row);
+      break;
+    case "move-to-user":
+      openAsset3dUserTransferDialog("move", row);
+      break;
+    case "view-shared":
+      openShareRecordsDialog(row);
       break;
     case "delete":
       handleDelete(row);

@@ -79,3 +79,30 @@ export function batchDeleteAsset3d(ids: string[]) {
     data: { ids },
   });
 }
+
+export function shareAsset3dToUser(data: { ids: string[]; targetUserId: number | string }) {
+  return request.post({
+    url: "/asset-3d/share-to-user",
+    data,
+  });
+}
+
+export function getAsset3dSharedRecords(id: string) {
+  return request.get({
+    url: `/asset-3d/${id}/shared-records`,
+  });
+}
+
+export function copyAsset3dToUser(data: { ids: string[]; targetUserId: number | string }) {
+  return request.post({
+    url: "/asset-3d/copy-to-user",
+    data,
+  });
+}
+
+export function moveAsset3dToUser(data: { ids: string[]; targetUserId: number | string }) {
+  return request.post({
+    url: "/asset-3d/move-to-user",
+    data,
+  });
+}

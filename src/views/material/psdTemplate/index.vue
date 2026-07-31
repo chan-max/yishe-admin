@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ContentWrap :plain="true">
     <ListPageLayout
       class="psd-template-page"
@@ -123,29 +123,36 @@
                 size="small"
                 type="danger"
                 :icon="Delete"
-                :disabled="loading"
                 @click="handleDelete(null)"
               >
-                批量删除
+                批量删除 ({{ ids.length }})
               </el-button>
-              <el-button
-                v-if="isAdmin"
-                size="small"
-                type="success"
+              <el-dropdown
+                trigger="click"
                 :disabled="!ids.length"
-                @click="openPsdTemplateUserTransferDialog('copy')"
+                @command="(cmd: PsdTemplateUserTransferAction) => openPsdTemplateUserTransferDialog(cmd)"
               >
-                分享给用户 ({{ ids.length }})
-              </el-button>
-              <el-button
-                v-if="isAdmin"
-                size="small"
-                type="warning"
-                :disabled="!ids.length"
-                @click="openPsdTemplateUserTransferDialog('move')"
-              >
-                转移给用户 ({{ ids.length }})
-              </el-button>
+                <el-button size="small" type="success" :disabled="!ids.length">
+                  分享 ({{ ids.length }})
+                  <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="share">
+                      <el-icon><Share /></el-icon>
+                      <span>共享</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item command="copy">
+                      <el-icon><DocumentCopy /></el-icon>
+                      <span>转存副本</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item command="move">
+                      <el-icon><TopRight /></el-icon>
+                      <span>移交所有人</span>
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </div>
           </el-form>
         </div>
@@ -234,11 +241,27 @@
                         {{ row.titleName }}
                       </span>
                     </div>
-                    <div v-else>
+                    <div v-else class="flex items-center gap-2">
                       <el-button type="danger" @click="handleEdit(row)" link size="small">
                         未选择标题,点击选择
                       </el-button>
                     </div>
+                  </template>
+
+                  <template #shareTypeSlot="{ row }">
+                    <el-tooltip
+                      v-if="row.shareType === 'shared'"
+                      content="这是共享快捷引用，请将资源转存副本备份，防止源文件删除导致丢失"
+                      placement="top"
+                    >
+                      <el-tag type="warning" size="small" effect="light" style="cursor: help">
+                        由【{{ row.sourceUser?.name || row.sourceUser?.account || ('用户' + row.sourceUserId) }}】共享
+                      </el-tag>
+                    </el-tooltip>
+                    <el-tag v-else-if="row.shareType === 'copy' || (row.sourceUserId && row.sourceUserId !== row.userId)" type="success" size="small" effect="light">
+                      由【{{ row.sourceUser?.name || row.sourceUser?.account || ('用户' + row.sourceUserId) }}】转存
+                    </el-tag>
+                    <el-tag v-else type="info" size="small" effect="plain">我上传的</el-tag>
                   </template>
 
                   <template #urlSlot="{ row }">
@@ -390,23 +413,34 @@
                             下载源文件
                           </el-dropdown-item>
                           <el-dropdown-item
-                            v-if="isAdmin"
+                            @click="() => openPsdTemplateUserTransferDialog('share', row)"
+                          >
+                            共享
+                          </el-dropdown-item>
+                          <el-dropdown-item
                             @click="() => openPsdTemplateUserTransferDialog('copy', row)"
                           >
-                            分享给用户
+                            转存副本
                           </el-dropdown-item>
                           <el-dropdown-item
                             v-if="isAdmin"
                             @click="() => openPsdTemplateUserTransferDialog('move', row)"
                           >
-                            转移给用户
+                            移交所有人
+                          </el-dropdown-item>
+                          <el-dropdown-item
+                            @click="() => openShareRecordsDialog(row)"
+                          >
+                            <el-icon><Connection /></el-icon>
+                            <span>查看分享</span>
                           </el-dropdown-item>
                           <el-dropdown-item
                             divided
                             class="dropdown-item-danger"
                             @click="handleDelete(row)"
                           >
-                            删除
+                            <el-icon><Delete /></el-icon>
+                            <span>删除</span>
                           </el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
@@ -887,6 +921,36 @@
         <el-button type="primary" @click="psdInfoDialogVisible = false">关闭</el-button>
       </template>
     </el-dialog>
+    <!-- 查看分享记录弹窗 -->
+    <el-dialog
+      v-model="shareRecordsDialogVisible"
+      :title="`分享记录 - ${shareRecordsResourceName}`"
+      width="600px"
+      destroy-on-close
+    >
+      <div v-loading="shareRecordsLoading">
+        <el-empty v-if="!shareRecordsLoading && shareRecordsList.length === 0" description="暂无分享记录" />
+        <el-table v-else :data="shareRecordsList" style="width: 100%">
+          <el-table-column prop="userName" label="分享给" min-width="120">
+            <template #default="{ row }">
+              <span>{{ row.userName || row.userId }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="shareType" label="分享类型" width="120">
+            <template #default="{ row }">
+              <el-tag v-if="row.shareType === 'shared'" type="warning" size="small" effect="light">快捷共享</el-tag>
+              <el-tag v-else-if="row.shareType === 'copy'" type="success" size="small" effect="light">物理副本</el-tag>
+              <el-tag v-else type="info" size="small" effect="plain">{{ row.shareType || '-' }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="createTime" label="分享时间" width="180">
+            <template #default="{ row }">
+              {{ formatTimestamp(row.createTime) }}
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </el-dialog>
   </ContentWrap>
 
   <el-dialog
@@ -899,13 +963,15 @@
   >
     <div class="sticker-user-transfer-dialog">
       <el-alert
-        :type="psdTemplateUserTransferAction === 'copy' ? 'success' : 'warning'"
+        :type="psdTemplateUserTransferAction === 'share' ? 'info' : psdTemplateUserTransferAction === 'copy' ? 'success' : 'warning'"
         :closable="false"
         show-icon
         :title="
-          psdTemplateUserTransferAction === 'copy'
-            ? '复制模板并分享给目标用户，原模板会保留。'
-            : '转移模板给目标用户，会变更模板归属并同步调整 COS 路径。'
+          psdTemplateUserTransferAction === 'share'
+            ? '快捷共享 PSD 模板给目标用户，0 额外存储空间开销，极速完成。'
+            : psdTemplateUserTransferAction === 'copy'
+            ? '复制物理副本 PSD 模板给目标用户，生成独立文件存储。'
+            : '转移 PSD 模板给目标用户，会变更模板归属。'
         "
       />
 
@@ -995,6 +1061,10 @@ import {
   DocumentCopy,
   DArrowLeft,
   DArrowRight,
+  Share,
+  ArrowDown,
+  TopRight,
+  Connection,
 } from "@element-plus/icons-vue";
 import { useWindowSize, useLocalStorage } from "@vueuse/core";
 import type { VxeGridProps } from "vxe-table";
@@ -1092,6 +1162,12 @@ const gridOptions = ref<VxeGridProps<any>>({
       },
     },
     { title: "psd模板名称", field: "name", width: 240, showOverflow: true },
+    {
+      title: "资源类型",
+      field: "shareType",
+      width: 200,
+      slots: { default: "shareTypeSlot" },
+    },
     {
       title: "描述",
       field: "description",
@@ -1234,7 +1310,7 @@ const dialogTitle = ref("");
 const dialogVisible = ref(false);
 const isEdit = ref(true);
 const submitLoading = ref(false);
-type PsdTemplateUserTransferAction = "copy" | "move";
+type PsdTemplateUserTransferAction = "share" | "copy" | "move";
 type PsdTemplateUserTransferUserOption = {
   id: string;
   name?: string;
@@ -1246,16 +1322,20 @@ const psdTemplateUserTransferDialogVisible = ref(false);
 const psdTemplateUserTransferSubmitting = ref(false);
 const psdTemplateUserTransferUsersLoading = ref(false);
 const psdTemplateUserTransferUsersLoaded = ref(false);
-const psdTemplateUserTransferAction = ref<PsdTemplateUserTransferAction>("copy");
+const psdTemplateUserTransferAction = ref<PsdTemplateUserTransferAction>("share");
 const psdTemplateUserTransferIds = ref<string[]>([]);
 const psdTemplateUserTransferTargetUserId = ref("");
 const psdTemplateUserTransferUserOptions = ref<PsdTemplateUserTransferUserOption[]>([]);
-const psdTemplateUserTransferDialogTitle = computed(() =>
-  psdTemplateUserTransferAction.value === "copy" ? "分享模板给用户" : "转移模板给用户",
-);
-const psdTemplateUserTransferSubmitText = computed(() =>
-  psdTemplateUserTransferAction.value === "copy" ? "确认分享" : "确认转移",
-);
+const psdTemplateUserTransferDialogTitle = computed(() => {
+  if (psdTemplateUserTransferAction.value === "share") return "快捷共享 PSD 模板给用户";
+  if (psdTemplateUserTransferAction.value === "copy") return "复制副本 PSD 模板给用户";
+  return "转移 PSD 模板给用户";
+});
+const psdTemplateUserTransferSubmitText = computed(() => {
+  if (psdTemplateUserTransferAction.value === "share") return "确认快捷共享";
+  if (psdTemplateUserTransferAction.value === "copy") return "确认复制副本";
+  return "确认转移";
+});
 const psdTemplateUserTransferPreviewItems = computed(() =>
   psdTemplateUserTransferIds.value.slice(0, 5).map((id) => {
     const row = dataSource.value.find((item: any) => String(item.id) === String(id));
@@ -1265,6 +1345,13 @@ const psdTemplateUserTransferPreviewItems = computed(() =>
     };
   }),
 );
+
+// 查看分享记录
+const shareRecordsDialogVisible = ref(false);
+const shareRecordsLoading = ref(false);
+const shareRecordsList = ref<any[]>([]);
+const shareRecordsTotal = ref(0);
+const shareRecordsResourceName = ref('');
 
 // 拖拽状态（拖模板 -> 文件夹）
 const {
@@ -1414,7 +1501,12 @@ async function submitPsdTemplateUserTransfer() {
   }
 
   psdTemplateUserTransferSubmitting.value = true;
-  const actionLabel = psdTemplateUserTransferAction.value === "copy" ? "分享" : "转移";
+  const actionLabel =
+    psdTemplateUserTransferAction.value === "share"
+      ? "快捷共享"
+      : psdTemplateUserTransferAction.value === "copy"
+      ? "复制副本"
+      : "转移";
 
   try {
     const payload = {
@@ -1422,7 +1514,9 @@ async function submitPsdTemplateUserTransfer() {
       targetUserId: psdTemplateUserTransferTargetUserId.value,
     };
     const res =
-      psdTemplateUserTransferAction.value === "copy"
+      psdTemplateUserTransferAction.value === "share"
+        ? await psdTemplateApi.shareToUser(payload)
+        : psdTemplateUserTransferAction.value === "copy"
         ? await psdTemplateApi.copyToUser(payload)
         : await psdTemplateApi.moveToUser(payload);
     const result = res || {};
@@ -2288,6 +2382,22 @@ function handleViewPsdInfo(row: any) {
 function handleViewPsdFileInfo(row: any) {
   currentPsdFileInfoRow.value = row;
   psdFileInfoDialogVisible.value = true;
+}
+
+async function openShareRecordsDialog(row: any) {
+  shareRecordsResourceName.value = row.name || `ID: ${row.id}`;
+  shareRecordsDialogVisible.value = true;
+  shareRecordsLoading.value = true;
+  shareRecordsList.value = [];
+  try {
+    const res = await psdTemplateApi.getSharedRecords(String(row.id));
+    shareRecordsList.value = res?.list || [];
+    shareRecordsTotal.value = res?.total || 0;
+  } catch (e: any) {
+    ElMessage.error(e?.message || '获取分享记录失败');
+  } finally {
+    shareRecordsLoading.value = false;
+  }
 }
 
 // 格式化psd模板配置显示（支持后端返回的新数据结构）

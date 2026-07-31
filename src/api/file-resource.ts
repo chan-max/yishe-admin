@@ -54,6 +54,19 @@ export function copyFileResourceToUser(data: { ids: string[] | string; targetUse
   })
 }
 
+export function shareFileResourceToUser(data: { ids: string[] | string; targetUserId: string }) {
+  return request.post({
+    url: '/file-resource/share-to-user',
+    data
+  })
+}
+
+export function getFileResourceSharedRecords(id: string) {
+  return request.get({
+    url: `/file-resource/${id}/shared-records`
+  })
+}
+
 export function moveFileResourceToUser(data: { ids: string[] | string; targetUserId: string }) {
   return request.post({
     url: '/file-resource/move-to-user',

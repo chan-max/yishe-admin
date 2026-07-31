@@ -21,7 +21,7 @@
       </div>
       <div class="shrink-0">
         <!-- 删除按钮 -->
-        <el-button type="danger" :icon="Delete" :loading="batchDeleteLoading" @click="handleDelete(null)" :disabled="!ids.length">
+        <el-button type="danger" :icon="Delete" :loading="batchDeleteLoading" @click="handleDelete(null)">
           批量删除({{ ids.length }})
         </el-button>
       </div>
