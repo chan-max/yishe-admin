@@ -962,18 +962,8 @@
     @closed="resetPsdTemplateUserTransferDialog"
   >
     <div class="sticker-user-transfer-dialog">
-      <el-alert
-        :type="psdTemplateUserTransferAction === 'share' ? 'info' : psdTemplateUserTransferAction === 'copy' ? 'success' : 'warning'"
-        :closable="false"
-        show-icon
-        :title="
-          psdTemplateUserTransferAction === 'share'
-            ? '快捷共享 PSD 模板给目标用户，0 额外存储空间开销，极速完成。'
-            : psdTemplateUserTransferAction === 'copy'
-            ? '复制物理副本 PSD 模板给目标用户，生成独立文件存储。'
-            : '转移 PSD 模板给目标用户，会变更模板归属。'
-        "
-      />
+
+
 
       <el-form label-width="96px" class="sticker-user-transfer-form">
         <el-form-item label="目标用户" required>

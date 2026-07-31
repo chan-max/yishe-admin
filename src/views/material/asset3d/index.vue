@@ -348,18 +348,8 @@
       @closed="resetAsset3dUserTransferDialog"
     >
       <div class="sticker-user-transfer-dialog">
-        <el-alert
-          :type="asset3dUserTransferAction === 'share' ? 'info' : asset3dUserTransferAction === 'copy' ? 'success' : 'warning'"
-          :closable="false"
-          show-icon
-          :title="
-            asset3dUserTransferAction === 'share'
-              ? '快捷共享 3D 资源给目标用户，0 额外存储空间开销，极速完成。'
-              : asset3dUserTransferAction === 'copy'
-              ? '复制物理副本 3D 资源给目标用户，生成独立文件存储。'
-              : '转移 3D 资源给目标用户，会变更资源归属。'
-          "
-        />
+
+
 
         <el-form label-width="96px" class="sticker-user-transfer-form">
           <el-form-item label="目标用户" required>

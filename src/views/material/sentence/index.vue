@@ -362,18 +362,8 @@
       @closed="resetSentenceUserTransferDialog"
     >
       <div class="sticker-user-transfer-dialog">
-        <el-alert
-          :type="sentenceUserTransferAction === 'share' ? 'info' : sentenceUserTransferAction === 'copy' ? 'success' : 'warning'"
-          :closable="false"
-          show-icon
-          :title="
-            sentenceUserTransferAction === 'share'
-              ? '快捷共享例句给目标用户，0 额外存储空间开销，极速完成。'
-              : sentenceUserTransferAction === 'copy'
-              ? '复制物理副本例句给目标用户，生成独立文件存储。'
-              : '转移例句给目标用户，会变更素材归属。'
-          "
-        />
+
+
 
         <el-form label-width="96px" class="sticker-user-transfer-form mt-4">
           <el-form-item label="目标用户" required>

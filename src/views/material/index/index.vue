@@ -2502,14 +2502,6 @@
     <el-dialog v-model="stickerUserTransferDialogVisible" :title="stickerUserTransferDialogTitle" width="560px"
       align-center :close-on-click-modal="false" @closed="resetStickerUserTransferDialog">
       <div class="sticker-user-transfer-dialog">
-        <el-alert
-          :type="stickerUserTransferAction === 'share' ? 'info' : stickerUserTransferAction === 'copy' ? 'success' : 'warning'"
-          :closable="false" show-icon :title="stickerUserTransferAction === 'share'
-            ? '快捷共享素材给目标用户，0 额外存储空间开销，极速完成。'
-            : stickerUserTransferAction === 'copy'
-              ? '复制物理副本素材给目标用户，生成独立文件存储。'
-              : '转移素材给目标用户，会变更素材归属。'
-            " />
 
         <el-form label-width="96px" class="sticker-user-transfer-form">
           <el-form-item label="目标用户" required>

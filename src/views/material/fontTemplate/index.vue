@@ -112,11 +112,11 @@
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item command="share">
+                    <el-dropdown-item command="share-to-user">
                       <el-icon><Share /></el-icon>
                       <span>共享</span>
                     </el-dropdown-item>
-                    <el-dropdown-item command="copy">
+                    <el-dropdown-item command="copy-to-user">
                       <el-icon><DocumentCopy /></el-icon>
                       <span>转存副本</span>
                     </el-dropdown-item>
@@ -864,18 +864,8 @@
       @closed="resetFontTemplateUserTransferDialog"
     >
       <div class="sticker-user-transfer-dialog">
-        <el-alert
-          :type="fontTemplateUserTransferAction === 'share' ? 'info' : fontTemplateUserTransferAction === 'copy' ? 'success' : 'warning'"
-          :closable="false"
-          show-icon
-          :title="
-            fontTemplateUserTransferAction === 'share'
-              ? '快捷共享字体模板给目标用户，0 额外存储空间开销，极速完成。'
-              : fontTemplateUserTransferAction === 'copy'
-              ? '复制物理副本字体模板给目标用户，生成独立文件存储。'
-              : '转移字体模板给目标用户，会变更模板归属。'
-          "
-        />
+
+
 
         <el-form label-width="96px" class="sticker-user-transfer-form">
           <el-form-item label="目标用户" required>
