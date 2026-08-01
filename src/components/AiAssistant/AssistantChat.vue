@@ -446,6 +446,7 @@ defineExpose({ scrollToBottom, focusInput: () => inputRef.value?.focus?.() });
 .message-content--user .message-text {
   background: var(--el-color-primary-light-9);
   color: var(--el-color-primary);
+  border: 1px solid var(--el-color-primary-light-8);
   border-radius: 8px 8px 2px 8px;
   max-width: min(640px, 72%);
   padding: 8px 12px;
@@ -455,15 +456,29 @@ defineExpose({ scrollToBottom, focusInput: () => inputRef.value?.focus?.() });
   white-space: pre-wrap;
 }
 
+:global(html.dark) .message-content--user .message-text {
+  background: color-mix(in srgb, var(--el-color-primary) 22%, #141414);
+  color: var(--el-color-primary-light-3);
+  border-color: color-mix(in srgb, var(--el-color-primary) 35%, transparent);
+}
+
 .message-content--assistant {
   align-items: flex-start;
 }
 
 .message-content--assistant .message-body {
-  background: var(--el-fill-color-light, #f5f7fa);
+  background: var(--el-bg-color-overlay, #ffffff);
+  border: 1px solid var(--el-border-color-lighter);
   border-radius: 2px 10px 10px 10px;
   padding: 10px 14px;
   max-width: min(720px, 85%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+:global(html.dark) .message-content--assistant .message-body {
+  background: #1d1e1f !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .message-body {
@@ -476,6 +491,10 @@ defineExpose({ scrollToBottom, focusInput: () => inputRef.value?.focus?.() });
   line-height: 1.6;
   color: var(--el-text-color-primary);
   word-break: break-word;
+}
+
+:global(html.dark) .message-body .message-text {
+  color: #f0f2f5 !important;
 }
 
 .message-pending {

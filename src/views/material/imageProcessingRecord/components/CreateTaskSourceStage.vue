@@ -3,16 +3,19 @@
     <div class="create-task-stage__header">
       <div class="create-task-stage__index">1</div>
       <div class="create-task-stage__title-wrap">
-        <div class="create-task-stage__title">输入源图信息</div>
-        <div class="create-task-stage__desc">先完成必填的图片地址，再补充标题和来源链路。</div>
+        <div class="create-task-stage__title">选择源图</div>
+        <div class="create-task-stage__desc">支持上传本地文件或直接粘贴网络图片链接。</div>
       </div>
     </div>
 
     <div class="create-task-source-grid">
       <div class="create-task-panel">
         <div class="create-task-intro">
-          <div class="create-task-intro__title">先确认源图和标题</div>
-          <div class="create-task-intro__desc">输入可访问的图片地址后，就可以继续配置处理方式。</div>
+          <div class="create-task-intro__title">源图提供方式</div>
+          <el-radio-group v-model="sourceMode" size="small" @change="handleSourceModeChange">
+            <el-radio-button label="upload">本地文件上传</el-radio-button>
+            <el-radio-button label="url">网络图片链接</el-radio-button>
+          </el-radio-group>
         </div>
 
         <el-form label-position="top" class="create-task-form">
@@ -25,23 +28,30 @@
             />
           </el-form-item>
 
-          <el-form-item label="图片地址">
+          <el-form-item v-if="sourceMode === 'upload'" label="上传本地源图文件">
+            <UploadImg
+              v-model="form.imageUrl"
+              :limit="1"
+              :is-show-tip="false"
+              @change="handleUploadSuccess"
+            />
+          </el-form-item>
+
+          <el-form-item v-else label="图片远程 URL 链接">
             <el-input
               v-model="form.imageUrl"
               clearable
               placeholder="https://example.com/source.png"
+              @input="handleUrlInput"
             />
           </el-form-item>
-        </el-form>
 
-        <div class="create-task-tip">
-          当前仅支持远程图片地址，请先粘贴可直接访问的原图链接。
-        </div>
+        </el-form>
       </div>
 
       <div class="create-task-panel create-task-panel--preview">
         <div class="create-task-preview-card">
-          <div class="create-task-preview-card__title">原图预览</div>
+          <div class="create-task-preview-card__title">源图预览</div>
           <div class="create-task-preview-card__body">
             <img
               v-if="createSourcePreview"
@@ -49,7 +59,7 @@
               alt="source preview"
               class="create-task-preview-card__image"
             />
-            <div v-else class="create-task-preview-card__empty">等待选择图片</div>
+            <div v-else class="create-task-preview-card__empty">等待选择或上传图片</div>
           </div>
         </div>
 
@@ -74,39 +84,62 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from "vue";
+import UploadImg from "@/components/UploadFile/src/UploadImg.vue";
+
 defineOptions({ name: "CreateTaskSourceStage" });
 
-defineProps<{
+const props = defineProps<{
   form: Record<string, any>;
   createSourcePreview: string;
   hasSourceContext: boolean;
 }>();
+
+const sourceMode = ref("upload");
+
+function handleSourceModeChange(mode: string) {
+  if (mode === "upload") {
+    props.form.sourceImageOwned = true;
+  } else {
+    props.form.sourceImageOwned = false;
+  }
+}
+
+function handleUploadSuccess() {
+  props.form.sourceImageOwned = true;
+}
+
+function handleUrlInput() {
+  props.form.sourceImageOwned = false;
+}
 </script>
 
 <style scoped lang="scss">
 .create-task-stage {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 20px;
 }
 
 .create-task-stage__header {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--el-border-color-extra-light);
 }
 
 .create-task-stage__index {
   display: flex;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
-  background: var(--el-fill-color-light);
-  color: var(--el-text-color-primary);
+  border-radius: 50%;
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   flex-shrink: 0;
 }
 
@@ -114,55 +147,55 @@ defineProps<{
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .create-task-stage__title {
   color: var(--el-text-color-primary);
   font-size: 15px;
   font-weight: 600;
-  line-height: 1.5;
+  line-height: 1.3;
 }
 
 .create-task-stage__desc {
-  color: var(--el-text-color-secondary);
+  color: var(--el-text-color-placeholder);
   font-size: 12px;
-  line-height: 1.6;
+  line-height: 1.4;
 }
 
 .create-task-source-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) 360px;
-  gap: 16px;
-  align-items: stretch;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 24px;
+  align-items: start;
 }
 
 .create-task-panel {
   display: flex;
   min-height: 0;
   flex-direction: column;
-  gap: 14px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 16px;
-  background: var(--el-bg-color-page);
-  padding: 16px 18px;
+  gap: 16px;
+  background: transparent;
+  padding: 0;
+  border: none;
+  box-shadow: none;
 }
 
 .create-task-panel--preview {
   padding: 0;
   border: 0;
   background: transparent;
+  box-shadow: none;
 }
 
 .create-task-intro,
 .create-task-context-card {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 14px;
-  background: var(--el-fill-color-extra-light);
-  padding: 12px 14px;
+  gap: 8px;
+  border-radius: 8px;
+  background: var(--el-fill-color-blank);
+  padding: 0;
 }
 
 .create-task-intro__title,
@@ -171,7 +204,7 @@ defineProps<{
   color: var(--el-text-color-primary);
   font-size: 13px;
   font-weight: 600;
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 .create-task-intro__desc,
@@ -181,37 +214,39 @@ defineProps<{
 .create-task-preview-card__empty {
   color: var(--el-text-color-secondary);
   font-size: 12px;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .create-task-form {
   display: flex;
   flex-direction: column;
+  gap: 12px;
 }
 
 .create-task-preview-card {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 14px;
-  background: var(--el-bg-color);
-  padding: 12px;
+  gap: 8px;
+  background: transparent;
+  padding: 0;
+  border: none;
+  box-shadow: none;
 }
 
 .create-task-preview-card__body {
   display: flex;
-  min-height: 220px;
+  min-height: 200px;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--el-fill-color-light);
+  border: 1px dashed var(--el-border-color-lighter);
 }
 
 .create-task-preview-card__image {
   width: 100%;
-  max-height: 320px;
+  max-height: 300px;
   object-fit: contain;
 }
 
@@ -234,7 +269,7 @@ defineProps<{
 
 @media (max-width: 768px) {
   .create-task-panel {
-    padding: 14px;
+    padding: 0;
   }
 }
 </style>

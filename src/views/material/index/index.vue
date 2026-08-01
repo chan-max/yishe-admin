@@ -298,6 +298,18 @@
                       </el-icon>
                       <span>生成独立站商品</span>
                     </el-dropdown-item>
+                    <el-dropdown-item @click="openBatchImageProcessing('process')">
+                      <el-icon>
+                        <Operation />
+                      </el-icon>
+                      <span>图片链式处理</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item @click="openBatchImageProcessing('variations')">
+                      <el-icon>
+                        <PictureFilled />
+                      </el-icon>
+                      <span>图片裂变预设</span>
+                    </el-dropdown-item>
                     <el-dropdown-item :title="addToGroupButtonTitle" @click="openBatchAddToGroupDialog">
                       <el-icon>
                         <FolderAdd />
@@ -1790,10 +1802,10 @@
                             <div class="op-submenu" data-submenu="ownership" @mouseenter="handleSubmenuKeepVisible"
                               @mouseleave="handleSubmenuHide">
                               <div class="op-submenu-item" @click.stop="handleOperationCommand('share-to-user', row)">
-                                ⚡ 共享
+                                共享
                               </div>
                               <div class="op-submenu-item" @click.stop="handleOperationCommand('copy-to-user', row)">
-                                📄 转存副本
+                                转存副本
                               </div>
                               <div class="op-submenu-item" @click.stop="handleOperationCommand('move-to-user', row)">
                                 移交所有人
@@ -6931,6 +6943,16 @@ function openImageProcessingWorkbench(row: any, taskType: "process" | "variation
       ...buildImageProcessingPrefillOptions(row, taskType),
     }),
   );
+}
+
+function openBatchImageProcessing(taskType: "process" | "variations" = "process") {
+  const selectedItems = dataSource.value.filter((item) => ids.value.includes(item.id));
+  const firstWithUrl = selectedItems.find((item) => String(item?.url || "").trim());
+  if (!firstWithUrl) {
+    ElMessage.warning("请先勾选至少一张包含有效图片地址的素材");
+    return;
+  }
+  openImageProcessingWorkbench(firstWithUrl, taskType);
 }
 
 // 处理dropdown操作命令

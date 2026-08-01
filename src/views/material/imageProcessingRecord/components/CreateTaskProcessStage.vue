@@ -3,12 +3,24 @@
     <div class="create-task-stage__header">
       <div class="create-task-stage__index">2</div>
       <div class="create-task-stage__title-wrap">
-        <div class="create-task-stage__title">配置处理链</div>
-        <div class="create-task-stage__desc">从已选步骤开始，继续向下补充操作目录和可选 JSON 配置。</div>
+        <div class="create-task-stage__title">配置处理步骤（支持单功能或链式组合）</div>
+        <div class="create-task-stage__desc">可选择单个独立功能处理，也可顺序添加多个功能进行链式处理。</div>
       </div>
     </div>
 
     <div class="create-task-block">
+      <div class="create-task-quick-presets">
+        <span class="create-task-quick-presets__label">常用快捷预设：</span>
+        <div class="create-task-quick-presets__items">
+          <el-tag class="create-task-quick-tag" effect="plain" @click="appendQuickPreset('resize')">1080x1080 缩放</el-tag>
+          <el-tag class="create-task-quick-tag" effect="plain" @click="appendQuickPreset('watermark')">文字水印</el-tag>
+          <el-tag class="create-task-quick-tag" effect="plain" @click="appendQuickPreset('sharpen')">图像锐化</el-tag>
+          <el-tag class="create-task-quick-tag" effect="plain" @click="appendQuickPreset('sepia')">复古怀旧</el-tag>
+          <el-tag class="create-task-quick-tag" effect="plain" @click="appendQuickPreset('lowpoly')">低多边形</el-tag>
+          <el-tag class="create-task-quick-tag" effect="plain" @click="appendQuickPreset('png')">转为 PNG</el-tag>
+        </div>
+      </div>
+
       <div class="create-task-toolbar">
         <div class="create-task-pills">
           <div class="create-task-pill">当前处理链 {{ currentOperations.length }} 步</div>
@@ -262,9 +274,61 @@ function handleAppendSelectedOperation() {
   emit("append-operation", selectedOperation.value);
   catalogDialogVisible.value = false;
 }
+
+function appendQuickPreset(presetType: string) {
+  const presets: Record<string, any> = {
+    resize: { type: "resize", description: "调整尺寸", params: { width: 1080, height: 1080, maintainAspectRatio: true } },
+    watermark: { type: "watermark", description: "文字水印", params: { type: "text", text: "衣设 Yishe", position: "bottom-right", fontSize: 24, color: "#FFFFFF" } },
+    sharpen: { type: "sharpen", description: "图像锐化", params: { radius: 1, amount: 1 } },
+    sepia: { type: "sepia", description: "复古怀旧", params: { intensity: 80 } },
+    lowpoly: { type: "lowpoly", description: "低多边形", params: { pointCount: 900, edgeBias: 0.65 } },
+    png: { type: "convert", description: "格式转换", params: { format: "png", quality: 90 } },
+  };
+
+  const preset = presets[presetType];
+  if (preset) {
+    emit("append-operation", preset);
+  }
+}
 </script>
 
 <style scoped lang="scss">
+.create-task-quick-presets {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--el-border-color-lighter);
+}
+
+.create-task-quick-presets__label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--el-text-color-regular);
+}
+
+.create-task-quick-presets__items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.create-task-quick-tag {
+  cursor: pointer;
+  user-select: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  &:hover {
+    color: var(--el-color-primary);
+    border-color: var(--el-color-primary);
+    background-color: var(--el-color-primary-light-9);
+    transform: translateY(-1px);
+  }
+}
+
 .create-task-stage,
 .create-task-block,
 .create-task-intro,
@@ -276,37 +340,40 @@ function handleAppendSelectedOperation() {
 }
 
 .create-task-stage {
-  gap: 14px;
+  gap: 20px;
 }
 
 .create-task-stage__header,
 .create-task-toolbar,
 .create-task-card__header {
   display: flex;
-  gap: 12px;
+  gap: 10px;
 }
 
 .create-task-stage__header {
-  align-items: flex-start;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--el-border-color-extra-light);
 }
 
 .create-task-stage__index {
   display: flex;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
-  background: var(--el-fill-color-light);
+  border-radius: 50%;
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   flex-shrink: 0;
 }
 
 .create-task-stage__title-wrap {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .create-task-stage__title,
@@ -314,9 +381,9 @@ function handleAppendSelectedOperation() {
 .create-task-card__title,
 .create-task-empty__title {
   color: var(--el-text-color-primary);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
-  line-height: 1.5;
+  line-height: 1.3;
 }
 
 .create-task-stage__desc,
@@ -326,33 +393,32 @@ function handleAppendSelectedOperation() {
 .create-task-toolbar--plain,
 .create-task-param-card__label,
 .create-task-param-card__value {
-  color: var(--el-text-color-secondary);
+  color: var(--el-text-color-placeholder);
   font-size: 12px;
-  line-height: 1.6;
+  line-height: 1.4;
 }
 
 .create-task-block {
-  gap: 14px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 16px;
-  background: var(--el-bg-color-page);
-  padding: 16px 18px;
+  gap: 16px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
 }
 
 .create-task-block--optional {
-  background: var(--el-fill-color-extra-light);
+  margin-top: 10px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--el-border-color-lighter);
 }
 
 .create-task-intro {
-  gap: 6px;
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 14px;
-  background: var(--el-fill-color-extra-light);
-  padding: 12px 14px;
+  gap: 4px;
+  padding: 0;
 }
 
 .create-task-toolbar {
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
 }
@@ -365,6 +431,7 @@ function handleAppendSelectedOperation() {
 .create-task-pills,
 .create-task-tags {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
   gap: 8px;
 }
@@ -398,56 +465,68 @@ function handleAppendSelectedOperation() {
 
 .create-task-select-option {
   display: flex;
-  min-width: 0;
+  align-items: center;
   justify-content: space-between;
+  min-width: 0;
+  height: 100%;
   gap: 12px;
 }
 
 .create-task-select-option__title,
 .create-task-select-option__meta {
-  font-size: 12px;
-  line-height: 1.6;
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  line-height: 1;
 }
 
 .create-task-select-option__title {
   color: var(--el-text-color-primary);
+  font-weight: 500;
 }
 
 .create-task-select-option__meta {
   color: var(--el-text-color-secondary);
+  font-size: 12px;
   flex-shrink: 0;
 }
 
 .create-task-pill,
 .create-task-card__step {
-  border-radius: 999px;
-  background: var(--el-fill-color-extra-light);
-  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--el-fill-color-light);
+  padding: 3px 8px;
   font-size: 12px;
+  color: var(--el-text-color-regular);
 }
 
 .create-task-chain-list {
-  gap: 12px;
+  gap: 10px;
 }
 
 .create-task-card {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 14px;
+  gap: 8px;
+  border: 1px solid var(--el-border-color-extra-light);
+  border-radius: 8px;
   background: var(--el-bg-color);
-  padding: 16px 18px;
+  padding: 12px 14px;
+  transition: all 0.2s ease;
+  &:hover {
+    border-color: var(--el-border-color-light);
+  }
 }
 
 .create-task-card__header {
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
 }
 
 .create-task-card__main,
 .create-task-card__title-wrap {
   display: flex;
+  align-items: center;
   min-width: 0;
 }
 
@@ -459,35 +538,38 @@ function handleAppendSelectedOperation() {
 .create-task-card__title-wrap {
   flex: 1;
   flex-direction: column;
-  gap: 4px;
+  align-items: flex-start;
+  gap: 2px;
 }
 
 .create-task-param-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 10px;
+  gap: 8px;
 }
 
 .create-task-param-card {
-  border-radius: 10px;
+  border-radius: 6px;
   background: var(--el-fill-color-extra-light);
-  padding: 10px 12px;
+  padding: 6px 10px;
 }
 
 .create-task-empty {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 6px;
-  border: 1px dashed var(--el-border-color);
-  border-radius: 14px;
-  background: var(--el-fill-color-extra-light);
+  border: 1px dashed var(--el-border-color-light);
+  border-radius: 8px;
+  background: var(--el-fill-color-blank);
   padding: 24px 16px;
   text-align: center;
 }
 
 .create-task-empty--simple {
   border-style: solid;
-  padding: 18px;
+  padding: 16px;
 }
 
 .create-task-filter {
@@ -495,14 +577,15 @@ function handleAppendSelectedOperation() {
 }
 
 .create-task-json-editor :deep(.el-textarea__inner) {
-  min-height: 420px !important;
-  line-height: 1.65;
+  min-height: 180px !important;
+  line-height: 1.6;
+  border-radius: 6px;
 }
 
 @media (max-width: 768px) {
   .create-task-block,
   .create-task-card {
-    padding: 14px;
+    padding: 0;
   }
 
   .create-task-select-row {
@@ -512,6 +595,7 @@ function handleAppendSelectedOperation() {
   .create-task-toolbar,
   .create-task-card__header {
     flex-direction: column;
+    align-items: flex-start;
   }
 
   .create-task-dialog-footer {

@@ -10,27 +10,11 @@
 
     <div class="create-task-submit-grid">
       <div class="create-task-panel">
-        <div v-if="formTaskType === 'process' && currentOperations.length" class="create-task-preview-chain">
-          <div class="create-task-preview-chain__title">本次处理链</div>
+        <div v-if="currentOperations.length" class="create-task-preview-chain">
+          <div class="create-task-preview-chain__title">本次处理链 ({{ currentOperations.length }} 步)</div>
           <div class="create-task-preview-chip-list">
             <span v-for="operation in currentOperations" :key="operation.key" class="create-task-preview-chip">
               {{ operation.title }}
-            </span>
-          </div>
-        </div>
-
-        <div v-else-if="formTaskType === 'variations' && variationPreviewNames.length" class="create-task-preview-chain">
-          <div class="create-task-preview-chain__title">本次裂变输出</div>
-          <div class="create-task-preview-chain__desc">本次将基于当前图片生成 {{ variations.length }} 组裂变结果。</div>
-          <div class="create-task-preview-chip-list">
-            <span v-for="(name, index) in variationPreviewNames" :key="`${name}-${index}`" class="create-task-preview-chip">
-              {{ name }}
-            </span>
-            <span
-              v-if="variations.length > variationPreviewNames.length"
-              class="create-task-preview-chip create-task-preview-chip--more"
-            >
-              +{{ variations.length - variationPreviewNames.length }}
             </span>
           </div>
         </div>
@@ -49,7 +33,7 @@
       <div class="create-task-actions__buttons">
         <el-button @click="$emit('cancel')">取消</el-button>
         <el-button type="primary" :loading="submitLoading" :disabled="!canSubmitCreate" @click="$emit('submit')">
-          {{ formTaskType === "variations" ? "执行图片裂变" : "立即执行" }}
+          立即执行
         </el-button>
       </div>
     </div>
@@ -62,8 +46,6 @@ defineOptions({ name: "CreateTaskSubmitStage" });
 defineProps<{
   formTaskType: string;
   currentOperations: any[];
-  variationPreviewNames: string[];
-  variations: any[];
   requestPreviewJson: string;
   createSubmitHint: string;
   submitLoading: boolean;
@@ -155,13 +137,31 @@ defineEmits(["cancel", "submit"]);
 }
 
 .create-task-intro,
+.create-task-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: transparent;
+  padding: 0;
+  border: none;
+  box-shadow: none;
+}
+
+.create-task-panel--preview {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.create-task-intro,
 .create-task-request-preview,
 .create-task-preview-chain {
-  gap: 10px;
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 14px;
-  background: var(--el-fill-color-extra-light);
-  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: transparent;
+  padding: 0;
+  border: none;
 }
 
 .create-task-request-preview {
@@ -171,13 +171,13 @@ defineEmits(["cancel", "submit"]);
 .create-task-preview-chip-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .create-task-preview-chip {
-  border-radius: 999px;
-  background: var(--el-bg-color);
-  padding: 5px 10px;
+  border-radius: 4px;
+  background: var(--el-fill-color-light);
+  padding: 4px 10px;
   color: var(--el-text-color-primary);
   font-size: 12px;
 }
@@ -191,23 +191,26 @@ defineEmits(["cancel", "submit"]);
   overflow: auto;
   max-width: 100%;
   flex: 1;
-  border-radius: 10px;
-  background: var(--el-fill-color-light);
-  padding: 12px;
+  border-radius: 6px;
+  background: var(--el-fill-color-extra-light);
+  padding: 10px 12px;
   color: var(--el-text-color-regular);
   font-size: 12px;
-  line-height: 1.6;
+  line-height: 1.5;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   word-break: break-word;
+  border: 1px dashed var(--el-border-color-lighter);
 }
 
 .create-task-actions {
+  display: flex;
+  flex-direction: column;
   gap: 12px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 16px;
-  background: var(--el-bg-color-page);
-  padding: 16px 18px;
+  margin-top: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--el-border-color-extra-light);
+  background: transparent;
 }
 
 .create-task-actions__buttons {
@@ -230,7 +233,7 @@ defineEmits(["cancel", "submit"]);
 @media (max-width: 768px) {
   .create-task-panel,
   .create-task-actions {
-    padding: 14px;
+    padding: 0;
   }
 
   .create-task-actions__buttons {

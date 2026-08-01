@@ -1,5 +1,79 @@
 <template>
   <ContentWrap :plain="true">
+    <!-- 顶部：处理预设库 -->
+    <div class="image-processing-showcase">
+      <div class="image-processing-showcase__header">
+        <div class="image-processing-showcase__title-row">
+          <h2 class="image-processing-showcase__title">处理预设库</h2>
+          <el-tag
+            :type="processingCount > 0 ? 'warning' : imagesStatus.available ? 'success' : 'info'"
+            effect="light"
+            size="small"
+          >
+            <span class="pulse-dot" :class="{ 'is-active': imagesStatus.available, 'is-processing': processingCount > 0 }"></span>
+            {{ processingCount > 0 ? `正在处理中 (${processingCount} 个)` : imagesStatus.available ? "客户端引擎已连线" : "内置引擎就绪" }}
+          </el-tag>
+        </div>
+
+        <el-button type="primary" size="small" :icon="Plus" @click="openCreateDialog">
+          新建任务
+        </el-button>
+      </div>
+
+      <div class="image-processing-showcase__tabs-bar">
+        <el-radio-group v-model="activeShowcaseCategory" size="small">
+          <el-radio-button label="all">全部 ({{ unifiedShowcaseItems.length }})</el-radio-button>
+          <el-radio-button label="basic">基础编辑</el-radio-button>
+          <el-radio-button label="effect">艺术效果</el-radio-button>
+          <el-radio-button label="filter">风格滤镜</el-radio-button>
+          <el-radio-button label="variation">裂变预设</el-radio-button>
+        </el-radio-group>
+
+        <el-input
+          v-model="showcaseKeyword"
+          size="small"
+          clearable
+          placeholder="搜索处理方式"
+          class="showcase-search-input"
+          :prefix-icon="Search"
+        />
+      </div>
+
+      <div v-if="filteredUnifiedShowcaseItems.length" class="showcase-grid">
+        <div
+          v-for="item in filteredUnifiedShowcaseItems"
+          :key="item.key"
+          class="showcase-card"
+          :class="{ 'showcase-card--variation': item.kind === 'variation' }"
+          @click="handleShowcaseItemClick(item)"
+        >
+          <div class="showcase-card__header">
+            <div
+              class="showcase-card__icon-box"
+              :class="{ 'showcase-card__icon-box--var': item.kind === 'variation' }"
+            >
+              <el-icon><PictureFilled v-if="item.kind === 'variation'" /><Operation v-else /></el-icon>
+            </div>
+            <div class="showcase-card__title-wrap">
+              <div class="showcase-card__title">{{ item.title }}</div>
+              <div class="showcase-card__code">{{ item.subtitle }}</div>
+            </div>
+            <el-tag
+              size="small"
+              :type="item.kind === 'variation' ? 'success' : 'info'"
+              effect="plain"
+            >
+              {{ item.categoryLabel }}
+            </el-tag>
+          </div>
+        </div>
+      </div>
+
+      <div v-else class="showcase-empty">
+        <span>未找到匹配方式</span>
+      </div>
+    </div>
+
     <ListPageLayout class="image-processing-record-page">
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
@@ -115,11 +189,14 @@
                   <div class="image-record-source-cell">
                     <div class="image-record-thumb" @click.stop="openRowSource(row)">
                       <img
-                        v-if="getSourcePreview(row)"
+                        v-if="getSourcePreview(row) && !imageLoadErrorMap[row.id]"
                         :src="getSourcePreview(row)"
                         :alt="row.sourceFilename || row.title || '原图'"
+                        @error="handleImageError(row.id)"
                       />
-                      <span v-else class="image-record-thumb__placeholder">无预览</span>
+                      <span v-else class="image-record-thumb__placeholder">
+                        {{ imageLoadErrorMap[row.id] ? "原图失效" : "无预览" }}
+                      </span>
                     </div>
                     <div class="image-record-source-meta">
                       <span class="image-record-source-type">
@@ -157,11 +234,14 @@
                       @click.stop="openFirstResult(row)"
                     >
                       <img
-                        v-if="getFirstResultUrl(row)"
+                        v-if="getFirstResultUrl(row) && !imageLoadErrorMap['res_' + row.id]"
                         :src="getFirstResultUrl(row)"
                         :alt="row.title || '结果图'"
+                        @error="handleImageError('res_' + row.id)"
                       />
-                      <span v-else class="image-record-thumb__placeholder">无结果</span>
+                      <span v-else class="image-record-thumb__placeholder">
+                        {{ imageLoadErrorMap['res_' + row.id] ? "加载失败" : "无结果" }}
+                      </span>
                     </div>
                     <div class="image-record-result-meta">
                       <span class="image-record-result-count">{{ getResultSummary(row) }}</span>
@@ -225,11 +305,6 @@
       class="image-processing-create-dialog"
     >
       <div v-loading="metaLoading" class="image-processing-create-layout">
-        <el-tabs v-model="form.taskType" class="image-processing-mode-tabs">
-          <el-tab-pane label="链式处理" name="process" />
-          <el-tab-pane label="图片裂变" name="variations" />
-        </el-tabs>
-
         <el-card shadow="never" class="image-processing-panel-card image-processing-create-workspace">
           <div class="image-processing-linear-flow">
             <CreateTaskSourceStage
@@ -239,7 +314,6 @@
             />
 
             <CreateTaskProcessStage
-              v-if="form.taskType === 'process'"
               :form="form"
               :current-operations="currentOperations"
               :current-operations-parse-error="currentOperationsParseError"
@@ -264,18 +338,9 @@
               @update:operations-json="form.operationsJson = $event"
             />
 
-            <CreateTaskVariationsStage
-              v-else
-              :variations="variations"
-              :get-variation-operation-count="getVariationOperationCount"
-              :get-variation-operation-labels="getVariationOperationLabels"
-            />
-
             <CreateTaskSubmitStage
               :form-task-type="form.taskType"
               :current-operations="currentOperations"
-              :variation-preview-names="variationPreviewNames"
-              :variations="variations"
               :request-preview-json="requestPreviewJson"
               :create-submit-hint="createSubmitHint"
               :submit-loading="submitLoading"
@@ -331,7 +396,7 @@
               >
                 <div
                   class="image-processing-result-card__thumb"
-                  @click="file.url && openUrl(file.url)"
+                  @click="file.url && previewImage(file.url, detailResultFiles.map((f: any) => f.url).filter(Boolean))"
                 >
                   <img
                     v-if="file.url"
@@ -362,9 +427,9 @@
                       type="primary"
                       link
                       size="small"
-                      @click="openUrl(file.url)"
+                      @click="previewImage(file.url, detailResultFiles.map((f: any) => f.url).filter(Boolean))"
                     >
-                      打开归档文件
+                      预览图片
                     </el-button>
                   </div>
                 </div>
@@ -408,6 +473,7 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { Delete, Plus, Search } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
 import { formatTimestamp } from "@/common/date";
+import { createImageViewer } from "@/components/ImageViewer";
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from "@/common/table";
 import {
   batchDeleteImageProcessingRecord,
@@ -428,7 +494,6 @@ import {
 import CreateTaskProcessStage from "./components/CreateTaskProcessStage.vue";
 import CreateTaskSourceStage from "./components/CreateTaskSourceStage.vue";
 import CreateTaskSubmitStage from "./components/CreateTaskSubmitStage.vue";
-import CreateTaskVariationsStage from "./components/CreateTaskVariationsStage.vue";
 import {
   buildImageProcessingPrefillSignature,
   clearImageProcessingRoutePrefill,
@@ -459,6 +524,25 @@ const operationKeyword = ref("");
 const operationCategoryFilter = ref("all");
 const activeCatalogOperationKey = ref("");
 
+const processingCount = computed(() => {
+  const now = Date.now();
+  return dataSource.value.filter((item) => {
+    if (
+      item.status !== "processing" &&
+      item.status !== "pending" &&
+      item.status !== "assigned" &&
+      item.status !== "pending_client"
+    ) {
+      return false;
+    }
+    const createdAt = new Date(item.createTime || item.createdAt || 0).getTime();
+    if (createdAt && now - createdAt > 2 * 60 * 1000) {
+      return false;
+    }
+    return true;
+  }).length;
+});
+
 const queryParams = reactive({
   currentPage: 1,
   pageSize: 20,
@@ -467,16 +551,51 @@ const queryParams = reactive({
   taskType: "",
 });
 
-const form = reactive({
+const form = reactive<Record<string, any>>({
   title: "",
   taskType: "process",
-  sourceType: "url",
   imageUrl: "",
   operationsJson: EMPTY_OPERATIONS_JSON,
+  processorId: "imagemagick",
   sourceModule: "",
   sourceRecordId: "",
   sourceName: "",
+  sourceImageOwned: true,
 });
+
+const DEFAULT_FALLBACK_OPERATIONS = [
+  { type: "resize", apiType: "resize", category: "basic", description: "调整图像尺寸与宽高比", params: { width: { type: "number", description: "目标宽度 (px)", required: true }, height: { type: "number", description: "目标高度 (px)", required: true }, maintainAspectRatio: { type: "boolean", description: "保持原宽高比", default: true } }, requiredParams: ["width", "height"] },
+  { type: "crop", apiType: "crop", category: "basic", description: "按指定坐标和大小裁剪图像", params: { x: { type: "number", description: "起点 X 坐标 (px)" }, y: { type: "number", description: "起点 Y 坐标 (px)" }, width: { type: "number", description: "裁剪宽度 (px)", required: true }, height: { type: "number", description: "裁剪高度 (px)", required: true } }, requiredParams: ["width", "height"] },
+  { type: "shapeCrop", apiType: "shapeCrop", category: "basic", description: "圆形 / 椭圆 / 多边形形状裁剪", params: { shape: { type: "string", description: "形状 (circle/ellipse/polygon)", default: "circle" }, width: { type: "number", description: "宽度 (px)", default: 200 }, height: { type: "number", description: "高度 (px)", default: 200 } }, requiredParams: [] },
+  { type: "rotate", apiType: "rotate", category: "basic", description: "旋转图像指定角度", params: { degrees: { type: "number", description: "旋转角度 (度)", default: 90 }, backgroundColor: { type: "string", description: "空白填充颜色", default: "#000000" } }, requiredParams: ["degrees"] },
+  { type: "convert", apiType: "convert", category: "basic", description: "转换图像文件格式 (JPG/PNG/WEBP/GIF)", params: { format: { type: "string", description: "目标格式 (jpg/png/webp/gif)", default: "jpg" }, quality: { type: "number", description: "压缩质量 (1-100)", default: 90 } }, requiredParams: ["format"] },
+  { type: "watermark", apiType: "watermark", category: "basic", description: "添加文字或图片水印", params: { type: { type: "string", description: "水印类型 (text/image)", default: "text" }, text: { type: "string", description: "文字内容", default: "衣设 Yishe" }, fontSize: { type: "number", description: "字号大小 (px)", default: 24 }, color: { type: "string", description: "文字颜色", default: "#FFFFFF" }, position: { type: "string", description: "位置 (top-left/center/bottom-right 等)", default: "bottom-right" } }, requiredParams: [] },
+  { type: "adjust", apiType: "adjust", category: "basic", description: "基础图像调整（亮度/对比度/饱和度）", params: { brightness: { type: "number", description: "亮度 (-100 到 100)", default: 0 }, contrast: { type: "number", description: "对比度 (-100 到 100)", default: 0 }, saturation: { type: "number", description: "饱和度 (-100 到 100)", default: 0 } }, requiredParams: [] },
+  { type: "lowpoly", apiType: "effects-lowpoly", category: "effect", description: "晶格低多边形 Lowpoly 艺术效果", params: { pointCount: { type: "number", description: "采样点数量", default: 900 }, edgeBias: { type: "number", description: "边缘权重", default: 0.65 } }, requiredParams: [] },
+  { type: "blur", apiType: "effects-blur", category: "effect", description: "高斯模糊效果", params: { radius: { type: "number", description: "模糊半径", default: 5 }, sigma: { type: "number", description: "模糊 Sigma", default: 5 } }, requiredParams: [] },
+  { type: "sharpen", apiType: "effects-sharpen", category: "effect", description: "图像锐化清晰增强", params: { radius: { type: "number", description: "锐化半径", default: 1 }, amount: { type: "number", description: "锐化程度", default: 1 } }, requiredParams: [] },
+  { type: "grayscale", apiType: "effects-grayscale", category: "effect", description: "黑白灰度效果", params: { intensity: { type: "number", description: "强度", default: 100 } }, requiredParams: [] },
+  { type: "sepia", apiType: "effects-sepia", category: "effect", description: "复古暖调棕褐色", params: { intensity: { type: "number", description: "强度", default: 80 } }, requiredParams: [] },
+  { type: "charcoal", apiType: "effects-charcoal", category: "effect", description: "木炭素描画效果", params: { radius: { type: "number", description: "素描半径", default: 1 } }, requiredParams: [] },
+  { type: "oil-painting", apiType: "effects-oil-painting", category: "effect", description: "油画艺术画笔效果", params: { radius: { type: "number", description: "笔触大小", default: 3 } }, requiredParams: [] },
+  { type: "pixelate", apiType: "effects-pixelate", category: "effect", description: "像素马赛克效果", params: { size: { type: "number", description: "像素块大小", default: 10 } }, requiredParams: [] },
+  { type: "vignette", apiType: "effects-vignette", category: "effect", description: "四周暗角效果", params: { radius: { type: "number", description: "晕影半径", default: 100 } }, requiredParams: [] },
+  { type: "filter-grayscale", apiType: "filter-grayscale", category: "filter", description: "黑白灰度滤镜", params: { intensity: { type: "number", description: "滤镜强度 (0-1)", default: 1 } }, requiredParams: [] },
+  { type: "filter-sepia", apiType: "filter-sepia", category: "filter", description: "复古老照片滤镜", params: { intensity: { type: "number", description: "滤镜强度 (0-1)", default: 1 } }, requiredParams: [] },
+  { type: "filter-invert", apiType: "filter-invert", category: "filter", description: "底片反色滤镜", params: { intensity: { type: "number", description: "滤镜强度 (0-1)", default: 1 } }, requiredParams: [] },
+  { type: "filter-blur", apiType: "filter-blur", category: "filter", description: "柔和模糊滤镜", params: { intensity: { type: "number", description: "滤镜强度 (0-1)", default: 1 } }, requiredParams: [] },
+];
+
+const DEFAULT_FALLBACK_VARIATIONS = [
+  { id: "square_hd", name: "正方形高清图 (1080x1080)", description: "输出 1080x1080 标准电商商品展示主图", operations: [{ type: "resize", params: { width: 1080, height: 1080, maintainAspectRatio: true } }] },
+  { id: "portrait_mobile", name: "竖屏手机海报 (1080x1920)", description: "输出 9:16 竖屏手机端海报规格", operations: [{ type: "resize", params: { width: 1080, height: 1920, maintainAspectRatio: true } }] },
+  { id: "vintage_bw", name: "复古黑白风", description: "转换为高对比度复古黑白老照片效果", operations: [{ type: "effects", params: { effectType: "grayscale" } }] },
+  { id: "sepia_warm", name: "暖调棕褐怀旧", description: "添加经典暖色调 Sepia 怀旧风格滤镜", operations: [{ type: "effects", params: { effectType: "sepia", intensity: 80 } }] },
+  { id: "art_lowpoly", name: "晶格低多边形艺术风", description: "将图片转换为现代 Lowpoly 几何晶格艺术图形", operations: [{ type: "effects", params: { effectType: "lowpoly", pointCount: 900, edgeBias: 0.65 } }] },
+  { id: "watermark_brand", name: "品牌保护水印图", description: "在右下角自动添加品牌文字水印", operations: [{ type: "watermark", params: { type: "text", text: "衣设 Yishe", position: "bottom-right", fontSize: 24, color: "#FFFFFF" } }] },
+  { id: "web_optimized_png", name: "Web 优化无损 PNG", description: "转换为 PNG 高清格式并优化质量", operations: [{ type: "convert", params: { format: "png", quality: 95 } }] },
+  { id: "circle_avatar", name: "圆形头像标贴", description: "裁剪为透明背景圆形贴图", operations: [{ type: "shapeCrop", params: { shape: "circle", width: 400, height: 400 } }] },
+];
 
 const categoryLabelMap: Record<string, string> = {
   all: "全部",
@@ -493,6 +612,125 @@ const categoryOrderMap: Record<string, number> = {
   default: 9,
 };
 const ACTIVE_RECORD_STATUSES = new Set(["pending", "pending_client", "assigned", "processing"]);
+
+const activeShowcaseCategory = ref("all");
+const showcaseKeyword = ref("");
+
+function getCategoryLabel(cat?: string): string {
+  return categoryLabelMap[cat || ""] || categoryLabelMap.default || "常用操作";
+}
+
+const unifiedShowcaseItems = computed(() => {
+  const opList = (operations.value.length ? operations.value : DEFAULT_FALLBACK_OPERATIONS).map((op: any) => ({
+    key: `op-${op.apiType || op.type}`,
+    kind: "operation",
+    title: op.description || op.type,
+    subtitle: op.apiType || op.type,
+    category: op.category || "basic",
+    categoryLabel: getCategoryLabel(op.category),
+    raw: op,
+  }));
+
+  const varList = (variations.value.length ? variations.value : DEFAULT_FALLBACK_VARIATIONS).map((v: any) => ({
+    key: `var-${v.id || v.name}`,
+    kind: "variation",
+    title: v.name || v.id,
+    subtitle: v.description || "自动生成多组衍生结果",
+    category: "variation",
+    categoryLabel: "多图裂变",
+    raw: v,
+  }));
+
+  return [...opList, ...varList];
+});
+
+const filteredUnifiedShowcaseItems = computed(() => {
+  const cat = activeShowcaseCategory.value;
+  const kw = showcaseKeyword.value.trim().toLowerCase();
+
+  return unifiedShowcaseItems.value.filter((item) => {
+    if (cat !== "all" && item.category !== cat) {
+      return false;
+    }
+    if (kw) {
+      const text = `${item.title} ${item.subtitle} ${item.categoryLabel}`.toLowerCase();
+      return text.includes(kw);
+    }
+    return true;
+  });
+});
+
+const testGenerateLoading = ref(false);
+
+async function generateTestRecords() {
+  testGenerateLoading.value = true;
+  try {
+    const testCases = [
+      {
+        title: "测试任务 - 1080x1080正方形+文字水印",
+        taskType: "process",
+        imageUrl: "https://picsum.photos/id/1025/1200/800.jpg",
+        processorId: "imagemagick",
+        operationsJson: JSON.stringify([
+          { type: "resize", params: { width: 1080, height: 1080, maintainAspectRatio: true } },
+          { type: "watermark", params: { type: "text", text: "衣设 Yishe AI", position: "bottom-right", fontSize: 28, color: "#FFFFFF" } }
+        ], null, 2),
+      },
+      {
+        title: "测试任务 - 晶格 Lowpoly 艺术效果+锐化",
+        taskType: "process",
+        imageUrl: "https://picsum.photos/id/1069/1000/1000.jpg",
+        processorId: "imagemagick",
+        operationsJson: JSON.stringify([
+          { type: "lowpoly", params: { pointCount: 900, edgeBias: 0.65 } },
+          { type: "sharpen", params: { radius: 1, amount: 1 } }
+        ], null, 2),
+      },
+      {
+        title: "测试任务 - 复古怀旧滤镜+无损PNG转换",
+        taskType: "process",
+        imageUrl: "https://picsum.photos/id/1062/1200/800.jpg",
+        processorId: "imagemagick",
+        operationsJson: JSON.stringify([
+          { type: "sepia", params: { intensity: 80 } },
+          { type: "convert", params: { format: "png", quality: 95 } }
+        ], null, 2),
+      },
+    ];
+
+    for (const item of testCases) {
+      await createImageProcessingRecord(item);
+    }
+    ElMessage.success("已发起 3 条测试任务，请观察下方记录列表！");
+    await getList();
+  } catch (error: any) {
+    ElMessage.error(error?.message || "生成测试记录失败");
+  } finally {
+    testGenerateLoading.value = false;
+  }
+}
+
+function handleShowcaseItemClick(item: any) {
+  if (item.kind === "operation") {
+    quickStartOperation(item.raw);
+  } else {
+    quickStartVariation(item.raw);
+  }
+}
+
+function quickStartOperation(op: any) {
+  openCreateDialog();
+  form.taskType = "process";
+  if (op) {
+    activeCatalogOperationKey.value = getOperationIdentity(op);
+    appendCatalogOperation(op);
+  }
+}
+
+function quickStartVariation(_v?: any) {
+  openCreateDialog();
+  form.taskType = "variations";
+}
 
 let recordRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 let processingPollTimer: ReturnType<typeof setTimeout> | null = null;
@@ -645,12 +883,7 @@ const canSubmitCreate = computed(() => {
   if (!/^https?:\/\//i.test(String(form.imageUrl || "").trim())) {
     return false;
   }
-
-  if (form.taskType === "process") {
-    return !currentOperationsParseError.value && currentOperations.value.length > 0;
-  }
-
-  return variations.value.length > 0;
+  return !currentOperationsParseError.value && currentOperations.value.length > 0;
 });
 
 const detailResultFiles = computed(() => {
@@ -663,20 +896,16 @@ const requestPreviewJson = computed(() => {
 
 const createSubmitHint = computed(() => {
   if (imagesStatus.checked && !imagesStatus.available) {
-    return String(imagesStatus.message || "").trim() || "图片处理当前不可执行，请稍后再试。";
+    return String(imagesStatus.message || "").trim() || "图片处理服务当前不可用，请稍后再试。";
   }
   if (!/^https?:\/\//i.test(String(form.imageUrl || "").trim())) {
-    return "请先输入有效的图片地址，再继续提交任务。";
+    return "请先选择或输入有效的源图地址。";
   }
-  if (form.taskType === "process") {
-    if (currentOperationsParseError.value) {
-      return currentOperationsParseError.value;
-    }
-    if (!currentOperations.value.length) {
-      return "请先从操作目录中加入至少一个处理步骤。";
-    }
-  } else if (!variations.value.length) {
-    return "当前还没有可用的裂变预设，请先刷新页面数据。";
+  if (currentOperationsParseError.value) {
+    return currentOperationsParseError.value;
+  }
+  if (!currentOperations.value.length) {
+    return "请先加入至少一个处理步骤。";
   }
   return "当前配置已完成，可以直接提交任务。";
 });
@@ -864,6 +1093,14 @@ async function refreshActiveRows() {
   }
 }
 
+const imageLoadErrorMap = ref<Record<string, boolean>>({});
+
+function handleImageError(id: string | number) {
+  if (id) {
+    imageLoadErrorMap.value[String(id)] = true;
+  }
+}
+
 function getSourcePreview(row: any) {
   return row?.sourceImageUrl || row?.sourceOriginalUrl || "";
 }
@@ -883,18 +1120,31 @@ function getResultSummary(row: any) {
   return `${successCount}/${files.length} 个已归档`;
 }
 
+function previewImage(url?: string, list?: string[]) {
+  const normalized = String(url || "").trim();
+  if (!normalized) return;
+  const urlList = (list && list.length ? list : [normalized]).filter(Boolean);
+  const initialIndex = Math.max(0, urlList.indexOf(normalized));
+  createImageViewer({
+    urlList,
+    initialIndex,
+  });
+}
+
 function openUrl(url?: string) {
   const normalized = String(url || "").trim();
   if (!normalized) return;
-  window.open(normalized, "_blank", "noopener,noreferrer");
+  previewImage(normalized);
 }
 
 function openRowSource(row: any) {
-  openUrl(getSourcePreview(row));
+  previewImage(getSourcePreview(row));
 }
 
 function openFirstResult(row: any) {
-  openUrl(getFirstResultUrl(row));
+  const files = Array.isArray(row?.resultFiles) ? row.resultFiles : [];
+  const validUrls = files.map((item: any) => item?.url).filter(Boolean);
+  previewImage(getFirstResultUrl(row), validUrls);
 }
 
 function resetForm() {
@@ -1392,8 +1642,14 @@ async function loadMeta(silent = false) {
   try {
     const result: any = await getImageProcessingMeta();
     catalog.value = result?.catalog || null;
-    operations.value = Array.isArray(result?.operations) ? result.operations : [];
-    variations.value = Array.isArray(result?.variations) ? result.variations : [];
+    operations.value =
+      Array.isArray(result?.operations) && result.operations.length > 0
+        ? result.operations
+        : DEFAULT_FALLBACK_OPERATIONS;
+    variations.value =
+      Array.isArray(result?.variations) && result.variations.length > 0
+        ? result.variations
+        : DEFAULT_FALLBACK_VARIATIONS;
     if (
       !activeCatalogOperationKey.value ||
       !operations.value.some((operation) => getOperationIdentity(operation) === activeCatalogOperationKey.value)
@@ -1405,9 +1661,9 @@ async function loadMeta(silent = false) {
     syncDefaultOperationsJson();
   } catch (error: any) {
     catalog.value = null;
-    operations.value = [];
-    variations.value = [];
-    ElMessage.error(error?.message || "获取图片服务元数据失败");
+    operations.value = DEFAULT_FALLBACK_OPERATIONS;
+    variations.value = DEFAULT_FALLBACK_VARIATIONS;
+    console.warn("获取图片服务元数据警告，使用本地内置处理方式目录:", error);
   } finally {
     metaLoading.value = false;
   }
@@ -1421,6 +1677,7 @@ async function getList() {
     const result: any = await getImageProcessingRecordPage({ ...queryParams });
     dataSource.value = result?.list || result?.records || [];
     total.value = result?.total || 0;
+    console.log("📥 [ImageProcessingRecord] 成功获取到的记录列表条数:", dataSource.value.length, dataSource.value);
   } catch (error: any) {
     dataSource.value = [];
     total.value = 0;
@@ -1557,6 +1814,9 @@ async function submitCreate() {
     if (String(form.sourceName || "").trim()) {
       payload.sourceName = String(form.sourceName).trim();
     }
+    if (String(form.processorId || "").trim()) {
+      payload.processorId = String(form.processorId).trim();
+    }
     if (form.taskType === "process") {
       payload.operationsJson = form.operationsJson;
     }
@@ -1691,6 +1951,11 @@ watch(
 
 onMounted(async () => {
   websocketClient.events.on("imageProcessingRecordChanged", handleImageProcessingRecordChanged);
+  (window as any).runSampleImageProcessingTests = async () => {
+    const { triggerSampleImageProcessingTests } = await import("@/api/image-processing-record/sdk");
+    await triggerSampleImageProcessingTests();
+    await getList();
+  };
   await Promise.allSettled([loadMeta(), getList(), refreshServiceHealth("images")]);
 });
 
@@ -1855,7 +2120,9 @@ onBeforeUnmount(() => {
   min-height: 0;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 16px;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 :deep(.image-processing-panel-card .el-card__body) {
@@ -2106,6 +2373,28 @@ onBeforeUnmount(() => {
   margin-top: 2px;
 }
 
+.image-processing-unified-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: var(--el-fill-color-light);
+  margin-bottom: 12px;
+}
+
+.dialog-mode-pill-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mode-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
 @media (max-width: 1440px) {
   .image-processing-detail-layout {
     gap: 10px;
@@ -2141,6 +2430,175 @@ onBeforeUnmount(() => {
   .image-processing-panel-toolbar__actions {
     justify-content: flex-start;
   }
+}
 
+.image-processing-showcase {
+  margin-bottom: 16px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
+  background: var(--el-bg-color-page);
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.image-processing-showcase__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.image-processing-showcase__title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.image-processing-showcase__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.image-processing-showcase__tabs-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  border-top: 1px dashed var(--el-border-color-lighter);
+  padding-top: 10px;
+}
+
+.showcase-search-input {
+  width: 280px;
+}
+
+.showcase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 10px;
+  padding: 4px 2px;
+  overflow: visible;
+}
+
+.showcase-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 10px;
+  background: var(--el-bg-color);
+  padding: 10px 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--el-color-primary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    .showcase-card__hint {
+      color: var(--el-color-primary);
+    }
+  }
+}
+
+.showcase-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.showcase-card__icon-box {
+  display: flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+  font-size: 16px;
+  flex-shrink: 0;
+
+  &--var {
+    background: var(--el-color-success-light-9);
+    color: var(--el-color-success);
+  }
+}
+
+.showcase-card__title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.showcase-card__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.showcase-card__code {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.showcase-card__footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.showcase-card__hint {
+  font-size: 11px;
+  color: var(--el-text-color-placeholder);
+  transition: color 0.2s ease;
+}
+
+.pulse-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--el-color-info);
+  margin-right: 6px;
+  vertical-align: middle;
+
+  &.is-active {
+    background: var(--el-color-success);
+    box-shadow: 0 0 0 2px rgba(103, 194, 58, 0.2);
+  }
+
+  &.is-processing {
+    background: var(--el-color-warning);
+    animation: pulse-breathing 1.2s infinite ease-in-out;
+  }
+}
+
+@keyframes pulse-breathing {
+  0% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(230, 162, 60, 0.6);
+  }
+  70% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 5px rgba(230, 162, 60, 0);
+  }
+  100% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(230, 162, 60, 0);
+  }
 }
 </style>
