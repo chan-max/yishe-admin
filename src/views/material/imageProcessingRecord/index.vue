@@ -2056,13 +2056,13 @@ onBeforeUnmount(() => {
 
 :deep(.image-processing-create-dialog .el-dialog__body) {
   height: calc(100vh - 70px);
-  padding-top: 12px;
+  padding: 20px 32px 24px;
   overflow: hidden;
 }
 
 :deep(.image-processing-detail-dialog .el-dialog__body) {
   height: calc(100vh - 70px);
-  padding-top: 12px;
+  padding: 20px 32px 24px;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -2072,7 +2072,8 @@ onBeforeUnmount(() => {
   height: 100%;
   min-height: 0;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
+  padding: 4px 8px 12px;
 }
 
 .image-processing-mode-tabs :deep(.el-tabs__header) {
@@ -2090,12 +2091,12 @@ onBeforeUnmount(() => {
 }
 
 .image-processing-create-layout :deep(.image-processing-panel-card .el-card__header) {
-  padding: 16px 20px 14px;
+  padding: 18px 24px 16px;
 }
 
 .image-processing-create-layout :deep(.image-processing-panel-card .el-card__body) {
-  gap: 16px;
-  padding: 20px 20px 18px;
+  gap: 20px;
+  padding: 24px 28px 24px;
 }
 
 .image-processing-create-workspace {
