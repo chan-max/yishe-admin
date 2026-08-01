@@ -341,7 +341,6 @@ function appendQuickPreset(presetType: string) {
 
 .create-task-stage {
   gap: 20px;
-  padding: 4px 6px;
 }
 
 .create-task-stage__header,
