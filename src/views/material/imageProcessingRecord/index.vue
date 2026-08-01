@@ -2112,8 +2112,21 @@ onBeforeUnmount(() => {
   gap: 20px;
   overflow-x: hidden;
   overflow-y: auto;
-  padding-right: 2px;
+  padding-right: 14px;
   padding-bottom: 8px;
+}
+
+.image-processing-linear-flow::-webkit-scrollbar {
+  width: 6px;
+}
+
+.image-processing-linear-flow::-webkit-scrollbar-thumb {
+  background: var(--el-border-color-dark, #c0c4cc);
+  border-radius: 4px;
+}
+
+.image-processing-linear-flow::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .image-processing-panel-card {
