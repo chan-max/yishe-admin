@@ -3,21 +3,13 @@
     <div class="create-task-stage__header">
       <div class="create-task-stage__index">1</div>
       <div class="create-task-stage__title-wrap">
-        <div class="create-task-stage__title">选择源图</div>
-        <div class="create-task-stage__desc">支持上传本地文件或直接粘贴网络图片链接。</div>
+        <div class="create-task-stage__title">指定网络源图</div>
+        <div class="create-task-stage__desc">仅支持输入 HTTP / HTTPS 远程网络图片链接（原图将被永久防删隔离保护）。</div>
       </div>
     </div>
 
     <div class="create-task-source-grid">
       <div class="create-task-panel">
-        <div class="create-task-intro">
-          <div class="create-task-intro__title">源图提供方式</div>
-          <el-radio-group v-model="sourceMode" size="small" @change="handleSourceModeChange">
-            <el-radio-button label="upload">本地文件上传</el-radio-button>
-            <el-radio-button label="url">网络图片链接</el-radio-button>
-          </el-radio-group>
-        </div>
-
         <el-form label-position="top" class="create-task-form">
           <el-form-item label="任务标题">
             <el-input
@@ -28,24 +20,14 @@
             />
           </el-form-item>
 
-          <el-form-item v-if="sourceMode === 'upload'" label="上传本地源图文件">
-            <UploadImg
-              v-model="form.imageUrl"
-              :limit="1"
-              :is-show-tip="false"
-              @change="handleUploadSuccess"
-            />
-          </el-form-item>
-
-          <el-form-item v-else label="图片远程 URL 链接">
+          <el-form-item label="图片远程 HTTP / HTTPS URL 链接">
             <el-input
               v-model="form.imageUrl"
               clearable
-              placeholder="https://example.com/source.png"
+              placeholder="https://example.com/source.jpg"
               @input="handleUrlInput"
             />
           </el-form-item>
-
         </el-form>
       </div>
 
@@ -84,9 +66,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import UploadImg from "@/components/UploadFile/src/UploadImg.vue";
-
 defineOptions({ name: "CreateTaskSourceStage" });
 
 const props = defineProps<{
@@ -94,20 +73,6 @@ const props = defineProps<{
   createSourcePreview: string;
   hasSourceContext: boolean;
 }>();
-
-const sourceMode = ref("upload");
-
-function handleSourceModeChange(mode: string) {
-  if (mode === "upload") {
-    props.form.sourceImageOwned = true;
-  } else {
-    props.form.sourceImageOwned = false;
-  }
-}
-
-function handleUploadSuccess() {
-  props.form.sourceImageOwned = true;
-}
 
 function handleUrlInput() {
   props.form.sourceImageOwned = false;
