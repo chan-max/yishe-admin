@@ -266,6 +266,12 @@
                         <el-dropdown-menu class="operation-menu-compact">
                           <el-dropdown-item command="detail">查看详情</el-dropdown-item>
                           <el-dropdown-item
+                            v-if="row.status === 'success'"
+                            command="import"
+                          >
+                            导入素材库
+                          </el-dropdown-item>
+                          <el-dropdown-item
                             command="delete"
                             divided
                             class="operation-menu-item--danger"
@@ -463,6 +469,18 @@
           </div>
         </section>
       </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button
+            v-if="currentRow && currentRow.status === 'success'"
+            type="primary"
+            @click="handleImportResults(currentRow)"
+          >
+            导入素材库
+          </el-button>
+          <el-button @click="detailVisible = false">关闭</el-button>
+        </div>
+      </template>
     </el-dialog>
   </ContentWrap>
 </template>
@@ -482,6 +500,7 @@ import {
   getImageProcessingMeta,
   getImageProcessingRecordDetail,
   getImageProcessingRecordPage,
+  importImageProcessingResults,
 } from "@/api/image-processing-record";
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
@@ -1928,9 +1947,31 @@ async function handleBatchDelete() {
   }
 }
 
+async function handleImportResults(row: any) {
+  if (!row?.id) return;
+  try {
+    loading.value = true;
+    const res: any = await importImageProcessingResults(row.id, {});
+    if (res?.success !== false) {
+      ElMessage.success("成功导入素材库！已沉淀为设计素材");
+      await getList();
+    } else {
+      ElMessage.warning(res?.message || "导入素材库部分跳过或失败");
+    }
+  } catch (error: any) {
+    ElMessage.error(error?.message || "导入素材库失败");
+  } finally {
+    loading.value = false;
+  }
+}
+
 function handleOperationCommand(command: string, row: any) {
   if (command === "detail") {
     openDetail(row);
+    return;
+  }
+  if (command === "import") {
+    handleImportResults(row);
     return;
   }
   if (command === "delete") {
