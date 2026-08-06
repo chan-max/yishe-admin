@@ -466,6 +466,7 @@ export type WebsocketEvents = {
   globalNotification: GlobalNotificationEvent;
   amazonCrawlerTaskUpdate: Record<string, any>;
   "remote-result": RemoteResultEvent;
+  "mcp-async-result": { requestId: string; toolName: string; result: any };
 };
 
 const emitter = mitt<WebsocketEvents>();
@@ -956,6 +957,10 @@ function bindSocketEvents(currentSocket: Socket) {
 
   currentSocket.on("global-notification", (data: GlobalNotificationEvent) => {
     emitter.emit("globalNotification", data);
+  });
+
+  currentSocket.on("mcp-async-result", (data: { requestId: string; toolName: string; result: any }) => {
+    emitter.emit("mcp-async-result", data);
   });
 }
 

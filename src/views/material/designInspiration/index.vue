@@ -145,61 +145,68 @@
       width="720px"
       align-center
       class="design-inspiration-dialog"
+      :class="{ 'is-mobile': isMobile }"
+      :style="isMobile ? { width: 'calc(100vw - 16px)', margin: '8px auto' } : {}"
+      :close-on-click-modal="!isMobile"
       @close="dialogClose"
     >
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="86px">
-        <el-form-item label="标题" prop="title">
-          <el-input
-            v-model="form.title"
-            maxlength="200"
-            show-word-limit
-            placeholder="例如：太极 / LOL / 绝命毒师"
-          />
-        </el-form-item>
-        <el-form-item label="分类" prop="category">
-          <el-input v-model="form.category" maxlength="80" show-word-limit placeholder="可选" />
-        </el-form-item>
-        <el-form-item label="关键词">
-          <el-input v-model="form.keywordsText" placeholder="多个关键词用逗号分隔" />
-        </el-form-item>
-        <el-form-item label="内容" prop="content">
-          <el-input
-            v-model="form.content"
-            type="textarea"
-            :rows="6"
-            maxlength="4000"
-            show-word-limit
-            placeholder="记录画面、情绪、元素、颜色或设计方向"
-          />
-        </el-form-item>
-        <el-form-item label="提示词片段">
-          <el-input
-            v-model="form.promptHints"
-            type="textarea"
-            :rows="3"
-            placeholder="后续可给 agent 使用的提示片段"
-          />
-        </el-form-item>
-        <el-form-item label="避让事项">
-          <el-input
-            v-model="form.avoidNotes"
-            type="textarea"
-            :rows="3"
-            placeholder="例如：不要直接复刻 Logo，不要使用具体人物肖像"
-          />
-        </el-form-item>
-      </el-form>
+      <el-scrollbar :max-height="isMobile ? '55vh' : '60vh'" class="design-inspiration-dialog__scroll">
+        <el-form ref="formRef" :model="form" :rules="rules" :label-width="isMobile ? undefined : '86px'" :label-position="isMobile ? 'top' : undefined">
+          <el-form-item label="标题" prop="title">
+            <el-input
+              v-model="form.title"
+              maxlength="200"
+              show-word-limit
+              placeholder="例如：太极 / LOL / 绝命毒师"
+            />
+          </el-form-item>
+          <el-form-item label="分类" prop="category">
+            <el-input v-model="form.category" maxlength="80" show-word-limit placeholder="可选" />
+          </el-form-item>
+          <el-form-item label="关键词">
+            <el-input v-model="form.keywordsText" placeholder="多个关键词用逗号分隔" />
+          </el-form-item>
+          <el-form-item label="内容" prop="content">
+            <el-input
+              v-model="form.content"
+              type="textarea"
+              :rows="isMobile ? 4 : 6"
+              maxlength="4000"
+              show-word-limit
+              placeholder="记录画面、情绪、元素、颜色或设计方向"
+            />
+          </el-form-item>
+          <el-form-item label="自我认知片段">
+            <el-input
+              v-model="form.promptHints"
+              type="textarea"
+              :rows="isMobile ? 2 : 3"
+              placeholder="后续可给 agent 使用的提示片段"
+            />
+          </el-form-item>
+          <el-form-item label="避让事项">
+            <el-input
+              v-model="form.avoidNotes"
+              type="textarea"
+              :rows="isMobile ? 2 : 3"
+              placeholder="例如：不要直接复刻 Logo，不要使用具体人物肖像"
+            />
+          </el-form-item>
+        </el-form>
+      </el-scrollbar>
 
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="submitForm">确定</el-button>
+        <div class="design-inspiration-dialog__footer">
+          <el-button @click="dialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="submitLoading" @click="submitForm">确定</el-button>
+        </div>
       </template>
     </el-dialog>
   </ContentWrap>
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref, watchEffect } from "vue";
+import { computed, onMounted, reactive, ref, watchEffect } from "vue";
 import type { FormInstance, FormRules } from "element-plus";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Delete, Plus, Search } from "@element-plus/icons-vue";
@@ -215,6 +222,8 @@ import { buildOperationColumn, buildTimeColumn, commonGridOptions } from "@/comm
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import Pagination from "@/components/Pagination/index.vue";
+
+const isMobile = computed(() => window.innerWidth < 768);
 
 const queryParams = reactive({
   currentPage: 1,
@@ -451,7 +460,42 @@ onMounted(() => {
 
 @media (max-width: 767px) {
   .design-inspiration-dialog :deep(.el-dialog) {
-    width: calc(100vw - 20px) !important;
+    width: calc(100vw - 16px) !important;
+    margin: 8px auto !important;
+    max-height: calc(100vh - 16px);
+  }
+
+  .design-inspiration-dialog :deep(.el-dialog__header) {
+    padding: 12px 16px;
+    margin-right: 0;
+  }
+
+  .design-inspiration-dialog :deep(.el-dialog__body) {
+    padding: 12px 16px 0;
+  }
+
+  .design-inspiration-dialog__scroll :deep(.el-form-item) {
+    margin-bottom: 14px;
+  }
+
+  .design-inspiration-dialog__scroll :deep(.el-form-item__label) {
+    font-size: 13px;
+  }
+
+  .design-inspiration-dialog__scroll :deep(.el-textarea__inner) {
+    font-size: 14px;
+  }
+
+  .design-inspiration-dialog__footer {
+    display: flex;
+    gap: 10px;
+    padding: 12px 16px;
+  }
+
+  .design-inspiration-dialog__footer .el-button {
+    flex: 1;
+    height: 40px;
+    font-size: 15px;
   }
 }
 </style>

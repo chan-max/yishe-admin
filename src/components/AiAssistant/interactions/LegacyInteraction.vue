@@ -107,20 +107,23 @@
       placeholder="补充说明（可选）"
     />
 
-    <!-- 极简操作按钮 -->
+    <!-- 操作按钮 -->
     <div class="interaction-actions">
-      <el-button size="small" text @click="$emit('reject', { confirmed: false, input: buildRejectInput(), reason: '' })">
+      <button
+        class="action-btn action-btn--ghost"
+        type="button"
+        @click="$emit('reject', { confirmed: false, input: buildRejectInput(), reason: '' })"
+      >
         {{ payload.type === "confirm" ? "取消" : "跳过" }}
-      </el-button>
-      <el-button
-        size="small"
-        type="primary"
-        :disabled="!canSubmit"
-        :loading="loading"
+      </button>
+      <button
+        class="action-btn action-btn--primary"
+        type="button"
+        :disabled="!canSubmit || loading"
         @click="handleSubmit"
       >
-        {{ submitLabel }}
-      </el-button>
+        {{ loading ? "处理中" : submitLabel }}
+      </button>
     </div>
   </section>
 </template>
@@ -283,80 +286,55 @@ init();
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  background: var(--el-bg-color-overlay, var(--el-bg-color, #ffffff));
-  border: 1px solid var(--el-border-color-lighter, #e4e7ed);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  transition: all 0.2s ease;
-  max-width: min(680px, 94%);
-}
-
-:global(html.dark) .interaction-panel {
-  background: var(--el-bg-color-overlay, #1d1e1f);
-  border-color: var(--el-border-color-darker, #363637);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-lighter);
 }
 
 .interaction-question {
   font-size: 13px;
-  line-height: 1.55;
-  color: var(--el-text-color-primary, #303133);
+  line-height: 1.5;
+  color: var(--el-text-color-primary);
   white-space: pre-wrap;
   word-break: break-word;
 }
 
-:global(html.dark) .interaction-question {
-  color: var(--el-text-color-primary, #e5eaf3);
-}
-
 .choice-list {
   display: grid;
-  gap: 6px;
+  gap: 4px;
 }
 
 .choice-option {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: flex-start;
+  display: flex;
+  align-items: center;
   gap: 8px;
   width: 100%;
-  min-height: 36px;
-  padding: 8px 10px;
-  border: 1px solid var(--el-border-color-lighter, #e4e7ed);
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid var(--el-border-color-lighter);
   border-radius: 6px;
-  background: var(--el-fill-color-blank, #ffffff);
+  background: var(--el-fill-color-blank);
   color: var(--el-text-color-primary);
   text-align: left;
   cursor: pointer;
-  transition: all 0.16s ease;
-}
-
-:global(html.dark) .choice-option {
-  background: var(--el-fill-color-dark, #262727);
-  border-color: var(--el-border-color-darker, #363637);
+  transition: all .12s;
 }
 
 .choice-option:hover,
 .choice-option.active {
   border-color: var(--el-color-primary);
-  background: var(--el-color-primary-light-9, #ecf5ff);
+  background: var(--el-color-primary-light-9);
   color: var(--el-color-primary);
-}
-
-:global(html.dark) .choice-option:hover,
-:global(html.dark) .choice-option.active {
-  background: rgba(64, 158, 255, 0.15);
 }
 
 .choice-indicator {
   width: 14px;
   height: 14px;
-  margin-top: 2px;
   border-radius: 50%;
   border: 2px solid var(--el-border-color);
   flex-shrink: 0;
-  transition: border-color 0.2s, background 0.2s;
+  transition: border-color .15s, background .15s;
 }
 
 .choice-option.active .choice-indicator {
@@ -365,25 +343,25 @@ init();
 }
 
 .choice-copy {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 1px;
   min-width: 0;
   font-size: 12px;
-  line-height: 18px;
+  line-height: 16px;
 }
 
 .choice-copy small {
-  display: block;
   color: var(--el-text-color-secondary);
   line-height: 1.4;
 }
 
 .interaction-form :deep(.el-form-item) {
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .interaction-form :deep(.el-form-item__label) {
-  margin-bottom: 3px;
+  margin-bottom: 2px;
   font-size: 12px;
   color: var(--el-text-color-regular);
 }
@@ -397,49 +375,63 @@ init();
 .feedback-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 4px;
 }
 
 .feedback-option {
-  min-height: 30px;
+  min-height: 28px;
   padding: 0 10px;
-  border: 1px solid var(--el-border-color-lighter, #e4e7ed);
+  border: 1px solid var(--el-border-color-lighter);
   border-radius: 6px;
-  background: var(--el-fill-color-blank, #ffffff);
+  background: var(--el-fill-color-blank);
   color: var(--el-text-color-regular);
   font-size: 12px;
   cursor: pointer;
-  transition: all 0.16s ease;
-}
-
-:global(html.dark) .feedback-option {
-  background: var(--el-fill-color-dark, #262727);
-  border-color: var(--el-border-color-darker, #363637);
+  transition: all .12s;
 }
 
 .feedback-option:hover,
 .feedback-option.active {
   border-color: var(--el-color-primary);
-  background: var(--el-color-primary-light-9, #ecf5ff);
+  background: var(--el-color-primary-light-9);
   color: var(--el-color-primary);
-}
-
-:global(html.dark) .feedback-option:hover,
-:global(html.dark) .feedback-option.active {
-  background: rgba(64, 158, 255, 0.15);
 }
 
 .interaction-actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
-  margin-top: 4px;
+  gap: 6px;
   padding-top: 6px;
-  border-top: 1px solid var(--el-border-color-extra-light, #f2f6fc);
+  border-top: 1px solid var(--el-border-color-extra-light);
 }
 
-:global(html.dark) .interaction-actions {
-  border-top-color: var(--el-border-color-darker, #363637);
+.action-btn {
+  height: 28px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .12s;
 }
+
+.action-btn--ghost {
+  background: transparent;
+  color: var(--el-text-color-secondary);
+}
+
+.action-btn--ghost:hover {
+  color: var(--el-text-color-primary);
+  background: var(--el-fill-color);
+}
+
+.action-btn--primary {
+  background: var(--el-color-primary);
+  color: #fff;
+}
+
+.action-btn--primary:hover:not(:disabled) { opacity: .85; }
+.action-btn--primary:disabled { opacity: .4; cursor: not-allowed; }
 </style>

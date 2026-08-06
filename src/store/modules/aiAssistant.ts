@@ -575,6 +575,10 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
     markAiAssistantRuntimeIdle();
   }
 
+  function addSystemMessage(content: string) {
+    messages.value.push(createLocalMessage({ role: "assistant", content }));
+  }
+
   return {
     // State
     conversations,
@@ -604,5 +608,6 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
     resumeInteraction,
     clearMessages,
     resetLoadingState,
+    addSystemMessage,
   };
 });

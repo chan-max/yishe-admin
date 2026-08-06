@@ -67,3 +67,13 @@ export function batchDeleteRemotionVideoRecord(ids: string[]) {
     data: { ids }
   })
 }
+
+export function aiGenerateRemotionVideoRecord(data: {
+  action: string
+  prompt: string
+}) {
+  return request.post({
+    url: '/remotion-video-record/ai-generate',
+    data
+  })
+}

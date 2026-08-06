@@ -5,966 +5,500 @@
     :initial-fullscreen="true"
     :fullscreen="true"
     scroll
-    class="ai-setting-usage-dialog"
+    class="ai-usage-dialog"
   >
-    <div class="ai-setting-dialog">
-      <div class="ai-setting-dialog__hero">
-        <div class="ai-setting-dialog__hero-main">
-          <div class="ai-setting-dialog__hero-title">功能场景绑定</div>
-          <div class="ai-setting-dialog__hero-desc">
-            按功能选择实际调用的 AI Key，调用规范由系统按功能固定。
-          </div>
+    <div class="ai-usage">
+      <div class="ai-usage__header">
+        <div class="ai-usage__header-left">
+          <h2 class="ai-usage__title">功能场景绑定</h2>
+          <p class="ai-usage__desc">按功能选择实际调用的 AI Key，调用规范由系统按功能固定。</p>
         </div>
-
-        <div class="ai-setting-dialog__stats">
-          <div class="ai-setting-dialog__stat-card">
-            <span class="ai-setting-dialog__stat-label">功能分组</span>
-            <span class="ai-setting-dialog__stat-value">{{ featureGroups.length }}</span>
-          </div>
-          <div class="ai-setting-dialog__stat-card">
-            <span class="ai-setting-dialog__stat-label">功能数量</span>
-            <span class="ai-setting-dialog__stat-value">{{ form.items.length }}</span>
-          </div>
-          <div class="ai-setting-dialog__stat-card">
-            <span class="ai-setting-dialog__stat-label">已配置</span>
-            <span class="ai-setting-dialog__stat-value">{{ configuredCount }}</span>
-          </div>
-          <div class="ai-setting-dialog__stat-card">
-            <span class="ai-setting-dialog__stat-label">可用 Key</span>
-            <span class="ai-setting-dialog__stat-value">{{ availableKeyCount }}</span>
-          </div>
+        <div class="ai-usage__header-right">
+          <span class="ai-usage__stat">已配置 {{ configuredCount }}/{{ form.items.length }}</span>
+          <span class="ai-usage__stat">可用 Key {{ availableKeyCount }}</span>
+          <el-button size="small" text :disabled="loading" @click="loadConfig">刷新</el-button>
         </div>
       </div>
 
-      <div v-if="!loading && !availableKeyCount" class="ai-setting-dialog__empty">
+      <div v-if="!loading && !availableKeyCount" class="ai-usage__empty">
         当前还没有可用 Key。请先新增自己的 Key，或联系管理员开放公开 Key 和共享 AI 使用权限。
       </div>
 
-      <el-form
-        v-loading="loading"
-        :model="form"
-        label-position="top"
-        class="ai-setting-dialog__form"
-      >
-        <div class="ai-setting-dialog__toolbar">
-          <div class="ai-setting-dialog__legend">
-            <span class="key-option__tag" data-source="mine">我的 Key</span>
-            <span class="key-option__tag" data-source="public">公开 Key</span>
-            <span class="key-option__tag key-option__tag--danger">不可用 / 已失效</span>
+      <div v-loading="loading" class="ai-usage__body">
+        <div v-for="group in featureGroups" :key="group.group" class="ai-usage__group">
+          <div class="ai-usage__group-head">
+            <span class="ai-usage__group-name">{{ group.group }}</span>
+            <span class="ai-usage__group-count">{{ group.configuredCount }}/{{ group.items.length }}</span>
           </div>
-          <el-button size="small" :disabled="loading" @click="loadConfig"> 刷新 </el-button>
-        </div>
-
-        <div class="ai-setting-groups">
-          <section v-for="group in featureGroups" :key="group.group" class="ai-setting-group">
-            <div class="ai-setting-group__header">
-              <div>
-                <div class="ai-setting-group__title">{{ group.group }}</div>
-                <div class="ai-setting-group__meta">
-                  已配置 {{ group.configuredCount }} / {{ group.items.length }}
+          <div class="ai-usage__rows" :class="{ 'ai-usage__rows--collapsed': !expandedGroups.has(group.group) }">
+            <div v-for="row in getGroupItems(group)" :key="row.code" class="ai-usage__row">
+              <div class="ai-usage__row-left">
+                <span
+                  class="ai-usage__tag"
+                  :class="{
+                    'ai-usage__tag--bound': !!row.keyId && resolveSelectedOption(row.keyId)?.available !== false,
+                    'ai-usage__tag--invalid': resolveSelectedOption(row.keyId)?.available === false,
+                    'ai-usage__tag--unbound': !row.keyId,
+                  }"
+                >
+                  {{ getStatusText(row) }}
+                </span>
+                <span class="ai-usage__row-name">{{ row.label }}</span>
+                <span v-if="row.description" class="ai-usage__row-desc">{{ row.description }}</span>
+              </div>
+              <div class="ai-usage__row-right">
+                <div v-if="row.specCode" class="ai-usage__row-spec">
+                  <span class="ai-usage__row-spec-label">{{ resolveSpecLabel(row.specCode) }}</span>
+                  <span v-if="resolveSpecModel(row.specCode)" class="ai-usage__row-spec-meta">{{ resolveSpecModel(row.specCode) }}</span>
                 </div>
+                <el-select
+                  :model-value="row.keyId"
+                  placeholder="选择 Key"
+                  size="small"
+                  clearable
+                  filterable
+                  class="ai-usage__row-select"
+                  @update:model-value="(val: number | '') => handleKeyChange(row.code, val || null)"
+                >
+                  <el-option-group v-if="groupedOptions.mine.length" label="我的 Key">
+                    <el-option
+                      v-for="opt in groupedOptions.mine"
+                      :key="opt.id"
+                      :label="opt.name"
+                      :value="opt.id"
+                      :disabled="opt.available === false"
+                    />
+                  </el-option-group>
+                  <el-option-group v-if="groupedOptions.public.length" label="公开 Key">
+                    <el-option
+                      v-for="opt in groupedOptions.public"
+                      :key="opt.id"
+                      :label="opt.name"
+                      :value="opt.id"
+                      :disabled="opt.available === false"
+                    />
+                  </el-option-group>
+                </el-select>
+                <el-button
+                  size="small"
+                  :disabled="!isRowDirty(row) || savingCodes.includes(row.code)"
+                  :loading="savingCodes.includes(row.code)"
+                  @click="saveRow(row)"
+                >
+                  保存
+                </el-button>
               </div>
             </div>
-
-            <div class="ai-setting-group__cards">
-              <article v-for="row in group.items" :key="row.code" class="ai-setting-feature">
-                <div class="ai-setting-feature__head">
-                  <div class="ai-setting-feature__status-row">
-                    <span
-                      class="ai-setting-feature__status"
-                      :class="{
-                        'is-bound': !!row.keyId,
-                        'is-invalid': resolveSelectedOption(row.keyId)?.available === false,
-                      }"
-                    >
-                      {{
-                        resolveSelectedOption(row.keyId)?.available === false
-                          ? "Key 不可用"
-                          : row.keyId
-                            ? "已绑定"
-                            : "未绑定"
-                      }}
-                    </span>
-                    <span class="ai-setting-feature__code">{{ row.code }}</span>
-                  </div>
-                  <div class="ai-setting-feature__title">{{ row.label }}</div>
-                </div>
-
-                <div class="ai-setting-feature__body">
-                  <div class="ai-setting-feature__scene">{{ row.scene || "未标注使用位置" }}</div>
-                  <div class="ai-setting-feature__desc">{{ row.description }}</div>
-
-                  <div
-                    class="ai-setting-feature__current"
-                    :class="{ 'is-empty': !resolveSelectedOption(row.keyId) }"
-                  >
-                    <div class="ai-setting-feature__current-label">当前 Key</div>
-                    <div class="ai-setting-feature__current-main">
-                      <span class="ai-setting-feature__current-name">
-                        {{ resolveSelectedOption(row.keyId)?.name || "未绑定" }}
-                      </span>
-                      <span
-                        v-if="
-                          resolveSelectedOption(row.keyId)?.source &&
-                          resolveSelectedOption(row.keyId)?.source !== 'missing'
-                        "
-                        class="key-option__tag"
-                        :data-source="resolveSelectedOption(row.keyId)?.source"
-                      >
-                        {{ formatSourceLabel(resolveSelectedOption(row.keyId)?.source) }}
-                      </span>
-                    </div>
-                    <div
-                      v-if="resolveSelectedOption(row.keyId)"
-                      class="ai-setting-feature__current-meta"
-                    >
-                      <span>{{ resolveSelectedOption(row.keyId)?.model || "未设置模型" }}</span>
-                      <span v-if="resolveSelectedOption(row.keyId)?.uploader?.account">
-                        / {{ resolveSelectedOption(row.keyId)?.uploader?.account }}
-                      </span>
-                    </div>
-                    <div
-                      v-if="resolveSelectedOption(row.keyId)?.available === false"
-                      class="feature-key-hint"
-                    >
-                      当前绑定的 Key
-                      {{ resolveSelectedOption(row.keyId)?.unavailableReasonText || "不可用" }}，
-                      请重新选择。
-                    </div>
-                    <div v-if="row.specCode" class="ai-setting-feature__current-meta">
-                      <span>固定规范：{{ getSpecLabel(row.specCode) || "未配置" }}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="ai-setting-feature__footer">
-                  <div class="ai-setting-feature__footer-main">
-                    <el-select
-                      v-model="row.keyId"
-                      size="small"
-                      class="w-full"
-                      clearable
-                      filterable
-                      placeholder="选择 Key"
-                    >
-                      <el-option
-                        v-for="item in keyOptions"
-                        :key="item.id"
-                        :label="formatKeyOptionLabel(item)"
-                        :value="item.id!"
-                        :disabled="item.available === false"
-                      >
-                        <div class="key-option">
-                          <div class="key-option__title-row">
-                            <span class="key-option__title">{{ item.name }}</span>
-                            <span
-                              v-if="item.source && item.source !== 'missing'"
-                              class="key-option__tag"
-                              :data-source="item.source"
-                            >
-                              {{ formatSourceLabel(item.source) }}
-                            </span>
-                            <span
-                              v-if="item.available === false"
-                              class="key-option__tag key-option__tag--danger"
-                            >
-                              {{ item.unavailableReasonText || "不可用" }}
-                            </span>
-                          </div>
-                          <div class="key-option__meta">
-                            <span>{{ item.model || "未设置模型" }}</span>
-                            <span v-if="item.uploader?.account">
-                              / {{ item.uploader.account }}
-                            </span>
-                          </div>
-                        </div>
-                      </el-option>
-                    </el-select>
-                    <el-button link :disabled="!row.keyId" @click="resetFeature(row)">
-                      清空
-                    </el-button>
-                  </div>
-                  <div
-                    class="ai-setting-feature__fixed-spec"
-                    :title="getSpecLabel(row.specCode) || '未配置'"
-                  >
-                    <span class="ai-setting-feature__fixed-spec-label">固定规范</span>
-                    <span class="ai-setting-feature__fixed-spec-value">
-                      {{ getSpecLabel(row.specCode) || "未配置" }}
-                    </span>
-                  </div>
-                </div>
-              </article>
-            </div>
-          </section>
+            <button
+              v-if="group.items.length > 20"
+              class="ai-usage__toggle"
+              @click="toggleGroup(group.group)"
+            >
+              {{ expandedGroups.has(group.group) ? '收起' : `展开全部 (${group.items.length})` }}
+            </button>
+          </div>
         </div>
-      </el-form>
+      </div>
     </div>
 
     <template #footer>
-      <div class="ai-setting-dialog__footer">
-        <span>最近更新时间：{{ updatedAtText }}</span>
-        <div class="ai-setting-dialog__footer-actions">
-          <el-button size="small" @click="dialogVisible = false">关闭</el-button>
-          <el-button size="small" type="primary" :loading="saving" @click="saveConfig">
-            保存设置
-          </el-button>
-        </div>
+      <div class="ai-usage__footer">
+        <span class="ai-usage__footer-hint">
+          <template v-if="lastSavedCode">{{ lastSavedLabel }} 已保存</template>
+        </span>
+        <el-button @click="dialogVisible = false">关闭</el-button>
       </div>
     </template>
   </Dialog>
 </template>
 
-<script setup lang="ts">
-import { computed, reactive, ref } from "vue";
-import dayjs from "dayjs";
+<script lang="ts" setup>
+import { computed, ref, watch } from "vue";
+import { ElMessage } from "element-plus";
 import {
   getAiApiKeyUsageOptions,
   getAiFeatureRegistry,
   getAiProviderSpecs,
-  type AiApiKeyConfig,
-  type AiApiKeySource,
-  type AiFeatureRegistryItem,
-  type AiProviderSpec,
 } from "@/api/aiApiKey";
-import { getAiSetting, updateAiSetting, type UserAiSetting } from "@/api/user";
-import { ElMessage } from "element-plus";
+import type { AiFeatureRegistryItem } from "@/api/aiApiKey";
+import { getAiSetting, updateAiSetting } from "@/api/user";
+import Dialog from "@/components/Dialog/src/Dialog.vue";
 
-type FeatureSettingFormItem = AiFeatureRegistryItem & {
+interface AiKeyOption {
+  id: number;
+  name: string;
+  model: string;
+  baseUrl: string;
+  available: boolean;
+  source: string;
+  default: boolean;
+  specCode?: string;
+}
+
+interface SpecOption {
+  code: string;
+  label: string;
+  category: string;
+  defaultBaseUrl: string;
+  defaultModel: string;
+  capabilities: string[];
+}
+
+interface FeatureSettingFormItem extends AiFeatureRegistryItem {
   keyId: number | null;
   specCode: string;
   params: Record<string, any>;
-};
+}
 
-type AiSettingFormData = {
-  version: number;
-  items: FeatureSettingFormItem[];
-  updatedAt: string;
-};
+const emit = defineEmits<{ saved: [] }>();
 
-type FeatureSettingGroup = {
-  group: string;
-  items: FeatureSettingFormItem[];
-  configuredCount: number;
-};
-
-const emit = defineEmits(["saved"]);
-
-const dialogVisible = ref(false);
 const loading = ref(false);
 const saving = ref(false);
-const registry = ref<AiFeatureRegistryItem[]>([]);
-const usageOptions = ref<AiApiKeyConfig[]>([]);
-const providerSpecs = ref<AiProviderSpec[]>([]);
+const savingCodes = ref<string[]>([]);
+const dialogVisible = ref(false);
+const expandedGroups = ref<Set<string>>(new Set());
 
-const createDefaultSetting = (): AiSettingFormData => ({
-  version: 1,
-  items: [],
-  updatedAt: "",
-});
+const keyOptions = ref<AiKeyOption[]>([]);
+const specOptions = ref<SpecOption[]>([]);
+const form = ref<{ items: FeatureSettingFormItem[] }>({ items: [] });
+const formSnapshot = ref<Map<string, number | null>>(new Map());
 
-const form = reactive<AiSettingFormData>(createDefaultSetting());
+const lastSavedCode = ref("");
+const lastSavedLabel = ref("");
 
-const keyOptions = computed(() => {
-  return usageOptions.value;
-});
-
-const keyOptionMap = computed(() => {
-  return new Map(
-    keyOptions.value
-      .map((item) => [normalizeKeyId(item.id), item] as const)
-      .filter((item): item is [number, AiApiKeyConfig] => item[0] !== null),
-  );
-});
-
-const providerSpecMap = computed(() => {
-  return new Map(providerSpecs.value.map((item) => [item.code, item]));
-});
-
-const availableKeyCount = computed(() => {
-  return keyOptions.value.filter((item) => item.available !== false).length;
-});
-
-const configuredCount = computed(() => {
-  return form.items.filter((item) => !!item.keyId).length;
-});
-
-const featureGroups = computed<FeatureSettingGroup[]>(() => {
-  const groupMap = new Map<string, FeatureSettingFormItem[]>();
-
-  form.items.forEach((item) => {
-    const groupKey = String(item.group || "未分组").trim() || "未分组";
-    if (!groupMap.has(groupKey)) {
-      groupMap.set(groupKey, []);
-    }
-    groupMap.get(groupKey)?.push(item);
-  });
-
-  return Array.from(groupMap.entries()).map(([group, items]) => ({
-    group,
-    items,
-    configuredCount: items.filter((item) => !!item.keyId).length,
-  }));
-});
-
-const updatedAtText = computed(() => {
-  return form.updatedAt ? dayjs(form.updatedAt).format("YYYY-MM-DD HH:mm:ss") : "未保存";
-});
-
-const normalizeKeyId = (value: unknown) => {
-  const normalized = Number(value);
-  if (!Number.isInteger(normalized) || normalized <= 0) {
-    return null;
+const featureGroups = computed(() => {
+  const map = new Map<string, { group: string; items: FeatureSettingFormItem[]; configuredCount: number }>();
+  for (const item of form.value.items) {
+    const g = item.group || "其他";
+    if (!map.has(g)) map.set(g, { group: g, items: [], configuredCount: 0 });
+    const entry = map.get(g)!;
+    entry.items.push(item);
+    if (item.keyId) entry.configuredCount++;
   }
-  return normalized;
-};
+  return Array.from(map.values());
+});
 
-const formatSourceLabel = (source?: AiApiKeySource) => {
-  if (source === "public") return "公开";
-  if (source === "missing") return "";
-  return "我的";
-};
+const configuredCount = computed(() => form.value.items.filter((i) => i.keyId).length);
+const availableKeyCount = computed(() => keyOptions.value.filter((k) => k.available).length);
 
-const formatKeyOptionLabel = (item: AiApiKeyConfig) => {
-  const sourceLabel = formatSourceLabel(item.source);
-  const parts = [
-    item.name,
-    item.model ? `(${item.model})` : "",
-    sourceLabel ? `[${sourceLabel}]` : "",
-  ].filter(Boolean);
+const groupedOptions = computed(() => ({
+  mine: keyOptions.value.filter((k) => k.source === "mine"),
+  public: keyOptions.value.filter((k) => k.source === "public"),
+}));
 
-  if (item.available === false && item.unavailableReasonText) {
-    parts.push(`- ${item.unavailableReasonText}`);
-  }
+function isRowDirty(row: FeatureSettingFormItem) {
+  return row.keyId !== formSnapshot.value.get(row.code);
+}
 
-  return parts.join(" ");
-};
+function getStatusText(row: FeatureSettingFormItem) {
+  if (!row.keyId) return "未绑定";
+  const opt = resolveSelectedOption(row.keyId);
+  if (opt?.available === false) return "不可用";
+  return "已绑定";
+}
 
-const resolveSelectedOption = (keyId: unknown) => {
-  const normalizedKeyId = normalizeKeyId(keyId);
-  if (!normalizedKeyId) {
-    return null;
-  }
-  return keyOptionMap.value.get(normalizedKeyId) || null;
-};
+function resolveSelectedOption(keyId: number | null) {
+  if (!keyId) return undefined;
+  return keyOptions.value.find((k) => k.id === keyId);
+}
 
-const getSpecLabel = (specCode?: string) => {
-  return specCode ? providerSpecMap.value.get(specCode)?.label || specCode : "";
-};
+function resolveSpecLabel(specCode?: string) {
+  if (!specCode) return "";
+  const spec = specOptions.value.find((s) => s.code === specCode);
+  return spec?.label || specCode;
+}
 
-const getFeatureDefaultSpecCode = (feature: AiFeatureRegistryItem) => {
+function resolveSpecModel(specCode?: string) {
+  if (!specCode) return "";
+  const spec = specOptions.value.find((s) => s.code === specCode);
+  return spec?.defaultModel || "";
+}
+
+function resolveDefaultSpecCode(row: AiFeatureRegistryItem) {
   return (
-    String(feature.defaultSpecCode || "").trim() ||
-    String(feature.allowedSpecCodes?.[0] || "").trim() ||
-    providerSpecs.value[0]?.code ||
+    String(row.defaultSpecCode || "").trim() ||
+    String(row.allowedSpecCodes?.[0] || "").trim() ||
+    specOptions.value[0]?.code ||
     ""
   );
-};
+}
 
-const applySetting = (payload?: Partial<UserAiSetting>) => {
-  const rawFeatureKeys =
-    payload?.featureKeys &&
-    typeof payload.featureKeys === "object" &&
-    !Array.isArray(payload.featureKeys)
-      ? payload.featureKeys
-      : {};
-  const rawFeatureBindings =
-    payload?.featureBindings &&
-    typeof payload.featureBindings === "object" &&
-    !Array.isArray(payload.featureBindings)
-      ? payload.featureBindings
-      : {};
+function handleKeyChange(code: string, keyId: number | null) {
+  const item = form.value.items.find((i) => i.code === code);
+  if (item) item.keyId = keyId;
+}
 
-  Object.assign(form, {
-    version: Number(payload?.version || 2) || 2,
-    items: registry.value.map((item) => {
-      const binding = rawFeatureBindings[item.code];
-      const normalizedBinding =
-        binding && typeof binding === "object" && !Array.isArray(binding) ? binding : null;
-      const specCode = getFeatureDefaultSpecCode(item);
-      return {
-        ...item,
-        keyId: normalizeKeyId(normalizedBinding?.keyId || rawFeatureKeys[item.code]),
-        specCode,
-        params:
-          normalizedBinding?.params &&
-          typeof normalizedBinding.params === "object" &&
-          !Array.isArray(normalizedBinding.params)
-            ? normalizedBinding.params
-            : {},
-      };
-    }),
-    updatedAt: String(payload?.updatedAt || "").trim(),
-  });
-};
+function toggleGroup(groupName: string) {
+  if (expandedGroups.value.has(groupName)) {
+    expandedGroups.value.delete(groupName);
+  } else {
+    expandedGroups.value.add(groupName);
+  }
+}
 
-const loadConfig = async () => {
+function getGroupItems(group: { group: string; items: FeatureSettingFormItem[] }) {
+  if (expandedGroups.value.has(group.group)) {
+    return group.items;
+  }
+  return group.items.slice(0, 20);
+}
+
+async function saveRow(row: FeatureSettingFormItem) {
+  if (savingCodes.value.includes(row.code)) return;
+  savingCodes.value.push(row.code);
+  try {
+    const featureKeys: Record<string, number> = {};
+    for (const item of form.value.items) {
+      if (item.keyId) featureKeys[item.code] = item.keyId;
+    }
+    await updateAiSetting({ version: 2, featureKeys, featureBindings: {}, updatedAt: "" });
+    formSnapshot.value.set(row.code, row.keyId);
+    lastSavedCode.value = row.code;
+    lastSavedLabel.value = row.label;
+    ElMessage.success(`${row.label} 已保存`);
+    emit("saved");
+  } catch {
+    ElMessage.error("保存失败");
+  } finally {
+    savingCodes.value = savingCodes.value.filter((c) => c !== row.code);
+  }
+}
+
+async function loadConfig() {
   loading.value = true;
   try {
-    const [registryData, settingData, optionData, specData] = await Promise.all([
-      getAiFeatureRegistry(),
-      getAiSetting(),
+    const [keys, specs, settings, features] = await Promise.all([
       getAiApiKeyUsageOptions(),
       getAiProviderSpecs(),
+      getAiSetting(),
+      getAiFeatureRegistry(),
     ]);
-    registry.value = Array.isArray(registryData) ? registryData : [];
-    usageOptions.value = Array.isArray(optionData) ? optionData : [];
-    providerSpecs.value = Array.isArray(specData) ? specData : [];
-    applySetting(settingData || {});
+    keyOptions.value = keys || [];
+    specOptions.value = specs || [];
+    const boundKeys = settings?.featureKeys || {};
+    form.value = {
+      items: (features || []).map((f) => ({
+        ...f,
+        keyId: boundKeys[f.code] ?? null,
+        specCode: resolveDefaultSpecCode(f),
+        params: {},
+      })),
+    };
+    formSnapshot.value = new Map(form.value.items.map((i) => [i.code, i.keyId]));
   } finally {
     loading.value = false;
   }
-};
+}
 
-const open = async () => {
-  dialogVisible.value = true;
-  await loadConfig();
-};
-
-const resetFeature = (feature: FeatureSettingFormItem) => {
-  feature.keyId = null;
-};
-
-const saveConfig = async () => {
-  const featureKeys = form.items.reduce<Record<string, number>>((result, item) => {
-    const keyId = normalizeKeyId(item.keyId);
-    if (!keyId) {
-      return result;
-    }
-    result[item.code] = keyId;
-    return result;
-  }, {});
-  const featureBindings = form.items.reduce<NonNullable<UserAiSetting["featureBindings"]>>(
-    (result, item) => {
-      const keyId = normalizeKeyId(item.keyId);
-      if (!keyId) {
-        return result;
-      }
-      result[item.code] = {
-        keyId,
-        specCode: getFeatureDefaultSpecCode(item),
-        params: item.params || {},
-      };
-      return result;
-    },
-    {},
-  );
-
-  const payload: UserAiSetting = {
-    version: 2,
-    featureKeys,
-    featureBindings,
-    updatedAt: form.updatedAt || "",
-  };
-
-  saving.value = true;
-  try {
-    const data = await updateAiSetting(payload);
-    applySetting(data || payload);
-    ElMessage.success("AI 使用设置已保存");
-    emit("saved");
-    dialogVisible.value = false;
-  } finally {
-    saving.value = false;
-  }
-};
-
-defineExpose({
-  open,
-  reload: loadConfig,
+watch(dialogVisible, (val) => {
+  if (val) loadConfig();
 });
+
+const open = () => {
+  dialogVisible.value = true;
+};
+
+defineExpose({ open, reload: loadConfig });
 </script>
 
-<style scoped lang="scss">
-:deep(.ai-setting-usage-dialog .el-dialog__body) {
-  flex: 1;
+<style scoped>
+.ai-usage {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   min-height: 0;
-  padding: 0 !important;
 }
 
-:deep(.ai-setting-usage-dialog .el-dialog__footer) {
-  padding: 16px 22px;
-  background: var(--el-bg-color);
-  border-top: 1px solid var(--el-border-color-light);
-}
-
-:deep(.ai-setting-usage-dialog .el-dialog) {
+/* ── Header ── */
+.ai-usage__header {
   display: flex;
-  flex-direction: column;
-}
-
-:deep(.ai-setting-usage-dialog .el-scrollbar) {
-  height: 100% !important;
-}
-
-:deep(.ai-setting-usage-dialog .el-scrollbar__view) {
-  min-height: 100%;
-}
-
-.ai-setting-dialog {
-  display: flex;
-  flex-direction: column;
-  min-height: 100%;
-  box-sizing: border-box;
-  padding: 14px 16px 18px;
-  background: var(--el-bg-color-page);
-}
-
-.ai-setting-dialog__hero {
-  display: flex;
-  align-items: stretch;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  padding: 12px 14px;
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 8px;
-  background: var(--el-bg-color);
+  gap: 16px;
 }
-
-.ai-setting-dialog__hero-main {
-  flex: 1;
-  min-width: 0;
-}
-
-.ai-setting-dialog__hero-title {
-  color: var(--el-text-color-primary);
+.ai-usage__header-left { flex: 1; }
+.ai-usage__title {
+  margin: 0;
   font-size: 16px;
-  font-weight: 700;
-  line-height: 1.3;
-}
-
-.ai-setting-dialog__hero-desc {
-  margin-top: 6px;
-  max-width: 680px;
-  color: var(--el-text-color-regular);
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.ai-setting-dialog__stats {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(96px, 1fr));
-  gap: 10px;
-  min-width: 220px;
-}
-
-.ai-setting-dialog__stat-card {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 4px;
-  padding: 8px 10px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
-  background: var(--el-fill-color-lighter);
-}
-
-.ai-setting-dialog__stat-label {
-  color: var(--el-text-color-secondary);
-  font-size: 11px;
-  line-height: 1;
-}
-
-.ai-setting-dialog__stat-value {
-  color: var(--el-text-color-primary);
-  font-size: 17px;
-  font-weight: 700;
-  line-height: 1.1;
-}
-
-.ai-setting-dialog__legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.ai-setting-dialog__empty {
-  margin-top: 10px;
-  padding: 10px 12px;
-  border: 1px solid var(--el-color-danger-light-7);
-  border-radius: 8px;
-  background: var(--el-color-danger-light-9);
-  color: var(--el-text-color-regular);
-  font-size: 12px;
-  line-height: 1.6;
-}
-
-.ai-setting-dialog__form {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  margin-top: 12px;
-}
-
-.ai-setting-dialog__toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.ai-setting-groups {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.ai-setting-group {
-  padding: 12px;
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 8px;
-  background: var(--el-bg-color);
-}
-
-.ai-setting-group__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.ai-setting-group__title {
-  color: var(--el-text-color-primary);
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 1.3;
-}
-
-.ai-setting-group__meta {
-  margin-top: 2px;
-  color: var(--el-text-color-secondary);
-  font-size: 11px;
-  line-height: 1.4;
-}
-
-.ai-setting-group__cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
-  grid-auto-rows: 1fr;
-  gap: 10px;
-}
-
-.ai-setting-feature {
-  display: flex;
-  min-width: 0;
-  min-height: 206px;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 12px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
-  background: var(--el-fill-color-blank);
-  transition:
-    border-color 0.18s ease,
-    box-shadow 0.18s ease;
-}
-
-.ai-setting-feature:hover {
-  border-color: var(--el-border-color);
-  box-shadow: var(--el-box-shadow-lighter);
-}
-
-.ai-setting-feature__head {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.ai-setting-feature__status-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.ai-setting-feature__status {
-  display: inline-flex;
-  align-items: center;
-  flex: none;
-  padding: 0 8px;
-  border-radius: 999px;
-  background: var(--el-fill-color-light);
-  color: var(--el-text-color-secondary);
-  font-size: 11px;
   font-weight: 600;
-  line-height: 22px;
-}
-
-.ai-setting-feature__status.is-bound {
-  background: var(--el-color-success-light-9);
-  color: var(--el-color-success);
-}
-
-.ai-setting-feature__status.is-invalid {
-  background: var(--el-color-danger-light-9);
-  color: var(--el-color-danger);
-}
-
-.ai-setting-feature__title {
   color: var(--el-text-color-primary);
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1.4;
 }
-
-.ai-setting-feature__code {
-  display: inline-flex;
-  align-items: center;
-  min-width: 0;
-  max-width: 100%;
-  color: var(--el-text-color-secondary);
-  font-size: 10px;
-  line-height: 18px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  word-break: break-all;
-}
-
-.ai-setting-feature__body {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.ai-setting-feature__scene {
-  color: var(--el-text-color-primary);
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1.45;
-}
-
-.ai-setting-feature__desc {
-  color: var(--el-text-color-regular);
-  font-size: 12px;
-  line-height: 1.5;
-  display: -webkit-box;
-  min-height: 36px;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
-.ai-setting-feature__current {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  min-height: 64px;
-  padding: 9px 10px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
-  background: var(--el-fill-color-lighter);
-}
-
-.ai-setting-feature__current.is-empty {
-  border-style: dashed;
-  background: var(--el-fill-color-blank);
-}
-
-.ai-setting-feature__current-label {
-  color: var(--el-text-color-secondary);
-  font-size: 11px;
-  line-height: 1.2;
-}
-
-.ai-setting-feature__current-main {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-
-.ai-setting-feature__current-name {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--el-text-color-primary);
+.ai-usage__desc {
+  margin: 4px 0 0;
   font-size: 13px;
-  font-weight: 700;
-  line-height: 1.35;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ai-setting-feature__current-meta {
   color: var(--el-text-color-secondary);
-  font-size: 11px;
-  line-height: 1.4;
 }
-
-.ai-setting-feature__footer {
+.ai-usage__header-right {
   display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.ai-setting-feature__footer-main {
-  display: flex;
-  min-width: 0;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.ai-usage__stat {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
-.ai-setting-feature__footer :deep(.el-input),
-.ai-setting-feature__footer :deep(.el-select) {
-  min-width: 0;
-}
-
-.ai-setting-feature__footer-main :deep(.el-select) {
-  flex: 1;
-}
-
-.ai-setting-feature__footer-main :deep(.el-button) {
-  flex: none;
-}
-
-.ai-setting-feature__fixed-spec {
-  display: flex;
-  min-width: 0;
-  width: 100%;
-  box-sizing: border-box;
-  align-items: center;
-  gap: 6px;
-  padding: 0 10px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 6px;
+.ai-usage__empty {
+  padding: 20px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--el-text-color-placeholder);
   background: var(--el-fill-color-lighter);
-  color: var(--el-text-color-regular);
-  font-size: 12px;
-  line-height: 30px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  border-radius: 8px;
 }
 
-.ai-setting-feature__fixed-spec-label {
-  flex: none;
-  color: var(--el-text-color-secondary);
-}
-
-.ai-setting-feature__fixed-spec-value {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--el-text-color-regular);
-  text-overflow: ellipsis;
-}
-
-.key-option {
+/* ── Body ── */
+.ai-usage__body {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 1px 0;
+  gap: 16px;
 }
 
-.key-option__title-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  min-width: 0;
-}
-
-.key-option__title {
-  min-width: 0;
-  color: var(--el-text-color-primary);
-  font-weight: 600;
-  font-size: 12px;
+/* ── Group ── */
+.ai-usage__group {
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
-
-.key-option__meta {
-  color: var(--el-text-color-secondary);
-  font-size: 11px;
-}
-
-.key-option__tag {
-  display: inline-flex;
-  align-items: center;
-  flex: none;
-  padding: 0 5px;
-  border-radius: 999px;
-  background: var(--el-fill-color-light);
-  color: var(--el-text-color-secondary);
-  font-size: 10px;
-  line-height: 18px;
-}
-
-.key-option__tag[data-source="mine"] {
-  background: var(--el-color-primary-light-9);
-  color: var(--el-color-primary);
-}
-
-.key-option__tag[data-source="public"] {
-  background: var(--el-color-success-light-9);
-  color: var(--el-color-success);
-}
-
-.key-option__tag[data-source="missing"],
-.key-option__tag--danger {
-  background: var(--el-color-danger-light-9);
-  color: var(--el-color-danger);
-}
-
-.feature-key-hint {
-  color: var(--el-color-danger);
-  font-size: 11px;
-  line-height: 1.4;
-}
-
-.ai-setting-dialog__footer {
+.ai-usage__group-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  padding: 10px 14px;
+  background: var(--el-fill-color-lighter);
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+.ai-usage__group-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+.ai-usage__group-count {
   font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
-.ai-setting-dialog__footer-actions {
+/* ── Rows ── */
+.ai-usage__rows {
+  display: flex;
+  flex-direction: column;
+}
+.ai-usage__rows--collapsed {
+  max-height: 600px;
+  overflow: hidden;
+}
+
+.ai-usage__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--el-border-color-extra-light);
+  transition: background .1s;
+}
+.ai-usage__row:last-child { border-bottom: none; }
+.ai-usage__row:hover { background: var(--el-fill-color-lighter); }
+
+.ai-usage__row-left {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+.ai-usage__row-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
-@media (max-width: 1080px) {
-  .ai-setting-dialog__hero {
-    flex-direction: column;
-  }
-
-  .ai-setting-dialog__stats {
-    min-width: 0;
-  }
+.ai-usage__row-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--el-text-color-primary);
+  white-space: nowrap;
+}
+.ai-usage__row-desc {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ai-usage__row-spec {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  white-space: nowrap;
+}
+.ai-usage__row-spec-label {
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+}
+.ai-usage__row-spec-meta {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+}
+.ai-usage__row-select {
+  width: 180px;
 }
 
-@media (max-width: 640px) {
-  .ai-setting-dialog {
-    padding: 12px;
-  }
+.ai-usage__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 8px 0;
+  margin-top: 4px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--el-color-primary);
+  transition: background .1s;
+}
+.ai-usage__toggle:hover {
+  background: var(--el-fill-color-light);
+}
 
-  .ai-setting-dialog__stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+/* ── Tags ── */
+.ai-usage__tag {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0 8px;
+  height: 20px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 20px;
+}
+.ai-usage__tag--bound {
+  background: var(--el-color-success-light-9);
+  color: var(--el-color-success);
+}
+.ai-usage__tag--invalid {
+  background: var(--el-color-danger-light-9);
+  color: var(--el-color-danger);
+}
+.ai-usage__tag--unbound {
+  background: var(--el-fill-color);
+  color: var(--el-text-color-placeholder);
+}
 
-  .ai-setting-dialog__toolbar,
-  .ai-setting-dialog__footer,
-  .ai-setting-dialog__footer-actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .ai-setting-group__cards {
-    grid-template-columns: 1fr;
-  }
-
-  .ai-setting-feature__footer {
-    grid-template-columns: 1fr;
-  }
+/* ── Footer ── */
+.ai-usage__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.ai-usage__footer-hint {
+  font-size: 12px;
+  color: var(--el-color-success);
 }
 </style>

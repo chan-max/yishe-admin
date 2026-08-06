@@ -61,6 +61,10 @@
                 >搜索</el-button
               >
               <el-button size="small" type="primary" @click="openCreateDialog()">新增</el-button>
+              <el-button size="small" type="success" @click="openAiGenerateDialog()">
+                <el-icon><MagicStick /></el-icon>
+                AI 生成
+              </el-button>
               <el-button
                 size="small"
                 type="danger"
@@ -99,7 +103,14 @@
                 <template #templateSlot="{ row }">
                   <div class="record-template-cell">
                     <div class="record-template-name">
-                      <span class="record-template-main">{{
+                      <el-tag
+                        v-if="row.templateName === '自由创作' || row.templateId === 'ai-universal'"
+                        type="warning"
+                        size="small"
+                        effect="plain"
+                        class="mr-1"
+                      >自由创作</el-tag>
+                      <span v-else class="record-template-main">{{
                         row.templateName || row.templateId
                       }}</span>
                       <span class="record-template-id">{{ row.templateId }}</span>
@@ -549,7 +560,16 @@
           <template #header>基础信息</template>
           <div class="detail-section">
             <div><strong>标题：</strong>{{ currentRow.title || "-" }}</div>
-            <div><strong>模板：</strong>{{ currentRow.templateName || currentRow.templateId }}</div>
+            <div>
+              <strong>模板：</strong>
+              <el-tag
+                v-if="currentRow.templateName === '自由创作' || currentRow.templateId === 'ai-universal'"
+                type="warning"
+                size="small"
+                effect="plain"
+              >自由创作</el-tag>
+              <span v-else>{{ currentRow.templateName || currentRow.templateId }}</span>
+            </div>
             <div><strong>状态：</strong>{{ getStatusLabel(currentRow.status) }}</div>
             <div><strong>进度：</strong>{{ getProgressDisplayText(currentRow) }}</div>
             <div v-if="resolveRecordMachineCode(currentRow)">
@@ -595,12 +615,104 @@
       ></video>
     </div>
   </el-dialog>
+
+  <!-- AI 视频生成对话框 -->
+  <el-dialog
+    v-model="aiGenerateVisible"
+    title="AI 生成视频"
+    :width="isMobile ? 'calc(100vw - 16px)' : '520px'"
+    destroy-on-close
+    :close-on-click-modal="false"
+  >
+    <!-- 模式切换 -->
+    <div style="display: flex; gap: 0; margin-bottom: 16px; border: 1px solid var(--el-border-color); border-radius: 8px; overflow: hidden;">
+      <button
+        type="button"
+        :style="{
+          flex: 1, padding: '10px 0', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600,
+          background: aiForm.mode === 'ai-generate' ? 'var(--el-color-primary)' : 'var(--el-fill-color-light)',
+          color: aiForm.mode === 'ai-generate' ? '#fff' : 'var(--el-text-color-regular)',
+          transition: 'all 0.2s',
+        }"
+        @click="aiForm.mode = 'ai-generate'"
+      >
+        <el-icon style="vertical-align: -2px; margin-right: 4px;"><MagicStick /></el-icon>
+        智能匹配
+      </button>
+      <button
+        type="button"
+        :style="{
+          flex: 1, padding: '10px 0', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600,
+          background: aiForm.mode === 'ai-free-generate' ? 'var(--el-color-primary)' : 'var(--el-fill-color-light)',
+          color: aiForm.mode === 'ai-free-generate' ? '#fff' : 'var(--el-text-color-regular)',
+          transition: 'all 0.2s',
+        }"
+        @click="aiForm.mode = 'ai-free-generate'"
+      >
+        <el-icon style="vertical-align: -2px; margin-right: 4px;"><VideoPlay /></el-icon>
+        自由描述
+      </button>
+    </div>
+
+    <!-- 模式说明 -->
+    <div style="margin-bottom: 12px; padding: 8px 12px; border-radius: 6px; background: var(--el-fill-color-lighter); font-size: 12px; color: var(--el-text-color-secondary); line-height: 1.6;">
+      <template v-if="aiForm.mode === 'ai-generate'">
+        根据描述自动选择合适的通用模板（图片渐变、文字展示、金句等），填入参数后渲染。
+      </template>
+      <template v-else>
+        自由描述你想要的视频内容，AI 会自动提取文字、图片并匹配合适的通用模板。
+      </template>
+    </div>
+
+    <!-- Prompt 输入 -->
+    <el-input
+      v-model="aiForm.prompt"
+      type="textarea"
+      :rows="5"
+      :placeholder="aiForm.mode === 'ai-generate' ? '描述视频内容，如：多图轮播展示，以下是图片 https://example.com/1.jpg https://example.com/2.jpg' : '自由描述，如：产品卖点展示，标题：核心优势，简洁高效；一键生成；永久免费'"
+      resize="none"
+    />
+    <div style="margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap;">
+      <el-link
+        v-for="tag in currentQuickTags"
+        :key="tag.label"
+        type="info"
+        :underline="false"
+        style="font-size: 12px;"
+        @click="insertQuickTag(tag.value)"
+      >{{ tag.label }}</el-link>
+    </div>
+
+    <!-- 结果显示 -->
+    <div v-if="aiSubmitResult" style="margin-top: 12px; font-size: 13px;">
+      <template v-if="aiSubmitResult.success">
+        <div style="display: flex; align-items: center; gap: 6px; color: var(--el-color-success);">
+          <el-icon><CircleCheck /></el-icon>
+          已提交 · {{ aiSubmitResult.templateUsed }}
+          <template v-if="aiSubmitResult.sceneCount">
+            · {{ aiSubmitResult.sceneCount }} 个场景 · {{ aiSubmitResult.totalDuration }}s
+          </template>
+        </div>
+      </template>
+      <span v-else style="color: var(--el-color-danger);">{{ aiSubmitResult.error }}</span>
+    </div>
+
+    <template #footer>
+      <el-button @click="aiGenerateVisible = false">取消</el-button>
+      <el-button
+        type="primary"
+        :loading="aiSubmitting"
+        :disabled="!aiForm.prompt"
+        @click="submitAiGenerate"
+      >{{ aiSubmitting ? '生成中...' : '生成' }}</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Delete, Search, QuestionFilled } from "@element-plus/icons-vue";
+import { Delete, Search, QuestionFilled, MagicStick, Files, VideoPlay, CircleCheck } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
 import { formatTimestamp } from "@/common/date";
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from "@/common/table";
@@ -611,6 +723,7 @@ import {
   getRemotionTemplateList,
   getRemotionVideoRecordDetail,
   getRemotionVideoRecordPage,
+  aiGenerateRemotionVideoRecord,
 } from "@/api/remotion-video-record";
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
@@ -619,6 +732,7 @@ import { refreshServiceHealth, useServiceHealthState } from "@/services/serviceH
 import { websocketClient, type RemotionVideoRecordStatusEvent } from "@/services/websocketClient";
 
 const { height } = useWindowSize();
+const isMobile = computed(() => window.innerWidth < 768);
 const loading = ref(false);
 const total = ref(0);
 const dataSource = ref<any[]>([]);
@@ -651,6 +765,39 @@ const currentRow = ref<any>(null);
 const previewVisible = ref(false);
 const previewUrl = ref('');
 const remotionStatus = useServiceHealthState("videoTemplate");
+
+// AI 生成相关状态
+const aiGenerateVisible = ref(false);
+const aiSubmitting = ref(false);
+const aiForm = ref({
+  mode: 'ai-free-generate' as 'ai-generate' | 'ai-free-generate',
+  prompt: '',
+});
+const aiSubmitResult = ref<any>(null);
+
+// 快捷标签（按模式分组）
+const quickTagsByMode = {
+  'ai-generate': [
+    { label: '多图渐变', value: '图片轮播展示，标题：产品图集，以下是图片 https://example.com/1.jpg https://example.com/2.jpg https://example.com/3.jpg' },
+    { label: '文字展示', value: '产品卖点展示，标题：核心优势，简洁高效；一键生成；永久免费' },
+    { label: '金句展示', value: '品牌金句展示，品牌：YISHE，好的设计不是做加法，而是做减法' },
+    { label: '功能卡片', value: '功能介绍，标题：核心功能，智能分析；多平台整合；实时同步' },
+    { label: '数据报告', value: '数据分析报告，标题：用户增长趋势，日活5.2万；转化率3.8%；留存62%' },
+  ],
+  'ai-free-generate': [
+    { label: '多图渐变', value: '图片轮播展示，标题：产品图集，以下是图片 https://example.com/1.jpg https://example.com/2.jpg https://example.com/3.jpg' },
+    { label: '文字展示', value: '产品卖点展示，标题：核心优势，简洁高效；一键生成；永久免费' },
+    { label: '金句展示', value: '品牌金句展示，品牌：YISHE，好的设计不是做加法，而是做减法' },
+    { label: '功能卡片', value: '功能介绍，标题：核心功能，智能分析；多平台整合；实时同步' },
+    { label: '数据报告', value: '数据分析报告，标题：用户增长趋势，日活5.2万；转化率3.8%；留存62%' },
+  ],
+};
+
+const currentQuickTags = computed(() => quickTagsByMode[aiForm.value.mode] || quickTagsByMode['ai-free-generate']);
+
+function insertQuickTag(value: string) {
+  aiForm.value.prompt = value;
+}
 let processingPollTimer: ReturnType<typeof setTimeout> | null = null;
 let templateSearchTimer: ReturnType<typeof setTimeout> | null = null;
 const ACTIVE_RECORD_STATUSES = new Set([
@@ -1567,6 +1714,54 @@ function openCreateDialog(row?: any) {
   Object.keys(formParams).forEach(key => delete formParams[key]);
   if (form.inputProps) {
     Object.assign(formParams, form.inputProps);
+  }
+}
+
+function openAiGenerateDialog() {
+  aiGenerateVisible.value = true;
+  aiSubmitResult.value = null;
+  aiForm.value = {
+    mode: 'ai-free-generate',
+    prompt: '',
+  };
+}
+
+async function submitAiGenerate() {
+  if (!aiForm.value.prompt) return;
+  
+  aiSubmitting.value = true;
+  aiSubmitResult.value = null;
+  
+  try {
+    const result: any = await aiGenerateRemotionVideoRecord({
+      action: aiForm.value.mode,
+      prompt: aiForm.value.prompt,
+    });
+    
+    if (result.success) {
+      aiSubmitResult.value = {
+        success: true,
+        jobId: result.jobId,
+        recordId: result.recordId,
+        templateUsed: result.templateUsed,
+        sceneCount: result.sceneCount,
+        totalDuration: result.totalDuration,
+        mode: result.mode,
+      };
+      getList();
+    } else {
+      aiSubmitResult.value = {
+        success: false,
+        error: result.error || '提交失败',
+      };
+    }
+  } catch (error: any) {
+    aiSubmitResult.value = {
+      success: false,
+      error: error.message || '网络错误',
+    };
+  } finally {
+    aiSubmitting.value = false;
   }
 }
 
@@ -2776,4 +2971,6 @@ watch(
     font-size: 11px;
   }
 }
+
+/* AI 生成对话框样式 */
 </style>

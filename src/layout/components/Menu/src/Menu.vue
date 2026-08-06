@@ -26,6 +26,7 @@ import {
   ensureAiAssistantRuntimeInitialized,
   resolveAiAssistantRuntimeTone,
   resolveAiAssistantRuntimeTooltip,
+  aiAssistantRuntimeState,
 } from "@/services/aiAssistantRuntimeState";
 import {
   designToolRuntimeState,
@@ -481,9 +482,14 @@ export default defineComponent({
       ensureAiAssistantRuntimeInitialized();
       const tone = resolveAiAssistantRuntimeTone();
       const title = resolveAiAssistantRuntimeTooltip();
+      const runningCount = aiAssistantRuntimeState.runningCount;
 
-      if (tone === "running") {
-        return renderRunningStatusDot(title);
+      if (tone === "running" && runningCount > 0) {
+        // 显示运行中的 Agent 数量 - 使用与状态点相同大小的圆点
+        return renderMenuStatusHint(
+          <span class={`${prefixCls}__status-count`} />,
+          `${runningCount} 个 Agent 正在运行`,
+        );
       }
 
       if (tone === "checking") {
@@ -1342,9 +1348,9 @@ $prefix-cls: #{$namespace}-menu;
   }
 
   &__link--running-video {
-    --menu-running-rgb: 59 130 246;
-    --menu-running-highlight-rgb: 96 165 250;
-    --menu-running-text-color: rgb(30 41 59 / 98%);
+    --menu-running-rgb: 234 179 8;
+    --menu-running-highlight-rgb: 250 204 21;
+    --menu-running-text-color: rgb(234 179 8 / 98%);
   }
 
   &__status-dot {
@@ -1441,8 +1447,8 @@ $prefix-cls: #{$namespace}-menu;
   }
 
   &__status-dot--running-video {
-    --menu-running-rgb: 59 130 246;
-    --menu-running-highlight-rgb: 96 165 250;
+    --menu-running-rgb: 234 179 8;
+    --menu-running-highlight-rgb: 250 204 21;
   }
 
   &__status-dot--offline {
@@ -1456,6 +1462,56 @@ $prefix-cls: #{$namespace}-menu;
   &__link:hover &__status-dot--offline,
   &__link--active &__status-dot--offline {
     animation: status-dot-breathe-offline 3s ease-in-out infinite;
+  }
+
+  // Agent 运行数量徽章 - 小巧精致风格
+  &__status-count {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 8px;
+    height: 8px;
+    font-size: 0;
+    color: transparent;
+    background: rgb(var(--menu-running-rgb, 245 158 11) / 90%);
+    border-radius: 50%;
+    box-shadow: 0 0 6px rgb(var(--menu-running-rgb, 245 158 11) / 30%);
+    animation: status-count-breathe 1.8s ease-in-out infinite;
+    margin-left: var(--left-menu-status-dot-margin-left);
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: -2px;
+      border: 1px solid rgb(var(--menu-running-rgb, 245 158 11) / 30%);
+      border-radius: 50%;
+      animation: status-count-ring 1.5s ease-in-out infinite;
+    }
+  }
+
+  @keyframes status-count-breathe {
+    0%,
+    100% {
+      opacity: 0.85;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+  }
+
+  @keyframes status-count-ring {
+    0%,
+    100% {
+      opacity: 0.3;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.6;
+      transform: scale(1.15);
+    }
   }
 
   @media (min-width: 768px) and (max-width: 1180px),
@@ -1493,6 +1549,10 @@ $prefix-cls: #{$namespace}-menu;
   }
 
   .#{$prefix-cls}__link--running-psd {
+    --menu-running-text-color: rgb(250 204 21 / 98%);
+  }
+
+  .#{$prefix-cls}__link--running-video {
     --menu-running-text-color: rgb(250 204 21 / 98%);
   }
 }

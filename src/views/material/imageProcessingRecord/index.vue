@@ -599,6 +599,45 @@ const DEFAULT_FALLBACK_OPERATIONS = [
   { type: "oil-painting", apiType: "effects-oil-painting", category: "effect", description: "油画艺术画笔效果", params: { radius: { type: "number", description: "笔触大小", default: 3 } }, requiredParams: [] },
   { type: "pixelate", apiType: "effects-pixelate", category: "effect", description: "像素马赛克效果", params: { size: { type: "number", description: "像素块大小", default: 10 } }, requiredParams: [] },
   { type: "vignette", apiType: "effects-vignette", category: "effect", description: "四周暗角效果", params: { radius: { type: "number", description: "晕影半径", default: 100 } }, requiredParams: [] },
+  // === 新增：边框/描边 ===
+  { type: "border", apiType: "border", category: "basic", description: "添加边框/描边", params: { width: { type: "number", description: "边框宽度 (px)", default: 10 }, color: { type: "string", description: "边框颜色", default: "#000000" } }, requiredParams: ["width"] },
+  // === 新增：背景替换 ===
+  { type: "backgroundReplace", apiType: "backgroundReplace", category: "basic", description: "替换指定背景颜色为新颜色", params: { targetColor: { type: "string", description: "要替换的目标颜色", required: true }, newColor: { type: "string", description: "替换后的颜色", required: true }, fuzz: { type: "number", description: "颜色容差 (%)", default: 15 } }, requiredParams: ["targetColor", "newColor"] },
+  // === 新增：去EXIF元数据 ===
+  { type: "strip", apiType: "strip", category: "basic", description: "去除EXIF元数据", params: {}, requiredParams: [] },
+  // === 新增：社交媒体预设尺寸 ===
+  { type: "socialPreset", apiType: "socialPreset", category: "basic", description: "社交媒体预设尺寸裁剪", params: { platform: { type: "string", description: "平台预设 (wechat-moments/wechat-avatar/instagram-square/instagram-story/weibo-cover/xiaohongshu/douyin-cover/bilibili-cover)", required: true } }, requiredParams: ["platform"] },
+  // === 新增：漩涡扭曲 ===
+  { type: "swirl", apiType: "effects-swirl", category: "effect", description: "漩涡扭曲效果", params: { degrees: { type: "number", description: "旋转角度", default: 60 } }, requiredParams: [] },
+  // === 新增：波浪变形 ===
+  { type: "wave", apiType: "effects-wave", category: "effect", description: "波浪变形效果", params: { amplitude: { type: "number", description: "振幅 (px)", default: 10 }, wavelength: { type: "number", description: "波长 (px)", default: 100 } }, requiredParams: [] },
+  // === 新增：内缩扭曲 ===
+  { type: "implode", apiType: "effects-implode", category: "effect", description: "内缩扭曲效果（负值为外爆）", params: { amount: { type: "number", description: "内缩程度 (-1到1)", default: 0.5 } }, requiredParams: [] },
+  // === 新增：曝光过度 ===
+  { type: "solarize", apiType: "effects-solarize", category: "effect", description: "曝光过度效果", params: { threshold: { type: "number", description: "阈值 (0-100%)", default: 50 } }, requiredParams: [] },
+  // === 新增：像素扩散 ===
+  { type: "spread", apiType: "effects-spread", category: "effect", description: "像素扩散/抖动效果", params: { amount: { type: "number", description: "扩散距离 (px)", default: 5 } }, requiredParams: [] },
+  // === 新增：双色调 ===
+  { type: "duotone", apiType: "effects-duotone", category: "effect", description: "双色调效果（黑白照片着两种颜色）", params: { color1: { type: "string", description: "暗部颜色", default: "#000066" }, color2: { type: "string", description: "亮部颜色", default: "#FFD700" } }, requiredParams: [] },
+  // === 新增：渐变叠加 ===
+  { type: "gradientOverlay", apiType: "effects-gradientOverlay", category: "effect", description: "渐变叠加效果", params: { direction: { type: "string", description: "方向 (top/bottom/left/right)", default: "bottom" }, color1: { type: "string", description: "起始颜色", default: "#000000" }, color2: { type: "string", description: "结束颜色", default: "#FFFFFF" }, opacity: { type: "number", description: "不透明度 (0-1)", default: 0.5 } }, requiredParams: [] },
+  // === 新增：通用图片处理工具 ===
+  { type: "compress", apiType: "compress", category: "basic", description: "图片压缩优化（减小文件体积，适用于Web）", params: { quality: { type: "number", description: "压缩质量 (1-100)", default: 80 }, format: { type: "string", description: "输出格式 (original/webp/jpg/png)", default: "original" }, strip: { type: "boolean", description: "去除元数据", default: true }, progressive: { type: "boolean", description: "渐进式JPEG", default: false } }, requiredParams: [] },
+  { type: "extractExif", apiType: "extractExif", category: "basic", description: "提取图片EXIF元数据信息", params: {}, requiredParams: [] },
+  { type: "colorPalette", apiType: "colorPalette", category: "basic", description: "提取图片主色调（返回颜色数组）", params: { count: { type: "number", description: "提取颜色数量", default: 6 } }, requiredParams: [] },
+  { type: "compare", apiType: "compare", category: "basic", description: "对比两张图片差异", params: { imageUrl2: { type: "string", description: "第二张图片URL", required: true }, metric: { type: "string", description: "对比指标 (AE/MAE/MSE/PSNR/SSIM/NCC)", default: "AE" } }, requiredParams: ["imageUrl2"] },
+  { type: "liquidRescale", apiType: "liquidRescale", category: "basic", description: "智能内容感知缩放（保护重要内容不变形）", params: { width: { type: "number", description: "目标宽度 (px)", required: true }, height: { type: "number", description: "目标高度 (px)", required: true }, preserveFeatures: { type: "boolean", description: "保护重要内容", default: true } }, requiredParams: ["width", "height"] },
+  { type: "autoColor", apiType: "effects-autoColor", category: "effect", description: "自动色彩校正/白平衡", params: {}, requiredParams: [] },
+  // === 新增：通用快捷处理特效 ===
+  { type: "modulate", apiType: "effects-modulate", category: "effect", description: "色相/饱和度/亮度组合调整", params: { hue: { type: "number", description: "色相偏移 (100=不变)", default: 100 }, saturation: { type: "number", description: "饱和度 (100=不变)", default: 100 }, brightness: { type: "number", description: "亮度 (100=不变)", default: 100 } }, requiredParams: [] },
+  { type: "opacity", apiType: "opacity", category: "basic", description: "调整图片整体透明度", params: { value: { type: "number", description: "透明度 (0=全透明，100=不透明)", default: 100 } }, requiredParams: [] },
+  { type: "shadow", apiType: "shadow", category: "basic", description: "添加投影阴影", params: { offsetX: { type: "number", description: "X偏移 (px)", default: 4 }, offsetY: { type: "number", description: "Y偏移 (px)", default: 4 }, blur: { type: "number", description: "模糊半径", default: 8 }, color: { type: "string", description: "阴影颜色", default: "#000000" }, opacity: { type: "number", description: "不透明度 (0-100)", default: 80 } }, requiredParams: [] },
+  { type: "append", apiType: "append", category: "basic", description: "图片拼接（水平或垂直）", params: { images: { type: "array", description: "图片URL数组", required: true }, direction: { type: "string", description: "拼接方向 (horizontal/vertical)", default: "horizontal" } }, requiredParams: ["images"] },
+  { type: "composite", apiType: "composite", category: "basic", description: "图片合成（将前景图叠加到背景图）", params: { foregroundUrl: { type: "string", description: "前景图片URL", required: true }, position: { type: "string", description: "位置", default: "center" }, offsetX: { type: "number", description: "X偏移 (px)", default: 0 }, offsetY: { type: "number", description: "Y偏移 (px)", default: 0 } }, requiredParams: ["foregroundUrl"] },
+  { type: "opaque", apiType: "opaque", category: "basic", description: "颜色替换（将图片中某颜色替换为新颜色）", params: { targetColor: { type: "string", description: "要替换的颜色", required: true }, newColor: { type: "string", description: "替换后的颜色", required: true }, fuzz: { type: "number", description: "颜色容差 (%)", default: 10 } }, requiredParams: ["targetColor", "newColor"] },
+  { type: "gradient", apiType: "gradient", category: "basic", description: "生成渐变背景图片", params: { width: { type: "number", description: "宽度 (px)", default: 800 }, height: { type: "number", description: "高度 (px)", default: 800 }, color1: { type: "string", description: "起始颜色", default: "#000000" }, color2: { type: "string", description: "结束颜色", default: "#FFFFFF" }, direction: { type: "string", description: "方向 (horizontal/vertical/diagonal)", default: "vertical" } }, requiredParams: [] },
+  { type: "alpha", apiType: "alpha", category: "basic", description: "去除背景使其透明（适合产品图）", params: { targetColor: { type: "string", description: "要变透明的颜色", default: "#FFFFFF" }, fuzz: { type: "number", description: "颜色容差 (%)", default: 15 } }, requiredParams: [] },
+  { type: "blend", apiType: "blend", category: "basic", description: "图片混合（将两张图按比例融合）", params: { imageUrl2: { type: "string", description: "第二张图片URL", required: true }, ratio: { type: "number", description: "混合比例 (0=全第一张，100=全第二张)", default: 50 } }, requiredParams: ["imageUrl2"] },
   { type: "filter-grayscale", apiType: "filter-grayscale", category: "filter", description: "黑白灰度滤镜", params: { intensity: { type: "number", description: "滤镜强度 (0-1)", default: 1 } }, requiredParams: [] },
   { type: "filter-sepia", apiType: "filter-sepia", category: "filter", description: "复古老照片滤镜", params: { intensity: { type: "number", description: "滤镜强度 (0-1)", default: 1 } }, requiredParams: [] },
   { type: "filter-invert", apiType: "filter-invert", category: "filter", description: "底片反色滤镜", params: { intensity: { type: "number", description: "滤镜强度 (0-1)", default: 1 } }, requiredParams: [] },

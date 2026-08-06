@@ -26,6 +26,27 @@ export interface AiAssistantConversation {
   createdAt: string;
   updatedAt: string;
   persona: AiAssistantPersona;
+  // 状态字段
+  status?: string;
+  currentRunId?: string | null;
+  statusMessage?: string | null;
+  lastStatusChangeAt?: string | null;
+  lastRunningAt?: string | null;
+  lastErrorAt?: string | null;
+  lastErrorMessage?: string | null;
+  // 统计字段
+  userMessageCount?: number;
+  assistantMessageCount?: number;
+  toolCallCount?: number;
+  totalAiTokens?: number;
+  avgAiResponseMs?: number;
+  avgToolExecutionMs?: number;
+  totalDurationMs?: number;
+  firstMessageAt?: string | null;
+  lastAiResponseAt?: string | null;
+  runCount?: number;
+  successfulRunCount?: number;
+  failedRunCount?: number;
 }
 
 export interface AiAssistantToolSchemaProperty {

@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import { ref, computed, nextTick, watch, onMounted } from "vue";
 import type { ScrollbarInstance } from "element-plus";
-import { Promotion } from "@element-plus/icons-vue";
 import type { AiAssistantMessage } from "@/api/aiAssistant";
 import { AiAssistantApi } from "@/api/aiAssistant";
 import MarkdownView from "@/components/MarkdownView/index.vue";
@@ -25,7 +24,7 @@ const props = withDefaults(
     compact?: boolean;
   }>(),
   {
-    inputPlaceholder: "输入你的目标或问题",
+    inputPlaceholder: "输入你的问题",
     canSend: false,
     thinkingText: "",
     promptItems: () => [],
@@ -44,8 +43,8 @@ const emit = defineEmits<{
 const inputMessage = ref("");
 const messageListRef = ref<HTMLElement>();
 const messageScrollbarRef = ref<ScrollbarInstance>();
-const inputRef = ref<{ focus?: () => void }>();
 const commandPopupRef = ref<InstanceType<typeof CommandPopup>>();
+const textareaRef = ref<HTMLTextAreaElement>();
 
 const visibleMessages = computed(() =>
   props.messages.filter((message) => {
@@ -58,12 +57,11 @@ const visibleMessages = computed(() =>
   }),
 );
 
-// ── Slash Command Popup ──
 const slashCommands = ref<CommandItem[]>([]);
 const cmdPopupVisible = ref(false);
 const cmdFilter = ref("");
 const cmdTrigger = ref<"/" | "@" | null>(null);
-const cmdTriggerIndex = ref(-1); // position of / or @ in inputMessage
+const cmdTriggerIndex = ref(-1);
 const cmdAnchorRect = ref<{ left: number; top: number; width: number } | null>(null);
 
 onMounted(async () => {
@@ -81,12 +79,10 @@ onMounted(async () => {
 });
 
 function detectCommandTrigger(text: string, cursorPos: number) {
-  // Scan backward from cursor to find / or @ at start of a word
   for (let i = cursorPos - 1; i >= 0; i--) {
     const ch = text[i];
-    if (ch === " " || ch === "\n") break; // word boundary
+    if (ch === " " || ch === "\n") break;
     if (ch === "/" || ch === "@") {
-      // Must be at start of input or preceded by whitespace/newline
       if (i === 0 || /[\s\n]/.test(text[i - 1])) {
         cmdTrigger.value = ch;
         cmdTriggerIndex.value = i;
@@ -101,29 +97,31 @@ function detectCommandTrigger(text: string, cursorPos: number) {
 }
 
 function handleInputChange() {
-  const el = (inputRef.value as any)?.$el?.querySelector("textarea");
+  const el = textareaRef.value;
   const cursorPos = el?.selectionStart ?? inputMessage.value.length;
-  // Compute anchor rect from textarea
   if (el) {
     const rect = el.getBoundingClientRect();
     cmdAnchorRect.value = { left: rect.left, top: rect.top, width: rect.width };
   }
   detectCommandTrigger(inputMessage.value, cursorPos);
+  autoResize();
+}
+
+function autoResize() {
+  const el = textareaRef.value;
+  if (!el) return;
+  el.style.height = "auto";
+  el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
 }
 
 function handleCommandSelect(cmd: CommandItem) {
   const alias = cmd.aliases[0] || `/${cmd.name}`;
   const before = inputMessage.value.slice(0, cmdTriggerIndex.value);
-  const after = inputMessage.value.slice(
-    cmdTriggerIndex.value + 1 + cmdFilter.value.length,
-  );
+  const after = inputMessage.value.slice(cmdTriggerIndex.value + 1 + cmdFilter.value.length);
   inputMessage.value = `${before}${alias} ${after}`.trimEnd() + " ";
   cmdPopupVisible.value = false;
   cmdTrigger.value = null;
-  nextTick(() => {
-    const el = (inputRef.value as any)?.$el?.querySelector("textarea");
-    el?.focus();
-  });
+  nextTick(() => textareaRef.value?.focus());
 }
 
 function handleCommandClose() {
@@ -140,14 +138,12 @@ function handleSend() {
   if (!message || !canSendComputed.value) return;
   inputMessage.value = "";
   cmdPopupVisible.value = false;
+  nextTick(() => autoResize());
   emit("send", message);
 }
 
 function handleKeydown(e: KeyboardEvent) {
-  // Forward to command popup first
-  if (cmdPopupVisible.value && commandPopupRef.value?.handleKeydown(e)) {
-    return;
-  }
+  if (cmdPopupVisible.value && commandPopupRef.value?.handleKeydown(e)) return;
   if (e.key === "Enter" && !e.shiftKey) {
     if (!canSendComputed.value) return;
     e.preventDefault();
@@ -175,12 +171,8 @@ function formatToolContent(message: AiAssistantMessage) {
     if (obj._note) return String(obj._note);
     if (obj.message) return String(obj.message);
     if (obj.now) return `系统时间: ${obj.now}`;
-    if (obj.total !== undefined) return `共 ${obj.total} 条数据`;
-    try {
-      return JSON.stringify(obj);
-    } catch {
-      return "执行完成";
-    }
+    if (obj.total !== undefined) return `共 ${obj.total} 条`;
+    try { return JSON.stringify(obj); } catch { return "执行完成"; }
   }
   const str = String(content);
   if (str === "[object Object]") {
@@ -188,7 +180,7 @@ function formatToolContent(message: AiAssistantMessage) {
     if (res._note) return String(res._note);
     if (res.message) return String(res.message);
     if (res.now) return `系统时间: ${res.now}`;
-    if (res.total !== undefined) return `共 ${res.total} 条数据`;
+    if (res.total !== undefined) return `共 ${res.total} 条`;
     return "执行完成";
   }
   return str;
@@ -197,436 +189,457 @@ function formatToolContent(message: AiAssistantMessage) {
 function toolMessageClass(message: AiAssistantMessage) {
   if (message.toolResult?.success === false) return "is-error";
   const str = String(message.content || "");
-  if (str === "执行中..." || str.startsWith("准备调用")) {
-    return "is-running";
-  }
+  if (str === "执行中..." || str.startsWith("准备调用")) return "is-running";
   return "is-done";
 }
 
 function scrollToBottom() {
   nextTick(() => {
-    const height = messageListRef.value?.scrollHeight || 0;
     if (messageScrollbarRef.value) {
-      messageScrollbarRef.value.setScrollTop(height);
+      messageScrollbarRef.value.setScrollTop(messageListRef.value?.scrollHeight || 0);
     }
   });
 }
 
-watch(
-  () => props.messages.length,
-  () => nextTick(() => scrollToBottom()),
-);
+watch(() => props.messages.length, () => nextTick(() => scrollToBottom()));
+watch(() => props.messages[props.messages.length - 1]?.content, () => nextTick(() => scrollToBottom()));
+watch(() => props.pendingInteraction, () => nextTick(() => scrollToBottom()));
 
-watch(
-  () => props.messages[props.messages.length - 1]?.content,
-  () => nextTick(() => scrollToBottom()),
-);
-
-watch(
-  () => props.pendingInteraction,
-  () => nextTick(() => scrollToBottom()),
-);
-
-defineExpose({ scrollToBottom, focusInput: () => inputRef.value?.focus?.() });
+defineExpose({ scrollToBottom, focusInput: () => textareaRef.value?.focus() });
 </script>
 
 <template>
-  <div class="assistant-chat" :class="{ 'assistant-chat--compact': compact }">
-    <el-scrollbar ref="messageScrollbarRef" class="chat-scrollbar">
-      <div ref="messageListRef" class="message-list">
-        <!-- 空状态 -->
-        <div v-if="!visibleMessages.length && !loading" class="empty-state">
-          <div class="empty-state__title">你想先处理什么？</div>
-          <div v-if="promptItems.length" class="prompt-list">
-            <button
-              v-for="prompt in promptItems"
-              :key="prompt.key"
-              class="prompt-item"
-              type="button"
-              @click="handlePromptClick(prompt.key)"
-            >
-              {{ prompt.label }}
+  <div class="chat">
+    <el-scrollbar ref="messageScrollbarRef" class="chat__scroll">
+      <div ref="messageListRef" class="chat__messages">
+        <!-- Empty -->
+        <div v-if="!visibleMessages.length && !loading" class="chat__empty">
+          <div class="chat__empty-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+          </div>
+          <h2 class="chat__empty-title">有什么可以帮你的？</h2>
+          <div v-if="promptItems.length" class="chat__prompts">
+            <button v-for="p in promptItems" :key="p.key" class="chat__prompt" @click="handlePromptClick(p.key)">
+              {{ p.label }}
             </button>
           </div>
         </div>
 
-        <!-- 消息列表 -->
-        <div
-          v-for="msg in visibleMessages"
-          :key="msg.id"
-          class="message-item"
-          :class="[`message-role-${msg.role}`]"
-        >
-          <!-- 用户消息 -->
-          <div v-if="msg.role === 'user'" class="message-content message-content--user">
-            <div class="message-text">{{ msg.content }}</div>
-          </div>
+        <!-- Messages -->
+        <template v-else>
+          <div v-for="msg in visibleMessages" :key="msg.id" class="msg" :class="`msg--${msg.role}`">
+            <!-- User -->
+            <div v-if="msg.role === 'user'" class="msg__row msg__row--right">
+              <div class="msg__bubble msg__bubble--user">{{ msg.content }}</div>
+            </div>
 
-          <!-- 助手消息 -->
-          <div v-else-if="msg.role === 'assistant'" class="message-content message-content--assistant">
-            <div class="message-body">
-              <div class="message-text">
+            <!-- Assistant -->
+            <div v-else-if="msg.role === 'assistant'" class="msg__row msg__row--left">
+              <div class="msg__icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                  <path d="M2 17l10 5 10-5" />
+                  <path d="M2 12l10 5 10-5" />
+                </svg>
+              </div>
+              <div class="msg__content">
                 <MarkdownView v-if="msg.content" :content="msg.content" />
-                <span v-else class="message-pending">正在整理回复...</span>
+                <span v-else class="msg__pending">正在回复...</span>
+              </div>
+            </div>
+
+            <!-- Tool -->
+            <div v-else class="msg__row msg__row--left">
+              <div class="msg__icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path
+                    d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                </svg>
+              </div>
+              <div class="msg__tool" :class="toolMessageClass(msg)">
+                <span class="msg__tool-dot" />
+                <span class="msg__tool-name">{{ msg.toolLabel || msg.toolKey }}</span>
+                <span class="msg__tool-sep">·</span>
+                <span class="msg__tool-result">{{ formatToolContent(msg) }}</span>
               </div>
             </div>
           </div>
 
-          <!-- 工具消息 -->
-          <div v-else class="message-content message-content--tool">
-            <div class="message-tool" :class="toolMessageClass(msg)">
-              <span class="tool-dot" />
-              <div class="tool-copy">
-                <span class="tool-title">{{ msg.toolLabel || msg.toolKey || "工具" }}</span>
-                <span class="tool-result">{{ formatToolContent(msg) }}</span>
-              </div>
+          <!-- Typing -->
+          <div v-if="loading && !hasPendingAssistantMessage" class="msg__row msg__row--left">
+            <div class="msg__icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                <path d="M2 17l10 5 10-5" />
+                <path d="M2 12l10 5 10-5" />
+              </svg>
+            </div>
+            <div class="msg__typing">
+              <span class="dot" /><span class="dot" /><span class="dot" />
+              <span class="msg__typing-text">{{ thinkingText || "思考中" }}</span>
             </div>
           </div>
-        </div>
 
-        <!-- 输入中指示器 -->
-        <div v-if="loading && !hasPendingAssistantMessage" class="message-item message-assistant">
-          <div class="message-content message-content--assistant">
-            <div class="message-body">
-              <div class="message-text message-text--typing">
-                <span class="typing-dot" />
-                <span class="typing-dot" />
-                <span class="typing-dot" />
-                <span>{{ thinkingText || "正在思考" }}</span>
-              </div>
-            </div>
+          <!-- Interaction -->
+          <div v-if="pendingInteraction" class="chat__interaction">
+            <InteractionRenderer :payload="pendingInteraction" :loading="loading" @submit="handleInteractionSubmit"
+              @reject="handleInteractionReject" />
           </div>
-        </div>
-
-        <!-- 交互区域（跟随消息列表一并滚动） -->
-        <div v-if="pendingInteraction" class="interaction-wrapper">
-          <InteractionRenderer
-            :payload="pendingInteraction"
-            :loading="loading"
-            @submit="handleInteractionSubmit"
-            @reject="handleInteractionReject"
-          />
-        </div>
+        </template>
       </div>
     </el-scrollbar>
 
-    <!-- 输入区域 -->
-    <footer class="input-area">
-      <CommandPopup
-        ref="commandPopupRef"
-        :visible="cmdPopupVisible"
-        :commands="slashCommands"
-        :filter="cmdFilter"
-        :trigger="cmdTrigger"
-        :anchor-rect="cmdAnchorRect"
-        @select="handleCommandSelect"
-        @close="handleCommandClose"
-      />
-      <el-input
-        ref="inputRef"
-        v-model="inputMessage"
-        type="textarea"
-        :rows="compact ? 2 : 3"
-        :placeholder="inputPlaceholder"
-        @keydown="handleKeydown"
-        @input="handleInputChange"
-      />
-      <div class="input-actions">
-        <el-button
-          type="primary"
-          :icon="Promotion"
-          :loading="loading"
-          :disabled="!canSendComputed"
-          @click="handleSend"
-        >
+    <!-- Input -->
+    <div class="chat__input">
+      <div class="chat__input-box">
+        <CommandPopup ref="commandPopupRef" :visible="cmdPopupVisible" :commands="slashCommands" :filter="cmdFilter"
+          :trigger="cmdTrigger" :anchor-rect="cmdAnchorRect" @select="handleCommandSelect"
+          @close="handleCommandClose" />
+        <textarea ref="textareaRef" v-model="inputMessage" class="chat__textarea" :placeholder="inputPlaceholder"
+          rows="1" @keydown="handleKeydown" @input="handleInputChange" />
+        <button class="chat__send" :disabled="!canSendComputed" @click="handleSend">
           {{ loading ? "处理中" : "发送" }}
-        </el-button>
+        </button>
       </div>
-    </footer>
+      <p class="chat__hint">Enter 发送 · Shift + Enter 换行</p>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.assistant-chat {
+.chat {
   display: flex;
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  min-width: 0;
 }
 
-.chat-scrollbar {
+.chat__scroll {
   flex: 1;
   min-height: 0;
-  background: transparent;
 }
 
-.message-list {
-  position: relative;
+.chat__messages {
   min-height: 100%;
-  padding: 16px 22px 18px;
+  display: flex;
+  padding-top: 24px;
+  flex-direction: column;
 }
 
-.assistant-chat--compact .message-list {
-  padding: 12px 14px 14px;
-}
-
-/* 空状态 */
-.empty-state {
-  min-height: calc(100% - 12px);
+/* ── Empty ── */
+.chat__empty {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  max-width: 440px;
-  margin: 0 auto;
-  padding: 24px 12px;
-  color: var(--el-text-color-secondary);
-  text-align: center;
+  gap: 8px;
+  padding: 24px 16px;
 }
 
-.empty-state__title {
+.chat__empty-icon {
+  color: var(--el-text-color-placeholder);
+}
+
+.chat__empty-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
   color: var(--el-text-color-primary);
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 24px;
 }
 
-.assistant-chat--compact .empty-state__title {
-  font-size: 14px;
-  line-height: 20px;
-}
-
-.prompt-list {
+.chat__prompts {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 8px;
-  margin-top: 14px;
+  gap: 6px;
+  margin-top: 4px;
 }
 
-.prompt-item {
-  height: 32px;
-  padding: 0 11px;
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 6px;
+.chat__prompt {
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 15px;
   background: transparent;
   color: var(--el-text-color-regular);
   font-size: 12px;
   cursor: pointer;
-  transition:
-    color 0.16s ease,
-    background-color 0.16s ease;
+  transition: all .12s;
 }
 
-.prompt-item:hover {
-  border-color: color-mix(in srgb, var(--el-color-primary) 32%, var(--el-border-color-light));
-  background: var(--el-color-primary-light-9);
+.chat__prompt:hover {
+  border-color: var(--el-color-primary);
   color: var(--el-color-primary);
 }
 
-/* 消息 */
-.message-item {
-  margin-bottom: 16px;
+/* ── Message ── */
+.msg {
+  padding: 2px 0;
 }
 
-.assistant-chat--compact .message-item {
-  margin-bottom: 12px;
-}
-
-.message-content {
+.msg__row {
   display: flex;
-  min-width: 0;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 4px 20px;
 }
 
-.message-content--user {
+.msg__row--right {
   justify-content: flex-end;
 }
 
-.message-content--user .message-text {
-  background: var(--el-color-primary-light-9);
-  color: var(--el-color-primary);
-  border: 1px solid var(--el-color-primary-light-8);
-  border-radius: 8px 8px 2px 8px;
-  max-width: min(640px, 72%);
-  padding: 8px 12px;
-  font-size: 13px;
-  line-height: 1.55;
-  word-break: break-word;
-  white-space: pre-wrap;
+.msg__row--left {
+  justify-content: flex-start;
 }
 
-:global(html.dark) .message-content--user .message-text {
-  background: color-mix(in srgb, var(--el-color-primary) 22%, #141414);
-  color: var(--el-color-primary-light-3);
-  border-color: color-mix(in srgb, var(--el-color-primary) 35%, transparent);
+/* ── Icon ── */
+.msg__icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--el-fill-color-dark, #333);
+  color: #fff;
 }
 
-.message-content--assistant {
-  align-items: flex-start;
-}
-
-.message-content--assistant .message-body {
-  background: var(--el-bg-color-overlay, #ffffff);
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 2px 10px 10px 10px;
-  padding: 10px 14px;
-  max-width: min(720px, 85%);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-}
-
-:global(html.dark) .message-content--assistant .message-body {
-  background: #1d1e1f !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.message-body {
-  min-width: 0;
+/* ── Content ── */
+.msg__content {
   flex: 1;
-}
-
-.message-body .message-text {
-  font-size: 13px;
+  min-width: 0;
+  font-size: 14px;
   line-height: 1.6;
   color: var(--el-text-color-primary);
   word-break: break-word;
 }
 
-:global(html.dark) .message-body .message-text {
-  color: #f0f2f5 !important;
-}
-
-.message-pending {
+.msg__pending {
   color: var(--el-text-color-placeholder);
   font-size: 13px;
 }
 
-.message-text--typing {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--el-text-color-secondary);
-}
-
-.typing-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--el-text-color-placeholder);
-  animation: typingPulse 1.2s infinite;
-}
-
-.typing-dot:nth-child(2) { animation-delay: 0.2s; }
-.typing-dot:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes typingPulse {
-  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
-  40% { opacity: 1; transform: scale(1); }
-}
-
-/* 工具消息 */
-.message-content--tool {
-  padding-left: 28px;
-}
-
-.message-tool {
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  max-width: min(720px, 88%);
-  padding: 7px 10px;
-  border-radius: 6px;
-  background: var(--el-fill-color-light);
-  font-size: 12px;
-  line-height: 1.45;
-}
-
-.message-tool.is-running {
-  background: var(--el-color-warning-light-9);
-}
-
-.message-tool.is-running .tool-dot {
-  background: var(--el-color-warning);
-  animation: toolPulse 1s infinite;
-}
-
-.message-tool.is-done .tool-dot {
-  background: var(--el-color-success);
-}
-
-.message-tool.is-error .tool-dot {
-  background: var(--el-color-danger);
-}
-
-.message-tool.is-error .tool-result {
-  color: var(--el-color-danger);
-}
-
-.tool-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  margin-top: 6px;
-}
-
-@keyframes toolPulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
-}
-
-.tool-copy {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.tool-title {
-  font-weight: 600;
-  color: var(--el-text-color-regular);
-  line-height: 18px;
-}
-
-.tool-result {
-  color: var(--el-text-color-secondary);
-  line-height: 18px;
+/* ── User Bubble ── */
+.msg__bubble--user {
+  display: inline-block;
+  max-width: 70%;
+  padding: 8px 14px;
+  border-radius: 18px 18px 4px 18px;
+  background: var(--el-color-primary);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1.5;
   word-break: break-word;
   white-space: pre-wrap;
 }
 
-.assistant-chat--compact .message-content--tool {
-  padding-left: 18px;
+/* ── Tool ── */
+.msg__tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--el-fill-color-light);
+  font-size: 12px;
+  line-height: 1.4;
 }
 
-.assistant-chat--compact .message-tool {
-  max-width: 94%;
+.msg__tool.is-running {
+  background: var(--el-color-warning-light-9);
 }
 
-/* 交互区域 */
-.interaction-wrapper {
-  margin-top: 12px;
-  margin-bottom: 8px;
-  width: 100%;
+.msg__tool.is-running .msg__tool-dot {
+  background: var(--el-color-warning);
+  animation: pulse 1.2s infinite;
 }
 
-/* 输入区域 */
-.input-area {
+.msg__tool.is-done .msg__tool-dot {
+  background: var(--el-color-success);
+}
+
+.msg__tool.is-error {
+  background: var(--el-color-danger-light-9);
+}
+
+.msg__tool.is-error .msg__tool-dot {
+  background: var(--el-color-danger);
+}
+
+.msg__tool-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
   flex-shrink: 0;
-  padding: 10px 18px 14px;
-  border-top: 1px solid var(--el-border-color-lighter);
 }
 
-.assistant-chat--compact .input-area {
-  padding: 8px 12px 10px;
+.msg__tool-name {
+  font-weight: 500;
+  color: var(--el-text-color-regular);
 }
 
-.input-actions {
+.msg__tool-sep {
+  color: var(--el-text-color-placeholder);
+}
+
+.msg__tool-result {
+  color: var(--el-text-color-secondary);
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: .4;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ── Typing ── */
+.msg__typing {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  margin-top: 6px;
+  gap: 4px;
+  padding: 4px 0;
+}
+
+.dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--el-text-color-placeholder);
+  animation: bounce 1.4s infinite;
+}
+
+.dot:nth-child(2) {
+  animation-delay: .2s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: .4s;
+}
+
+@keyframes bounce {
+
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: .4;
+  }
+
+  30% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+
+.msg__typing-text {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  margin-left: 2px;
+}
+
+/* ── Interaction ── */
+.chat__interaction {
+  padding: 8px 16px;
+}
+
+/* ── Input ── */
+.chat__input {
+  flex-shrink: 0;
+  padding: 8px 20px 12px;
+}
+
+.chat__input-box {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 6px 8px 6px 14px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 22px;
+  background: var(--el-bg-color);
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.chat__input-box:focus-within {
+  border-color: var(--el-color-primary);
+  box-shadow: 0 0 0 2px var(--el-color-primary-light-9);
+}
+
+.chat__textarea {
+  flex: 1;
+  min-height: 22px;
+  max-height: 160px;
+  padding: 4px 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--el-text-color-primary);
+  font-size: 14px;
+  line-height: 1.5;
+  resize: none;
+  font-family: inherit;
+}
+
+.chat__textarea::placeholder {
+  color: var(--el-text-color-placeholder);
+}
+
+.chat__send {
+  flex-shrink: 0;
+  height: 28px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 14px;
+  background: var(--el-color-primary);
+  color: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: opacity .15s;
+}
+
+.chat__send:hover:not(:disabled) {
+  opacity: .85;
+}
+
+.chat__send:disabled {
+  opacity: .3;
+  cursor: not-allowed;
+}
+
+.chat__hint {
+  margin: 6px 0 0;
+  text-align: center;
+  font-size: 11px;
+  color: var(--el-text-color-placeholder);
+}
+
+/* ── Responsive ── */
+@media (max-width: 767px) {
+  .msg__row {
+    padding: 4px 12px;
+  }
+
+  .chat__input {
+    padding: 6px 12px 10px;
+  }
+
+  .msg__bubble--user {
+    max-width: 85%;
+  }
 }
 </style>

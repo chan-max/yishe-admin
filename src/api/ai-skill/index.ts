@@ -1,6 +1,6 @@
 import request from "@/config/axios";
 
-export type AiSkillTarget = "design-agent" | "admin-agent";
+export type AiSkillTarget = "design-agent" | "admin-agent" | "browser-use";
 
 export interface AiSkillContent {
   entry: string;
@@ -25,6 +25,10 @@ export interface AiSkill {
   content: AiSkillContent;
   enabled: boolean;
   isPublic: boolean;
+  folderId?: string | null;
+  shareType?: string | null;
+  sourceUserId?: number | null;
+  sourceUser?: { id: number; name?: string; account?: string } | null;
   permission?: AiSkillPermission;
   createTime?: string;
   updateTime?: string;
@@ -36,6 +40,7 @@ export interface AiSkillPageParams {
   keyword?: string;
   target?: AiSkillTarget | "";
   enabled?: boolean;
+  folderId?: string | null;
 }
 
 export interface AiSkillPageResult {
@@ -59,4 +64,33 @@ export const deleteAiSkill = (ids: string | string[]) =>
   request.post<{ removedCount: number }>({
     url: "/ai-skill/delete",
     data: { ids: Array.isArray(ids) ? ids : [ids] },
+  });
+
+export const batchMoveAiSkill = (data: { ids: string[]; folderId: string | null }) =>
+  request.post<{ success: boolean; movedCount: number }>({
+    url: "/ai-skill/batch-move",
+    data,
+  });
+
+export const shareAiSkillToUser = (data: { ids: string | string[]; targetUserId: number }) =>
+  request.post<{ success: boolean; total: number; failed: any[] }>({
+    url: "/ai-skill/share-to-user",
+    data,
+  });
+
+export const copyAiSkillToUser = (data: { ids: string | string[]; targetUserId: number }) =>
+  request.post<{ list: AiSkill[]; total: number; failed: any[] }>({
+    url: "/ai-skill/copy-to-user",
+    data,
+  });
+
+export const moveAiSkillToUser = (data: { ids: string | string[]; targetUserId: number }) =>
+  request.post<{ list: AiSkill[]; total: number; failed: any[] }>({
+    url: "/ai-skill/move-to-user",
+    data,
+  });
+
+export const getAiSkillSharedRecords = (id: string) =>
+  request.get<{ list: any[]; total: number }>({
+    url: `/ai-skill/${id}/shared-records`,
   });

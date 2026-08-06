@@ -1,6 +1,9 @@
 <template>
   <ContentWrap :plain="true">
-    <ListPageLayout class="skills-page">
+    <ListPageLayout
+      class="skills-page"
+      :sidebar-width="folderTreeCollapsed ? '28px' : '280px'"
+    >
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
           <el-form :model="query" label-position="top" class="list-page-search-form">
@@ -19,8 +22,7 @@
               <el-col :xs="24" :sm="12" :md="8" :lg="5" :xl="4">
                 <el-form-item label="适用端">
                   <el-select v-model="query.target" size="small" clearable placeholder="全部">
-                    <el-option label="设计工具 Agent" value="design-agent" />
-                    <el-option label="Admin Agent" value="admin-agent" />
+                    <el-option v-for="opt in targetOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -45,20 +47,72 @@
               >
                 批量删除
               </el-button>
+              <el-dropdown
+                trigger="click"
+                :disabled="!selectedIds.length || !isAdmin"
+                @command="handleBatchShareCommand"
+              >
+                <el-button size="small" type="success" :disabled="!selectedIds.length || !isAdmin">
+                  分享 ({{ selectedIds.length }})
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="share-to-user">快捷共享</el-dropdown-item>
+                    <el-dropdown-item command="copy-to-user">转存副本</el-dropdown-item>
+                    <el-dropdown-item command="move-to-user">移交所有人</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </div>
           </el-form>
+        </div>
+      </template>
+
+      <template #sidebar>
+        <div
+          class="list-page-panel list-page-panel--flat list-page-sidebar folder-sidebar-shell"
+        >
+          <div class="list-page-sidebar__body folder-sidebar-body">
+            <div v-show="!folderTreeCollapsed" class="folder-sidebar-tree">
+              <FolderTree
+                v-model="selectedFolderId"
+                width="100%"
+                :folder-category="FOLDER_CATEGORY"
+                :show-count="false"
+                :drag-state="dragState"
+                @change="handleFolderChange"
+                @folder-drag-over="handleFolderDragOver"
+                @folder-drag-leave="handleFolderDragLeave"
+                @folder-drop="handleFolderDrop"
+              />
+            </div>
+          </div>
+          <button
+            type="button"
+            class="folder-sidebar-toggle"
+            @click="folderTreeCollapsed = !folderTreeCollapsed"
+          >
+            <el-icon :size="14">
+              <DArrowRight v-if="folderTreeCollapsed" />
+              <DArrowLeft v-else />
+            </el-icon>
+          </button>
         </div>
       </template>
 
       <template #table>
         <vxe-grid
           ref="gridRef"
+          class="skills-dnd-grid"
           v-bind="gridOptions"
           :data="rows"
           :loading="loading"
           @checkbox-change="checkboxChange"
           @checkbox-all="checkboxAllChange"
         >
+          <template #dragHandleSlot>
+            <TableRowDragHandle />
+          </template>
           <template #nameDefaultSlot="{ row }">
             <div class="skill-name">{{ row.name }}</div>
             <div class="skill-description">{{ row.description || "暂无说明" }}</div>
@@ -77,15 +131,14 @@
           <template #triggersDefaultSlot="{ row }">
             <span class="muted">{{ row.triggers?.slice(0, 4).join("、") || "未设置" }}</span>
           </template>
-          <template #ownerDefaultSlot="{ row }">
-            <div>{{ row.permission?.owned ? "本人" : "用户 " + row.userId }}</div>
-            <el-tag
-              size="small"
-              :type="row.permission?.canEdit ? 'success' : 'info'"
-              effect="plain"
-            >
-              {{ row.permission?.canEdit ? "可管理" : "只读" }}
+          <template #shareTypeDefaultSlot="{ row }">
+            <el-tag v-if="row.shareType === 'shared'" type="warning" size="small">
+              由【{{ row.sourceUser?.name || row.sourceUser?.account || row.sourceUserId }}】共享
             </el-tag>
+            <el-tag v-else-if="row.shareType === 'copy'" type="success" size="small">
+              由【{{ row.sourceUser?.name || row.sourceUser?.account || row.sourceUserId }}】转存
+            </el-tag>
+            <span v-else class="muted">-</span>
           </template>
           <template #permissionDefaultSlot="{ row }">
             <el-tag :type="row.isPublic ? 'success' : 'info'" size="small">
@@ -98,22 +151,21 @@
             </el-tag>
           </template>
           <template #operationDefaultSlot="{ row }">
-            <el-button
-              link
-              type="primary"
-              :disabled="row.permission?.canEdit === false"
-              @click="openEdit(row)"
-            >
-              编辑
-            </el-button>
-            <el-button
-              link
-              type="danger"
-              :disabled="row.permission?.canDelete === false"
-              @click="removeSkills(row.id ? [row.id] : [])"
-            >
-              删除
-            </el-button>
+            <el-dropdown trigger="click" @command="(cmd: string) => handleRowCommand(cmd, row)">
+              <el-button link type="primary">操作</el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="edit" :disabled="row.permission?.canEdit === false">编辑</el-dropdown-item>
+                  <el-dropdown-item v-if="isAdmin" divided command="share-to-user">快捷共享</el-dropdown-item>
+                  <el-dropdown-item v-if="isAdmin" command="copy-to-user">转存副本</el-dropdown-item>
+                  <el-dropdown-item v-if="isAdmin" command="move-to-user">移交所有人</el-dropdown-item>
+                  <el-dropdown-item v-if="isAdmin" divided command="view-shared">查看分享记录</el-dropdown-item>
+                  <el-dropdown-item divided command="delete" :disabled="row.permission?.canDelete === false">
+                    <span style="color: var(--el-color-danger)">删除</span>
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </template>
         </vxe-grid>
       </template>
@@ -149,10 +201,9 @@
           <el-input v-model="form.name" maxlength="160" show-word-limit />
         </el-form-item>
         <el-form-item label="适用 Agent" prop="targets">
-          <el-checkbox-group v-model="form.targets">
-            <el-checkbox value="design-agent">设计工具 Agent</el-checkbox>
-            <el-checkbox value="admin-agent">Admin Agent</el-checkbox>
-          </el-checkbox-group>
+          <el-select v-model="form.targets" multiple placeholder="请选择适用的 Agent">
+            <el-option v-for="opt in targetOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+          </el-select>
         </el-form-item>
         <el-form-item label="使用权限">
           <div class="permission-controls">
@@ -163,18 +214,19 @@
               active-text="公开"
               inactive-text="私有"
             />
-            <el-tag v-else type="info" effect="plain">私有，仅本人可用</el-tag>
+            <el-tag v-else type="info" effect="plain">私有</el-tag>
           </div>
         </el-form-item>
         <el-form-item label="用途说明" class="skill-editor-meta__wide">
           <el-input
             v-model="form.description"
+            size="small"
             maxlength="4000"
             placeholder="说明它适合处理什么任务，便于匹配"
           />
         </el-form-item>
         <el-form-item label="触发关键词" class="skill-editor-meta__wide">
-          <el-input v-model="triggerText" placeholder="用逗号分隔，例如：对联，书法，打印" />
+          <el-input v-model="triggerText" size="small" placeholder="用逗号分隔，例如：对联，书法，打印" />
         </el-form-item>
       </div>
 
@@ -242,25 +294,102 @@
       <el-button type="primary" :loading="saving" @click="save">保存</el-button>
     </template>
   </el-dialog>
+
+  <!-- 分享/转移弹窗 -->
+  <el-dialog
+    v-model="transferDialogVisible"
+    :title="transferDialogTitle"
+    width="480px"
+    :close-on-click-modal="false"
+    destroy-on-close
+  >
+    <el-form label-width="80px">
+      <el-form-item label="目标用户">
+        <el-select
+          v-model="transferTargetUserId"
+          filterable
+          placeholder="搜索用户名"
+          style="width: 100%"
+          :loading="userListLoading"
+          @focus="loadUserList"
+        >
+          <el-option
+            v-for="u in userList"
+            :key="u.id"
+            :label="u.name || u.account"
+            :value="u.id"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="数量">
+        <span>共 {{ transferIds.length }} 个 Skill</span>
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="transferDialogVisible = false">取消</el-button>
+      <el-button type="primary" :loading="transferLoading" @click="submitTransfer">确定</el-button>
+    </template>
+  </el-dialog>
+
+  <!-- 分享记录弹窗 -->
+  <el-dialog
+    v-model="sharedRecordsDialogVisible"
+    title="分享记录"
+    width="560px"
+    destroy-on-close
+  >
+    <el-table :data="sharedRecordsList" size="small" v-loading="sharedRecordsLoading">
+      <el-table-column prop="name" label="名称" />
+      <el-table-column prop="shareType" label="类型" width="80">
+        <template #default="{ row }">
+          <el-tag :type="row.shareType === 'shared' ? 'warning' : 'success'" size="small">
+            {{ row.shareType === 'shared' ? '共享' : '副本' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="userName" label="用户" width="120" />
+      <el-table-column prop="createTime" label="时间" width="160" />
+    </el-table>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from "vue";
 import { ElMessage, ElMessageBox, type FormInstance } from "element-plus";
-import { Delete, Document, Plus, Refresh, Search, StarFilled } from "@element-plus/icons-vue";
+import { DArrowLeft, DArrowRight, Delete, Document, Plus, Refresh, Search, StarFilled } from "@element-plus/icons-vue";
+import { useLocalStorage } from "@vueuse/core";
 import { ContentWrap } from "@/components/ContentWrap";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
+import FolderTree from "@/components/material/FolderTree.vue";
+import TableRowDragHandle from "@/components/TableRowDragHandle/index.vue";
 import Pagination from "@/components/Pagination/index.vue";
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from "@/common/table";
+import { useFolderRowDrag } from "@/hooks/useFolderRowDrag";
 import { useUserStore } from "@/store/modules/user";
+import { getUserList } from "@/api/user";
 import {
+  batchMoveAiSkill,
+  copyAiSkillToUser,
   createAiSkill,
   deleteAiSkill,
   getAiSkillPage,
+  getAiSkillSharedRecords,
+  moveAiSkillToUser,
+  shareAiSkillToUser,
   updateAiSkill,
   type AiSkill,
   type AiSkillTarget,
 } from "@/api/ai-skill";
+
+const FOLDER_CATEGORY = "skill";
+
+const targetOptions: { label: string; value: AiSkillTarget }[] = [
+  { label: "设计工具 Agent", value: "design-agent" },
+  { label: "Admin Agent", value: "admin-agent" },
+  { label: "浏览器自动化", value: "browser-use" },
+];
+const targetLabel = (target: AiSkillTarget) =>
+  targetOptions.find((o) => o.value === target)?.label ?? target;
 
 const userStore = useUserStore();
 const isAdmin = computed(() => userStore.user?.isAdmin === true);
@@ -274,19 +403,61 @@ const formRef = ref<FormInstance>();
 const triggerText = ref("");
 const activePath = ref("SKILL.md");
 
+// ── 文件夹折叠 ──
+const folderTreeCollapsed = useLocalStorage("ai_skill_folder_collapsed", false);
+
+// ── 拖拽到文件夹 ──
+const {
+  dragState,
+  setupRowDrag,
+  handleFolderDragOver,
+  handleFolderDragLeave,
+  resetAfterDrop,
+  markExternalFolderDropHandled,
+} = useFolderRowDrag({
+  gridClass: "skills-dnd-grid",
+  dataSource: rows,
+  selectedIds,
+  onDropToFolder: handleFolderDrop,
+});
+
 const query = reactive<{
   currentPage: number;
   pageSize: number;
   keyword: string;
   target: AiSkillTarget | "";
   enabled: boolean | "";
+  folderId: string | null;
 }>({
   currentPage: 1,
   pageSize: 20,
   keyword: "",
   target: "",
   enabled: "",
+  folderId: null,
 });
+
+const selectedFolderId = ref<string | null>(null);
+
+// ── 分享/转移状态 ──
+const transferDialogVisible = ref(false);
+const transferAction = ref<"share" | "copy" | "move">("share");
+const transferIds = ref<string[]>([]);
+const transferTargetUserId = ref<number | null>(null);
+const transferLoading = ref(false);
+const userList = ref<any[]>([]);
+const userListLoading = ref(false);
+
+const transferDialogTitle = computed(() => {
+  if (transferAction.value === "share") return "快捷共享 Skill 给用户";
+  if (transferAction.value === "copy") return "复制副本 Skill 给用户";
+  return "转移 Skill 给用户";
+});
+
+// ── 分享记录状态 ──
+const sharedRecordsDialogVisible = ref(false);
+const sharedRecordsList = ref<any[]>([]);
+const sharedRecordsLoading = ref(false);
 
 const createEmptySkill = (): AiSkill => ({
   name: "",
@@ -302,6 +473,7 @@ const createEmptySkill = (): AiSkill => ({
   },
   enabled: true,
   isPublic: false,
+  folderId: null,
 });
 
 const form = reactive<AiSkill>(createEmptySkill());
@@ -330,6 +502,12 @@ const gridOptions = ref({
   columns: [
     { type: "checkbox", width: 50 },
     {
+      title: "",
+      field: "dragHandle",
+      width: 36,
+      slots: { default: "dragHandleSlot" },
+    },
+    {
       title: "Skill",
       field: "name",
       minWidth: 240,
@@ -348,10 +526,10 @@ const gridOptions = ref({
       slots: { default: "triggersDefaultSlot" },
     },
     {
-      title: "归属",
-      field: "userId",
-      width: 130,
-      slots: { default: "ownerDefaultSlot" },
+      title: "来源",
+      field: "shareType",
+      width: 160,
+      slots: { default: "shareTypeDefaultSlot" },
     },
     {
       title: "权限",
@@ -378,12 +556,14 @@ async function load() {
       pageSize: query.pageSize,
       keyword: query.keyword || undefined,
       target: query.target || undefined,
+      folderId: query.folderId ?? undefined,
     };
     if (query.enabled !== "") params.enabled = query.enabled;
     const result = await getAiSkillPage(params);
     rows.value = result?.list || [];
     total.value = result?.total || 0;
     selectedIds.value = [];
+    nextTick(setupRowDrag);
   } catch {
     ElMessage.error("Skills 加载失败");
   } finally {
@@ -403,8 +583,24 @@ function resetSearch() {
   search();
 }
 
+function handleFolderChange(payload: { folderId: string | null }) {
+  if (payload.folderId === "all") {
+    query.folderId = null;
+  } else if (payload.folderId === null) {
+    query.folderId = "__NOT_GROUP__";
+  } else {
+    query.folderId = payload.folderId;
+  }
+  query.currentPage = 1;
+  void load();
+}
+
 function openCreate() {
-  resetForm(createEmptySkill());
+  const newSkill = createEmptySkill();
+  if (query.folderId && query.folderId !== "__NOT_GROUP__" && query.folderId !== "__ALL__") {
+    newSkill.folderId = query.folderId;
+  }
+  resetForm(newSkill);
   triggerText.value = "";
   activePath.value = "SKILL.md";
   dialogVisible.value = true;
@@ -513,6 +709,7 @@ async function save() {
       },
       enabled: form.enabled,
       isPublic: canSetPublic.value ? form.isPublic : false,
+      folderId: form.folderId || null,
     };
     if (form.id) {
       await updateAiSkill(payload);
@@ -563,11 +760,114 @@ function checkboxAllChange({ records }: { records: AiSkill[] }) {
   syncSelectedRows(records);
 }
 
-function targetLabel(target: AiSkillTarget) {
-  return target === "design-agent" ? "设计工具" : "Admin";
+// ── 分享/转移操作 ──
+
+function handleBatchShareCommand(command: string) {
+  if (!selectedIds.value.length) return;
+  if (command === "view-shared") return;
+  openTransferDialog(command as "share" | "copy" | "move", [...selectedIds.value]);
+}
+
+function handleRowCommand(command: string, row: AiSkill) {
+  if (command === "edit") {
+    openEdit(row);
+  } else if (command === "delete") {
+    removeSkills(row.id ? [row.id] : []);
+  } else if (command === "view-shared") {
+    openSharedRecordsDialog(row);
+  } else {
+    openTransferDialog(command as "share" | "copy" | "move", [row.id!]);
+  }
+}
+
+function openTransferDialog(action: "share" | "copy" | "move", ids: string[]) {
+  transferAction.value = action;
+  transferIds.value = ids;
+  transferTargetUserId.value = null;
+  transferDialogVisible.value = true;
+}
+
+async function loadUserList() {
+  if (userList.value.length) return;
+  userListLoading.value = true;
+  try {
+    const res = await getUserList({ currentPage: 1, pageSize: 200 });
+    userList.value = res?.list || [];
+  } catch {
+    // ignore
+  } finally {
+    userListLoading.value = false;
+  }
+}
+
+async function submitTransfer() {
+  if (!transferTargetUserId.value) {
+    ElMessage.warning("请选择目标用户");
+    return;
+  }
+  transferLoading.value = true;
+  try {
+    const payload = { ids: transferIds.value, targetUserId: transferTargetUserId.value };
+    if (transferAction.value === "share") {
+      await shareAiSkillToUser(payload);
+      ElMessage.success("共享成功");
+    } else if (transferAction.value === "copy") {
+      await copyAiSkillToUser(payload);
+      ElMessage.success("复制成功");
+    } else {
+      await moveAiSkillToUser(payload);
+      ElMessage.success("转移成功");
+    }
+    transferDialogVisible.value = false;
+    await load();
+  } catch {
+    ElMessage.error("操作失败");
+  } finally {
+    transferLoading.value = false;
+  }
+}
+
+async function openSharedRecordsDialog(row: AiSkill) {
+  sharedRecordsDialogVisible.value = true;
+  sharedRecordsLoading.value = true;
+  sharedRecordsList.value = [];
+  try {
+    const res = await getAiSkillSharedRecords(row.id!);
+    sharedRecordsList.value = res?.list || [];
+  } catch {
+    ElMessage.error("加载分享记录失败");
+  } finally {
+    sharedRecordsLoading.value = false;
+  }
+}
+
+async function handleFolderDrop(payload: { data: any }) {
+  markExternalFolderDropHandled();
+  if (!dragState.draggingIds.length) return;
+  if (payload.data.id === "__ALL__") return;
+
+  const targetFolderId =
+    payload.data.id === "__NOT_GROUP__" ? null : payload.data.id;
+  const targetPath = payload.data.path || "";
+  const movingIds = [...dragState.draggingIds];
+
+  try {
+    await batchMoveAiSkill({ ids: movingIds, folderId: targetFolderId });
+    ElMessage.success(`已移动 ${movingIds.length} 个 Skill 到 ${targetPath || "未分组"}`);
+    await load();
+    selectedIds.value = [];
+  } catch (error: any) {
+    ElMessage.error(error?.message || "移动失败");
+  } finally {
+    resetAfterDrop();
+  }
 }
 
 onMounted(load);
+
+onUnmounted(() => {
+  // Sortable cleanup handled by useFolderRowDrag
+});
 </script>
 
 <style scoped>
@@ -620,6 +920,15 @@ onMounted(load);
   font-size: 12px;
 }
 
+/* ── 拖拽样式 ── */
+:deep(.template-drag-ghost) {
+  opacity: 0.4;
+}
+
+:deep(.template-drag-chosen) {
+  background: var(--el-color-primary-light-9) !important;
+}
+
 .skill-editor-form {
   display: flex;
   height: 100%;
@@ -629,18 +938,30 @@ onMounted(load);
 
 .skill-editor-meta {
   display: grid;
-  padding: 14px 20px 0;
+  padding: 8px 16px 4px;
   border-bottom: 1px solid var(--el-border-color-lighter);
-  column-gap: 16px;
-  grid-template-columns: minmax(260px, 1.5fr) minmax(220px, 1fr) minmax(220px, 1fr);
+  column-gap: 12px;
+  row-gap: 0;
+  grid-template-columns: 1fr 1fr 1fr;
 }
 
 .skill-editor-meta :deep(.el-form-item) {
-  margin-bottom: 14px;
+  margin-bottom: 6px;
+}
+
+.skill-editor-meta :deep(.el-form-item__label) {
+  line-height: 20px;
+  padding-bottom: 1px;
+  font-size: 12px;
+}
+
+.skill-editor-meta :deep(.el-input__wrapper),
+.skill-editor-meta :deep(.el-textarea__inner) {
+  --el-input-height: 28px;
 }
 
 .skill-editor-meta__wide {
-  grid-column: span 2;
+  grid-column: span 3;
 }
 
 .file-editor {
@@ -667,10 +988,20 @@ onMounted(load);
   padding: 0 12px;
   border-bottom: 1px solid var(--el-border-color);
   font-weight: 600;
+  line-height: 1;
+}
+
+.file-list__header span {
+  line-height: 48px;
+}
+
+.file-list__header .el-button {
+  margin: 0;
 }
 
 .file-row {
-  display: grid;
+  display: flex;
+  align-items: center;
   width: 100%;
   min-height: 42px;
   padding: 8px 10px;
@@ -680,8 +1011,8 @@ onMounted(load);
   color: var(--el-text-color-regular);
   cursor: pointer;
   font: inherit;
-  grid-template-columns: 18px minmax(0, 1fr) 18px;
   text-align: left;
+  gap: 0;
 }
 
 .file-row:hover,
@@ -691,6 +1022,8 @@ onMounted(load);
 }
 
 .file-row__path {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   padding: 0 6px;
   text-overflow: ellipsis;
@@ -758,11 +1091,11 @@ onMounted(load);
 
 @media (max-width: 900px) {
   .skill-editor-meta {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: 1fr 1fr;
   }
 
   .skill-editor-meta__wide {
-    grid-column: span 1;
+    grid-column: span 2;
   }
 }
 

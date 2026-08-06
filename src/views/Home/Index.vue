@@ -181,6 +181,13 @@ const shortcuts: ShortcutItem[] = [
     route: "/home/hot-search",
     icon: "ep:hot-water",
   },
+  {
+    key: "design-inspiration",
+    title: "设计灵感",
+    description: "灵感收集与管理",
+    route: "/resource/design-inspiration",
+    icon: "ep:edit",
+  },
 ];
 
 // ── 功能模块 ──────────────────────────────────────
