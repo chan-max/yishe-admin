@@ -605,7 +605,7 @@ onBeforeUnmount(() => {
   background: color-mix(in srgb, var(--el-color-primary-light-9) 52%, var(--el-fill-color-blank) 48%);
   box-shadow:
     inset 0 0 0 1px color-mix(in srgb, var(--el-color-primary) 34%, transparent 66%),
-    0 14px 34px rgba(59, 130, 246, 0.12);
+    0 14px 34px color-mix(in srgb, var(--el-color-primary) 12%, transparent);
 }
 
 .image-preview-container.is-drag-over .empty-state,

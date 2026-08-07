@@ -45,10 +45,10 @@ html.light {
   --ep-cover-feedback-success-border: #86efac;
   --ep-cover-feedback-success-accent: #22c55e;
   --ep-cover-feedback-success-text: #166534;
-  --ep-cover-feedback-info-bg: #dbeafe;
-  --ep-cover-feedback-info-border: #93c5fd;
-  --ep-cover-feedback-info-accent: #3b82f6;
-  --ep-cover-feedback-info-text: #1d4ed8;
+  --ep-cover-feedback-info-bg: color-mix(in srgb, var(--el-color-primary) 12%, transparent);
+  --ep-cover-feedback-info-border: color-mix(in srgb, var(--el-color-primary) 38%, transparent);
+  --ep-cover-feedback-info-accent: var(--el-color-primary);
+  --ep-cover-feedback-info-text: var(--el-color-primary-dark-2);
   --ep-cover-feedback-warning-bg: #fef3c7;
   --ep-cover-feedback-warning-border: #fcd34d;
   --ep-cover-feedback-warning-accent: #f59e0b;
@@ -64,10 +64,10 @@ html.dark {
   --ep-cover-feedback-success-border: rgba(74, 222, 128, 0.38);
   --ep-cover-feedback-success-accent: #4ade80;
   --ep-cover-feedback-success-text: #dcfce7;
-  --ep-cover-feedback-info-bg: rgba(59, 130, 246, 0.22);
-  --ep-cover-feedback-info-border: rgba(96, 165, 250, 0.4);
-  --ep-cover-feedback-info-accent: #60a5fa;
-  --ep-cover-feedback-info-text: #dbeafe;
+  --ep-cover-feedback-info-bg: color-mix(in srgb, var(--el-color-primary) 22%, transparent);
+  --ep-cover-feedback-info-border: color-mix(in srgb, var(--el-color-primary) 40%, transparent);
+  --ep-cover-feedback-info-accent: var(--el-color-primary-light-5);
+  --ep-cover-feedback-info-text: var(--el-color-primary-light-8);
   --ep-cover-feedback-warning-bg: rgba(245, 158, 11, 0.22);
   --ep-cover-feedback-warning-border: rgba(251, 191, 36, 0.4);
   --ep-cover-feedback-warning-accent: #fbbf24;
@@ -456,11 +456,17 @@ html.dark .el-alert {
   border: 0;
   font-size: var(--ep-cover-font-size-sm);
   transform: none;
+  background: transparent !important;
+  background-color: transparent !important;
 }
 
 .el-button.is-link:hover,
+.el-button.is-link:focus,
+.el-button.is-link:focus-visible,
 .el-button.is-link:active {
   transform: none;
+  background: transparent !important;
+  background-color: transparent !important;
   opacity: 0.86;
 }
 
@@ -860,10 +866,13 @@ html.dark .el-alert {
 }
 
 .el-dropdown-menu__item:not(.is-disabled):hover,
+.el-dropdown-menu__item:not(.is-disabled):focus,
+.el-dropdown-menu__item:not(.is-disabled):focus-visible,
 .el-select-dropdown__item.hover,
 .el-cascader-node:not(.is-disabled):hover,
 .el-picker-panel__shortcut:hover {
-  background: var(--ep-cover-soft-bg-hover);
+  background: color-mix(in srgb, var(--el-color-primary) 10%, transparent) !important;
+  color: var(--el-color-primary) !important;
   transform: translateX(1px);
 }
 

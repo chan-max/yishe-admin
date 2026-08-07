@@ -5138,12 +5138,12 @@ onUnmounted(() => {
 
 .queue-runtime-console__detail-trigger:hover {
   color: #d7ecff;
-  background: rgba(59, 130, 246, 0.08);
-  border-color: rgba(59, 130, 246, 0.18);
+  background: color-mix(in srgb, var(--el-color-primary) 8%, transparent);
+  border-color: color-mix(in srgb, var(--el-color-primary) 18%, transparent);
 }
 
 .queue-runtime-console__detail-trigger:focus-visible {
-  outline: 2px solid rgba(59, 130, 246, 0.3);
+  outline: 2px solid color-mix(in srgb, var(--el-color-primary) 30%, transparent);
   outline-offset: 1px;
 }
 

@@ -1605,7 +1605,7 @@ function handleOperationCommand(command: string, row: any) {
 
 .table-file-audio-card:hover {
   border-color: var(--el-color-primary-light-5);
-  box-shadow: 0 10px 24px rgba(64, 158, 255, 0.12);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--el-color-primary) 12%, transparent);
   transform: translateY(-1px);
 }
 

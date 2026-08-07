@@ -694,7 +694,7 @@ onActivated(() => {
   padding: 24px;
   border-radius: 18px;
   background:
-    radial-gradient(circle at top right, rgba(96, 165, 250, 0.18), transparent 36%),
+    radial-gradient(circle at top right, color-mix(in srgb, var(--el-color-primary) 18%, transparent), transparent 36%),
     linear-gradient(135deg, #fffaf2 0%, #f6faff 100%);
   border: 1px solid rgba(148, 163, 184, 0.22);
 }
@@ -706,7 +706,7 @@ onActivated(() => {
 }
 
 .capability-page__eyebrow {
-  color: #2563eb;
+  color: var(--el-color-primary);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -814,7 +814,7 @@ onActivated(() => {
 }
 
 .feature-name-cell code {
-  color: #2563eb;
+  color: var(--el-color-primary);
   font-size: 12px;
 }
 

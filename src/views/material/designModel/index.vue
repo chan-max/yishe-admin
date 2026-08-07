@@ -1686,8 +1686,8 @@ async function downloadAllStickers() {
   .phash-text {
     font-family: 'Courier New', monospace;
     font-size: 12px;
-    color: #409eff;
-    background: rgba(64, 158, 255, 0.1);
+    color: var(--el-color-primary);
+    background: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
     padding: 2px 6px;
     border-radius: 4px;
     cursor: pointer;
@@ -1695,8 +1695,8 @@ async function downloadAllStickers() {
     transition: all 0.2s ease;
 
     &:hover {
-      background: rgba(64, 158, 255, 0.2);
-      color: #337ecc;
+      background: color-mix(in srgb, var(--el-color-primary) 20%, transparent);
+      color: var(--el-color-primary);
     }
   }
 

@@ -651,13 +651,13 @@
             style="
               margin-top: 12px;
               padding: 8px;
-              background: #f0f9ff;
+              background: color-mix(in srgb, var(--el-color-primary) 8%, transparent);
               border-radius: 4px;
-              border-left: 3px solid #3b82f6;
+              border-left: 3px solid var(--el-color-primary);
             "
           >
-            <div style="font-size: 12px; color: #1e40af; font-weight: 500">智能尺寸</div>
-            <div style="font-size: 11px; color: #3b82f6; margin-top: 2px">
+            <div style="font-size: 12px; color: var(--el-color-primary-dark-2); font-weight: 500">智能尺寸</div>
+            <div style="font-size: 11px; color: var(--el-color-primary); margin-top: 2px">
               画布尺寸将根据文字内容和字体大小自动计算
             </div>
           </div>
@@ -668,10 +668,10 @@
             <div class="preview-header compact">
               <span>实时预览</span>
               <div v-if="fontLoading" class="font-loading-indicator">
-                <el-icon class="is-loading" style="margin-right: 4px; color: #409eff">
+                <el-icon class="is-loading" style="margin-right: 4px; color: var(--el-color-primary)">
                   <Loading />
                 </el-icon>
-                <span style="color: #409eff; font-size: 12px">字体加载中...</span>
+                <span style="color: var(--el-color-primary); font-size: 12px">字体加载中...</span>
               </div>
             </div>
             <div class="preview-content compact">
@@ -2646,9 +2646,9 @@ function closeImagePreview() {
   display: flex;
   align-items: center;
   padding: 4px 8px;
-  background: rgba(64, 158, 255, 0.1);
+  background: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
   border-radius: 4px;
-  border: 1px solid rgba(64, 158, 255, 0.2);
+  border: 1px solid color-mix(in srgb, var(--el-color-primary) 20%, transparent);
   animation: pulse 2s infinite;
 }
 

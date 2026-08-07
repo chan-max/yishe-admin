@@ -1476,7 +1476,7 @@
                       >
                         <el-icon
                           v-if="publishForm[platform].selectedImages.includes(url)"
-                          class="text-blue-600 text-xs check-icon"
+                          class="text-[var(--el-color-primary)] text-xs check-icon"
                         >
                           <Check />
                         </el-icon>
@@ -1527,7 +1527,7 @@
                       >
                         <el-icon
                           v-if="publishForm[platform].selectedVideos.includes(url)"
-                          class="text-blue-600 text-xs check-icon"
+                          class="text-[var(--el-color-primary)] text-xs check-icon"
                         >
                           <Check />
                         </el-icon>
@@ -5714,8 +5714,8 @@ function getPublishTaskType(platform: string) {
   &.selected {
     .w-32 {
       box-shadow:
-        0 0 0 4px #3b82f6,
-        0 6px 20px rgba(59, 130, 246, 0.4);
+        0 0 0 4px var(--el-color-primary),
+        0 6px 20px color-mix(in srgb, var(--el-color-primary) 40%, transparent);
     }
   }
 
@@ -5732,8 +5732,8 @@ function getPublishTaskType(platform: string) {
   &.selected {
     .w-20 {
       box-shadow:
-        0 0 0 4px #3b82f6,
-        0 3px 12px rgba(59, 130, 246, 0.4);
+        0 0 0 4px var(--el-color-primary),
+        0 3px 12px color-mix(in srgb, var(--el-color-primary) 40%, transparent);
     }
   }
 
@@ -5749,7 +5749,7 @@ function getPublishTaskType(platform: string) {
   justify-content: center;
   width: 100%;
   height: 100%;
-  color: #2563eb !important;
+  color: var(--el-color-primary) !important;
   /* 蓝色 */
 
   svg {
@@ -5834,7 +5834,7 @@ function getPublishTaskType(platform: string) {
   font-weight: 600;
   font-size: 14px;
   white-space: nowrap;
-  text-shadow: 0 1px 2px rgba(64, 158, 255, 0.1);
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--el-color-primary) 10%, transparent);
 }
 
 .relation-value {
@@ -6351,7 +6351,7 @@ function getPublishTaskType(platform: string) {
       .platform-item-content {
         border-color: var(--el-color-primary);
         background-color: var(--el-color-primary-light-9);
-        box-shadow: 0 2px 8px rgba(64, 158, 255, 0.2);
+        box-shadow: 0 2px 8px color-mix(in srgb, var(--el-color-primary) 20%, transparent);
       }
     }
 
@@ -6928,7 +6928,7 @@ function getPublishTaskType(platform: string) {
           background: #4caf50;
 
           &.blue {
-            background: #2196f3;
+            background: var(--el-color-primary);
           }
         }
       }

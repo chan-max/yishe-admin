@@ -263,7 +263,7 @@ export default {
 }
 
 .verify-change-code {
-  color: #337ab7;
+  color: var(--el-color-primary);
   cursor: pointer;
 }
 
@@ -272,7 +272,7 @@ export default {
   height: 30px;
   margin-top: 10px;
   color: #fff;
-  background-color: #337ab7;
+  background-color: var(--el-color-primary);
   border: none;
   border-radius: 8px;
 }
@@ -300,7 +300,7 @@ export default {
 
 .verify-bar-area .verify-move-block:hover {
   color: #fff;
-  background-color: #337ab7;
+  background-color: var(--el-color-primary);
 }
 
 .verify-bar-area .verify-left-bar {

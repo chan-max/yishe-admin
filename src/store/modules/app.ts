@@ -6,6 +6,7 @@ import { CACHE_KEY, useCache } from '@/hooks/web/useCache'
 import { ElementPlusSize } from '@/types/elementPlus'
 import { LayoutType } from '@/types/layout'
 import { ThemeTypes } from '@/types/theme'
+import { getElementPlusPrimaryVars } from '@/utils/color'
 
 const { wsCache } = useCache()
 
@@ -284,6 +285,16 @@ export const useAppStore = defineStore('app', {
 
       for (const key in currentTheme) {
         setCssVar(`--${humpToUnderline(key)}`, currentTheme[key])
+      }
+
+      // 根据主色生成 Element Plus 的 light-3/5/7/8/9 与 dark-2 全套变量，
+      // 否则仅覆盖 --el-color-primary 时按钮等组件的浅色变体仍是默认蓝。
+      const primary = String((currentTheme as ThemeTypes).elColorPrimary || '').trim()
+      if (primary) {
+        const primaryVars = getElementPlusPrimaryVars(primary)
+        for (const key in primaryVars) {
+          setCssVar(key, primaryVars[key])
+        }
       }
     },
     setFooter(footer: boolean) {

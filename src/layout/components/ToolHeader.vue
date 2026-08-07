@@ -5,6 +5,7 @@ import { UserInfo } from "@/layout/components/UserInfo";
 import { Screenfull } from "@/layout/components/Screenfull";
 import { Breadcrumb } from "@/layout/components/Breadcrumb";
 import { ThemeSwitch } from "@/layout/components/ThemeSwitch";
+import { Personalization } from "@/layout/components/Personalization";
 import ClientStatus from "@/layout/components/ClientStatus.vue";
 import AdminDataScopeSwitch from "@/layout/components/AdminDataScopeSwitch.vue";
 import GlobalNotificationCenter from "@/layout/components/GlobalNotificationCenter.vue";
@@ -74,6 +75,7 @@ export default defineComponent({
               <ThemeSwitch />
             </div>
           ) : undefined}
+          {!mobile.value ? <Personalization /> : undefined}
           {screenfull.value ? (
             !mobile.value ? (
               <Screenfull class="custom-hover" color="var(--top-header-text-color)" />

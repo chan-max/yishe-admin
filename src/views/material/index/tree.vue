@@ -269,8 +269,8 @@ const buildTreeData = (list: any[]) => {
 }
 
 :deep(.el-tree-node.is-current > .el-tree-node__content) {
-  background-color: #e6f7ff;
-  color: #1890ff;
+  background-color: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
+  color: var(--el-color-primary);
   overflow: hidden !important;
 }
 

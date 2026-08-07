@@ -1,39 +1,52 @@
 <template>
   <ContentWrap :plain="true">
-    <!-- 顶部：处理预设库 -->
+    <!-- 顶部：处理预设库（极简风） -->
     <div class="image-processing-showcase">
       <div class="image-processing-showcase__header">
         <div class="image-processing-showcase__title-row">
           <h2 class="image-processing-showcase__title">处理预设库</h2>
-          <el-tag
-            :type="processingCount > 0 ? 'warning' : imagesStatus.available ? 'success' : 'info'"
-            effect="light"
-            size="small"
+          <div
+            class="showcase-engine-pill"
+            :class="{
+              'is-processing': processingCount > 0,
+              'is-connected': imagesStatus.available && processingCount === 0
+            }"
           >
-            <span class="pulse-dot" :class="{ 'is-active': imagesStatus.available, 'is-processing': processingCount > 0 }"></span>
-            {{ processingCount > 0 ? `正在处理中 (${processingCount} 个)` : imagesStatus.available ? "客户端引擎已连线" : "内置引擎就绪" }}
-          </el-tag>
+            <span
+              class="pulse-dot"
+              :class="{
+                'is-active': imagesStatus.available,
+                'is-processing': processingCount > 0
+              }"
+            ></span>
+            {{ processingCount > 0 ? `正在处理中 (${processingCount})` : imagesStatus.available ? "客户端引擎已连线" : "内置引擎就绪" }}
+          </div>
         </div>
 
-        <el-button type="primary" size="small" :icon="Plus" @click="openCreateDialog">
+        <el-button type="primary" size="small" class="showcase-create-btn" :icon="Plus" @click="openCreateDialog">
           新建任务
         </el-button>
       </div>
 
       <div class="image-processing-showcase__tabs-bar">
-        <el-radio-group v-model="activeShowcaseCategory" size="small">
-          <el-radio-button label="all">全部 ({{ unifiedShowcaseItems.length }})</el-radio-button>
-          <el-radio-button label="basic">基础编辑</el-radio-button>
-          <el-radio-button label="effect">艺术效果</el-radio-button>
-          <el-radio-button label="filter">风格滤镜</el-radio-button>
-          <el-radio-button label="variation">裂变预设</el-radio-button>
-        </el-radio-group>
+        <div class="showcase-tabs">
+          <div
+            v-for="tab in showcaseCategories"
+            :key="tab.value"
+            class="showcase-tab-item"
+            :class="{ 'is-active': activeShowcaseCategory === tab.value }"
+            @click="activeShowcaseCategory = tab.value"
+          >
+            <span class="showcase-tab-label">{{ tab.label }}</span>
+            <span v-if="tab.value === 'all'" class="showcase-tab-count">{{ unifiedShowcaseItems.length }}</span>
+          </div>
+        </div>
 
         <el-input
           v-model="showcaseKeyword"
           size="small"
           clearable
-          placeholder="搜索处理方式"
+          placeholder="搜索处理方式..."
           class="showcase-search-input"
           :prefix-icon="Search"
         />
@@ -52,19 +65,18 @@
               class="showcase-card__icon-box"
               :class="{ 'showcase-card__icon-box--var': item.kind === 'variation' }"
             >
-              <el-icon><PictureFilled v-if="item.kind === 'variation'" /><Operation v-else /></el-icon>
+              <Icon :icon="item.kind === 'variation' ? 'ep:picture-filled' : 'ep:operation'" />
             </div>
             <div class="showcase-card__title-wrap">
               <div class="showcase-card__title">{{ item.title }}</div>
               <div class="showcase-card__code">{{ item.subtitle }}</div>
             </div>
-            <el-tag
-              size="small"
-              :type="item.kind === 'variation' ? 'success' : 'info'"
-              effect="plain"
+            <span
+              class="showcase-card__badge"
+              :class="{ 'showcase-card__badge--var': item.kind === 'variation' }"
             >
               {{ item.categoryLabel }}
-            </el-tag>
+            </span>
           </div>
         </div>
       </div>
@@ -197,10 +209,16 @@
                       <span v-else class="image-record-thumb__placeholder">
                         {{ imageLoadErrorMap[row.id] ? "原图失效" : "无预览" }}
                       </span>
+                      <span v-if="getAllSourceImages(row).length > 1" class="image-record-thumb__badge">
+                        {{ getAllSourceImages(row).length }} 图
+                      </span>
                     </div>
                     <div class="image-record-source-meta">
                       <span class="image-record-source-type">
                         {{ row.sourceType === "upload" ? "本地上传" : "图片地址" }}
+                        <template v-if="getAllSourceImages(row).length > 1">
+                          (共 {{ getAllSourceImages(row).length }} 张)
+                        </template>
                       </span>
                       <span class="image-record-source-name" :title="row.sourceFilename || '-'">
                         {{ row.sourceFilename || "-" }}
@@ -252,18 +270,17 @@
                   <span class="table-time-text">{{ formatTimestamp(row.createTime) }}</span>
                 </template>
                 <template #operationDefaultSlot="{ row }">
-                  <div class="flex justify-start">
+                  <div class="flex items-center">
                     <el-dropdown
                       trigger="click"
                       placement="bottom-end"
                       @command="(command) => handleOperationCommand(command, row)"
-                      class="operation-dropdown"
                     >
-                      <el-button type="primary" link size="small" class="operation-trigger-button">
-                        操作
+                      <el-button type="primary" link size="small">
+                        操作<el-icon class="el-icon--right"><Icon icon="ep:arrow-down" /></el-icon>
                       </el-button>
                       <template #dropdown>
-                        <el-dropdown-menu class="operation-menu-compact">
+                        <el-dropdown-menu>
                           <el-dropdown-item command="detail">查看详情</el-dropdown-item>
                           <el-dropdown-item
                             v-if="row.status === 'success'"
@@ -271,12 +288,8 @@
                           >
                             导入素材库
                           </el-dropdown-item>
-                          <el-dropdown-item
-                            command="delete"
-                            divided
-                            class="operation-menu-item--danger"
-                          >
-                            删除
+                          <el-dropdown-item command="delete" divided>
+                            <span class="text-red-500">删除</span>
                           </el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
@@ -338,6 +351,7 @@
               @remove-operation="removeCurrentOperation"
               @select-operation="selectCatalogOperation"
               @append-operation="appendOperationTemplate"
+              @update-param="handleUpdateOperationParam"
               @format-json="formatOperationsJson"
               @update:operation-keyword="operationKeyword = $event"
               @update:operation-category-filter="operationCategoryFilter = $event"
@@ -361,113 +375,168 @@
 
     <el-dialog
       v-model="detailVisible"
-      title="图片处理详情"
-      fullscreen
+      title="图片处理任务详情"
+      width="980px"
+      top="4vh"
       destroy-on-close
       class="image-processing-detail-dialog"
     >
-      <div v-if="currentRow" class="image-processing-detail-layout">
-        <section class="image-processing-detail-section image-processing-detail-section--source">
-          <div class="image-processing-detail-card__header">
-            <span>原图</span>
-            <span class="image-processing-detail-card__meta">输入图片</span>
-          </div>
-          <div class="image-processing-detail-section__body image-processing-panel-scroll image-processing-panel-scroll--column">
-            <div class="image-processing-preview-card image-processing-preview-card--detail">
-              <div class="image-processing-preview-card__body image-processing-preview-card__body--detail">
-                <img
-                  v-if="currentRow.sourceImageUrl || currentRow.sourceOriginalUrl"
-                  :src="currentRow.sourceImageUrl || currentRow.sourceOriginalUrl"
-                  alt="source image"
-                  class="image-processing-preview-card__image"
-                />
-                <div v-else class="image-processing-preview-card__empty">无原图地址</div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="image-processing-detail-section image-processing-detail-section--results">
-          <div class="image-processing-detail-card__header">
-            <span>处理结果</span>
-            <span class="image-processing-detail-card__meta">{{ detailResultFiles.length }} 张</span>
-          </div>
-          <div class="image-processing-detail-section__body image-processing-panel-scroll image-processing-panel-scroll--column">
-            <div v-if="detailResultFiles.length" class="image-processing-result-gallery">
-              <div
-                v-for="(file, index) in detailResultFiles"
-                :key="file.key || file.outputFile || `${index}`"
-                class="image-processing-result-card"
-                :class="{ 'is-failed': !file.success }"
+      <div v-if="currentRow" class="detail-dialog-container">
+        <!-- 顶部 Summary 英雄信息卡片 -->
+        <div class="detail-header-card">
+          <div class="detail-header-card__main">
+            <div class="detail-header-card__title-row">
+              <h3 class="detail-header-card__title">{{ currentRow.title || '图片处理任务' }}</h3>
+              <el-tag
+                size="small"
+                :type="currentRow.status === 'success' ? 'success' : currentRow.status === 'failed' ? 'danger' : 'warning'"
+                effect="dark"
+                class="detail-header-card__status"
               >
-                <div
-                  class="image-processing-result-card__thumb"
-                  @click="file.url && previewImage(file.url, detailResultFiles.map((f: any) => f.url).filter(Boolean))"
-                >
-                  <img
-                    v-if="file.url"
-                    :src="file.url"
-                    :alt="file.name || file.outputFile || 'result'"
-                  />
-                  <div v-else class="image-processing-result-card__empty">无归档结果</div>
-                </div>
-                <div class="image-processing-result-card__body">
-                  <div class="image-processing-result-card__title">
-                    {{ file.name || file.outputFile || "结果文件" }}
-                  </div>
-                  <div class="image-processing-result-card__meta">
-                    {{ file.description || (file.success ? "处理完成" : "处理失败") }}
-                  </div>
+                {{ currentRow.status === 'success' ? '处理成功' : currentRow.status === 'failed' ? '处理失败' : '处理中/派发中' }}
+              </el-tag>
+            </div>
+            <div class="detail-header-card__meta-row">
+              <span class="detail-meta-item">
+                <span class="detail-meta-label">任务 ID:</span>
+                <span class="detail-meta-value font-mono">{{ currentRow.id }}</span>
+              </span>
+              <span class="detail-meta-item">
+                <span class="detail-meta-label">创建时间:</span>
+                <span class="detail-meta-value">{{ formatTime(currentRow.createTime || currentRow.createdAt) }}</span>
+              </span>
+              <span v-if="currentRow.responseData?.dispatch?.machineCode" class="detail-meta-item">
+                <span class="detail-meta-label">执行终端:</span>
+                <span class="detail-meta-value font-mono">{{ currentRow.responseData.dispatch.machineCode }}</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 主体左右双栏对比布局 -->
+        <div class="detail-body-grid">
+          <!-- 左栏：图像预览与对比 -->
+          <div class="detail-grid-col detail-grid-col--visual">
+            <!-- 结果图 -->
+            <div class="detail-section-card">
+              <div class="detail-section-card__header">
+                <span class="detail-section-card__title">成品处理结果</span>
+                <span class="detail-section-card__count">{{ detailResultFiles.length }} 张</span>
+              </div>
+              <div class="detail-section-card__body">
+                <div v-if="detailResultFiles.length" class="detail-result-list">
                   <div
-                    v-if="file.outputFile"
-                    class="image-processing-result-card__meta is-mono"
+                    v-for="(file, index) in detailResultFiles"
+                    :key="file.key || file.outputFile || `${index}`"
+                    class="detail-result-item"
                   >
-                    {{ file.outputFile }}
-                  </div>
-                  <div v-if="file.error" class="image-processing-result-card__error">
-                    {{ file.error }}
-                  </div>
-                  <div class="image-processing-result-card__actions">
-                    <el-button
-                      v-if="file.url"
-                      type="primary"
-                      link
-                      size="small"
-                      @click="previewImage(file.url, detailResultFiles.map((f: any) => f.url).filter(Boolean))"
+                    <div
+                      class="detail-result-item__preview"
+                      @click="file.url && previewImage(file.url, detailResultFiles.map((f: any) => f.url).filter(Boolean))"
                     >
-                      预览图片
-                    </el-button>
+                      <img v-if="file.url" :src="file.url" :alt="file.name || 'result'" />
+                      <div v-else class="detail-result-item__empty">无归档结果</div>
+                      <div v-if="file.url" class="detail-result-item__hover">
+                        <Icon icon="ep:zoom-in" width="20" height="20" />
+                        <span>放大预览</span>
+                      </div>
+                    </div>
+                    <div class="detail-result-item__info">
+                      <div class="detail-result-item__name">{{ file.name || file.outputFile || "成品图 #" + (index + 1) }}</div>
+                      <div class="detail-result-item__actions">
+                        <el-button
+                          v-if="file.url"
+                          type="primary"
+                          size="small"
+                          @click="previewImage(file.url, detailResultFiles.map((f: any) => f.url).filter(Boolean))"
+                        >
+                          大图预览
+                        </el-button>
+                        <el-button
+                          v-if="currentRow.status === 'success'"
+                          type="success"
+                          size="small"
+                          @click="handleImportResults(currentRow)"
+                        >
+                          导入素材库
+                        </el-button>
+                      </div>
+                    </div>
                   </div>
                 </div>
+                <div v-else class="detail-empty-box">暂无处理结果文件</div>
               </div>
             </div>
-            <div v-else class="image-processing-empty-state">暂无处理结果</div>
-          </div>
-        </section>
 
-        <section class="image-processing-detail-section image-processing-detail-section--request">
-          <div class="image-processing-detail-card__header">
-            <span>请求参数</span>
-            <span class="image-processing-detail-card__meta">提交内容</span>
+            <!-- 原图素材 -->
+            <div class="detail-section-card">
+              <div class="detail-section-card__header">
+                <span class="detail-section-card__title">原图素材</span>
+                <span class="detail-section-card__count">{{ detailSourceImages.length }} 张</span>
+              </div>
+              <div class="detail-section-card__body">
+                <div v-if="detailSourceImages.length" class="detail-source-list">
+                  <div
+                    v-for="(imgUrl, index) in detailSourceImages"
+                    :key="index"
+                    class="detail-source-item"
+                  >
+                    <div class="detail-source-item__thumb" @click="previewImage(imgUrl, detailSourceImages)">
+                      <img :src="imgUrl" :alt="'source image ' + (index + 1)" />
+                    </div>
+                    <div class="detail-source-item__url" :title="imgUrl">{{ imgUrl }}</div>
+                  </div>
+                </div>
+                <div v-else class="detail-empty-box">未找到原图素材地址</div>
+              </div>
+            </div>
           </div>
-          <div class="image-processing-detail-section__body image-processing-panel-scroll">
-            <pre class="image-processing-json-block image-processing-json-block--detail">{{
-              formatJson(currentRow.requestParams)
-            }}</pre>
-          </div>
-        </section>
 
-        <section class="image-processing-detail-section image-processing-detail-section--response">
-          <div class="image-processing-detail-card__header">
-            <span>返回结果</span>
-            <span class="image-processing-detail-card__meta">处理响应</span>
+          <!-- 右栏：执行步骤与底层日志 Tabs -->
+          <div class="detail-grid-col detail-grid-col--info">
+            <el-tabs type="border-card" class="detail-info-tabs">
+              <el-tab-pane label="链式处理步骤">
+                <div v-if="detailOperationsList.length" class="detail-steps-timeline">
+                  <div v-for="(op, idx) in detailOperationsList" :key="idx" class="detail-step-card">
+                    <div class="detail-step-card__header">
+                      <span class="detail-step-card__num">步骤 {{ idx + 1 }}</span>
+                      <span class="detail-step-card__type">{{ op.type }}</span>
+                    </div>
+                    <div v-if="op.params && Object.keys(op.params).length" class="detail-step-card__params">
+                      <span
+                        v-for="(val, pName) in op.params"
+                        :key="pName"
+                        class="detail-step-param-tag"
+                      >
+                        {{ pName }}: <strong>{{ val }}</strong>
+                      </span>
+                    </div>
+                    <div v-else class="detail-step-card__empty-param">无额外参数</div>
+                  </div>
+                </div>
+                <div v-else class="detail-empty-box">无处理步骤数据</div>
+              </el-tab-pane>
+
+              <el-tab-pane label="底层执行命令">
+                <div v-if="detailExecutedCommands.length" class="detail-commands-list">
+                  <div v-for="(cmd, idx) in detailExecutedCommands" :key="idx" class="detail-command-card">
+                    <div class="detail-command-card__idx">#{{ idx + 1 }} ImageMagick 指令</div>
+                    <code class="detail-command-card__code">{{ cmd }}</code>
+                  </div>
+                </div>
+                <div v-else class="detail-empty-box">无命令行执行日志</div>
+              </el-tab-pane>
+
+              <el-tab-pane label="请求 Payload">
+                <pre class="detail-code-block">{{ formatJson(currentRow.requestParams) }}</pre>
+              </el-tab-pane>
+
+              <el-tab-pane label="完整 Response">
+                <pre class="detail-code-block">{{ formatJson(currentRow.responseData) }}</pre>
+              </el-tab-pane>
+            </el-tabs>
           </div>
-          <div class="image-processing-detail-section__body image-processing-panel-scroll">
-            <pre class="image-processing-json-block image-processing-json-block--detail">{{
-              formatJson(currentRow.responseData)
-            }}</pre>
-          </div>
-        </section>
+        </div>
       </div>
       <template #footer>
         <div class="dialog-footer">
@@ -645,6 +714,8 @@ const DEFAULT_FALLBACK_OPERATIONS = [
 ];
 
 const DEFAULT_FALLBACK_VARIATIONS = [
+  { id: "tile_collage", name: "组图相册 (2列画廊)", description: "将多张图片组合排版为 2 列精美组图照片墙", operations: [{ type: "tile", params: { columns: 2, tileWidth: 400, tileHeight: 400, gap: 15, backgroundColor: "#FFFFFF" } }] },
+  { id: "append_long", name: "多图无缝拼接长图", description: "将多张图片水平或垂直无缝拼接为长图", operations: [{ type: "append", params: { direction: "horizontal" } }] },
   { id: "square_hd", name: "正方形高清图 (1080x1080)", description: "输出 1080x1080 标准电商商品展示主图", operations: [{ type: "resize", params: { width: 1080, height: 1080, maintainAspectRatio: true } }] },
   { id: "portrait_mobile", name: "竖屏手机海报 (1080x1920)", description: "输出 9:16 竖屏手机端海报规格", operations: [{ type: "resize", params: { width: 1080, height: 1920, maintainAspectRatio: true } }] },
   { id: "vintage_bw", name: "复古黑白风", description: "转换为高对比度复古黑白老照片效果", operations: [{ type: "effects", params: { effectType: "grayscale" } }] },
@@ -673,6 +744,14 @@ const ACTIVE_RECORD_STATUSES = new Set(["pending", "pending_client", "assigned",
 
 const activeShowcaseCategory = ref("all");
 const showcaseKeyword = ref("");
+
+const showcaseCategories = [
+  { label: "全部", value: "all" },
+  { label: "基础编辑", value: "basic" },
+  { label: "艺术效果", value: "effect" },
+  { label: "风格滤镜", value: "filter" },
+  { label: "裂变预设", value: "variation" },
+];
 
 function getCategoryLabel(cat?: string): string {
   return categoryLabelMap[cat || ""] || categoryLabelMap.default || "常用操作";
@@ -769,9 +848,9 @@ async function generateTestRecords() {
 }
 
 function handleShowcaseItemClick(item: any) {
-  if (item.kind === "operation") {
+  if (item?.kind === "operation") {
     quickStartOperation(item.raw);
-  } else {
+  } else if (item?.kind === "variation") {
     quickStartVariation(item.raw);
   }
 }
@@ -781,13 +860,17 @@ function quickStartOperation(op: any) {
   form.taskType = "process";
   if (op) {
     activeCatalogOperationKey.value = getOperationIdentity(op);
-    appendCatalogOperation(op);
+    appendOperationTemplate(op);
   }
 }
 
-function quickStartVariation(_v?: any) {
+function quickStartVariation(v?: any) {
   openCreateDialog();
-  form.taskType = "variations";
+  form.taskType = "process";
+  if (v && Array.isArray(v.operations) && v.operations.length > 0) {
+    replaceOperationsJson(v.operations);
+    ElMessage.success(`已载入“${v.name || '预设套件'}”处理链配置`);
+  }
 }
 
 let recordRefreshTimer: ReturnType<typeof setTimeout> | null = null;
@@ -855,10 +938,24 @@ const operationUsageCountMap = computed(() => {
   return map;
 });
 
+const allCatalogOperations = computed(() => {
+  const opList = operations.value.length ? operations.value : DEFAULT_FALLBACK_OPERATIONS;
+  const varList = (variations.value.length ? variations.value : DEFAULT_FALLBACK_VARIATIONS).map((v: any) => ({
+    type: v.id || v.name,
+    apiType: v.id || v.name,
+    category: "variation",
+    description: `[套件预设] ${v.name || v.id}`,
+    params: v.operations?.[0]?.params || {},
+    requiredParams: [],
+    variationRaw: v,
+  }));
+  return [...opList, ...varList];
+});
+
 const operationCategoryOptions = computed(() => {
   const counts = new Map<string, number>();
 
-  operations.value.forEach((operation) => {
+  allCatalogOperations.value.forEach((operation) => {
     const category = String(operation?.category || "default");
     counts.set(category, (counts.get(category) || 0) + 1);
   });
@@ -867,7 +964,7 @@ const operationCategoryOptions = computed(() => {
     {
       value: "all",
       label: categoryLabelMap.all,
-      count: operations.value.length,
+      count: allCatalogOperations.value.length,
     },
   ];
 
@@ -893,7 +990,7 @@ const filteredGroupedOperations = computed(() => {
   const categoryFilter = String(operationCategoryFilter.value || "all");
   const groups = new Map<string, any[]>();
 
-  operations.value
+  allCatalogOperations.value
     .filter((operation) => {
       const category = String(operation?.category || "default");
       if (categoryFilter !== "all" && category !== categoryFilter) {
@@ -946,6 +1043,31 @@ const canSubmitCreate = computed(() => {
 
 const detailResultFiles = computed(() => {
   return Array.isArray(currentRow.value?.resultFiles) ? currentRow.value.resultFiles : [];
+});
+
+const detailSourceImages = computed(() => {
+  if (!currentRow.value) return [];
+  return getAllSourceImages(currentRow.value);
+});
+
+const detailOperationsList = computed(() => {
+  if (!currentRow.value) return [];
+  const reqOps = currentRow.value.requestParams?.operations;
+  if (Array.isArray(reqOps)) return reqOps;
+  const jsonStr = currentRow.value.operationsJson;
+  if (jsonStr) {
+    try {
+      const parsed = JSON.parse(jsonStr);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (e) {}
+  }
+  return [];
+});
+
+const detailExecutedCommands = computed(() => {
+  if (!currentRow.value) return [];
+  const cmds = currentRow.value.responseData?.execution?.commands || currentRow.value.responseData?.commands;
+  return Array.isArray(cmds) ? cmds : [];
 });
 
 const requestPreviewJson = computed(() => {
@@ -1159,6 +1281,49 @@ function handleImageError(id: string | number) {
   }
 }
 
+function getAllSourceImages(row: any): string[] {
+  if (!row) return [];
+  const urls: string[] = [];
+
+  try {
+    let req = row.requestParams;
+    if (typeof req === "string") {
+      req = JSON.parse(req);
+    }
+    req = req || {};
+
+    const primary = row.sourceImageUrl || row.sourceOriginalUrl || req.imageUrl || req.source?.imageUrl;
+    if (primary) urls.push(primary);
+
+    const ops: any[] = [];
+    if (Array.isArray(req.operations)) ops.push(...req.operations);
+    if (Array.isArray(req.request?.operations)) ops.push(...req.request.operations);
+    if (typeof req.operationsJson === "string") {
+      try {
+        const parsed = JSON.parse(req.operationsJson);
+        if (Array.isArray(parsed)) ops.push(...parsed);
+      } catch (e) {}
+    }
+
+    for (const op of ops) {
+      if (op?.params) {
+        if (Array.isArray(op.params.images)) {
+          op.params.images.forEach((img: any) => {
+            if (img && typeof img === "string" && !urls.includes(img)) {
+              urls.push(img);
+            }
+          });
+        }
+        if (op.params.imageUrl2 && typeof op.params.imageUrl2 === "string" && !urls.includes(op.params.imageUrl2)) {
+          urls.push(op.params.imageUrl2);
+        }
+      }
+    }
+  } catch (e) {}
+
+  return urls.length ? urls : [];
+}
+
 function getSourcePreview(row: any) {
   return row?.sourceImageUrl || row?.sourceOriginalUrl || "";
 }
@@ -1196,7 +1361,8 @@ function openUrl(url?: string) {
 }
 
 function openRowSource(row: any) {
-  previewImage(getSourcePreview(row));
+  const sources = getAllSourceImages(row);
+  previewImage(sources[0] || getSourcePreview(row), sources);
 }
 
 function openFirstResult(row: any) {
@@ -1349,15 +1515,31 @@ function formatOperationParamValue(value: unknown) {
 }
 
 function getCurrentOperationParamEntries(operation: any) {
+  const meta = resolveOperationMetaByType(operation?.type);
+  const paramsSchema = (meta?.params || {}) as Record<string, any>;
+
   const params =
     operation?.params && typeof operation.params === "object" && !Array.isArray(operation.params)
       ? operation.params
       : {};
 
-  return Object.entries(params).map(([name, value]) => ({
-    name,
-    value: formatOperationParamValue(value),
-  }));
+  const allKeys = Array.from(new Set([...Object.keys(paramsSchema), ...Object.keys(params)]));
+
+  return allKeys.map((name) => {
+    const schema = paramsSchema[name] || {};
+    const rawVal = params[name] !== undefined ? params[name] : schema.default;
+    const nameLower = name.toLowerCase();
+    const isColor = nameLower.includes("color") || nameLower.includes("bg") || (typeof rawVal === "string" && rawVal.startsWith("#"));
+
+    return {
+      name,
+      rawVal,
+      isColor,
+      type: schema.type || typeof rawVal,
+      description: schema.description || "",
+      value: formatOperationParamValue(rawVal),
+    };
+  });
 }
 
 function buildCurrentOperationViewModel(operation: any, index: number) {
@@ -1621,9 +1803,33 @@ function appendOperationTemplate(operation: any) {
     return;
   }
 
-  parsed.push(buildOperationTemplate(operation));
+  if (operation?.variationRaw && Array.isArray(operation.variationRaw.operations)) {
+    operation.variationRaw.operations.forEach((opItem: any) => {
+      parsed.push(opItem);
+    });
+  } else {
+    parsed.push(buildOperationTemplate(operation));
+  }
   replaceOperationsJson(parsed);
   selectCatalogOperation(operation);
+}
+
+function handleUpdateOperationParam(stepIndex: number, paramName: string, newValue: any) {
+  const raw = String(form.operationsJson || "").trim();
+  if (!raw) return;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed) || !parsed[stepIndex]) return;
+    if (!parsed[stepIndex].params) {
+      parsed[stepIndex].params = {};
+    }
+    let finalVal = newValue;
+    if (typeof newValue === "string" && newValue.trim() !== "" && !isNaN(Number(newValue)) && !newValue.startsWith("#")) {
+      finalVal = Number(newValue);
+    }
+    parsed[stepIndex].params[paramName] = finalVal;
+    replaceOperationsJson(parsed);
+  } catch (e) {}
 }
 
 function formatJson(value: any) {
@@ -1819,6 +2025,13 @@ function openCreateDialog() {
 
 async function prepareDetailState(row: any) {
   currentRow.value = row;
+  if (!row?.id) return;
+  try {
+    const res: any = await getImageProcessingRecordDetail(row.id);
+    if (res) {
+      currentRow.value = res;
+    }
+  } catch (e) {}
 }
 
 async function submitCreate() {
@@ -2088,6 +2301,7 @@ onBeforeUnmount(() => {
 
 .image-record-thumb,
 .image-record-result-thumb {
+  position: relative;
   display: flex;
   width: 72px;
   height: 72px;
@@ -2113,6 +2327,18 @@ onBeforeUnmount(() => {
   font-size: 12px;
   text-align: center;
   line-height: 1.5;
+}
+
+.image-record-thumb__badge {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 8px;
+  line-height: 1.2;
 }
 
 .image-record-source-type,
@@ -2354,21 +2580,323 @@ onBeforeUnmount(() => {
   background: linear-gradient(180deg, var(--el-fill-color-extra-light), var(--el-fill-color-light));
 }
 
-.image-processing-detail-layout {
+.detail-dialog-container {
   display: flex;
-  min-height: auto;
-  height: auto;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
-.image-processing-detail-section {
+.detail-header-card {
+  background: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+
+.detail-header-card__title-row {
   display: flex;
-  min-height: auto;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.detail-header-card__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--el-text-color-primary);
+}
+
+.detail-header-card__meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.detail-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.detail-meta-label {
+  color: var(--el-text-color-placeholder);
+}
+
+.detail-meta-value {
+  color: var(--el-text-color-regular);
+}
+
+.detail-body-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .detail-body-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.detail-grid-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.detail-section-card {
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.detail-section-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--el-fill-color-light);
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.detail-section-card__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.detail-section-card__count {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+}
+
+.detail-section-card__body {
+  padding: 12px;
+}
+
+.detail-result-item {
+  display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 6px 0;
-  overflow: visible;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--el-border-color-lighter);
+  background: var(--el-fill-color-extra-light);
+  padding: 8px;
+}
+
+.detail-result-item__preview {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--el-bg-color);
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.detail-result-item__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.detail-result-item__hover {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.detail-result-item__preview:hover .detail-result-item__hover {
+  opacity: 1;
+}
+
+.detail-result-item__info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.detail-result-item__name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail-result-item__actions {
+  display: flex;
+  gap: 6px;
+}
+
+.detail-source-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detail-source-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  background: var(--el-fill-color-extra-light);
+}
+
+.detail-source-item__thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+  cursor: pointer;
+  background: var(--el-bg-color);
+}
+
+.detail-source-item__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.detail-source-item__url {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: monospace;
+}
+
+.detail-info-tabs {
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 380px;
+}
+
+.detail-steps-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px;
+}
+
+.detail-step-card {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-lighter);
+}
+
+.detail-step-card__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.detail-step-card__num {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--el-color-primary);
+  background: color-mix(in srgb, var(--el-color-primary) 15%, transparent);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.detail-step-card__type {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.detail-step-card__params {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.detail-step-param-tag {
+  font-size: 11px;
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-lighter);
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: var(--el-text-color-regular);
+}
+
+.detail-step-card__empty-param {
+  font-size: 11px;
+  color: var(--el-text-color-placeholder);
+}
+
+.detail-commands-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px;
+}
+
+.detail-command-card {
+  padding: 10px;
+  border-radius: 8px;
+  background: #1e1e1e;
+  color: #4ec9b0;
+}
+
+.detail-command-card__idx {
+  font-size: 10px;
+  color: #858585;
+  margin-bottom: 4px;
+}
+
+.detail-command-card__code {
+  font-family: Consolas, Monaco, "Andale Mono", monospace;
+  font-size: 11px;
+  color: #ce9178;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.detail-code-block {
+  margin: 0;
+  padding: 12px;
+  background: var(--el-fill-color-darker);
+  color: var(--el-text-color-primary);
+  font-family: Consolas, Monaco, monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  border-radius: 8px;
+  max-height: 340px;
+  overflow: auto;
+}
+
+.detail-empty-box {
+  padding: 24px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--el-text-color-placeholder);
 }
 
 .image-processing-detail-section__body {
@@ -2526,14 +3054,14 @@ onBeforeUnmount(() => {
 }
 
 .image-processing-showcase {
-  margin-bottom: 16px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 12px;
-  background: var(--el-bg-color-page);
-  padding: 14px 18px;
+  margin-bottom: 20px;
+  border: none;
+  background: transparent;
+  padding: 0 0 18px 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+  border-bottom: 1px solid var(--el-border-color-extra-light);
 }
 
 .image-processing-showcase__header {
@@ -2547,15 +3075,45 @@ onBeforeUnmount(() => {
 .image-processing-showcase__title-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
 .image-processing-showcase__title {
   margin: 0;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--el-text-color-primary);
+}
+
+.showcase-engine-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--el-fill-color-light);
+  color: var(--el-text-color-secondary);
+  transition: all 0.2s ease;
+
+  &.is-connected {
+    background: rgba(103, 194, 58, 0.09);
+    color: #67c23a;
+  }
+
+  &.is-processing {
+    background: rgba(230, 162, 60, 0.1);
+    color: #e6a23c;
+  }
+}
+
+.showcase-create-btn {
+  border-radius: 20px;
+  padding: 0 16px;
+  font-weight: 500;
 }
 
 .image-processing-showcase__tabs-bar {
@@ -2564,19 +3122,72 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  border-top: 1px dashed var(--el-border-color-lighter);
-  padding-top: 10px;
+  padding-top: 2px;
+}
+
+.showcase-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--el-fill-color-lighter);
+  padding: 3px;
+  border-radius: 20px;
+}
+
+.showcase-tab-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--el-text-color-secondary);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    color: var(--el-text-color-primary);
+    background: rgba(255, 255, 255, 0.6);
+  }
+
+  &.is-active {
+    background: var(--el-bg-color);
+    color: var(--el-color-primary);
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+}
+
+.showcase-tab-count {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+  font-weight: 600;
 }
 
 .showcase-search-input {
-  width: 280px;
+  width: 240px;
+
+  :deep(.el-input__wrapper) {
+    border-radius: 20px;
+    box-shadow: 0 0 0 1px var(--el-border-color-lighter) inset;
+    background: var(--el-bg-color);
+    padding-left: 12px;
+
+    &.is-focus {
+      box-shadow: 0 0 0 1.5px var(--el-color-primary) inset !important;
+    }
+  }
 }
 
 .showcase-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 10px;
-  padding: 4px 2px;
   overflow: visible;
 }
 
@@ -2584,20 +3195,18 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  border: 1px solid var(--el-border-color-light);
+  border: 1px solid var(--el-border-color-extra-light);
   border-radius: 10px;
   background: var(--el-bg-color);
   padding: 10px 12px;
   cursor: pointer;
   user-select: none;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
   &:hover {
-    border-color: var(--el-color-primary);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    .showcase-card__hint {
-      color: var(--el-color-primary);
-    }
+    border-color: var(--el-color-primary-light-5);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04);
   }
 }
 
@@ -2609,19 +3218,19 @@ onBeforeUnmount(() => {
 
 .showcase-card__icon-box {
   display: flex;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   align-items: center;
   justify-content: center;
   border-radius: 8px;
   background: var(--el-color-primary-light-9);
   color: var(--el-color-primary);
-  font-size: 16px;
+  font-size: 15px;
   flex-shrink: 0;
 
   &--var {
-    background: var(--el-color-success-light-9);
-    color: var(--el-color-success);
+    background: rgba(103, 194, 58, 0.1);
+    color: #67c23a;
   }
 }
 
@@ -2637,27 +3246,37 @@ onBeforeUnmount(() => {
   font-size: 13px;
   font-weight: 600;
   color: var(--el-text-color-primary);
-  line-height: 1.4;
+  line-height: 1.35;
   word-break: break-word;
 }
 
 .showcase-card__code {
   font-size: 11px;
   color: var(--el-text-color-secondary);
-  line-height: 1.4;
+  line-height: 1.35;
   word-break: break-word;
 }
 
-.showcase-card__footer {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 10px;
-}
-
-.showcase-card__hint {
+.showcase-card__badge {
   font-size: 11px;
   color: var(--el-text-color-placeholder);
-  transition: color 0.2s ease;
+  background: transparent;
+  padding: 0;
+  line-height: 1.4;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &--var {
+    color: #67c23a;
+    font-weight: 500;
+  }
+}
+
+.showcase-empty {
+  padding: 24px 0;
+  text-align: center;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
 }
 
 .pulse-dot {
@@ -2666,16 +3285,14 @@ onBeforeUnmount(() => {
   height: 6px;
   border-radius: 50%;
   background: var(--el-color-info);
-  margin-right: 6px;
-  vertical-align: middle;
 
   &.is-active {
-    background: var(--el-color-success);
-    box-shadow: 0 0 0 2px rgba(103, 194, 58, 0.2);
+    background: #67c23a;
+    box-shadow: 0 0 0 2px rgba(103, 194, 58, 0.25);
   }
 
   &.is-processing {
-    background: var(--el-color-warning);
+    background: #e6a23c;
     animation: pulse-breathing 1.2s infinite ease-in-out;
   }
 }
@@ -2687,7 +3304,7 @@ onBeforeUnmount(() => {
   }
   70% {
     transform: scale(1.1);
-    box-shadow: 0 0 0 5px rgba(230, 162, 60, 0);
+    box-shadow: 0 0 0 4px rgba(230, 162, 60, 0);
   }
   100% {
     transform: scale(0.9);

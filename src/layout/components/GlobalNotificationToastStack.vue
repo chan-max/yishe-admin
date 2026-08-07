@@ -270,8 +270,8 @@ const getProgressMeta = (item: { metadata?: Record<string, any> }) => {
 }
 
 .uiverse-toast.is-info {
-  background: #3b82f6;
-  border-left-color: #3b82f6;
+  background: var(--el-color-primary);
+  border-left-color: var(--el-color-primary);
   color: #ffffff;
 }
 
@@ -280,7 +280,7 @@ const getProgressMeta = (item: { metadata?: Record<string, any> }) => {
 }
 
 .uiverse-toast.is-info:hover {
-  background: #2563eb;
+  background: var(--el-color-primary-dark-2);
 }
 
 .uiverse-toast.is-warning {
@@ -326,8 +326,8 @@ const getProgressMeta = (item: { metadata?: Record<string, any> }) => {
 }
 
 :global(html.dark) .uiverse-toast.is-info {
-  background: #3b82f6;
-  border-left-color: #1d4ed8;
+  background: var(--el-color-primary);
+  border-left-color: var(--el-color-primary);
   color: #ffffff;
 }
 
@@ -336,7 +336,7 @@ const getProgressMeta = (item: { metadata?: Record<string, any> }) => {
 }
 
 :global(html.dark) .uiverse-toast.is-info:hover {
-  background: #2563eb;
+  background: var(--el-color-primary-dark-2);
 }
 
 :global(html.dark) .uiverse-toast.is-warning {

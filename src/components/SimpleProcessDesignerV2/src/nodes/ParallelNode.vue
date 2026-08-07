@@ -51,7 +51,7 @@
               <div v-if="!readonly" class="node-toolbar">
                 <div class="toolbar-icon">
                   <Icon
-                    color="#0089ff"
+                    color="var(--el-color-primary)"
                     icon="ep:circle-close-filled"
                     :size="18"
                     @click="deleteCondition(index)"

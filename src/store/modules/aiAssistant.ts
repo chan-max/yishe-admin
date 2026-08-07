@@ -1,6 +1,5 @@
 import { ref, computed } from "vue";
 import { defineStore } from "pinia";
-import { useRoute } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
   AiAssistantApi,
@@ -10,7 +9,6 @@ import {
 } from "@/api/aiAssistant";
 import type {
   InteractionPayload,
-  InteractionSubmitResult,
 } from "@/components/AiAssistant/interactions/types";
 import {
   markAiAssistantRuntimeIdle,
@@ -27,14 +25,13 @@ interface StreamContext {
 // ========== Store ==========
 
 export const useAiAssistantStore = defineStore("ai-assistant", () => {
-  const route = useRoute();
-
   // ========== State ==========
 
   const conversations = ref<AiAssistantConversation[]>([]);
   const messages = ref<AiAssistantMessage[]>([]);
   const currentConversationId = ref<number | null>(null);
   const loading = ref(false);
+  const historyLoading = ref(false);
   const runtimeStatus = ref("idle");
   const thinkingText = ref("");
   const currentRunId = ref("");
@@ -46,16 +43,12 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
     conversations.value.find((item) => item.id === currentConversationId.value),
   );
 
-  const activeConversationTitle = computed(
-    () => activeConversation.value?.title || "新会话",
-  );
+  const activeConversationTitle = computed(() => activeConversation.value?.title || "新会话");
 
   const statusText = computed(() => {
     if (pendingInteraction.value) return "等待用户参与";
     if (loading.value) {
-      return runtimeStatus.value === "tool_calling"
-        ? "工具执行中"
-        : "流式响应中";
+      return runtimeStatus.value === "tool_calling" ? "工具执行中" : "流式响应中";
     }
     if (activeConversation.value?.lastMessageAt) {
       const d = activeConversation.value.lastMessageAt;
@@ -65,8 +58,7 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
   });
 
   const senderPlaceholder = computed(() => {
-    if (pendingInteraction.value)
-      return "可以先输入下一条消息，完成上方交互后再发送";
+    if (pendingInteraction.value) return "可以先输入下一条消息，完成上方交互后再发送";
     if (loading.value) return "智能助手正在处理";
     return "输入你的目标或问题";
   });
@@ -76,9 +68,7 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
   const hasPendingAssistantMessage = computed(() =>
     messages.value.some(
       (msg) =>
-        msg.role === "assistant" &&
-        !msg.content &&
-        msg.runTrace?.runId === currentRunId.value,
+        msg.role === "assistant" && !msg.content && msg.runTrace?.runId === currentRunId.value,
     ),
   );
 
@@ -111,20 +101,9 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
     }
   }
 
-  function buildPageContext(): AiAssistantPageContext {
-    return {
-      routePath: route.path,
-      fullPath: route.fullPath,
-      routeName: String(route.name || ""),
-      routeTitle: String(route.meta?.title || ""),
-      query: route.query,
-      params: route.params,
-    };
-  }
 
-  function createLocalMessage(
-    partial: Partial<AiAssistantMessage>,
-  ): AiAssistantMessage {
+
+  function createLocalMessage(partial: Partial<AiAssistantMessage>): AiAssistantMessage {
     return {
       id: Date.now() + Math.random(),
       conversationId: currentConversationId.value,
@@ -171,13 +150,18 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
   }
 
   async function loadMessages() {
+    historyLoading.value = true;
     try {
-      messages.value = await AiAssistantApi.getMessages({
-        conversationId: currentConversationId.value || undefined,
-      });
+      messages.value = dedupeRunMessages(
+        await AiAssistantApi.getMessages({
+          conversationId: currentConversationId.value || undefined,
+        }),
+      );
     } catch (error) {
       console.error("加载消息失败:", error);
       ElMessage.error("加载消息失败");
+    } finally {
+      historyLoading.value = false;
     }
   }
 
@@ -279,10 +263,7 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
     const existing = [...messages.value]
       .reverse()
       .find(
-        (msg) =>
-          msg.role === "tool" &&
-          msg.toolKey === toolKey &&
-          msg.runTrace?.runId === runId,
+        (msg) => msg.role === "tool" && msg.toolKey === toolKey && msg.runTrace?.runId === runId,
       );
 
     if (existing) {
@@ -371,9 +352,12 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
         break;
       case "assistant.status":
         runtimeStatus.value = data?.status || "thinking";
-        if (data?.status === "thinking") thinkingText.value = "正在思考...";
-        if (data?.status === "tool_calling")
-          thinkingText.value = "正在准备调用工具...";
+        if (data?.message) {
+          thinkingText.value = data.message;
+        } else {
+          if (data?.status === "thinking") thinkingText.value = "正在思考...";
+          if (data?.status === "tool_calling") thinkingText.value = "正在准备调用工具...";
+        }
         break;
       case "assistant.plan":
         runtimeStatus.value = "tool_calling";
@@ -401,6 +385,9 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
             success: true,
             summary: resultSummary,
             data: data.data,
+            durationMs: data.durationMs ?? null,
+            startedAt: data.startedAt ?? null,
+            completedAt: data.completedAt ?? null,
           },
         });
         break;
@@ -409,7 +396,13 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
         thinkingText.value = `${data.label || data.tool} 执行出错，正在处理...`;
         upsertToolMessage(data.tool, data.label, data.error || "执行失败", {
           ...data,
-          toolResult: { success: false, error: data.error },
+          toolResult: {
+            success: false,
+            error: data.error,
+            durationMs: data.durationMs ?? null,
+            startedAt: data.startedAt ?? null,
+            completedAt: data.completedAt ?? null,
+          },
         });
         break;
       case "assistant.answer.delta":
@@ -427,12 +420,28 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
           if (context.assistantMsg) {
             context.assistantMsg.content = data.reply;
           } else {
-            messages.value.push(
-              createLocalMessage({ role: "assistant", content: data.reply }),
-            );
+            context.assistantMsg = createLocalMessage({
+              role: "assistant",
+              content: data.reply,
+              runTrace: { runId: data?.runId || currentRunId.value },
+            });
+            messages.value.push(context.assistantMsg);
           }
         } else if (context.assistantMsg && !context.assistantMsg.content) {
           context.assistantMsg.content = "已为您处理完成。";
+        }
+        if (context.assistantMsg) {
+          context.assistantMsg.runId = data?.runId || context.assistantMsg.runId || currentRunId.value;
+          context.assistantMsg.startedAt = data?.startedAt ?? context.assistantMsg.startedAt;
+          context.assistantMsg.completedAt = data?.completedAt ?? context.assistantMsg.completedAt;
+          context.assistantMsg.durationMs = data?.durationMs ?? context.assistantMsg.durationMs;
+          context.assistantMsg.aiResponseMs = data?.aiResponseMs ?? context.assistantMsg.aiResponseMs;
+          context.assistantMsg.toolExecutionMs = data?.toolExecutionMs ?? context.assistantMsg.toolExecutionMs;
+          context.assistantMsg.runTrace = data?.runTrace || {
+            ...(context.assistantMsg.runTrace || {}),
+            runId: data?.runId || currentRunId.value,
+            tools: data?.toolResults || [],
+          };
         }
         loading.value = false;
         runtimeStatus.value = "idle";
@@ -489,10 +498,7 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
 
   // ========== Public Actions ==========
 
-  async function sendMessage(
-    message: string,
-    pageContext?: AiAssistantPageContext,
-  ) {
+  async function sendMessage(message: string, pageContext?: AiAssistantPageContext) {
     if (!message || loading.value || pendingInteraction.value) return;
 
     loading.value = true;
@@ -560,10 +566,15 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
 
   /** Initialize store — load conversations & select first one if needed */
   async function initialize() {
-    await loadConversations();
-    if (conversations.value.length && !currentConversationId.value) {
-      currentConversationId.value = conversations.value[0].id;
-      await loadMessages();
+    historyLoading.value = true;
+    try {
+      await loadConversations();
+      if (conversations.value.length && !currentConversationId.value) {
+        currentConversationId.value = conversations.value[0].id;
+        await loadMessages();
+      }
+    } finally {
+      historyLoading.value = false;
     }
   }
 
@@ -579,12 +590,34 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
     messages.value.push(createLocalMessage({ role: "assistant", content }));
   }
 
+  function dedupeRunMessages(items: AiAssistantMessage[]) {
+    const seenIds = new Set<number>();
+    const seenRunRoles = new Set<string>();
+    return [...items]
+      .reverse()
+      .filter((message) => {
+        if (message.id > 0) {
+          if (seenIds.has(message.id)) return false;
+          seenIds.add(message.id);
+        }
+
+        const runId = String(message.runId || message.runTrace?.runId || "").trim();
+        if (!runId || message.role === "tool") return true;
+        const key = `${runId}|${message.role}`;
+        if (seenRunRoles.has(key)) return false;
+        seenRunRoles.add(key);
+        return true;
+      })
+      .reverse();
+  }
+
   return {
     // State
     conversations,
     messages,
     currentConversationId,
     loading,
+    historyLoading,
     runtimeStatus,
     thinkingText,
     currentRunId,

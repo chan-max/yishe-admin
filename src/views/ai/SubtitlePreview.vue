@@ -330,7 +330,7 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   border: 2px solid var(--el-color-primary-light-7);
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.05);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--el-color-primary) 5%, transparent);
   transition: all 0.3s ease;
 }
 

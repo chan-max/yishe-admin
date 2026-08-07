@@ -198,7 +198,7 @@
             <el-icon
               v-if="aiTableLoading?.[row?.id]"
               class="is-loading ml-2"
-              style="color: #409eff; font-size: 18px"
+              style="color: var(--el-color-primary); font-size: 18px"
             />
           </div>
         </template>

@@ -235,13 +235,13 @@ onUnmounted(() => {
       }
 
       &.operator {
-        background-color: #409eff;
+        background-color: var(--el-color-primary);
         color: white;
-        border-color: #409eff;
+        border-color: var(--el-color-primary);
 
         &:hover {
-          background-color: #66b1ff;
-          border-color: #66b1ff;
+          background-color: var(--el-color-primary-light-5);
+          border-color: var(--el-color-primary-light-5);
         }
       }
 

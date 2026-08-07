@@ -1480,8 +1480,12 @@ onUnmounted(() => {
 .vector-console-active-job {
   padding: 16px;
   border-radius: 8px;
-  background: linear-gradient(135deg, rgba(64, 158, 255, 0.08) 0%, rgba(64, 158, 255, 0.02) 100%);
-  border: 1px solid rgba(64, 158, 255, 0.15);
+  background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--el-color-primary) 8%, transparent) 0%,
+      color-mix(in srgb, var(--el-color-primary) 2%, transparent) 100%
+    );
+  border: 1px solid color-mix(in srgb, var(--el-color-primary) 15%, transparent);
 }
 
 .active-job-header {
@@ -1587,7 +1591,7 @@ onUnmounted(() => {
 
   &.is-building {
     border-color: var(--el-color-primary-light-4);
-    background: rgba(64, 158, 255, 0.02);
+    background: color-mix(in srgb, var(--el-color-primary) 2%, transparent);
   }
 }
 

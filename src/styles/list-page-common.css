@@ -943,17 +943,20 @@ html.dark {
   overflow: visible !important;
 }
 
-.op-menu-item:hover {
-  background: var(--el-fill-color-light);
+.op-menu-item:hover,
+.op-menu-item:focus-visible {
+  background: color-mix(in srgb, var(--el-color-primary) 10%, transparent) !important;
+  color: var(--el-color-primary) !important;
 }
 
 .op-menu-item.danger {
   color: var(--el-color-danger);
 }
 
-.op-menu-item.danger:hover {
-  background: var(--el-color-danger-light-9);
-  color: var(--el-color-danger);
+.op-menu-item.danger:hover,
+.op-menu-item.danger:focus-visible {
+  background: color-mix(in srgb, var(--el-color-danger) 10%, transparent) !important;
+  color: var(--el-color-danger) !important;
 }
 
 .op-menu-item.is-disabled {
@@ -1103,7 +1106,8 @@ html.dark {
 
 .operation-menu-compact .el-dropdown-menu__item:hover,
 .operation-menu-compact :deep(.el-dropdown-menu__item:hover) {
-  background-color: var(--el-fill-color-light) !important;
+  background-color: color-mix(in srgb, var(--el-color-primary) 10%, transparent) !important;
+  color: var(--el-color-primary) !important;
 }
 
 .operation-menu-compact .el-dropdown-menu__item--divided,
@@ -1150,7 +1154,7 @@ html.dark {
 .operation-menu-compact :deep(.el-dropdown-menu__item.dropdown-item-danger:hover),
 .operation-dropdown :deep(.el-dropdown-menu__item.operation-menu-item--danger:hover),
 .operation-dropdown :deep(.el-dropdown-menu__item.dropdown-item-danger:hover) {
-  background: var(--el-color-danger-light-9) !important;
+  background: color-mix(in srgb, var(--el-color-danger) 10%, transparent) !important;
   color: var(--el-color-danger) !important;
 }
 
@@ -1181,15 +1185,17 @@ html.dark {
   font-weight: 500;
   line-height: 1;
   color: var(--el-color-primary) !important;
+  background: transparent !important;
+  background-color: transparent !important;
 }
 
 .operation-trigger-button:hover,
-.operation-dropdown .el-button.operation-trigger-button:hover {
-  color: var(--el-color-primary) !important;
-}
-
+.operation-dropdown .el-button.operation-trigger-button:hover,
 .operation-trigger-button:focus-visible,
 .operation-dropdown .el-button.operation-trigger-button:focus-visible {
+  color: var(--el-color-primary) !important;
+  background: transparent !important;
+  background-color: transparent !important;
   outline: none;
 }
 

@@ -150,7 +150,7 @@
                     </el-avatar>
                     <div>
                       <span>{{ row.publicUserName || row.publicUserAccount || '匿名买家' }}</span>
-                      <span v-if="row.replyToUserName" class="text-blue-500 ml-1 text-xs">
+                      <span v-if="row.replyToUserName" class="text-[color-mix(in_srgb,var(--el-color-primary)_72%,transparent)] ml-1 text-xs">
                         (回复 @{{ row.replyToUserName }})
                       </span>
                     </div>
@@ -184,7 +184,7 @@
                 <!-- 官方回复状态 -->
                 <template #replySlot="{ row }">
                   <div v-if="row.replyContent" class="text-gray-700 bg-gray-50 dark:bg-gray-800 p-1.5 rounded border border-gray-100 text-xs">
-                    <span class="font-bold text-blue-600">商家回复：</span>{{ row.replyContent }}
+                    <span class="font-bold text-[var(--el-color-primary)]">商家回复：</span>{{ row.replyContent }}
                   </div>
                   <span v-else class="text-gray-400">未回复</span>
                 </template>

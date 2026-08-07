@@ -146,7 +146,7 @@ $toolbar-position: -55px;
     /* 鼠标放到组件上时 */
     &:hover {
       border: $hover-border-width dashed var(--el-color-primary);
-      box-shadow: 0 0 5px 0 rgb(24 144 255 / 30%);
+      box-shadow: 0 0 5px 0 color-mix(in srgb, var(--el-color-primary) 30%, transparent);
 
       .component-name {
         top: $hover-border-width;
@@ -215,7 +215,7 @@ $toolbar-position: -55px;
     .component-wrap {
       margin-bottom: $active-border-width + $active-border-width;
       border: $active-border-width solid var(--el-color-primary) !important;
-      box-shadow: 0 0 10px 0 rgb(24 144 255 / 30%);
+      box-shadow: 0 0 10px 0 color-mix(in srgb, var(--el-color-primary) 30%, transparent);
 
       .component-name {
         top: 0 !important;

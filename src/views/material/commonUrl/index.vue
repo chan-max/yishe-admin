@@ -125,7 +125,7 @@
         </template>
         <template #urlSlot="{ row }">
           <div class="text-wrap" style="max-width: 300px; word-break: break-all;">
-            <a :href="row.url" target="_blank" class="text-blue-600 hover:text-blue-800">
+            <a :href="row.url" target="_blank" class="text-[var(--el-color-primary)] hover:text-[var(--el-color-primary-dark-2)]">
               {{ row.url }}
             </a>
           </div>

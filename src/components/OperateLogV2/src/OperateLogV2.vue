@@ -51,7 +51,7 @@ const getUserTypeColor = (type: number) => {
     case 'danger':
       return '#F56C6C'
   }
-  return '#409EFF'
+  return 'var(--el-color-primary)'
 }
 </script>
 

@@ -105,6 +105,66 @@ export interface AiAssistantCapabilityCatalog {
   groups: AiAssistantCapabilityGroup[];
 }
 
+export interface AiAssistantToolCatalog {
+  total: number;
+  serverTotal: number;
+  clientTotal: number;
+  generatedAt: string;
+  summary: string;
+  groups: Array<{
+    key: string;
+    label: string;
+    total: number;
+    domains: Array<{ key: string; label: string; total: number; tools: string[] }>;
+  }>;
+  tools: Array<
+    AiAssistantToolDefinition & {
+      id?: string;
+      summary?: string;
+      source?: string;
+      sourceLabel?: string;
+      available?: boolean;
+      groupKey?: string;
+      groupLabel?: string;
+      clients?: Array<{
+        connectionId: string;
+        clientId?: string;
+        isOnline?: boolean;
+        appVersion?: string | null;
+      }>;
+      hierarchy?: {
+        source: { key: string; label: string };
+        domain: { key: string; label: string };
+        capability: { key: string; label: string };
+        action: { key: string; label: string };
+        path: string[];
+      };
+      workflow?: {
+        selectable: boolean;
+        nodeType: string;
+        value: string;
+        requiresClient: boolean;
+        requiresConfirmation: boolean;
+      };
+      children?: Array<{
+        key: string;
+        label: string;
+        description?: string;
+        kind: "operation" | "action";
+        inputSchema?: Record<string, any>;
+        aliases?: string[];
+      }>;
+    }
+  >;
+  clients: Array<{
+    connectionId: string;
+    clientId?: string;
+    isOnline?: boolean;
+    appVersion?: string | null;
+    toolDiscovery?: { success?: boolean; error?: string; tools?: any[] } | null;
+  }>;
+}
+
 export interface AiAssistantAttachment {
   kind: "image" | "file";
   name: string;
@@ -135,6 +195,16 @@ export interface AiAssistantMessage {
   toolResult: Record<string, any> | null;
   runTrace?: Record<string, any> | null;
   createdAt: string;
+  runId?: string | null;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  durationMs?: number | null;
+  aiResponseMs?: number | null;
+  toolExecutionMs?: number | null;
+  tokensUsed?: number | null;
+  modelName?: string | null;
+  errorText?: string | null;
+  toolCalls?: any[] | null;
 }
 
 export interface AiAssistantChatResult {
@@ -352,6 +422,12 @@ export const AiAssistantApi = {
   getCapabilityCatalog: async () => {
     return request.get<AiAssistantCapabilityCatalog>({
       url: "/ai-assistant/capabilities",
+    });
+  },
+
+  getToolCatalog: async () => {
+    return request.get<AiAssistantToolCatalog>({
+      url: "/ai-assistant/tool-catalog",
     });
   },
 

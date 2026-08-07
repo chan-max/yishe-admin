@@ -9,18 +9,6 @@
     </div>
 
     <div class="create-task-block">
-      <div class="create-task-quick-presets">
-        <span class="create-task-quick-presets__label">常用快捷预设：</span>
-        <div class="create-task-quick-presets__items">
-          <el-tag class="create-task-quick-tag" effect="plain" @click="appendQuickPreset('resize')">1080x1080 缩放</el-tag>
-          <el-tag class="create-task-quick-tag" effect="plain" @click="appendQuickPreset('watermark')">文字水印</el-tag>
-          <el-tag class="create-task-quick-tag" effect="plain" @click="appendQuickPreset('sharpen')">图像锐化</el-tag>
-          <el-tag class="create-task-quick-tag" effect="plain" @click="appendQuickPreset('sepia')">复古怀旧</el-tag>
-          <el-tag class="create-task-quick-tag" effect="plain" @click="appendQuickPreset('lowpoly')">低多边形</el-tag>
-          <el-tag class="create-task-quick-tag" effect="plain" @click="appendQuickPreset('png')">转为 PNG</el-tag>
-        </div>
-      </div>
-
       <div class="create-task-toolbar">
         <div class="create-task-pills">
           <div class="create-task-pill">当前处理链 {{ currentOperations.length }} 步</div>
@@ -65,7 +53,55 @@
           <div v-if="operation.paramEntries.length" class="create-task-param-grid">
             <div v-for="param in operation.paramEntries" :key="`${operation.key}-${param.name}`" class="create-task-param-card">
               <div class="create-task-param-card__label">{{ param.name }}</div>
-              <div class="create-task-param-card__value">{{ param.value }}</div>
+              <div class="create-task-param-card__input-wrap">
+                <!-- 颜色选择器 -->
+                <template v-if="param.isColor">
+                  <div class="flex items-center gap-2 w-full">
+                    <el-color-picker
+                      size="small"
+                      :model-value="param.rawVal || '#000000'"
+                      @change="$emit('update-param', index, param.name, $event)"
+                    />
+                    <el-input
+                      size="small"
+                      :model-value="param.rawVal"
+                      placeholder="#000000"
+                      @input="$emit('update-param', index, param.name, $event)"
+                    />
+                  </div>
+                </template>
+
+                <!-- 布尔开关 -->
+                <template v-else-if="typeof param.rawVal === 'boolean' || param.type === 'boolean'">
+                  <el-switch
+                    size="small"
+                    :model-value="Boolean(param.rawVal)"
+                    @change="$emit('update-param', index, param.name, $event)"
+                  />
+                </template>
+
+                <!-- 数字输入框 -->
+                <template v-else-if="typeof param.rawVal === 'number' || param.type === 'number'">
+                  <el-input-number
+                    size="small"
+                    controls-position="right"
+                    class="w-full"
+                    :model-value="Number(param.rawVal)"
+                    @change="$emit('update-param', index, param.name, $event)"
+                  />
+                </template>
+
+                <!-- 文本输入框 -->
+                <template v-else>
+                  <el-input
+                    size="small"
+                    class="w-full"
+                    :model-value="param.rawVal !== undefined && param.rawVal !== null ? String(param.rawVal) : ''"
+                    placeholder="请输入参数"
+                    @input="$emit('update-param', index, param.name, $event)"
+                  />
+                </template>
+              </div>
             </div>
           </div>
           <div v-else class="create-task-card__desc">这个操作无需额外参数</div>
@@ -218,6 +254,7 @@ const emit = defineEmits([
   "remove-operation",
   "select-operation",
   "append-operation",
+  "update-param",
   "format-json",
   "update:operation-keyword",
   "update:operation-category-filter",

@@ -36,7 +36,7 @@
             v-if="condition.conditionGroups.conditions.length > 1"
           >
             <Icon
-              color="#0089ff"
+              color="var(--el-color-primary)"
               icon="ep:circle-close-filled"
               :size="18"
               @click="deleteConditionGroup(condition.conditionGroups.conditions, cIdx)"
@@ -111,7 +111,7 @@
       </el-space>
       <div title="添加条件组" class="mt-4 cursor-pointer">
         <Icon
-          color="#0089ff"
+          color="var(--el-color-primary)"
           icon="ep:plus"
           :size="24"
           @click="addConditionGroup(condition.conditionGroups?.conditions)"
@@ -239,7 +239,7 @@ defineExpose({ validate })
   position: relative;
 
   &:hover {
-    border-color: #0089ff;
+    border-color: var(--el-color-primary);
 
     .condition-group-delete {
       opacity: 1;

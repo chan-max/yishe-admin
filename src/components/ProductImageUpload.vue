@@ -276,8 +276,8 @@ defineExpose({
 }
 
 .image-item:hover {
-  border-color: #409eff;
-  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.2);
+  border-color: var(--el-color-primary);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--el-color-primary) 20%, transparent);
 }
 
 .image-item.dragging {
@@ -331,8 +331,8 @@ defineExpose({
 }
 
 .chosen-item {
-  border-color: #409eff;
-  box-shadow: 0 2px 12px rgba(64, 158, 255, 0.3);
+  border-color: var(--el-color-primary);
+  box-shadow: 0 2px 12px color-mix(in srgb, var(--el-color-primary) 30%, transparent);
 }
 
 .preview-image {

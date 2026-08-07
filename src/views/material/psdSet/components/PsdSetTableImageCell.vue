@@ -260,7 +260,7 @@ onBeforeUnmount(() => {
 }
 
 .psd-set-table-image-cell__card:hover {
-  border-color: rgba(64, 158, 255, 0.45);
+  border-color: color-mix(in srgb, var(--el-color-primary) 45%, transparent);
 }
 
 .psd-set-table-image-cell__image {
@@ -315,7 +315,7 @@ onBeforeUnmount(() => {
 }
 
 .psd-set-table-image-cell__nav:focus-visible {
-  outline: 2px solid rgba(64, 158, 255, 0.72);
+  outline: 2px solid color-mix(in srgb, var(--el-color-primary) 72%, transparent);
   outline-offset: 1px;
 }
 
@@ -361,7 +361,7 @@ onBeforeUnmount(() => {
   height: 16px;
   padding: 0 6px;
   border-radius: 999px;
-  background: rgba(64, 158, 255, 0.72);
+  background: color-mix(in srgb, var(--el-color-primary) 72%, transparent);
   color: #fff;
   font-size: 9px;
   line-height: 16px;
@@ -401,6 +401,6 @@ onBeforeUnmount(() => {
   height: 22px;
   padding: 0 8px;
   border-radius: 999px;
-  background: rgba(64, 158, 255, 0.08);
+  background: color-mix(in srgb, var(--el-color-primary) 8%, transparent);
 }
 </style>

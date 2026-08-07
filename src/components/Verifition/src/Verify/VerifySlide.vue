@@ -236,8 +236,8 @@ const start = (e) => {
   startMoveTime.value = +new Date() //开始滑动的时间
   if (isEnd.value == false) {
     text.value = ''
-    moveBlockBackgroundColor.value = '#337ab7'
-    leftBarBorderColor.value = '#337AB7'
+    moveBlockBackgroundColor.value = 'var(--el-color-primary)'
+    leftBarBorderColor.value = 'var(--el-color-primary)'
     iconColor.value = '#fff'
     e.stopPropagation()
     status.value = true

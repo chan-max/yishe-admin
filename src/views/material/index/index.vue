@@ -240,80 +240,44 @@
                 <el-icon><Delete /></el-icon>
                 <span>批量删除({{ ids.length }})</span>
               </el-button>
-              <el-dropdown trigger="click"
+              <el-dropdown trigger="click" popper-class="material-tool-dropdown"
                 @command="(cmd: StickerUserTransferAction) => openStickerUserTransferDialog(cmd)">
                 <el-button size="small" type="success" :disabled="loading || !ids.length">
                   分享 ({{ ids.length }})
-                  <el-icon class="el-icon--right">
-                    <ArrowDown />
-                  </el-icon>
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item command="share">
-                      <el-icon>
-                        <Share />
-                      </el-icon>
                       <span>共享</span>
                     </el-dropdown-item>
                     <el-dropdown-item command="copy">
-                      <el-icon>
-                        <DocumentCopy />
-                      </el-icon>
                       <span>转存副本</span>
                     </el-dropdown-item>
                     <el-dropdown-item command="move">
-                      <el-icon>
-                        <TopRight />
-                      </el-icon>
                       <span>移交所有人</span>
                     </el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
-              <el-dropdown trigger="click" :disabled="loading || !ids.length">
-                <el-button size="small" type="primary" plain :disabled="loading || !ids.length">
+              <el-dropdown trigger="click" popper-class="material-tool-dropdown" :disabled="loading || !ids.length">
+                <el-button size="small" type="primary" :disabled="loading || !ids.length">
                   制作工具 ({{ ids.length }})
-                  <el-icon class="el-icon--right">
-                    <ArrowDown />
-                  </el-icon>
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item @click="() => openPsdSetDialog(false)">
-                      <el-icon>
-                        <Picture />
-                      </el-icon>
                       <span>制作PS套图</span>
                     </el-dropdown-item>
                     <el-dropdown-item @click="openMaterialPublishConfigDialog">
-                      <el-icon>
-                        <Setting />
-                      </el-icon>
                       <span>选择发布配置</span>
                     </el-dropdown-item>
                     <el-dropdown-item @click="openMaterialProductConfigDialog">
-                      <el-icon>
-                        <MagicStick />
-                      </el-icon>
                       <span>生成独立站商品</span>
                     </el-dropdown-item>
                     <el-dropdown-item @click="openBatchImageProcessing('process')">
-                      <el-icon>
-                        <Operation />
-                      </el-icon>
                       <span>图片链式处理</span>
                     </el-dropdown-item>
-                    <el-dropdown-item @click="openBatchImageProcessing('variations')">
-                      <el-icon>
-                        <PictureFilled />
-                      </el-icon>
-                      <span>图片裂变预设</span>
-                    </el-dropdown-item>
                     <el-dropdown-item :title="addToGroupButtonTitle" @click="openBatchAddToGroupDialog">
-                      <el-icon>
-                        <FolderAdd />
-                      </el-icon>
                       <span>{{ addToGroupButtonText }}</span>
                     </el-dropdown-item>
                   </el-dropdown-menu>
@@ -1862,7 +1826,7 @@
                     </el-dropdown>
 
                     <el-icon v-if="aiTableLoading?.[row?.id]" class="is-loading ml-2"
-                      style="color: #409eff; font-size: 18px" />
+                      style="color: var(--el-color-primary); font-size: 18px" />
                   </div>
                 </template>
               </vxe-grid>
@@ -2930,7 +2894,6 @@ import {
   Edit,
   Picture,
   UploadFilled,
-  MagicStick,
   Key,
   Document,
   Warning,
@@ -2941,9 +2904,6 @@ import {
   Files,
   DArrowLeft,
   DArrowRight,
-  Share,
-  TopRight,
-  ArrowDown,
   Connection,
 } from "@element-plus/icons-vue";
 import tree from "./tree.vue";
@@ -7535,7 +7495,7 @@ async function handleUrlUpload() {
   align-items: center;
   padding: 0 5px;
   border-radius: 999px;
-  background: rgba(64, 158, 255, 0.92);
+  background: color-mix(in srgb, var(--el-color-primary) 92%, transparent);
   color: #fff;
   font-size: 10px;
   line-height: 1;
@@ -7880,9 +7840,9 @@ async function handleUrlUpload() {
   color: var(--el-color-primary);
   font-weight: 500;
   padding: 2px 8px;
-  background: rgba(64, 158, 255, 0.1);
+  background: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
   border-radius: 4px;
-  border: 1px solid rgba(64, 158, 255, 0.3);
+  border: 1px solid color-mix(in srgb, var(--el-color-primary) 30%, transparent);
 }
 
 .section-title .template-count-info {
@@ -8725,8 +8685,8 @@ h1 {
 }
 
 .step-active {
-  box-shadow: 0 0 0 3px #409eff44;
-  background: rgba(64, 158, 255, 0.1) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--el-color-primary) 27%, transparent);
+  background: color-mix(in srgb, var(--el-color-primary) 10%, transparent) !important;
   /* 高亮：主色+透明 */
   opacity: 1;
 }
@@ -8743,7 +8703,7 @@ h1 {
 .border-blue-200,
 .bg-blue-50 {
   background: transparent !important;
-  border-color: rgba(64, 158, 255, 0.15) !important;
+  border-color: color-mix(in srgb, var(--el-color-primary) 15%, transparent) !important;
 }
 
 .design-model-flex {
@@ -8879,8 +8839,8 @@ h1 {
 .original-info {
   margin-bottom: 16px;
   padding: 8px 12px;
-  background-color: #f0f9ff;
-  border: 1px solid #bae6fd;
+  background-color: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--el-color-primary) 30%, transparent);
   border-radius: 6px;
 }
 
@@ -9028,7 +8988,7 @@ h1 {
   gap: 8px;
   min-height: 0;
   padding: 14px;
-  border: 1px solid rgba(64, 158, 255, 0.08);
+  border: 1px solid color-mix(in srgb, var(--el-color-primary) 8%, transparent);
   border-radius: 16px;
   background: linear-gradient(180deg, var(--el-bg-color), var(--el-fill-color-extra-light));
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
@@ -9120,7 +9080,7 @@ h1 {
 
 .material-publish-config-dialog__material-item:hover {
   transform: translateY(-1px);
-  border-color: rgba(64, 158, 255, 0.16);
+  border-color: color-mix(in srgb, var(--el-color-primary) 16%, transparent);
   box-shadow: 0 10px 20px rgba(15, 23, 42, 0.06);
 }
 
@@ -9343,6 +9303,27 @@ h1 {
 .el-dropdown__popper .el-dropdown-menu__item {
   overflow: visible !important;
 }
+
+/* 工具栏下拉：扁平化样式（无位移、无边框、柔和主题色高亮） */
+.material-tool-dropdown .el-dropdown-menu {
+  min-width: 150px;
+  padding: 5px;
+}
+
+.material-tool-dropdown .el-dropdown-menu__item {
+  padding: 7px 12px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.material-tool-dropdown .el-dropdown-menu__item:not(.is-disabled):hover,
+.material-tool-dropdown .el-dropdown-menu__item:not(.is-disabled):focus-visible {
+  background: color-mix(in srgb, var(--el-color-primary) 8%, transparent);
+  color: var(--el-color-primary);
+  transform: none;
+  box-shadow: none;
+  outline: none;
+}
 </style>
 <style scoped>
 .operation-dropdown {
@@ -9351,13 +9332,14 @@ h1 {
 
 .operation-trigger-button {
   min-width: 42px;
-  padding: 0 4px;
+  padding: 2px 6px;
   border-radius: 4px;
+  background: transparent !important;
 }
 
 .operation-trigger-button:hover,
 .operation-trigger-button:focus-visible {
-  background: var(--el-color-primary-light-9);
+  background: color-mix(in srgb, var(--el-color-primary) 12%, transparent) !important;
   outline: none;
 }
 
@@ -9404,9 +9386,8 @@ h1 {
 .op-menu-item.has-submenu:hover,
 .op-submenu-item:hover,
 .op-submenu-item:focus-visible {
-  background: var(--el-color-primary-light-9);
+  background: color-mix(in srgb, var(--el-color-primary) 8%, transparent);
   color: var(--el-color-primary);
-  box-shadow: inset 0 0 0 1px var(--el-color-primary-light-7);
   outline: none;
 }
 
@@ -9416,9 +9397,8 @@ h1 {
 
 .op-menu-item.danger:hover,
 .op-menu-item.danger:focus-visible {
-  background: var(--el-color-danger-light-9);
+  background: color-mix(in srgb, var(--el-color-danger) 8%, transparent);
   color: var(--el-color-danger);
-  box-shadow: inset 0 0 0 1px var(--el-color-danger-light-7);
 }
 
 .op-menu-arrow,
@@ -9982,7 +9962,7 @@ h1 {
 
 .psd-set-materials,
 .psd-set-templates {
-  border: 1px solid rgba(64, 158, 255, 0.08);
+  border: 1px solid color-mix(in srgb, var(--el-color-primary) 8%, transparent);
   border-radius: 16px;
   padding: 14px;
   min-height: 220px;
@@ -10174,7 +10154,7 @@ h1 {
 
 .psd-set-materials .thumb:hover {
   transform: translateY(-1px);
-  border-color: rgba(64, 158, 255, 0.18);
+  border-color: color-mix(in srgb, var(--el-color-primary) 18%, transparent);
   box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
 }
 
@@ -10318,9 +10298,9 @@ h1 {
   color: var(--el-color-primary);
   font-weight: 500;
   padding: 3px 8px;
-  background: rgba(64, 158, 255, 0.1);
+  background: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
   border-radius: 4px;
-  border: 1px solid rgba(64, 158, 255, 0.22);
+  border: 1px solid color-mix(in srgb, var(--el-color-primary) 22%, transparent);
   white-space: nowrap;
 }
 
@@ -10367,14 +10347,14 @@ h1 {
 
 .psd-set-templates .template-item:hover {
   transform: translateY(-1px);
-  border-color: rgba(64, 158, 255, 0.18);
+  border-color: color-mix(in srgb, var(--el-color-primary) 18%, transparent);
   box-shadow: 0 14px 28px rgba(15, 23, 42, 0.06);
 }
 
 .psd-set-templates .template-item.is-checked {
   border-color: var(--el-color-primary);
-  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.18);
-  background: linear-gradient(180deg, rgba(64, 158, 255, 0.08), rgba(64, 158, 255, 0.03));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--el-color-primary) 18%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--el-color-primary) 8%, transparent), color-mix(in srgb, var(--el-color-primary) 3%, transparent));
 }
 
 .psd-set-templates .template-content-wrapper {
@@ -10652,7 +10632,7 @@ h1 {
   height: 24px;
   border: 1.5px solid var(--el-border-color);
   border-radius: 3px;
-  background: linear-gradient(135deg, rgba(64, 158, 255, 0.1) 0%, rgba(64, 158, 255, 0.2) 100%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--el-color-primary) 10%, transparent) 0%, color-mix(in srgb, var(--el-color-primary) 20%, transparent) 100%);
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -10665,7 +10645,7 @@ h1 {
   content: "";
   position: absolute;
   inset: 2px;
-  border: 1px solid rgba(64, 158, 255, 0.3);
+  border: 1px solid color-mix(in srgb, var(--el-color-primary) 30%, transparent);
   border-radius: 2px;
 }
 
@@ -10692,7 +10672,7 @@ h1 {
 .very-wide-thumb,
 .ultra-wide-thumb,
 .extreme-wide-thumb {
-  background: linear-gradient(135deg, rgba(64, 158, 255, 0.15) 0%, rgba(64, 158, 255, 0.25) 100%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--el-color-primary) 15%, transparent) 0%, color-mix(in srgb, var(--el-color-primary) 25%, transparent) 100%);
 }
 
 /* 正方形 */
@@ -10726,7 +10706,7 @@ h1 {
 /* 选中状态 */
 :deep(.el-select-dropdown__item.is-selected) .size-thumb {
   border-color: var(--el-color-primary);
-  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--el-color-primary) 20%, transparent);
 }
 
 :deep(.el-select-dropdown__item:hover) .size-thumb {

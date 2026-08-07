@@ -132,7 +132,7 @@
                 <template #targetSlot="{ row }">
                   <div class="break-all">
                     <span v-if="row.targetName" class="mr-1">{{ row.targetName }}</span>
-                    <code v-if="row.targetId" class="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-blue-600">
+                    <code v-if="row.targetId" class="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-[var(--el-color-primary)]">
                       {{ row.targetId }}
                     </code>
                     <span v-if="!row.targetName && !row.targetId" class="text-gray-400">-</span>

@@ -87,7 +87,7 @@ const handleOpen = (key: string) => {
   width: 24px;
   height: 24px;
   border-radius: 0;
-  background: #409eff;
+  background: var(--el-color-primary);
   color: #fff;
   cursor: pointer;
   box-shadow:

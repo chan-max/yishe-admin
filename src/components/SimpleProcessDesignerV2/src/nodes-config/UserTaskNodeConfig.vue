@@ -973,9 +973,9 @@ function useTimeoutHandler() {
       transition: all 0.3s;
 
       &:focus {
-        border-color: #40a9ff;
+        border-color: var(--el-color-primary);
         outline: 0;
-        box-shadow: 0 0 0 2px rgb(24 144 255 / 20%);
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--el-color-primary) 20%, transparent);
       }
     }
   }

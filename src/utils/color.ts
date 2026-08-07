@@ -173,3 +173,49 @@ export const PREDEFINE_COLORS = [
   '#1f73c3',
   '#711f57'
 ]
+
+/**
+ * 混合两种颜色，weight 为 color1 所占比例（0~1，color2 占 1-weight）。
+ * 与 SCSS 的 mix(color1, color2, weight) 行为一致。
+ */
+export const mixColor = (color1: string, color2: string, weight: number): string => {
+  const parse = (hex: string): number[] | null => {
+    let h = hex.trim()
+    if (h[0] === '#') h = h.slice(1)
+    if (h.length === 3) {
+      h = h
+        .split('')
+        .map((c) => c + c)
+        .join('')
+    }
+    if (!/^[0-9a-fA-F]{6}$/.test(h)) return null
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]
+  }
+  const a = parse(color1)
+  const b = parse(color2)
+  if (!a || !b) return color1
+  const w = Math.max(0, Math.min(1, weight))
+  return rgbToHex(
+    Math.round(a[0] * w + b[0] * (1 - w)),
+    Math.round(a[1] * w + b[1] * (1 - w)),
+    Math.round(a[2] * w + b[2] * (1 - w))
+  )
+}
+
+/**
+ * 根据主色生成 Element Plus 主题所需的 --el-color-primary 全套变量。
+ * light-N 对应 SCSS `mix(white, primary, N/10)`，dark-2 对应 `mix(black, primary, 10%)`。
+ */
+export const getElementPlusPrimaryVars = (color: string): Record<string, string> => {
+  const WHITE = '#ffffff'
+  const BLACK = '#000000'
+  return {
+    '--el-color-primary': color,
+    '--el-color-primary-light-3': mixColor(WHITE, color, 0.3),
+    '--el-color-primary-light-5': mixColor(WHITE, color, 0.5),
+    '--el-color-primary-light-7': mixColor(WHITE, color, 0.7),
+    '--el-color-primary-light-8': mixColor(WHITE, color, 0.8),
+    '--el-color-primary-light-9': mixColor(WHITE, color, 0.9),
+    '--el-color-primary-dark-2': mixColor(BLACK, color, 0.1)
+  }
+}

@@ -203,7 +203,7 @@ const getOpName = (opCode: string): string => {
   position: relative;
 
   &:hover {
-    border-color: #0089ff;
+    border-color: var(--el-color-primary);
 
     .condition-group-delete {
       opacity: 1;

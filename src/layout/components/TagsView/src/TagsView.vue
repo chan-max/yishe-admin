@@ -330,9 +330,9 @@ watch(
               },
             },
           ]" :tag-item="item" @visible-change="visibleChange">
-            <div>
+            <div class="h-full w-full flex items-center justify-center">
               <router-link :ref="tagLinksRefs.set" v-slot="{ navigate }" :to="{ ...item }" custom>
-                <div :class="`h-full flex items-center justify-center whitespace-nowrap ${prefixCls}__item--label`"
+                <div :class="`h-full w-full flex items-center justify-center whitespace-nowrap ${prefixCls}__item--label`"
                   @click="navigate">
                   <span :class="`${prefixCls}__item--title`">
                     {{
@@ -539,12 +539,13 @@ $prefix-cls: #{$namespace}-tags-view;
       align-items: center;
       justify-content: center;
       color: inherit;
-      opacity: 0;
+      opacity: 0.6;
       border-radius: 999px;
       transform: translate(0, -50%);
       transition:
         opacity 0.18s ease,
-        background-color 0.18s ease;
+        background-color 0.18s ease,
+        transform 0.18s ease;
     }
 
     &:hover {
@@ -553,14 +554,16 @@ $prefix-cls: #{$namespace}-tags-view;
       background: color-mix(in srgb, var(--tags-view-item-hover-bg) 70%, transparent 30%);
       border-color: color-mix(in srgb, var(--tags-view-item-border-color) 42%, transparent 58%);
       box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
-      transform: translateY(-1px) scale(1.045);
+      transform: translateY(-1px) scale(1.02);
 
       &:not(.#{$prefix-cls}__item--affix) .#{$prefix-cls}__item--close {
-        opacity: 1;
+        opacity: 0.85;
       }
 
       .#{$prefix-cls}__item--close:hover {
-        background: color-mix(in srgb, var(--tags-view-tool-hover-bg) 52%, transparent 48%);
+        opacity: 1;
+        background: color-mix(in srgb, var(--tags-view-tool-hover-bg) 75%, transparent 25%);
+        transform: translate(0, -50%) scale(1.15);
       }
     }
 
@@ -574,12 +577,18 @@ $prefix-cls: #{$namespace}-tags-view;
   &__item--label {
     display: flex;
     width: 100%;
+    height: 100%;
     min-width: 0;
     align-items: center;
     justify-content: center;
-    padding: 0 var(--tags-view-item-inline-padding);
+    padding: 0 calc(var(--tags-view-item-inline-padding) + 10px) 0 var(--tags-view-item-inline-padding);
     line-height: 1;
     text-align: center;
+    cursor: pointer;
+  }
+
+  &__item--affix .#{$prefix-cls}__item--label {
+    padding: 0 var(--tags-view-item-inline-padding);
   }
 
   &__item.is-active {
