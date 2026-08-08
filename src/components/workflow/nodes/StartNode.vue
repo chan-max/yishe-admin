@@ -1,26 +1,60 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { Handle, Position } from '@vue-flow/core'
 
-defineProps<{ data: { label?: string; config?: any } }>()
+const props = defineProps<{ data: { label?: string; config?: any } }>()
+
+const triggerLabel = computed(() => {
+  const type = props.data.config?.triggerType
+  if (type === 'webhook') return 'Webhook'
+  if (type === 'cron') return '定时 Cron'
+  return '手动触发'
+})
+
+const paramCount = computed(() => {
+  const params = props.data.config?.inputParams
+  return Array.isArray(params) ? params.length : 0
+})
 </script>
 
 <template>
   <div class="wf-node wf-node--start">
-    <span>{{ data.label || '开始' }}</span>
+    <div class="wf-start-title">{{ data.label || '开始' }}</div>
+    <div class="wf-start-badge">
+      <span>{{ triggerLabel }}</span>
+      <span v-if="paramCount > 0" class="wf-param-tag">{{ paramCount }}个变量</span>
+    </div>
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>
 
 <style scoped>
 .wf-node--start {
-  background: linear-gradient(135deg, #22c55e, #16a34a);
+  background: linear-gradient(135deg, #10b981, #059669);
   color: #fff;
-  border-radius: 20px;
-  padding: 6px 16px;
-  min-width: 80px;
+  border-radius: 12px;
+  padding: 6px 12px;
+  min-width: 110px;
   font-size: 12px;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.wf-start-title {
   font-weight: 600;
-  text-align: center;
-  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+}
+.wf-start-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  opacity: 0.9;
+}
+.wf-param-tag {
+  background: rgba(255, 255, 255, 0.25);
+  padding: 0 4px;
+  border-radius: 3px;
 }
 </style>

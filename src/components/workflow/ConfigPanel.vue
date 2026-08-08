@@ -41,6 +41,21 @@ const handleDelete = () => {
   if (props.node) emit('delete', props.node.id)
 }
 
+const addInputParam = () => {
+  if (!form.value.config.inputParams) {
+    form.value.config.inputParams = []
+  }
+  form.value.config.inputParams.push({ key: '', type: 'string' })
+  handleDataChange()
+}
+
+const removeInputParam = (index: number) => {
+  if (Array.isArray(form.value.config.inputParams)) {
+    form.value.config.inputParams.splice(index, 1)
+    handleDataChange()
+  }
+}
+
 const NODE_TYPE_LABELS: Record<string, string> = {
   start: '开始节点',
   end: '结束节点',
@@ -72,6 +87,72 @@ const NODE_TYPE_LABELS: Record<string, string> = {
               @input="handleDataChange"
             />
           </el-form-item>
+
+          <!-- 开始节点专用配置 -->
+          <template v-if="node.type === 'start'">
+            <el-form-item label="触发类型">
+              <el-select v-model="form.config.triggerType" placeholder="选择类型" @change="handleDataChange">
+                <el-option label="▶ 手动触发" value="manual" />
+                <el-option label="⚡ Webhook" value="webhook" />
+                <el-option label="⏰ 定时 Cron" value="cron" />
+              </el-select>
+            </el-form-item>
+
+            <template v-if="form.config.triggerType === 'webhook'">
+              <el-form-item label="Webhook Path">
+                <el-input
+                  v-model="form.config.webhookPath"
+                  placeholder="wf_abc123"
+                  @input="handleDataChange"
+                />
+              </el-form-item>
+            </template>
+
+            <template v-if="form.config.triggerType === 'cron'">
+              <el-form-item label="Cron 表达式">
+                <el-input
+                  v-model="form.config.cronExpression"
+                  placeholder="0 8 * * *"
+                  @input="handleDataChange"
+                />
+              </el-form-item>
+            </template>
+
+            <el-form-item label="输入变量定义">
+              <div class="wf-param-list">
+                <div
+                  v-for="(param, idx) in (form.config.inputParams || [])"
+                  :key="idx"
+                  class="wf-param-item"
+                >
+                  <el-input
+                    v-model="param.key"
+                    placeholder="变量名"
+                    size="small"
+                    style="width: 80px"
+                    @input="handleDataChange"
+                  />
+                  <el-select
+                    v-model="param.type"
+                    size="small"
+                    style="width: 70px"
+                    @change="handleDataChange"
+                  >
+                    <el-option label="string" value="string" />
+                    <el-option label="number" value="number" />
+                    <el-option label="boolean" value="boolean" />
+                    <el-option label="json" value="json" />
+                  </el-select>
+                  <el-button type="danger" text circle size="small" @click="removeInputParam(idx)">
+                    <el-icon><Delete /></el-icon>
+                  </el-button>
+                </div>
+                <el-button size="small" type="primary" plain style="width: 100%; margin-top: 4px;" @click="addInputParam">
+                  + 添加输入变量
+                </el-button>
+              </div>
+            </el-form-item>
+          </template>
 
           <!-- AI 大模型专用配置 -->
           <template v-if="node.type === 'llm'">
@@ -195,6 +276,17 @@ const NODE_TYPE_LABELS: Record<string, string> = {
     padding-bottom: 2px;
     color: var(--el-text-color-secondary);
   }
+}
+
+.wf-param-list {
+  width: 100%;
+}
+
+.wf-param-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
 }
 
 .config-panel__empty {
