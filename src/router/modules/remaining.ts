@@ -19,6 +19,42 @@ const { t } = useI18n();
  * meta.canTo: 即使 hidden 为 true，也允许路由跳转。
  */
 const remainingRouter: AppRouteRecordRaw[] = [
+  // ── 工作流 ────────────────────────────────────────────────────
+  {
+    path: '/workflow',
+    component: Layout,
+    name: 'Workflow',
+    redirect: '/workflow/index',
+    meta: {
+      title: '工作流',
+      icon: 'ep:connection',
+      order: 10,
+      alwaysShow: true,
+    },
+    children: [
+      {
+        path: 'index',
+        component: () => import('@/views/workflow/index/index.vue'),
+        name: 'WorkflowIndex',
+        meta: {
+          title: '我的工作流',
+          noCache: true,
+        },
+      },
+    ],
+  },
+  // 编辑器：全屏使用，隐藏侧边栏和标签栏
+  {
+    path: '/workflow/editor/:id',
+    component: () => import('@/views/workflow/editor/index.vue'),
+    name: 'WorkflowEditor',
+    meta: {
+      title: '工作流编辑器',
+      hidden: true,
+      noTagsView: false,
+      noCache: true,
+    },
+  },
   {
     path: "/",
     name: "Root",
