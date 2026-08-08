@@ -127,7 +127,7 @@ const statusMap: Record<string, { label: string; type: string }> = {
       <el-button @click="handleSearch">查询</el-button>
     </div>
 
-    <!-- 工作流卡片网格 (Figma Style) -->
+    <!-- 工作流卡片网格 (扁平无边框无阴影) -->
     <div v-loading="loading" class="wf-grid">
       <!-- 新建卡片 -->
       <div class="wf-card wf-card--new" @click="createVisible = true">
@@ -144,9 +144,9 @@ const statusMap: Record<string, { label: string; type: string }> = {
         class="wf-card"
         @click="openEditor(item)"
       >
-        <!-- 封面图/图标展现区域 -->
-        <div class="wf-card__cover">
-          <div class="wf-card__cover-icon">
+        <!-- 卡片头部 (图标 + 状态) -->
+        <div class="wf-card__header">
+          <div class="wf-card__icon">
             <el-icon><Connection /></el-icon>
           </div>
           <div class="wf-card__status" :class="'wf-card__status--' + item.status">
@@ -270,47 +270,47 @@ const statusMap: Record<string, { label: string; type: string }> = {
 }
 
 .wf-card {
-  position: relative;
   background: var(--app-content-surface-color);
-  border: 1px solid var(--app-content-border-color);
-  border-radius: 10px;
+  border: none;
+  box-shadow: none;
+  border-radius: 12px;
+  padding: 16px 18px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.15s ease;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  gap: 12px;
+  min-height: 140px;
 
   &:hover {
-    border-color: var(--el-color-primary-light-5);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.07);
+    background: var(--app-content-surface-muted-color);
+    border: none;
+    box-shadow: none;
 
-    .wf-card__cover-icon {
-      transform: scale(1.08);
+    .wf-card__icon {
       color: var(--el-color-primary);
-    }
-
-    .wf-more-btn {
-      opacity: 1;
+      background: color-mix(in srgb, var(--el-color-primary) 12%, transparent);
     }
   }
 }
 
 .wf-card--new {
-  border: 1.5px dashed var(--app-content-border-color);
-  background: transparent;
+  background: var(--app-content-surface-color);
+  border: none;
+  box-shadow: none;
   align-items: center;
   justify-content: center;
-  min-height: 180px;
+  min-height: 140px;
   gap: 10px;
 
   &:hover {
-    border-color: var(--el-color-primary);
-    background: color-mix(in srgb, var(--el-color-primary) 5%, transparent);
+    background: color-mix(in srgb, var(--el-color-primary) 8%, var(--app-content-surface-color));
+    border: none;
+    box-shadow: none;
 
     .wf-card--new__icon {
       background: var(--el-color-primary);
       color: #ffffff;
-      transform: scale(1.1);
     }
 
     .wf-card--new__title {
@@ -329,46 +329,42 @@ const statusMap: Record<string, { label: string; type: string }> = {
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 .wf-card--new__title {
   font-size: 14px;
   font-weight: 500;
   color: var(--el-text-color-regular);
-  transition: color 0.2s ease;
+  transition: color 0.15s ease;
 }
 
-/* 封面展示区域 (Figma Cover Tile) */
-.wf-card__cover {
-  height: 105px;
+/* 卡片头部 */
+.wf-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wf-card__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
   background: var(--app-content-surface-muted-color);
+  color: var(--el-text-color-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
-  border-bottom: 1px solid var(--app-content-border-color);
-}
-
-.wf-card__cover-icon {
-  font-size: 32px;
-  color: var(--el-text-color-placeholder);
-  transition: all 0.2s ease;
+  font-size: 18px;
+  transition: all 0.15s ease;
 }
 
 .wf-card__status {
-  position: absolute;
-  top: 8px;
-  right: 8px;
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
-  background: var(--app-content-surface-color);
-  border: 1px solid var(--app-content-border-color);
 
   &--draft {
     color: var(--el-text-color-secondary);
@@ -394,12 +390,14 @@ const statusMap: Record<string, { label: string; type: string }> = {
 
 /* 标题与描述 */
 .wf-card__info {
-  padding: 12px 14px 4px;
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .wf-card__title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--el-text-color-primary);
   margin: 0;
@@ -412,7 +410,7 @@ const statusMap: Record<string, { label: string; type: string }> = {
   font-size: 12px;
   line-height: 1.4;
   color: var(--el-text-color-secondary);
-  margin: 4px 0 0;
+  margin: 0;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -424,7 +422,7 @@ const statusMap: Record<string, { label: string; type: string }> = {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 14px 10px;
+  padding-top: 4px;
 }
 
 .wf-card__time {
@@ -440,19 +438,17 @@ const statusMap: Record<string, { label: string; type: string }> = {
 .wf-more-btn {
   border: none;
   background: transparent;
-  color: var(--el-text-color-secondary);
+  color: var(--el-text-color-placeholder);
   cursor: pointer;
-  padding: 4px 6px;
+  padding: 4px;
   border-radius: 4px;
   display: flex;
   align-items: center;
   font-size: 14px;
-  opacity: 0.7;
   transition: all 0.15s ease;
 
   &:hover {
-    opacity: 1;
-    background: var(--app-content-surface-muted-color);
+    background: var(--app-content-surface-color);
     color: var(--el-color-primary);
   }
 }
