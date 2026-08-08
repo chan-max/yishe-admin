@@ -2,12 +2,11 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch, markRaw } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
-import { ArrowLeft, EditPen, Loading, Check, Warning, MagicStick, Download, Upload, Delete, RefreshRight } from '@element-plus/icons-vue'
+import { ArrowLeft, EditPen, Loading, Check, Warning } from '@element-plus/icons-vue'
 import {
   VueFlow,
   useVueFlow,
   type Node,
-  type Edge,
   type Connection,
   type NodeMouseEvent
 } from '@vue-flow/core'

@@ -2,7 +2,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, Connection, MoreFilled, EditPen, Delete } from '@element-plus/icons-vue'
+import { Plus, Search, MoreFilled, EditPen, Delete } from '@element-plus/icons-vue'
 import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
 import {
   getWorkflowPageApi,
