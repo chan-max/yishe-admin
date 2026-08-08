@@ -123,11 +123,11 @@ html.light {
   --tab-menu-collapse-height: 36px;
 
   --app-content-padding: 16px;
-  --app-content-bg-color: #f0f4f8;
-  --app-content-surface-color: #f7f9fc;
-  --app-content-surface-muted-color: #f0f4f8;
-  --app-content-border-color: rgba(148, 163, 184, 0.18);
-  --app-content-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+  --app-content-bg-color: #f7f9fc;
+  --app-content-surface-color: #ffffff;
+  --app-content-surface-muted-color: #f7f9fc;
+  --app-content-border-color: rgba(148, 163, 184, 0.22);
+  --app-content-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
   --app-content-highlight-color: rgba(255, 255, 255, 0.45);
   --app-overlay-color: rgba(15, 23, 42, 0.16);
   --app-scrollbar-thumb-color: rgba(125, 138, 159, 0.46);
