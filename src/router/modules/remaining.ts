@@ -41,19 +41,18 @@ const remainingRouter: AppRouteRecordRaw[] = [
           noCache: true,
         },
       },
+      {
+        path: 'editor/:id',
+        component: () => import('@/views/workflow/editor/index.vue'),
+        name: 'WorkflowEditor',
+        meta: {
+          title: '工作流编辑器',
+          hidden: true,
+          noCache: true,
+          activeMenu: '/workflow/index',
+        },
+      },
     ],
-  },
-  // 编辑器：全屏使用，隐藏侧边栏和标签栏
-  {
-    path: '/workflow/editor/:id',
-    component: () => import('@/views/workflow/editor/index.vue'),
-    name: 'WorkflowEditor',
-    meta: {
-      title: '工作流编辑器',
-      hidden: true,
-      noTagsView: false,
-      noCache: true,
-    },
   },
   {
     path: "/",
