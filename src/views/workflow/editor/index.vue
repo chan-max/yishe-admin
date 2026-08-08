@@ -1,3 +1,4 @@
+<script setup lang="ts">
 import { ref, computed, onMounted, watch, markRaw } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
