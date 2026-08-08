@@ -38,33 +38,38 @@
           </div>
 
           <div class="wf-cron-form">
-            <!-- Cron 表达式与交互时间选择器（同排并列） -->
-            <div class="flex items-center gap-2 mb-3">
+            <!-- 1. Cron 表达式（独立一行） -->
+            <div class="flex items-center gap-2 mb-2">
               <span class="text-xs text-[var(--el-text-color-regular)] w-20 shrink-0">Cron 表达式:</span>
               <el-input
                 v-model="cronExpression"
                 size="small"
-                placeholder="0 8 * * *"
-                style="width: 130px"
+                placeholder="例如: 0 8 * * *"
+                style="width: 250px"
               />
+            </div>
+
+            <!-- 2. 交互时间选择器（独立一行） -->
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-xs text-[var(--el-text-color-regular)] w-20 shrink-0">时间选择器:</span>
               <el-time-picker
                 v-model="timePickerValue"
                 format="HH:mm"
                 size="small"
                 placeholder="选择时间点"
-                style="width: 130px"
+                style="width: 250px"
                 @change="handleTimePickerChange"
               />
             </div>
 
-            <!-- 周期预设下拉 -->
+            <!-- 3. 周期预设（独立一行） -->
             <div class="flex items-center gap-2 mb-3">
               <span class="text-xs text-[var(--el-text-color-regular)] w-20 shrink-0">周期预设:</span>
               <el-select
                 v-model="cronPreset"
                 size="small"
                 placeholder="选择预设周期"
-                style="width: 268px"
+                style="width: 250px"
                 @change="applyCronPreset"
               >
                 <el-option label="每天 08:00 (0 8 * * *)" value="0 8 * * *" />
@@ -79,7 +84,7 @@
                 下次预计：{{ formatDate(cronNextRunTime) }}
               </span>
               <span v-else class="text-xs text-[var(--el-text-color-placeholder)]">
-                当前表达式: {{ cronExpression }}
+                表达式: {{ cronExpression }}
               </span>
               <el-button size="small" type="primary" @click="saveCronTrigger">保存定时设置</el-button>
             </div>

@@ -118,24 +118,23 @@ const NODE_TYPE_LABELS: Record<string, string> = {
             </el-form-item>
 
             <template v-if="form.config.triggerType === 'cron'">
-              <el-form-item label="Cron 表达式 & 时间选择">
-                <div class="flex items-center gap-1">
-                  <el-input
-                    v-model="form.config.cronExpression"
-                    placeholder="0 8 * * *"
-                    size="small"
-                    style="width: 92px"
-                    @input="handleDataChange"
-                  />
-                  <el-time-picker
-                    v-model="timePickerValue"
-                    format="HH:mm"
-                    size="small"
-                    placeholder="选择时间"
-                    style="width: 92px"
-                    @change="handleTimePickerChange"
-                  />
-                </div>
+              <el-form-item label="Cron 表达式">
+                <el-input
+                  v-model="form.config.cronExpression"
+                  placeholder="0 8 * * *"
+                  size="small"
+                  @input="handleDataChange"
+                />
+              </el-form-item>
+              <el-form-item label="时间选择器">
+                <el-time-picker
+                  v-model="timePickerValue"
+                  format="HH:mm"
+                  size="small"
+                  placeholder="选择时间点"
+                  style="width: 100%"
+                  @change="handleTimePickerChange"
+                />
               </el-form-item>
             </template>
 
