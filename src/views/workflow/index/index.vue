@@ -2,7 +2,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, Connection, Clock } from '@element-plus/icons-vue'
+import { Plus, Search, Connection, MoreFilled, EditPen, Delete } from '@element-plus/icons-vue'
 import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
 import {
   getWorkflowPageApi,
@@ -127,15 +127,14 @@ const statusMap: Record<string, { label: string; type: string }> = {
       <el-button @click="handleSearch">查询</el-button>
     </div>
 
-    <!-- 工作流卡片网格 -->
+    <!-- 工作流卡片网格 (Figma Style) -->
     <div v-loading="loading" class="wf-grid">
       <!-- 新建卡片 -->
       <div class="wf-card wf-card--new" @click="createVisible = true">
-        <div class="wf-card--new__icon-wrap">
-          <el-icon class="wf-card--new__icon"><Plus /></el-icon>
+        <div class="wf-card--new__icon">
+          <el-icon><Plus /></el-icon>
         </div>
         <span class="wf-card--new__title">新建工作流</span>
-        <span class="wf-card--new__desc">从空白画布开始自由搭建</span>
       </div>
 
       <!-- 工作流卡片 -->
@@ -145,47 +144,42 @@ const statusMap: Record<string, { label: string; type: string }> = {
         class="wf-card"
         @click="openEditor(item)"
       >
-        <!-- 顶部色彩点缀条 -->
-        <div class="wf-card__accent-bar" />
-
-        <!-- 卡片头部：图标与状态 -->
-        <div class="wf-card__header">
-          <div class="wf-card__icon">
+        <!-- 封面图/图标展现区域 -->
+        <div class="wf-card__cover">
+          <div class="wf-card__cover-icon">
             <el-icon><Connection /></el-icon>
           </div>
-          <div class="wf-card__badge" :class="'wf-card__badge--' + item.status">
-            <span class="wf-card__badge-dot" />
-            <span class="wf-card__badge-text">{{ statusMap[item.status]?.label || item.status }}</span>
+          <div class="wf-card__status" :class="'wf-card__status--' + item.status">
+            <span class="wf-card__status-dot" />
+            <span>{{ statusMap[item.status]?.label || item.status }}</span>
           </div>
         </div>
 
-        <!-- 卡片主体内容 -->
-        <div class="wf-card__body">
-          <h3 class="wf-card__name" :title="item.name">{{ item.name }}</h3>
-          <p class="wf-card__desc">{{ item.description || '暂无详细描述，点击进入编辑器配置节点与连线' }}</p>
+        <!-- 标题与简短描述 -->
+        <div class="wf-card__info">
+          <h3 class="wf-card__title" :title="item.name">{{ item.name }}</h3>
+          <p class="wf-card__desc" v-if="item.description">{{ item.description }}</p>
         </div>
 
-        <!-- 卡片元信息标签 -->
-        <div class="wf-card__meta">
-          <span class="wf-card__version-tag">v{{ item.version || 1 }}.0</span>
-          <span class="wf-card__node-count" v-if="item.canvas?.nodes?.length">
-            {{ item.canvas.nodes.length }} 个节点
-          </span>
-        </div>
-
-        <!-- 卡片底部 -->
+        <!-- 极简底栏 (更新时间与三点菜单) -->
         <div class="wf-card__footer">
-          <div class="wf-card__time">
-            <el-icon><Clock /></el-icon>
-            <span>{{ new Date(item.updateTime).toLocaleDateString('zh-CN') }}</span>
-          </div>
+          <span class="wf-card__time">更新于 {{ new Date(item.updateTime).toLocaleDateString('zh-CN') }}</span>
           <div class="wf-card__actions" @click.stop>
-            <el-button size="small" type="primary" plain class="wf-action-btn" @click="openEditor(item)">
-              编辑
-            </el-button>
-            <el-button size="small" type="danger" text class="wf-action-btn" @click="handleDelete(item)">
-              删除
-            </el-button>
+            <el-dropdown trigger="click" placement="bottom-end">
+              <button type="button" class="wf-more-btn" title="更多操作">
+                <el-icon><MoreFilled /></el-icon>
+              </button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item @click="openEditor(item)">
+                    <el-icon class="mr-1"><EditPen /></el-icon> 编辑
+                  </el-dropdown-item>
+                  <el-dropdown-item type="danger" divided @click="handleDelete(item)">
+                    <el-icon class="mr-1"><Delete /></el-icon> 删除
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </div>
         </div>
       </div>
@@ -270,8 +264,8 @@ const statusMap: Record<string, { label: string; type: string }> = {
 
 .wf-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
   margin-bottom: 24px;
 }
 
@@ -279,227 +273,188 @@ const statusMap: Record<string, { label: string; type: string }> = {
   position: relative;
   background: var(--app-content-surface-color);
   border: 1px solid var(--app-content-border-color);
-  border-radius: 14px;
-  padding: 20px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  min-height: 180px;
   overflow: hidden;
 
-  /* 顶部隐约高亮线 */
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--el-color-primary), var(--el-color-primary-light-3));
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-
   &:hover {
-    border-color: color-mix(in srgb, var(--el-color-primary) 45%, transparent);
-    box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.12);
-    transform: translateY(-4px);
+    border-color: var(--el-color-primary-light-5);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.07);
 
-    &::before {
-      opacity: 1;
+    .wf-card__cover-icon {
+      transform: scale(1.08);
+      color: var(--el-color-primary);
     }
 
-    .wf-card__icon {
-      transform: scale(1.05);
-      background: color-mix(in srgb, var(--el-color-primary) 18%, transparent);
+    .wf-more-btn {
+      opacity: 1;
     }
   }
 }
 
 .wf-card--new {
-  border: 2px dashed color-mix(in srgb, var(--el-color-primary) 30%, var(--app-content-border-color));
-  background: color-mix(in srgb, var(--el-color-primary) 3%, transparent);
+  border: 1.5px dashed var(--app-content-border-color);
+  background: transparent;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  color: var(--el-text-color-secondary);
+  min-height: 180px;
   gap: 10px;
-  min-height: 190px;
-
-  &::before {
-    display: none;
-  }
 
   &:hover {
     border-color: var(--el-color-primary);
-    color: var(--el-color-primary);
-    background: color-mix(in srgb, var(--el-color-primary) 8%, transparent);
-    transform: translateY(-4px);
-    box-shadow: 0 10px 24px -6px color-mix(in srgb, var(--el-color-primary) 15%, transparent);
+    background: color-mix(in srgb, var(--el-color-primary) 5%, transparent);
 
-    .wf-card--new__icon-wrap {
+    .wf-card--new__icon {
       background: var(--el-color-primary);
       color: #ffffff;
-      transform: scale(1.1) rotate(90deg);
+      transform: scale(1.1);
+    }
+
+    .wf-card--new__title {
+      color: var(--el-color-primary);
     }
   }
 }
 
-.wf-card--new__icon-wrap {
-  width: 44px;
-  height: 44px;
+.wf-card--new__icon {
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--el-color-primary) 12%, transparent);
-  color: var(--el-color-primary);
+  background: var(--app-content-surface-muted-color);
+  color: var(--el-text-color-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 18px;
+  transition: all 0.2s ease;
 }
 
 .wf-card--new__title {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--el-text-color-regular);
+  transition: color 0.2s ease;
 }
 
-.wf-card--new__desc {
-  font-size: 12px;
-  color: var(--el-text-color-placeholder);
-}
-
-.wf-card__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.wf-card__icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--el-color-primary) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--el-color-primary) 20%, transparent);
-  color: var(--el-color-primary);
+/* 封面展示区域 (Figma Cover Tile) */
+.wf-card__cover {
+  height: 105px;
+  background: var(--app-content-surface-muted-color);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
-  transition: all 0.3s ease;
+  position: relative;
+  border-bottom: 1px solid var(--app-content-border-color);
 }
 
-.wf-card__badge {
+.wf-card__cover-icon {
+  font-size: 32px;
+  color: var(--el-text-color-placeholder);
+  transition: all 0.2s ease;
+}
+
+.wf-card__status {
+  position: absolute;
+  top: 8px;
+  right: 8px;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 3px 10px;
-  border-radius: 20px;
-  font-size: 12px;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
   font-weight: 500;
+  background: var(--app-content-surface-color);
+  border: 1px solid var(--app-content-border-color);
 
   &--draft {
-    background: color-mix(in srgb, #94a3b8 14%, transparent);
-    color: var(--el-text-color-regular);
-
-    .wf-card__badge-dot { background: #94a3b8; }
+    color: var(--el-text-color-secondary);
+    .wf-card__status-dot { background: #94a3b8; }
   }
 
   &--published {
-    background: color-mix(in srgb, #22c55e 14%, transparent);
     color: #16a34a;
-
-    .wf-card__badge-dot { background: #22c55e; }
+    .wf-card__status-dot { background: #22c55e; }
   }
 
   &--archived {
-    background: color-mix(in srgb, #f59e0b 14%, transparent);
     color: #d97706;
-
-    .wf-card__badge-dot { background: #f59e0b; }
+    .wf-card__status-dot { background: #f59e0b; }
   }
 }
 
-.wf-card__badge-dot {
+.wf-card__status-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
 }
 
-.wf-card__body {
+/* 标题与描述 */
+.wf-card__info {
+  padding: 12px 14px 4px;
   flex: 1;
 }
 
-.wf-card__name {
-  font-size: 16px;
+.wf-card__title {
+  font-size: 14px;
   font-weight: 600;
-  letter-spacing: -0.01em;
   color: var(--el-text-color-primary);
-  margin: 0 0 6px;
+  margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .wf-card__desc {
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 1.4;
   color: var(--el-text-color-secondary);
-  margin: 0;
+  margin: 4px 0 0;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 
-.wf-card__meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.wf-card__version-tag {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: var(--app-content-surface-muted-color);
-  color: var(--el-text-color-secondary);
-  border: 1px solid var(--app-content-border-color);
-}
-
-.wf-card__node-count {
-  font-size: 11px;
-  color: var(--el-text-color-placeholder);
-}
-
+/* 极简底栏 */
 .wf-card__footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 10px;
-  border-top: 1px solid var(--app-content-border-color);
+  padding: 8px 14px 10px;
 }
 
 .wf-card__time {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--el-text-color-placeholder);
 }
 
 .wf-card__actions {
   display: flex;
-  gap: 6px;
+  align-items: center;
 }
 
-.wf-action-btn {
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: 6px;
+.wf-more-btn {
+  border: none;
+  background: transparent;
+  color: var(--el-text-color-secondary);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  opacity: 0.7;
+  transition: all 0.15s ease;
+
+  &:hover {
+    opacity: 1;
+    background: var(--app-content-surface-muted-color);
+    color: var(--el-color-primary);
+  }
 }
 
 .wf-pagination {
