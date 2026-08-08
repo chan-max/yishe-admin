@@ -1,66 +1,72 @@
 <template>
   <el-dialog
     v-model="visible"
-    title="定时调度高级配置与预设模板"
-    width="680px"
+    title="定时调度配置预设"
+    width="760px"
     destroy-on-close
     append-to-body
     class="wf-advanced-cron-dialog"
   >
     <div class="wf-cron-dialog-body" v-loading="loading">
-      <el-form label-position="top" size="small" class="wf-cron-dialog-form">
-        <!-- 基础信息 -->
-        <div class="wf-form-section">
-          <div class="wf-section-title">基础信息</div>
-          <div class="grid grid-cols-2 gap-3">
-            <el-form-item label="调度名称">
-              <el-input v-model="form.name" placeholder="请输入调度名称" maxlength="200" show-word-limit />
-            </el-form-item>
-            <el-form-item label="是否启用">
-              <el-switch v-model="form.enabled" active-text="开启" inactive-text="关闭" />
-            </el-form-item>
+      <el-form label-position="top" size="small">
+        <!-- 1. 基础与执行配置 (两列平铺，无多余边框) -->
+        <div class="wf-clean-group">
+          <div class="wf-group-title">基础配置</div>
+          <div class="grid grid-cols-12 gap-4">
+            <div class="col-span-8">
+              <el-form-item label="调度名称">
+                <el-input v-model="form.name" placeholder="请输入调度名称" maxlength="200" show-word-limit />
+              </el-form-item>
+            </div>
+            <div class="col-span-4">
+              <el-form-item label="是否启用">
+                <el-switch v-model="form.enabled" active-text="开启" inactive-text="关闭" />
+              </el-form-item>
+            </div>
           </div>
         </div>
 
-        <!-- 执行配置 -->
-        <div class="wf-form-section mt-3">
-          <div class="wf-section-title">执行配置</div>
-          <div class="grid grid-cols-2 gap-3">
-            <el-form-item label="Cron 表达式">
-              <el-input
-                v-model="form.expression"
-                placeholder="例如: */10 * * * *"
-                @input="handleExpressionInput"
-              />
-              <span v-if="nextRunPreview" class="text-xs text-[var(--el-color-success)] mt-1">
-                下次预计: {{ nextRunPreview }}
-              </span>
-            </el-form-item>
+        <div class="wf-clean-group mt-3">
+          <div class="wf-group-title">执行配置</div>
+          <div class="grid grid-cols-12 gap-4">
+            <div class="col-span-4">
+              <el-form-item label="Cron 表达式">
+                <el-input
+                  v-model="form.expression"
+                  placeholder="例如: 0 8 * * *"
+                  @input="handleExpressionInput"
+                />
+              </el-form-item>
+            </div>
 
-            <el-form-item label="时间选择器">
-              <el-time-picker
-                v-model="timePickerValue"
-                format="HH:mm"
-                size="small"
-                placeholder="选择时间点"
-                style="width: 100%"
-                @change="handleTimePickerChange"
-              />
-            </el-form-item>
+            <div class="col-span-4">
+              <el-form-item label="时间选择器">
+                <el-time-picker
+                  v-model="timePickerValue"
+                  format="HH:mm"
+                  size="small"
+                  placeholder="选择时间点"
+                  style="width: 100%"
+                  @change="handleTimePickerChange"
+                />
+              </el-form-item>
+            </div>
+
+            <div class="col-span-4">
+              <el-form-item label="超时覆盖 (ms)">
+                <el-input-number
+                  v-model="form.timeoutMs"
+                  :min="0"
+                  :step="1000"
+                  controls-position="right"
+                  placeholder="例如: 60000"
+                  style="width: 100%"
+                />
+              </el-form-item>
+            </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3 mt-2">
-            <el-form-item label="超时覆盖 (ms)">
-              <el-input-number
-                v-model="form.timeoutMs"
-                :min="0"
-                :step="1000"
-                controls-position="right"
-                placeholder="例如: 60000"
-                style="width: 100%"
-              />
-            </el-form-item>
-
+          <div class="mt-2">
             <el-form-item label="参数覆盖 (JSON)">
               <el-input
                 v-model="form.paramsOverride"
@@ -70,18 +76,24 @@
               />
             </el-form-item>
           </div>
+
+          <div v-if="nextRunPreview" class="text-xs text-[var(--el-color-success)] mt-1 font-500">
+            下次预计触发时间：{{ nextRunPreview }}
+          </div>
         </div>
 
-        <!-- Cron 快捷模板 -->
-        <div class="wf-form-section mt-3">
-          <div class="wf-section-title">Cron 快捷模板</div>
-          <div class="flex flex-wrap gap-1.5 mt-1">
+        <!-- 2. Cron 快捷模板 (扁平按纽组，无卡片框) -->
+        <div class="wf-clean-group mt-4">
+          <div class="wf-group-title">Cron 快捷模板</div>
+          <div class="flex flex-wrap gap-2 mt-1">
             <el-button
               v-for="item in cronTemplates"
               :key="item.expr"
               size="small"
-              :type="form.expression === item.expr ? 'primary' : 'default'"
-              plain
+              :type="form.expression === item.expr ? 'primary' : 'info'"
+              :plain="form.expression !== item.expr"
+              text
+              bg
               @click="applyTemplate(item.expr)"
             >
               {{ item.label }}
@@ -89,14 +101,14 @@
           </div>
         </div>
 
-        <!-- Cron 参考 -->
-        <div class="wf-form-section mt-3">
-          <div class="wf-section-title">Cron 参考说明</div>
+        <!-- 3. Cron 参考说明 (无边框轻量列表) -->
+        <div class="wf-clean-group mt-4">
+          <div class="wf-group-title">Cron 参考说明</div>
           <div class="wf-ref-grid">
             <div v-for="item in cronTemplates" :key="`${item.expr}-ref`" class="wf-ref-cell">
-              <span class="font-600 text-[var(--el-text-color-primary)]">{{ item.label }}:</span>
+              <span class="font-500 text-[var(--el-text-color-regular)]">{{ item.label }}:</span>
               <code class="wf-ref-code">{{ item.expr }}</code>
-              <span class="text-[var(--el-text-color-secondary)]">{{ item.desc }}</span>
+              <span class="text-[var(--el-text-color-secondary)] opacity-80">{{ item.desc }}</span>
             </div>
           </div>
         </div>
@@ -105,7 +117,7 @@
 
     <template #footer>
       <el-button size="small" @click="visible = false">取消</el-button>
-      <el-button size="small" type="primary" :loading="saving" @click="handleSave">保存预设配置</el-button>
+      <el-button size="small" type="primary" :loading="saving" @click="handleSave">保存配置</el-button>
     </template>
   </el-dialog>
 </template>
@@ -255,36 +267,39 @@ watch(
 </script>
 
 <style scoped>
-.wf-form-section {
-  background: var(--app-content-surface-muted-color);
-  padding: 10px 12px;
-  border-radius: 6px;
-  border: 1px solid var(--el-border-color-light);
+.wf-cron-dialog-body {
+  padding: 0 4px;
 }
-.wf-section-title {
+.wf-clean-group {
+  display: flex;
+  flex-direction: column;
+}
+.wf-group-title {
   font-size: 12px;
   font-weight: 600;
   color: var(--el-text-color-primary);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 .wf-ref-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
-  max-height: 140px;
+  gap: 8px 16px;
+  max-height: 150px;
   overflow-y: auto;
+  padding: 2px 0;
 }
 .wf-ref-cell {
   font-size: 11px;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 .wf-ref-code {
   font-family: monospace;
   color: var(--el-color-primary);
-  background: var(--app-content-surface-color);
-  padding: 0 4px;
-  border-radius: 3px;
+  background: var(--app-content-surface-muted-color);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 11px;
 }
 </style>
