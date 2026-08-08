@@ -74,9 +74,16 @@
                 </template>
                 <template #tagsSlot="{ row }">
                   <div class="flex flex-wrap items-center gap-1">
-                    <el-tag v-for="tag in getTagsArray(row.tags)" :key="tag" size="small">{{
-                      tag
-                    }}</el-tag>
+                    <el-tag
+                      v-for="tag in getTagsArray(row.tags)"
+                      :key="tag"
+                      size="small"
+                      type="info"
+                      effect="plain"
+                      class="!bg-[var(--app-content-surface-muted-color)] !border-[var(--app-content-border-color)] !text-[var(--el-text-color-regular)]"
+                    >
+                      {{ tag }}
+                    </el-tag>
                     <span v-if="!row.tags" class="text-xs text-[var(--el-text-color-secondary)]"
                       >-</span
                     >

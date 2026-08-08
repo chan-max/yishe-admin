@@ -95,7 +95,14 @@
                 </template>
                 <template #tagsSlot="{ row }">
                   <div v-if="row.tags" class="text-document-tags">
-                    <el-tag v-for="tag in getTagsArray(row.tags)" :key="tag" size="small" type="info">
+                    <el-tag
+                      v-for="tag in getTagsArray(row.tags)"
+                      :key="tag"
+                      size="small"
+                      type="info"
+                      effect="plain"
+                      class="!bg-[var(--app-content-surface-muted-color)] !border-[var(--app-content-border-color)] !text-[var(--el-text-color-regular)]"
+                    >
                       {{ tag }}
                     </el-tag>
                   </div>
