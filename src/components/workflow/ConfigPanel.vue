@@ -149,14 +149,6 @@ const NODE_TYPE_LABELS: Record<string, string> = {
             </el-form-item>
 
             <template v-if="form.config.triggerType === 'cron'">
-              <el-form-item label="当前 Cron 表达式">
-                <el-input
-                  v-model="form.config.cronExpression"
-                  placeholder="0 8 * * *"
-                  size="small"
-                  readonly
-                />
-              </el-form-item>
               <el-button
                 size="small"
                 type="primary"
