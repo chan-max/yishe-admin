@@ -92,13 +92,15 @@
             </div>
 
             <div class="flex items-center justify-between mt-2 pt-2 border-t border-[var(--app-content-border-color)]">
-              <span v-if="cronNextRunTime" class="text-xs text-[var(--el-color-success)]">
-                下次预计：{{ formatDate(cronNextRunTime) }}
-              </span>
-              <span v-else class="text-xs text-[var(--el-text-color-placeholder)]">
-                当前: {{ cronExpression }}
-              </span>
-              <el-button size="small" type="primary" @click="saveCronTrigger">保存定时设置</el-button>
+              <el-button size="small" type="primary" plain @click="advancedCronVisible = true">
+                高级 Cron 配置与详细功能
+              </el-button>
+              <div class="flex items-center gap-2">
+                <span v-if="cronNextRunTime" class="text-xs text-[var(--el-color-success)]">
+                  下次预计：{{ formatDate(cronNextRunTime) }}
+                </span>
+                <el-button size="small" type="primary" @click="saveCronTrigger">保存设置</el-button>
+              </div>
             </div>
           </div>
         </div>
@@ -126,12 +128,15 @@
         </div>
       </el-tab-pane>
     </el-tabs>
+
+    <AdvancedCronDialog v-model="advancedCronVisible" :workflow-id="props.workflowId" @saved="loadTriggers" />
   </el-dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import AdvancedCronDialog from './AdvancedCronDialog.vue'
 import {
   getWorkflowTriggersApi,
   saveWorkflowTriggerApi,
@@ -151,6 +156,7 @@ const visible = computed({
 })
 
 const activeTab = ref('manual')
+const advancedCronVisible = ref(false)
 
 // 触发器状态
 const manualEnabled = ref(true)

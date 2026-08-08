@@ -2,9 +2,11 @@
 import { ref, watch } from 'vue'
 import { Delete, Pointer } from '@element-plus/icons-vue'
 import type { Node } from '@vue-flow/core'
+import AdvancedCronDialog from './AdvancedCronDialog.vue'
 
 const props = defineProps<{
   node: Node | null
+  workflowId?: string
 }>()
 
 const emit = defineEmits<{
@@ -13,6 +15,7 @@ const emit = defineEmits<{
 }>()
 
 const form = ref({ label: '', config: {} as any })
+const advancedCronVisible = ref(false)
 
 watch(
   () => props.node,
@@ -179,6 +182,16 @@ const NODE_TYPE_LABELS: Record<string, string> = {
                   />
                 </el-select>
               </el-form-item>
+
+              <el-button
+                size="small"
+                type="primary"
+                plain
+                style="width: 100%; margin-bottom: 12px;"
+                @click="advancedCronVisible = true"
+              >
+                高级 Cron 配置与详细功能
+              </el-button>
             </template>
 
             <el-form-item label="输入变量定义">
@@ -297,6 +310,8 @@ const NODE_TYPE_LABELS: Record<string, string> = {
         <p>点击节点查看配置</p>
       </div>
     </template>
+
+    <AdvancedCronDialog v-model="advancedCronVisible" :workflow-id="workflowId || ''" />
   </div>
 </template>
 

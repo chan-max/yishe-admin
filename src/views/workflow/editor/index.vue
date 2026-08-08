@@ -466,6 +466,7 @@ const statusText = computed(() => {
       <!-- 右侧配置面板 -->
       <ConfigPanel
         :node="selectedNode"
+        :workflow-id="workflowId"
         @update="onNodeUpdate"
         @delete="onNodeDelete"
       />
