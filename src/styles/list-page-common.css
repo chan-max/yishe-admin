@@ -2,12 +2,12 @@
 
 :root,
 html.light {
-  --list-page-base-bg: var(--app-content-bg-color);
-  --list-page-surface-bg: var(--app-content-surface-color);
-  --list-page-surface-bg-soft: var(--app-content-surface-muted-color);
+  --list-page-base-bg: #f0f4f8;
+  --list-page-surface-bg: #f7f9fc;
+  --list-page-surface-bg-soft: #edf1f6;
   --list-page-panel-bg: var(--list-page-surface-bg);
-  --list-page-panel-border: var(--app-content-border-color);
-  --list-page-panel-shadow: var(--app-content-shadow);
+  --list-page-panel-border: rgba(148, 163, 184, 0.18);
+  --list-page-panel-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
   --list-page-panel-radius: 16px;
   --list-page-muted-text: #475569;
 }

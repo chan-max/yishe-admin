@@ -57,29 +57,15 @@ const handleReset = () => {
 
 <template>
   <el-tooltip content="个性化" placement="bottom" effect="light" :show-after="300">
-    <button
-      type="button"
-      class="personalization-trigger"
-      aria-label="个性化设置"
-      @click="drawerVisible = true"
-    >
+    <button type="button" class="personalization-trigger" aria-label="个性化设置" @click="drawerVisible = true">
       <Icon icon="ep:brush" :size="12" />
       <span class="personalization-trigger__label">个性化</span>
-      <span
-        class="personalization-trigger__dot"
-        :style="{ backgroundColor: themeColor }"
-      ></span>
+      <span class="personalization-trigger__dot" :style="{ backgroundColor: themeColor }"></span>
     </button>
   </el-tooltip>
 
-  <el-drawer
-    v-model="drawerVisible"
-    title="个性化设置"
-    size="320px"
-    append-to-body
-    :with-header="true"
-    class="personalization-drawer"
-  >
+  <el-drawer v-model="drawerVisible" title="个性化设置" size="320px" append-to-body :with-header="true"
+    class="personalization-drawer">
     <div class="personalization-body">
       <section class="personalization-section">
         <div class="personalization-section__head">
@@ -89,28 +75,18 @@ const handleReset = () => {
           </button>
         </div>
         <p class="personalization-section__desc">
-          选择后即时生效，并自动同步到按钮、选中态等 Element Plus 组件。
+          选择后即时生效。
         </p>
         <div class="personalization-swatches">
-          <button
-            v-for="color in PRESET_COLORS"
-            :key="color"
-            type="button"
-            class="personalization-swatch"
-            :class="{ active: themeColor.toLowerCase() === color.toLowerCase() }"
-            :style="{ backgroundColor: color }"
-            :aria-label="color"
-            @click="applyThemeColor(color)"
-          >
+          <button v-for="color in PRESET_COLORS" :key="color" type="button" class="personalization-swatch"
+            :class="{ active: themeColor.toLowerCase() === color.toLowerCase() }" :style="{ backgroundColor: color }"
+            :aria-label="color" @click="applyThemeColor(color)">
             <span v-if="themeColor.toLowerCase() === color.toLowerCase()" class="personalization-swatch__check">
               ✓
             </span>
           </button>
-          <el-color-picker
-            class="personalization-color-picker"
-            :model-value="themeColor"
-            @change="handlePickerChange"
-          />
+          <el-color-picker class="personalization-color-picker" :model-value="themeColor"
+            @change="handlePickerChange" />
         </div>
       </section>
 
