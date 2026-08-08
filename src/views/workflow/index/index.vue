@@ -3,6 +3,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, Connection } from '@element-plus/icons-vue'
+import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
 import {
   getWorkflowPageApi,
   createWorkflowApi,
@@ -92,18 +93,19 @@ const statusMap: Record<string, { label: string; type: string }> = {
 </script>
 
 <template>
-  <div class="workflow-list-page">
-    <!-- 页头 -->
-    <div class="wf-page-header">
-      <div class="wf-page-header__left">
-        <h1 class="wf-page-title">工作流</h1>
-        <p class="wf-page-subtitle">构建和管理你的自动化工作流程</p>
+  <ContentWrap :plain="true">
+    <div class="workflow-list-page">
+      <!-- 页头 -->
+      <div class="wf-page-header">
+        <div class="wf-page-header__left">
+          <h1 class="wf-page-title">工作流</h1>
+          <p class="wf-page-subtitle">构建和管理你的自动化工作流程</p>
+        </div>
+        <el-button type="primary" @click="createVisible = true">
+          <el-icon class="mr-1"><Plus /></el-icon>
+          新建工作流
+        </el-button>
       </div>
-      <el-button type="primary" @click="createVisible = true">
-        <el-icon class="mr-1"><Plus /></el-icon>
-        新建工作流
-      </el-button>
-    </div>
 
     <!-- 搜索 -->
     <div class="wf-search-bar">
@@ -210,11 +212,12 @@ const statusMap: Record<string, { label: string; type: string }> = {
       </template>
     </el-dialog>
   </div>
+  </ContentWrap>
 </template>
 
 <style scoped lang="scss">
 .workflow-list-page {
-  padding: 24px;
+  padding: 0;
   min-height: 100%;
 }
 
@@ -266,14 +269,14 @@ const statusMap: Record<string, { label: string; type: string }> = {
 
   &:hover {
     border-color: var(--el-color-primary-light-5);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--app-content-shadow);
     transform: translateY(-2px);
   }
 }
 
 .wf-card--new {
   border-style: dashed;
-  border-color: var(--el-border-color);
+  border-color: var(--app-content-border-color);
   background: transparent;
   align-items: center;
   justify-content: center;
@@ -283,7 +286,7 @@ const statusMap: Record<string, { label: string; type: string }> = {
   &:hover {
     border-color: var(--el-color-primary);
     color: var(--el-color-primary);
-    background: var(--el-color-primary-light-9);
+    background: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
     transform: translateY(-2px);
   }
 }
@@ -307,7 +310,7 @@ const statusMap: Record<string, { label: string; type: string }> = {
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  background: var(--el-color-primary-light-9);
+  background: color-mix(in srgb, var(--el-color-primary) 12%, transparent);
   color: var(--el-color-primary);
   display: flex;
   align-items: center;

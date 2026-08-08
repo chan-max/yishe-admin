@@ -102,7 +102,7 @@ const onDragStart = (event: DragEvent, type: string, label: string) => {
 
   &:hover {
     border-color: var(--el-color-primary-light-5);
-    background: var(--el-color-primary-light-9);
+    background: color-mix(in srgb, var(--el-color-primary) 12%, transparent);
     transform: translateX(2px);
   }
 

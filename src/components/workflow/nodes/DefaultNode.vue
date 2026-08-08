@@ -17,21 +17,21 @@ defineProps<{ data: { label?: string; config?: any; selected?: boolean } }>()
 
 <style scoped>
 .wf-node--default {
-  background: #fff;
-  border: 1.5px solid #d1d5db;
+  background: var(--app-content-surface-color);
+  border: 1.5px solid var(--app-content-border-color);
   border-radius: 10px;
   padding: 12px 18px;
   min-width: 130px;
   text-align: center;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+  box-shadow: var(--app-content-shadow);
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .wf-node--default:hover,
 .wf-node--default.selected {
   border-color: var(--el-color-primary);
-  box-shadow: 0 0 0 3px var(--el-color-primary-light-7), 0 2px 10px rgba(0,0,0,0.07);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--el-color-primary) 25%, transparent);
 }
 .wf-node__body { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.wf-node__icon { font-size: 18px; }
-.wf-node__label { font-size: 13px; font-weight: 500; color: #1f2937; }
+.wf-node__icon { font-size: 18px; color: var(--el-color-primary); }
+.wf-node__label { font-size: 13px; font-weight: 500; color: var(--el-text-color-primary); }
 </style>

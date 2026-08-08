@@ -13,6 +13,7 @@ import {
 } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
+import { useAppStore } from '@/store/modules/app'
 import { getWorkflowDetailApi, updateWorkflowApi } from '@/api/workflow'
 
 // 自定义节点
@@ -22,9 +23,14 @@ import EndNode from '@/components/workflow/nodes/EndNode.vue'
 import NodePanel from '@/components/workflow/NodePanel.vue'
 import ConfigPanel from '@/components/workflow/ConfigPanel.vue'
 
+const appStore = useAppStore()
 const route = useRoute()
 const router = useRouter()
 const workflowId = computed(() => route.params.id as string)
+
+const patternColor = computed(() =>
+  appStore.getIsDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(148, 163, 184, 0.4)'
+)
 
 // VueFlow 实例
 const {
@@ -249,7 +255,7 @@ const statusText = computed(() => {
           @node-click="onNodeClick"
           @pane-click="onPaneClick"
         >
-          <Background pattern-color="#d1d5db" :gap="20" />
+          <Background :pattern-color="patternColor" :gap="20" />
           <Controls />
         </VueFlow>
       </div>
@@ -272,8 +278,10 @@ const statusText = computed(() => {
 .workflow-editor {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - var(--top-tool-height) - var(--tags-view-height));
+  height: calc(100vh - var(--top-tool-height) - var(--tags-view-height) - (var(--app-content-padding) * 2));
   background: var(--app-content-bg-color);
+  border: 1px solid var(--app-content-border-color);
+  border-radius: 12px;
   overflow: hidden;
 }
 
@@ -318,9 +326,9 @@ const statusText = computed(() => {
   font-weight: 600;
   color: var(--el-text-color-primary);
   cursor: pointer;
-  padding: 2px 4px;
+  padding: 2px 6px;
   border-radius: 4px;
-  &:hover { background: var(--app-content-border-color); }
+  &:hover { background: var(--app-content-surface-muted-color); }
 }
 
 .wf-title-edit-icon {
@@ -350,7 +358,32 @@ const statusText = computed(() => {
 .wf-canvas {
   flex: 1;
   height: 100%;
-  background: #f8fafc;
+  background: var(--app-content-bg-color);
   position: relative;
 }
+
+/* VueFlow 控件适配深色/浅色模式 */
+:deep(.vue-flow__controls) {
+  background: var(--app-content-surface-color);
+  border: 1px solid var(--app-content-border-color);
+  border-radius: 8px;
+  box-shadow: var(--app-content-shadow);
+  overflow: hidden;
+}
+
+:deep(.vue-flow__controls-button) {
+  background: var(--app-content-surface-color);
+  border-bottom: 1px solid var(--app-content-border-color);
+  fill: var(--el-text-color-primary);
+  color: var(--el-text-color-primary);
+
+  &:hover {
+    background: var(--app-content-surface-muted-color);
+  }
+}
+
+:deep(.vue-flow__edge-path) {
+  stroke: var(--el-border-color-darker, #94a3b8);
+}
+
 </style>
