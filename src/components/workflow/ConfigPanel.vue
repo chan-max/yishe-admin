@@ -66,6 +66,23 @@ const removeInputParam = (index: number) => {
 
 const timePickerValue = ref<Date | null>(new Date(2026, 0, 1, 8, 0))
 
+const cronTemplates = [
+  { label: '每 5 分钟', expr: '*/5 * * * *' },
+  { label: '每 10 分钟', expr: '*/10 * * * *' },
+  { label: '每 30 分钟', expr: '*/30 * * * *' },
+  { label: '每小时整点', expr: '0 * * * *' },
+  { label: '每天 09:00', expr: '0 9 * * *' },
+  { label: '每天 12:00', expr: '0 12 * * *' },
+  { label: '每天 18:00', expr: '0 18 * * *' },
+  { label: '每天 00:30', expr: '30 0 * * *' },
+  { label: '工作日 09:00', expr: '0 9 * * 1-5' },
+  { label: '工作日 18:00', expr: '0 18 * * 1-5' },
+  { label: '每周一 09:00', expr: '0 9 * * 1' },
+  { label: '每周日 23:00', expr: '0 23 * * 0' },
+  { label: '每月 1 日 09:00', expr: '0 9 1 * *' },
+  { label: '每月最后一天 23:00', expr: '0 23 28-31 * *' },
+]
+
 const handleTimePickerChange = (val: Date | null) => {
   if (val) {
     const d = new Date(val)
@@ -74,6 +91,17 @@ const handleTimePickerChange = (val: Date | null) => {
     form.value.config.cronExpression = `${m} ${h} * * *`
     handleDataChange()
   }
+}
+
+const applyCronTemplate = (expr: string) => {
+  form.value.config.cronExpression = expr
+  const parts = expr.trim().split(/\s+/)
+  if (parts.length === 5 && !isNaN(parseInt(parts[0])) && !isNaN(parseInt(parts[1]))) {
+    const m = parseInt(parts[0], 10)
+    const h = parseInt(parts[1], 10)
+    timePickerValue.value = new Date(2026, 0, 1, h, m)
+  }
+  handleDataChange()
 }
 
 const NODE_TYPE_LABELS: Record<string, string> = {
@@ -135,6 +163,21 @@ const NODE_TYPE_LABELS: Record<string, string> = {
                   style="width: 100%"
                   @change="handleTimePickerChange"
                 />
+              </el-form-item>
+              <el-form-item label="Cron 快捷模板">
+                <el-select
+                  placeholder="选择预设模板"
+                  size="small"
+                  style="width: 100%"
+                  @change="applyCronTemplate"
+                >
+                  <el-option
+                    v-for="item in cronTemplates"
+                    :key="item.expr"
+                    :label="`${item.label} (${item.expr})`"
+                    :value="item.expr"
+                  />
+                </el-select>
               </el-form-item>
             </template>
 

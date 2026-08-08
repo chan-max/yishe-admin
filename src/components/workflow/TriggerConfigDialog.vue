@@ -2,7 +2,7 @@
   <el-dialog
     v-model="visible"
     title="工作流设置与触发器"
-    width="480px"
+    width="540px"
     destroy-on-close
     append-to-body
     class="wf-trigger-dialog"
@@ -45,38 +45,50 @@
                 v-model="cronExpression"
                 size="small"
                 placeholder="例如: 0 8 * * *"
-                style="width: 250px"
+                style="width: 280px"
               />
             </div>
 
             <!-- 2. 交互时间选择器（独立一行） -->
-            <div class="flex items-center gap-2 mb-2">
+            <div class="flex items-center gap-2 mb-3">
               <span class="text-xs text-[var(--el-text-color-regular)] w-20 shrink-0">时间选择器:</span>
               <el-time-picker
                 v-model="timePickerValue"
                 format="HH:mm"
                 size="small"
                 placeholder="选择时间点"
-                style="width: 250px"
+                style="width: 280px"
                 @change="handleTimePickerChange"
               />
             </div>
 
-            <!-- 3. 周期预设（独立一行） -->
-            <div class="flex items-center gap-2 mb-3">
-              <span class="text-xs text-[var(--el-text-color-regular)] w-20 shrink-0">周期预设:</span>
-              <el-select
-                v-model="cronPreset"
-                size="small"
-                placeholder="选择预设周期"
-                style="width: 250px"
-                @change="applyCronPreset"
-              >
-                <el-option label="每天 08:00 (0 8 * * *)" value="0 8 * * *" />
-                <el-option label="每小时 00 分 (0 * * * *)" value="0 * * * *" />
-                <el-option label="每 5 分钟 (*/5 * * * *)" value="*/5 * * * *" />
-                <el-option label="工作日 09:00 (0 9 * * 1-5)" value="0 9 * * 1-5" />
-              </el-select>
+            <!-- 3. Cron 快捷模板 -->
+            <div class="wf-template-card mb-3">
+              <div class="text-xs font-600 mb-2 text-[var(--el-text-color-primary)]">Cron 快捷模板</div>
+              <div class="flex flex-wrap gap-1.5">
+                <el-button
+                  v-for="item in cronTemplates"
+                  :key="item.expr"
+                  size="small"
+                  :type="cronExpression === item.expr ? 'primary' : 'default'"
+                  plain
+                  @click="applyCronTemplate(item.expr)"
+                >
+                  {{ item.label }}
+                </el-button>
+              </div>
+            </div>
+
+            <!-- 4. Cron 参考与场景说明 -->
+            <div class="wf-reference-card mb-3">
+              <div class="text-xs font-600 mb-1 text-[var(--el-text-color-primary)]">Cron 参考说明</div>
+              <div class="wf-reference-list">
+                <div v-for="item in cronTemplates" :key="`${item.expr}-ref`" class="wf-reference-item">
+                  <span class="wf-ref-label">{{ item.label }}:</span>
+                  <code class="wf-ref-expr">{{ item.expr }}</code>
+                  <span class="wf-ref-desc">{{ item.desc }}</span>
+                </div>
+              </div>
             </div>
 
             <div class="flex items-center justify-between mt-2 pt-2 border-t border-[var(--app-content-border-color)]">
@@ -84,7 +96,7 @@
                 下次预计：{{ formatDate(cronNextRunTime) }}
               </span>
               <span v-else class="text-xs text-[var(--el-text-color-placeholder)]">
-                表达式: {{ cronExpression }}
+                当前: {{ cronExpression }}
               </span>
               <el-button size="small" type="primary" @click="saveCronTrigger">保存定时设置</el-button>
             </div>
@@ -95,7 +107,7 @@
       <!-- 3. 运行日志列表 -->
       <el-tab-pane label="运行历史" name="executions">
         <div class="wf-pane-content">
-          <el-table :data="executions" size="small" border height="240px" v-loading="loadingExecutions">
+          <el-table :data="executions" size="small" border height="280px" v-loading="loadingExecutions">
             <el-table-column prop="status" label="状态" width="80">
               <template #default="{ row }">
                 <el-tag :type="row.status === 'success' ? 'success' : row.status === 'failed' ? 'danger' : 'warning'" size="small">
@@ -145,11 +157,28 @@ const manualEnabled = ref(true)
 
 const cronEnabled = ref(false)
 const cronExpression = ref('0 8 * * *')
-const cronPreset = ref('0 8 * * *')
 const cronNextRunTime = ref<string | null>(null)
 
 // 时间选择器
 const timePickerValue = ref<Date | null>(new Date(2026, 0, 1, 8, 0))
+
+// 快捷 Cron 模板
+const cronTemplates = [
+  { label: '每 5 分钟', expr: '*/5 * * * *', desc: '适合高频轻量任务' },
+  { label: '每 10 分钟', expr: '*/10 * * * *', desc: '常用轮询任务' },
+  { label: '每 30 分钟', expr: '*/30 * * * *', desc: '中频同步任务' },
+  { label: '每小时整点', expr: '0 * * * *', desc: '每小时执行一次' },
+  { label: '每天 09:00', expr: '0 9 * * *', desc: '每天上午 9 点' },
+  { label: '每天 12:00', expr: '0 12 * * *', desc: '每天中午 12 点' },
+  { label: '每天 18:00', expr: '0 18 * * *', desc: '每天下午 6 点' },
+  { label: '每天 00:30', expr: '30 0 * * *', desc: '适合夜间批处理' },
+  { label: '工作日 09:00', expr: '0 9 * * 1-5', desc: '周一到周五上午 9 点' },
+  { label: '工作日 18:00', expr: '0 18 * * 1-5', desc: '周一到周五下午 6 点' },
+  { label: '每周一 09:00', expr: '0 9 * * 1', desc: '每周一上午 9 点' },
+  { label: '每周日 23:00', expr: '0 23 * * 0', desc: '每周日晚上 11 点' },
+  { label: '每月 1 日 09:00', expr: '0 9 1 * *', desc: '每月 1 日上午 9 点' },
+  { label: '每月最后一天 23:00', expr: '0 23 28-31 * *', desc: '需脚本内自行兜底最后一天判断' },
+]
 
 // 运行日志状态
 const executions = ref<any[]>([])
@@ -164,8 +193,18 @@ const handleTimePickerChange = (val: Date | null) => {
   }
 }
 
-const applyCronPreset = (val: string) => {
-  cronExpression.value = val
+const applyCronTemplate = (expr: string) => {
+  cronExpression.value = expr
+  parseCronToTimePicker(expr)
+}
+
+const parseCronToTimePicker = (expr: string) => {
+  const parts = expr.trim().split(/\s+/)
+  if (parts.length === 5 && !isNaN(parseInt(parts[0])) && !isNaN(parseInt(parts[1]))) {
+    const m = parseInt(parts[0], 10)
+    const h = parseInt(parts[1], 10)
+    timePickerValue.value = new Date(2026, 0, 1, h, m)
+  }
 }
 
 const loadTriggers = async () => {
@@ -182,14 +221,7 @@ const loadTriggers = async () => {
       cronEnabled.value = cron.enabled
       cronExpression.value = cron.config?.expression || '0 8 * * *'
       cronNextRunTime.value = cron.nextRunTime || null
-
-      // 解析表达式给时间选择器
-      const parts = cronExpression.value.trim().split(/\s+/)
-      if (parts.length === 5 && !isNaN(parseInt(parts[0])) && !isNaN(parseInt(parts[1]))) {
-        const m = parseInt(parts[0], 10)
-        const h = parseInt(parts[1], 10)
-        timePickerValue.value = new Date(2026, 0, 1, h, m)
-      }
+      parseCronToTimePicker(cronExpression.value)
     } else {
       cronEnabled.value = false
     }
@@ -265,21 +297,21 @@ watch(
 
 <style scoped>
 .wf-pane-content {
-  padding: 8px 0;
+  padding: 4px 0;
 }
 .wf-setting-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
+  padding: 8px 12px;
   background: var(--app-content-surface-muted-color);
   border-radius: 6px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 .wf-setting-label {
   display: flex;
   flex-direction: column;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
 }
 .wf-setting-desc {
@@ -297,7 +329,47 @@ watch(
 }
 .wf-cron-form {
   background: var(--app-content-surface-muted-color);
-  padding: 12px;
+  padding: 10px 12px;
   border-radius: 6px;
+}
+.wf-template-card {
+  border: 1px solid var(--el-border-color-light);
+  background: var(--app-content-surface-color);
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+.wf-reference-card {
+  border: 1px solid var(--el-border-color-light);
+  background: var(--app-content-surface-color);
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+.wf-reference-list {
+  max-height: 120px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.wf-reference-item {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.wf-ref-label {
+  font-weight: 500;
+  color: var(--el-text-color-regular);
+}
+.wf-ref-expr {
+  font-family: monospace;
+  color: var(--el-color-primary);
+  background: var(--app-content-surface-muted-color);
+  padding: 0 4px;
+  border-radius: 3px;
+}
+.wf-ref-desc {
+  opacity: 0.85;
 }
 </style>
