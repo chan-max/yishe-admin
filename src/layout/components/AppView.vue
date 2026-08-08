@@ -99,15 +99,15 @@ provide("reload", reload);
       },
     ]"
   >
-    <!-- 全屏按钮 - 角标风格 -->
-    <div class="absolute right-3 top-2 z-10">
+    <!-- 全屏按钮 - 极简小图标 -->
+    <div class="absolute right-2 top-1.5 z-20 opacity-40 hover:opacity-100 transition-opacity">
       <button
         type="button"
-        class="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--app-content-surface-color)] border border-[var(--app-content-border-color)] text-[var(--app-content-text-color)] hover:bg-[var(--app-content-surface-muted-color)] hover:border-[var(--ai-primary)] transition-all shadow-md hover:shadow-lg"
+        class="flex h-4 w-4 items-center justify-center text-[var(--el-text-color-secondary)] hover:text-[var(--el-color-primary)] transition-colors p-0 border-none bg-transparent cursor-pointer"
         @click.stop="toggleFullscreen"
-        title="全屏"
+        :title="isFullscreen ? '退出全屏' : '全屏'"
       >
-        <Icon :icon="isFullscreen ? 'zmdi:fullscreen-exit' : 'zmdi:fullscreen'" :size="10" />
+        <Icon :icon="isFullscreen ? 'zmdi:fullscreen-exit' : 'zmdi:fullscreen'" :size="12" />
       </button>
     </div>
 

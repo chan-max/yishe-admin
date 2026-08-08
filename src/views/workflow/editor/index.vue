@@ -1,5 +1,4 @@
-<script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, markRaw } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, EditPen, Loading, Check, Warning } from '@element-plus/icons-vue'
@@ -55,11 +54,11 @@ const saveStatus = ref<'saved' | 'saving' | 'unsaved'>('saved')
 const selectedNode = ref<Node | null>(null)
 const canvasRef = ref<HTMLDivElement | null>(null)
 
-// 自定义节点类型映射
+// 自定义节点类型映射 (使用 markRaw 避免 Vue 响应式代理警告)
 const nodeTypes = {
-  start: StartNode,
-  default: DefaultNode,
-  end: EndNode
+  start: markRaw(StartNode),
+  default: markRaw(DefaultNode),
+  end: markRaw(EndNode)
 }
 
 // ─── 加载工作流 ───────────────────────────────────────────────
@@ -251,7 +250,9 @@ const statusText = computed(() => {
         <VueFlow
           :node-types="nodeTypes"
           fit-view-on-init
-          :default-edge-options="{ animated: false, style: { stroke: '#6b7280', strokeWidth: 2 } }"
+          :min-zoom="0.1"
+          :max-zoom="4"
+          :default-edge-options="{ animated: false, style: { stroke: '#94a3b8', strokeWidth: 2 } }"
           @node-click="onNodeClick"
           @pane-click="onPaneClick"
         >
@@ -270,11 +271,13 @@ const statusText = computed(() => {
   </div>
 </template>
 
-<style scoped lang="scss">
+<style>
 @import '@vue-flow/core/dist/style.css';
 @import '@vue-flow/core/dist/theme-default.css';
 @import '@vue-flow/controls/dist/style.css';
+</style>
 
+<style scoped lang="scss">
 .workflow-editor {
   display: flex;
   flex-direction: column;
