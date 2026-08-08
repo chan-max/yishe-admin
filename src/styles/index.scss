@@ -83,8 +83,15 @@ body,
 .el-message-box,
 .el-notification {
   font-family: var(--app-font-family-sans);
-  background: var(--app-content-bg-color);
   color: var(--el-text-color-primary);
+}
+
+/* 非 tooltip 类 popper（dropdown, select, card 等）需要背景色 */
+.el-dropdown-menu,
+.el-select-dropdown,
+.el-cascader__dropdown,
+.el-popper.is-light:not([data-popper-placement]) {
+  background: var(--app-content-surface-color);
 }
 
 .el-overlay-dialog {
