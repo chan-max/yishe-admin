@@ -11,7 +11,6 @@ export interface WorkflowItem {
   name: string
   description?: string
   status: 'draft' | 'published' | 'archived'
-  version: number
   userId: number
   canvas?: WorkflowCanvas
   createTime: string
