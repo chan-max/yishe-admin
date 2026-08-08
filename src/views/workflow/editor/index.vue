@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, markRaw } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, markRaw } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { ArrowLeft, EditPen, Loading, Check, Warning } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { ArrowLeft, EditPen, Loading, Check, Warning, MagicStick, Download, Upload, Delete, RefreshRight } from '@element-plus/icons-vue'
 import {
   VueFlow,
   useVueFlow,
@@ -13,6 +13,7 @@ import {
 } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
+import { MiniMap } from '@vue-flow/minimap'
 import { useAppStore } from '@/store/modules/app'
 import { getWorkflowDetailApi, updateWorkflowApi } from '@/api/workflow'
 
@@ -20,6 +21,11 @@ import { getWorkflowDetailApi, updateWorkflowApi } from '@/api/workflow'
 import StartNode from '@/components/workflow/nodes/StartNode.vue'
 import DefaultNode from '@/components/workflow/nodes/DefaultNode.vue'
 import EndNode from '@/components/workflow/nodes/EndNode.vue'
+import ConditionNode from '@/components/workflow/nodes/ConditionNode.vue'
+import LLMNode from '@/components/workflow/nodes/LLMNode.vue'
+import HttpNode from '@/components/workflow/nodes/HttpNode.vue'
+import CodeNode from '@/components/workflow/nodes/CodeNode.vue'
+
 import NodePanel from '@/components/workflow/NodePanel.vue'
 import ConfigPanel from '@/components/workflow/ConfigPanel.vue'
 
@@ -55,15 +61,163 @@ const saveStatus = ref<'saved' | 'saving' | 'unsaved'>('saved')
 const selectedNode = ref<Node | null>(null)
 const canvasRef = ref<HTMLDivElement | null>(null)
 
+// 连线类型与配置
+const edgeType = ref<'default' | 'smoothstep' | 'straight'>('smoothstep')
+
 // 自定义节点类型映射 (使用 markRaw 避免 Vue 响应式代理警告)
 const nodeTypes = {
   start: markRaw(StartNode),
   default: markRaw(DefaultNode),
-  end: markRaw(EndNode)
+  end: markRaw(EndNode),
+  condition: markRaw(ConditionNode),
+  llm: markRaw(LLMNode),
+  http: markRaw(HttpNode),
+  code: markRaw(CodeNode)
 }
 
-// ─── 加载工作流 ───────────────────────────────────────────────
+// ─── 复制/粘贴节点 ───────────────────────────────────────────
+const copiedNode = ref<Node | null>(null)
+
+const handleKeydown = (e: KeyboardEvent) => {
+  // 如果在输入框内，不触发画布快捷键
+  const tag = (e.target as HTMLElement)?.tagName?.toLowerCase()
+  if (tag === 'input' || tag === 'textarea') return
+
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'c') {
+    if (selectedNode.value) {
+      copiedNode.value = JSON.parse(JSON.stringify(selectedNode.value))
+      ElMessage.success('已复制节点')
+    }
+  } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'v') {
+    if (copiedNode.value) {
+      const newNode: Node = {
+        ...JSON.parse(JSON.stringify(copiedNode.value)),
+        id: `node_${Date.now()}`,
+        position: {
+          x: copiedNode.value.position.x + 30,
+          y: copiedNode.value.position.y + 30
+        }
+      }
+      addNodes([newNode])
+      selectedNode.value = newNode
+      ElMessage.success('已粘贴节点')
+    }
+  } else if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (selectedNode.value) {
+      onNodeDelete(selectedNode.value.id)
+    }
+  }
+}
+
+// ─── 一键整理对齐布局 ─────────────────────────────────────────
+const autoLayout = () => {
+  if (nodes.value.length === 0) return
+  const nodeMap = new Map(nodes.value.map((n) => [n.id, n]))
+  const startNodes = nodes.value.filter(
+    (n) => n.type === 'start' || !edges.value.some((e) => e.target === n.id)
+  )
+
+  const levels = new Map<string, number>()
+  const queue = startNodes.map((n) => ({ id: n.id, level: 0 }))
+
+  while (queue.length > 0) {
+    const curr = queue.shift()!
+    if (levels.has(curr.id) && levels.get(curr.id)! >= curr.level) continue
+    levels.set(curr.id, curr.level)
+    const outgoing = edges.value.filter((e) => e.source === curr.id)
+    for (const edge of outgoing) {
+      queue.push({ id: edge.target, level: curr.level + 1 })
+    }
+  }
+
+  const levelGroups: Record<number, string[]> = {}
+  nodes.value.forEach((n) => {
+    const lvl = levels.get(n.id) || 0;
+    if (!levelGroups[lvl]) levelGroups[lvl] = []
+    levelGroups[lvl].push(n.id)
+  })
+
+  Object.entries(levelGroups).forEach(([lvlStr, nodeIds]) => {
+    const lvl = Number(lvlStr)
+    const y = 80 + lvl * 140
+    const totalWidth = nodeIds.length * 200
+    const startX = 200 - totalWidth / 2
+
+    nodeIds.forEach((id, idx) => {
+      const node = nodeMap.get(id)
+      if (node) {
+        node.position = { x: startX + idx * 200, y }
+      }
+    })
+  })
+  ElMessage.success('画布已一键整理对齐')
+}
+
+// ─── 导出 / 导入 JSON ────────────────────────────────────────
+const exportJson = () => {
+  const data = JSON.stringify(
+    {
+      name: workflow.value?.name,
+      canvas: {
+        nodes: nodes.value,
+        edges: edges.value,
+        viewport: getViewport()
+      }
+    },
+    null,
+    2
+  )
+  const blob = new Blob([data], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `workflow_${workflowId.value}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+  ElMessage.success('已导出 JSON 文件')
+}
+
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const triggerImportJson = () => {
+  fileInputRef.value?.click()
+}
+
+const handleImportJson = (event: Event) => {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    try {
+      const json = JSON.parse(e.target?.result as string)
+      if (json.canvas) {
+        setNodes(json.canvas.nodes || [])
+        setEdges(json.canvas.edges || [])
+        if (json.canvas.viewport) setViewport(json.canvas.viewport)
+        ElMessage.success('导入 JSON 成功')
+      }
+    } catch {
+      ElMessage.error('JSON 解析失败，请检查文件格式')
+    }
+  }
+  reader.readAsText(file)
+}
+
+// ─── 清空画布 ────────────────────────────────────────────────
+const clearCanvas = async () => {
+  await ElMessageBox.confirm('确定要清空画布中的所有节点和连线吗？', '提示', {
+    confirmButtonText: '清空',
+    cancelButtonText: '取消',
+    type: 'warning'
+  })
+  setNodes([])
+  setEdges([])
+  selectedNode.value = null
+  ElMessage.success('已清空画布')
+}
+
+// ─── 加载工作流与注册键盘事件 ──────────────────────────────
 onMounted(async () => {
+  window.addEventListener('keydown', handleKeydown)
   try {
     const res: any = await getWorkflowDetailApi(workflowId.value)
     workflow.value = res
@@ -79,6 +233,10 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeydown)
 })
 
 // ─── 自动保存：debounce 2s ────────────────────────────────────
@@ -119,8 +277,11 @@ onConnect((params: Connection) => {
     id: `e-${params.source}-${params.target}-${Date.now()}`,
     source: params.source,
     target: params.target,
+    sourceHandle: params.sourceHandle,
+    targetHandle: params.targetHandle,
+    type: edgeType.value,
     animated: false,
-    style: { stroke: '#6b7280', strokeWidth: 2 }
+    style: { stroke: '#94a3b8', strokeWidth: 2 }
   }])
 })
 
@@ -225,6 +386,22 @@ const statusText = computed(() => {
       </div>
 
       <div class="wf-editor-toolbar__right">
+        <!-- 连线类型 -->
+        <el-select v-model="edgeType" size="small" style="width: 100px" placeholder="连线类型">
+          <el-option label="折线" value="smoothstep" />
+          <el-option label="曲线" value="default" />
+          <el-option label="直线" value="straight" />
+        </el-select>
+
+        <!-- 整理与工具按纽 -->
+        <el-button size="small" :icon="MagicStick" @click="autoLayout">对齐</el-button>
+        <el-button size="small" :icon="Download" @click="exportJson">导出</el-button>
+        <el-button size="small" :icon="Upload" @click="triggerImportJson">导入</el-button>
+        <input ref="fileInputRef" type="file" accept=".json" style="display: none" @change="handleImportJson" />
+        <el-button size="small" type="danger" text :icon="Delete" @click="clearCanvas">清空</el-button>
+
+        <div class="wf-divider" />
+
         <!-- 保存状态 -->
         <span :class="['wf-save-status', `wf-save-status--${saveStatus}`]">
           <el-icon v-if="saveStatus === 'saving'"><Loading /></el-icon>
@@ -232,7 +409,7 @@ const statusText = computed(() => {
           <el-icon v-else><Warning /></el-icon>
           {{ statusText }}
         </span>
-        <el-button size="small" type="primary" @click="saveCanvas">立即保存</el-button>
+        <el-button size="small" type="primary" @click="saveCanvas">保存</el-button>
       </div>
     </div>
 
@@ -259,6 +436,7 @@ const statusText = computed(() => {
         >
           <Background :pattern-color="patternColor" :gap="20" />
           <Controls />
+          <MiniMap class="wf-minimap" />
         </VueFlow>
       </div>
 
@@ -276,6 +454,7 @@ const statusText = computed(() => {
 @import '@vue-flow/core/dist/style.css';
 @import '@vue-flow/core/dist/theme-default.css';
 @import '@vue-flow/controls/dist/style.css';
+@import '@vue-flow/minimap/dist/style.css';
 </style>
 
 <style scoped lang="scss">
@@ -389,4 +568,10 @@ const statusText = computed(() => {
   stroke: var(--el-border-color-darker, #94a3b8);
 }
 
+:deep(.wf-minimap) {
+  background: var(--app-content-surface-color);
+  border: 1px solid var(--app-content-border-color);
+  border-radius: 8px;
+  overflow: hidden;
+}
 </style>
