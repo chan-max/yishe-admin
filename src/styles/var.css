@@ -85,9 +85,9 @@ html.light {
   --top-header-action-size: 34px;
   --top-header-action-radius: 8px;
   --top-tool-p-x: 0;
-  --top-header-breadcrumb-color: rgba(36, 48, 65, 0.54);
-  --top-header-breadcrumb-muted-color: rgba(36, 48, 65, 0.3);
-  --top-header-breadcrumb-active-color: rgba(22, 32, 51, 0.92);
+  --top-header-breadcrumb-color: #3d4f6a;
+  --top-header-breadcrumb-muted-color: rgba(36, 48, 65, 0.46);
+  --top-header-breadcrumb-active-color: #0f172a;
   --top-header-breadcrumb-font-size: 11px;
   --top-header-breadcrumb-separator-size: 10px;
   --top-header-breadcrumb-label-max-width: 180px;
@@ -101,14 +101,14 @@ html.light {
   --tags-view-active-indicator-width: 26px;
   --tags-view-active-indicator-offset: -9px;
   --tags-view-border-color: rgba(116, 134, 160, 0.1);
-  --tags-view-tool-color: rgba(36, 48, 65, 0.46);
-  --tags-view-tool-hover-color: rgba(36, 48, 65, 0.8);
+  --tags-view-tool-color: rgba(36, 48, 65, 0.58);
+  --tags-view-tool-hover-color: rgba(36, 48, 65, 0.9);
   --tags-view-tool-hover-bg: color-mix(in srgb, var(--el-color-primary) 5%, transparent);
   --tags-view-item-bg: rgba(255, 255, 255, 0.72);
   --tags-view-item-border-color: rgba(148, 163, 184, 0.1);
-  --tags-view-item-color: #5b677b;
+  --tags-view-item-color: #3d4f6a;
   --tags-view-item-hover-bg: #ffffff;
-  --tags-view-item-hover-color: #243041;
+  --tags-view-item-hover-color: #0f172a;
   --tags-view-item-active-bg: transparent;
   --tags-view-item-active-border-color: color-mix(
     in srgb,
@@ -206,8 +206,8 @@ html.light {
   --table-row-drag-ghost-bg: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
 
   --app-form-label-size: 11px;
-  --app-form-label-weight: 500;
-  --app-form-label-color: rgba(36, 48, 65, 0.66);
+  --app-form-label-weight: 600;
+  --app-form-label-color: #334155;
   --app-form-label-spacing: 0.02em;
   --app-form-item-margin: 12px;
   --app-form-item-top-margin: 10px;

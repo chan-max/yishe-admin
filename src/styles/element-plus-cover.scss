@@ -554,6 +554,7 @@ html.dark .el-alert {
 .el-textarea__inner,
 .el-input-number .el-input__inner {
   font-size: var(--ep-cover-font-size-sm);
+  color: var(--el-text-color-primary);
 }
 
 .el-input--large .el-input__inner,
@@ -1184,7 +1185,8 @@ html.dark .el-alert {
 
 .el-form-item__label {
   font-size: var(--ep-cover-font-size-xs);
-  color: var(--ep-cover-muted-color);
+  color: var(--ep-cover-title-color);
+  font-weight: 600;
 }
 
 .el-form--small .el-form-item__label {

@@ -100,8 +100,8 @@ html.dark {
 .list-page-search-form :deep(.el-form-item__label) {
   padding: 0 0 2px;
   font-size: 12px;
-  font-weight: 500;
-  color: var(--list-page-muted-text);
+  font-weight: 600;
+  color: #334155;
   line-height: 1.2;
   letter-spacing: 0.02em;
 }
