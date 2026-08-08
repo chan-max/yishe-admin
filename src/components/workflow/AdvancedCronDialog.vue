@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="visible"
-    title="高级定时调度配置"
+    title="定时调度高级配置与预设模板"
     width="680px"
     destroy-on-close
     append-to-body
@@ -37,6 +37,19 @@
               </span>
             </el-form-item>
 
+            <el-form-item label="时间选择器">
+              <el-time-picker
+                v-model="timePickerValue"
+                format="HH:mm"
+                size="small"
+                placeholder="选择时间点"
+                style="width: 100%"
+                @change="handleTimePickerChange"
+              />
+            </el-form-item>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 mt-2">
             <el-form-item label="超时覆盖 (ms)">
               <el-input-number
                 v-model="form.timeoutMs"
@@ -47,16 +60,16 @@
                 style="width: 100%"
               />
             </el-form-item>
-          </div>
 
-          <el-form-item label="参数覆盖 (JSON)" class="mt-2">
-            <el-input
-              v-model="form.paramsOverride"
-              type="textarea"
-              :rows="3"
-              placeholder='请输入 JSON，例如 { "batchSize": 100 }'
-            />
-          </el-form-item>
+            <el-form-item label="参数覆盖 (JSON)">
+              <el-input
+                v-model="form.paramsOverride"
+                type="textarea"
+                :rows="2"
+                placeholder='请输入 JSON，例如 { "shopId": 1 }'
+              />
+            </el-form-item>
+          </div>
         </div>
 
         <!-- Cron 快捷模板 -->
@@ -78,7 +91,7 @@
 
         <!-- Cron 参考 -->
         <div class="wf-form-section mt-3">
-          <div class="wf-section-title">Cron 参考</div>
+          <div class="wf-section-title">Cron 参考说明</div>
           <div class="wf-ref-grid">
             <div v-for="item in cronTemplates" :key="`${item.expr}-ref`" class="wf-ref-cell">
               <span class="font-600 text-[var(--el-text-color-primary)]">{{ item.label }}:</span>
@@ -92,7 +105,7 @@
 
     <template #footer>
       <el-button size="small" @click="visible = false">取消</el-button>
-      <el-button size="small" type="primary" :loading="saving" @click="handleSave">保存配置</el-button>
+      <el-button size="small" type="primary" :loading="saving" @click="handleSave">保存预设配置</el-button>
     </template>
   </el-dialog>
 </template>
@@ -117,11 +130,12 @@ const visible = computed({
 const loading = ref(false)
 const saving = ref(false)
 const nextRunPreview = ref<string | null>(null)
+const timePickerValue = ref<Date | null>(new Date(2026, 0, 1, 8, 0))
 
 const form = ref({
   name: '工作流定时调度',
   enabled: true,
-  expression: '*/10 * * * *',
+  expression: '0 8 * * *',
   timeoutMs: 60000,
   paramsOverride: '{}',
 })
@@ -143,12 +157,31 @@ const cronTemplates = [
   { label: '每月最后一天 23:00', expr: '0 23 28-31 * *', desc: '需脚本内自行兜底最后一天判断' },
 ]
 
+const handleTimePickerChange = (val: Date | null) => {
+  if (val) {
+    const d = new Date(val)
+    const h = d.getHours()
+    const m = d.getMinutes()
+    form.value.expression = `${m} ${h} * * *`
+  }
+}
+
 const applyTemplate = (expr: string) => {
   form.value.expression = expr
+  parseCronToTimePicker(expr)
+}
+
+const parseCronToTimePicker = (expr: string) => {
+  const parts = expr.trim().split(/\s+/)
+  if (parts.length === 5 && !isNaN(parseInt(parts[0])) && !isNaN(parseInt(parts[1]))) {
+    const m = parseInt(parts[0], 10)
+    const h = parseInt(parts[1], 10)
+    timePickerValue.value = new Date(2026, 0, 1, h, m)
+  }
 }
 
 const handleExpressionInput = () => {
-  // Input change handled in template
+  parseCronToTimePicker(form.value.expression)
 }
 
 const loadTriggerConfig = async () => {
@@ -160,11 +193,12 @@ const loadTriggerConfig = async () => {
     if (cron) {
       form.value.enabled = cron.enabled
       form.value.name = cron.config?.name || '工作流定时调度'
-      form.value.expression = cron.config?.expression || '*/10 * * * *'
+      form.value.expression = cron.config?.expression || '0 8 * * *'
       form.value.timeoutMs = cron.config?.timeoutMs || 60000
       form.value.paramsOverride = cron.config?.paramsOverride
         ? JSON.stringify(cron.config.paramsOverride, null, 2)
         : '{}'
+      parseCronToTimePicker(form.value.expression)
       if (cron.nextRunTime) {
         nextRunPreview.value = new Date(cron.nextRunTime).toLocaleString()
       }
@@ -202,7 +236,7 @@ const handleSave = async () => {
     if (res?.nextRunTime) {
       nextRunPreview.value = new Date(res.nextRunTime).toLocaleString()
     }
-    ElMessage.success('高级定时调度配置保存成功')
+    ElMessage.success('定时调度预设配置保存成功')
     emit('saved', res)
     visible.value = false
   } catch (err: any) {

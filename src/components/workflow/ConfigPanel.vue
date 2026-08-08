@@ -149,40 +149,14 @@ const NODE_TYPE_LABELS: Record<string, string> = {
             </el-form-item>
 
             <template v-if="form.config.triggerType === 'cron'">
-              <el-form-item label="Cron 表达式">
+              <el-form-item label="当前 Cron 表达式">
                 <el-input
                   v-model="form.config.cronExpression"
                   placeholder="0 8 * * *"
                   size="small"
-                  @input="handleDataChange"
+                  readonly
                 />
               </el-form-item>
-              <el-form-item label="时间选择器">
-                <el-time-picker
-                  v-model="timePickerValue"
-                  format="HH:mm"
-                  size="small"
-                  placeholder="选择时间点"
-                  style="width: 100%"
-                  @change="handleTimePickerChange"
-                />
-              </el-form-item>
-              <el-form-item label="Cron 快捷模板">
-                <el-select
-                  placeholder="选择预设模板"
-                  size="small"
-                  style="width: 100%"
-                  @change="applyCronTemplate"
-                >
-                  <el-option
-                    v-for="item in cronTemplates"
-                    :key="item.expr"
-                    :label="`${item.label} (${item.expr})`"
-                    :value="item.expr"
-                  />
-                </el-select>
-              </el-form-item>
-
               <el-button
                 size="small"
                 type="primary"
@@ -190,7 +164,7 @@ const NODE_TYPE_LABELS: Record<string, string> = {
                 style="width: 100%; margin-bottom: 12px;"
                 @click="advancedCronVisible = true"
               >
-                高级 Cron 配置与详细功能
+                设置定时与预设模板
               </el-button>
             </template>
 

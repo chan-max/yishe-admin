@@ -38,69 +38,20 @@
           </div>
 
           <div class="wf-cron-form">
-            <!-- 1. Cron 表达式（独立一行） -->
-            <div class="flex items-center gap-2 mb-2">
-              <span class="text-xs text-[var(--el-text-color-regular)] w-20 shrink-0">Cron 表达式:</span>
-              <el-input
-                v-model="cronExpression"
-                size="small"
-                placeholder="例如: 0 8 * * *"
-                style="width: 280px"
-              />
-            </div>
-
-            <!-- 2. 交互时间选择器（独立一行） -->
-            <div class="flex items-center gap-2 mb-3">
-              <span class="text-xs text-[var(--el-text-color-regular)] w-20 shrink-0">时间选择器:</span>
-              <el-time-picker
-                v-model="timePickerValue"
-                format="HH:mm"
-                size="small"
-                placeholder="选择时间点"
-                style="width: 280px"
-                @change="handleTimePickerChange"
-              />
-            </div>
-
-            <!-- 3. Cron 快捷模板 -->
-            <div class="wf-template-card mb-3">
-              <div class="text-xs font-600 mb-2 text-[var(--el-text-color-primary)]">Cron 快捷模板</div>
-              <div class="flex flex-wrap gap-1.5">
-                <el-button
-                  v-for="item in cronTemplates"
-                  :key="item.expr"
-                  size="small"
-                  :type="cronExpression === item.expr ? 'primary' : 'default'"
-                  plain
-                  @click="applyCronTemplate(item.expr)"
-                >
-                  {{ item.label }}
-                </el-button>
-              </div>
-            </div>
-
-            <!-- 4. Cron 参考与场景说明 -->
-            <div class="wf-reference-card mb-3">
-              <div class="text-xs font-600 mb-1 text-[var(--el-text-color-primary)]">Cron 参考说明</div>
-              <div class="wf-reference-list">
-                <div v-for="item in cronTemplates" :key="`${item.expr}-ref`" class="wf-reference-item">
-                  <span class="wf-ref-label">{{ item.label }}:</span>
-                  <code class="wf-ref-expr">{{ item.expr }}</code>
-                  <span class="wf-ref-desc">{{ item.desc }}</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="flex items-center justify-between mt-2 pt-2 border-t border-[var(--app-content-border-color)]">
-              <el-button size="small" type="primary" plain @click="advancedCronVisible = true">
-                高级 Cron 配置与详细功能
-              </el-button>
-              <div class="flex items-center gap-2">
-                <span v-if="cronNextRunTime" class="text-xs text-[var(--el-color-success)]">
-                  下次预计：{{ formatDate(cronNextRunTime) }}
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex flex-col">
+                <span class="text-xs font-500 text-[var(--el-text-color-regular)]">当前 Cron 表达式：</span>
+                <span class="text-sm font-mono text-[var(--el-color-primary)] font-600 mt-0.5">
+                  {{ cronExpression || '未设置' }}
                 </span>
-                <el-button size="small" type="primary" @click="saveCronTrigger">保存设置</el-button>
               </div>
+              <el-button size="small" type="primary" plain @click="advancedCronVisible = true">
+                配置 Cron 与快捷预设
+              </el-button>
+            </div>
+
+            <div v-if="cronNextRunTime" class="text-xs text-[var(--el-color-success)] pt-2 border-t border-[var(--app-content-border-color)]">
+              下次预计触发时间：{{ formatDate(cronNextRunTime) }}
             </div>
           </div>
         </div>
