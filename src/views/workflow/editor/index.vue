@@ -387,7 +387,7 @@ const statusText = computed(() => {
 
       <div class="wf-editor-toolbar__right">
         <!-- 连线类型 -->
-        <el-select v-model="edgeType" size="small" style="width: 80px" placeholder="连线">
+        <el-select v-model="edgeType" size="small" style="width: 72px" placeholder="连线">
           <el-option label="折线" value="smoothstep" />
           <el-option label="曲线" value="default" />
           <el-option label="直线" value="straight" />
@@ -483,39 +483,60 @@ const statusText = computed(() => {
 .wf-editor-toolbar__right {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+}
+
+.wf-editor-toolbar__right {
+  :deep(.el-button--small) {
+    padding: 2px 7px;
+    height: 24px;
+    font-size: 11px;
+    border-radius: 4px;
+  }
+
+  :deep(.el-select--small) {
+    .el-select__wrapper {
+      min-height: 24px;
+      height: 24px;
+      padding: 0 6px;
+      font-size: 11px;
+      border-radius: 4px;
+    }
+  }
 }
 
 .wf-back-btn {
-  font-size: 12px;
-  padding: 2px 6px;
+  font-size: 11px;
+  padding: 2px 4px;
+  height: 24px;
   color: var(--el-text-color-secondary);
 }
 
 .wf-divider {
   width: 1px;
-  height: 14px;
+  height: 12px;
   background: var(--app-content-border-color);
+  margin: 0 2px;
 }
 
 .wf-title-wrap {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .wf-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--el-text-color-primary);
   cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 1px 4px;
+  border-radius: 3px;
   &:hover { background: var(--app-content-surface-muted-color); }
 }
 
 .wf-title-edit-icon {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--el-text-color-placeholder);
   cursor: pointer;
   &:hover { color: var(--el-color-primary); }
@@ -524,8 +545,9 @@ const statusText = computed(() => {
 .wf-save-status {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 12px;
+  gap: 3px;
+  font-size: 11px;
+  margin-right: 2px;
 
   &--saved { color: var(--el-color-success); }
   &--saving { color: var(--el-text-color-secondary); }
