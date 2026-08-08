@@ -60,63 +60,38 @@
       <!-- 3. 运行日志列表 -->
       <el-tab-pane label="运行历史" name="executions">
         <div class="wf-pane-content flex flex-col">
-          <!-- 工具栏 (刷新按钮 + 数量统计) -->
-          <div class="flex items-center justify-between mb-2 px-1">
-            <span class="text-xs text-[var(--el-text-color-secondary)]">
-              共 {{ executions.length }} 条运行记录
-            </span>
-            <el-button
-              size="small"
-              type="primary"
-              text
-              bg
-              :loading="loadingExecutions"
-              @click="loadExecutions"
-            >
-              刷新日志
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs text-[var(--el-text-color-secondary)]">共 {{ executions.length }} 条记录</span>
+            <el-button size="small" type="primary" text :loading="loadingExecutions" @click="loadExecutions">
+              刷新
             </el-button>
           </div>
 
-          <!-- 列表或空状态 -->
-          <div v-loading="loadingExecutions" class="wf-exec-container">
-            <div v-if="executions.length === 0" class="wf-exec-empty flex flex-col items-center justify-center py-10">
-              <span class="text-xs text-[var(--el-text-color-placeholder)]">暂无运行历史记录</span>
+          <div v-loading="loadingExecutions" class="wf-exec-list">
+            <div v-if="executions.length === 0" class="text-center py-8 text-xs text-[var(--el-text-color-placeholder)]">
+              暂无运行历史
             </div>
 
-            <div v-else class="flex flex-col gap-2">
-              <div
-                v-for="item in executions"
-                :key="item.id"
-                class="wf-exec-card"
-              >
-                <div class="flex items-center justify-between">
+            <div v-else class="divide-y divide-[var(--el-border-color-lighter)]">
+              <div v-for="item in executions" :key="item.id" class="wf-exec-row">
+                <div class="flex items-center justify-between py-1.5 px-1">
                   <div class="flex items-center gap-2">
-                    <span
-                      class="wf-exec-dot"
-                      :class="'wf-exec-dot--' + item.status"
-                    />
-                    <span class="text-xs font-600 text-[var(--el-text-color-primary)]">
-                      {{ item.status === 'success' ? '执行成功' : item.status === 'failed' ? '执行失败' : '正在运行' }}
+                    <span class="wf-exec-dot" :class="'wf-exec-dot--' + item.status" />
+                    <span class="text-xs font-500 text-[var(--el-text-color-primary)]">
+                      {{ item.status === 'success' ? '成功' : item.status === 'failed' ? '失败' : '运行中' }}
                     </span>
-
-                    <span
-                      class="wf-exec-source-tag"
-                      :class="'wf-exec-source-tag--' + item.triggerType"
-                    >
-                      {{ item.triggerType === 'cron' ? '定时调度' : '手动触发' }}
+                    <span class="text-xs text-[var(--el-text-color-secondary)] opacity-80">
+                      [{{ item.triggerType === 'cron' ? '定时' : '手动' }}]
                     </span>
                   </div>
 
-                  <div class="flex items-center gap-3 text-xs text-[var(--el-text-color-secondary)]">
-                    <span v-if="item.durationMs" class="font-mono text-11px">
-                      {{ item.durationMs }} ms
-                    </span>
+                  <div class="flex items-center gap-4 text-xs text-[var(--el-text-color-secondary)] font-mono">
                     <span>{{ formatDate(item.createTime) }}</span>
+                    <span v-if="item.durationMs" class="w-16 text-right">{{ item.durationMs }}ms</span>
                   </div>
                 </div>
 
-                <!-- 错误日志信息 -->
-                <div v-if="item.errorText" class="wf-exec-error-box mt-2 text-xs font-mono">
+                <div v-if="item.errorText" class="text-xs text-[var(--el-color-danger)] font-mono px-1 pb-1">
                   {{ item.errorText }}
                 </div>
               </div>
@@ -375,24 +350,21 @@ watch(
 .wf-ref-desc {
   opacity: 0.85;
 }
-.wf-exec-container {
-  max-height: 280px;
+.wf-exec-list {
+  max-height: 260px;
   overflow-y: auto;
   padding-right: 2px;
 }
-.wf-exec-card {
-  background: var(--app-content-surface-muted-color);
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid var(--el-border-color-lighter);
-  transition: all 0.2s ease;
+.wf-exec-row {
+  border-radius: 4px;
+  transition: background 0.15s ease;
 }
-.wf-exec-card:hover {
-  border-color: var(--el-border-color);
+.wf-exec-row:hover {
+  background: var(--app-content-surface-muted-color);
 }
 .wf-exec-dot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   display: inline-block;
 }
@@ -404,27 +376,5 @@ watch(
 }
 .wf-exec-dot--running {
   background: var(--el-color-warning);
-}
-.wf-exec-source-tag {
-  font-size: 10px;
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-weight: 500;
-}
-.wf-exec-source-tag--cron {
-  color: var(--el-color-warning);
-  background: rgba(230, 162, 60, 0.12);
-}
-.wf-exec-source-tag--manual {
-  color: var(--el-color-primary);
-  background: rgba(64, 158, 255, 0.12);
-}
-.wf-exec-error-box {
-  background: rgba(245, 108, 108, 0.08);
-  color: var(--el-color-danger);
-  padding: 6px 8px;
-  border-radius: 4px;
-  white-space: pre-wrap;
-  word-break: break-all;
 }
 </style>
