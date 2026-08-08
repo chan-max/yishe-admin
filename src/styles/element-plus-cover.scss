@@ -236,6 +236,13 @@ html.dark .el-alert {
   color: var(--el-text-color-primary);
 }
 
+.el-button:not(.is-text):not(.is-link):not(.is-plain):not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(.el-button--danger) {
+  --el-button-hover-bg-color: var(--ep-cover-soft-bg-hover);
+  --el-button-active-bg-color: var(--ep-cover-soft-bg-active);
+  --el-button-hover-border-color: var(--ep-cover-border-color-strong);
+  --el-button-active-border-color: var(--ep-cover-border-color-strong);
+}
+
 .el-button--default:hover,
 .el-button--info:hover {
   background: var(--ep-cover-soft-bg-hover);

@@ -138,6 +138,7 @@ const rows = [
   gap: 8px;
   width: 100%;
   padding: 4px;
+  background: var(--app-content-surface-color);
 }
 
 .calc__screen {
@@ -153,15 +154,15 @@ const rows = [
 .calc__val {
   font-size: 24px;
   font-weight: 300;
-  color: #eef5ff;
+  color: var(--el-text-color-primary);
   line-height: 1.1;
   letter-spacing: -0.02em;
-  &.err { color: #ff6b6b }
+  &.err { color: var(--el-color-danger) }
 }
 
 .calc__pre {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--el-text-color-placeholder);
   margin-top: 2px;
 }
 
@@ -179,19 +180,19 @@ const rows = [
   font-weight: 400;
   cursor: pointer;
   transition: background 0.1s;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.8);
-  &:hover { background: rgba(255, 255, 255, 0.1) }
+  background: var(--ep-cover-soft-bg);
+  color: var(--el-text-color-primary);
+  &:hover { background: var(--ep-cover-soft-bg-hover) }
   &:active { transform: scale(0.96) }
   &.op {
-    background: rgba(103, 214, 151, 0.15);
-    color: #67d697;
-    &:hover { background: rgba(103, 214, 151, 0.22) }
+    background: color-mix(in srgb, var(--el-color-primary) 14%, transparent);
+    color: var(--el-color-primary);
+    &:hover { background: color-mix(in srgb, var(--el-color-primary) 22%, transparent) }
   }
   &.fn {
-    background: rgba(255, 255, 255, 0.04);
-    color: rgba(255, 255, 255, 0.5);
-    &:hover { background: rgba(255, 255, 255, 0.08) }
+    background: color-mix(in srgb, var(--el-text-color-secondary) 8%, transparent);
+    color: var(--el-text-color-secondary);
+    &:hover { background: var(--ep-cover-soft-bg-hover) }
   }
   &.z { grid-column: span 2 }
 }

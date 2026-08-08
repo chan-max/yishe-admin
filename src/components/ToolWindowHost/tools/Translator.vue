@@ -202,8 +202,8 @@ const copyResult = async () => {
   min-height: 0;
   min-width: 0;
   padding: clamp(3px, 1.2cqw, 7px);
-  background: #0b1117;
-  color: #edf5f7;
+  background: var(--app-content-surface-color);
+  color: var(--el-text-color-primary);
   font-size: 13px;
 }
 
@@ -239,14 +239,14 @@ button {
   height: 32px;
   min-width: 0;
   padding: 0 9px;
-  border: 1px solid #233241;
+  border: 1px solid var(--app-content-border-color);
   border-radius: 5px;
   outline: none;
-  background: #111a23;
-  color: #edf5f7;
+  background: var(--ep-cover-soft-bg);
+  color: var(--el-text-color-primary);
 
   &:focus {
-    border-color: #31cf82;
+    border-color: var(--el-color-primary);
   }
 }
 
@@ -269,13 +269,13 @@ button {
 .icon-btn {
   width: 32px;
   height: 32px;
-  border: 1px solid #233241;
-  background: #111a23;
-  color: #91a4b5;
+  border: 1px solid var(--app-content-border-color);
+  background: var(--ep-cover-soft-bg);
+  color: var(--el-text-color-secondary);
 
   &:hover:not(:disabled) {
-    border-color: #31cf82;
-    color: #31cf82;
+    border-color: var(--el-color-primary);
+    color: var(--el-color-primary);
   }
 }
 
@@ -293,12 +293,12 @@ button {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  border: 1px solid #233241;
+  border: 1px solid var(--app-content-border-color);
   border-radius: 6px;
-  background: #101923;
+  background: var(--ep-cover-soft-bg);
 
   &.result {
-    border-color: rgba(49, 207, 130, 0.45);
+    border-color: color-mix(in srgb, var(--el-color-primary) 45%, transparent);
   }
 }
 
@@ -310,16 +310,16 @@ button {
   outline: none;
   resize: none;
   background: transparent;
-  color: #edf5f7;
+  color: var(--el-text-color-primary);
   font-size: 14px;
   line-height: 1.55;
 
   &::placeholder {
-    color: #5e6f7d;
+    color: var(--el-text-color-placeholder);
   }
 
   &[readonly] {
-    color: #e8fff4;
+    color: color-mix(in srgb, var(--el-color-primary) 78%, var(--el-text-color-primary));
   }
 }
 
@@ -329,8 +329,8 @@ button {
   justify-content: space-between;
   min-height: 30px;
   padding: 4px 7px;
-  border-top: 1px solid #1d2a36;
-  color: #667889;
+  border-top: 1px solid var(--app-content-border-color);
+  color: var(--el-text-color-secondary);
   font-size: 12px;
 }
 
@@ -338,24 +338,24 @@ button {
   height: 24px;
   padding: 0 7px;
   background: transparent;
-  color: #91a4b5;
+  color: var(--el-text-color-secondary);
 
   &:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.05);
-    color: #edf5f7;
+    background: var(--ep-cover-soft-bg-hover);
+    color: var(--el-text-color-primary);
   }
 }
 
 .translate-btn {
   height: 32px;
   padding: 0 16px;
-  background: #31cf82;
-  color: #07120d;
+  background: var(--el-color-primary);
+  color: var(--el-color-white);
   font-weight: 600;
   white-space: nowrap;
 
   &:hover:not(:disabled) {
-    background: #29bd74;
+    background: color-mix(in srgb, var(--el-color-primary) 88%, #000);
   }
 }
 

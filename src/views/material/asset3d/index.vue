@@ -1,6 +1,6 @@
 <template>
   <ContentWrap :plain="true">
-    <ListPageLayout class="clip-material-page asset3d-page">
+    <ListPageLayout class="file-resource-page asset3d-page">
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
           <el-form :model="queryParams" label-position="top" class="list-page-search-form">
@@ -1103,22 +1103,22 @@ onMounted(getList);
 </script>
 
 <style lang="less" scoped>
-:deep(.clip-material-page) {
+:deep(.file-resource-page) {
   gap: 10px;
   padding: 8px 0 0;
 }
 
-:deep(.clip-material-page .list-page-layout__body),
-:deep(.clip-material-page .list-page-layout__main) {
+:deep(.file-resource-page .list-page-layout__body),
+:deep(.file-resource-page .list-page-layout__main) {
   gap: 10px;
 }
 
-:deep(.clip-material-page .list-page-filter--flat) {
+:deep(.file-resource-page .list-page-filter--flat) {
   gap: 10px;
   padding-bottom: 10px;
 }
 
-:deep(.clip-material-page .list-page-table-panel__pagination--flat) {
+:deep(.file-resource-page .list-page-table-panel__pagination--flat) {
   padding-top: 10px;
 }
 

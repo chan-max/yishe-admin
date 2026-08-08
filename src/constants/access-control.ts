@@ -1,5 +1,5 @@
-// 保留历史权限 key，避免线上已有角色权限失效；展示语义已经统一为“文件资源”。
-const FILE_RESOURCE_MENU_KEY = "resource.clip-material";
+// 文件资源菜单权限 key
+const FILE_RESOURCE_MENU_KEY = "resource.file-resource";
 
 export interface MenuAccessOption {
   key: string;
@@ -33,7 +33,6 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   CrawlerMaterial: "resource.crawler-material",
   Material: "resource.material",
   FileResource: FILE_RESOURCE_MENU_KEY,
-  ClipMaterial: FILE_RESOURCE_MENU_KEY,
   Asset3d: "resource.asset-3d",
   Font: "resource.font",
   Psd: "resource.psd",

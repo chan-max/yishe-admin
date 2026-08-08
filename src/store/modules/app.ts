@@ -7,6 +7,7 @@ import { ElementPlusSize } from '@/types/elementPlus'
 import { LayoutType } from '@/types/layout'
 import { ThemeTypes } from '@/types/theme'
 import { getElementPlusPrimaryVars } from '@/utils/color'
+import { DEFAULT_LOADING_STYLE, isValidLoadingStyle } from '@/config/loadingTemplates'
 
 const { wsCache } = useCache()
 
@@ -72,6 +73,7 @@ interface AppState {
   footer: boolean
   theme: ThemeTypes
   fixedMenu: boolean
+  loadingStyle: string
 }
 
 export const useAppStore = defineStore('app', {
@@ -105,7 +107,11 @@ export const useAppStore = defineStore('app', {
       layout: wsCache.get(CACHE_KEY.LAYOUT) || 'classic', // layout布局
       isDark: wsCache.get(CACHE_KEY.IS_DARK) || false, // 是否是暗黑模式
       currentSize: wsCache.get('currentSize') || 'small', // 组件尺寸
-      theme: wsCache.get(CACHE_KEY.THEME) || DARK_THEME
+      theme: wsCache.get(CACHE_KEY.THEME) || DARK_THEME,
+      loadingStyle: (() => {
+        const v = wsCache.get(CACHE_KEY.LOADING_STYLE)
+        return isValidLoadingStyle(v) ? v : DEFAULT_LOADING_STYLE
+      })(),
     }
   },
   getters: {
@@ -183,6 +189,9 @@ export const useAppStore = defineStore('app', {
     },
     getTheme(): ThemeTypes {
       return this.theme
+    },
+    getLoadingStyle(): string {
+      return this.loadingStyle
     },
     getFooter(): boolean {
       return this.footer
@@ -299,6 +308,15 @@ export const useAppStore = defineStore('app', {
     },
     setFooter(footer: boolean) {
       this.footer = footer
+    },
+    setLoadingStyle(key: string) {
+      if (!isValidLoadingStyle(key)) return
+      this.loadingStyle = key
+      document.documentElement.dataset.loader = key
+      wsCache.set(CACHE_KEY.LOADING_STYLE, key)
+    },
+    applyLoadingStyle() {
+      document.documentElement.dataset.loader = this.loadingStyle
     }
   },
   persist: false

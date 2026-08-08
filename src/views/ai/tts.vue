@@ -177,25 +177,25 @@
 
           <el-form-item v-if="isVoiceCloneModel && voiceSource === 'material'" label="音频素材" required>
             <div class="voice-list-container">
-              <div class="clip-material-toolbar">
-                <el-input v-model="clipMaterialKeyword" placeholder="搜索素材名称/描述/关键词" clearable
-                  @keyup.enter="loadClipMaterialAudios" />
-                <el-button :loading="loadingClipMaterials" @click="loadClipMaterialAudios">查询</el-button>
+              <div class="file-resource-toolbar">
+                <el-input v-model="fileResourceKeyword" placeholder="搜索素材名称/描述/关键词" clearable
+                  @keyup.enter="loadFileResourceAudios" />
+                <el-button :loading="loadingFileResources" @click="loadFileResourceAudios">查询</el-button>
               </div>
 
-              <el-select v-model="selectedClipMaterialId" class="w-full" placeholder="请选择音频素材"
-                :loading="loadingClipMaterials" clearable>
-                <el-option v-for="item in clipMaterialAudios" :key="item.id"
+              <el-select v-model="selectedFileResourceId" class="w-full" placeholder="请选择音频素材"
+                :loading="loadingFileResources" clearable>
+                <el-option v-for="item in fileResourceAudios" :key="item.id"
                   :label="`${item.name || '未命名'} (${(item.suffix || '').toLowerCase()})`" :value="item.id" />
               </el-select>
 
-              <div class="clip-material-actions">
+              <div class="file-resource-actions">
                 <el-button type="primary" :loading="uploadingAudio" @click="handleCreateVoiceFromMaterial">
                   使用所选素材创建音色
                 </el-button>
               </div>
 
-              <audio v-if="selectedClipMaterial?.url" :src="selectedClipMaterial.url" controls preload="none"
+              <audio v-if="selectedFileResource?.url" :src="selectedFileResource.url" controls preload="none"
                 class="audio-preview" />
             </div>
             <div v-if="customVoiceInfo" class="voice-info">
@@ -556,13 +556,13 @@ const voiceSource = ref<'existing' | 'material'>('existing') // 音色来源：e
 const customVoiceName = ref('') // 用户输入的音色名称
 const customVoiceList = ref<any[]>([]) // 已创建的音色列表
 const loadingVoices = ref(false) // 加载音色列表中
-const clipMaterialKeyword = ref('')
-const clipMaterialAudios = ref<any[]>([])
-const selectedClipMaterialId = ref('')
-const loadingClipMaterials = ref(false)
+const fileResourceKeyword = ref('')
+const fileResourceAudios = ref<any[]>([])
+const selectedFileResourceId = ref('')
+const loadingFileResources = ref(false)
 
-const selectedClipMaterial = computed(() => {
-  return clipMaterialAudios.value.find((item) => item.id === selectedClipMaterialId.value)
+const selectedFileResource = computed(() => {
+  return fileResourceAudios.value.find((item) => item.id === selectedFileResourceId.value)
 })
 
 const audioSuffixSet = new Set(['mp3', 'wav', 'm4a', 'aac', 'ogg', 'flac', 'amr', 'opus'])
@@ -673,7 +673,7 @@ watch(
       // 加载音色列表
       if (dialogVisible.value) {
         loadCustomVoices()
-        loadClipMaterialAudios()
+        loadFileResourceAudios()
       }
     }
   }
@@ -686,7 +686,7 @@ watch(
     form.voice = ''
     customVoiceInfo.value = null
     customVoiceName.value = ''
-    selectedClipMaterialId.value = ''
+    selectedFileResourceId.value = ''
   }
 )
 
@@ -707,9 +707,9 @@ const resetForm = () => {
   customVoiceInfo.value = null
   customVoiceName.value = ''
   voiceSource.value = 'existing'
-  clipMaterialKeyword.value = ''
-  clipMaterialAudios.value = []
-  selectedClipMaterialId.value = ''
+  fileResourceKeyword.value = ''
+  fileResourceAudios.value = []
+  selectedFileResourceId.value = ''
   form.sample_rate = 24000
   form.speed = 1
   form.pitch = 1
@@ -774,44 +774,44 @@ const handleDeleteVoice = async (voice: string) => {
   }
 }
 
-const loadClipMaterialAudios = async () => {
-  if (loadingClipMaterials.value) return
-  loadingClipMaterials.value = true
+const loadFileResourceAudios = async () => {
+  if (loadingFileResources.value) return
+  loadingFileResources.value = true
   try {
     const res = await getFileResourceList({
       currentPage: 1,
       pageSize: 200,
-      keyword: clipMaterialKeyword.value || undefined,
+      keyword: fileResourceKeyword.value || undefined,
       isDeleted: false
     })
     const payload = res?.data ?? res
     const list = payload?.list || []
-    clipMaterialAudios.value = list.filter((item) => audioSuffixSet.has(String(item?.suffix || '').toLowerCase()))
+    fileResourceAudios.value = list.filter((item) => audioSuffixSet.has(String(item?.suffix || '').toLowerCase()))
   } catch (error: any) {
     ElMessage.error(error?.message || '查询剪辑音频素材失败')
   } finally {
-    loadingClipMaterials.value = false
+    loadingFileResources.value = false
   }
 }
 
 const handleCreateVoiceFromMaterial = async () => {
-  if (!selectedClipMaterial.value?.url) {
+  if (!selectedFileResource.value?.url) {
     ElMessage.warning('请先选择音频素材')
     return
   }
 
   let preferredName = sanitizePreferredName(customVoiceName.value.trim())
   if (!preferredName) {
-    preferredName = sanitizePreferredName(selectedClipMaterial.value.name || '') || `custom_voice_${Date.now()}`
+    preferredName = sanitizePreferredName(selectedFileResource.value.name || '') || `custom_voice_${Date.now()}`
   }
 
   uploadingAudio.value = true
   try {
     const res = await createCustomVoice({
-      audioUrl: selectedClipMaterial.value.url,
+      audioUrl: selectedFileResource.value.url,
       targetModel: 'qwen3-tts-vc-2026-01-22',
       preferredName,
-      audioMimeType: resolveAudioMimeType(selectedClipMaterial.value.suffix)
+      audioMimeType: resolveAudioMimeType(selectedFileResource.value.suffix)
     })
 
     const payload = res?.data ?? res
@@ -886,7 +886,7 @@ const handleAdd = () => {
   dialogVisible.value = true
   // 默认加载音色列表（声音复刻模型可能用到）
   loadCustomVoices()
-  loadClipMaterialAudios()
+  loadFileResourceAudios()
 }
 
 const submitForm = async () => {
@@ -1206,14 +1206,14 @@ onMounted(() => {
   margin-top: 8px;
 }
 
-.clip-material-toolbar {
+.file-resource-toolbar {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 8px;
   margin-bottom: 8px;
 }
 
-.clip-material-actions {
+.file-resource-actions {
   margin-top: 8px;
   margin-bottom: 8px;
 }

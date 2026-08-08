@@ -2,6 +2,7 @@
 import { computed, ref } from "vue";
 import { useAppStore } from "@/store/modules/app";
 import { ElMessage } from "element-plus";
+import { LOADING_TEMPLATES, DEFAULT_LOADING_STYLE } from "@/config/loadingTemplates";
 
 defineOptions({ name: "Personalization" });
 
@@ -53,6 +54,18 @@ const handleReset = () => {
   applyThemeColor(def);
   ElMessage.success("主题色已恢复默认");
 };
+
+const loadingStyle = computed(() => appStore.getLoadingStyle);
+
+const selectLoadingStyle = (key: string) => {
+  appStore.setLoadingStyle(key);
+  ElMessage.success("加载动画已切换");
+};
+
+const resetLoadingStyle = () => {
+  appStore.setLoadingStyle(DEFAULT_LOADING_STYLE);
+  ElMessage.success("加载动画已恢复默认");
+};
 </script>
 
 <template>
@@ -94,6 +107,37 @@ const handleReset = () => {
           <el-switch v-model="isDark" inline-prompt active-text="深" inactive-text="浅" />
         </div>
         <p class="personalization-section__desc">切换后整个系统界面会使用暗色配色。</p>
+      </section>
+
+      <section class="personalization-section">
+        <div class="personalization-section__head">
+          <span class="personalization-section__title">加载动画</span>
+          <button
+            v-if="loadingStyle !== DEFAULT_LOADING_STYLE"
+            type="button"
+            class="personalization-reset"
+            @click="resetLoadingStyle"
+          >
+            恢复默认
+          </button>
+        </div>
+        <p class="personalization-section__desc">所有加载动画（页面 / 表格 / 按钮）统一生效。</p>
+        <div class="personalization-loaders">
+          <button
+            v-for="tpl in LOADING_TEMPLATES"
+            :key="tpl.key"
+            type="button"
+            class="personalization-loader"
+            :class="{ active: loadingStyle === tpl.key }"
+            :title="tpl.desc"
+            @click="selectLoadingStyle(tpl.key)"
+          >
+            <span class="personalization-loader__preview" :data-loader="tpl.key">
+              <span class="loader-preview" />
+            </span>
+            <span class="personalization-loader__name">{{ tpl.name }}</span>
+          </button>
+        </div>
       </section>
     </div>
   </el-drawer>
@@ -228,5 +272,172 @@ const handleReset = () => {
 .personalization-color-picker {
   width: 26px;
   height: 26px;
+}
+
+.personalization-loaders {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.personalization-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 4px 8px;
+  border: 1px solid var(--app-content-border-color);
+  border-radius: 10px;
+  background: var(--app-content-surface-color);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--el-color-primary) 40%, transparent);
+    transform: translateY(-1px);
+  }
+
+  &.active {
+    border-color: var(--el-color-primary);
+    box-shadow: inset 0 0 0 1px var(--el-color-primary);
+  }
+}
+
+.personalization-loader__preview {
+  position: relative;
+  display: flex;
+  width: 44px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+}
+
+.personalization-loader__name {
+  font-size: 12px;
+  line-height: 1;
+  color: var(--el-text-color-primary);
+}
+
+// ---- 加载动画模版预览（与 _loading.scss 视觉一致，复用全局 keyframes）----
+.loader-preview {
+  position: relative;
+  display: block;
+  width: 26px;
+  height: 26px;
+}
+
+.personalization-loader__preview[data-loader="ring"] .loader-preview::before {
+  content: "";
+  display: block;
+  width: 26px;
+  height: 26px;
+  margin: 0 auto;
+  border-radius: 50%;
+  background:
+    radial-gradient(farthest-side, var(--el-color-primary) 94%, transparent) top/5px 5px no-repeat,
+    conic-gradient(transparent 30%, var(--el-color-primary));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 0);
+  mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 0);
+  animation: yishe-loading-rotate 1s infinite linear;
+}
+
+.personalization-loader__preview[data-loader="dual-ring"] .loader-preview::before {
+  content: "";
+  display: block;
+  width: 26px;
+  height: 26px;
+  margin: 0 auto;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--el-color-primary) 20%, transparent);
+  border-top-color: var(--el-color-primary);
+  animation: yishe-loading-rotate 0.9s infinite linear;
+}
+
+.personalization-loader__preview[data-loader="dual-ring"] .loader-preview::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--el-color-primary) 16%, transparent);
+  border-bottom-color: var(--el-color-primary);
+  animation: yishe-loading-rotate-rev 1.3s infinite linear;
+}
+
+.personalization-loader__preview[data-loader="ripple"] .loader-preview::before {
+  content: "";
+  display: block;
+  width: 26px;
+  height: 26px;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--el-color-primary) 0 3px, transparent 4px);
+}
+
+.personalization-loader__preview[data-loader="ripple"] .loader-preview::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 26px;
+  height: 26px;
+  margin-left: -13px;
+  border-radius: 50%;
+  border: 2px solid var(--el-color-primary);
+  animation: yishe-loading-ripple 1.6s infinite ease-out;
+}
+
+.personalization-loader__preview[data-loader="dots"] .loader-preview::before {
+  content: "";
+  display: block;
+  width: 30px;
+  height: 26px;
+  margin: 0 auto;
+}
+
+.personalization-loader__preview[data-loader="dots"] .loader-preview::after {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  border-radius: 50%;
+  background: var(--el-color-primary);
+  box-shadow:
+    -9px 0 0 0 var(--el-color-primary),
+    9px 0 0 0 var(--el-color-primary);
+  animation: yishe-loading-dots 0.9s infinite ease-in-out;
+}
+
+.personalization-loader__preview[data-loader="bars"] .loader-preview::before {
+  content: "";
+  display: block;
+  width: 24px;
+  height: 26px;
+  margin: 0 auto;
+}
+
+.personalization-loader__preview[data-loader="bars"] .loader-preview::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  width: 4px;
+  height: 14px;
+  margin-left: -8px;
+  border-radius: 999px;
+  background: var(--el-color-primary);
+  box-shadow:
+    6px 0 0 -1px var(--el-color-primary),
+    12px 0 0 -1px var(--el-color-primary);
+  animation: yishe-loading-bars 1s infinite ease-in-out;
 }
 </style>

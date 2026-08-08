@@ -208,7 +208,7 @@ onUnmounted(() => {
         text-align: right;
         font-size: 24px;
         font-weight: bold;
-        background-color: #f5f7fa;
+        background-color: var(--ep-cover-soft-bg);
       }
     }
   }
@@ -236,7 +236,7 @@ onUnmounted(() => {
 
       &.operator {
         background-color: var(--el-color-primary);
-        color: white;
+        color: var(--el-color-white);
         border-color: var(--el-color-primary);
 
         &:hover {
@@ -246,27 +246,13 @@ onUnmounted(() => {
       }
 
       &.equals {
-        background-color: #67c23a;
-        color: white;
-        border-color: #67c23a;
+        background-color: var(--el-color-primary);
+        color: var(--el-color-white);
+        border-color: var(--el-color-primary);
 
         &:hover {
-          background-color: #85ce61;
-          border-color: #85ce61;
-        }
-      }
-    }
-  }
-}
-
-// 暗色主题适配
-.dark {
-  .calculator {
-    .display {
-      .display-input {
-        :deep(.el-input__inner) {
-          background-color: #2d2d2d;
-          color: #e5eaf3;
+          background-color: var(--el-color-primary-light-5);
+          border-color: var(--el-color-primary-light-5);
         }
       }
     }

@@ -237,8 +237,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: "file-resource",
-        alias: "/resource/clip-material",
-        component: () => import("@/views/material/clip-material/index.vue"),
+        component: () => import("@/views/material/file-resource/index.vue"),
         name: "FileResource",
         meta: {
           canTo: true,
@@ -1113,15 +1112,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
     path: "/resource/material-center/material",
     redirect: "/resource/material",
     name: "ResourceMaterialCenterMaterialCompat",
-    meta: {
-      hidden: true,
-      noTagsView: true,
-    },
-  },
-  {
-    path: "/resource/material-center/clip-material",
-    redirect: "/resource/file-resource",
-    name: "ResourceMaterialCenterFileResourceCompat",
     meta: {
       hidden: true,
       noTagsView: true,

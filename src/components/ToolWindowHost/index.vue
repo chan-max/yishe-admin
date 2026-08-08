@@ -382,10 +382,32 @@ onBeforeUnmount(() => {
 
 <style scoped lang="scss">
 .tool-window-host {
+  --twh-backdrop: rgba(15, 23, 42, 0.5);
+  --twh-panel-bg: var(--app-content-surface-color);
+  --twh-panel-border: var(--app-content-border-color);
+  --twh-panel-border-active: var(--ep-cover-border-color-strong);
+  --twh-shadow-lg: 0 18px 44px rgba(15, 23, 42, 0.18);
+  --twh-header-bg: var(--app-content-surface-muted-color);
+  --twh-header-border: var(--app-content-border-color);
+  --twh-accent: var(--el-color-primary);
+  --twh-title-color: var(--ep-cover-title-color);
+  --twh-muted-color: var(--ep-cover-muted-color);
+  --twh-action-color: var(--el-text-color-secondary);
+  --twh-action-hover-bg: var(--ep-cover-soft-bg-hover);
+  --twh-action-hover-color: var(--el-text-color-primary);
+  --twh-action-border: var(--app-content-border-color);
+  --twh-body-bg: var(--app-content-bg-color);
+  --twh-empty-bg: var(--app-content-surface-color);
+
   position: fixed;
   inset: 0;
   z-index: 4000;
   pointer-events: none;
+}
+
+html.dark .tool-window-host {
+  --twh-backdrop: rgba(0, 0, 0, 0.62);
+  --twh-shadow-lg: 0 18px 44px rgba(0, 0, 0, 0.5);
 }
 
 .tool-window-host__window {
@@ -404,7 +426,7 @@ onBeforeUnmount(() => {
 .tool-window-host__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(3, 7, 18, 0.66);
+  background: var(--twh-backdrop);
 }
 
 .tool-window-host__panel {
@@ -414,9 +436,9 @@ onBeforeUnmount(() => {
   height: 100%;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: #0a0f16;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--twh-panel-border);
+  background: var(--twh-panel-bg);
+  box-shadow: var(--twh-shadow-lg);
 }
 
 .tool-window-host__window.is-fullscreen .tool-window-host__panel {
@@ -430,7 +452,7 @@ onBeforeUnmount(() => {
 }
 
 .tool-window-host__window.is-active .tool-window-host__panel {
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: var(--twh-panel-border-active);
 }
 
 .tool-window-host__window.is-dragging .tool-window-host__panel,
@@ -445,8 +467,8 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   gap: 8px;
   padding: 0 6px 0 8px;
-  border-bottom: 1px solid #16202d;
-  background: #0c121a;
+  border-bottom: 1px solid var(--twh-header-border);
+  background: var(--twh-header-bg);
   user-select: none;
 }
 
@@ -464,7 +486,7 @@ onBeforeUnmount(() => {
 .tool-window-host__title-icon {
   flex-shrink: 0;
   font-size: 9px;
-  color: #5ebf87;
+  color: var(--twh-accent);
   opacity: 0.9;
 }
 
@@ -477,7 +499,7 @@ onBeforeUnmount(() => {
     monospace;
   font-size: 9px;
   font-weight: 400;
-  color: #dce5f2;
+  color: var(--twh-title-color);
   letter-spacing: 0;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -496,7 +518,7 @@ onBeforeUnmount(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
   letter-spacing: 0.02em;
-  color: #67788f;
+  color: var(--twh-muted-color);
 }
 
 .tool-window-host__actions {
@@ -524,7 +546,7 @@ onBeforeUnmount(() => {
     top: 4px;
     bottom: 4px;
     width: 1px;
-    background: rgba(76, 92, 114, 0.38);
+    background: var(--twh-action-border);
   }
 }
 
@@ -537,7 +559,7 @@ onBeforeUnmount(() => {
   border: 1px solid transparent;
   border-radius: 3px;
   background: transparent;
-  color: #8ea5bf;
+  color: var(--twh-action-color);
   cursor: pointer;
   transition:
     background-color 0.18s ease,
@@ -549,21 +571,21 @@ onBeforeUnmount(() => {
   }
 
   &:hover {
-    border-color: rgba(103, 214, 151, 0.14);
-    background: #101824;
-    color: #dce8f7;
+    border-color: color-mix(in srgb, var(--twh-accent) 18%, transparent);
+    background: var(--twh-action-hover-bg);
+    color: var(--twh-action-hover-color);
   }
 
   &.is-danger:hover {
-    border-color: rgba(239, 68, 68, 0.18);
-    background: #241217;
-    color: #ff8f8f;
+    border-color: color-mix(in srgb, var(--el-color-danger) 22%, transparent);
+    background: color-mix(in srgb, var(--el-color-danger) 10%, transparent);
+    color: var(--el-color-danger);
   }
 
   &.is-danger-soft:hover {
-    border-color: rgba(244, 114, 182, 0.18);
-    background: #23131d;
-    color: #ffb0d5;
+    border-color: color-mix(in srgb, var(--el-color-danger) 16%, transparent);
+    background: color-mix(in srgb, var(--el-color-danger) 8%, transparent);
+    color: var(--el-color-danger);
   }
 }
 
@@ -572,7 +594,7 @@ onBeforeUnmount(() => {
   flex: 1;
   min-height: 0;
   padding: 2px;
-  background: #080d14;
+  background: var(--twh-body-bg);
 }
 
 .tool-window-host__window.is-fullscreen .tool-window-host__body {
@@ -609,26 +631,26 @@ onBeforeUnmount(() => {
   justify-content: center;
   gap: 8px;
   background:
-    radial-gradient(circle at top, rgba(57, 173, 111, 0.1), transparent 34%),
-    #0b1119;
+    radial-gradient(circle at top, color-mix(in srgb, var(--twh-accent) 10%, transparent), transparent 34%),
+    var(--twh-empty-bg);
   border-radius: 4px;
   text-align: center;
 }
 
 .tool-window-host__empty-icon {
   font-size: 24px;
-  color: #67d697;
+  color: var(--twh-accent);
 }
 
 .tool-window-host__empty-title {
   font-size: 14px;
   font-weight: 600;
-  color: #eef5ff;
+  color: var(--twh-title-color);
 }
 
 .tool-window-host__empty-desc {
   font-size: 12px;
-  color: #7d92ab;
+  color: var(--twh-muted-color);
 }
 
 .tool-window-host__drag-mask {

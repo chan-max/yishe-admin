@@ -21,6 +21,7 @@ provide('configGlobal', props)
 // 初始化所有主题色
 onMounted(() => {
   appStore.setCssVarTheme()
+  appStore.applyLoadingStyle()
 })
 
 const { width } = useWindowSize()

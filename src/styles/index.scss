@@ -3,6 +3,7 @@
 @use "./theme.scss";
 @use "./element-plus-cover.scss";
 @use "element-plus/theme-chalk/dark/css-vars.css";
+@use "./loading";
 @use "./list-page-common.css";
 
 // 确保右下角通知提示始终在最顶层
@@ -120,103 +121,9 @@ select {
   ) !important;
 }
 
-.el-loading-spinner {
-  left: 50% !important;
-  top: 50% !important;
-  width: auto !important;
-  min-width: 30px;
-  height: auto !important;
-  margin: 0 !important;
-  transform: translate(-50%, -50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-
-  .circular,
-  .path {
-    display: none !important;
-  }
-
-  .loader {
-    --color: #a5a5b0;
-    --size: 26px;
-    width: var(--size);
-    height: var(--size);
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(2, 1fr);
-    gap: 2px;
-    margin: 0 auto;
-  }
-
-  .loader span {
-    width: 100%;
-    height: 100%;
-    display: block;
-    background-color: var(--color);
-    animation: keyframes-blink 0.6s alternate infinite linear;
-  }
-
-  .loader span:nth-child(1) {
-    animation-delay: 0ms;
-  }
-
-  .loader span:nth-child(2) {
-    animation-delay: 200ms;
-  }
-
-  .loader span:nth-child(3) {
-    animation-delay: 300ms;
-  }
-
-  .loader span:nth-child(4) {
-    animation-delay: 400ms;
-  }
-
-  .loader span:nth-child(5) {
-    animation-delay: 500ms;
-  }
-
-  .loader span:nth-child(6) {
-    animation-delay: 600ms;
-  }
-
-  .el-loading-text {
-    margin-top: 6px;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    color: var(--el-text-color-primary);
-    white-space: nowrap;
-  }
-}
-
 html.light {
   .el-loading-mask {
     background: color-mix(in srgb, #ffffff 72%, transparent 28%) !important;
-  }
-
-  .el-loading-spinner {
-    .loader {
-      --color: #c5c7d2;
-    }
-
-    .el-loading-text {
-      color: color-mix(in srgb, var(--el-text-color-primary) 72%, #ffffff 28%);
-    }
-  }
-}
-
-@keyframes keyframes-blink {
-  0% {
-    opacity: 0.3;
-    transform: scale(0.5) rotate(5deg);
-  }
-
-  50% {
-    opacity: 1;
-    transform: scale(1);
   }
 }
 

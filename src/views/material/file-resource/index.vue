@@ -1,7 +1,7 @@
 <template>
   <ContentWrap :plain="true">
     <ListPageLayout
-      class="clip-material-page"
+      class="file-resource-page"
       :sidebar-width="folderTreeCollapsed ? '28px' : '280px'"
     >
       <template #filter>
@@ -137,7 +137,7 @@
               <el-dropdown
                 trigger="click"
                 :disabled="!ids.length"
-                @command="(cmd: ClipMaterialUserTransferAction) => openClipMaterialUserTransferDialog(cmd)"
+                @command="(cmd: FileResourceUserTransferAction) => openFileResourceUserTransferDialog(cmd)"
               >
                 <el-button size="small" type="success" :disabled="!ids.length">
                   分享 ({{ ids.length }})
@@ -227,12 +227,12 @@
 
       <template #sidebar>
         <div
-          class="list-page-panel list-page-panel--flat list-page-sidebar clip-material-sidebar folder-sidebar-shell"
+          class="list-page-panel list-page-panel--flat list-page-sidebar file-resource-sidebar folder-sidebar-shell"
         >
-          <div class="list-page-sidebar__body clip-material-sidebar__body folder-sidebar-body">
+          <div class="list-page-sidebar__body file-resource-sidebar__body folder-sidebar-body">
             <div
               v-show="!folderTreeCollapsed"
-              class="clip-material-sidebar__tree folder-sidebar-tree"
+              class="file-resource-sidebar__tree folder-sidebar-tree"
             >
               <FolderTree
                 v-model="selectedFolderId"
@@ -249,7 +249,7 @@
           </div>
           <button
             type="button"
-            class="clip-material-sidebar__toggle folder-sidebar-toggle"
+            class="file-resource-sidebar__toggle folder-sidebar-toggle"
             @click="folderTreeCollapsed = !folderTreeCollapsed"
           >
             <el-icon :size="14">
@@ -268,7 +268,7 @@
             <div class="common-table">
               <vxe-grid
                 ref="gridRef"
-                class="clip-material-dnd-grid"
+                class="file-resource-dnd-grid"
                 v-bind="gridOptions"
                 :data="dataSource"
                 :loading="loading"
@@ -491,11 +491,11 @@
       top="16px"
       :footer="false"
       :destroy-on-close="true"
-      class="clip-material-upload-dialog"
+      class="file-resource-upload-dialog"
       @close="uploadModalClose"
     >
-      <div class="clip-material-upload-dialog__content">
-        <clip-material-upload @single-file-uploaded="singleFileUploaded" />
+      <div class="file-resource-upload-dialog__content">
+        <file-resource-upload @single-file-uploaded="singleFileUploaded" />
       </div>
     </el-dialog>
 
@@ -556,12 +556,12 @@
     />
 
     <el-dialog
-      v-model="clipMaterialUserTransferDialogVisible"
-      :title="clipMaterialUserTransferDialogTitle"
+      v-model="fileResourceUserTransferDialogVisible"
+      :title="fileResourceUserTransferDialogTitle"
       width="560px"
       align-center
       :close-on-click-modal="false"
-      @closed="resetClipMaterialUserTransferDialog"
+      @closed="resetFileResourceUserTransferDialog"
     >
       <div class="sticker-user-transfer-dialog">
 
@@ -570,15 +570,15 @@
         <el-form label-width="96px" class="sticker-user-transfer-form">
           <el-form-item label="目标用户" required>
             <el-select
-              v-model="clipMaterialUserTransferTargetUserId"
+              v-model="fileResourceUserTransferTargetUserId"
               class="sticker-user-transfer-form__select"
               filterable
               clearable
-              :loading="clipMaterialUserTransferUsersLoading"
+              :loading="fileResourceUserTransferUsersLoading"
               placeholder="请选择目标用户"
             >
               <el-option
-                v-for="item in clipMaterialUserTransferUserOptions"
+                v-for="item in fileResourceUserTransferUserOptions"
                 :key="item.id"
                 :label="item.label"
                 :value="item.id"
@@ -597,13 +597,13 @@
           </el-form-item>
 
           <el-form-item label="资源数量">
-            <el-tag type="info">{{ clipMaterialUserTransferIds.length }}</el-tag>
+            <el-tag type="info">{{ fileResourceUserTransferIds.length }}</el-tag>
           </el-form-item>
 
           <el-form-item label="选中资源">
             <div class="sticker-user-transfer-preview">
               <el-tag
-                v-for="item in clipMaterialUserTransferPreviewItems"
+                v-for="item in fileResourceUserTransferPreviewItems"
                 :key="item.id"
                 size="small"
                 effect="plain"
@@ -611,10 +611,10 @@
                 {{ item.label }}
               </el-tag>
               <span
-                v-if="clipMaterialUserTransferIds.length > clipMaterialUserTransferPreviewItems.length"
+                v-if="fileResourceUserTransferIds.length > fileResourceUserTransferPreviewItems.length"
                 class="sticker-user-transfer-preview__more"
               >
-                等 {{ clipMaterialUserTransferIds.length }} 条
+                等 {{ fileResourceUserTransferIds.length }} 条
               </span>
             </div>
           </el-form-item>
@@ -622,13 +622,13 @@
       </div>
 
       <template #footer>
-        <el-button @click="clipMaterialUserTransferDialogVisible = false">取消</el-button>
+        <el-button @click="fileResourceUserTransferDialogVisible = false">取消</el-button>
         <el-button
           type="primary"
-          :loading="clipMaterialUserTransferSubmitting"
-          @click="submitClipMaterialUserTransfer"
+          :loading="fileResourceUserTransferSubmitting"
+          @click="submitFileResourceUserTransfer"
         >
-          {{ clipMaterialUserTransferSubmitText }}
+          {{ fileResourceUserTransferSubmitText }}
         </el-button>
       </template>
     </el-dialog>
@@ -686,7 +686,7 @@ import { formatTimestamp } from "@/common/date";
 import { useDebounceFn, useLocalStorage, useWindowSize } from "@vueuse/core";
 
 import { useUserStore } from "@/store/modules/user";
-import clipMaterialUpload from "./clip-material-upload.vue";
+import fileResourceUpload from "./file-resource-upload.vue";
 import VideoPreview from "./VideoPreview.vue";
 import FolderTree from "@/components/material/FolderTree.vue";
 import TableRowDragHandle from "@/components/TableRowDragHandle/index.vue";
@@ -840,34 +840,34 @@ const dataSource = ref([]);
 const loading = ref(false);
 const ids = ref<any[]>([]);
 const total = ref(0);
-type ClipMaterialUserTransferAction = "share" | "copy" | "move";
-type ClipMaterialUserTransferUserOption = {
+type FileResourceUserTransferAction = "share" | "copy" | "move";
+type FileResourceUserTransferUserOption = {
   id: string;
   name?: string;
   account?: string;
   label: string;
   isAdmin?: boolean;
 };
-const clipMaterialUserTransferDialogVisible = ref(false);
-const clipMaterialUserTransferSubmitting = ref(false);
-const clipMaterialUserTransferUsersLoading = ref(false);
-const clipMaterialUserTransferUsersLoaded = ref(false);
-const clipMaterialUserTransferAction = ref<ClipMaterialUserTransferAction>("share");
-const clipMaterialUserTransferIds = ref<string[]>([]);
-const clipMaterialUserTransferTargetUserId = ref("");
-const clipMaterialUserTransferUserOptions = ref<ClipMaterialUserTransferUserOption[]>([]);
-const clipMaterialUserTransferDialogTitle = computed(() => {
-  if (clipMaterialUserTransferAction.value === "share") return "快捷共享文件资源给用户";
-  if (clipMaterialUserTransferAction.value === "copy") return "复制副本文件资源给用户";
+const fileResourceUserTransferDialogVisible = ref(false);
+const fileResourceUserTransferSubmitting = ref(false);
+const fileResourceUserTransferUsersLoading = ref(false);
+const fileResourceUserTransferUsersLoaded = ref(false);
+const fileResourceUserTransferAction = ref<FileResourceUserTransferAction>("share");
+const fileResourceUserTransferIds = ref<string[]>([]);
+const fileResourceUserTransferTargetUserId = ref("");
+const fileResourceUserTransferUserOptions = ref<FileResourceUserTransferUserOption[]>([]);
+const fileResourceUserTransferDialogTitle = computed(() => {
+  if (fileResourceUserTransferAction.value === "share") return "快捷共享文件资源给用户";
+  if (fileResourceUserTransferAction.value === "copy") return "复制副本文件资源给用户";
   return "转移文件资源给用户";
 });
-const clipMaterialUserTransferSubmitText = computed(() => {
-  if (clipMaterialUserTransferAction.value === "share") return "确认快捷共享";
-  if (clipMaterialUserTransferAction.value === "copy") return "确认复制副本";
+const fileResourceUserTransferSubmitText = computed(() => {
+  if (fileResourceUserTransferAction.value === "share") return "确认快捷共享";
+  if (fileResourceUserTransferAction.value === "copy") return "确认复制副本";
   return "确认转移";
 });
-const clipMaterialUserTransferPreviewItems = computed(() =>
-  clipMaterialUserTransferIds.value.slice(0, 5).map((id) => {
+const fileResourceUserTransferPreviewItems = computed(() =>
+  fileResourceUserTransferIds.value.slice(0, 5).map((id) => {
     const row = dataSource.value.find((item: any) => String(item.id) === String(id));
     return {
       id: String(id),
@@ -907,7 +907,7 @@ const {
   resetAfterDrop,
   markExternalFolderDropHandled,
 } = useFolderRowDrag({
-  gridClass: "clip-material-dnd-grid",
+  gridClass: "file-resource-dnd-grid",
   dataSource,
   selectedIds: ids,
   onDropToFolder: handleFolderDrop,
@@ -915,7 +915,7 @@ const {
 
 // 上传相关
 const uploadModalVisible = ref(false);
-const folderTreeCollapsed = useLocalStorage("clip_material_folder_collapsed", false);
+const folderTreeCollapsed = useLocalStorage("file_resource_folder_collapsed", false);
 const selectedFolderId = ref<string | null>(FOLDER_FILTER.ALL);
 
 function uploadModalClose() {}
@@ -933,7 +933,7 @@ async function getList() {
   nextTick(setupRowDrag);
 }
 
-function ensureClipMaterialAdminOperation() {
+function ensureFileResourceAdminOperation() {
   if (!isAdmin.value) {
     ElMessage.warning("仅管理员可执行该操作");
     return false;
@@ -941,45 +941,45 @@ function ensureClipMaterialAdminOperation() {
   return true;
 }
 
-async function loadClipMaterialTransferUserOptions() {
-  if (clipMaterialUserTransferUsersLoaded.value || clipMaterialUserTransferUsersLoading.value) {
+async function loadFileResourceTransferUserOptions() {
+  if (fileResourceUserTransferUsersLoaded.value || fileResourceUserTransferUsersLoading.value) {
     return;
   }
 
-  clipMaterialUserTransferUsersLoading.value = true;
+  fileResourceUserTransferUsersLoading.value = true;
   try {
     const res = await getUserList({
       currentPage: 1,
       pageSize: 1000,
     });
     const list = Array.isArray(res?.list) ? res.list : [];
-    clipMaterialUserTransferUserOptions.value = list.map((item: any) => ({
+    fileResourceUserTransferUserOptions.value = list.map((item: any) => ({
       id: String(item.id),
       name: item.name || "",
       account: item.account || "",
       label: item.name || item.account || `用户 #${item.id}`,
       isAdmin: !!item.isAdmin,
     }));
-    clipMaterialUserTransferUsersLoaded.value = true;
+    fileResourceUserTransferUsersLoaded.value = true;
   } catch (error: any) {
     ElMessage.error(error?.message || "加载用户列表失败");
   } finally {
-    clipMaterialUserTransferUsersLoading.value = false;
+    fileResourceUserTransferUsersLoading.value = false;
   }
 }
 
-function resetClipMaterialUserTransferDialog() {
-  clipMaterialUserTransferSubmitting.value = false;
-  clipMaterialUserTransferAction.value = "copy";
-  clipMaterialUserTransferIds.value = [];
-  clipMaterialUserTransferTargetUserId.value = "";
+function resetFileResourceUserTransferDialog() {
+  fileResourceUserTransferSubmitting.value = false;
+  fileResourceUserTransferAction.value = "copy";
+  fileResourceUserTransferIds.value = [];
+  fileResourceUserTransferTargetUserId.value = "";
 }
 
-async function openClipMaterialUserTransferDialog(
-  action: ClipMaterialUserTransferAction,
+async function openFileResourceUserTransferDialog(
+  action: FileResourceUserTransferAction,
   row?: any,
 ) {
-  if (!ensureClipMaterialAdminOperation()) {
+  if (!ensureFileResourceAdminOperation()) {
     return;
   }
 
@@ -992,45 +992,45 @@ async function openClipMaterialUserTransferDialog(
     return;
   }
 
-  clipMaterialUserTransferAction.value = action;
-  clipMaterialUserTransferIds.value = Array.from(new Set(targetIds));
-  clipMaterialUserTransferTargetUserId.value = "";
-  await loadClipMaterialTransferUserOptions();
-  clipMaterialUserTransferDialogVisible.value = true;
+  fileResourceUserTransferAction.value = action;
+  fileResourceUserTransferIds.value = Array.from(new Set(targetIds));
+  fileResourceUserTransferTargetUserId.value = "";
+  await loadFileResourceTransferUserOptions();
+  fileResourceUserTransferDialogVisible.value = true;
 }
 
-async function submitClipMaterialUserTransfer() {
-  if (!ensureClipMaterialAdminOperation()) {
+async function submitFileResourceUserTransfer() {
+  if (!ensureFileResourceAdminOperation()) {
     return;
   }
 
-  if (!clipMaterialUserTransferIds.value.length) {
+  if (!fileResourceUserTransferIds.value.length) {
     ElMessage.warning("请选择要操作的文件资源");
     return;
   }
 
-  if (!clipMaterialUserTransferTargetUserId.value) {
+  if (!fileResourceUserTransferTargetUserId.value) {
     ElMessage.warning("请选择目标用户");
     return;
   }
 
-  clipMaterialUserTransferSubmitting.value = true;
+  fileResourceUserTransferSubmitting.value = true;
   const actionLabel =
-    clipMaterialUserTransferAction.value === "share"
+    fileResourceUserTransferAction.value === "share"
       ? "快捷共享"
-      : clipMaterialUserTransferAction.value === "copy"
+      : fileResourceUserTransferAction.value === "copy"
       ? "复制副本"
       : "转移";
 
   try {
     const payload = {
-      ids: clipMaterialUserTransferIds.value,
-      targetUserId: clipMaterialUserTransferTargetUserId.value,
+      ids: fileResourceUserTransferIds.value,
+      targetUserId: fileResourceUserTransferTargetUserId.value,
     };
     const res =
-      clipMaterialUserTransferAction.value === "share"
+      fileResourceUserTransferAction.value === "share"
         ? await shareFileResourceToUser(payload)
-        : clipMaterialUserTransferAction.value === "copy"
+        : fileResourceUserTransferAction.value === "copy"
         ? await copyFileResourceToUser(payload)
         : await moveFileResourceToUser(payload);
     const result = res || {};
@@ -1045,7 +1045,7 @@ async function submitClipMaterialUserTransfer() {
       ElNotification.success(
         `${actionLabel}成功 ${successCount} 条${failedCount ? `，失败 ${failedCount} 条` : ""}${warningCount ? `，警告 ${warningCount} 条` : ""}`,
       );
-      clipMaterialUserTransferDialogVisible.value = false;
+      fileResourceUserTransferDialogVisible.value = false;
       resetCheckStatus();
       await getList();
     } else if (failedCount > 0) {
@@ -1078,7 +1078,7 @@ async function submitClipMaterialUserTransfer() {
   } catch (error: any) {
     ElMessage.error(error?.message || `${actionLabel}失败`);
   } finally {
-    clipMaterialUserTransferSubmitting.value = false;
+    fileResourceUserTransferSubmitting.value = false;
   }
 }
 
@@ -1426,13 +1426,13 @@ function handleOperationCommand(command: string, row: any) {
       openFilePreview(row);
       break;
     case "copy-to-user":
-      openClipMaterialUserTransferDialog("copy", row);
+      openFileResourceUserTransferDialog("copy", row);
       break;
     case "share-to-user":
-      openClipMaterialUserTransferDialog("share", row);
+      openFileResourceUserTransferDialog("share", row);
       break;
     case "move-to-user":
-      openClipMaterialUserTransferDialog("move", row);
+      openFileResourceUserTransferDialog("move", row);
       break;
     case "view-shared":
       openShareRecordsDialog(row);
@@ -1447,26 +1447,26 @@ function handleOperationCommand(command: string, row: any) {
 </script>
 
 <style lang="less" scoped>
-:deep(.clip-material-page) {
+:deep(.file-resource-page) {
   gap: 10px;
   padding: 8px 0 0;
 }
 
-:deep(.clip-material-page .list-page-layout__body),
-:deep(.clip-material-page .list-page-layout__main) {
+:deep(.file-resource-page .list-page-layout__body),
+:deep(.file-resource-page .list-page-layout__main) {
   gap: 10px;
 }
 
-:deep(.clip-material-page .list-page-filter--flat) {
+:deep(.file-resource-page .list-page-filter--flat) {
   gap: 10px;
   padding-bottom: 10px;
 }
 
-:deep(.clip-material-page .list-page-table-panel__pagination--flat) {
+:deep(.file-resource-page .list-page-table-panel__pagination--flat) {
   padding-top: 10px;
 }
 
-:deep(.clip-material-upload-dialog) {
+:deep(.file-resource-upload-dialog) {
   .el-dialog {
     display: flex;
     width: calc(100vw - 32px) !important;
@@ -1501,7 +1501,7 @@ function handleOperationCommand(command: string, row: any) {
   }
 }
 
-:global(.clip-material-upload-dialog.el-dialog) {
+:global(.file-resource-upload-dialog.el-dialog) {
   display: flex;
   width: calc(100vw - 32px) !important;
   max-width: calc(100vw - 32px);
@@ -1514,14 +1514,14 @@ function handleOperationCommand(command: string, row: any) {
   overflow: hidden;
 }
 
-:global(.clip-material-upload-dialog.el-dialog .el-dialog__header) {
+:global(.file-resource-upload-dialog.el-dialog .el-dialog__header) {
   padding: 18px 24px 16px;
   margin-right: 0;
   border-bottom: 1px solid var(--el-border-color-lighter);
   background: var(--el-bg-color);
 }
 
-:global(.clip-material-upload-dialog.el-dialog .el-dialog__body) {
+:global(.file-resource-upload-dialog.el-dialog .el-dialog__body) {
   display: flex;
   flex: 1;
   min-height: 0;
@@ -1530,24 +1530,24 @@ function handleOperationCommand(command: string, row: any) {
   background: var(--el-bg-color-page);
 }
 
-.clip-material-upload-dialog__content {
+.file-resource-upload-dialog__content {
   display: flex;
   flex: 1;
   min-width: 0;
   min-height: 0;
 }
 
-.clip-material-sidebar {
+.file-resource-sidebar {
   position: relative;
   min-height: 100%;
 }
 
-.clip-material-sidebar__body {
+.file-resource-sidebar__body {
   min-height: 0;
   padding: 0;
 }
 
-.clip-material-sidebar__tree {
+.file-resource-sidebar__tree {
   min-height: 0;
   height: 100%;
   overflow: hidden;
@@ -1692,7 +1692,7 @@ function handleOperationCommand(command: string, row: any) {
 }
 
 @media (max-width: 1360px) {
-  :deep(.clip-material-upload-dialog) {
+  :deep(.file-resource-upload-dialog) {
     .el-dialog__body {
       overflow-y: auto;
       overscroll-behavior: contain;
@@ -1701,7 +1701,7 @@ function handleOperationCommand(command: string, row: any) {
 }
 
 @media (max-width: 1024px) {
-  :deep(.clip-material-upload-dialog) {
+  :deep(.file-resource-upload-dialog) {
     .el-dialog {
       width: calc(100vw - 12px) !important;
       max-width: calc(100vw - 12px);
@@ -1720,7 +1720,7 @@ function handleOperationCommand(command: string, row: any) {
     }
   }
 
-  :global(.clip-material-upload-dialog.el-dialog) {
+  :global(.file-resource-upload-dialog.el-dialog) {
     width: calc(100vw - 12px) !important;
     max-width: calc(100vw - 12px);
     height: calc(100vh - 12px);
@@ -1730,15 +1730,15 @@ function handleOperationCommand(command: string, row: any) {
     border-radius: 14px;
   }
 
-  :global(.clip-material-upload-dialog.el-dialog .el-dialog__header) {
+  :global(.file-resource-upload-dialog.el-dialog .el-dialog__header) {
     padding: 14px 16px;
   }
 
-  :global(.clip-material-upload-dialog.el-dialog .el-dialog__body) {
+  :global(.file-resource-upload-dialog.el-dialog .el-dialog__body) {
     padding: 12px;
   }
 
-  .clip-material-sidebar__body {
+  .file-resource-sidebar__body {
     padding: 0;
   }
 }
