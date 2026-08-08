@@ -2,7 +2,7 @@
   <el-dialog
     v-model="visible"
     title="定时调度配置预设"
-    width="760px"
+    width="840px"
     destroy-on-close
     append-to-body
     class="wf-advanced-cron-dialog"
@@ -268,7 +268,9 @@ watch(
 
 <style scoped>
 .wf-cron-dialog-body {
-  padding: 0 4px;
+  max-height: 540px;
+  overflow-y: auto;
+  padding: 0 10px 4px 4px;
 }
 .wf-clean-group {
   display: flex;
@@ -284,8 +286,6 @@ watch(
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 8px 16px;
-  max-height: 150px;
-  overflow-y: auto;
   padding: 2px 0;
 }
 .wf-ref-cell {
