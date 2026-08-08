@@ -56,13 +56,11 @@ const handleReset = () => {
 </script>
 
 <template>
-  <el-tooltip content="个性化" placement="bottom" effect="light" :show-after="300">
-    <button type="button" class="personalization-trigger" aria-label="个性化设置" @click="drawerVisible = true">
-      <Icon icon="ep:brush" :size="12" />
-      <span class="personalization-trigger__label">个性化</span>
-      <span class="personalization-trigger__dot" :style="{ backgroundColor: themeColor }"></span>
-    </button>
-  </el-tooltip>
+  <button type="button" class="personalization-trigger" aria-label="个性化设置" @click="drawerVisible = true">
+    <Icon icon="ep:brush" :size="12" />
+    <span class="personalization-trigger__label">个性化</span>
+    <span class="personalization-trigger__dot" :style="{ backgroundColor: themeColor }"></span>
+  </button>
 
   <el-drawer v-model="drawerVisible" title="个性化设置" size="320px" append-to-body :with-header="true"
     class="personalization-drawer">
