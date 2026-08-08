@@ -92,21 +92,10 @@ const NODE_TYPE_LABELS: Record<string, string> = {
           <template v-if="node.type === 'start'">
             <el-form-item label="触发类型">
               <el-select v-model="form.config.triggerType" placeholder="选择类型" @change="handleDataChange">
-                <el-option label="▶ 手动触发" value="manual" />
-                <el-option label="⚡ Webhook" value="webhook" />
-                <el-option label="⏰ 定时 Cron" value="cron" />
+                <el-option label="手动触发" value="manual" />
+                <el-option label="定时调度" value="cron" />
               </el-select>
             </el-form-item>
-
-            <template v-if="form.config.triggerType === 'webhook'">
-              <el-form-item label="Webhook Path">
-                <el-input
-                  v-model="form.config.webhookPath"
-                  placeholder="wf_abc123"
-                  @input="handleDataChange"
-                />
-              </el-form-item>
-            </template>
 
             <template v-if="form.config.triggerType === 'cron'">
               <el-form-item label="Cron 表达式">
