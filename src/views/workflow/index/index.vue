@@ -271,32 +271,35 @@ const statusMap: Record<string, { label: string; type: string }> = {
 
 .wf-card {
   background: var(--app-content-surface-color);
-  border: none;
+  border: 1px solid transparent;
   box-shadow: none;
   border-radius: 12px;
   padding: 16px 18px;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
   gap: 12px;
   min-height: 140px;
 
   &:hover {
-    background: var(--app-content-surface-muted-color);
-    border: none;
-    box-shadow: none;
+    background: color-mix(in srgb, var(--el-color-primary) 7%, var(--app-content-surface-color));
+    border-color: color-mix(in srgb, var(--el-color-primary) 30%, transparent);
+
+    .wf-card__title {
+      color: var(--el-color-primary);
+    }
 
     .wf-card__icon {
-      color: var(--el-color-primary);
-      background: color-mix(in srgb, var(--el-color-primary) 12%, transparent);
+      color: #ffffff;
+      background: var(--el-color-primary);
     }
   }
 }
 
 .wf-card--new {
   background: var(--app-content-surface-color);
-  border: none;
+  border: 1.5px dashed var(--app-content-border-color);
   box-shadow: none;
   align-items: center;
   justify-content: center;
@@ -304,9 +307,8 @@ const statusMap: Record<string, { label: string; type: string }> = {
   gap: 10px;
 
   &:hover {
-    background: color-mix(in srgb, var(--el-color-primary) 8%, var(--app-content-surface-color));
-    border: none;
-    box-shadow: none;
+    background: color-mix(in srgb, var(--el-color-primary) 7%, var(--app-content-surface-color));
+    border-color: var(--el-color-primary);
 
     .wf-card--new__icon {
       background: var(--el-color-primary);
