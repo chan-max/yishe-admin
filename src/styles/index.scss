@@ -5,6 +5,7 @@
 @use "element-plus/theme-chalk/dark/css-vars.css";
 @use "./loading";
 @use "./list-page-common.css";
+@use "./vxe-table-theme.scss";
 
 // 确保右下角通知提示始终在最顶层
 .el-message,

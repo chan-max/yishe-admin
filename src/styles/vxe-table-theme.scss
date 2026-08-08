@@ -1,0 +1,204 @@
+/**
+ * Modern Linear / Raycast Dark-SaaS Style for vxe-table & vxe-grid
+ * Transformed global styling inspired by modern minimal dark table UIs
+ */
+
+/* 1. Global Container Outer Card & Rounded Borders */
+.vxe-table,
+.vxe-grid {
+  border-radius: 10px !important;
+  border: 1px solid var(--el-border-color-lighter, rgba(255, 255, 255, 0.08)) !important;
+  background-color: var(--app-content-surface-color, #141518) !important;
+  overflow: hidden !important;
+  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.12) !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  /* Global CSS Variables Overrides for VXE Table */
+  --vxe-ui-font-size-default: 12px;
+  --vxe-ui-font-size-mini: 11px;
+  --vxe-ui-font-size-small: 12px;
+  --vxe-ui-table-header-font-weight: 600;
+  --vxe-ui-table-border-color: var(--el-border-color-lighter, rgba(255, 255, 255, 0.06));
+}
+
+/* Outer wrapper cleanup */
+.vxe-table--render-wrapper {
+  background-color: transparent !important;
+}
+
+/* 2. Header Row Styling (Spacious, Muted, Clean) */
+.vxe-table .vxe-table--header-wrapper,
+.vxe-grid .vxe-table--header-wrapper {
+  background-color: var(--app-content-surface-muted-color, #1a1c20) !important;
+  border-bottom: 1px solid var(--el-border-color-lighter, rgba(255, 255, 255, 0.08)) !important;
+}
+
+.vxe-table .vxe-header--row,
+.vxe-grid .vxe-header--row {
+  background-color: transparent !important;
+}
+
+.vxe-table .vxe-header--column,
+.vxe-grid .vxe-header--column {
+  background-color: transparent !important;
+  height: 42px !important;
+  color: var(--el-text-color-regular, #94a3b8) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  border-right: none !important; /* Frameless vertical columns */
+  border-bottom: none !important;
+  padding: 6px 12px !important;
+}
+
+.vxe-table .vxe-header--column .vxe-cell,
+.vxe-grid .vxe-header--column .vxe-cell {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: var(--el-text-color-regular, #94a3b8) !important;
+}
+
+/* 3. Body Rows & Cells (Frameless Stream, Soft Dividers, Smooth Hover) */
+.vxe-table .vxe-table--body-wrapper,
+.vxe-grid .vxe-table--body-wrapper {
+  background-color: transparent !important;
+}
+
+.vxe-table .vxe-body--row,
+.vxe-grid .vxe-body--row {
+  height: 46px !important;
+  background-color: transparent !important;
+  transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Subtle horizontal border dividers between rows, NO vertical borders */
+.vxe-table .vxe-body--column,
+.vxe-grid .vxe-body--column {
+  border-right: none !important;
+  border-bottom: 1px solid var(--el-border-color-lighter, rgba(255, 255, 255, 0.05)) !important;
+  padding: 6px 12px !important;
+  font-size: 12px !important;
+  color: var(--el-text-color-primary, #e2e8f0) !important;
+  vertical-align: middle !important;
+  background-color: transparent !important;
+}
+
+/* Hover Row Effect (Linear/Raycast Style Subtle Glow) */
+.vxe-table .vxe-body--row:hover > .vxe-body--column,
+.vxe-grid .vxe-body--row:hover > .vxe-body--column,
+.vxe-table .vxe-body--row.row--hover > .vxe-body--column,
+.vxe-grid .vxe-body--row.row--hover > .vxe-body--column {
+  background-color: var(--el-fill-color-light, rgba(255, 255, 255, 0.04)) !important;
+}
+
+/* Checked / Selected Row Effect */
+.vxe-table .vxe-body--row.row--checked > .vxe-body--column,
+.vxe-grid .vxe-body--row.row--checked > .vxe-body--column {
+  background-color: color-mix(in srgb, var(--el-color-primary) 12%, transparent) !important;
+}
+
+/* 4. Checkbox Styling (Sleek Rounded Rectangles) */
+.vxe-checkbox--icon {
+  border-radius: 4px !important;
+  border-color: var(--el-border-color, rgba(255, 255, 255, 0.2)) !important;
+  background-color: transparent !important;
+  transition: all 0.2s ease !important;
+}
+
+.vxe-checkbox.is--checked .vxe-checkbox--icon {
+  background-color: var(--el-color-primary) !important;
+  border-color: var(--el-color-primary) !important;
+}
+
+/* 5. Custom Status Pill Badges (Capsule Badges like "Done" & "In Process") */
+.vxe-status-pill,
+.vxe-tag-capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 9999px; /* Pill Capsule */
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+
+  &--success, &--done {
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+  }
+
+  &--warning, &--process {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+  }
+
+  &--danger, &--error {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+  }
+
+  &--info, &--default {
+    color: #94a3b8;
+    background: rgba(148, 163, 184, 0.12);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+  }
+}
+
+/* Dot indicator inside status pills */
+.vxe-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+
+  &--success, &--done { background: #10b981; }
+  &--warning, &--process { background: #f59e0b; }
+  &--danger, &--error { background: #ef4444; }
+  &--info, &--default { background: #94a3b8; }
+}
+
+/* 6. Pager / Pagination Bar (Modern Borderless Alignment) */
+.vxe-pager {
+  background-color: transparent !important;
+  border-top: 1px solid var(--el-border-color-lighter, rgba(255, 255, 255, 0.06)) !important;
+  padding: 10px 16px !important;
+  height: auto !important;
+  font-size: 12px !important;
+  color: var(--el-text-color-secondary) !important;
+}
+
+.vxe-pager--prev-btn,
+.vxe-pager--next-btn,
+.vxe-pager--num-btn,
+.vxe-pager--jump-prev,
+.vxe-pager--jump-next {
+  border-radius: 6px !important;
+  border: 1px solid var(--el-border-color-light, rgba(255, 255, 255, 0.1)) !important;
+  background-color: var(--app-content-surface-color, transparent) !important;
+  color: var(--el-text-color-regular) !important;
+  min-width: 30px !important;
+  height: 30px !important;
+  margin: 0 3px !important;
+  transition: all 0.2s ease !important;
+}
+
+.vxe-pager--num-btn.is--active {
+  background-color: var(--el-color-primary) !important;
+  border-color: var(--el-color-primary) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+.vxe-pager--prev-btn:hover:not(.is--disabled),
+.vxe-pager--next-btn:hover:not(.is--disabled),
+.vxe-pager--num-btn:hover:not(.is--active) {
+  background-color: var(--el-fill-color-light, rgba(255, 255, 255, 0.08)) !important;
+  border-color: var(--el-border-color, rgba(255, 255, 255, 0.2)) !important;
+  color: var(--el-text-color-primary) !important;
+}
