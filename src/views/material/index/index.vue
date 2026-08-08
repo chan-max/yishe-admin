@@ -237,7 +237,9 @@
                 下载 ({{ ids.length }})
               </el-button>
               <el-button size="small" type="danger" :loading="deleteLoading" @click="handleDelete(null)">
-                <el-icon><Delete /></el-icon>
+                <el-icon>
+                  <Delete />
+                </el-icon>
                 <span>批量删除({{ ids.length }})</span>
               </el-button>
               <el-dropdown trigger="click" popper-class="material-tool-dropdown"
@@ -1343,7 +1345,7 @@
                   <span class="detail-label">本地路径：</span>
                   <span class="detail-value">{{
                     currentPsdTemplate.windowsLocalPath || "暂无"
-                    }}</span>
+                  }}</span>
                 </div>
               </div>
             </div>
@@ -1414,12 +1416,15 @@
                   <el-tooltip v-if="row.shareType === 'shared'" content="这是共享快捷引用，请将资源转存副本备份，防止源文件删除导致丢失"
                     placement="top">
                     <el-tag type="warning" size="small" effect="light" style="cursor: help">
-                      {{ (row.sourceUserId && String(row.sourceUserId) !== String(row.userId)) ? `由【${row.sourceUser?.name || row.sourceUser?.account || ('用户' + row.sourceUserId)}】共享` : '共享' }}
+                      {{ (row.sourceUserId && String(row.sourceUserId) !== String(row.userId)) ?
+                        `由【${row.sourceUser?.name || row.sourceUser?.account || ('用户' + row.sourceUserId)}】共享` : '共享' }}
                     </el-tag>
                   </el-tooltip>
-                  <el-tag v-else-if="row.shareType === 'copy' || (row.sourceUserId && String(row.sourceUserId) !== String(row.userId))"
+                  <el-tag
+                    v-else-if="row.shareType === 'copy' || (row.sourceUserId && String(row.sourceUserId) !== String(row.userId))"
                     type="success" size="small" effect="light">
-                    {{ (row.sourceUserId && String(row.sourceUserId) !== String(row.userId)) ? `由【${row.sourceUser?.name || row.sourceUser?.account || ('用户' + row.sourceUserId)}】转存` : '转存副本' }}
+                    {{ (row.sourceUserId && String(row.sourceUserId) !== String(row.userId)) ? `由【${row.sourceUser?.name
+                      || row.sourceUser?.account || ('用户' + row.sourceUserId)}】转存` : '转存副本' }}
                   </el-tag>
                   <el-tag v-else type="info" size="small" effect="plain">我上传的</el-tag>
                 </template>
@@ -1560,7 +1565,7 @@
                 <template #sizeSlot="{ row }">
                   <span v-if="row.size" class="table-cell-text table-time-cell">{{
                     (row.size / 1024).toFixed(1) + " KB"
-                    }}</span>
+                  }}</span>
                   <span v-else class="table-cell-empty">-</span>
                 </template>
 
@@ -1649,7 +1654,7 @@
                   </el-link>
                   <span v-else-if="row.source" class="table-cell-text table-cell-text--secondary">{{
                     row.source.length > 50 ? row.source.substring(0, 50) + "..." : row.source
-                    }}</span>
+                  }}</span>
                   <span v-else class="table-cell-empty">-</span>
                 </template>
 
@@ -2360,7 +2365,7 @@
                 <span class="material-detail-label">图片链接</span>
                 <span class="material-detail-value material-detail-value--break">{{
                   formatDetailValue(stickerDetailCurrent.url)
-                  }}</span>
+                }}</span>
               </div>
               <div class="material-detail-field material-detail-field--wide">
                 <span class="material-detail-label">原始地址</span>
@@ -2398,7 +2403,7 @@
               <div class="material-detail-field">
                 <span class="material-detail-label">侵权</span>
                 <span class="material-detail-value">{{ formatBooleanDetail(stickerDetailCurrent.isInfringement)
-                  }}</span>
+                }}</span>
               </div>
               <div class="material-detail-field">
                 <span class="material-detail-label">抠图</span>
@@ -2649,7 +2654,7 @@
                         </h3>
                         <el-tag effect="plain">{{
                           selectedStoryScript.status || "generated"
-                          }}</el-tag>
+                        }}</el-tag>
                       </div>
                       <div class="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-xs opacity-70">
                         <span>版本 v{{ selectedStoryScript.versionNo }}</span>
@@ -4430,7 +4435,7 @@ async function loadVectorSimilarResults(imageUrl: string, resetPage = true): Pro
       lowerMsg.includes("model service") ||
       lowerMsg.includes("模型服务")
     ) {
-      ElMessage.error("模型服务未启动，请先启动 yishe-models 服务");
+      ElMessage.error("模型服务未启动");
     } else {
       ElMessage.error(errorMsg || "搜索失败");
     }
@@ -4481,7 +4486,7 @@ async function loadVectorSimilarTextResults(text: string, resetPage = true): Pro
       lowerMsg.includes("model service") ||
       lowerMsg.includes("模型服务")
     ) {
-      ElMessage.error("模型服务未启动，请先启动 yishe-models 服务");
+      ElMessage.error("模型服务未启动");
     } else {
       ElMessage.error(errorMsg || "文字搜索失败");
     }
@@ -4584,7 +4589,7 @@ async function submitSimilarImageSearch() {
 
   // 检查模型服务是否可用
   if (modelServiceHealth.checked && !modelServiceHealth.available) {
-    ElMessage.warning("模型服务未启动，请先启动 yishe-models 服务");
+    ElMessage.warning("模型服务未启动");
     return;
   }
 

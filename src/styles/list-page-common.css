@@ -9,7 +9,7 @@ html.light {
   --list-page-panel-border: var(--app-content-border-color);
   --list-page-panel-shadow: var(--app-content-shadow);
   --list-page-panel-radius: 16px;
-  --list-page-muted-text: rgba(36, 48, 65, 0.55);
+  --list-page-muted-text: #475569;
 }
 
 html.dark {

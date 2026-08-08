@@ -8,6 +8,13 @@ html.light {
 
   --login-bg-color: #f3f7fd;
 
+  /* 全局白天模式 (Light Mode) 高对比度文本色彩 - 解决字体颜色偏浅问题 */
+  --el-text-color-primary: #0f172a;
+  --el-text-color-regular: #334155;
+  --el-text-color-secondary: #475569;
+  --el-text-color-placeholder: #64748b;
+  --el-text-color-disabled: #94a3b8;
+
   --left-menu-max-width: 280px;
   --left-menu-mobile-max-width: 232px;
   --left-menu-min-width: 64px;
