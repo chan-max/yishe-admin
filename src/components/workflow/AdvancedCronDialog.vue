@@ -2,7 +2,7 @@
   <el-dialog
     v-model="visible"
     title="定时调度配置预设"
-    width="840px"
+    fullscreen
     destroy-on-close
     append-to-body
     class="wf-advanced-cron-dialog"
@@ -268,9 +268,9 @@ watch(
 
 <style scoped>
 .wf-cron-dialog-body {
-  max-height: 540px;
+  height: calc(100vh - 130px);
   overflow-y: auto;
-  padding: 0 10px 4px 4px;
+  padding: 12px 24px;
 }
 .wf-clean-group {
   display: flex;
