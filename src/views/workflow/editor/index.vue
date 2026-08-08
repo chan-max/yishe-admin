@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { ArrowLeft, EditPen, Loading, Check, Warning } from '@element-plus/icons-vue'
 import {
   VueFlow,
   useVueFlow,

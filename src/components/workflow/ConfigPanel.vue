@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { Delete, Pointer } from '@element-plus/icons-vue'
 import type { Node } from '@vue-flow/core'
 
 const props = defineProps<{
