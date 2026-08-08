@@ -180,8 +180,6 @@ const statusMap: Record<string, { label: string; type: string }> = {
       />
     </div>
 
-    <!-- 空状态 -->
-    <el-empty v-if="!loading && list.length === 0" description="还没有工作流，点击「新建工作流」开始" />
 
     <!-- 创建对话框 -->
     <el-dialog v-model="createVisible" title="新建工作流" width="440px" align-center>
