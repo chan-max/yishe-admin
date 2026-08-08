@@ -1,6 +1,6 @@
 {
   "name": "yishe-admin",
-  "version": "0.0.221",
+  "version": "0.0.222",
   "description": "基于vue3、vite4、element-plus、typesScript",
   "author": "jc",
   "private": false,

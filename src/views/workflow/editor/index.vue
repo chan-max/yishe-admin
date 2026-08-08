@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch, markRaw } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import { ArrowLeft, EditPen, Loading, Check, Warning, MagicStick, Download, Upload, Delete, RefreshRight } from '@element-plus/icons-vue'
 import {
   VueFlow,
@@ -15,7 +15,7 @@ import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import { MiniMap } from '@vue-flow/minimap'
 import { useAppStore } from '@/store/modules/app'
-import { getWorkflowDetailApi, updateWorkflowApi } from '@/api/workflow'
+import { getWorkflowDetailApi, updateWorkflowApi, runWorkflowApi } from '@/api/workflow'
 
 // 自定义节点
 import StartNode from '@/components/workflow/nodes/StartNode.vue'
@@ -28,6 +28,7 @@ import CodeNode from '@/components/workflow/nodes/CodeNode.vue'
 
 import NodePanel from '@/components/workflow/NodePanel.vue'
 import ConfigPanel from '@/components/workflow/ConfigPanel.vue'
+import TriggerConfigDialog from '@/components/workflow/TriggerConfigDialog.vue'
 
 const appStore = useAppStore()
 const route = useRoute()
@@ -60,6 +61,27 @@ const loading = ref(true)
 const saveStatus = ref<'saved' | 'saving' | 'unsaved'>('saved')
 const selectedNode = ref<Node | null>(null)
 const canvasRef = ref<HTMLDivElement | null>(null)
+
+const triggerDialogVisible = ref(false)
+const runningWorkflow = ref(false)
+
+const handleRunWorkflow = async () => {
+  if (!workflowId.value) return
+  runningWorkflow.value = true
+  try {
+    const res: any = await runWorkflowApi(workflowId.value)
+    ElNotification({
+      title: '工作流触发成功',
+      message: `运行记录ID: ${res?.executionId || 'OK'}, 耗时: ${res?.durationMs || 0}ms`,
+      type: 'success',
+      duration: 3000,
+    })
+  } catch (err: any) {
+    ElMessage.error(err.message || '触发失败')
+  } finally {
+    runningWorkflow.value = false
+  }
+}
 
 // 连线类型与配置
 const edgeType = ref<'default' | 'smoothstep' | 'straight'>('smoothstep')
@@ -395,6 +417,8 @@ const statusText = computed(() => {
 
         <!-- 整理与工具按纽 (无多余图标，简洁高密度) -->
         <el-button size="small" @click="autoLayout">对齐</el-button>
+        <el-button size="small" @click="triggerDialogVisible = true">设置</el-button>
+        <el-button size="small" type="success" :loading="runningWorkflow" @click="handleRunWorkflow">运行</el-button>
         <el-button size="small" @click="exportJson">导出</el-button>
         <el-button size="small" @click="triggerImportJson">导入</el-button>
         <input ref="fileInputRef" type="file" accept=".json" style="display: none" @change="handleImportJson" />
@@ -447,6 +471,9 @@ const statusText = computed(() => {
         @delete="onNodeDelete"
       />
     </div>
+
+    <!-- 触发器与设置对话框 -->
+    <TriggerConfigDialog v-model="triggerDialogVisible" :workflow-id="workflowId" />
   </div>
 </template>
 

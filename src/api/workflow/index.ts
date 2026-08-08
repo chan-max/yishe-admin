@@ -49,3 +49,28 @@ export const updateWorkflowApi = (data: {
 // 删除工作流
 export const deleteWorkflowApi = (ids: string | string[]) =>
   request.post({ url: '/workflow/delete', data: { ids } })
+
+// 🚀 手动运行工作流
+export const runWorkflowApi = (id: string, input?: Record<string, any>) =>
+  request.post({ url: `/workflow/${id}/run`, data: { input } })
+
+// 获取工作流关联的触发器列表
+export const getWorkflowTriggersApi = (id: string) =>
+  request.get({ url: `/workflow/${id}/triggers` })
+
+// 保存/新增/更新工作流触发器
+export const saveWorkflowTriggerApi = (
+  id: string,
+  data: { type: string; config?: Record<string, any>; enabled?: boolean }
+) => request.post({ url: `/workflow/${id}/triggers`, data })
+
+// 删除触发器
+export const deleteWorkflowTriggerApi = (triggerId: string) =>
+  request.delete({ url: `/workflow/triggers/${triggerId}` })
+
+// 获取工作流运行历史日志列表
+export const getWorkflowExecutionsApi = (
+  id: string,
+  data?: { currentPage?: number; pageSize?: number }
+) => request.post({ url: `/workflow/${id}/executions`, data })
+
