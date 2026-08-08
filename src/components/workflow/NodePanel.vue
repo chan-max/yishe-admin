@@ -1,26 +1,26 @@
 <script setup lang="ts">
-// 左侧节点面板：从这里拖拽节点到画布
+// 左侧节点面板：高密度极简面板
 const NODE_GROUPS = [
   {
-    title: '基础流程',
+    title: '基础节点',
     items: [
-      { type: 'start', label: '开始', icon: '▶', color: '#22c55e', desc: '流程入口' },
-      { type: 'default', label: '普通节点', icon: '⚙', color: '#3b82f6', desc: '逻辑处理' },
-      { type: 'end', label: '结束', icon: '⏹', color: '#ef4444', desc: '流程出口' }
+      { type: 'start', label: '开始', color: '#22c55e' },
+      { type: 'default', label: '普通处理', color: '#3b82f6' },
+      { type: 'end', label: '结束出口', color: '#ef4444' }
     ]
   },
   {
     title: '逻辑分支',
     items: [
-      { type: 'condition', label: '条件判断', icon: '🔀', color: '#f59e0b', desc: 'True/False 分支' }
+      { type: 'condition', label: '条件分支', color: '#f59e0b' }
     ]
   },
   {
-    title: 'AI 与服务',
+    title: '服务集成',
     items: [
-      { type: 'llm', label: 'AI 大模型', icon: '✨', color: '#8b5cf6', desc: '生成与对话' },
-      { type: 'http', label: 'HTTP 请求', icon: '🌐', color: '#06b6d4', desc: 'API / Webhook' },
-      { type: 'code', label: '代码脚本', icon: '💻', color: '#f97316', desc: 'JS 脚本逻辑' }
+      { type: 'llm', label: 'AI 大模型', color: '#8b5cf6' },
+      { type: 'http', label: 'HTTP 请求', color: '#06b6d4' },
+      { type: 'code', label: '代码脚本', color: '#f97316' }
     ]
   }
 ]
@@ -36,8 +36,9 @@ const onDragStart = (event: DragEvent, type: string, label: string) => {
 
 <template>
   <div class="node-panel">
-    <div class="node-panel__title">组件库</div>
-    <p class="node-panel__hint">按住拖拽节点到画布</p>
+    <div class="node-panel__header">
+      <span class="node-panel__title">组件库</span>
+    </div>
 
     <div class="node-panel__groups">
       <div v-for="group in NODE_GROUPS" :key="group.title" class="node-panel__group">
@@ -50,13 +51,8 @@ const onDragStart = (event: DragEvent, type: string, label: string) => {
             draggable="true"
             @dragstart="onDragStart($event, node.type, node.label)"
           >
-            <div class="node-panel__item-icon" :style="{ background: node.color + '20', color: node.color }">
-              {{ node.icon }}
-            </div>
-            <div class="node-panel__item-info">
-              <span class="node-panel__item-label">{{ node.label }}</span>
-              <span class="node-panel__item-desc">{{ node.desc }}</span>
-            </div>
+            <span class="node-panel__dot" :style="{ background: node.color }" />
+            <span class="node-panel__item-label">{{ node.label }}</span>
           </div>
         </div>
       </div>
@@ -66,28 +62,27 @@ const onDragStart = (event: DragEvent, type: string, label: string) => {
 
 <style scoped lang="scss">
 .node-panel {
-  width: 200px;
+  width: 150px;
   height: 100%;
   background: var(--app-content-surface-color);
   border-right: 1px solid var(--app-content-border-color);
-  padding: 14px 12px;
+  padding: 10px 8px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   flex-shrink: 0;
   overflow: hidden;
 }
 
-.node-panel__title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--el-text-color-primary);
+.node-panel__header {
+  padding: 0 4px 4px;
+  border-bottom: 1px solid var(--app-content-border-color);
 }
 
-.node-panel__hint {
-  font-size: 11px;
-  color: var(--el-text-color-placeholder);
-  margin: 0 0 4px;
+.node-panel__title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--el-text-color-primary);
 }
 
 .node-panel__groups {
@@ -95,39 +90,37 @@ const onDragStart = (event: DragEvent, type: string, label: string) => {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding-right: 2px;
+  gap: 10px;
 }
 
 .node-panel__group-title {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  color: var(--el-text-color-secondary);
-  margin-bottom: 6px;
-  letter-spacing: 0.02em;
+  color: var(--el-text-color-placeholder);
+  margin: 0 0 4px 4px;
+  text-transform: uppercase;
 }
 
 .node-panel__list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .node-panel__item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px;
-  border: 1px solid transparent;
-  border-radius: 8px;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 6px;
   cursor: grab;
   background: var(--app-content-surface-muted-color);
-  transition: all 0.15s;
+  transition: all 0.15s ease;
+  user-select: none;
 
   &:hover {
-    border-color: var(--el-color-primary-light-5);
-    background: color-mix(in srgb, var(--el-color-primary) 12%, transparent);
-    transform: translateX(2px);
+    background: color-mix(in srgb, var(--el-color-primary) 10%, var(--app-content-surface-color));
+    color: var(--el-color-primary);
   }
 
   &:active {
@@ -135,32 +128,19 @@ const onDragStart = (event: DragEvent, type: string, label: string) => {
   }
 }
 
-.node-panel__item-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
+.node-panel__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
   flex-shrink: 0;
-}
-
-.node-panel__item-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
 }
 
 .node-panel__item-label {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--el-text-color-primary);
-}
-
-.node-panel__item-desc {
-  font-size: 11px;
-  color: var(--el-text-color-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

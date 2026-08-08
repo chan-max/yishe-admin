@@ -158,7 +158,7 @@ const NODE_TYPE_LABELS: Record<string, string> = {
 
 <style scoped lang="scss">
 .config-panel {
-  width: 260px;
+  width: 210px;
   height: 100%;
   background: var(--app-content-surface-color);
   border-left: 1px solid var(--app-content-border-color);
@@ -171,20 +171,30 @@ const NODE_TYPE_LABELS: Record<string, string> = {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px;
+  padding: 8px 12px;
   border-bottom: 1px solid var(--app-content-border-color);
 }
 
 .config-panel__type-badge {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--el-text-color-primary);
 }
 
 .config-panel__body {
-  padding: 16px;
+  padding: 10px 12px;
   flex: 1;
   overflow-y: auto;
+
+  :deep(.el-form-item) {
+    margin-bottom: 10px;
+  }
+
+  :deep(.el-form-item__label) {
+    font-size: 11px;
+    padding-bottom: 2px;
+    color: var(--el-text-color-secondary);
+  }
 }
 
 .config-panel__empty {
@@ -193,13 +203,13 @@ const NODE_TYPE_LABELS: Record<string, string> = {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   color: var(--el-text-color-placeholder);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .config-panel__empty-icon {
-  font-size: 32px;
+  font-size: 24px;
   opacity: 0.4;
 }
 </style>

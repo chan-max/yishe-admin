@@ -8,11 +8,8 @@ defineProps<{ data: { label?: string; config?: any } }>()
   <div class="wf-node wf-node--condition">
     <Handle type="target" :position="Position.Top" />
     <div class="wf-node__header">
-      <span class="wf-node__icon">🔀</span>
+      <span class="wf-node__dot" />
       <span class="wf-node__title">{{ data.label || '条件判断' }}</span>
-    </div>
-    <div class="wf-node__condition">
-      {{ data.config?.expression || '如果满足条件' }}
     </div>
     <div class="wf-node__handles">
       <div class="wf-handle-label wf-handle-label--true">
@@ -31,31 +28,32 @@ defineProps<{ data: { label?: string; config?: any } }>()
 .wf-node--condition {
   background: var(--app-content-surface-color);
   border: 1px solid color-mix(in srgb, #f59e0b 40%, var(--app-content-border-color));
-  border-radius: 10px;
-  padding: 10px 14px;
-  min-width: 150px;
-  box-shadow: 0 2px 10px color-mix(in srgb, #f59e0b 15%, transparent);
+  border-radius: 6px;
+  padding: 6px 10px;
+  min-width: 120px;
+  box-shadow: 0 1px 4px color-mix(in srgb, #f59e0b 10%, transparent);
   transition: all 0.15s ease;
   position: relative;
 }
 .wf-node--condition:hover,
 .wf-node--condition.selected {
   border-color: #f59e0b;
-  box-shadow: 0 0 0 3px color-mix(in srgb, #f59e0b 25%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, #f59e0b 25%, transparent);
 }
 .wf-node__header {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 6px;
+  gap: 5px;
+  margin-bottom: 4px;
 }
-.wf-node__icon { font-size: 15px; }
-.wf-node__title { font-size: 13px; font-weight: 600; color: var(--el-text-color-primary); }
-.wf-node__condition {
-  font-size: 11px;
-  color: var(--el-text-color-secondary);
-  margin-bottom: 8px;
+.wf-node__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f59e0b;
+  flex-shrink: 0;
 }
+.wf-node__title { font-size: 12px; font-weight: 600; color: var(--el-text-color-primary); }
 .wf-node__handles {
   display: flex;
   justify-content: space-between;

@@ -387,18 +387,18 @@ const statusText = computed(() => {
 
       <div class="wf-editor-toolbar__right">
         <!-- 连线类型 -->
-        <el-select v-model="edgeType" size="small" style="width: 100px" placeholder="连线类型">
+        <el-select v-model="edgeType" size="small" style="width: 80px" placeholder="连线">
           <el-option label="折线" value="smoothstep" />
           <el-option label="曲线" value="default" />
           <el-option label="直线" value="straight" />
         </el-select>
 
-        <!-- 整理与工具按纽 -->
-        <el-button size="small" :icon="MagicStick" @click="autoLayout">对齐</el-button>
-        <el-button size="small" :icon="Download" @click="exportJson">导出</el-button>
-        <el-button size="small" :icon="Upload" @click="triggerImportJson">导入</el-button>
+        <!-- 整理与工具按纽 (无多余图标，简洁高密度) -->
+        <el-button size="small" @click="autoLayout">对齐</el-button>
+        <el-button size="small" @click="exportJson">导出</el-button>
+        <el-button size="small" @click="triggerImportJson">导入</el-button>
         <input ref="fileInputRef" type="file" accept=".json" style="display: none" @change="handleImportJson" />
-        <el-button size="small" type="danger" text :icon="Delete" @click="clearCanvas">清空</el-button>
+        <el-button size="small" type="danger" text @click="clearCanvas">清空</el-button>
 
         <div class="wf-divider" />
 
@@ -471,29 +471,30 @@ const statusText = computed(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
-  height: 48px;
+  padding: 0 12px;
+  height: 36px;
   background: var(--app-content-surface-color);
   border-bottom: 1px solid var(--app-content-border-color);
   flex-shrink: 0;
-  gap: 12px;
+  gap: 8px;
 }
 
 .wf-editor-toolbar__left,
 .wf-editor-toolbar__right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
 }
 
 .wf-back-btn {
-  font-size: 13px;
+  font-size: 12px;
+  padding: 2px 6px;
   color: var(--el-text-color-secondary);
 }
 
 .wf-divider {
   width: 1px;
-  height: 20px;
+  height: 14px;
   background: var(--app-content-border-color);
 }
 

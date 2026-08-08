@@ -99,10 +99,9 @@ const statusMap: Record<string, { label: string; type: string }> = {
       <div class="wf-page-header">
         <div class="wf-page-header__left">
           <h1 class="wf-page-title">工作流</h1>
-          <p class="wf-page-subtitle">构建和管理你的自动化工作流程</p>
+          <p class="wf-page-subtitle">构建和管理自动化工作流程</p>
         </div>
-        <el-button type="primary" @click="createVisible = true">
-          <el-icon class="mr-1"><Plus /></el-icon>
+        <el-button type="primary" size="small" @click="createVisible = true">
           新建工作流
         </el-button>
       </div>
@@ -111,30 +110,26 @@ const statusMap: Record<string, { label: string; type: string }> = {
     <div class="wf-search-bar">
       <el-input
         v-model="params.name"
-        placeholder="搜索工作流名称..."
+        placeholder="搜索工作流..."
+        size="small"
         clearable
-        style="width: 280px"
+        style="width: 220px"
         @keyup.enter="handleSearch"
         @clear="handleSearch"
-      >
-        <template #prefix><el-icon><Search /></el-icon></template>
-      </el-input>
-      <el-select v-model="params.status" placeholder="全部状态" clearable style="width: 140px" @change="handleSearch">
+      />
+      <el-select v-model="params.status" size="small" placeholder="全部状态" clearable style="width: 110px" @change="handleSearch">
         <el-option label="草稿" value="draft" />
         <el-option label="已发布" value="published" />
         <el-option label="已归档" value="archived" />
       </el-select>
-      <el-button @click="handleSearch">查询</el-button>
+      <el-button size="small" @click="handleSearch">查询</el-button>
     </div>
 
-    <!-- 工作流卡片网格 (扁平无边框无阴影) -->
+    <!-- 工作流卡片网格 (高密度极简) -->
     <div v-loading="loading" class="wf-grid">
       <!-- 新建卡片 -->
       <div class="wf-card wf-card--new" @click="createVisible = true">
-        <div class="wf-card--new__icon">
-          <el-icon><Plus /></el-icon>
-        </div>
-        <span class="wf-card--new__title">新建工作流</span>
+        <span class="wf-card--new__title">+ 新建工作流</span>
       </div>
 
       <!-- 工作流卡片 -->
@@ -144,39 +139,28 @@ const statusMap: Record<string, { label: string; type: string }> = {
         class="wf-card"
         @click="openEditor(item)"
       >
-        <!-- 卡片头部 (图标 + 状态) -->
+        <!-- 卡片头部 (标题 + 状态) -->
         <div class="wf-card__header">
-          <div class="wf-card__icon">
-            <el-icon><Connection /></el-icon>
-          </div>
+          <h3 class="wf-card__title" :title="item.name">{{ item.name }}</h3>
           <div class="wf-card__status" :class="'wf-card__status--' + item.status">
             <span class="wf-card__status-dot" />
             <span>{{ statusMap[item.status]?.label || item.status }}</span>
           </div>
         </div>
 
-        <!-- 标题与简短描述 -->
-        <div class="wf-card__info">
-          <h3 class="wf-card__title" :title="item.name">{{ item.name }}</h3>
-          <p class="wf-card__desc" v-if="item.description">{{ item.description }}</p>
-        </div>
+        <!-- 描述 -->
+        <p class="wf-card__desc" v-if="item.description">{{ item.description }}</p>
 
-        <!-- 极简底栏 (更新时间与三点菜单) -->
+        <!-- 极简底栏 -->
         <div class="wf-card__footer">
           <span class="wf-card__time">更新于 {{ new Date(item.updateTime).toLocaleDateString('zh-CN') }}</span>
           <div class="wf-card__actions" @click.stop>
             <el-dropdown trigger="click" placement="bottom-end">
-              <button type="button" class="wf-more-btn" title="更多操作">
-                <el-icon><MoreFilled /></el-icon>
-              </button>
+              <button type="button" class="wf-more-btn" title="更多">...</button>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item @click="openEditor(item)">
-                    <el-icon class="mr-1"><EditPen /></el-icon> 编辑
-                  </el-dropdown-item>
-                  <el-dropdown-item type="danger" divided @click="handleDelete(item)">
-                    <el-icon class="mr-1"><Delete /></el-icon> 删除
-                  </el-dropdown-item>
+                  <el-dropdown-item @click="openEditor(item)">编辑</el-dropdown-item>
+                  <el-dropdown-item type="danger" divided @click="handleDelete(item)">删除</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -239,81 +223,70 @@ const statusMap: Record<string, { label: string; type: string }> = {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 24px;
+  margin-bottom: 12px;
 }
 
 .wf-page-title {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--el-text-color-primary);
-  margin: 0 0 4px;
+  margin: 0 0 2px;
 }
 
 .wf-page-subtitle {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--el-text-color-secondary);
   margin: 0;
 }
 
 .wf-search-bar {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
 .wf-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
 }
 
 .wf-card {
   background: var(--app-content-surface-color);
   border: 1px solid transparent;
   box-shadow: none;
-  border-radius: 12px;
-  padding: 16px 18px;
+  border-radius: 8px;
+  padding: 12px 14px;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.15s ease;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  min-height: 140px;
+  gap: 8px;
+  min-height: 100px;
 
   &:hover {
     background: color-mix(in srgb, var(--el-color-primary) 7%, var(--app-content-surface-color));
-    border-color: color-mix(in srgb, var(--el-color-primary) 30%, transparent);
+    border-color: color-mix(in srgb, var(--el-color-primary) 25%, transparent);
 
     .wf-card__title {
       color: var(--el-color-primary);
-    }
-
-    .wf-card__icon {
-      color: #ffffff;
-      background: var(--el-color-primary);
     }
   }
 }
 
 .wf-card--new {
   background: var(--app-content-surface-color);
-  border: 1.5px dashed var(--app-content-border-color);
+  border: 1px dashed var(--app-content-border-color);
   box-shadow: none;
   align-items: center;
   justify-content: center;
-  min-height: 140px;
-  gap: 10px;
+  min-height: 100px;
 
   &:hover {
     background: color-mix(in srgb, var(--el-color-primary) 7%, var(--app-content-surface-color));
     border-color: var(--el-color-primary);
-
-    .wf-card--new__icon {
-      background: var(--el-color-primary);
-      color: #ffffff;
-    }
 
     .wf-card--new__title {
       color: var(--el-color-primary);
@@ -321,55 +294,40 @@ const statusMap: Record<string, { label: string; type: string }> = {
   }
 }
 
-.wf-card--new__icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--app-content-surface-muted-color);
-  color: var(--el-text-color-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  transition: all 0.15s ease;
-}
-
 .wf-card--new__title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
-  color: var(--el-text-color-regular);
+  color: var(--el-text-color-secondary);
   transition: color 0.15s ease;
 }
 
-/* 卡片头部 */
 .wf-card__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
 }
 
-.wf-card__icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background: var(--app-content-surface-muted-color);
-  color: var(--el-text-color-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  transition: all 0.15s ease;
+.wf-card__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .wf-card__status {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-size: 12px;
+  gap: 4px;
+  font-size: 11px;
   font-weight: 500;
+  flex-shrink: 0;
 
   &--draft {
-    color: var(--el-text-color-secondary);
+    color: var(--el-text-color-placeholder);
     .wf-card__status-dot { background: #94a3b8; }
   }
 
@@ -385,31 +343,13 @@ const statusMap: Record<string, { label: string; type: string }> = {
 }
 
 .wf-card__status-dot {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
 }
 
-/* 标题与描述 */
-.wf-card__info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.wf-card__title {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-  margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .wf-card__desc {
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.4;
   color: var(--el-text-color-secondary);
   margin: 0;
@@ -419,16 +359,16 @@ const statusMap: Record<string, { label: string; type: string }> = {
   -webkit-box-orient: vertical;
 }
 
-/* 极简底栏 */
 .wf-card__footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-top: auto;
   padding-top: 4px;
 }
 
 .wf-card__time {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--el-text-color-placeholder);
 }
 
