@@ -278,10 +278,9 @@ const statusText = computed(() => {
 .workflow-editor {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - var(--top-tool-height) - var(--tags-view-height) - (var(--app-content-padding) * 2));
+  height: calc(100vh - var(--top-tool-height) - var(--tags-view-height));
+  margin: calc(0px - var(--app-content-padding));
   background: var(--app-content-bg-color);
-  border: 1px solid var(--app-content-border-color);
-  border-radius: 12px;
   overflow: hidden;
 }
 

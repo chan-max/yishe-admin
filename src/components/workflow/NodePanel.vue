@@ -94,10 +94,10 @@ const onDragStart = (event: DragEvent, type: string, label: string) => {
   align-items: center;
   gap: 10px;
   padding: 10px;
-  border: 1px solid var(--app-content-border-color);
+  border: 1px solid transparent;
   border-radius: 8px;
   cursor: grab;
-  background: var(--app-content-surface-color);
+  background: var(--app-content-surface-muted-color);
   transition: all 0.15s;
 
   &:hover {
