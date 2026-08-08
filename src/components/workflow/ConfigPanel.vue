@@ -20,6 +20,14 @@ watch(
     if (n) {
       form.value.label = n.data?.label || ''
       form.value.config = { ...(n.data?.config || {}) }
+      if (n.data?.config?.cronExpression) {
+        const parts = String(n.data.config.cronExpression).trim().split(/\s+/)
+        if (parts.length === 5 && !isNaN(parseInt(parts[0])) && !isNaN(parseInt(parts[1]))) {
+          const m = parseInt(parts[0], 10)
+          const h = parseInt(parts[1], 10)
+          timePickerValue.value = new Date(2026, 0, 1, h, m)
+        }
+      }
     }
   },
   { immediate: true }
@@ -52,6 +60,18 @@ const addInputParam = () => {
 const removeInputParam = (index: number) => {
   if (Array.isArray(form.value.config.inputParams)) {
     form.value.config.inputParams.splice(index, 1)
+    handleDataChange()
+  }
+}
+
+const timePickerValue = ref<Date | null>(new Date(2026, 0, 1, 8, 0))
+
+const handleTimePickerChange = (val: Date | null) => {
+  if (val) {
+    const d = new Date(val)
+    const h = d.getHours()
+    const m = d.getMinutes()
+    form.value.config.cronExpression = `${m} ${h} * * *`
     handleDataChange()
   }
 }
@@ -98,12 +118,24 @@ const NODE_TYPE_LABELS: Record<string, string> = {
             </el-form-item>
 
             <template v-if="form.config.triggerType === 'cron'">
-              <el-form-item label="Cron 表达式">
-                <el-input
-                  v-model="form.config.cronExpression"
-                  placeholder="0 8 * * *"
-                  @input="handleDataChange"
-                />
+              <el-form-item label="Cron 表达式 & 时间选择">
+                <div class="flex items-center gap-1">
+                  <el-input
+                    v-model="form.config.cronExpression"
+                    placeholder="0 8 * * *"
+                    size="small"
+                    style="width: 92px"
+                    @input="handleDataChange"
+                  />
+                  <el-time-picker
+                    v-model="timePickerValue"
+                    format="HH:mm"
+                    size="small"
+                    placeholder="选择时间"
+                    style="width: 92px"
+                    @change="handleTimePickerChange"
+                  />
+                </div>
               </el-form-item>
             </template>
 

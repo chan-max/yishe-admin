@@ -2,7 +2,7 @@
   <el-dialog
     v-model="visible"
     title="工作流设置与触发器"
-    width="500px"
+    width="480px"
     destroy-on-close
     append-to-body
     class="wf-trigger-dialog"
@@ -38,45 +38,40 @@
           </div>
 
           <div class="wf-cron-form">
+            <!-- Cron 表达式与交互时间选择器（同排并列） -->
             <div class="flex items-center gap-2 mb-3">
-              <span class="text-xs text-[var(--el-text-color-regular)] w-16">执行周期:</span>
-              <el-select v-model="scheduleMode" size="small" style="width: 120px" @change="updateCronFromUI">
-                <el-option label="每天" value="daily" />
-                <el-option label="每小时" value="hourly" />
-                <el-option label="固定间隔" value="interval" />
-                <el-option label="自定义 Cron" value="custom" />
-              </el-select>
-
-              <!-- 每天：选择时间点 -->
+              <span class="text-xs text-[var(--el-text-color-regular)] w-20 shrink-0">Cron 表达式:</span>
+              <el-input
+                v-model="cronExpression"
+                size="small"
+                placeholder="0 8 * * *"
+                style="width: 130px"
+              />
               <el-time-picker
-                v-if="scheduleMode === 'daily'"
                 v-model="timePickerValue"
                 format="HH:mm"
                 size="small"
-                placeholder="选择时间"
+                placeholder="选择时间点"
                 style="width: 130px"
-                @change="updateCronFromUI"
+                @change="handleTimePickerChange"
               />
-
-              <!-- 间隔：选择分钟数 -->
-              <div v-else-if="scheduleMode === 'interval'" class="flex items-center gap-1">
-                <el-input-number
-                  v-model="intervalMinutes"
-                  :min="1"
-                  :max="1440"
-                  size="small"
-                  controls-position="right"
-                  style="width: 90px"
-                  @change="updateCronFromUI"
-                />
-                <span class="text-xs text-[var(--el-text-color-secondary)]">分钟</span>
-              </div>
             </div>
 
-            <!-- 自定义 Cron 输入 -->
-            <div v-if="scheduleMode === 'custom'" class="flex items-center gap-2 mb-3">
-              <span class="text-xs text-[var(--el-text-color-regular)] w-16">Cron 表达式:</span>
-              <el-input v-model="cronExpression" size="small" placeholder="例如: 0 8 * * *" style="width: 180px" />
+            <!-- 周期预设下拉 -->
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-xs text-[var(--el-text-color-regular)] w-20 shrink-0">周期预设:</span>
+              <el-select
+                v-model="cronPreset"
+                size="small"
+                placeholder="选择预设周期"
+                style="width: 268px"
+                @change="applyCronPreset"
+              >
+                <el-option label="每天 08:00 (0 8 * * *)" value="0 8 * * *" />
+                <el-option label="每小时 00 分 (0 * * * *)" value="0 * * * *" />
+                <el-option label="每 5 分钟 (*/5 * * * *)" value="*/5 * * * *" />
+                <el-option label="工作日 09:00 (0 9 * * 1-5)" value="0 9 * * 1-5" />
+              </el-select>
             </div>
 
             <div class="flex items-center justify-between mt-2 pt-2 border-t border-[var(--app-content-border-color)]">
@@ -84,7 +79,7 @@
                 下次预计：{{ formatDate(cronNextRunTime) }}
               </span>
               <span v-else class="text-xs text-[var(--el-text-color-placeholder)]">
-                表达式: {{ cronExpression }}
+                当前表达式: {{ cronExpression }}
               </span>
               <el-button size="small" type="primary" @click="saveCronTrigger">保存定时设置</el-button>
             </div>
@@ -145,33 +140,27 @@ const manualEnabled = ref(true)
 
 const cronEnabled = ref(false)
 const cronExpression = ref('0 8 * * *')
+const cronPreset = ref('0 8 * * *')
 const cronNextRunTime = ref<string | null>(null)
 
-// 交互式时间选择状态
-const scheduleMode = ref<'daily' | 'hourly' | 'interval' | 'custom'>('daily')
+// 时间选择器
 const timePickerValue = ref<Date | null>(new Date(2026, 0, 1, 8, 0))
-const intervalMinutes = ref(5)
 
 // 运行日志状态
 const executions = ref<any[]>([])
 const loadingExecutions = ref(false)
 
-const updateCronFromUI = () => {
-  if (scheduleMode.value === 'daily') {
-    if (timePickerValue.value) {
-      const date = new Date(timePickerValue.value)
-      const h = date.getHours()
-      const m = date.getMinutes()
-      cronExpression.value = `${m} ${h} * * *`
-    } else {
-      cronExpression.value = '0 8 * * *'
-    }
-  } else if (scheduleMode.value === 'hourly') {
-    const m = timePickerValue.value ? new Date(timePickerValue.value).getMinutes() : 0
-    cronExpression.value = `${m} * * * *`
-  } else if (scheduleMode.value === 'interval') {
-    cronExpression.value = `*/${intervalMinutes.value || 5} * * * *`
+const handleTimePickerChange = (val: Date | null) => {
+  if (val) {
+    const d = new Date(val)
+    const h = d.getHours()
+    const m = d.getMinutes()
+    cronExpression.value = `${m} ${h} * * *`
   }
+}
+
+const applyCronPreset = (val: string) => {
+  cronExpression.value = val
 }
 
 const loadTriggers = async () => {
@@ -189,38 +178,18 @@ const loadTriggers = async () => {
       cronExpression.value = cron.config?.expression || '0 8 * * *'
       cronNextRunTime.value = cron.nextRunTime || null
 
-      // 反解析 cron 填回 UI
-      parseCronToUI(cronExpression.value)
+      // 解析表达式给时间选择器
+      const parts = cronExpression.value.trim().split(/\s+/)
+      if (parts.length === 5 && !isNaN(parseInt(parts[0])) && !isNaN(parseInt(parts[1]))) {
+        const m = parseInt(parts[0], 10)
+        const h = parseInt(parts[1], 10)
+        timePickerValue.value = new Date(2026, 0, 1, h, m)
+      }
     } else {
       cronEnabled.value = false
     }
   } catch (error) {
     console.error('加载触发器配置失败', error)
-  }
-}
-
-const parseCronToUI = (cron: string) => {
-  if (!cron) return
-  if (cron.startsWith('*/')) {
-    scheduleMode.value = 'interval'
-    const match = cron.match(/\*\/(\d+)/)
-    if (match) intervalMinutes.value = parseInt(match[1], 10)
-  } else {
-    const parts = cron.trim().split(/\s+/)
-    if (parts.length === 5 && parts[2] === '*' && parts[3] === '*' && parts[4] === '*') {
-      if (parts[1] === '*') {
-        scheduleMode.value = 'hourly'
-        const m = parseInt(parts[0], 10) || 0
-        timePickerValue.value = new Date(2026, 0, 1, 0, m)
-      } else {
-        scheduleMode.value = 'daily'
-        const m = parseInt(parts[0], 10) || 0
-        const h = parseInt(parts[1], 10) || 0
-        timePickerValue.value = new Date(2026, 0, 1, h, m)
-      }
-    } else {
-      scheduleMode.value = 'custom'
-    }
   }
 }
 
@@ -256,7 +225,6 @@ const saveManualTrigger = async () => {
 }
 
 const saveCronTrigger = async () => {
-  updateCronFromUI()
   try {
     const res = await saveWorkflowTriggerApi(props.workflowId, {
       type: 'cron',
