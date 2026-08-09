@@ -14,8 +14,7 @@
         <div class="settings-panel__title">{{ t('profile.info.resetPwd') }}</div>
         <ResetPwd />
       </section>
-    </div>
-  </div>
+    </div>  </div>
 </template>
 <script lang="ts" setup>
 import { BasicInfo, OpenApiSetting, ResetPwd } from './components'
@@ -59,20 +58,22 @@ defineOptions({ name: 'PersonalSettingsPage' })
 }
 
 .settings-panel {
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--el-bg-color);
+  box-shadow: var(--app-content-shadow);
 }
 
 .settings-panel--main {
-  padding: 18px;
+  padding: 24px;
 }
 
 .settings-panel__title {
-  margin-bottom: 16px;
-  font-size: 15px;
+  padding-bottom: 14px;
+  margin-bottom: 22px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--el-text-color-primary);
+  border-bottom: 1px solid var(--app-content-border-color);
 }
 
 @media (max-width: 960px) {

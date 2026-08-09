@@ -2,31 +2,43 @@
   <section class="settings-panel settings-panel--main">
     <div class="settings-panel__title">{{ t('profile.info.basicInfo') }}</div>
 
-    <div class="profile-summary">
-      <div class="profile-summary__avatar">
-        <UserAvatar :img="avatar" />
-        <div class="profile-summary__tip">支持修改头像地址</div>
-      </div>
-
-      <div class="profile-summary__main">
-        <div class="profile-summary__name-row">
-          <div class="profile-summary__name">{{ displayName }}</div>
-          <span class="profile-summary__badge">{{ roleLabel }}</span>
+    <div class="profile-head">
+      <el-upload
+        :auto-upload="false"
+        :show-file-list="false"
+        accept="image/*"
+        :on-change="handleAvatarPick"
+      >
+        <div class="profile-avatar" :class="{ 'is-uploading': uploadingAvatar }">
+          <el-avatar :src="avatar" :size="92">
+            <Icon icon="ep:user" />
+          </el-avatar>
+          <span class="profile-avatar__mask">
+            <Icon :icon="uploadingAvatar ? 'ep:loading' : 'ep:camera-filled'" :size="16" />
+            <span>{{ uploadingAvatar ? '上传中' : '更换头像' }}</span>
+          </span>
         </div>
-        <div class="profile-summary__sub">{{ accountText }}</div>
+      </el-upload>
 
-        <div class="profile-summary__meta">
-          <div class="profile-summary__meta-item">
-            <span class="profile-summary__meta-label">用户简称</span>
-            <span class="profile-summary__meta-value">{{ shortNameText }}</span>
+      <div class="profile-head__info">
+        <div class="profile-head__name-row">
+          <span class="profile-head__name">{{ displayName }}</span>
+          <span class="profile-head__badge">{{ roleLabel }}</span>
+        </div>
+        <div class="profile-head__sub">{{ accountText }}</div>
+
+        <div class="profile-head__meta">
+          <div class="profile-head__meta-item">
+            <span class="profile-head__meta-label">用户简称</span>
+            <span class="profile-head__meta-value">{{ shortNameText }}</span>
           </div>
-          <div class="profile-summary__meta-item">
-            <span class="profile-summary__meta-label">所属公司</span>
-            <span class="profile-summary__meta-value">{{ companyText }}</span>
+          <div class="profile-head__meta-item">
+            <span class="profile-head__meta-label">所属公司</span>
+            <span class="profile-head__meta-value">{{ companyText }}</span>
           </div>
-          <div class="profile-summary__meta-item">
-            <span class="profile-summary__meta-label">账号状态</span>
-            <span class="profile-summary__meta-value">{{ expireText }}</span>
+          <div class="profile-head__meta-item">
+            <span class="profile-head__meta-label">账号状态</span>
+            <span class="profile-head__meta-value">{{ expireText }}</span>
           </div>
         </div>
       </div>
@@ -46,25 +58,14 @@
           <el-input v-model="formData.email" placeholder="请输入邮箱地址" />
         </el-form-item>
 
-        <el-form-item label="头像地址" prop="avatar">
-          <el-input v-model="formData.avatar" placeholder="请输入头像地址" />
+        <el-form-item label="登录账号">
+          <el-input :model-value="accountText" disabled />
         </el-form-item>
-      </div>
-
-      <div class="profile-form__readonly">
-        <div class="profile-form__readonly-item">
-          <span class="profile-form__readonly-label">登录账号</span>
-          <span class="profile-form__readonly-value">{{ accountText }}</span>
-        </div>
-        <div class="profile-form__readonly-item">
-          <span class="profile-form__readonly-label">用户类型</span>
-          <span class="profile-form__readonly-value">{{ roleLabel }}</span>
-        </div>
       </div>
 
       <div class="profile-form__actions">
         <XButton :title="t('common.save')" type="primary" @click="submit" />
-        <XButton :title="t('common.reset')" @click="init" />
+        <XButton :title="t('common.reset')" @click="handleReset" />
       </div>
     </el-form>
   </section>
@@ -72,9 +73,10 @@
 
 <script lang="ts" setup>
 import type { FormInstance, FormRules } from 'element-plus'
+import type { UploadFile } from 'element-plus'
 import { getUserInfo, updateUser } from '@/api/user'
 import { useUserStore } from '@/store/modules/user'
-import UserAvatar from './UserAvatar.vue'
+import { uploadToCOS, deleteCOSFile } from '@/api/cos'
 
 defineOptions({ name: 'BasicInfo' })
 
@@ -101,6 +103,74 @@ const shortNameText = computed(() => formData.shortName || userStore.user.shortN
 const companyText = computed(() => profile.value?.company?.name || userStore.user.company?.name || '未加入公司')
 const roleLabel = computed(() => (userStore.user.isAdmin ? '管理员' : '普通成员'))
 const expireText = computed(() => profile.value?.expireTime || userStore.user.expireTime || userStore.user.company?.expireTime || '长期有效')
+
+// 头像上传
+const uploadingAvatar = ref(false)
+// 本次会话新上传、尚未落库的 COS key（未保存离开/重置时清理）
+const uploadedCosKeys = ref<string[]>([])
+
+// 仅提交 User 实体的合法字段，避免 shortName/company 等非列字段被 TypeORM 校验报错
+const buildUpdatePayload = () => {
+  const payload: Record<string, any> = {}
+  for (const key of ['id', 'account', 'name', 'phone', 'email', 'avatar']) {
+    if (formData[key] !== undefined) payload[key] = formData[key]
+  }
+  return payload
+}
+
+const cleanupAvatarFiles = async (keys: string[]) => {
+  if (!keys.length) return
+  await Promise.allSettled(keys.map((key) => deleteCOSFile(key)))
+}
+
+const handleAvatarPick = async (uploadFile: UploadFile) => {
+  const file = uploadFile.raw
+  if (!file) return
+
+  if (!file.type.startsWith('image/')) {
+    message.error('请选择图片文件')
+    return
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    message.error('图片大小不能超过 5MB')
+    return
+  }
+
+  const user = userStore.user
+
+  uploadingAvatar.value = true
+  try {
+    const { url, key } = await uploadToCOS({
+      file,
+      category: 'avatar',
+      account: user.account || user.shortName || 'user',
+      userId: user.id
+    })
+    uploadedCosKeys.value.push(key)
+    formData.avatar = url
+
+    // 旧头像由后端在更新成功后自动删除（服务端兜底）
+    await updateUser(buildUpdatePayload())
+    userStore.setUserAvatarAction(url)
+
+    uploadedCosKeys.value = []
+    message.success('头像已更新')
+    await init()
+  } catch (e: any) {
+    // 落库失败时清理刚上传的 COS 文件，避免孤儿文件
+    await cleanupAvatarFiles(uploadedCosKeys.value)
+    uploadedCosKeys.value = []
+    message.error(e?.message || '头像上传失败')
+  } finally {
+    uploadingAvatar.value = false
+  }
+}
+
+const handleReset = async () => {
+  await cleanupAvatarFiles(uploadedCosKeys.value)
+  uploadedCosKeys.value = []
+  await init()
+}
 
 const rules = reactive<FormRules>({
   name: [{ required: true, message: '请输入用户名称', trigger: 'blur' }],
@@ -135,7 +205,7 @@ const submit = async () => {
   if (!formRef.value) return
   await formRef.value.validate(async (valid) => {
     if (!valid) return
-    await updateUser({ ...profile.value, ...formData })
+    await updateUser(buildUpdatePayload())
     userStore.setUserAvatarAction(formData.avatar || '')
     message.success(t('common.updateSuccess'))
     await init()
@@ -147,161 +217,149 @@ onMounted(init)
 
 <style scoped lang="scss">
 .settings-panel {
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--el-bg-color);
+  box-shadow: var(--app-content-shadow);
 }
 
 .settings-panel--main {
-  padding: 18px;
+  padding: 24px;
 }
 
 .settings-panel__title {
-  margin-bottom: 16px;
-  font-size: 15px;
+  padding-bottom: 14px;
+  margin-bottom: 22px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--el-text-color-primary);
+  border-bottom: 1px solid var(--app-content-border-color);
 }
 
-.profile-summary {
+.profile-head {
   display: flex;
-  gap: 18px;
-  padding: 18px;
-  margin-bottom: 20px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 10px;
-  background: var(--el-fill-color-light);
+  gap: 22px;
+  align-items: center;
+  margin-bottom: 26px;
 }
 
-.profile-summary__avatar {
+.profile-avatar {
+  position: relative;
+  flex-shrink: 0;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  cursor: pointer;
+  overflow: hidden;
+
+  &.is-uploading {
+    cursor: default;
+    opacity: 0.7;
+  }
+}
+
+.profile-avatar__mask {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
+  gap: 4px;
   align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.profile-summary__tip {
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
   font-size: 12px;
-  color: var(--el-text-color-secondary);
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
-.profile-summary__main {
+.profile-avatar:hover .profile-avatar__mask,
+.profile-avatar:focus-visible .profile-avatar__mask {
+  opacity: 1;
+}
+
+.profile-head__info {
   min-width: 0;
   flex: 1;
 }
 
-.profile-summary__name-row {
+.profile-head__name-row {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
 }
 
-.profile-summary__name {
-  font-size: 22px;
+.profile-head__name {
+  font-size: 20px;
   font-weight: 600;
   line-height: 1.2;
   color: var(--el-text-color-primary);
 }
 
-.profile-summary__badge {
+.profile-head__badge {
   display: inline-flex;
   align-items: center;
-  height: 24px;
+  height: 22px;
   padding: 0 10px;
   border-radius: 999px;
-  background: var(--el-bg-color);
-  color: var(--el-text-color-secondary);
+  background: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
+  color: var(--el-color-primary);
   font-size: 12px;
-  border: 1px solid var(--el-border-color-light);
 }
 
-.profile-summary__sub {
-  margin-top: 6px;
+.profile-head__sub {
+  margin-top: 5px;
   font-size: 13px;
   color: var(--el-text-color-secondary);
 }
 
-.profile-summary__meta {
+.profile-head__meta {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 16px;
+  gap: 22px 32px;
+  margin-top: 18px;
 }
 
-.profile-summary__meta-item {
-  min-width: 0;
-  padding: 12px 14px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
-  background: var(--el-bg-color);
-}
-
-.profile-summary__meta-label {
+.profile-head__meta-label {
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   font-size: 12px;
   color: var(--el-text-color-secondary);
 }
 
-.profile-summary__meta-value {
+.profile-head__meta-value {
   display: block;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   font-size: 13px;
   font-weight: 500;
   color: var(--el-text-color-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .profile-form__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 2px 16px;
-}
-
-.profile-form__readonly {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  padding-top: 4px;
-}
-
-.profile-form__readonly-item {
-  padding: 12px 14px;
-  border-radius: 8px;
-  background: var(--el-fill-color-light);
-}
-
-.profile-form__readonly-label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
-.profile-form__readonly-value {
-  display: block;
-  font-size: 13px;
-  color: var(--el-text-color-primary);
+  gap: 0 16px;
+  max-width: 760px;
 }
 
 .profile-form__actions {
   display: flex;
-  justify-content: flex-start;
-  margin-top: 18px;
+  gap: 10px;
+  margin-top: 4px;
 }
 
 @media (max-width: 900px) {
-  .profile-summary {
+  .profile-head {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .profile-summary__meta,
-  .profile-form__grid,
-  .profile-form__readonly {
+  .profile-head__meta,
+  .profile-form__grid {
     grid-template-columns: 1fr;
   }
 }
