@@ -273,30 +273,11 @@ html.light .vxe-table {
   transform: translateY(-1px);
 }
 
-/* 拖拽行与幽灵样式（通用） */
-.is-dragging-row {
-  opacity: 1 !important;
-  background-color: var(--table-row-drag-active-bg) !important;
-  box-shadow: inset 0 0 0 1px var(--table-row-drag-active-border-color) !important;
-}
-
-.template-drag-ghost {
-  opacity: 0.82 !important;
-  background-color: var(--table-row-drag-ghost-bg) !important;
-  box-shadow:
-    inset 0 0 0 1px var(--table-row-drag-active-border-color),
-    0 12px 24px rgba(15, 23, 42, 0.08) !important;
-}
-
-.template-drag-chosen {
-  background-color: var(--table-row-drag-active-bg) !important;
-  box-shadow:
-    inset 0 0 0 1px var(--table-row-drag-active-border-color),
-     0 8px 18px color-mix(in srgb, var(--el-color-primary) 8%, transparent) !important;
-}
-
+/* 拖拽行与幽灵样式（通用全局设置） */
 .template-drag-dragging,
-.template-drag-dragging * {
+.template-drag-dragging *,
+.sortable-drag,
+.sortable-drag * {
   cursor: grabbing !important;
 }
 
