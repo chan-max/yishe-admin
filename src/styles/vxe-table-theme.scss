@@ -3,13 +3,13 @@
  * Ultra-compact small bold header, ZERO vertical lines, paper-thin dividers
  */
 
-/* 1. Global Container Outer Card, Ultra-thin Border & Zero Shadows */
+/* 1. Global Container Outer Card, Zero Border & Zero Shadows */
 .vxe-table,
 .vxe-grid,
 .common-table,
 .list-page-table-wrapper {
   border-radius: 8px !important;
-  border: 1px solid rgba(255, 255, 255, 0.025) !important;
+  border: none !important;
   background-color: var(--app-content-surface-color, #141518) !important;
   overflow: hidden !important;
   box-shadow: none !important;
@@ -34,7 +34,7 @@ html.light {
   .vxe-grid,
   .common-table,
   .list-page-table-wrapper {
-    border: 1px solid rgba(0, 0, 0, 0.03) !important;
+    border: none !important;
     background-color: #ffffff !important;
     box-shadow: none !important;
   }
