@@ -177,7 +177,7 @@ html.light {
   --table-row-drag-handle-color: #94a3b8;
   --table-row-drag-handle-hover-color: var(--el-color-primary);
   --table-row-drag-handle-active-color: var(--el-color-primary);
-  --table-row-drag-handle-bg: rgba(255, 255, 255, 0.78);
+  --table-row-drag-handle-bg: rgba(0, 0, 0, 0.03);
   --table-row-drag-handle-hover-bg: color-mix(
     in srgb,
     var(--el-color-primary) 8%,
@@ -188,13 +188,13 @@ html.light {
     var(--el-color-primary) 12%,
     transparent
   );
-  --table-row-drag-handle-border-color: rgba(148, 163, 184, 0.16);
+  --table-row-drag-handle-border-color: rgba(0, 0, 0, 0.08);
   --table-row-drag-handle-hover-border-color: color-mix(
     in srgb,
     var(--el-color-primary) 24%,
     transparent
   );
-  --table-row-drag-handle-shadow: 0 4px 10px rgba(15, 23, 42, 0.04);
+  --table-row-drag-handle-shadow: none;
   --table-row-drag-handle-hover-shadow: 0 8px 18px color-mix(in srgb, var(--el-color-primary) 14%, transparent);
   --table-row-drag-handle-active-shadow: 0 6px 14px color-mix(in srgb, var(--el-color-primary) 16%, transparent);
   --table-row-drag-active-bg: color-mix(in srgb, var(--el-color-primary) 8%, transparent);

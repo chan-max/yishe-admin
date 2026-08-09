@@ -349,25 +349,33 @@ html.light {
   border-bottom: 1px dashed color-mix(in srgb, var(--el-color-primary) 40%, transparent) !important;
 }
 
-/* Floating Dragged Element attached to Mouse Cursor (DEFAULT: Dark Mode Surface #1a1c22) */
+/* Floating Dragged Element & SortableJS Fallback Wrapper (DEFAULT: Dark Mode Surface #1a1c22) */
 .vxe-table .vxe-body--row.template-drag-dragging,
 .vxe-grid .vxe-body--row.template-drag-dragging,
 tr.template-drag-dragging,
 tr.sortable-drag,
-.sortable-drag {
+.sortable-drag,
+.sortable-fallback,
+.template-drag-fallback {
   cursor: grabbing !important;
   opacity: 0.96 !important;
   background-color: #1a1c22 !important;
   color: #e2e8f0 !important;
   box-shadow: 0 18px 40px -4px rgba(0, 0, 0, 0.55), 0 0 0 1px color-mix(in srgb, var(--el-color-primary) 35%, transparent) !important;
   border-radius: 6px !important;
+
+  tr, td, th, div, span, label {
+    background-color: #1a1c22 !important;
+    color: #e2e8f0 !important;
+  }
 }
 
 .vxe-table .vxe-body--row.template-drag-dragging > .vxe-body--column,
 .vxe-grid .vxe-body--row.template-drag-dragging > .vxe-body--column,
 tr.template-drag-dragging > td,
 tr.sortable-drag > td,
-.sortable-drag td {
+.sortable-drag td,
+.sortable-fallback td {
   background-color: #1a1c22 !important;
   color: #e2e8f0 !important;
 }
@@ -378,17 +386,25 @@ html.light {
   .vxe-grid .vxe-body--row.template-drag-dragging,
   tr.template-drag-dragging,
   tr.sortable-drag,
-  .sortable-drag {
+  .sortable-drag,
+  .sortable-fallback,
+  .template-drag-fallback {
     background-color: #ffffff !important;
     color: #0f172a !important;
     box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.12), 0 0 0 1px color-mix(in srgb, var(--el-color-primary) 30%, transparent) !important;
+
+    tr, td, th, div, span, label {
+      background-color: #ffffff !important;
+      color: #0f172a !important;
+    }
   }
 
   .vxe-table .vxe-body--row.template-drag-dragging > .vxe-body--column,
   .vxe-grid .vxe-body--row.template-drag-dragging > .vxe-body--column,
   tr.template-drag-dragging > td,
   tr.sortable-drag > td,
-  .sortable-drag td {
+  .sortable-drag td,
+  .sortable-fallback td {
     background-color: #ffffff !important;
     color: #0f172a !important;
   }
