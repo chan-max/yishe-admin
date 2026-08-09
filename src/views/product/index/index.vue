@@ -2758,12 +2758,12 @@ const baseColumns: any[] = [
   {
     title: "",
     field: "dragHandle",
-    width: 40,
+    width: 34,
     showOverflow: false,
     align: "center",
     slots: { default: "dragHandleSlot" },
   },
-  { type: "checkbox", width: 50, showOverflow: true },
+  { type: "checkbox", width: 42, showOverflow: true },
   {
     title: "商品图片",
     field: "images",

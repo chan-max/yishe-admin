@@ -316,3 +316,80 @@ html.light {
   color: #ffffff !important;
   font-weight: 600 !important;
 }
+
+/* 7. Premium Drag Interaction Styles for Light & Dark Modes */
+.vxe-table .vxe-body--row.template-drag-chosen,
+.vxe-grid .vxe-body--row.template-drag-chosen,
+.vxe-table .vxe-body--row.sortable-chosen,
+.vxe-grid .vxe-body--row.sortable-chosen {
+  background-color: transparent !important;
+}
+
+.vxe-table .vxe-body--row.template-drag-chosen > .vxe-body--column,
+.vxe-grid .vxe-body--row.template-drag-chosen > .vxe-body--column,
+.vxe-table .vxe-body--row.sortable-chosen > .vxe-body--column,
+.vxe-grid .vxe-body--row.sortable-chosen > .vxe-body--column {
+  background-color: color-mix(in srgb, var(--el-color-primary) 10%, transparent) !important;
+}
+
+/* Ghost / Placeholder Row in Table during Drag */
+.vxe-table .vxe-body--row.template-drag-ghost,
+.vxe-grid .vxe-body--row.template-drag-ghost,
+.vxe-table .vxe-body--row.sortable-ghost,
+.vxe-grid .vxe-body--row.sortable-ghost {
+  opacity: 0.45 !important;
+}
+
+.vxe-table .vxe-body--row.template-drag-ghost > .vxe-body--column,
+.vxe-grid .vxe-body--row.template-drag-ghost > .vxe-body--column,
+.vxe-table .vxe-body--row.sortable-ghost > .vxe-body--column,
+.vxe-grid .vxe-body--row.sortable-ghost > .vxe-body--column {
+  background-color: color-mix(in srgb, var(--el-color-primary) 6%, transparent) !important;
+  border-top: 1px dashed color-mix(in srgb, var(--el-color-primary) 40%, transparent) !important;
+  border-bottom: 1px dashed color-mix(in srgb, var(--el-color-primary) 40%, transparent) !important;
+}
+
+/* Floating Dragged Element attached to Mouse Cursor */
+.vxe-table .vxe-body--row.template-drag-dragging,
+.vxe-grid .vxe-body--row.template-drag-dragging,
+tr.template-drag-dragging,
+tr.sortable-drag {
+  cursor: grabbing !important;
+  opacity: 0.96 !important;
+  box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.35), 0 0 0 1px color-mix(in srgb, var(--el-color-primary) 35%, transparent) !important;
+  border-radius: 6px !important;
+}
+
+html.light {
+  .vxe-table .vxe-body--row.template-drag-dragging,
+  .vxe-grid .vxe-body--row.template-drag-dragging,
+  tr.template-drag-dragging,
+  tr.sortable-drag {
+    background-color: #ffffff !important;
+    box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.12), 0 0 0 1px color-mix(in srgb, var(--el-color-primary) 30%, transparent) !important;
+  }
+
+  .vxe-table .vxe-body--row.template-drag-dragging > .vxe-body--column,
+  .vxe-grid .vxe-body--row.template-drag-dragging > .vxe-body--column,
+  tr.template-drag-dragging > td,
+  tr.sortable-drag > td {
+    background-color: #ffffff !important;
+  }
+}
+
+html.dark {
+  .vxe-table .vxe-body--row.template-drag-dragging,
+  .vxe-grid .vxe-body--row.template-drag-dragging,
+  tr.template-drag-dragging,
+  tr.sortable-drag {
+    background-color: #1a1c22 !important;
+    box-shadow: 0 18px 40px -4px rgba(0, 0, 0, 0.5), 0 0 0 1px color-mix(in srgb, var(--el-color-primary) 40%, transparent) !important;
+  }
+
+  .vxe-table .vxe-body--row.template-drag-dragging > .vxe-body--column,
+  .vxe-grid .vxe-body--row.template-drag-dragging > .vxe-body--column,
+  tr.template-drag-dragging > td,
+  tr.sortable-drag > td {
+    background-color: #1a1c22 !important;
+  }
+}

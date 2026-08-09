@@ -778,11 +778,12 @@ const gridOptions = ref({
     {
       title: "",
       field: "dragHandle",
-      width: 40,
+      width: 34,
+      showOverflow: false,
       align: "center",
       slots: { default: "dragHandleSlot" },
     },
-    { type: "checkbox", width: 50, ellipsis: true, reserve: true },
+    { type: "checkbox", width: 42, ellipsis: true, reserve: true },
     {
       title: "文件预览",
       field: "url",

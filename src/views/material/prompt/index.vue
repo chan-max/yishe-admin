@@ -357,13 +357,15 @@ const gridOptions = ref({
   rowConfig: { keyField: "id" },
   checkboxConfig: { reserve: true },
   columns: [
-    { type: "checkbox", width: 50, ellipsis: true, reserve: true },
     {
-      title: "拖拽",
+      title: "",
       field: "dragHandle",
-      width: 50,
+      width: 34,
+      showOverflow: false,
+      align: "center",
       slots: { default: "dragHandleSlot" },
     },
+    { type: "checkbox", width: 42, ellipsis: true, reserve: true },
     { title: "ID", field: "id", width: 80 },
     {
       title: "标题",

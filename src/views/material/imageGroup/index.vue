@@ -387,7 +387,8 @@ const gridOptions = computed<VxeGridProps<ImageGroupItem>>(() => ({
     {
       title: "",
       field: "dragHandle",
-      width: 40,
+      width: 34,
+      showOverflow: false,
       align: "center",
       slots: { default: "dragHandleSlot" },
     },

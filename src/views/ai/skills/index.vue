@@ -500,13 +500,15 @@ const gridOptions = ref({
     checkMethod: ({ row }: { row: AiSkill }) => row.permission?.canDelete !== false,
   },
   columns: [
-    { type: "checkbox", width: 50 },
     {
       title: "",
       field: "dragHandle",
-      width: 36,
+      width: 34,
+      showOverflow: false,
+      align: "center",
       slots: { default: "dragHandleSlot" },
     },
+    { type: "checkbox", width: 42 },
     {
       title: "Skill",
       field: "name",

@@ -329,14 +329,14 @@ const gridOptions = ref({
     {
       title: '',
       field: 'dragHandle',
-      width: 40,
+      width: 34,
       showOverflow: false,
       align: 'center',
       slots: {
         default: 'dragHandleSlot',
       },
     },
-    { type: 'checkbox', width: 50 },
+    { type: 'checkbox', width: 42 },
     // { title: 'ID', field: 'id', width: 80 },
     { title: '网址名称', field: 'name', minWidth: 200, slots: { default: 'nameSlot' } },
     { title: '网址链接', field: 'url', minWidth: 300, slots: { default: 'urlSlot' } },
