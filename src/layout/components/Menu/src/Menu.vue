@@ -1752,6 +1752,20 @@ $prefix-cls: #{$namespace}-menu;
   }
 }
 
+:global(html.light .v-menu__link--warning:not(.v-menu__link--active)) {
+  color: rgb(146 64 14 / 98%) !important;
+  background: linear-gradient(90deg, rgb(245 158 11 / 16%) 0%, rgb(245 158 11 / 2%) 100%) !important;
+  border-left-color: rgb(217 119 6 / 55%) !important;
+}
+
+:global(html.light .v-menu__link--warning:hover:not(.v-menu__link--active)) {
+  color: rgb(124 45 18 / 98%) !important;
+  background:
+    linear-gradient(90deg, rgb(245 158 11 / 22%) 0%, rgb(245 158 11 / 4%) 100%),
+    var(--left-menu-link-hover-bg) !important;
+  border-left-color: rgb(217 119 6 / 70%) !important;
+}
+
 :global(html.light .v-menu__auto-badge) {
   border-color: rgb(100 116 139 / 34%) !important;
   background: rgb(241 245 249 / 98%) !important;
