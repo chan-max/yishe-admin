@@ -1,16 +1,16 @@
 /**
  * Modern Linear / Raycast Dark-SaaS Style for vxe-table & vxe-grid
- * Transformed global styling inspired by modern minimal dark table UIs
+ * Ultra-subtle, paper-thin dividers and borders
  */
 
 /* 1. Global Container Outer Card & Rounded Borders */
 .vxe-table,
 .vxe-grid {
   border-radius: 10px !important;
-  border: 1px solid var(--el-border-color-lighter, rgba(255, 255, 255, 0.08)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
   background-color: var(--app-content-surface-color, #141518) !important;
   overflow: hidden !important;
-  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.08) !important;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
   /* Global CSS Variables Overrides for VXE Table */
@@ -18,7 +18,16 @@
   --vxe-ui-font-size-mini: 11px;
   --vxe-ui-font-size-small: 12px;
   --vxe-ui-table-header-font-weight: 600;
-  --vxe-ui-table-border-color: var(--el-border-color-lighter, rgba(255, 255, 255, 0.06));
+  --vxe-ui-table-border-color: rgba(255, 255, 255, 0.03);
+}
+
+html.light {
+  .vxe-table,
+  .vxe-grid {
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+    background-color: #ffffff !important;
+    --vxe-ui-table-border-color: rgba(0, 0, 0, 0.04);
+  }
 }
 
 /* Outer wrapper cleanup */
@@ -26,11 +35,19 @@
   background-color: transparent !important;
 }
 
-/* 2. Header Row Styling (Spacious, Muted, Clean) */
+/* 2. Header Row Styling (Spacious, Muted, Extremely Thin Border) */
 .vxe-table .vxe-table--header-wrapper,
 .vxe-grid .vxe-table--header-wrapper {
   background-color: var(--app-content-surface-muted-color, #1a1c20) !important;
-  border-bottom: 1px solid var(--el-border-color-lighter, rgba(255, 255, 255, 0.08)) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
+
+html.light {
+  .vxe-table .vxe-table--header-wrapper,
+  .vxe-grid .vxe-table--header-wrapper {
+    background-color: #f8fafc !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important;
+  }
 }
 
 .vxe-table .vxe-header--row,
@@ -58,7 +75,7 @@
   color: var(--el-text-color-regular, #94a3b8) !important;
 }
 
-/* 3. Body Rows & Cells (Frameless Stream, Soft Dividers, Smooth Hover) */
+/* 3. Body Rows & Cells (Paper-thin Dividers, Smooth Hover) */
 .vxe-table .vxe-table--body-wrapper,
 .vxe-grid .vxe-table--body-wrapper {
   background-color: transparent !important;
@@ -71,11 +88,11 @@
   transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-/* Subtle horizontal border dividers between rows, NO vertical borders */
+/* Subtle, ultra-thin horizontal dividers between rows, NO vertical borders */
 .vxe-table .vxe-body--column,
 .vxe-grid .vxe-body--column {
   border-right: none !important;
-  border-bottom: 1px solid var(--el-border-color-lighter, rgba(255, 255, 255, 0.05)) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03) !important;
   padding: 6px 12px !important;
   font-size: 12px !important;
   color: var(--el-text-color-primary, #e2e8f0) !important;
@@ -83,26 +100,49 @@
   background-color: transparent !important;
 }
 
+html.light {
+  .vxe-table .vxe-body--column,
+  .vxe-grid .vxe-body--column {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.03) !important;
+    color: #1e293b !important;
+  }
+}
+
 /* Hover Row Effect (Linear/Raycast Style Subtle Glow) */
 .vxe-table .vxe-body--row:hover > .vxe-body--column,
 .vxe-grid .vxe-body--row:hover > .vxe-body--column,
 .vxe-table .vxe-body--row.row--hover > .vxe-body--column,
 .vxe-grid .vxe-body--row.row--hover > .vxe-body--column {
-  background-color: var(--el-fill-color-light, rgba(255, 255, 255, 0.04)) !important;
+  background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+html.light {
+  .vxe-table .vxe-body--row:hover > .vxe-body--column,
+  .vxe-grid .vxe-body--row:hover > .vxe-body--column,
+  .vxe-table .vxe-body--row.row--hover > .vxe-body--column,
+  .vxe-grid .vxe-body--row.row--hover > .vxe-body--column {
+    background-color: rgba(0, 0, 0, 0.02) !important;
+  }
 }
 
 /* Checked / Selected Row Effect */
 .vxe-table .vxe-body--row.row--checked > .vxe-body--column,
 .vxe-grid .vxe-body--row.row--checked > .vxe-body--column {
-  background-color: color-mix(in srgb, var(--el-color-primary) 12%, transparent) !important;
+  background-color: color-mix(in srgb, var(--el-color-primary) 10%, transparent) !important;
 }
 
-/* 4. Checkbox Styling (Sleek Rounded Rectangles) */
+/* 4. Checkbox Styling (Sleek Rounded Rectangles with Subtle Border) */
 .vxe-checkbox--icon {
   border-radius: 4px !important;
-  border-color: var(--el-border-color, rgba(255, 255, 255, 0.2)) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
   background-color: transparent !important;
   transition: all 0.2s ease !important;
+}
+
+html.light {
+  .vxe-checkbox--icon {
+    border-color: rgba(0, 0, 0, 0.15) !important;
+  }
 }
 
 .vxe-checkbox.is--checked .vxe-checkbox--icon {
@@ -126,26 +166,26 @@
 
   &--success, &--done {
     color: #10b981;
-    background: rgba(16, 185, 129, 0.12);
-    border: 1px solid rgba(16, 185, 129, 0.2);
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.15);
   }
 
   &--warning, &--process {
     color: #f59e0b;
-    background: rgba(245, 158, 11, 0.12);
-    border: 1px solid rgba(245, 158, 11, 0.2);
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.15);
   }
 
   &--danger, &--error {
     color: #ef4444;
-    background: rgba(239, 68, 68, 0.12);
-    border: 1px solid rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.15);
   }
 
   &--info, &--default {
     color: #94a3b8;
-    background: rgba(148, 163, 184, 0.12);
-    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgba(148, 163, 184, 0.1);
+    border: 1px solid rgba(148, 163, 184, 0.15);
   }
 }
 
@@ -163,14 +203,20 @@
   &--info, &--default { background: #94a3b8; }
 }
 
-/* 6. Pager / Pagination Bar (Modern Borderless Alignment) */
+/* 6. Pager / Pagination Bar (Modern Ultra-Thin Border Alignment) */
 .vxe-pager {
   background-color: transparent !important;
-  border-top: 1px solid var(--el-border-color-lighter, rgba(255, 255, 255, 0.06)) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.03) !important;
   padding: 10px 16px !important;
   height: auto !important;
   font-size: 12px !important;
   color: var(--el-text-color-secondary) !important;
+}
+
+html.light {
+  .vxe-pager {
+    border-top: 1px solid rgba(0, 0, 0, 0.03) !important;
+  }
 }
 
 .vxe-pager--prev-btn,
@@ -179,13 +225,23 @@
 .vxe-pager--jump-prev,
 .vxe-pager--jump-next {
   border-radius: 6px !important;
-  border: 1px solid var(--el-border-color-light, rgba(255, 255, 255, 0.1)) !important;
-  background-color: var(--app-content-surface-color, transparent) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  background-color: transparent !important;
   color: var(--el-text-color-regular) !important;
   min-width: 30px !important;
   height: 30px !important;
   margin: 0 3px !important;
   transition: all 0.2s ease !important;
+}
+
+html.light {
+  .vxe-pager--prev-btn,
+  .vxe-pager--next-btn,
+  .vxe-pager--num-btn,
+  .vxe-pager--jump-prev,
+  .vxe-pager--jump-next {
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  }
 }
 
 .vxe-pager--num-btn.is--active {
@@ -198,7 +254,16 @@
 .vxe-pager--prev-btn:hover:not(.is--disabled),
 .vxe-pager--next-btn:hover:not(.is--disabled),
 .vxe-pager--num-btn:hover:not(.is--active) {
-  background-color: var(--el-fill-color-light, rgba(255, 255, 255, 0.08)) !important;
-  border-color: var(--el-border-color, rgba(255, 255, 255, 0.2)) !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
   color: var(--el-text-color-primary) !important;
+}
+
+html.light {
+  .vxe-pager--prev-btn:hover:not(.is--disabled),
+  .vxe-pager--next-btn:hover:not(.is--disabled),
+  .vxe-pager--num-btn:hover:not(.is--active) {
+    background-color: rgba(0, 0, 0, 0.03) !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+  }
 }
