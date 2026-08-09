@@ -25,8 +25,9 @@ import LLMNode from '@/components/workflow/nodes/LLMNode.vue'
 import HttpNode from '@/components/workflow/nodes/HttpNode.vue'
 import CodeNode from '@/components/workflow/nodes/CodeNode.vue'
 
-import NodeLibraryPanel from '@/components/workflow/NodeLibraryPanel.vue'
+import NodePanel from '@/components/workflow/NodePanel.vue'
 import ConfigPanel from '@/components/workflow/ConfigPanel.vue'
+import NodePickerDialog from '@/components/workflow/NodePickerDialog.vue'
 import TriggerConfigDialog from '@/components/workflow/TriggerConfigDialog.vue'
 import type { SystemNodeCapability } from './config/nodeRegistry'
 
@@ -63,6 +64,7 @@ const selectedNode = ref<Node | null>(null)
 const canvasRef = ref<HTMLDivElement | null>(null)
 
 const triggerDialogVisible = ref(false)
+const nodePickerVisible = ref(false)
 const runningWorkflow = ref(false)
 
 const handleRunWorkflow = async () => {
@@ -99,14 +101,6 @@ const nodeTypes = {
 
 // ─── 复制/粘贴节点 ───────────────────────────────────────────
 const copiedNode = ref<Node | null>(null)
-
-const onNodeClick = ({ node }: NodeMouseEvent) => {
-  selectedNode.value = node
-}
-
-const onPaneClick = () => {
-  selectedNode.value = null
-}
 
 // ─── 快捷点击添加能力节点 ──────────────────────────────────────
 const handleAddNodeFromLibrary = (capability: SystemNodeCapability) => {
@@ -390,32 +384,6 @@ const onPaneClick = () => {
   selectedNode.value = null
 }
 
-// ─── 拖拽放置节点 ─────────────────────────────────────────────
-const onDrop = (event: DragEvent) => {
-  event.preventDefault()
-  const type = event.dataTransfer?.getData('application/vueflow-node-type')
-  const label = event.dataTransfer?.getData('application/vueflow-node-label')
-  if (!type || !canvasRef.value) return
-
-  const bounds = canvasRef.value.getBoundingClientRect()
-  const position = project({
-    x: event.clientX - bounds.left,
-    y: event.clientY - bounds.top
-  })
-
-  addNodes([{
-    id: `node_${Date.now()}`,
-    type,
-    position,
-    data: { label: label || type, config: {} }
-  }])
-}
-
-const onDragOver = (event: DragEvent) => {
-  event.preventDefault()
-  if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'
-}
-
 // ─── 节点配置更新 ─────────────────────────────────────────────
 const onNodeUpdate = (updated: Node) => {
   const node = findNode(updated.id)
@@ -491,6 +459,7 @@ const statusText = computed(() => {
 
         <!-- 整理与工具按纽 (无多余图标，简洁高密度) -->
         <el-button size="small" @click="autoLayout">对齐</el-button>
+        <el-button size="small" type="primary" plain @click="nodePickerVisible = true">功能节点</el-button>
         <el-button size="small" @click="triggerDialogVisible = true">设置</el-button>
         <el-button size="small" type="success" :loading="runningWorkflow" @click="handleRunWorkflow">运行</el-button>
         <el-button size="small" @click="exportJson">导出</el-button>
@@ -513,7 +482,7 @@ const statusText = computed(() => {
 
     <!-- 编辑器主体 -->
     <div class="wf-editor-body">
-      <!-- 左侧节点面板 -->
+      <!-- 左侧基础节点面板 -->
       <NodePanel />
 
       <!-- 画布区 -->
@@ -549,6 +518,12 @@ const statusText = computed(() => {
 
     <!-- 触发器与设置对话框 -->
     <TriggerConfigDialog v-model="triggerDialogVisible" :workflow-id="workflowId" />
+
+    <!-- 功能节点选择弹窗 -->
+    <NodePickerDialog
+      v-model="nodePickerVisible"
+      @select="handleAddNodeFromLibrary"
+    />
   </div>
 </template>
 

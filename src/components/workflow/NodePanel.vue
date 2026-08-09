@@ -1,26 +1,21 @@
 <script setup lang="ts">
-// 左侧节点面板：高密度极简面板
+// 左侧基础节点面板：只显示最基础的拖拽节点，保持极简
 const NODE_GROUPS = [
   {
-    title: '基础节点',
+    title: '基础',
     items: [
       { type: 'start', label: '开始', color: '#22c55e' },
-      { type: 'default', label: '普通处理', color: '#3b82f6' },
-      { type: 'end', label: '结束出口', color: '#ef4444' }
+      { type: 'end', label: '结束', color: '#ef4444' },
+      { type: 'default', label: '普通节点', color: '#3b82f6' },
+      { type: 'condition', label: '条件分支', color: '#f59e0b' },
     ]
   },
   {
-    title: '逻辑分支',
-    items: [
-      { type: 'condition', label: '条件分支', color: '#f59e0b' }
-    ]
-  },
-  {
-    title: '服务集成',
+    title: '集成',
     items: [
       { type: 'llm', label: 'AI 大模型', color: '#8b5cf6' },
-      { type: 'http', label: 'HTTP 请求', color: '#06b6d4' },
-      { type: 'code', label: '代码脚本', color: '#f97316' }
+      { type: 'http', label: 'HTTP', color: '#06b6d4' },
+      { type: 'code', label: '代码', color: '#f97316' },
     ]
   }
 ]
@@ -36,9 +31,7 @@ const onDragStart = (event: DragEvent, type: string, label: string) => {
 
 <template>
   <div class="node-panel">
-    <div class="node-panel__header">
-      <span class="node-panel__title">组件库</span>
-    </div>
+    <div class="node-panel__header">组件库</div>
 
     <div class="node-panel__groups">
       <div v-for="group in NODE_GROUPS" :key="group.title" class="node-panel__group">
@@ -62,27 +55,24 @@ const onDragStart = (event: DragEvent, type: string, label: string) => {
 
 <style scoped lang="scss">
 .node-panel {
-  width: 150px;
+  width: 120px;
   height: 100%;
   background: var(--app-content-surface-color);
   border-right: 1px solid var(--app-content-border-color);
-  padding: 10px 8px;
+  padding: 8px 6px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
   overflow: hidden;
 }
 
 .node-panel__header {
-  padding: 0 4px 4px;
-  border-bottom: 1px solid var(--app-content-border-color);
-}
-
-.node-panel__title {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  color: var(--el-text-color-primary);
+  color: var(--el-text-color-secondary);
+  padding: 0 2px 6px;
+  border-bottom: 1px solid var(--app-content-border-color);
 }
 
 .node-panel__groups {
@@ -90,37 +80,37 @@ const onDragStart = (event: DragEvent, type: string, label: string) => {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .node-panel__group-title {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
   color: var(--el-text-color-placeholder);
-  margin: 0 0 4px 4px;
+  margin-bottom: 3px;
+  padding: 0 2px;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .node-panel__list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .node-panel__item {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 8px;
-  border-radius: 6px;
+  padding: 5px 6px;
+  border-radius: 4px;
   cursor: grab;
-  background: var(--app-content-surface-muted-color);
-  transition: all 0.15s ease;
+  transition: background 0.12s ease;
   user-select: none;
 
   &:hover {
-    background: color-mix(in srgb, var(--el-color-primary) 10%, var(--app-content-surface-color));
-    color: var(--el-color-primary);
+    background: var(--app-content-surface-muted-color, rgba(255,255,255,0.05));
   }
 
   &:active {
@@ -136,7 +126,7 @@ const onDragStart = (event: DragEvent, type: string, label: string) => {
 }
 
 .node-panel__item-label {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--el-text-color-primary);
   overflow: hidden;
