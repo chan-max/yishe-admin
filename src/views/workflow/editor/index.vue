@@ -25,9 +25,10 @@ import LLMNode from '@/components/workflow/nodes/LLMNode.vue'
 import HttpNode from '@/components/workflow/nodes/HttpNode.vue'
 import CodeNode from '@/components/workflow/nodes/CodeNode.vue'
 
-import NodePanel from '@/components/workflow/NodePanel.vue'
+import NodeLibraryPanel from '@/components/workflow/NodeLibraryPanel.vue'
 import ConfigPanel from '@/components/workflow/ConfigPanel.vue'
 import TriggerConfigDialog from '@/components/workflow/TriggerConfigDialog.vue'
+import type { SystemNodeCapability } from './config/nodeRegistry'
 
 const appStore = useAppStore()
 const route = useRoute()
@@ -98,6 +99,80 @@ const nodeTypes = {
 
 // ─── 复制/粘贴节点 ───────────────────────────────────────────
 const copiedNode = ref<Node | null>(null)
+
+const onNodeClick = ({ node }: NodeMouseEvent) => {
+  selectedNode.value = node
+}
+
+const onPaneClick = () => {
+  selectedNode.value = null
+}
+
+// ─── 快捷点击添加能力节点 ──────────────────────────────────────
+const handleAddNodeFromLibrary = (capability: SystemNodeCapability) => {
+  const mappedType = nodeTypes[capability.type as keyof typeof nodeTypes] ? capability.type : 'default'
+  const centerPos = {
+    x: 280 + Math.random() * 60,
+    y: 160 + Math.random() * 60
+  }
+
+  const newNode: Node = {
+    id: `${capability.type}_${Date.now().toString(36)}`,
+    type: mappedType,
+    position: centerPos,
+    data: {
+      label: capability.name,
+      capabilityType: capability.type,
+      config: { ...(capability.defaultData || {}) }
+    }
+  }
+
+  addNodes([newNode])
+  selectedNode.value = newNode
+}
+
+// ─── 拖拽放置节点 ─────────────────────────────────────────────
+const onDrop = (event: DragEvent) => {
+  event.preventDefault()
+  const type = event.dataTransfer?.getData('application/vueflow-node-type')
+  const label = event.dataTransfer?.getData('application/vueflow-node-label')
+  const rawData = event.dataTransfer?.getData('application/vueflow-node-data')
+  if (!type || !canvasRef.value) return
+
+  let defaultData = {}
+  if (rawData) {
+    try {
+      defaultData = JSON.parse(rawData)
+    } catch (e) {}
+  }
+
+  const bounds = canvasRef.value.getBoundingClientRect()
+  const position = project({
+    x: event.clientX - bounds.left,
+    y: event.clientY - bounds.top
+  })
+
+  const mappedType = nodeTypes[type as keyof typeof nodeTypes] ? type : 'default'
+
+  const newNode: Node = {
+    id: `${type}_${Date.now().toString(36)}`,
+    type: mappedType,
+    position,
+    data: {
+      label: label || type,
+      capabilityType: type,
+      config: { ...defaultData }
+    }
+  }
+
+  addNodes([newNode])
+  selectedNode.value = newNode
+}
+
+const onDragOver = (event: DragEvent) => {
+  event.preventDefault()
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'
+}
 
 const handleKeydown = (e: KeyboardEvent) => {
   // 如果在输入框内，不触发画布快捷键

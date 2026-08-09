@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { Delete, Pointer } from '@element-plus/icons-vue'
+import { ref, computed, watch } from 'vue'
+import { Delete, Pointer, Connection } from '@element-plus/icons-vue'
 import type { Node } from '@vue-flow/core'
 import AdvancedCronDialog from './AdvancedCronDialog.vue'
+import {
+  SYSTEM_NODE_REGISTRY,
+  type SystemNodeCapability
+} from '@/views/workflow/editor/config/nodeRegistry'
 
 const props = defineProps<{
   node: Node | null
@@ -17,20 +21,19 @@ const emit = defineEmits<{
 const form = ref({ label: '', config: {} as any })
 const advancedCronVisible = ref(false)
 
+// 当前节点对应的能力库元数据
+const currentCapability = computed<SystemNodeCapability | undefined>(() => {
+  if (!props.node) return undefined
+  const capType = props.node.data?.capabilityType || props.node.type
+  return SYSTEM_NODE_REGISTRY.find((item) => item.type === capType)
+})
+
 watch(
   () => props.node,
   (n) => {
     if (n) {
       form.value.label = n.data?.label || ''
       form.value.config = { ...(n.data?.config || {}) }
-      if (n.data?.config?.cronExpression) {
-        const parts = String(n.data.config.cronExpression).trim().split(/\s+/)
-        if (parts.length === 5 && !isNaN(parseInt(parts[0])) && !isNaN(parseInt(parts[1]))) {
-          const m = parseInt(parts[0], 10)
-          const h = parseInt(parts[1], 10)
-          timePickerValue.value = new Date(2026, 0, 1, h, m)
-        }
-      }
     }
   },
   { immediate: true }
@@ -66,72 +69,31 @@ const removeInputParam = (index: number) => {
     handleDataChange()
   }
 }
-
-const timePickerValue = ref<Date | null>(new Date(2026, 0, 1, 8, 0))
-
-const cronTemplates = [
-  { label: '每 5 分钟', expr: '*/5 * * * *' },
-  { label: '每 10 分钟', expr: '*/10 * * * *' },
-  { label: '每 30 分钟', expr: '*/30 * * * *' },
-  { label: '每小时整点', expr: '0 * * * *' },
-  { label: '每天 09:00', expr: '0 9 * * *' },
-  { label: '每天 12:00', expr: '0 12 * * *' },
-  { label: '每天 18:00', expr: '0 18 * * *' },
-  { label: '每天 00:30', expr: '30 0 * * *' },
-  { label: '工作日 09:00', expr: '0 9 * * 1-5' },
-  { label: '工作日 18:00', expr: '0 18 * * 1-5' },
-  { label: '每周一 09:00', expr: '0 9 * * 1' },
-  { label: '每周日 23:00', expr: '0 23 * * 0' },
-  { label: '每月 1 日 09:00', expr: '0 9 1 * *' },
-  { label: '每月最后一天 23:00', expr: '0 23 28-31 * *' },
-]
-
-const handleTimePickerChange = (val: Date | null) => {
-  if (val) {
-    const d = new Date(val)
-    const h = d.getHours()
-    const m = d.getMinutes()
-    form.value.config.cronExpression = `${m} ${h} * * *`
-    handleDataChange()
-  }
-}
-
-const applyCronTemplate = (expr: string) => {
-  form.value.config.cronExpression = expr
-  const parts = expr.trim().split(/\s+/)
-  if (parts.length === 5 && !isNaN(parseInt(parts[0])) && !isNaN(parseInt(parts[1]))) {
-    const m = parseInt(parts[0], 10)
-    const h = parseInt(parts[1], 10)
-    timePickerValue.value = new Date(2026, 0, 1, h, m)
-  }
-  handleDataChange()
-}
-
-const NODE_TYPE_LABELS: Record<string, string> = {
-  start: '开始节点',
-  end: '结束节点',
-  default: '普通节点',
-  condition: '条件判断',
-  llm: 'AI 大模型',
-  http: 'HTTP 请求',
-  code: '代码脚本'
-}
 </script>
 
 <template>
   <div class="config-panel">
     <template v-if="node">
       <div class="config-panel__header">
-        <span class="config-panel__type-badge">{{ NODE_TYPE_LABELS[node.type || 'default'] || node.type }}</span>
+        <div class="config-panel__title-badge">
+          <span
+            v-if="currentCapability"
+            class="config-panel__dot"
+            :style="{ background: currentCapability.color }"
+          />
+          <span class="config-panel__type-name">
+            {{ currentCapability?.name || node.data?.label || node.type }}
+          </span>
+        </div>
         <el-button type="danger" text size="small" @click="handleDelete">
           <el-icon><Delete /></el-icon>
-          删除
         </el-button>
       </div>
 
       <div class="config-panel__body">
         <el-form label-position="top" size="small">
-          <el-form-item label="节点名称">
+          <!-- 基础信息 -->
+          <el-form-item label="节点显示名称">
             <el-input
               v-model="form.label"
               placeholder="输入节点名称"
@@ -139,12 +101,12 @@ const NODE_TYPE_LABELS: Record<string, string> = {
             />
           </el-form-item>
 
-          <!-- 开始节点专用配置 -->
+          <!-- 1. 开始节点专属配置 -->
           <template v-if="node.type === 'start'">
             <el-form-item label="触发类型">
               <el-select v-model="form.config.triggerType" placeholder="选择类型" @change="handleDataChange">
-                <el-option label="手动触发" value="manual" />
-                <el-option label="定时调度" value="cron" />
+                <el-option label="手动触发 / API" value="manual" />
+                <el-option label="定时 Cron 调度" value="cron" />
               </el-select>
             </el-form-item>
 
@@ -196,76 +158,88 @@ const NODE_TYPE_LABELS: Record<string, string> = {
             </el-form-item>
           </template>
 
-          <!-- AI 大模型专用配置 -->
-          <template v-if="node.type === 'llm'">
-            <el-form-item label="模型类型">
-              <el-select v-model="form.config.model" placeholder="选择模型" @change="handleDataChange">
-                <el-option label="DeepSeek-R1" value="DeepSeek-R1" />
-                <el-option label="GPT-4o" value="GPT-4o" />
-                <el-option label="Claude-3.5-Sonnet" value="Claude-3.5-Sonnet" />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="System Prompt">
-              <el-input
-                v-model="form.config.systemPrompt"
-                type="textarea"
-                :rows="3"
-                placeholder="设置 AI 提示词..."
-                @input="handleDataChange"
-              />
-            </el-form-item>
-          </template>
+          <!-- 2. 基于 Schema 动态渲染输入表单 -->
+          <template v-if="currentCapability?.inputSchema?.length">
+            <div class="config-panel__section-title">节点入参配置</div>
+            <div
+              v-for="field in currentCapability.inputSchema"
+              :key="field.field"
+              class="config-panel__schema-field"
+            >
+              <el-form-item :label="field.label">
+                <template v-if="field.type === 'select'">
+                  <el-select
+                    v-model="form.config[field.field]"
+                    :placeholder="field.placeholder || '请选择'"
+                    style="width: 100%"
+                    @change="handleDataChange"
+                  >
+                    <el-option
+                      v-for="opt in field.options || []"
+                      :key="opt.value"
+                      :label="opt.label"
+                      :value="opt.value"
+                    />
+                  </el-select>
+                </template>
 
-          <!-- 条件判断专用配置 -->
-          <template v-if="node.type === 'condition'">
-            <el-form-item label="判断表达式">
-              <el-input
-                v-model="form.config.expression"
-                placeholder="例如：score > 80"
-                @input="handleDataChange"
-              />
-            </el-form-item>
-          </template>
+                <template v-else-if="field.type === 'textarea'">
+                  <el-input
+                    v-model="form.config[field.field]"
+                    type="textarea"
+                    :rows="3"
+                    :placeholder="field.placeholder || '支持 {{ node_id.variable }}'"
+                    @input="handleDataChange"
+                  />
+                </template>
 
-          <!-- HTTP 请求专用配置 -->
-          <template v-if="node.type === 'http'">
-            <el-form-item label="请求方式">
-              <el-select v-model="form.config.method" placeholder="Method" @change="handleDataChange">
-                <el-option label="POST" value="POST" />
-                <el-option label="GET" value="GET" />
-                <el-option label="PUT" value="PUT" />
-                <el-option label="DELETE" value="DELETE" />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="请求 URL">
-              <el-input
-                v-model="form.config.url"
-                placeholder="https://api.example.com"
-                @input="handleDataChange"
-              />
-            </el-form-item>
-          </template>
+                <template v-else-if="field.type === 'number'">
+                  <el-input-number
+                    v-model="form.config[field.field]"
+                    size="small"
+                    style="width: 100%"
+                    @change="handleDataChange"
+                  />
+                </template>
 
-          <!-- 代码脚本专用配置 -->
-          <template v-if="node.type === 'code'">
-            <el-form-item label="脚本语言">
-              <el-select v-model="form.config.language" placeholder="选择语言" @change="handleDataChange">
-                <el-option label="JavaScript" value="JavaScript" />
-                <el-option label="Python" value="Python" />
-              </el-select>
-            </el-form-item>
-          </template>
-
-          <el-form-item label="节点 ID">
-            <el-input :value="node.id" disabled />
-          </el-form-item>
-
-          <el-form-item label="坐标位置">
-            <div style="display:flex;gap:8px;">
-              <el-input :value="`x: ${Math.round(node.position.x)}`" disabled />
-              <el-input :value="`y: ${Math.round(node.position.y)}`" disabled />
+                <template v-else>
+                  <el-input
+                    v-model="form.config[field.field]"
+                    :placeholder="field.placeholder || '输入内容或 {{ 变量 }}'"
+                    @input="handleDataChange"
+                  />
+                </template>
+              </el-form-item>
             </div>
-          </el-form-item>
+          </template>
+
+          <!-- 3. 输出变量 Schema 预览 -->
+          <template v-if="currentCapability?.outputSchema?.length">
+            <div class="config-panel__section-title">输出变量 (供下游引用)</div>
+            <div class="config-panel__output-variables">
+              <div
+                v-for="out in currentCapability.outputSchema"
+                :key="out.field"
+                class="config-panel__output-tag"
+              >
+                <el-icon><Connection /></el-icon>
+                <span class="config-panel__output-name">{{ node.id }}.{{ out.field }}</span>
+                <span class="config-panel__output-label">({{ out.label }})</span>
+              </div>
+            </div>
+          </template>
+
+          <!-- 元数据信息 -->
+          <div class="config-panel__meta-box">
+            <div class="config-panel__meta-row">
+              <span class="config-panel__meta-label">节点 ID:</span>
+              <span class="config-panel__meta-val">{{ node.id }}</span>
+            </div>
+            <div class="config-panel__meta-row">
+              <span class="config-panel__meta-label">坐标:</span>
+              <span class="config-panel__meta-val">({{ Math.round(node.position.x) }}, {{ Math.round(node.position.y) }})</span>
+            </div>
+          </div>
         </el-form>
       </div>
     </template>
@@ -273,7 +247,8 @@ const NODE_TYPE_LABELS: Record<string, string> = {
     <template v-else>
       <div class="config-panel__empty">
         <el-icon class="config-panel__empty-icon"><Pointer /></el-icon>
-        <p>点击节点查看配置</p>
+
+        <p>点击画布中的节点进行配置</p>
       </div>
     </template>
 
@@ -283,43 +258,67 @@ const NODE_TYPE_LABELS: Record<string, string> = {
 
 <style scoped lang="scss">
 .config-panel {
-  width: 210px;
+  width: 250px;
   height: 100%;
-  background: var(--app-content-surface-color);
-  border-left: 1px solid var(--app-content-border-color);
+  background: var(--app-content-surface-color, #141518);
+  border-left: 1px solid var(--app-content-border-color, rgba(255, 255, 255, 0.08));
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  user-select: none;
 }
 
 .config-panel__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--app-content-border-color);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--app-content-border-color, rgba(255, 255, 255, 0.06));
 }
 
-.config-panel__type-badge {
+.config-panel__title-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.config-panel__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.config-panel__type-name {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--el-text-color-primary);
 }
 
 .config-panel__body {
-  padding: 10px 12px;
+  padding: 12px;
   flex: 1;
   overflow-y: auto;
 
   :deep(.el-form-item) {
-    margin-bottom: 10px;
+    margin-bottom: 12px;
   }
 
   :deep(.el-form-item__label) {
     font-size: 11px;
     padding-bottom: 2px;
     color: var(--el-text-color-secondary);
+    font-weight: 500;
   }
+}
+
+.config-panel__section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--el-text-color-primary);
+  margin: 14px 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed var(--app-content-border-color, rgba(255, 255, 255, 0.1));
 }
 
 .wf-param-list {
@@ -331,6 +330,61 @@ const NODE_TYPE_LABELS: Record<string, string> = {
   align-items: center;
   gap: 4px;
   margin-bottom: 6px;
+}
+
+.config-panel__output-variables {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.config-panel__output-tag {
+  font-size: 10px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--el-color-primary) 20%, transparent);
+  color: var(--el-color-primary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  word-break: break-all;
+}
+
+.config-panel__output-name {
+  font-family: monospace;
+  font-weight: 600;
+}
+
+.config-panel__output-label {
+  opacity: 0.7;
+  font-size: 9px;
+}
+
+.config-panel__meta-box {
+  margin-top: 16px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--app-content-border-color, rgba(255, 255, 255, 0.04));
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.config-panel__meta-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+}
+
+.config-panel__meta-label {
+  color: var(--el-text-color-placeholder);
+}
+
+.config-panel__meta-val {
+  color: var(--el-text-color-secondary);
+  font-family: monospace;
 }
 
 .config-panel__empty {
@@ -345,7 +399,7 @@ const NODE_TYPE_LABELS: Record<string, string> = {
 }
 
 .config-panel__empty-icon {
-  font-size: 24px;
+  font-size: 28px;
   opacity: 0.4;
 }
 </style>
