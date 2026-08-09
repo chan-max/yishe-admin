@@ -12,12 +12,19 @@
   overflow: hidden !important;
   box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.08) !important;
 
-  /* Override VXE Table internal border variables */
-  --vxe-ui-table-border-color: transparent;
-  --vxe-table-border-color: transparent;
+  /* Override VXE Table internal border & resizable line variables to transparent */
+  --vxe-ui-table-resizable-line-color: transparent !important;
+  --vxe-table-resizable-line-color: transparent !important;
+  --vxe-ui-table-border-color: transparent !important;
+  --vxe-table-border-color: transparent !important;
   --vxe-ui-font-size-default: 11px;
   --vxe-ui-font-size-mini: 10px;
   --vxe-ui-font-size-small: 11px;
+}
+
+:root {
+  --vxe-ui-table-resizable-line-color: transparent !important;
+  --vxe-table-resizable-line-color: transparent !important;
 }
 
 html.light {
