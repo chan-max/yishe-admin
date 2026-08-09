@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { Delete, Pointer, Connection } from '@element-plus/icons-vue'
 import type { Node } from '@vue-flow/core'
 import AdvancedCronDialog from './AdvancedCronDialog.vue'
 import {
   SYSTEM_NODE_REGISTRY,
-  type SystemNodeCapability
+  type SystemNodeCapability,
+  type NodeInputField
 } from '@/views/workflow/editor/config/nodeRegistry'
+import { getMessagePushList, type MessagePushConfig } from '@/api/messagePush'
 
 const props = defineProps<{
   node: Node | null
@@ -21,11 +23,48 @@ const emit = defineEmits<{
 const form = ref({ label: '', config: {} as any })
 const advancedCronVisible = ref(false)
 
+// 消息推送渠道列表（动态从 API 加载）
+const messagePushChannels = ref<MessagePushConfig[]>([])
+const channelsLoaded = ref(false)
+
+const loadMessagePushChannels = async () => {
+  if (channelsLoaded.value) return
+  try {
+    const list = await getMessagePushList()
+    messagePushChannels.value = Array.isArray(list) ? list.filter((c) => c.enabled) : []
+    channelsLoaded.value = true
+  } catch (e) {
+    messagePushChannels.value = []
+  }
+}
+
 // 当前节点对应的能力库元数据
 const currentCapability = computed<SystemNodeCapability | undefined>(() => {
   if (!props.node) return undefined
   const capType = props.node.data?.capabilityType || props.node.type
   return SYSTEM_NODE_REGISTRY.find((item) => item.type === capType)
+})
+
+// 是否是消息推送类节点
+const isNotifyNode = computed(() => currentCapability.value?.category === 'notify')
+
+// 动态注入渠道 options 进 inputSchema
+const resolvedInputSchema = computed<NodeInputField[]>(() => {
+  const schema = currentCapability.value?.inputSchema || []
+  if (!isNotifyNode.value) return schema
+
+  return schema.map((field) => {
+    if (field.field === 'channelId') {
+      return {
+        ...field,
+        options: messagePushChannels.value.map((ch) => ({
+          label: `${ch.name} (${ch.platform === 'feishu' ? '飞书' : '企业微信'})`,
+          value: ch.id,
+        })),
+      }
+    }
+    return field
+  })
 })
 
 watch(
@@ -34,6 +73,10 @@ watch(
     if (n) {
       form.value.label = n.data?.label || ''
       form.value.config = { ...(n.data?.config || {}) }
+    }
+    // 当选中的是消息推送节点时自动加载渠道列表
+    if (isNotifyNode.value) {
+      loadMessagePushChannels()
     }
   },
   { immediate: true }
@@ -159,10 +202,11 @@ const removeInputParam = (index: number) => {
           </template>
 
           <!-- 2. 基于 Schema 动态渲染输入表单 -->
-          <template v-if="currentCapability?.inputSchema?.length">
+          <!-- 2. 基于 Schema 动态渲染输入表单 -->
+          <template v-if="resolvedInputSchema.length">
             <div class="config-panel__section-title">节点入参配置</div>
             <div
-              v-for="field in currentCapability.inputSchema"
+              v-for="field in resolvedInputSchema"
               :key="field.field"
               class="config-panel__schema-field"
             >
@@ -202,6 +246,13 @@ const removeInputParam = (index: number) => {
                   />
                 </template>
 
+                <template v-else-if="field.type === 'boolean'">
+                  <el-switch
+                    v-model="form.config[field.field]"
+                    @change="handleDataChange"
+                  />
+                </template>
+
                 <template v-else>
                   <el-input
                     v-model="form.config[field.field]"
@@ -209,9 +260,15 @@ const removeInputParam = (index: number) => {
                     @input="handleDataChange"
                   />
                 </template>
+
+                <!-- 字段说明提示 -->
+                <div v-if="field.description" class="config-panel__field-desc">
+                  {{ field.description }}
+                </div>
               </el-form-item>
             </div>
           </template>
+
 
           <!-- 3. 输出变量 Schema 预览 -->
           <template v-if="currentCapability?.outputSchema?.length">
@@ -401,5 +458,12 @@ const removeInputParam = (index: number) => {
 .config-panel__empty-icon {
   font-size: 28px;
   opacity: 0.4;
+}
+
+.config-panel__field-desc {
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--el-text-color-placeholder);
+  line-height: 1.5;
 }
 </style>

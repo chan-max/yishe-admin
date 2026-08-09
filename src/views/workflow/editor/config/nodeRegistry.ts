@@ -19,7 +19,7 @@ export interface NodeOutputField {
 export interface SystemNodeCapability {
   type: string
   name: string
-  category: 'ai' | 'design' | 'material' | 'product' | 'integration' | 'logic' | 'base'
+  category: 'ai' | 'design' | 'material' | 'product' | 'integration' | 'logic' | 'base' | 'notify'
   icon: string
   color: string
   badge?: string
@@ -37,6 +37,7 @@ export const NODE_CATEGORIES = [
   { key: 'material', label: '素材与文件管理', icon: 'ep:folder-opened' },
   { key: 'product', label: '商品与电商处理', icon: 'ep:goods' },
   { key: 'integration', label: '网络与 API 集成', icon: 'ep:connection' },
+  { key: 'notify', label: '消息通知推送', icon: 'ep:bell' },
   { key: 'logic', label: '逻辑与控制流', icon: 'ep:cpu' },
 ] as const
 
@@ -562,6 +563,103 @@ export const SYSTEM_NODE_REGISTRY: SystemNodeCapability[] = [
     ],
     outputSchema: [
       { field: 'result', label: '脚本返回值', type: 'any' },
+    ],
+  },
+
+  // ─── 8. 消息通知推送 ─────────────────────────────────────────
+  {
+    type: 'message_push',
+    name: '消息推送通知',
+    category: 'notify',
+    icon: 'ep:bell',
+    color: '#0ea5e9',
+    badge: '通知',
+    description: '通过已配置的推送渠道（飞书/企业微信）发送工作流执行结果或自定义消息通知。',
+    defaultData: {
+      name: '消息推送通知',
+      channelId: null,
+      title: '工作流执行完成',
+      content: '工作流已完成执行。\n结果：{{ end_1.summary }}',
+    },
+    inputSchema: [
+      {
+        field: 'channelId',
+        label: '推送渠道',
+        type: 'select',
+        required: true,
+        placeholder: '选择已配置的推送渠道',
+        description: '在「消息推送」模块中配置的飞书/企业微信渠道',
+        options: [], // 运行时动态从 API 加载
+      },
+      {
+        field: 'title',
+        label: '消息标题',
+        type: 'string',
+        defaultValue: '工作流执行通知',
+        placeholder: '例如：商品渲染任务完成',
+        description: '支持 {{ node_id.variable }} 变量引用',
+      },
+      {
+        field: 'content',
+        label: '消息正文',
+        type: 'textarea',
+        defaultValue: '工作流已完成执行。\n结果：{{ end_1.summary }}',
+        placeholder: '支持 {{ node_id.variable }} 变量引用',
+        description: '飞书/企微 Markdown 格式均可使用',
+      },
+      {
+        field: 'sendOnError',
+        label: '仅在失败时发送',
+        type: 'boolean',
+        defaultValue: false,
+        description: '勾选后，只有工作流中出现错误节点时才触发此推送',
+      },
+    ],
+    outputSchema: [
+      { field: 'sent', label: '是否发送成功', type: 'boolean' },
+      { field: 'channelName', label: '推送渠道名称', type: 'string' },
+      { field: 'sentAt', label: '发送时间', type: 'string' },
+    ],
+  },
+  {
+    type: 'message_push_error_alert',
+    name: '错误告警推送',
+    category: 'notify',
+    icon: 'ep:warning',
+    color: '#ef4444',
+    badge: '告警',
+    description: '工作流节点运行失败时，立即推送错误详情与堆栈到指定渠道，用于故障告警监控。',
+    defaultData: {
+      name: '错误告警推送',
+      channelId: null,
+      alertTitle: '⚠️ 工作流执行异常',
+      includeStackTrace: true,
+    },
+    inputSchema: [
+      {
+        field: 'channelId',
+        label: '告警推送渠道',
+        type: 'select',
+        required: true,
+        placeholder: '选择告警接收渠道',
+        options: [], // 运行时动态从 API 加载
+      },
+      {
+        field: 'alertTitle',
+        label: '告警消息标题',
+        type: 'string',
+        defaultValue: '⚠️ 工作流执行异常',
+      },
+      {
+        field: 'includeStackTrace',
+        label: '包含错误详情',
+        type: 'boolean',
+        defaultValue: true,
+        description: '是否在推送中附上失败节点名称与错误信息',
+      },
+    ],
+    outputSchema: [
+      { field: 'sent', label: '是否告警推送成功', type: 'boolean' },
     ],
   },
 ]
