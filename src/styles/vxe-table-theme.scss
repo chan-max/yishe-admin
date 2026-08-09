@@ -55,21 +55,45 @@ html.light {
   background-color: transparent !important;
 }
 
-/* Remove ALL vertical lines and column resizer dividers across headers & body */
+/* Remove ALL vertical lines, linear gradients, and column resizer dividers across headers & body */
+.vxe-table,
+.vxe-grid,
+.vxe-table--header-wrapper,
+.vxe-table--header,
+.vxe-header--row,
+.vxe-header--column,
+.vxe-header--column .vxe-cell,
+.vxe-body--column,
+.vxe-body--column .vxe-cell,
+.vxe-cell--title,
+.vxe-cell--wrapper,
+.vxe-resizable {
+  border-right: none !important;
+  border-left: none !important;
+  box-shadow: none !important;
+  background-image: none !important; /* Wipes VXE gradient vertical lines */
+}
+
 .vxe-table .vxe-header--column,
 .vxe-grid .vxe-header--column,
 .vxe-table .vxe-body--column,
-.vxe-grid .vxe-body--column {
-  border-right: none !important;
-  border-left: none !important;
-
+.vxe-grid .vxe-body--column,
+.vxe-header--column .vxe-cell,
+.vxe-resizable,
+.vxe-table--resizable-bar,
+.vxe-table--border-line,
+.vxe-table--header-border-line {
   &::before,
   &::after {
     display: none !important;
     content: none !important;
     border: none !important;
     background: none !important;
+    background-image: none !important;
     width: 0 !important;
+    height: 0 !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
   }
 }
 
