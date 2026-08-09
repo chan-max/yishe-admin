@@ -330,9 +330,9 @@ watch(
               },
             },
           ]" :tag-item="item" @visible-change="visibleChange">
-            <div class="h-full w-full flex items-center justify-center">
+            <div class="h-full w-full flex min-w-0 items-center justify-center">
               <router-link :ref="tagLinksRefs.set" v-slot="{ navigate }" :to="{ ...item }" custom>
-                <div :class="`h-full w-full flex items-center justify-center whitespace-nowrap ${prefixCls}__item--label`"
+                <div :class="`h-full w-full flex min-w-0 items-center justify-center whitespace-nowrap ${prefixCls}__item--label`"
                   @click="navigate">
                   <span :class="`${prefixCls}__item--title`">
                     {{
@@ -510,6 +510,8 @@ $prefix-cls: #{$namespace}-tags-view;
     height: calc(100% - 10px);
     align-items: center;
     justify-content: center;
+    min-width: 0;
+    max-width: var(--tags-view-item-max-width, 200px);
     padding-right: 0;
     margin: 5px 0 5px 4px;
     font-size: var(--tags-view-item-font-size);
@@ -581,14 +583,17 @@ $prefix-cls: #{$namespace}-tags-view;
     min-width: 0;
     align-items: center;
     justify-content: center;
-    padding: 0 calc(var(--tags-view-item-inline-padding) + 10px) 0 var(--tags-view-item-inline-padding);
+    padding-left: var(--tags-view-item-inline-padding, 14px);
+    padding-right: calc(var(--tags-view-close-size, 16px) + var(--tags-view-close-right, 6px) + 10px);
     line-height: 1;
     text-align: center;
     cursor: pointer;
+    box-sizing: border-box;
   }
 
   &__item--affix .#{$prefix-cls}__item--label {
-    padding: 0 var(--tags-view-item-inline-padding);
+    padding-left: var(--tags-view-item-inline-padding, 14px);
+    padding-right: var(--tags-view-item-inline-padding, 14px);
   }
 
   &__item.is-active {
@@ -608,11 +613,14 @@ $prefix-cls: #{$namespace}-tags-view;
 
   &__item--title {
     position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    display: inline-block;
+    min-width: 0;
     max-width: 100%;
+    overflow: hidden;
     text-align: center;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+    white-space: nowrap;
   }
 
   &__item.is-active .#{$prefix-cls}__item--title::after {
@@ -634,7 +642,8 @@ $prefix-cls: #{$namespace}-tags-view;
     margin: 5px 0 5px 4px;
 
     .#{$prefix-cls}__item--label {
-      padding: 0 var(--tags-view-item-inline-padding);
+      padding-left: var(--tags-view-item-inline-padding, 14px);
+      padding-right: calc(var(--tags-view-close-size, 16px) + var(--tags-view-close-right, 6px) + 10px);
     }
 
     .#{$prefix-cls}__item--close {
