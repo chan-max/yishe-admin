@@ -3,14 +3,16 @@
  * Ultra-compact small bold header, ZERO vertical lines, paper-thin dividers
  */
 
-/* 1. Global Container Outer Card & Rounded Borders */
+/* 1. Global Container Outer Card, Ultra-thin Border & Zero Shadows */
 .vxe-table,
-.vxe-grid {
+.vxe-grid,
+.common-table,
+.list-page-table-wrapper {
   border-radius: 8px !important;
-  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.025) !important;
   background-color: var(--app-content-surface-color, #141518) !important;
   overflow: hidden !important;
-  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.08) !important;
+  box-shadow: none !important;
 
   /* Override VXE Table internal border & resizable line variables to transparent */
   --vxe-ui-table-resizable-line-color: transparent !important;
@@ -29,9 +31,12 @@
 
 html.light {
   .vxe-table,
-  .vxe-grid {
-    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  .vxe-grid,
+  .common-table,
+  .list-page-table-wrapper {
+    border: 1px solid rgba(0, 0, 0, 0.03) !important;
     background-color: #ffffff !important;
+    box-shadow: none !important;
   }
 }
 
