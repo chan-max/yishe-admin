@@ -98,6 +98,7 @@ html.light {
   --tags-view-item-inline-padding: 18px;
   --tags-view-close-size: 18px;
   --tags-view-close-right: 6px;
+  --tags-view-item-max-width: 200px;
   --tags-view-active-indicator-width: 26px;
   --tags-view-active-indicator-offset: -9px;
   --tags-view-border-color: rgba(116, 134, 160, 0.1);

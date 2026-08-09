@@ -67,10 +67,22 @@ defineExpose({
           :disabled="item.disabled"
           :divided="item.divided"
         >
-          <Icon :icon="item.icon" />
           {{ t(item.label) }}
         </ElDropdownItem>
       </ElDropdownMenu>
     </template>
   </ElDropdown>
 </template>
+
+<style lang="scss" scoped>
+:global(.v-context-menu-popper .el-dropdown-menu__item) {
+  min-width: 108px;
+  padding: 6px 16px;
+  font-size: 12px;
+  line-height: 20px;
+}
+
+:global(.v-context-menu-popper .el-dropdown-menu__item--divided) {
+  margin-top: 4px;
+}
+</style>

@@ -507,6 +507,7 @@ $prefix-cls: #{$namespace}-tags-view;
     position: relative;
     top: 0;
     display: flex;
+    flex: none;
     height: calc(100% - 10px);
     align-items: center;
     justify-content: center;
@@ -532,18 +533,16 @@ $prefix-cls: #{$namespace}-tags-view;
     will-change: transform;
 
     &--close {
-      position: absolute;
-      top: 50%;
-      right: var(--tags-view-close-right);
       display: flex;
+      flex: none;
       width: var(--tags-view-close-size);
       height: var(--tags-view-close-size);
       align-items: center;
       justify-content: center;
+      margin-left: 6px;
       color: inherit;
       opacity: 0.6;
       border-radius: 999px;
-      transform: translate(0, -50%);
       transition:
         opacity 0.18s ease,
         background-color 0.18s ease,
@@ -565,7 +564,7 @@ $prefix-cls: #{$namespace}-tags-view;
       .#{$prefix-cls}__item--close:hover {
         opacity: 1;
         background: color-mix(in srgb, var(--tags-view-tool-hover-bg) 75%, transparent 25%);
-        transform: translate(0, -50%) scale(1.15);
+        transform: scale(1.15);
       }
     }
 
@@ -583,8 +582,7 @@ $prefix-cls: #{$namespace}-tags-view;
     min-width: 0;
     align-items: center;
     justify-content: center;
-    padding-left: var(--tags-view-item-inline-padding, 14px);
-    padding-right: calc(var(--tags-view-close-size, 16px) + var(--tags-view-close-right, 6px) + 10px);
+    padding: 0 var(--tags-view-item-inline-padding, 14px);
     line-height: 1;
     text-align: center;
     cursor: pointer;
@@ -592,8 +590,7 @@ $prefix-cls: #{$namespace}-tags-view;
   }
 
   &__item--affix .#{$prefix-cls}__item--label {
-    padding-left: var(--tags-view-item-inline-padding, 14px);
-    padding-right: var(--tags-view-item-inline-padding, 14px);
+    padding: 0 var(--tags-view-item-inline-padding, 14px);
   }
 
   &__item.is-active {
@@ -613,13 +610,12 @@ $prefix-cls: #{$namespace}-tags-view;
 
   &__item--title {
     position: relative;
-    display: inline-block;
+    display: block;
+    flex: 0 1 auto;
     min-width: 0;
-    max-width: 100%;
     overflow: hidden;
     text-align: center;
     text-overflow: ellipsis;
-    vertical-align: middle;
     white-space: nowrap;
   }
 
@@ -642,12 +638,7 @@ $prefix-cls: #{$namespace}-tags-view;
     margin: 5px 0 5px 4px;
 
     .#{$prefix-cls}__item--label {
-      padding-left: var(--tags-view-item-inline-padding, 14px);
-      padding-right: calc(var(--tags-view-close-size, 16px) + var(--tags-view-close-right, 6px) + 10px);
-    }
-
-    .#{$prefix-cls}__item--close {
-      right: var(--tags-view-close-right);
+      padding: 0 var(--tags-view-item-inline-padding, 14px);
     }
   }
 
