@@ -705,22 +705,22 @@ onBeforeUnmount(() => {
 
 .parallel-entry__button--running {
   min-width: 116px;
-  border-color: #6c5ce7;
   background: #6c5ce7;
+  border-color: #6c5ce7;
   box-shadow: 0 0 0 2px rgb(108 92 231 / 14%);
 }
 
 .parallel-entry__button--running:hover,
 .parallel-entry__button--running:focus {
-  border-color: #5b4cdb;
   background: #5b4cdb;
+  border-color: #5b4cdb;
 }
 
 .parallel-entry__button--paused,
 .parallel-entry__button--paused:hover,
 .parallel-entry__button--paused:focus {
-  border-color: #d97706;
   background: #d97706;
+  border-color: #d97706;
 }
 
 .parallel-entry__button--paused .parallel-entry__spinner {
@@ -739,15 +739,15 @@ onBeforeUnmount(() => {
 
 .parallel-entry__count {
   display: inline-flex;
-  min-width: 16px;
   height: 16px;
-  align-items: center;
-  justify-content: center;
+  min-width: 16px;
   padding: 0 4px;
-  border-radius: 8px;
-  background: rgb(255 255 255 / 20%);
   font-size: 10px;
   line-height: 1;
+  background: rgb(255 255 255 / 20%);
+  border-radius: 8px;
+  align-items: center;
+  justify-content: center;
 }
 
 .pd-dialog-header,
@@ -768,26 +768,26 @@ onBeforeUnmount(() => {
   display: inline-flex;
   width: 34px;
   height: 34px;
+  font-size: 17px;
+  color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+  border-radius: 6px;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
-  background: var(--el-color-primary-light-9);
-  color: var(--el-color-primary);
-  font-size: 17px;
 }
 
 .pd-dialog-header__title {
-  color: var(--el-text-color-primary);
   font-size: 15px;
   font-weight: 650;
+  color: var(--el-text-color-primary);
 }
 
 .pd-dialog-header__meta,
 .pd-section__value,
 .pd-setting__meta,
 .pd-footer__summary {
-  color: var(--el-text-color-secondary);
   font-size: 11px;
+  color: var(--el-text-color-secondary);
 }
 
 .pd-content {
@@ -812,9 +812,9 @@ onBeforeUnmount(() => {
 }
 
 .pd-section__label {
-  color: var(--el-text-color-primary);
   font-size: 12px;
   font-weight: 600;
+  color: var(--el-text-color-primary);
 }
 
 .pd-target-list {
@@ -826,27 +826,27 @@ onBeforeUnmount(() => {
 .pd-target {
   display: inline-flex;
   min-width: 0;
-  align-items: center;
-  gap: 5px;
   padding: 4px 8px;
+  font-size: 11px;
+  color: var(--el-text-color-regular);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 4px;
-  color: var(--el-text-color-regular);
-  font-size: 11px;
+  align-items: center;
+  gap: 5px;
 }
 
 .pd-target__dot {
   width: 5px;
   height: 5px;
-  flex: 0 0 5px;
-  border-radius: 50%;
   background: var(--el-color-success);
+  border-radius: 50%;
+  flex: 0 0 5px;
 }
 
 .pd-empty {
   padding: 12px 0;
-  color: var(--el-text-color-placeholder);
   font-size: 12px;
+  color: var(--el-text-color-placeholder);
   text-align: center;
 }
 
@@ -868,13 +868,13 @@ onBeforeUnmount(() => {
 
 .pd-progress__numbers {
   margin-left: 8px;
-  color: var(--el-text-color-secondary);
   font-size: 11px;
+  color: var(--el-text-color-secondary);
 }
 
 .pd-progress__active {
-  color: var(--el-color-warning);
   font-size: 11px;
+  color: var(--el-color-warning);
 }
 
 .pd-run-list {
@@ -885,9 +885,9 @@ onBeforeUnmount(() => {
 
 .pd-run {
   min-height: 34px;
-  gap: 8px;
-  border-bottom: 1px solid var(--el-border-color-extra-light);
   font-size: 11px;
+  border-bottom: 1px solid var(--el-border-color-extra-light);
+  gap: 8px;
 }
 
 .pd-run:last-child {
@@ -936,7 +936,7 @@ onBeforeUnmount(() => {
   border-top: 1px solid var(--el-border-color-lighter);
 }
 
-@media (max-width: 640px) {
+@media (width <= 640px) {
   .pd-settings {
     grid-template-columns: 1fr;
   }

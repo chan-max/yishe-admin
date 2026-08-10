@@ -548,17 +548,17 @@ onActivated(() => {
 }
 
 .resource-toolbar__title {
-  color: var(--el-text-color-primary);
   font-size: 18px;
   font-weight: 600;
   line-height: 1.4;
+  color: var(--el-text-color-primary);
 }
 
 .resource-toolbar__desc {
   margin-top: 4px;
-  color: var(--el-text-color-secondary);
   font-size: 13px;
   line-height: 1.6;
+  color: var(--el-text-color-secondary);
 }
 
 .table-stack {

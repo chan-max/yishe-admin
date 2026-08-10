@@ -576,33 +576,33 @@ onBeforeUnmount(() => {
 
 .image-preview-container {
   position: relative;
-  flex: 1 1 auto;
+  display: flex;
   width: 0;
   min-width: min(100%, 640px);
-  display: flex;
-  flex-direction: column;
   min-height: 0;
-  overflow: hidden;
   padding: 14px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 16px;
+  overflow: hidden;
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--el-fill-color-blank) 88%, var(--el-color-primary-light-9) 12%) 0%,
     var(--el-fill-color-extra-light) 100%
   );
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 16px;
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--el-fill-color-blank) 70%, transparent 30%),
-    0 10px 30px rgba(15, 23, 42, 0.05);
+    0 10px 30px rgb(15 23 42 / 5%);
   transition:
     border-color 0.18s ease,
     background-color 0.18s ease,
     box-shadow 0.18s ease;
+  flex: 1 1 auto;
+  flex-direction: column;
 }
 
 .image-preview-container.is-drag-over {
-  border-color: color-mix(in srgb, var(--el-color-primary) 56%, var(--el-border-color) 44%);
   background: color-mix(in srgb, var(--el-color-primary-light-9) 52%, var(--el-fill-color-blank) 48%);
+  border-color: color-mix(in srgb, var(--el-color-primary) 56%, var(--el-border-color) 44%);
   box-shadow:
     inset 0 0 0 1px color-mix(in srgb, var(--el-color-primary) 34%, transparent 66%),
     0 14px 34px color-mix(in srgb, var(--el-color-primary) 12%, transparent);
@@ -615,10 +615,10 @@ onBeforeUnmount(() => {
 
 .image-preview-list {
   display: grid;
-  flex: 1;
   min-height: 0;
-  overflow-y: auto;
   padding-right: 4px;
+  overflow-y: auto;
+  flex: 1;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 14px;
   align-content: start;
@@ -627,48 +627,48 @@ onBeforeUnmount(() => {
 .image-preview-item {
   position: relative;
   display: flex;
-  flex-direction: column;
   min-height: 500px;
   overflow: hidden;
+  background: var(--el-bg-color);
   border: 1px solid color-mix(in srgb, var(--el-border-color) 72%, transparent 28%);
   border-radius: 16px;
-  background: var(--el-bg-color);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 12px 28px rgb(15 23 42 / 6%);
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease,
     border-color 0.2s ease;
+  flex-direction: column;
 }
 
 .image-preview-item:hover {
-  transform: translateY(-1px);
   border-color: color-mix(in srgb, var(--el-color-primary) 24%, var(--el-border-color) 76%);
-  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+  box-shadow: 0 16px 34px rgb(15 23 42 / 8%);
 }
 
 .preview-media {
   position: relative;
   height: 190px;
   padding: 12px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--el-fill-color-blank) 94%, transparent 6%) 0%,
     color-mix(in srgb, var(--el-fill-color-light) 86%, var(--el-fill-color-extra-light) 14%) 100%
   );
+  border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
 .preview-image {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--el-border-color) 68%, transparent 32%);
-  border-radius: 12px;
   background: linear-gradient(
     135deg,
     color-mix(in srgb, var(--el-color-primary-light-9) 44%, var(--el-fill-color-light) 56%) 0%,
     var(--el-fill-color-lighter) 100%
   );
+  border: 1px solid color-mix(in srgb, var(--el-border-color) 68%, transparent 32%);
+  border-radius: 12px;
 }
 
 .preview-image :deep(.el-image__inner) {
@@ -677,14 +677,14 @@ onBeforeUnmount(() => {
 
 .image-error-state {
   display: flex;
+  width: 100%;
+  height: 100%;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
   flex-direction: column;
   gap: 8px;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 100%;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
 }
 
 .actions {
@@ -692,29 +692,29 @@ onBeforeUnmount(() => {
   top: 20px;
   right: 20px;
   display: flex;
-  align-items: center;
-  justify-content: center;
   width: 30px;
   height: 30px;
-  border: 1px solid color-mix(in srgb, var(--el-border-color) 70%, transparent 30%);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--el-fill-color-blank) 92%, transparent 8%);
   color: var(--el-text-color-secondary);
   cursor: pointer;
-  backdrop-filter: blur(6px);
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  background: color-mix(in srgb, var(--el-fill-color-blank) 92%, transparent 8%);
+  border: 1px solid color-mix(in srgb, var(--el-border-color) 70%, transparent 30%);
+  border-radius: 999px;
+  box-shadow: 0 8px 20px rgb(15 23 42 / 8%);
   transition:
     transform 0.2s ease,
     color 0.2s ease,
     background-color 0.2s ease,
     border-color 0.2s ease;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(6px);
 }
 
 .actions:hover {
-  transform: scale(1.04);
   color: var(--el-color-danger);
   background: color-mix(in srgb, var(--el-fill-color-blank) 96%, transparent 4%);
   border-color: color-mix(in srgb, var(--el-color-danger) 20%, var(--el-border-color) 80%);
+  transform: scale(1.04);
 }
 
 .status {
@@ -723,17 +723,17 @@ onBeforeUnmount(() => {
   bottom: 20px;
   left: 20px;
   display: flex;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgb(15 23 42 / 8%);
   gap: 6px;
   align-items: center;
   justify-content: center;
-  padding: 8px 12px;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  text-align: center;
-  font-size: 12px;
-  font-weight: 600;
   backdrop-filter: blur(8px);
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
 }
 
 .uploading {
@@ -743,8 +743,8 @@ onBeforeUnmount(() => {
 }
 
 .fail {
-  cursor: pointer;
   color: var(--el-color-danger);
+  cursor: pointer;
   background: color-mix(in srgb, var(--el-color-danger-light-9) 82%, transparent 18%);
   border-color: color-mix(in srgb, var(--el-color-danger) 20%, transparent 80%);
 }
@@ -793,8 +793,8 @@ onBeforeUnmount(() => {
 
 .preview-fields :deep(.el-input__wrapper),
 .preview-fields :deep(.el-textarea__inner) {
-  border-radius: 10px;
   background: var(--el-fill-color-extra-light);
+  border-radius: 10px;
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--el-border-color) 84%, transparent 16%) inset;
   transition:
     box-shadow 0.2s ease,
@@ -843,83 +843,83 @@ onBeforeUnmount(() => {
 
 .file-info-tags :deep(.el-tag),
 .rename-tag :deep(.el-tag) {
-  border-radius: 999px;
   font-weight: 500;
+  border-radius: 999px;
 }
 
 .empty-state {
   display: flex;
+  height: 100%;
+  min-height: 420px;
+  padding: 40px 24px;
+  text-align: center;
+  background: color-mix(in srgb, var(--el-fill-color-blank) 84%, transparent 16%);
+  border: 1px dashed color-mix(in srgb, var(--el-border-color) 78%, transparent 22%);
+  border-radius: 16px;
   flex: 1;
   flex-direction: column;
   gap: 12px;
   align-items: center;
   justify-content: center;
-  min-height: 420px;
-  height: 100%;
-  padding: 40px 24px;
-  border: 1px dashed color-mix(in srgb, var(--el-border-color) 78%, transparent 22%);
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--el-fill-color-blank) 84%, transparent 16%);
-  text-align: center;
 }
 
 .empty-state-icon {
   display: flex;
-  align-items: center;
-  justify-content: center;
   width: 72px;
   height: 72px;
-  border-radius: 20px;
+  color: var(--el-color-primary);
   background: linear-gradient(
     135deg,
     color-mix(in srgb, var(--el-color-primary) 12%, transparent 88%) 0%,
     color-mix(in srgb, var(--el-color-primary) 4%, transparent 96%) 100%
   );
-  color: var(--el-color-primary);
+  border-radius: 20px;
+  align-items: center;
+  justify-content: center;
 }
 
 .empty-state-title {
-  color: var(--el-text-color-primary);
   font-size: 16px;
   font-weight: 700;
+  color: var(--el-text-color-primary);
 }
 
 .empty-state-desc {
   max-width: 320px;
-  color: var(--el-text-color-secondary);
   font-size: 13px;
   line-height: 1.7;
+  color: var(--el-text-color-secondary);
 }
 
 .operation-container {
-  flex: 0 0 clamp(224px, 20vw, 280px);
+  display: flex;
   width: clamp(224px, 20vw, 280px);
+  max-height: 100%;
   min-width: 0;
   min-height: 0;
-  max-height: 100%;
-  overflow-y: auto;
   padding-right: 2px;
+  overflow-y: auto;
+  flex: 0 0 clamp(224px, 20vw, 280px);
   flex-shrink: 0;
-  display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
 .operation-card {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
   padding: 14px;
+  background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 16px;
-  background: var(--el-bg-color);
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 12px 30px rgb(15 23 42 / 5%);
+  flex-direction: column;
+  gap: 12px;
 }
 
 .section-title {
-  color: var(--el-text-color-primary);
   font-size: 12px;
   font-weight: 700;
+  color: var(--el-text-color-primary);
 }
 
 .stats-grid {
@@ -930,17 +930,17 @@ onBeforeUnmount(() => {
 
 .stat-item {
   display: flex;
+  padding: 10px 12px;
+  background: var(--el-fill-color-extra-light);
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--el-border-color) 84%, transparent 16%);
   flex-direction: column;
   gap: 5px;
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: var(--el-fill-color-extra-light);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--el-border-color) 84%, transparent 16%);
 }
 
 .stat-label {
-  color: var(--el-text-color-secondary);
   font-size: 11px;
+  color: var(--el-text-color-secondary);
 }
 
 .stat-value {
@@ -1023,13 +1023,13 @@ onBeforeUnmount(() => {
 
 .switch-row {
   display: flex;
+  padding: 10px 12px;
+  background: var(--el-fill-color-extra-light);
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--el-border-color) 84%, transparent 16%);
   gap: 12px;
   align-items: flex-start;
   justify-content: space-between;
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: var(--el-fill-color-extra-light);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--el-border-color) 84%, transparent 16%);
 }
 
 .switch-copy {
@@ -1040,18 +1040,18 @@ onBeforeUnmount(() => {
 }
 
 .switch-title {
-  color: var(--el-text-color-primary);
   font-size: 13px;
   font-weight: 600;
+  color: var(--el-text-color-primary);
 }
 
 .switch-desc {
-  color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 1.5;
+  color: var(--el-text-color-secondary);
 }
 
-@media (max-width: 1360px) {
+@media (width <= 1360px) {
   .multi-image-upload-container {
     flex-direction: column;
     height: auto;
@@ -1061,11 +1061,11 @@ onBeforeUnmount(() => {
 
   .operation-container {
     width: 100%;
-    flex-basis: auto;
-    min-width: 0;
     max-height: none;
-    overflow: visible;
+    min-width: 0;
     padding-right: 0;
+    overflow: visible;
+    flex-basis: auto;
   }
 
   .image-preview-container {
@@ -1081,7 +1081,7 @@ onBeforeUnmount(() => {
   }
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .multi-image-upload-container {
     gap: 10px;
   }

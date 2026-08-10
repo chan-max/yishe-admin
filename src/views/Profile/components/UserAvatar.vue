@@ -19,13 +19,13 @@ defineProps({
 <style lang="scss" scoped>
 .change-avatar {
   display: flex;
-  align-items: center;
-  justify-content: center;
   width: 92px;
   height: 92px;
-  border-radius: 999px;
   overflow: hidden;
   background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-light);
+  border-radius: 999px;
+  align-items: center;
+  justify-content: center;
 }
 </style>

@@ -839,8 +839,8 @@ onUnmounted(() => {
 .session-actions,
 .session-credentials,
 .session-summary {
-  border: 1px solid var(--el-border-color-light);
   background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-light);
   border-radius: 8px;
   box-shadow: var(--el-box-shadow-light);
 }
@@ -861,9 +861,9 @@ onUnmounted(() => {
 .session-field span {
   display: block;
   margin-bottom: 6px;
-  color: var(--el-text-color-regular);
   font-size: 12px;
   font-weight: 600;
+  color: var(--el-text-color-regular);
 }
 
 .session-select {
@@ -896,15 +896,15 @@ onUnmounted(() => {
 }
 
 .session-credentials__title {
-  color: var(--el-text-color-primary);
   font-size: 15px;
   font-weight: 700;
+  color: var(--el-text-color-primary);
 }
 
 .session-credentials__desc {
   margin-top: 4px;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 .session-credentials__form {
@@ -927,17 +927,17 @@ onUnmounted(() => {
 
 .session-status__title,
 .session-summary__title {
-  color: var(--el-text-color-primary);
   font-size: 15px;
   font-weight: 700;
+  color: var(--el-text-color-primary);
 }
 
 .session-status__desc,
 .session-summary__desc,
 .session-summary__time {
   margin-top: 4px;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 .session-status__chips {
@@ -949,32 +949,32 @@ onUnmounted(() => {
 
 .session-chip {
   display: inline-flex;
-  align-items: center;
   min-height: 26px;
   padding: 0 10px;
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+  background: var(--el-fill-color-light);
   border: 1px solid var(--el-border-color-light);
   border-radius: 999px;
-  background: var(--el-fill-color-light);
-  color: var(--el-text-color-regular);
-  font-size: 12px;
+  align-items: center;
 }
 
 .session-chip.is-success {
   color: var(--el-color-success);
-  border-color: var(--el-color-success-light-5);
   background: var(--el-color-success-light-9);
+  border-color: var(--el-color-success-light-5);
 }
 
 .session-chip.is-warning {
   color: var(--el-color-warning);
-  border-color: var(--el-color-warning-light-5);
   background: var(--el-color-warning-light-9);
+  border-color: var(--el-color-warning-light-5);
 }
 
 .session-chip.is-danger {
   color: var(--el-color-danger);
-  border-color: var(--el-color-danger-light-5);
   background: var(--el-color-danger-light-9);
+  border-color: var(--el-color-danger-light-5);
 }
 
 .session-detail {
@@ -992,40 +992,40 @@ onUnmounted(() => {
 .session-meta {
   min-width: 0;
   padding: 10px;
+  background: var(--el-fill-color-blank);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
-  background: var(--el-fill-color-blank);
 }
 
 .session-meta span {
   display: block;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 .session-meta strong {
   display: block;
   margin-top: 6px;
-  color: var(--el-text-color-primary);
   font-size: 13px;
+  color: var(--el-text-color-primary);
   overflow-wrap: anywhere;
 }
 
 .session-json {
-  margin: 0;
   max-height: 460px;
-  overflow: auto;
   padding: 12px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
-  background: var(--el-fill-color-light);
-  color: var(--el-text-color-regular);
+  margin: 0;
+  overflow: auto;
   font-size: 12px;
   line-height: 1.55;
+  color: var(--el-text-color-regular);
   white-space: pre-wrap;
+  background: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
 }
 
-@media (max-width: 900px) {
+@media (width <= 900px) {
   .session-status,
   .session-summary {
     flex-direction: column;

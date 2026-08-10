@@ -105,32 +105,32 @@ const handleStopAll = async () => {
   right: 18px;
   bottom: 18px;
   z-index: 9999;
+  display: flex;
   width: 420px;
+  max-height: 65vh;
+  padding: 14px;
+  overflow-y: auto;
   background: var(--el-bg-color-overlay);
   border: 1px solid var(--el-border-color-light);
   border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-  padding: 14px;
-  display: flex;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 12%);
+  transition: width 0.2s ease;
   flex-direction: column;
   gap: 10px;
-  max-height: 65vh;
-  overflow-y: auto;
-  transition: width 0.2s ease;
 }
 
 .global-temu-batch-progress.is-collapsed {
   right: 60px;
-  left: auto;
   bottom: 0;
+  left: auto;
   width: auto;
-  min-width: 200px;
   max-height: none;
+  min-width: 200px;
+  padding: 6px 12px;
   overflow-y: visible;
   border-radius: 8px 8px 0 0;
-  padding: 6px 12px;
+  box-shadow: 0 -2px 8px rgb(0 0 0 / 8%);
   gap: 0;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .global-temu-batch-progress__head {
@@ -148,9 +148,9 @@ const handleStopAll = async () => {
 
 .global-temu-batch-progress__title {
   font-size: 13px;
+  font-weight: 600;
   color: var(--el-text-color-primary);
   white-space: nowrap;
-  font-weight: 600;
 }
 
 .global-temu-batch-progress.is-collapsed .global-temu-batch-progress__title {
@@ -177,8 +177,8 @@ const handleStopAll = async () => {
 
 .global-temu-batch-progress__stop-btn,
 .global-temu-batch-progress__toggle-btn {
-  padding: 2px 6px;
   min-height: auto;
+  padding: 2px 6px;
   font-size: 11px;
 }
 
@@ -190,11 +190,11 @@ const handleStopAll = async () => {
 
 .global-temu-batch-progress__item {
   display: flex;
+  padding: 10px 12px;
+  background: var(--el-fill-color-lighter);
+  border-radius: 8px;
   flex-direction: column;
   gap: 6px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: var(--el-fill-color-lighter);
   flex-shrink: 0;
 }
 

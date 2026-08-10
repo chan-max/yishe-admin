@@ -7,7 +7,7 @@
           :src="getPreviewUrl(file)"
           controls
           class="preview-video"
-          style="width: 120px; height: 120px; object-fit: cover; border-radius: 4px; background: #000;"
+          style="width: 120px; height: 120px; background: #000; border-radius: 4px; object-fit: cover;"
         />
         <div class="video-actions">
           <el-button type="danger" size="small" :icon="Delete" circle @click="removeFile(index)" />
@@ -150,15 +150,15 @@ defineExpose({
   position: relative;
   width: 120px;
   height: 120px;
+  overflow: hidden;
   border: 1px dashed #dcdfe6;
   border-radius: 4px;
-  overflow: hidden;
 }
 
 .video-actions {
   position: absolute;
-  right: 4px;
   top: 4px;
+  right: 4px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -169,16 +169,16 @@ defineExpose({
 }
 
 .upload-tip {
+  margin-top: 4px;
   font-size: 12px;
   color: #888;
-  margin-top: 4px;
 }
 
 .preview-video {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  border-radius: 4px;
   background: #000;
+  border-radius: 4px;
+  object-fit: cover;
 }
 </style> 

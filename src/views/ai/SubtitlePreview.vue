@@ -15,14 +15,14 @@
             播放：{{ formatDuration(currentTime) }} / {{ formatDuration(audioDuration) }} s
           </div>
         </div>
-        <div class="audio-progress-wrapper" style="margin-top:8px; display:flex; align-items:center; gap:8px">
+        <div class="audio-progress-wrapper" style=" display:flex;margin-top:8px; align-items:center; gap:8px">
           <div class="audio-progress"
-            style="flex:1; height:8px; background:var(--el-border-color); border-radius:4px; overflow:hidden">
+            style=" height:8px; overflow:hidden; background:var(--el-border-color); border-radius:4px;flex:1">
             <div class="audio-progress-fill"
               :style="{ width: audioProgressPercent, background: 'var(--el-color-primary)', height: '100%' }"></div>
           </div>
           <div class="audio-progress-percent"
-            style="min-width:48px; text-align:right; color:var(--el-text-color-secondary)">{{ audioProgressPercent }}
+            style="min-width:48px; color:var(--el-text-color-secondary); text-align:right">{{ audioProgressPercent }}
           </div>
         </div>
       </div>
@@ -263,30 +263,30 @@ onBeforeUnmount(() => {
 }
 
 .subtitle-preview-track {
-  flex: 1;
-  overflow-y: auto;
   padding: 20px;
+  overflow-y: auto;
   background: var(--el-fill-color-light);
-  border-radius: 12px;
   border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
+  flex: 1;
 }
 
 .preview-sentences {
-  list-style: none;
   padding: 0;
   margin: 0;
+  list-style: none;
 }
 
 .preview-sentence {
-  padding: 10px 12px;
-  border-radius: 6px;
   display: flex;
-  gap: 12px;
-  align-items: flex-start;
+  padding: 10px 12px;
+  margin-bottom: 4px;
   color: var(--el-text-color-secondary);
   cursor: pointer;
+  border-radius: 6px;
   transition: all 0.2s;
-  margin-bottom: 4px;
+  gap: 12px;
+  align-items: flex-start;
 }
 
 .preview-sentence:hover {
@@ -306,47 +306,47 @@ onBeforeUnmount(() => {
 }
 
 .sentence-karaoke {
-  font-size: 16px;
-  line-height: 1.6;
-  font-weight: 500;
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-repeat: no-repeat;
-  word-break: break-word;
-  color: var(--el-text-color-placeholder);
   display: inline;
   padding: 2px 0;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.6;
+  color: var(--el-text-color-placeholder);
+  word-break: break-word;
+  background-repeat: no-repeat;
+  background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .current-sentence-display {
-  margin-bottom: 16px;
-  padding: 20px;
-  background: var(--el-color-primary-light-9);
-  border-radius: 12px;
-  min-height: 120px;
   display: flex;
+  min-height: 120px;
+  padding: 20px;
+  margin-bottom: 16px;
+  background: var(--el-color-primary-light-9);
+  border: 2px solid var(--el-color-primary-light-7);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--el-color-primary) 5%, transparent);
+  transition: all 0.3s ease;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border: 2px solid var(--el-color-primary-light-7);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--el-color-primary) 5%, transparent);
-  transition: all 0.3s ease;
 }
 
 .current-sentence-content {
-  text-align: center;
   width: 100%;
+  text-align: center;
   animation: fadeIn 0.4s ease-out;
 }
 
 .current-sentence-label {
-  font-size: 12px;
-  color: var(--el-color-primary);
   margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  font-size: 12px;
   font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--el-color-primary);
+  text-transform: uppercase;
   opacity: 0.8;
 }
 
@@ -357,9 +357,9 @@ onBeforeUnmount(() => {
 }
 
 .current-sentence-placeholder {
-  color: var(--el-text-color-placeholder);
-  font-style: italic;
   font-size: 16px;
+  font-style: italic;
+  color: var(--el-text-color-placeholder);
 }
 
 @keyframes fadeIn {
@@ -379,9 +379,9 @@ onBeforeUnmount(() => {
 }
 
 .audio-preview {
+  display: none;
   width: 100%;
   height: 32px;
-  display: none;
 }
 
 .preview-controls {
@@ -391,8 +391,8 @@ onBeforeUnmount(() => {
 }
 
 .no-audio {
-  text-align: center;
   padding: 20px;
   color: var(--el-text-color-secondary);
+  text-align: center;
 }
 </style>

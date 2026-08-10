@@ -140,11 +140,11 @@ onMounted(() => {
 <style scoped>
 .admin-data-scope {
   display: inline-flex;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0 2px;
   align-items: center;
   gap: 6px;
-  min-width: 0;
-  max-width: 100%;
-  padding: 0 2px;
 }
 
 .admin-data-scope__label {
@@ -162,8 +162,8 @@ onMounted(() => {
 .admin-data-scope :deep(.el-select__wrapper) {
   min-height: 30px;
   padding: 0 10px;
-  border-radius: 999px;
   background: var(--top-header-hover-color);
+  border-radius: 999px;
   box-shadow: none;
 }
 
@@ -172,7 +172,7 @@ onMounted(() => {
   font-size: 12px;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .admin-data-scope__label {
     display: none;
   }
@@ -187,7 +187,7 @@ onMounted(() => {
   }
 }
 
-@media (max-width: 640px) {
+@media (width <= 640px) {
   .admin-data-scope {
     padding: 0;
   }

@@ -13,14 +13,14 @@ defineProps<{ data: { label?: string; config?: any } }>()
 
 <style scoped>
 .wf-node--end {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  color: #fff;
-  border-radius: 20px;
-  padding: 6px 16px;
   min-width: 80px;
+  padding: 6px 16px;
   font-size: 12px;
   font-weight: 600;
+  color: #fff;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgb(239 68 68 / 30%);
 }
 </style>

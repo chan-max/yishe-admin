@@ -121,7 +121,11 @@ const handleQuickAdd = (capability: SystemNodeCapability) => {
       </div>
 
       <div v-if="filteredCapabilities.length === 0" class="node-library-panel__empty">
-        <el-empty description="未找到匹配的系统能力节点" :image-size="60" />
+        <div class="node-library-panel__empty-illustration">
+          <el-icon class="node-library-panel__empty-icon"><Search /></el-icon>
+        </div>
+        <p class="node-library-panel__empty-title">未找到匹配的节点</p>
+        <p class="node-library-panel__empty-desc">尝试更换搜索词或切换分类</p>
       </div>
     </div>
   </div>
@@ -129,21 +133,21 @@ const handleQuickAdd = (capability: SystemNodeCapability) => {
 
 <style scoped lang="scss">
 .node-library-panel {
+  display: flex;
   width: 240px;
   height: 100%;
+  overflow: hidden;
   background: var(--app-content-surface-color, #141518);
-  border-right: 1px solid var(--app-content-border-color, rgba(255, 255, 255, 0.08));
-  display: flex;
+  border-right: 1px solid var(--app-content-border-color, rgb(255 255 255 / 8%));
+  user-select: none;
   flex-direction: column;
   flex-shrink: 0;
-  user-select: none;
-  overflow: hidden;
 }
 
 .node-library-panel__header {
-  padding: 10px 10px 8px;
-  border-bottom: 1px solid var(--app-content-border-color, rgba(255, 255, 255, 0.06));
   display: flex;
+  padding: 10px 10px 8px;
+  border-bottom: 1px solid var(--app-content-border-color, rgb(255 255 255 / 6%));
   flex-direction: column;
   gap: 8px;
 }
@@ -161,65 +165,65 @@ const handleQuickAdd = (capability: SystemNodeCapability) => {
 }
 
 .node-library-panel__badge {
-  font-size: 10px;
   padding: 1px 6px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--el-color-primary) 12%, transparent);
-  color: var(--el-color-primary);
+  font-size: 10px;
   font-weight: 600;
+  color: var(--el-color-primary);
+  background: color-mix(in srgb, var(--el-color-primary) 12%, transparent);
+  border-radius: 999px;
 }
 
 .node-library-panel__categories {
   display: flex;
+  padding: 8px 10px;
+  background: rgb(0 0 0 / 2%);
+  border-bottom: 1px solid var(--app-content-border-color, rgb(255 255 255 / 4%));
   flex-wrap: wrap;
   gap: 4px;
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--app-content-border-color, rgba(255, 255, 255, 0.04));
-  background: rgba(0, 0, 0, 0.02);
 }
 
 .node-library-panel__category-pill {
-  font-size: 10px;
-  padding: 2px 7px;
-  border-radius: 4px;
-  color: var(--el-text-color-secondary);
-  background: transparent;
-  cursor: pointer;
   display: inline-flex;
+  padding: 2px 7px;
+  font-size: 10px;
+  color: var(--el-text-color-secondary);
+  cursor: pointer;
+  background: transparent;
+  border-radius: 4px;
+  transition: all 0.15s ease;
   align-items: center;
   gap: 4px;
-  transition: all 0.15s ease;
 
   &:hover {
     color: var(--el-text-color-primary);
-    background: rgba(255, 255, 255, 0.06);
+    background: color-mix(in srgb, var(--el-color-primary) 8%, transparent);
   }
 
   &.is-active {
-    color: #ffffff;
-    background: var(--el-color-primary);
     font-weight: 600;
+    color: #fff;
+    background: var(--el-color-primary);
 
     .node-library-panel__count-badge {
-      background: rgba(255, 255, 255, 0.25);
-      color: #ffffff;
+      color: #fff;
+      background: rgb(255 255 255 / 20%);
     }
   }
 }
 
 .node-library-panel__count-badge {
-  font-size: 9px;
   padding: 0 4px;
-  border-radius: 999px;
-  background: rgba(148, 163, 184, 0.15);
+  font-size: 9px;
   color: var(--el-text-color-secondary);
+  background: color-mix(in srgb, var(--el-text-color-secondary) 15%, transparent);
+  border-radius: 999px;
 }
 
 .node-library-panel__list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 8px 10px;
   display: flex;
+  padding: 8px 10px;
+  overflow-y: auto;
+  flex: 1;
   flex-direction: column;
   gap: 8px;
 }
@@ -227,20 +231,20 @@ const handleQuickAdd = (capability: SystemNodeCapability) => {
 .node-library-card {
   position: relative;
   display: flex;
+  padding: 8px 9px;
+  cursor: grab;
+  background: color-mix(in srgb, var(--app-content-surface-color) 92%, #fff 8%);
+  border: 1px solid var(--app-content-border-color, rgb(255 255 255 / 6%));
+  border-radius: 8px;
+  transition: all 0.18s cubic-bezier(0.22, 1, 0.36, 1);
   align-items: flex-start;
   gap: 9px;
-  padding: 8px 9px;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--app-content-surface-color) 92%, #ffffff 8%);
-  border: 1px solid var(--app-content-border-color, rgba(255, 255, 255, 0.06));
-  cursor: grab;
-  transition: all 0.18s cubic-bezier(0.22, 1, 0.36, 1);
 
   &:hover {
-    border-color: color-mix(in srgb, var(--el-color-primary) 40%, transparent);
     background: color-mix(in srgb, var(--el-color-primary) 6%, var(--app-content-surface-color));
+    border-color: color-mix(in srgb, var(--el-color-primary) 40%, transparent);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 12px rgb(0 0 0 / 8%);
 
     .node-library-card__add-btn {
       opacity: 1;
@@ -255,13 +259,13 @@ const handleQuickAdd = (capability: SystemNodeCapability) => {
 }
 
 .node-library-card__icon-box {
+  display: flex;
   width: 26px;
   height: 26px;
+  color: #fff;
   border-radius: 6px;
-  display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
   flex-shrink: 0;
 }
 
@@ -270,9 +274,9 @@ const handleQuickAdd = (capability: SystemNodeCapability) => {
 }
 
 .node-library-card__content {
-  flex: 1;
-  min-width: 0;
   display: flex;
+  min-width: 0;
+  flex: 1;
   flex-direction: column;
   gap: 2px;
 }
@@ -285,54 +289,54 @@ const handleQuickAdd = (capability: SystemNodeCapability) => {
 }
 
 .node-library-card__name {
+  overflow: hidden;
   font-size: 11px;
   font-weight: 600;
   color: var(--el-text-color-primary);
-  white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .node-library-card__badge {
-  font-size: 9px;
   padding: 0 4px;
-  border-radius: 3px;
-  border: 1px solid currentColor;
+  font-size: 9px;
   font-weight: 600;
   line-height: 1.2;
+  border: 1px solid currentcolor;
+  border-radius: 3px;
 }
 
 .node-library-card__desc {
-  font-size: 10px;
-  color: var(--el-text-color-secondary);
-  line-height: 1.35;
-  margin: 0;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  margin: 0;
   overflow: hidden;
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--el-text-color-secondary);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .node-library-card__add-btn {
   position: absolute;
   top: 6px;
   right: 6px;
+  display: flex;
   width: 20px;
   height: 20px;
-  border-radius: 4px;
-  border: none;
-  background: var(--el-color-primary);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  color: #fff;
   cursor: pointer;
+  background: var(--el-color-primary);
+  border: none;
+  border-radius: 4px;
   opacity: 0;
   transform: scale(0.85);
   transition: all 0.15s ease;
+  align-items: center;
+  justify-content: center;
 
   &:hover {
-    background: color-mix(in srgb, var(--el-color-primary) 85%, #000000 15%);
+    background: color-mix(in srgb, var(--el-color-primary) 85%, #000 15%);
   }
 }
 

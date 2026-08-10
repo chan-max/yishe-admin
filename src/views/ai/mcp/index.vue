@@ -591,7 +591,7 @@ onMounted(() => {
 <style scoped>
 /* 使用系统原生主题颜色变量，保证完美适配白天/黑夜模式 */
 .mcp-console-container {
-  padding: 4px 0px;
+  padding: 4px 0;
   color: var(--el-text-color-primary);
   box-sizing: border-box;
 }
@@ -601,24 +601,24 @@ onMounted(() => {
 }
 
 .mcp-page-title h2 {
+  margin: 0 0 4px;
   font-size: 16px;
   font-weight: 600;
-  margin: 0 0 4px 0;
 }
 
 .mcp-page-title p {
+  margin: 0;
   font-size: 12px;
   color: var(--el-text-color-secondary);
-  margin: 0;
 }
 
 /* 扁平统计栏 */
 .mcp-stats-row {
   display: flex;
-  gap: 24px;
-  margin-bottom: 16px;
   padding: 8px 0;
+  margin-bottom: 16px;
   border-bottom: 1px solid var(--el-border-color-light);
+  gap: 24px;
 }
 
 .stat-item {
@@ -675,14 +675,14 @@ onMounted(() => {
 }
 
 .code-style {
+  padding: 2px 6px;
   font-family: Menlo, Monaco, Consolas, monospace;
   font-size: 12px;
   color: var(--el-color-primary);
+  word-break: break-all;
   background-color: var(--el-fill-color-light);
-  padding: 2px 6px;
   border-radius: 4px;
   align-self: flex-start;
-  word-break: break-all;
 }
 
 .tool-label-text {
@@ -709,8 +709,8 @@ onMounted(() => {
 }
 
 .active-status {
-  color: var(--el-color-success);
   font-size: 12px;
+  color: var(--el-color-success);
 }
 
 /* 日志面板 */
@@ -724,8 +724,8 @@ onMounted(() => {
 }
 
 .pagination-container {
-  margin-top: 16px;
   display: flex;
+  margin-top: 16px;
   justify-content: flex-end;
 }
 
@@ -740,15 +740,15 @@ onMounted(() => {
 }
 
 .guide-section h3 {
+  margin-bottom: 12px;
   font-size: 14px;
   font-weight: 600;
-  margin-bottom: 12px;
 }
 
 .guide-section ol {
   padding-left: 20px;
-  line-height: 1.8;
   font-size: 13px;
+  line-height: 1.8;
 }
 
 .guide-section ul {
@@ -763,10 +763,10 @@ onMounted(() => {
 }
 
 .copy-box code {
-  background-color: var(--el-fill-color-light);
   padding: 4px 8px;
-  border-radius: 4px;
   font-family: Menlo, Monaco, monospace;
+  background-color: var(--el-fill-color-light);
+  border-radius: 4px;
 }
 
 .guide-alert {
@@ -774,14 +774,14 @@ onMounted(() => {
 }
 
 .json-pre {
-  background-color: var(--el-fill-color-darker);
-  color: #fff;
   padding: 12px;
-  border-radius: 6px;
-  font-size: 11px;
-  font-family: Menlo, Monaco, Consolas, monospace;
-  overflow-x: auto;
   margin: 8px 0;
+  overflow-x: auto;
+  font-family: Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  color: #fff;
+  background-color: var(--el-fill-color-darker);
+  border-radius: 6px;
 }
 
 /* Drawer 样式 */
@@ -794,18 +794,18 @@ onMounted(() => {
 }
 
 .drawer-section h4 {
+  padding-left: 8px;
+  margin: 0 0 12px;
   font-size: 13px;
   font-weight: 600;
-  margin: 0 0 12px 0;
   color: var(--el-text-color-primary);
   border-left: 3px solid var(--el-color-primary);
-  padding-left: 8px;
 }
 
 .simple-info-table {
   width: 100%;
-  border-collapse: collapse;
   font-size: 13px;
+  border-collapse: collapse;
 }
 
 .simple-info-table th, .simple-info-table td {
@@ -815,9 +815,9 @@ onMounted(() => {
 }
 
 .simple-info-table th {
-  color: var(--el-text-color-secondary);
-  font-weight: 500;
   width: 100px;
+  font-weight: 500;
+  color: var(--el-text-color-secondary);
 }
 
 .simple-info-table td {
@@ -825,8 +825,8 @@ onMounted(() => {
 }
 
 .required-star {
-  color: var(--el-color-danger);
   margin-left: 2px;
+  color: var(--el-color-danger);
 }
 
 .type-text {
@@ -845,22 +845,22 @@ onMounted(() => {
 }
 
 .example-item {
+  padding: 10px;
   background-color: var(--el-fill-color-light);
   border: 1px solid var(--el-border-color-light);
   border-radius: 4px;
-  padding: 10px;
 }
 
 .example-prompt {
+  margin: 0 0 8px;
   font-size: 12px;
-  margin: 0 0 8px 0;
 }
 
 .empty-case {
+  padding: 20px;
   font-size: 12px;
   color: var(--el-text-color-placeholder);
   text-align: center;
-  padding: 20px;
 }
 
 .log-payload-viewer {

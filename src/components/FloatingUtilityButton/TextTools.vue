@@ -286,9 +286,9 @@ const handleClose = () => {
       margin-bottom: 16px;
 
       h4 {
-        margin: 0 0 8px 0;
-        color: #303133;
+        margin: 0 0 8px;
         font-size: 14px;
+        color: #303133;
       }
 
       .tool-buttons {
@@ -313,9 +313,9 @@ const handleClose = () => {
 
         .stat-label {
           display: block;
+          margin-bottom: 4px;
           font-size: 12px;
           color: #909399;
-          margin-bottom: 4px;
         }
 
         .stat-value {

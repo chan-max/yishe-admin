@@ -269,15 +269,15 @@ defineExpose({ open });
 
 .vision-config__current {
   padding: 12px;
+  background: var(--el-fill-color-lighter);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
-  background: var(--el-fill-color-lighter);
 }
 
 .vision-config__current-label {
+  margin-bottom: 4px;
   font-size: 11px;
   color: var(--el-text-color-secondary);
-  margin-bottom: 4px;
 }
 
 .vision-config__current-name {
@@ -300,13 +300,13 @@ defineExpose({ open });
 }
 
 .vision-config__source-tag[data-source="mine"] {
-  background: var(--el-color-primary-light-9);
   color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
 }
 
 .vision-config__source-tag[data-source="public"] {
-  background: var(--el-color-success-light-9);
   color: var(--el-color-success);
+  background: var(--el-color-success-light-9);
 }
 
 .vision-config__warning {
@@ -317,14 +317,14 @@ defineExpose({ open });
 
 .vision-config__empty-state {
   display: flex;
-  align-items: center;
-  gap: 8px;
   padding: 12px;
-  border: 1px dashed var(--el-border-color);
-  border-radius: 8px;
-  background: var(--el-fill-color-blank);
   font-size: 13px;
   color: var(--el-text-color-secondary);
+  background: var(--el-fill-color-blank);
+  border: 1px dashed var(--el-border-color);
+  border-radius: 8px;
+  align-items: center;
+  gap: 8px;
 }
 
 .vision-config__select {
@@ -341,15 +341,15 @@ defineExpose({ open });
 
 .vision-config__spec {
   padding: 12px;
+  background: var(--el-fill-color-blank);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
-  background: var(--el-fill-color-blank);
 }
 
 .vision-config__spec-label {
+  margin-bottom: 4px;
   font-size: 11px;
   color: var(--el-text-color-secondary);
-  margin-bottom: 4px;
 }
 
 .vision-config__spec-info {

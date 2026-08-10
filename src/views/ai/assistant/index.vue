@@ -18,10 +18,11 @@ defineOptions({
     100vh - var(--top-tool-height) - var(--tags-view-height) - var(--app-content-padding) -
       var(--app-content-padding)
   );
+
+  display: flex;
   width: 100%;
   height: var(--ai-assistant-page-height);
   min-height: 0;
-  display: flex;
   overflow: hidden;
 }
 
@@ -31,7 +32,7 @@ defineOptions({
   min-height: 0;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .ai-assistant-page {
     --ai-assistant-page-height: calc(
       100vh - var(--top-tool-height) - var(--app-content-padding) - var(--app-content-padding)

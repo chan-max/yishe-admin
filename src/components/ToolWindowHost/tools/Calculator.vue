@@ -142,11 +142,11 @@ const rows = [
 }
 
 .calc__screen {
+  display: flex;
+  height: 42px;
+  min-height: 42px;
   padding: 6px 2px;
   text-align: right;
-  min-height: 42px;
-  height: 42px;
-  display: flex;
   flex-direction: column;
   justify-content: flex-end;
 }
@@ -154,16 +154,17 @@ const rows = [
 .calc__val {
   font-size: 24px;
   font-weight: 300;
-  color: var(--el-text-color-primary);
   line-height: 1.1;
   letter-spacing: -0.02em;
+  color: var(--el-text-color-primary);
+
   &.err { color: var(--el-color-danger) }
 }
 
 .calc__pre {
+  margin-top: 2px;
   font-size: 11px;
   color: var(--el-text-color-placeholder);
-  margin-top: 2px;
 }
 
 .calc__keys {
@@ -174,26 +175,33 @@ const rows = [
 
 .k {
   height: 34px;
-  border: none;
-  border-radius: 6px;
   font-size: 14px;
   font-weight: 400;
-  cursor: pointer;
-  transition: background 0.1s;
-  background: var(--ep-cover-soft-bg);
   color: var(--el-text-color-primary);
+  cursor: pointer;
+  background: var(--ep-cover-soft-bg);
+  border: none;
+  border-radius: 6px;
+  transition: background 0.1s;
+
   &:hover { background: var(--ep-cover-soft-bg-hover) }
+
   &:active { transform: scale(0.96) }
+
   &.op {
-    background: color-mix(in srgb, var(--el-color-primary) 14%, transparent);
     color: var(--el-color-primary);
+    background: color-mix(in srgb, var(--el-color-primary) 14%, transparent);
+
     &:hover { background: color-mix(in srgb, var(--el-color-primary) 22%, transparent) }
   }
+
   &.fn {
-    background: color-mix(in srgb, var(--el-text-color-secondary) 8%, transparent);
     color: var(--el-text-color-secondary);
+    background: color-mix(in srgb, var(--el-text-color-secondary) 8%, transparent);
+
     &:hover { background: var(--ep-cover-soft-bg-hover) }
   }
+
   &.z { grid-column: span 2 }
 }
 </style>

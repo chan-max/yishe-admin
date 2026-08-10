@@ -58,8 +58,8 @@ defineOptions({ name: 'PersonalSettingsPage' })
 }
 
 .settings-panel {
-  border-radius: 12px;
   background: var(--el-bg-color);
+  border-radius: 12px;
   box-shadow: var(--app-content-shadow);
 }
 
@@ -76,7 +76,7 @@ defineOptions({ name: 'PersonalSettingsPage' })
   border-bottom: 1px solid var(--app-content-border-color);
 }
 
-@media (max-width: 960px) {
+@media (width <= 960px) {
   .settings-panel--main {
     padding: 16px;
   }

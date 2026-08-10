@@ -639,9 +639,9 @@ onActivated(() => {
 
 .detail-card {
   padding: 18px;
+  background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 14px;
-  background: var(--el-bg-color);
 }
 
 .detail-card--hero {
@@ -655,17 +655,17 @@ onActivated(() => {
 }
 
 .detail-card__title {
-  color: var(--el-text-color-primary);
   font-size: 18px;
   font-weight: 600;
   line-height: 1.4;
+  color: var(--el-text-color-primary);
 }
 
 .detail-card__subtitle {
   margin-top: 6px;
-  color: var(--el-text-color-secondary);
   font-size: 13px;
   line-height: 1.7;
+  color: var(--el-text-color-secondary);
 }
 
 .detail-chip-row,
@@ -685,23 +685,23 @@ onActivated(() => {
 
 .metric-card {
   padding: 12px;
-  border-radius: 12px;
-  border: 1px solid var(--el-border-color-lighter);
   background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
 }
 
 .metric-card span {
   display: block;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 .metric-card strong {
   display: block;
   margin-top: 6px;
-  color: var(--el-text-color-primary);
   font-size: 18px;
   line-height: 1.3;
+  color: var(--el-text-color-primary);
 }
 
 .detail-mini-section {
@@ -710,9 +710,9 @@ onActivated(() => {
 
 .detail-mini-section__title {
   margin-bottom: 8px;
-  color: var(--el-text-color-primary);
   font-size: 13px;
   font-weight: 600;
+  color: var(--el-text-color-primary);
 }
 
 .detail-toolbar {
@@ -730,9 +730,9 @@ onActivated(() => {
 .result-card,
 .source-card {
   padding: 16px;
+  background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 14px;
-  background: var(--el-bg-color);
 }
 
 .result-card__header {
@@ -743,28 +743,28 @@ onActivated(() => {
 
 .result-card__title,
 .source-card__title {
-  color: var(--el-text-color-primary);
   font-size: 15px;
   font-weight: 600;
   line-height: 1.5;
+  color: var(--el-text-color-primary);
 }
 
 .result-card__meta,
 .source-card__meta {
   display: flex;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 6px;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
 }
 
 .result-card__compare,
 .source-card__text {
   margin-top: 10px;
-  color: var(--el-text-color-secondary);
   font-size: 13px;
   line-height: 1.7;
+  color: var(--el-text-color-secondary);
 }
 
 .result-card__actions {
@@ -773,24 +773,24 @@ onActivated(() => {
 
 .mini-json,
 .json-preview {
-  overflow: auto;
-  margin: 0;
   padding: 14px;
-  border-radius: 12px;
-  border: 1px solid var(--el-border-color-lighter);
-  background: var(--el-fill-color-light);
-  color: var(--el-text-color-regular);
+  margin: 0;
+  overflow: auto;
   font-size: 12px;
   line-height: 1.6;
-  white-space: pre-wrap;
+  color: var(--el-text-color-regular);
   word-break: break-word;
+  white-space: pre-wrap;
+  background: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
 }
 
 .json-preview {
   max-height: 560px;
 }
 
-@media (max-width: 1200px) {
+@media (width <= 1200px) {
   .detail-overview-grid {
     grid-template-columns: 1fr;
   }
@@ -800,7 +800,7 @@ onActivated(() => {
   }
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .detail-card__header,
   .result-card__header {
     flex-direction: column;

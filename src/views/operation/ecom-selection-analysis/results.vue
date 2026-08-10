@@ -678,10 +678,10 @@ onActivated(() => {
 }
 
 .resource-toolbar__title {
-  color: var(--el-text-color-primary);
   font-size: 18px;
   font-weight: 600;
   line-height: 1.4;
+  color: var(--el-text-color-primary);
 }
 
 .resource-toolbar__desc,
@@ -709,9 +709,9 @@ onActivated(() => {
 .detail-card,
 .simple-card {
   padding: 16px;
+  background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 14px;
-  background: var(--el-bg-color);
 }
 
 .detail-card--hero {
@@ -732,9 +732,9 @@ onActivated(() => {
 
 .detail-card__title,
 .simple-card__title {
-  color: var(--el-text-color-primary);
   font-size: 16px;
   font-weight: 600;
+  color: var(--el-text-color-primary);
 }
 
 .metric-grid,
@@ -748,24 +748,24 @@ onActivated(() => {
 .metric-card,
 .stats-item {
   padding: 12px;
-  border-radius: 12px;
   background: var(--el-fill-color-light);
+  border-radius: 12px;
 }
 
 .metric-card span,
 .stats-item span {
   display: block;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 .metric-card strong,
 .stats-item strong {
   display: block;
   margin-top: 4px;
-  color: var(--el-text-color-primary);
   font-size: 18px;
   line-height: 1.4;
+  color: var(--el-text-color-primary);
   word-break: break-word;
 }
 
@@ -787,26 +787,26 @@ onActivated(() => {
 
 .json-preview {
   max-height: 520px;
-  overflow: auto;
-  margin: 0;
   padding: 14px;
-  border-radius: 12px;
-  border: 1px solid var(--el-border-color-lighter);
-  background: var(--el-fill-color-light);
-  color: var(--el-text-color-regular);
+  margin: 0;
+  overflow: auto;
   font-size: 12px;
   line-height: 1.6;
-  white-space: pre-wrap;
+  color: var(--el-text-color-regular);
   word-break: break-word;
+  white-space: pre-wrap;
+  background: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
 }
 
-@media (max-width: 1200px) {
+@media (width <= 1200px) {
   .detail-overview-grid {
     grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .metric-grid,
   .stats-list {
     grid-template-columns: 1fr;

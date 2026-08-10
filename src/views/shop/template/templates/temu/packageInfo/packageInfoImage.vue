@@ -172,9 +172,9 @@ const moveUp = (index) => {
   position: relative;
   width: 120px;
   height: 120px;
+  overflow: hidden;
   border: 1px dashed #dcdfe6;
   border-radius: 4px;
-  overflow: hidden;
 }
 
 .preview-image {
@@ -193,14 +193,14 @@ const moveUp = (index) => {
 }
 
 .upload-btn {
+  display: flex;
   width: 120px;
   height: 120px;
-  display: flex;
+  border: 1px dashed #dcdfe6;
+  border-radius: 4px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border: 1px dashed #dcdfe6;
-  border-radius: 4px;
 }
 
 .upload-tip {
@@ -212,11 +212,11 @@ const moveUp = (index) => {
 
 .image-slot {
   display: flex;
-  justify-content: center;
-  align-items: center;
   width: 100%;
   height: 100%;
-  background: #f5f7fa;
   color: #909399;
+  background: #f5f7fa;
+  justify-content: center;
+  align-items: center;
 }
 </style>

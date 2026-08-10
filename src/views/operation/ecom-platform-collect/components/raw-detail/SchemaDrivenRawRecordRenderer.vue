@@ -129,22 +129,22 @@ const snapshotDialogVisible = ref(false);
 
 .raw-json-detail__snapshot-placeholder {
   display: flex;
+  height: 160px;
+  font-size: 13px;
+  color: var(--el-text-color-placeholder);
   align-items: center;
   justify-content: center;
-  height: 160px;
-  color: var(--el-text-color-placeholder);
-  font-size: 13px;
 }
 
 .raw-json-detail__snapshot-meta {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
   padding: 10px 12px;
-  color: var(--el-text-color-regular);
   font-size: 12px;
   line-height: 1.6;
+  color: var(--el-text-color-regular);
   word-break: break-word;
+  flex-direction: column;
+  gap: 6px;
 }
 
 :deep(.raw-json-detail__dialog .el-dialog__body) {

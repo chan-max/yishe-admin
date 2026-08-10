@@ -117,8 +117,8 @@ watch(clients, (newClients) => {
 
 <style scoped lang="scss">
 .client-management {
-  height: 100%;
   display: flex;
+  height: 100%;
   flex-direction: column;
 }
 
@@ -158,15 +158,16 @@ watch(clients, (newClients) => {
 }
 
 .main {
-  flex: 1;
-  overflow-y: auto;
   padding: 12px 16px;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .tabs {
   :deep(.el-tabs__header) {
     margin-bottom: 10px;
   }
+
   :deep(.el-tabs__nav-wrap::after) {
     display: none;
   }

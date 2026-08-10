@@ -620,6 +620,19 @@ onMounted(() => {
 </script>
 
 <style scoped>
+
+
+/* ── Responsive ── */
+@media (width <= 900px) {
+  .image-analysis-page {
+    flex-direction: column;
+  }
+
+  .analysis-left {
+    width: 100%;
+  }
+}
+
 .image-analysis-page {
   display: flex;
   gap: 24px;
@@ -627,9 +640,9 @@ onMounted(() => {
 }
 
 .analysis-left {
+  display: flex;
   width: 440px;
   flex-shrink: 0;
-  display: flex;
   flex-direction: column;
   gap: 20px;
 }
@@ -651,36 +664,36 @@ onMounted(() => {
 }
 
 .section-label::before {
-  content: "";
   width: 3px;
   height: 12px;
-  border-radius: 999px;
   background: var(--el-color-primary);
+  border-radius: 999px;
+  content: "";
 }
 
 /* ── Drop Zone ── */
 .drop-zone {
   position: relative;
   display: flex;
-  align-items: center;
-  justify-content: center;
   min-height: 140px;
   padding: 24px 16px;
+  cursor: pointer;
+  background: var(--app-content-surface-color, var(--el-fill-color-lighter));
   border: 2px dashed var(--app-content-border-color);
   border-radius: 12px;
-  background: var(--app-content-surface-color, var(--el-fill-color-lighter));
-  cursor: pointer;
   transition: all 0.2s ease;
+  align-items: center;
+  justify-content: center;
 }
 
 .drop-zone:hover {
-  border-color: var(--el-color-primary-light-5);
   background: var(--el-color-primary-light-9);
+  border-color: var(--el-color-primary-light-5);
 }
 
 .drop-zone.is-drag-over {
-  border-color: var(--el-color-primary);
   background: var(--el-color-primary-light-9);
+  border-color: var(--el-color-primary);
   box-shadow: 0 0 0 3px var(--el-color-primary-light-8);
 }
 
@@ -699,8 +712,8 @@ onMounted(() => {
 }
 
 .drop-zone__title em {
-  color: var(--el-color-primary);
   font-style: normal;
+  color: var(--el-color-primary);
 }
 
 .drop-zone__tip {
@@ -727,10 +740,10 @@ onMounted(() => {
 
 .image-grid__item {
   position: relative;
-  aspect-ratio: 1;
-  border-radius: 8px;
   overflow: hidden;
   border: 1px solid var(--app-content-border-color);
+  border-radius: 8px;
+  aspect-ratio: 1;
 }
 
 .image-grid__img {
@@ -745,7 +758,7 @@ onMounted(() => {
   align-items: flex-start;
   justify-content: flex-end;
   padding: 4px;
-  background: linear-gradient(180deg, rgba(0,0,0,0.24) 0%, transparent 40%);
+  background: linear-gradient(180deg, rgb(0 0 0 / 24%) 0%, transparent 40%);
   opacity: 0;
   transition: opacity 0.15s ease;
 }
@@ -756,15 +769,15 @@ onMounted(() => {
 
 .image-grid__remove {
   display: flex;
-  align-items: center;
-  justify-content: center;
   width: 22px;
   height: 22px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.5);
   color: #fff;
   cursor: pointer;
+  background: rgb(0 0 0 / 50%);
+  border-radius: 50%;
   transition: background 0.15s;
+  align-items: center;
+  justify-content: center;
 }
 
 .image-grid__remove:hover {
@@ -777,7 +790,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.35);
+  background: rgb(0 0 0 / 35%);
 }
 
 /* ── Form ── */
@@ -790,11 +803,11 @@ onMounted(() => {
 }
 
 .analysis-form :deep(.el-form-item__label) {
+  padding-bottom: 4px;
   font-size: 12px;
   font-weight: 500;
-  color: var(--el-text-color-secondary);
   line-height: 1.2;
-  padding-bottom: 4px;
+  color: var(--el-text-color-secondary);
 }
 
 .analyze-btn-wrap {
@@ -806,10 +819,10 @@ onMounted(() => {
 .analyze-btn {
   width: 100%;
   height: 40px;
-  font-weight: 600;
   font-size: 14px;
-  border-radius: 8px;
+  font-weight: 600;
   letter-spacing: 0.5px;
+  border-radius: 8px;
 }
 
 /* ── Result ── */
@@ -845,23 +858,23 @@ onMounted(() => {
 }
 
 .markdown-body :deep(h1) {
+  padding-bottom: 8px;
+  margin: 20px 0 12px;
   font-size: 20px;
   font-weight: 600;
-  margin: 20px 0 12px;
-  padding-bottom: 8px;
   border-bottom: 1px solid var(--app-content-border-color);
 }
 
 .markdown-body :deep(h2) {
+  margin: 16px 0 10px;
   font-size: 17px;
   font-weight: 600;
-  margin: 16px 0 10px;
 }
 
 .markdown-body :deep(h3) {
+  margin: 12px 0 8px;
   font-size: 14px;
   font-weight: 600;
-  margin: 12px 0 8px;
 }
 
 .markdown-body :deep(p) {
@@ -870,8 +883,8 @@ onMounted(() => {
 
 .markdown-body :deep(ul),
 .markdown-body :deep(ol) {
-  margin: 6px 0;
   padding-left: 22px;
+  margin: 6px 0;
 }
 
 .markdown-body :deep(li) {
@@ -879,52 +892,52 @@ onMounted(() => {
 }
 
 .markdown-body :deep(table) {
-  border-collapse: collapse;
-  margin: 10px 0;
   width: 100%;
+  margin: 10px 0;
+  border-collapse: collapse;
 }
 
 .markdown-body :deep(th),
 .markdown-body :deep(td) {
-  border: 1px solid var(--app-content-border-color);
   padding: 6px 10px;
-  text-align: left;
   font-size: 12px;
+  text-align: left;
+  border: 1px solid var(--app-content-border-color);
 }
 
 .markdown-body :deep(th) {
-  background: var(--app-content-surface-muted-color);
   font-weight: 600;
+  background: var(--app-content-surface-muted-color);
 }
 
 .markdown-body :deep(blockquote) {
-  margin: 10px 0;
   padding: 6px 14px;
-  border-left: 4px solid var(--el-color-primary);
+  margin: 10px 0;
   background: var(--app-content-surface-muted-color);
+  border-left: 4px solid var(--el-color-primary);
   border-radius: 0 6px 6px 0;
 }
 
 .markdown-body :deep(code) {
-  background: var(--app-content-surface-muted-color);
   padding: 2px 5px;
-  border-radius: 3px;
-  font-size: 12px;
   font-family: monospace;
+  font-size: 12px;
+  background: var(--app-content-surface-muted-color);
+  border-radius: 3px;
 }
 
 .markdown-body :deep(pre) {
-  background: #1a1a2e;
   padding: 12px;
-  border-radius: 8px;
   overflow-x: auto;
+  background: #1a1a2e;
+  border-radius: 8px;
 }
 
 .markdown-body :deep(pre code) {
-  background: none;
   padding: 0;
-  color: #e0e0e0;
   font-size: 12px;
+  color: #e0e0e0;
+  background: none;
 }
 
 /* ── Detail Dialog ── */
@@ -945,22 +958,11 @@ onMounted(() => {
 .detail-image {
   max-width: 180px;
   max-height: 180px;
-  border-radius: 8px;
   border: 1px solid var(--app-content-border-color);
+  border-radius: 8px;
 }
 
 .detail-result {
   padding: 0;
-}
-
-/* ── Responsive ── */
-@media (max-width: 900px) {
-  .image-analysis-page {
-    flex-direction: column;
-  }
-
-  .analysis-left {
-    width: 100%;
-  }
 }
 </style>

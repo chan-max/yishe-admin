@@ -382,11 +382,11 @@ onBeforeUnmount(() => {
 
 <style scoped lang="scss">
 .tool-window-host {
-  --twh-backdrop: rgba(15, 23, 42, 0.5);
+  --twh-backdrop: rgb(15 23 42 / 50%);
   --twh-panel-bg: var(--app-content-surface-color);
   --twh-panel-border: var(--app-content-border-color);
   --twh-panel-border-active: var(--ep-cover-border-color-strong);
-  --twh-shadow-lg: 0 18px 44px rgba(15, 23, 42, 0.18);
+  --twh-shadow-lg: 0 18px 44px rgb(15 23 42 / 18%);
   --twh-header-bg: var(--app-content-surface-muted-color);
   --twh-header-border: var(--app-content-border-color);
   --twh-accent: var(--el-color-primary);
@@ -406,8 +406,8 @@ onBeforeUnmount(() => {
 }
 
 html.dark .tool-window-host {
-  --twh-backdrop: rgba(0, 0, 0, 0.62);
-  --twh-shadow-lg: 0 18px 44px rgba(0, 0, 0, 0.5);
+  --twh-backdrop: rgb(0 0 0 / 62%);
+  --twh-shadow-lg: 0 18px 44px rgb(0 0 0 / 50%);
 }
 
 .tool-window-host__window {
@@ -434,16 +434,16 @@ html.dark .tool-window-host {
   display: flex;
   width: 100%;
   height: 100%;
-  flex-direction: column;
   overflow: hidden;
-  border: 1px solid var(--twh-panel-border);
   background: var(--twh-panel-bg);
+  border: 1px solid var(--twh-panel-border);
   box-shadow: var(--twh-shadow-lg);
+  flex-direction: column;
 }
 
 .tool-window-host__window.is-fullscreen .tool-window-host__panel {
-  border-radius: 0;
   border: none;
+  border-radius: 0;
   box-shadow: none;
 }
 
@@ -463,13 +463,13 @@ html.dark .tool-window-host {
 .tool-window-host__header {
   display: flex;
   min-height: 32px;
+  padding: 0 6px 0 8px;
+  background: var(--twh-header-bg);
+  border-bottom: 1px solid var(--twh-header-border);
+  user-select: none;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 0 6px 0 8px;
-  border-bottom: 1px solid var(--twh-header-border);
-  background: var(--twh-header-bg);
-  user-select: none;
 }
 
 .tool-window-host__window:not(.is-fullscreen) .tool-window-host__header {
@@ -494,31 +494,31 @@ html.dark .tool-window-host {
   overflow: hidden;
   font-family:
     'Cascadia Code',
-    'Consolas',
+    Consolas,
     'Courier New',
     monospace;
   font-size: 9px;
   font-weight: 400;
-  color: var(--twh-title-color);
   letter-spacing: 0;
+  color: var(--twh-title-color);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .tool-window-host__title-host {
-  overflow: hidden;
-  flex-shrink: 1;
   max-width: min(22vw, 180px);
+  overflow: hidden;
   font-family:
     'Cascadia Code',
-    'Consolas',
+    Consolas,
     'Courier New',
     monospace;
   font-size: 7px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   letter-spacing: 0.02em;
   color: var(--twh-muted-color);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 1;
 }
 
 .tool-window-host__actions {
@@ -536,17 +536,17 @@ html.dark .tool-window-host {
 
 .tool-window-host__actions-group--edge {
   position: relative;
-  margin-left: 2px;
   padding-left: 6px;
+  margin-left: 2px;
 
   &::before {
-    content: '';
     position: absolute;
-    left: 0;
     top: 4px;
     bottom: 4px;
+    left: 0;
     width: 1px;
     background: var(--twh-action-border);
+    content: '';
   }
 }
 
@@ -554,38 +554,38 @@ html.dark .tool-window-host {
   display: inline-flex;
   width: 20px;
   height: 20px;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid transparent;
-  border-radius: 3px;
-  background: transparent;
   color: var(--twh-action-color);
   cursor: pointer;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
   transition:
     background-color 0.18s ease,
     color 0.18s ease,
     border-color 0.18s ease;
+  align-items: center;
+  justify-content: center;
 
   :deep(.el-icon) {
     font-size: 11px;
   }
 
   &:hover {
-    border-color: color-mix(in srgb, var(--twh-accent) 18%, transparent);
-    background: var(--twh-action-hover-bg);
     color: var(--twh-action-hover-color);
+    background: var(--twh-action-hover-bg);
+    border-color: color-mix(in srgb, var(--twh-accent) 18%, transparent);
   }
 
   &.is-danger:hover {
-    border-color: color-mix(in srgb, var(--el-color-danger) 22%, transparent);
-    background: color-mix(in srgb, var(--el-color-danger) 10%, transparent);
     color: var(--el-color-danger);
+    background: color-mix(in srgb, var(--el-color-danger) 10%, transparent);
+    border-color: color-mix(in srgb, var(--el-color-danger) 22%, transparent);
   }
 
   &.is-danger-soft:hover {
-    border-color: color-mix(in srgb, var(--el-color-danger) 16%, transparent);
-    background: color-mix(in srgb, var(--el-color-danger) 8%, transparent);
     color: var(--el-color-danger);
+    background: color-mix(in srgb, var(--el-color-danger) 8%, transparent);
+    border-color: color-mix(in srgb, var(--el-color-danger) 16%, transparent);
   }
 }
 
@@ -614,8 +614,8 @@ html.dark .tool-window-host {
   display: block;
   width: 100%;
   height: 100%;
-  border: 0;
   background: #fff;
+  border: 0;
   border-radius: 2px;
 }
 
@@ -626,15 +626,15 @@ html.dark .tool-window-host {
 .tool-window-host__empty {
   display: flex;
   height: 100%;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
+  text-align: center;
   background:
     radial-gradient(circle at top, color-mix(in srgb, var(--twh-accent) 10%, transparent), transparent 34%),
     var(--twh-empty-bg);
   border-radius: 4px;
-  text-align: center;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .tool-window-host__empty-icon {
@@ -671,8 +671,8 @@ html.dark .tool-window-host {
 
 .tool-window-host__resize-handle.is-n,
 .tool-window-host__resize-handle.is-s {
-  left: 10px;
   right: 10px;
+  left: 10px;
   height: 6px;
 }
 
@@ -730,12 +730,12 @@ html.dark .tool-window-host {
 }
 
 .tool-window-host__resize-handle.is-sw {
-  left: -3px;
   bottom: -3px;
+  left: -3px;
   cursor: nesw-resize;
 }
 
-@media (max-width: 900px) {
+@media (width <= 900px) {
   .tool-window-host__title-host {
     display: none;
   }

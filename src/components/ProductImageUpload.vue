@@ -221,14 +221,13 @@ defineExpose({
 
 .image-list {
   display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
+  width: 100%;
+  padding-bottom: 8px;
+  overflow: auto hidden;
+  flex-flow: row nowrap;
   align-items: flex-start;
   gap: 12px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding-bottom: 8px;
-  width: 100%;
+
   /* 自定义滚动条样式 */
   scrollbar-width: thin;
   scrollbar-color: #c1c1c1 #f1f1f1;
@@ -236,8 +235,7 @@ defineExpose({
 
 .draggable-container {
   display: flex !important;
-  flex-direction: row !important;
-  flex-wrap: nowrap !important;
+  flex-flow: row nowrap !important;
   align-items: flex-start !important;
   gap: 12px !important;
   width: auto !important;
@@ -267,12 +265,12 @@ defineExpose({
   width: 120px;
   height: 120px;
   min-width: 120px;
-  flex-shrink: 0;
-  border: 1px dashed #dcdfe6;
-  border-radius: 4px;
   overflow: hidden;
   cursor: move;
+  border: 1px dashed #dcdfe6;
+  border-radius: 4px;
   transition: all 0.3s ease;
+  flex-shrink: 0;
 }
 
 .image-item:hover {
@@ -288,20 +286,20 @@ defineExpose({
   position: absolute;
   top: 5px;
   left: 5px;
+  z-index: 10;
+  display: flex;
   width: 24px;
   height: 24px;
-  background: rgba(0, 0, 0, 0.5);
+  cursor: grab;
+  background: rgb(0 0 0 / 50%);
   border-radius: 4px;
-  display: flex;
+  transition: background 0.2s;
   align-items: center;
   justify-content: center;
-  cursor: grab;
-  z-index: 10;
-  transition: background 0.2s;
 }
 
 .drag-handle:hover {
-  background: rgba(0, 0, 0, 0.7);
+  background: rgb(0 0 0 / 70%);
 }
 
 .drag-handle:active {
@@ -309,25 +307,25 @@ defineExpose({
 }
 
 .drag-icon {
-  color: #fff;
   font-size: 14px;
+  color: #fff;
 }
 
 .image-index {
   position: absolute;
   bottom: 5px;
   left: 5px;
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 12px;
   z-index: 5;
+  padding: 2px 6px;
+  font-size: 12px;
+  color: #fff;
+  background: rgb(0 0 0 / 60%);
+  border-radius: 4px;
 }
 
 .ghost-item {
-  opacity: 0.4;
   background: #f0f0f0;
+  opacity: 0.4;
 }
 
 .chosen-item {
@@ -351,16 +349,16 @@ defineExpose({
 }
 
 .upload-btn {
+  display: flex;
   width: 120px;
   height: 120px;
   min-width: 120px;
+  border: 1px dashed #dcdfe6;
+  border-radius: 4px;
   flex-shrink: 0;
-  display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border: 1px dashed #dcdfe6;
-  border-radius: 4px;
 }
 
 .upload-tip {
@@ -372,11 +370,11 @@ defineExpose({
 
 .image-slot {
   display: flex;
-  justify-content: center;
-  align-items: center;
   width: 100%;
   height: 100%;
-  background: #f5f7fa;
   color: #909399;
+  background: #f5f7fa;
+  justify-content: center;
+  align-items: center;
 }
 </style> 

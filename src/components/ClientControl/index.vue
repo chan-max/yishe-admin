@@ -154,7 +154,7 @@
                       <el-progress
                         :percentage="Math.round(getAgentStatus(client).plan.currentStep / getAgentStatus(client).plan.totalSteps * 100)"
                         :stroke-width="8"
-                        style="width: 120px; display: inline-flex; vertical-align: middle; margin-left: 8px;"
+                        style=" display: inline-flex;width: 120px; margin-left: 8px; vertical-align: middle;"
                       />
                       {{ getAgentStatus(client).plan.currentStep }}/{{ getAgentStatus(client).plan.totalSteps }}
                     </span>
@@ -491,9 +491,9 @@ onMounted(() => {
 }
 
 .agent-label {
+  min-width: 72px;
   color: var(--el-text-color-secondary);
   white-space: nowrap;
-  min-width: 72px;
   flex-shrink: 0;
 }
 
@@ -503,8 +503,8 @@ onMounted(() => {
 }
 
 .agent-value--highlight {
-  color: var(--el-color-primary);
   font-weight: 500;
+  color: var(--el-color-primary);
 }
 
 .agent-value--mono {
@@ -513,6 +513,16 @@ onMounted(() => {
 }
 
 .client-control {
+  @media (width <= 960px) {
+    .client-item__top {
+      flex-direction: column;
+    }
+
+    .detail-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
   .card-header {
     display: flex;
     justify-content: space-between;
@@ -549,18 +559,18 @@ onMounted(() => {
 
     &:hover {
       border-color: var(--el-color-primary);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 8px rgb(0 0 0 / 10%);
     }
   }
 
   .client-item--online {
-    border-left-color: var(--el-color-success);
     background: color-mix(in srgb, var(--el-color-success) 6%, var(--el-bg-color) 94%);
+    border-left-color: var(--el-color-success);
   }
 
   .client-item--offline {
-    border-left-color: var(--el-color-danger);
     background: color-mix(in srgb, var(--el-color-danger) 5%, var(--el-bg-color) 95%);
+    border-left-color: var(--el-color-danger);
   }
 
   .client-item__top {
@@ -590,14 +600,14 @@ onMounted(() => {
 
   .client-status-banner {
     display: inline-flex;
+    padding: 6px 10px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    background: color-mix(in srgb, var(--el-fill-color-light) 88%, transparent 12%);
+    border-radius: 999px;
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
-    margin-bottom: 8px;
-    padding: 6px 10px;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--el-fill-color-light) 88%, transparent 12%);
-    font-size: 12px;
   }
 
   .client-status-banner__dot {
@@ -633,8 +643,8 @@ onMounted(() => {
     font-weight: 500;
 
     .label {
-      color: var(--el-text-color-secondary);
       margin-right: 4px;
+      color: var(--el-text-color-secondary);
     }
 
     .value {
@@ -706,9 +716,9 @@ onMounted(() => {
 
   .detail-key {
     width: 88px;
-    flex-shrink: 0;
-    color: var(--el-text-color-secondary);
     font-size: 12px;
+    color: var(--el-text-color-secondary);
+    flex-shrink: 0;
   }
 
   .detail-value {
@@ -727,26 +737,16 @@ onMounted(() => {
   }
 
   .detail-json {
-    margin: 0;
     padding: 10px;
-    background: var(--el-bg-color);
-    border: 1px solid var(--el-border-color-lighter);
-    border-radius: 6px;
-    white-space: pre-wrap;
-    word-break: break-all;
+    margin: 0;
     font-size: 12px;
     line-height: 1.5;
     color: var(--el-text-color-regular);
-  }
-
-  @media (max-width: 960px) {
-    .client-item__top {
-      flex-direction: column;
-    }
-
-    .detail-grid {
-      grid-template-columns: 1fr;
-    }
+    word-break: break-all;
+    white-space: pre-wrap;
+    background: var(--el-bg-color);
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 6px;
   }
 }
 </style>

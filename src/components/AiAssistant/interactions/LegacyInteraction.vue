@@ -284,20 +284,20 @@ init();
 <style scoped>
 .interaction-panel {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
   padding: 10px 12px;
-  border-radius: 8px;
   background: var(--el-fill-color-light);
   border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .interaction-question {
   font-size: 13px;
   line-height: 1.5;
   color: var(--el-text-color-primary);
-  white-space: pre-wrap;
   word-break: break-word;
+  white-space: pre-wrap;
 }
 
 .choice-list {
@@ -307,39 +307,39 @@ init();
 
 .choice-option {
   display: flex;
-  align-items: center;
-  gap: 8px;
   width: 100%;
   min-height: 32px;
   padding: 6px 10px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 6px;
-  background: var(--el-fill-color-blank);
   color: var(--el-text-color-primary);
   text-align: left;
   cursor: pointer;
+  background: var(--el-fill-color-blank);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
   transition: all .12s;
+  align-items: center;
+  gap: 8px;
 }
 
 .choice-option:hover,
 .choice-option.active {
-  border-color: var(--el-color-primary);
-  background: var(--el-color-primary-light-9);
   color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+  border-color: var(--el-color-primary);
 }
 
 .choice-indicator {
   width: 14px;
   height: 14px;
-  border-radius: 50%;
   border: 2px solid var(--el-border-color);
-  flex-shrink: 0;
+  border-radius: 50%;
   transition: border-color .15s, background .15s;
+  flex-shrink: 0;
 }
 
 .choice-option.active .choice-indicator {
-  border-color: var(--el-color-primary);
   background: var(--el-color-primary);
+  border-color: var(--el-color-primary);
 }
 
 .choice-copy {
@@ -352,8 +352,8 @@ init();
 }
 
 .choice-copy small {
-  color: var(--el-text-color-secondary);
   line-height: 1.4;
+  color: var(--el-text-color-secondary);
 }
 
 .interaction-form :deep(.el-form-item) {
@@ -381,20 +381,20 @@ init();
 .feedback-option {
   min-height: 28px;
   padding: 0 10px;
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+  cursor: pointer;
+  background: var(--el-fill-color-blank);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 6px;
-  background: var(--el-fill-color-blank);
-  color: var(--el-text-color-regular);
-  font-size: 12px;
-  cursor: pointer;
   transition: all .12s;
 }
 
 .feedback-option:hover,
 .feedback-option.active {
-  border-color: var(--el-color-primary);
-  background: var(--el-color-primary-light-9);
   color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+  border-color: var(--el-color-primary);
 }
 
 .interaction-actions {
@@ -409,17 +409,17 @@ init();
 .action-btn {
   height: 28px;
   padding: 0 10px;
-  border: none;
-  border-radius: 6px;
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
+  border: none;
+  border-radius: 6px;
   transition: all .12s;
 }
 
 .action-btn--ghost {
-  background: transparent;
   color: var(--el-text-color-secondary);
+  background: transparent;
 }
 
 .action-btn--ghost:hover {
@@ -428,10 +428,11 @@ init();
 }
 
 .action-btn--primary {
-  background: var(--el-color-primary);
   color: #fff;
+  background: var(--el-color-primary);
 }
 
 .action-btn--primary:hover:not(:disabled) { opacity: .85; }
-.action-btn--primary:disabled { opacity: .4; cursor: not-allowed; }
+
+.action-btn--primary:disabled { cursor: not-allowed; opacity: .4; }
 </style>

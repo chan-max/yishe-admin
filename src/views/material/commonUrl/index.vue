@@ -709,8 +709,8 @@ const submitForm = async () => {
 }
 
 .text-wrap {
-  white-space: normal;
   line-height: 1.5;
+  white-space: normal;
 }
 
 .keywords-container {
@@ -723,16 +723,16 @@ const submitForm = async () => {
 .keyword-tag {
   margin: 2px;
   font-size: 12px;
+  color: rgb(255 255 255 / 80%);
+  background-color: rgb(255 255 255 / 4%);
+  border-color: rgb(255 255 255 / 12%);
   border-radius: 999px;
-  background-color: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.8);
 }
 
 .keyword-tag:hover {
-  background-color: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.18);
-  color: rgba(255, 255, 255, 0.92);
+  color: rgb(255 255 255 / 92%);
+  background-color: rgb(255 255 255 / 7%);
+  border-color: rgb(255 255 255 / 18%);
 }
 
 .form-tip {

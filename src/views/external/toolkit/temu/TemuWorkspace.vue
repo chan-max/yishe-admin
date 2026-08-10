@@ -10095,10 +10095,72 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped lang="scss">
+
+
+@media (width <= 1280px) {
+  .temu-workspace__action-grid {
+    grid-template-columns: repeat(auto-fill, minmax(144px, 1fr));
+  }
+}
+
+@media (width <= 768px) {
+  .temu-workspace__toolbar,
+  .temu-workspace__editor-head,
+  .temu-workspace__result-head,
+  .temu-workspace__task-head,
+  .temu-workspace__task-detail-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .temu-workspace__action-grid,
+  .temu-workspace__form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .temu-workspace__search {
+    width: 100%;
+  }
+
+  .temu-workspace__toolbar-side,
+  .temu-workspace__result-tools,
+  .temu-workspace__task-tools,
+  .temu-workspace__runner {
+    width: 100%;
+  }
+
+  .temu-workspace__task-head-side {
+    width: 100%;
+    max-width: none;
+    align-items: stretch;
+  }
+
+  .temu-workspace__task-meta-compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: stretch;
+  }
+
+  .temu-workspace__task-meta-compact div {
+    justify-content: space-between;
+  }
+
+  .temu-workspace__task-meta-compact strong {
+    max-width: 68vw;
+  }
+
+  .temu-workspace__runner {
+    justify-content: stretch;
+    flex-direction: column;
+  }
+
+  .temu-workspace__task-dialog :deep(.el-dialog__header),
+  .temu-workspace__task-dialog :deep(.el-dialog__body) {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+}
+
 .temu-workspace {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
   --temu-runtime-badge-bg: var(--el-color-warning-light-9);
   --temu-runtime-badge-border: var(--el-color-warning-light-5);
   --temu-runtime-badge-text: var(--el-color-warning-dark-2);
@@ -10108,6 +10170,10 @@ onBeforeUnmount(() => {
   --temu-runtime-hint-bg: var(--el-color-warning-light-9);
   --temu-runtime-hint-border: var(--el-color-warning-light-7);
   --temu-runtime-hint-text: var(--el-color-warning-dark-2);
+
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 :global(html.dark) .temu-workspace {
@@ -10173,9 +10239,9 @@ onBeforeUnmount(() => {
 .temu-workspace__note,
 .temu-field__hint {
   margin-top: 4px;
-  color: var(--el-text-color-regular);
   font-size: 12px;
   line-height: 1.65;
+  color: var(--el-text-color-regular);
 }
 
 .temu-workspace__editor-tags,
@@ -10194,9 +10260,9 @@ onBeforeUnmount(() => {
 
 .temu-workspace__action-shell {
   padding: 10px;
-  border-radius: 10px;
-  border: 1px solid var(--el-border-color-light);
   background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 10px;
 }
 
 .temu-workspace__result {
@@ -10238,9 +10304,9 @@ onBeforeUnmount(() => {
   width: 86px;
   height: 86px;
   overflow: hidden;
-  border-radius: 8px;
-  border: 1px solid var(--el-border-color-lighter);
   background: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
 }
 
 .temu-workspace__preview-product {
@@ -10263,8 +10329,8 @@ onBeforeUnmount(() => {
 }
 
 .temu-workspace__preview-product small {
-  color: var(--el-text-color-secondary);
   font-size: 11px;
+  color: var(--el-text-color-secondary);
 }
 
 .temu-workspace__compliance-status-list {
@@ -10282,23 +10348,23 @@ onBeforeUnmount(() => {
 }
 
 .temu-workspace__compliance-status-name {
-  flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
-  color: var(--el-text-color-primary);
   font-size: 12px;
+  color: var(--el-text-color-primary);
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 0 1 auto;
 }
 
 .temu-workspace__compliance-status-item small {
-  flex: 0 0 auto;
   min-width: 0;
   overflow: hidden;
-  color: var(--el-text-color-secondary);
   font-size: 11px;
+  color: var(--el-text-color-secondary);
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 .temu-workspace__row-actions--right {
@@ -10334,20 +10400,20 @@ onBeforeUnmount(() => {
 
 .temu-workspace__compliance-picker-item {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 5px 8px;
   width: 100%;
   padding: 9px 10px;
   text-align: left;
+  cursor: pointer;
+  background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 7px;
-  background: var(--el-bg-color);
-  cursor: pointer;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 5px 8px;
 }
 
 .temu-workspace__compliance-picker-item.is-active {
-  border-color: var(--el-color-primary);
   background: var(--el-color-primary-light-9);
+  border-color: var(--el-color-primary);
 }
 
 .temu-workspace__compliance-picker-item span,
@@ -10359,20 +10425,20 @@ onBeforeUnmount(() => {
 }
 
 .temu-workspace__compliance-picker-item small {
-  grid-column: 1 / -1;
-  color: var(--el-text-color-secondary);
   font-size: 11px;
+  color: var(--el-text-color-secondary);
+  grid-column: 1 / -1;
 }
 
 .temu-workspace__compliance-editor-panel {
   display: grid;
-  align-content: start;
-  gap: 12px;
   min-width: 0;
   padding: 12px;
+  background: var(--el-fill-color-extra-light);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
-  background: var(--el-fill-color-extra-light);
+  align-content: start;
+  gap: 12px;
 }
 
 .temu-workspace__compliance-editor-title,
@@ -10393,11 +10459,11 @@ onBeforeUnmount(() => {
 }
 
 .temu-workspace__compliance-subtask {
-  justify-content: space-between;
   padding: 8px 10px;
+  background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 6px;
-  background: var(--el-bg-color);
+  justify-content: space-between;
 }
 
 .temu-workspace__compliance-subtask span {
@@ -10418,18 +10484,18 @@ onBeforeUnmount(() => {
 
 .temu-workspace__compliance-source-grid div {
   display: grid;
-  gap: 4px;
   min-width: 0;
-  flex: 1;
   padding: 10px;
+  background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 6px;
-  background: var(--el-bg-color);
+  gap: 4px;
+  flex: 1;
 }
 
 .temu-workspace__compliance-source-grid span {
-  color: var(--el-text-color-secondary);
   font-size: 11px;
+  color: var(--el-text-color-secondary);
 }
 
 .temu-workspace__price-review-identity {
@@ -10448,28 +10514,24 @@ onBeforeUnmount(() => {
 }
 
 .temu-workspace__price-review-identity span {
-  color: var(--el-text-color-secondary);
   font-size: 11px;
+  color: var(--el-text-color-secondary);
 }
 
 .temu-workspace__price-review-identity strong {
   overflow: hidden;
-  color: var(--el-text-color-primary);
   font-size: 12px;
   font-weight: 650;
+  color: var(--el-text-color-primary);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .temu-workspace__price-review-pricing {
   display: grid;
-  gap: 8px;
   min-width: 0;
   padding: 8px;
   text-align: left;
-  border: 1px solid
-    var(--price-review-risk-border, var(--el-border-color-lighter));
-  border-radius: 10px;
   background:
     linear-gradient(
       135deg,
@@ -10477,6 +10539,10 @@ onBeforeUnmount(() => {
       transparent 72%
     ),
     var(--price-review-risk-soft, var(--el-fill-color-extra-light));
+  border: 1px solid
+    var(--price-review-risk-border, var(--el-border-color-lighter));
+  border-radius: 10px;
+  gap: 8px;
 }
 
 .temu-workspace__price-review-prices {
@@ -10492,17 +10558,17 @@ onBeforeUnmount(() => {
 }
 
 .temu-workspace__price-review-prices span {
-  color: var(--el-text-color-secondary);
   font-size: 10px;
   line-height: 1.2;
+  color: var(--el-text-color-secondary);
 }
 
 .temu-workspace__price-review-prices strong {
   overflow: hidden;
-  color: var(--el-text-color-primary);
   font-size: 14px;
   font-weight: 750;
   line-height: 1.25;
+  color: var(--el-text-color-primary);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -10523,10 +10589,10 @@ onBeforeUnmount(() => {
 .temu-workspace__price-review-meter strong,
 .temu-workspace__price-review-meter em {
   display: inline-flex;
-  align-items: center;
   height: 24px;
-  border-radius: 999px;
   white-space: nowrap;
+  border-radius: 999px;
+  align-items: center;
 }
 
 .temu-workspace__price-review-meter strong {
@@ -10536,25 +10602,25 @@ onBeforeUnmount(() => {
   font-size: 15px;
   font-weight: 850;
   line-height: 24px;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65);
-  box-shadow: inset 0 0 0 1px currentColor;
+  text-shadow: 0 1px 0 rgb(255 255 255 / 65%);
+  box-shadow: inset 0 0 0 1px currentcolor;
 }
 
 .temu-workspace__price-review-meter em {
-  overflow: hidden;
   max-width: 170px;
   padding: 0 8px;
-  color: var(--price-review-risk-text, var(--el-text-color-primary));
+  overflow: hidden;
   font-size: 11px;
   font-style: normal;
   font-weight: 650;
   line-height: 24px;
+  color: var(--price-review-risk-text, var(--el-text-color-primary));
   text-overflow: ellipsis;
 }
 
 .temu-workspace__price-review-meter strong {
-  background: var(--price-review-risk-badge, var(--el-fill-color-blank));
   color: var(--price-review-risk-color, var(--el-text-color-primary));
+  background: var(--price-review-risk-badge, var(--el-fill-color-blank));
 }
 
 .temu-workspace__preview-actions {
@@ -10572,8 +10638,8 @@ onBeforeUnmount(() => {
 }
 
 .temu-workspace__submit-status small {
-  color: var(--el-text-color-secondary);
   font-size: 11px;
+  color: var(--el-text-color-secondary);
   word-break: break-all;
 }
 
@@ -10588,9 +10654,9 @@ onBeforeUnmount(() => {
 .temu-workspace__section-title,
 .temu-workspace__helper-label,
 .temu-workspace__editor-title {
-  color: var(--el-text-color-primary);
   font-size: 11px;
   font-weight: 700;
+  color: var(--el-text-color-primary);
 }
 
 .temu-workspace__toolbar-main {
@@ -10630,37 +10696,37 @@ onBeforeUnmount(() => {
 
 .temu-function-button,
 .temu-helper-chip {
-  appearance: none;
-  border: 1px solid var(--el-border-color);
-  background: var(--el-bg-color);
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color);
+  box-shadow: 0 4px 12px rgb(15 23 42 / 4%);
   transition:
     border-color 0.18s ease,
     background-color 0.18s ease,
     box-shadow 0.18s ease,
     transform 0.18s ease;
+  appearance: none;
 }
 
 .temu-function-button:hover,
 .temu-helper-chip:hover {
   border-color: var(--el-border-color-dark);
-  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
   transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgb(15 23 42 / 8%);
 }
 
 .temu-function-button__label,
 .temu-helper-chip__title {
-  color: var(--el-text-color-primary);
   font-size: 11px;
   font-weight: 700;
+  color: var(--el-text-color-primary);
 }
 
 .temu-function-button__meta,
 .temu-helper-chip__desc {
-  color: var(--el-text-color-regular);
   font-size: 11px;
   line-height: 1.55;
+  color: var(--el-text-color-regular);
 }
 
 .temu-function-button.is-active .temu-function-button__label {
@@ -10668,14 +10734,14 @@ onBeforeUnmount(() => {
 }
 
 .temu-function-button.is-active .temu-function-button__status {
-  background: var(--el-bg-color);
   color: var(--el-color-primary);
+  background: var(--el-bg-color);
 }
 
 .temu-function-button.is-active .temu-function-button__runtime {
-  border-color: var(--temu-runtime-badge-active-border);
-  background: var(--temu-runtime-badge-active-bg);
   color: var(--temu-runtime-badge-active-text);
+  background: var(--temu-runtime-badge-active-bg);
+  border-color: var(--temu-runtime-badge-active-border);
 }
 
 .temu-workspace__action-grid {
@@ -10686,22 +10752,22 @@ onBeforeUnmount(() => {
 
 .temu-function-button {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
   min-height: 72px;
   padding: 8px;
-  border-radius: 10px;
   text-align: left;
   background: var(--el-fill-color-blank);
+  border-radius: 10px;
+  flex-direction: column;
+  align-items: stretch;
 }
 
 .temu-function-button__label {
   display: -webkit-box;
   overflow: hidden;
-  color: var(--el-text-color-primary);
   font-size: 12px;
   font-weight: 700;
   line-height: 1.3;
+  color: var(--el-text-color-primary);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
@@ -10722,44 +10788,44 @@ onBeforeUnmount(() => {
 
 .temu-function-button__runtime,
 .temu-function-button__status {
-  flex-shrink: 0;
   padding: 0 5px;
-  border-radius: 999px;
-  border: 1px solid transparent;
   font-size: 9px;
   line-height: 16px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  flex-shrink: 0;
 }
 
 .temu-function-button__status {
-  background: var(--el-fill-color-extra-light);
   color: var(--el-text-color-regular);
+  background: var(--el-fill-color-extra-light);
 }
 
 .temu-function-button__runtime {
-  border-color: var(--temu-runtime-badge-border);
-  background: var(--temu-runtime-badge-bg);
-  color: var(--temu-runtime-badge-text);
   font-weight: 600;
+  color: var(--temu-runtime-badge-text);
+  background: var(--temu-runtime-badge-bg);
+  border-color: var(--temu-runtime-badge-border);
 }
 
 .temu-function-button__desc {
   display: -webkit-box;
   margin-top: 4px;
   overflow: hidden;
-  color: var(--el-text-color-regular);
   font-size: 10px;
   line-height: 1.35;
+  color: var(--el-text-color-regular);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 1;
 }
 
 .temu-function-button.is-active {
-  border-color: color-mix(in srgb, var(--el-color-primary) 36%, white);
   background: color-mix(
     in srgb,
     var(--el-color-primary) 8%,
     var(--el-bg-color)
   );
+  border-color: color-mix(in srgb, var(--el-color-primary) 36%, white);
 }
 
 .temu-function-button.is-active .temu-function-button__desc,
@@ -10775,16 +10841,16 @@ onBeforeUnmount(() => {
 .temu-workspace__editor,
 .temu-workspace__filter-empty {
   padding: 0;
-  border: 0;
   background: transparent;
+  border: 0;
 }
 
 .temu-workspace__editor::before,
 .temu-workspace__filter-empty::before {
-  content: "";
   display: block;
   margin-bottom: 14px;
   border-top: 1px solid var(--el-border-color-lighter);
+  content: "";
 }
 
 .temu-workspace__editor {
@@ -10795,30 +10861,30 @@ onBeforeUnmount(() => {
 
 .temu-workspace__editor-runtime-hint {
   display: inline-flex;
-  align-self: flex-start;
-  margin-top: 8px;
   padding: 4px 10px;
-  border: 1px solid var(--temu-runtime-hint-border);
-  border-radius: 999px;
-  background: var(--temu-runtime-hint-bg);
-  color: var(--temu-runtime-hint-text);
+  margin-top: 8px;
   font-size: 12px;
   font-weight: 600;
   line-height: 1.6;
+  color: var(--temu-runtime-hint-text);
+  background: var(--temu-runtime-hint-bg);
+  border: 1px solid var(--temu-runtime-hint-border);
+  border-radius: 999px;
+  align-self: flex-start;
 }
 
 .temu-workspace__helper-panel {
   padding: 0;
-  border: 0;
   background: transparent;
+  border: 0;
 }
 
 .temu-helper-chip {
-  padding: 9px 10px;
-  border-radius: 10px;
   max-width: 320px;
+  padding: 9px 10px;
   text-align: left;
   background: var(--el-fill-color-extra-light);
+  border-radius: 10px;
 }
 
 .temu-workspace__form {
@@ -10833,9 +10899,9 @@ onBeforeUnmount(() => {
 
 .temu-field__label {
   margin-bottom: 6px;
-  color: var(--el-text-color-regular);
   font-size: 12px;
   font-weight: 600;
+  color: var(--el-text-color-regular);
 }
 
 .temu-field__required {
@@ -10848,18 +10914,18 @@ onBeforeUnmount(() => {
 
 .temu-field__error {
   margin-top: 6px;
-  color: var(--el-color-danger);
   font-size: 12px;
+  color: var(--el-color-danger);
 }
 
 .temu-workspace__note {
   padding-top: 10px;
+  background: transparent;
   border-top: 1px dashed var(--el-border-color);
-  border-radius: 0;
   border-right: 0;
   border-bottom: 0;
   border-left: 0;
-  background: transparent;
+  border-radius: 0;
 }
 
 .temu-workspace__runner {
@@ -10870,37 +10936,37 @@ onBeforeUnmount(() => {
 
 .temu-workspace__unsupported,
 .temu-workspace__filter-empty {
-  color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 1.75;
+  color: var(--el-text-color-secondary);
 }
 
 .temu-workspace__result-title {
   display: flex;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--el-text-color-primary);
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
-  color: var(--el-text-color-primary);
-  font-size: 13px;
-  font-weight: 700;
 }
 
 .temu-workspace__json {
-  margin: 0;
+  max-height: 720px;
   padding: 12px;
-  border-radius: 10px;
-  border: 0;
-  background: var(--el-fill-color-light);
-  color: var(--el-text-color-primary);
+  margin: 0;
+  overflow: auto;
+  font-family:
+    SFMono-Regular, "JetBrains Mono", "Fira Code", Consolas,
+    "Liberation Mono", Menlo, monospace;
   font-size: 12px;
   line-height: 1.7;
-  overflow: auto;
-  max-height: 720px;
-  white-space: pre-wrap;
+  color: var(--el-text-color-primary);
   word-break: break-word;
-  font-family:
-    "SFMono-Regular", "JetBrains Mono", "Fira Code", Consolas,
-    "Liberation Mono", Menlo, monospace;
+  white-space: pre-wrap;
+  background: var(--el-fill-color-light);
+  border: 0;
+  border-radius: 10px;
 }
 
 .temu-workspace__json--compact {
@@ -10916,9 +10982,9 @@ onBeforeUnmount(() => {
 }
 
 .temu-workspace__task-action-cell small {
-  color: var(--el-text-color-placeholder);
   font-size: 10px;
   line-height: 1.4;
+  color: var(--el-text-color-placeholder);
   word-break: break-all;
 }
 
@@ -10941,19 +11007,19 @@ onBeforeUnmount(() => {
 
 .temu-workspace__task-detail {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
   padding: 0;
+  background: transparent;
   border: 0;
   border-radius: 0;
-  background: transparent;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .temu-workspace__task-detail--dialog {
   padding: 0;
+  background: transparent;
   border: 0;
   border-radius: 0;
-  background: transparent;
 }
 
 .temu-workspace__task-head-side {
@@ -10968,14 +11034,14 @@ onBeforeUnmount(() => {
 
 .temu-workspace__task-meta-compact {
   display: grid;
+  padding: 4px 6px;
+  background: var(--el-fill-color-extra-light);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
   grid-template-columns: repeat(6, minmax(92px, auto));
   gap: 4px 8px;
   justify-content: end;
   flex: 1 1 auto;
-  padding: 4px 6px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
-  background: var(--el-fill-color-extra-light);
 }
 
 .temu-workspace__task-meta-compact div {
@@ -10988,18 +11054,18 @@ onBeforeUnmount(() => {
 }
 
 .temu-workspace__task-meta-compact span {
-  flex: 0 0 auto;
-  color: var(--el-text-color-secondary);
   font-size: 10px;
+  color: var(--el-text-color-secondary);
+  flex: 0 0 auto;
 }
 
 .temu-workspace__task-meta-compact strong {
-  overflow: hidden;
   max-width: 150px;
-  color: var(--el-text-color-primary);
+  overflow: hidden;
   font-size: 11px;
   font-weight: 650;
   line-height: 1.4;
+  color: var(--el-text-color-primary);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -11088,10 +11154,10 @@ onBeforeUnmount(() => {
 
 .temu-workspace__price-review-filter-slider-value {
   font-size: 11px;
-  color: var(--el-text-color-secondary);
-  user-select: none;
-  white-space: nowrap;
   line-height: 1;
+  color: var(--el-text-color-secondary);
+  white-space: nowrap;
+  user-select: none;
 }
 
 .temu-workspace__price-review-filter-slider-input {
@@ -11110,11 +11176,11 @@ onBeforeUnmount(() => {
 
 .temu-workspace__jit-stock-field {
   display: inline-flex;
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+  white-space: nowrap;
   align-items: center;
   gap: 6px;
-  color: var(--el-text-color-regular);
-  font-size: 12px;
-  white-space: nowrap;
 }
 
 .temu-workspace__jit-status-filter {
@@ -11130,19 +11196,19 @@ onBeforeUnmount(() => {
 
 .temu-workspace__batch-reprice-head {
   display: flex;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--el-text-color-primary);
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 10px;
-  color: var(--el-text-color-primary);
-  font-size: 13px;
-  font-weight: 650;
 }
 
 .temu-workspace__batch-reprice-head small {
-  color: var(--el-text-color-secondary);
   font-size: 12px;
   font-weight: 400;
+  color: var(--el-text-color-secondary);
 }
 
 .temu-workspace__batch-reprice-identity {
@@ -11160,13 +11226,13 @@ onBeforeUnmount(() => {
 }
 
 .temu-workspace__batch-reprice-identity strong {
-  color: var(--el-text-color-primary);
   font-size: 12px;
+  color: var(--el-text-color-primary);
 }
 
 .temu-workspace__batch-reprice-identity span {
-  color: var(--el-text-color-secondary);
   font-size: 11px;
+  color: var(--el-text-color-secondary);
 }
 
 .temu-workspace__batch-reprice-input {
@@ -11194,8 +11260,8 @@ onBeforeUnmount(() => {
 }
 
 .temu-task-log-popover__head strong {
-  color: var(--el-text-color-primary);
   font-size: 13px;
+  color: var(--el-text-color-primary);
 }
 
 .temu-task-json-popover__content {
@@ -11205,8 +11271,8 @@ onBeforeUnmount(() => {
 
 .temu-task-log-item {
   padding: 12px 0;
-  border-bottom: 1px solid var(--el-border-color-lighter);
   background: transparent;
+  border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
 .temu-task-log-item__head {
@@ -11218,79 +11284,16 @@ onBeforeUnmount(() => {
 }
 
 .temu-task-log-item__time {
-  color: var(--el-text-color-secondary);
   font-size: 11px;
   line-height: 1.5;
+  color: var(--el-text-color-secondary);
 }
 
 .temu-task-log-item__message {
-  color: var(--el-text-color-primary);
   font-size: 12px;
   line-height: 1.7;
+  color: var(--el-text-color-primary);
   word-break: break-word;
-}
-
-@media (max-width: 1280px) {
-  .temu-workspace__action-grid {
-    grid-template-columns: repeat(auto-fill, minmax(144px, 1fr));
-  }
-}
-
-@media (max-width: 768px) {
-  .temu-workspace__toolbar,
-  .temu-workspace__editor-head,
-  .temu-workspace__result-head,
-  .temu-workspace__task-head,
-  .temu-workspace__task-detail-head {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .temu-workspace__action-grid,
-  .temu-workspace__form {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .temu-workspace__search {
-    width: 100%;
-  }
-
-  .temu-workspace__toolbar-side,
-  .temu-workspace__result-tools,
-  .temu-workspace__task-tools,
-  .temu-workspace__runner {
-    width: 100%;
-  }
-
-  .temu-workspace__task-head-side {
-    align-items: stretch;
-    max-width: none;
-    width: 100%;
-  }
-
-  .temu-workspace__task-meta-compact {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    justify-content: stretch;
-  }
-
-  .temu-workspace__task-meta-compact div {
-    justify-content: space-between;
-  }
-
-  .temu-workspace__task-meta-compact strong {
-    max-width: 68vw;
-  }
-
-  .temu-workspace__runner {
-    justify-content: stretch;
-    flex-direction: column;
-  }
-
-  .temu-workspace__task-dialog :deep(.el-dialog__header),
-  .temu-workspace__task-dialog :deep(.el-dialog__body) {
-    padding-right: 16px;
-    padding-left: 16px;
-  }
 }
 
 // 活动报名面板样式
@@ -11306,33 +11309,33 @@ onBeforeUnmount(() => {
 
 .temu-workspace__activity-card {
   padding: 14px 16px;
+  cursor: pointer;
   background: var(--el-fill-color-light);
   border: 1px solid var(--el-border-color-light);
   border-radius: 8px;
-  cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
     background: var(--el-color-primary-light-9);
     border-color: var(--el-color-primary-light-5);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 12px rgb(0 0 0 / 8%);
   }
 }
 
 .temu-workspace__activity-card-name {
+  margin-bottom: 8px;
   font-size: 15px;
   font-weight: 600;
   color: var(--el-text-color-primary);
-  margin-bottom: 8px;
 }
 
 .temu-workspace__activity-card-type,
 .temu-workspace__activity-card-theme,
 .temu-workspace__activity-card-stock {
+  margin-bottom: 4px;
   font-size: 13px;
   color: var(--el-text-color-regular);
-  margin-bottom: 4px;
 }
 
 .temu-workspace__activity-card-theme {
@@ -11341,26 +11344,26 @@ onBeforeUnmount(() => {
 
 .temu-workspace__activity-selector {
   display: flex;
-  align-items: center;
-  gap: 10px;
   padding: 12px 16px;
+  margin-bottom: 16px;
   background: var(--el-fill-color-light);
   border-radius: 6px;
-  margin-bottom: 16px;
+  align-items: center;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
 .temu-workspace__activity-label {
   font-size: 14px;
-  color: var(--el-text-color-regular);
   font-weight: 500;
+  color: var(--el-text-color-regular);
 }
 
 .temu-workspace__match-config {
   padding: 12px 16px;
+  margin-bottom: 16px;
   background: var(--el-fill-color-light);
   border-radius: 6px;
-  margin-bottom: 16px;
 }
 
 .temu-workspace__match-result {

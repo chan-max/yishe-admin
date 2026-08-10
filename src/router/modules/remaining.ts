@@ -968,6 +968,14 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: "个人设置",
         },
       },
+      {
+        path: "notify-message",
+        component: () => import("@/views/system/notify-message/index.vue"),
+        name: "MyNotifyMessage",
+        meta: {
+          title: "我的消息",
+        },
+      },
     ],
   },
   // ── 13. 系统管理 ────────────────────────────────────────────────────
@@ -1001,6 +1009,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           order: 2,
         },
       },
+
       {
         path: "user",
         component: () => import("@/views/system/user/index.vue"),

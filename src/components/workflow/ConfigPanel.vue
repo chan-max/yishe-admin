@@ -82,14 +82,23 @@ watch(
   { immediate: true }
 )
 
-const handleDataChange = () => {
+const handleDataChange = (fieldName?: string, selectedLabel?: string) => {
   if (!props.node) return
+
+  // 如果变更的是 select 字段，同时保存对应的 label（用于节点显示）
+  const config = { ...form.value.config }
+  if (fieldName && selectedLabel) {
+    // channelId -> channelName, 其他字段通用处理
+    const nameKey = fieldName === 'channelId' ? 'channelName' : `${fieldName}Name`
+    config[nameKey] = selectedLabel
+  }
+
   emit('update', {
     ...props.node,
     data: {
       ...props.node.data,
       label: form.value.label,
-      config: { ...form.value.config }
+      config
     }
   })
 }
@@ -112,6 +121,7 @@ const removeInputParam = (index: number) => {
     handleDataChange()
   }
 }
+
 </script>
 
 <template>
@@ -129,7 +139,9 @@ const removeInputParam = (index: number) => {
           </span>
         </div>
         <el-button type="danger" text size="small" @click="handleDelete">
-          <el-icon><Delete /></el-icon>
+          <svg class="config-panel__delete-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 7h16M10 11v6M14 11v6M5 7l1 13a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-13M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </el-button>
       </div>
 
@@ -149,7 +161,7 @@ const removeInputParam = (index: number) => {
             <el-form-item label="触发类型">
               <el-select v-model="form.config.triggerType" placeholder="选择类型" @change="handleDataChange">
                 <el-option label="手动触发 / API" value="manual" />
-                <el-option label="定时 Cron 调度" value="cron" />
+                <el-option label="定时触发" value="cron" />
               </el-select>
             </el-form-item>
 
@@ -191,7 +203,9 @@ const removeInputParam = (index: number) => {
                     <el-option label="json" value="json" />
                   </el-select>
                   <el-button type="danger" text circle size="small" @click="removeInputParam(idx)">
-                    <el-icon><Delete /></el-icon>
+                    <svg class="config-panel__delete-icon config-panel__delete-icon--sm" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M4 7h16M10 11v6M14 11v6M5 7l1 13a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-13M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
                   </el-button>
                 </div>
                 <el-button size="small" type="primary" plain style="width: 100%; margin-top: 4px;" @click="addInputParam">
@@ -216,7 +230,10 @@ const removeInputParam = (index: number) => {
                     v-model="form.config[field.field]"
                     :placeholder="field.placeholder || '请选择'"
                     style="width: 100%"
-                    @change="handleDataChange"
+                    @change="(val) => {
+                      const opt = field.options?.find(o => String(o.value) === String(val))
+                      handleDataChange(field.field, opt?.label)
+                    }"
                   >
                     <el-option
                       v-for="opt in field.options || []"
@@ -303,9 +320,13 @@ const removeInputParam = (index: number) => {
 
     <template v-else>
       <div class="config-panel__empty">
-        <el-icon class="config-panel__empty-icon"><Pointer /></el-icon>
-
-        <p>点击画布中的节点进行配置</p>
+        <div class="config-panel__empty-illustration">
+          <el-icon class="config-panel__empty-icon"><Pointer /></el-icon>
+        </div>
+        <div class="config-panel__empty-content">
+          <p class="config-panel__empty-title">未选择节点</p>
+          <p class="config-panel__empty-desc">点击画布中的节点进行配置</p>
+        </div>
       </div>
     </template>
 
@@ -315,14 +336,14 @@ const removeInputParam = (index: number) => {
 
 <style scoped lang="scss">
 .config-panel {
+  display: flex;
   width: 250px;
   height: 100%;
   background: var(--app-content-surface-color, #141518);
-  border-left: 1px solid var(--app-content-border-color, rgba(255, 255, 255, 0.08));
-  display: flex;
+  border-left: 1px solid var(--app-content-border-color, rgb(255 255 255 / 8%));
+  user-select: none;
   flex-direction: column;
   flex-shrink: 0;
-  user-select: none;
 }
 
 .config-panel__header {
@@ -330,7 +351,7 @@ const removeInputParam = (index: number) => {
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  border-bottom: 1px solid var(--app-content-border-color, rgba(255, 255, 255, 0.06));
+  border-bottom: 1px solid var(--app-content-border-color, rgb(255 255 255 / 6%));
 }
 
 .config-panel__title-badge {
@@ -340,10 +361,10 @@ const removeInputParam = (index: number) => {
 }
 
 .config-panel__dot {
+  display: inline-block;
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  display: inline-block;
 }
 
 .config-panel__type-name {
@@ -362,20 +383,20 @@ const removeInputParam = (index: number) => {
   }
 
   :deep(.el-form-item__label) {
-    font-size: 11px;
     padding-bottom: 2px;
-    color: var(--el-text-color-secondary);
+    font-size: 11px;
     font-weight: 500;
+    color: var(--el-text-color-secondary);
   }
 }
 
 .config-panel__section-title {
+  padding-bottom: 4px;
+  margin: 14px 0 8px;
   font-size: 11px;
   font-weight: 700;
   color: var(--el-text-color-primary);
-  margin: 14px 0 8px;
-  padding-bottom: 4px;
-  border-bottom: 1px dashed var(--app-content-border-color, rgba(255, 255, 255, 0.1));
+  border-bottom: 1px dashed var(--app-content-border-color, rgb(255 255 255 / 10%));
 }
 
 .wf-param-list {
@@ -396,35 +417,42 @@ const removeInputParam = (index: number) => {
 }
 
 .config-panel__output-tag {
-  font-size: 10px;
+  display: flex;
   padding: 4px 6px;
-  border-radius: 4px;
+  overflow: hidden;
+  font-size: 10px;
+  color: var(--el-color-primary);
   background: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
   border: 1px solid color-mix(in srgb, var(--el-color-primary) 20%, transparent);
-  color: var(--el-color-primary);
-  display: flex;
+  border-radius: 4px;
   align-items: center;
   gap: 4px;
-  word-break: break-all;
 }
 
 .config-panel__output-name {
+  min-width: 0;
+  overflow: hidden;
   font-family: monospace;
   font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 1;
 }
 
 .config-panel__output-label {
-  opacity: 0.7;
   font-size: 9px;
+  white-space: nowrap;
+  opacity: 0.7;
+  flex-shrink: 0;
 }
 
 .config-panel__meta-box {
-  margin-top: 16px;
-  padding: 8px 10px;
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.04);
-  border: 1px solid var(--app-content-border-color, rgba(255, 255, 255, 0.04));
   display: flex;
+  padding: 8px 10px;
+  margin-top: 16px;
+  background: color-mix(in srgb, var(--el-text-color-secondary) 6%, transparent);
+  border: 1px solid var(--app-content-border-color, rgb(255 255 255 / 4%));
+  border-radius: 6px;
   flex-direction: column;
   gap: 4px;
 }
@@ -432,16 +460,24 @@ const removeInputParam = (index: number) => {
 .config-panel__meta-row {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   font-size: 10px;
 }
 
 .config-panel__meta-label {
   color: var(--el-text-color-placeholder);
+  flex-shrink: 0;
 }
 
 .config-panel__meta-val {
-  color: var(--el-text-color-secondary);
+  min-width: 0;
+  margin-left: 8px;
+  overflow: hidden;
   font-family: monospace;
+  color: var(--el-text-color-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 1;
 }
 
 .config-panel__empty {
@@ -450,20 +486,61 @@ const removeInputParam = (index: number) => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  color: var(--el-text-color-placeholder);
-  font-size: 12px;
+  gap: 12px;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.config-panel__empty-illustration {
+  display: flex;
+  width: 56px;
+  height: 56px;
+  background: color-mix(in srgb, var(--el-text-color-secondary) 8%, transparent);
+  border-radius: 14px;
+  align-items: center;
+  justify-content: center;
 }
 
 .config-panel__empty-icon {
-  font-size: 28px;
-  opacity: 0.4;
+  font-size: 24px;
+  color: var(--el-text-color-secondary);
+  opacity: 0.5;
+}
+
+.config-panel__empty-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.config-panel__empty-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-regular);
+}
+
+.config-panel__empty-desc {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--el-text-color-placeholder);
 }
 
 .config-panel__field-desc {
   margin-top: 4px;
   font-size: 10px;
-  color: var(--el-text-color-placeholder);
   line-height: 1.5;
+  color: var(--el-text-color-placeholder);
+}
+
+.config-panel__delete-icon {
+  width: 16px;
+  height: 16px;
+
+  &--sm {
+    width: 13px;
+    height: 13px;
+  }
 }
 </style>

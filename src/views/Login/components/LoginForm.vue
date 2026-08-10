@@ -143,9 +143,9 @@
         <span style="font-size: 19px; font-weight: bold; letter-spacing: 1px">忘记密码？</span>
       </div>
     </template>
-    <div style="text-align: center; padding: 18px 0 10px 0">
-      <div style="font-size: 17px; margin-bottom: 10px; font-weight: 500">请联系管理员重置密码</div>
-      <div style="font-size: 16px; font-weight: bold; margin-bottom: 6px; letter-spacing: 1px">
+    <div style=" padding: 18px 0 10px;text-align: center">
+      <div style=" margin-bottom: 10px;font-size: 17px; font-weight: 500">请联系管理员重置密码</div>
+      <div style=" margin-bottom: 6px;font-size: 16px; font-weight: bold; letter-spacing: 1px">
         <span>TEL</span> & <span>WECHAT</span>：18742539196
       </div>
       <el-tag type="success" effect="plain" style="margin-top: 4px">24小时在线</el-tag>
@@ -387,8 +387,8 @@ onMounted(() => {
   }
 
   :deep(.login-form__input .el-input__wrapper) {
-    border-radius: 14px;
     min-height: 46px;
+    border-radius: 14px;
   }
 
   :deep(.login-form__input .el-input__prefix-inner) {

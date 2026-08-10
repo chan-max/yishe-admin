@@ -425,15 +425,15 @@ watch(
 $prefix-cls: #{$namespace}-tags-view;
 
 .#{$prefix-cls} {
-  isolation: isolate;
+  background: linear-gradient(180deg,
+      color-mix(in srgb, var(--top-header-bg-color) 92%, #fff 8%) 0%,
+      var(--top-header-bg-color) 100%);
   border-top: 1px solid color-mix(in srgb, var(--tags-view-border-color) 44%, transparent 56%);
   border-bottom: 1px solid color-mix(in srgb, var(--tags-view-border-color) 58%, transparent 42%);
-  background: linear-gradient(180deg,
-      color-mix(in srgb, var(--top-header-bg-color) 92%, #ffffff 8%) 0%,
-      var(--top-header-bg-color) 100%);
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, #ffffff 68%, transparent 32%),
+    inset 0 1px 0 color-mix(in srgb, #fff 68%, transparent 32%),
     inset 0 -1px 0 color-mix(in srgb, var(--tags-view-border-color) 16%, transparent 84%);
+  isolation: isolate;
 
   >* {
     position: relative;
@@ -474,13 +474,13 @@ $prefix-cls: #{$namespace}-tags-view;
       z-index: 3;
       color: var(--tags-view-tool-hover-color);
       background: color-mix(in srgb, var(--tags-view-tool-hover-bg) 56%, transparent 44%);
-      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
       transform: translateY(-1px) scale(1.12);
+      box-shadow: 0 4px 12px rgb(15 23 42 / 8%);
     }
 
     &:active {
-      box-shadow: none;
       transform: translateY(0) scale(0.96);
+      box-shadow: none;
       transition-duration: 0.08s;
     }
 
@@ -507,12 +507,9 @@ $prefix-cls: #{$namespace}-tags-view;
     position: relative;
     top: 0;
     display: flex;
-    flex: none;
     height: calc(100% - 10px);
-    align-items: center;
-    justify-content: center;
-    min-width: 0;
     max-width: var(--tags-view-item-max-width, 200px);
+    min-width: 0;
     padding-right: 0;
     margin: 5px 0 5px 4px;
     font-size: var(--tags-view-item-font-size);
@@ -523,30 +520,33 @@ $prefix-cls: #{$namespace}-tags-view;
     border: 1px solid transparent;
     border-radius: 8px;
     box-sizing: border-box;
-    transform-origin: center;
     transition:
       color 0.2s ease,
       background-color 0.2s ease,
       border-color 0.2s ease,
       box-shadow 0.2s ease,
       transform 0.18s ease;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    transform-origin: center;
     will-change: transform;
 
     &--close {
       display: flex;
-      flex: none;
       width: var(--tags-view-close-size);
       height: var(--tags-view-close-size);
-      align-items: center;
-      justify-content: center;
       margin-left: 6px;
       color: inherit;
-      opacity: 0.6;
       border-radius: 999px;
+      opacity: 0.6;
       transition:
         opacity 0.18s ease,
         background-color 0.18s ease,
         transform 0.18s ease;
+      flex: none;
+      align-items: center;
+      justify-content: center;
     }
 
     &:hover {
@@ -554,23 +554,23 @@ $prefix-cls: #{$namespace}-tags-view;
       color: var(--tags-view-item-hover-color);
       background: color-mix(in srgb, var(--tags-view-item-hover-bg) 70%, transparent 30%);
       border-color: color-mix(in srgb, var(--tags-view-item-border-color) 42%, transparent 58%);
-      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
       transform: translateY(-1px) scale(1.02);
+      box-shadow: 0 6px 16px rgb(15 23 42 / 8%);
 
       &:not(.#{$prefix-cls}__item--affix) .#{$prefix-cls}__item--close {
         opacity: 0.85;
       }
 
       .#{$prefix-cls}__item--close:hover {
-        opacity: 1;
         background: color-mix(in srgb, var(--tags-view-tool-hover-bg) 75%, transparent 25%);
+        opacity: 1;
         transform: scale(1.15);
       }
     }
 
     &:active {
-      box-shadow: none;
       transform: translateY(0) scale(0.98);
+      box-shadow: none;
       transition-duration: 0.08s;
     }
   }
@@ -600,8 +600,8 @@ $prefix-cls: #{$namespace}-tags-view;
         var(--tags-view-item-active-border-color) 44%,
         transparent 56%);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.35),
-      0 1px 2px rgba(15, 23, 42, 0.03);
+      inset 0 1px 0 rgb(255 255 255 / 35%),
+      0 1px 2px rgb(15 23 42 / 3%);
   }
 
   &__item.is-active .#{$prefix-cls}__item--title {
@@ -625,8 +625,8 @@ $prefix-cls: #{$namespace}-tags-view;
     left: 50%;
     width: var(--tags-view-active-indicator-width);
     height: 2px;
-    border-radius: 999px;
     background: var(--el-color-primary);
+    border-radius: 999px;
     content: "";
     transform: translateX(-50%);
   }
@@ -655,13 +655,13 @@ $prefix-cls: #{$namespace}-tags-view;
         color-mix(in srgb, var(--top-header-bg-color) 96%, #1f1f1f 4%) 0%,
         var(--top-header-bg-color) 100%);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.03),
+      inset 0 1px 0 rgb(255 255 255 / 3%),
       inset 0 -1px 0 color-mix(in srgb, var(--tags-view-border-color) 32%, transparent 68%);
 
     &::before {
-      border-color: color-mix(in srgb, var(--tags-view-border-color) 92%, transparent 8%);
       background: color-mix(in srgb, var(--top-header-bg-color) 94%, #1a1a1a 6%);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+      border-color: color-mix(in srgb, var(--tags-view-border-color) 92%, transparent 8%);
+      box-shadow: inset 0 1px 0 rgb(255 255 255 / 2%);
     }
 
     &__tool {
@@ -684,8 +684,8 @@ $prefix-cls: #{$namespace}-tags-view;
           var(--tags-view-item-active-border-color) 30%,
           transparent 70%);
       box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.03),
-        0 1px 2px rgba(0, 0, 0, 0.16);
+        inset 0 1px 0 rgb(255 255 255 / 3%),
+        0 1px 2px rgb(0 0 0 / 16%);
     }
 
     &__item--immerse:not(.is-active) {

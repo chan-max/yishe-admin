@@ -742,22 +742,22 @@ onMounted(loadGroups);
 }
 
 .image-group-sidebar__tree {
-  min-height: 0;
   height: 100%;
+  min-height: 0;
   overflow: hidden;
 }
 
 .image-group-id {
   display: inline-flex;
-  align-items: center;
   max-width: 100%;
-  gap: 5px;
   padding: 0;
-  border: 0;
-  color: var(--el-color-primary);
   font: inherit;
-  background: transparent;
+  color: var(--el-color-primary);
   cursor: pointer;
+  background: transparent;
+  border: 0;
+  align-items: center;
+  gap: 5px;
 }
 
 .image-group-id span {
@@ -792,9 +792,9 @@ onMounted(loadGroups);
   width: 60px;
   height: 60px;
   overflow: hidden;
+  background: var(--el-fill-color-light);
   border: 1px solid var(--el-border-color);
   border-radius: 6px;
-  background: var(--el-fill-color-light);
   transition:
     border-color 140ms ease,
     box-shadow 140ms ease,
@@ -818,9 +818,9 @@ onMounted(loadGroups);
 
 .image-group-member__placeholder {
   display: grid;
-  place-items: center;
-  color: var(--el-text-color-placeholder);
   font-size: 28px;
+  color: var(--el-text-color-placeholder);
+  place-items: center;
 }
 
 .image-group-member__order {
@@ -835,11 +835,11 @@ onMounted(loadGroups);
   left: 0;
   min-width: 18px;
   padding: 1px 4px;
-  border-radius: 0 0 5px 0;
   font-size: 9px;
   font-weight: 600;
   line-height: 14px;
   text-align: center;
+  border-radius: 0 0 5px;
 }
 
 .image-group-member__drag-indicator {
@@ -850,14 +850,14 @@ onMounted(loadGroups);
   display: grid;
   width: 17px;
   height: 17px;
-  place-items: center;
-  border-radius: 3px;
-  color: #fff;
-  background: rgb(0 0 0 / 62%);
   font-size: 12px;
-  opacity: 0;
+  color: #fff;
   pointer-events: none;
+  background: rgb(0 0 0 / 62%);
+  border-radius: 3px;
+  opacity: 0;
   transition: opacity 120ms ease;
+  place-items: center;
 }
 
 .image-group-member:hover .image-group-member__drag-indicator,
@@ -866,9 +866,9 @@ onMounted(loadGroups);
 }
 
 .image-group-member--ghost {
+  background: var(--el-color-primary-light-9) !important;
   border-color: var(--el-color-primary) !important;
   border-style: dashed !important;
-  background: var(--el-color-primary-light-9) !important;
   box-shadow: inset 0 0 0 1px var(--el-color-primary-light-7);
 }
 
@@ -892,19 +892,19 @@ onMounted(loadGroups);
   top: 0;
   right: 0;
   z-index: 3;
-  flex: 0 0 18px;
   width: 18px !important;
-  min-width: 18px !important;
-  max-width: 18px;
   height: 18px !important;
-  min-height: 18px !important;
+  max-width: 18px;
   max-height: 18px;
+  min-width: 18px !important;
+  min-height: 18px !important;
   padding: 0 !important;
-  border-radius: 50%;
   font-size: 10px;
   line-height: 18px;
+  border-radius: 50%;
   opacity: 0;
   transition: opacity 120ms ease;
+  flex: 0 0 18px;
 }
 
 .image-group-member:hover .image-group-member__remove,
@@ -935,13 +935,13 @@ onMounted(loadGroups);
   background-color: transparent !important;
 }
 
-@media (max-width: 1024px) {
+@media (width <= 1024px) {
   .image-group-sidebar__body {
     padding-bottom: 28px;
   }
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .image-group-members-grid {
     grid-template-columns: repeat(auto-fill, 52px);
     gap: 5px;

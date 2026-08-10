@@ -186,36 +186,35 @@ const buildTreeData = (list: any[]) => {
 
 <style scoped>
 .tree-container {
-  padding: 16px;
-  height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
   width: 100%;
+  height: 100%;
+  padding: 16px;
+  overflow: hidden auto;
   box-sizing: border-box;
 }
 
 .tree-node {
   display: flex;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 4px 0;
+  box-sizing: border-box;
   align-items: center;
   gap: 8px;
-  padding: 4px 0;
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  box-sizing: border-box;
 }
 
 .node-label {
-  font-size: 14px !important;
-  color: #333;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
-  flex: 1;
-  min-width: 0;
   display: block;
   width: 0;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 14px !important;
+  color: #333;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
   flex-grow: 1;
 }
 
@@ -224,9 +223,9 @@ const buildTreeData = (list: any[]) => {
 }
 
 :deep(.el-tree) {
-  overflow-x: hidden !important;
   width: 100%;
   max-width: 100%;
+  overflow-x: hidden !important;
   box-sizing: border-box;
 }
 
@@ -238,20 +237,20 @@ const buildTreeData = (list: any[]) => {
 }
 
 :deep(.el-tree-node__content) {
-  height: 32px;
-  line-height: 32px;
-  overflow: hidden !important;
   width: 100%;
+  height: 32px;
   max-width: 100%;
-  box-sizing: border-box;
   padding-right: 8px;
+  overflow: hidden !important;
+  line-height: 32px;
+  box-sizing: border-box;
 }
 
 :deep(.el-tree-node__content:hover) {
-  background-color: #f5f7fa;
-  overflow: hidden !important;
   width: 100% !important;
   max-width: 100% !important;
+  overflow: hidden !important;
+  background-color: #f5f7fa;
 }
 
 :deep(.el-tree-node__content:hover .tree-node) {
@@ -261,17 +260,17 @@ const buildTreeData = (list: any[]) => {
 }
 
 :deep(.el-tree-node__content:hover .node-label) {
-  font-size: 14px !important;
   max-width: 100%;
   overflow: hidden;
+  font-size: 14px !important;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 :deep(.el-tree-node.is-current > .el-tree-node__content) {
-  background-color: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
-  color: var(--el-color-primary);
   overflow: hidden !important;
+  color: var(--el-color-primary);
+  background-color: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
 }
 
 :deep(.el-tree-node__expand-icon) {

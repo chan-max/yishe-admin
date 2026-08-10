@@ -632,6 +632,34 @@ onUnmounted(() => {
 </script>
 
 <style scoped lang="scss">
+
+
+// ─── 响应式 ──────────────────────────────────────────────
+@media (width <= 768px) {
+  .amazon-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .amazon-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .amazon-header__actions,
+  .amazon-toolbar {
+    width: 100%;
+  }
+
+  .amazon-toolbar {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  .amazon-toolbar__spacer {
+    display: none;
+  }
+}
+
 .amazon-page {
   display: flex;
   flex-direction: column;
@@ -644,13 +672,13 @@ onUnmounted(() => {
 // ─── 顶部 ────────────────────────────────────────────────
 .amazon-header {
   display: flex;
+  padding: 12px 14px;
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 14px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
-  background: var(--el-bg-color);
 }
 
 .amazon-header__left {
@@ -680,13 +708,13 @@ onUnmounted(() => {
 
 .account-badge {
   display: flex;
-  align-items: center;
-  gap: 8px;
   min-height: 32px;
   padding: 4px 10px;
-  border-radius: 6px;
-  border: 1px solid var(--el-border-color-light);
   background: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 6px;
+  align-items: center;
+  gap: 8px;
 }
 
 .account-badge--empty {
@@ -694,14 +722,14 @@ onUnmounted(() => {
 }
 
 .account-badge__avatar {
-  background: var(--el-color-primary-light-9);
   color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
 }
 
 .account-badge__name {
-  font-size: 13px;
   max-width: 120px;
   overflow: hidden;
+  font-size: 13px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -733,20 +761,20 @@ onUnmounted(() => {
 
 .amazon-guide__num {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
   width: 18px;
   height: 18px;
-  border-radius: 50%;
-  background: var(--el-color-primary);
-  color: #fff;
   font-size: 11px;
   font-weight: 700;
+  color: #fff;
+  background: var(--el-color-primary);
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
 }
 
 .amazon-guide__arrow {
-  color: var(--el-text-color-placeholder);
   font-size: 12px;
+  color: var(--el-text-color-placeholder);
 }
 
 // ─── 统计卡片 ────────────────────────────────────────────
@@ -758,27 +786,30 @@ onUnmounted(() => {
 
 .amazon-stat {
   display: flex;
-  align-items: center;
-  gap: 10px;
   padding: 10px 12px;
+  background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-light);
   border-radius: 8px;
-  background: var(--el-bg-color);
+  align-items: center;
+  gap: 10px;
 }
 
 .amazon-stat__icon {
   display: flex;
-  align-items: center;
-  justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: 8px;
   font-size: 20px;
   color: #fff;
+  border-radius: 8px;
+  align-items: center;
+  justify-content: center;
 
   &--pending { background: #909399; }
+
   &--running { background: #e6a23c; }
+
   &--completed { background: #67c23a; }
+
   &--failed { background: #f56c6c; }
 }
 
@@ -795,12 +826,12 @@ onUnmounted(() => {
 // ─── 工具栏 ──────────────────────────────────────────────
 .amazon-toolbar {
   display: flex;
-  align-items: center;
-  gap: 8px;
   padding: 8px 10px;
+  background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
-  background: var(--el-bg-color);
+  align-items: center;
+  gap: 8px;
 }
 
 .amazon-toolbar__spacer {
@@ -809,8 +840,8 @@ onUnmounted(() => {
 
 // ─── 表格 ────────────────────────────────────────────────
 .amazon-table {
-  border-radius: 8px;
   overflow: hidden;
+  border-radius: 8px;
 }
 
 .amazon-table :deep(.el-table__header th) {
@@ -818,6 +849,7 @@ onUnmounted(() => {
 }
 
 .text-muted { color: var(--el-text-color-placeholder); }
+
 .text-error { color: var(--el-color-danger); }
 
 // ─── 分页 ────────────────────────────────────────────────
@@ -843,8 +875,8 @@ onUnmounted(() => {
 // ─── 对话框账号信息 ──────────────────────────────────────
 .current-account-info {
   padding: 8px 12px;
-  border-radius: 6px;
   background: var(--el-fill-color-light);
+  border-radius: 6px;
 }
 
 .current-account-info__row {
@@ -856,33 +888,7 @@ onUnmounted(() => {
 }
 
 .current-account-info__row .label {
-  color: var(--el-text-color-secondary);
   min-width: 56px;
-}
-
-// ─── 响应式 ──────────────────────────────────────────────
-@media (max-width: 768px) {
-  .amazon-stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .amazon-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .amazon-header__actions,
-  .amazon-toolbar {
-    width: 100%;
-  }
-
-  .amazon-toolbar {
-    align-items: stretch;
-    flex-wrap: wrap;
-  }
-
-  .amazon-toolbar__spacer {
-    display: none;
-  }
+  color: var(--el-text-color-secondary);
 }
 </style>

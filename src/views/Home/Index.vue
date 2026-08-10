@@ -288,6 +288,33 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
+
+
+/* ── 响应式 ──────────────────────────────── */
+@media (width <= 1180px) {
+  .home-grid--shortcuts {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .home-grid--modules {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (width <= 767px) {
+  .home-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .home-grid--shortcuts {
+    grid-template-columns: 1fr;
+  }
+
+  .home-stat__value {
+    font-size: 22px;
+  }
+}
+
 .home-dashboard {
   display: flex;
   flex-direction: column;
@@ -325,12 +352,12 @@ onMounted(() => {
 
 .home-stat {
   display: flex;
+  padding: 16px 18px;
+  background: color-mix(in srgb, var(--el-bg-color) 97%, transparent 3%);
+  border: 1px solid color-mix(in srgb, var(--el-border-color) 50%, transparent 50%);
+  border-radius: 12px;
   flex-direction: column;
   gap: 4px;
-  padding: 16px 18px;
-  border-radius: 12px;
-  border: 1px solid color-mix(in srgb, var(--el-border-color) 50%, transparent 50%);
-  background: color-mix(in srgb, var(--el-bg-color) 97%, transparent 3%);
 }
 
 .home-stat__value {
@@ -377,43 +404,43 @@ onMounted(() => {
 /* ── 快捷入口卡片 ────────────────────────── */
 .home-shortcut {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px;
-  border-radius: 12px;
-  border: 1px solid color-mix(in srgb, var(--el-border-color) 50%, transparent 50%);
-  background: color-mix(in srgb, var(--el-bg-color) 97%, transparent 3%);
-  appearance: none;
-  -webkit-appearance: none;
   width: 100%;
-  outline: none;
-  cursor: pointer;
+  padding: 14px;
   font: inherit;
   color: inherit;
   text-align: left;
+  cursor: pointer;
+  background: color-mix(in srgb, var(--el-bg-color) 97%, transparent 3%);
+  border: 1px solid color-mix(in srgb, var(--el-border-color) 50%, transparent 50%);
+  border-radius: 12px;
+  outline: none;
   transition:
     transform 0.16s ease,
     border-color 0.16s ease,
     box-shadow 0.16s ease;
+  appearance: none;
+  appearance: none;
+  align-items: flex-start;
+  gap: 12px;
 
   &:hover {
-    transform: translateY(-1px);
     border-color: color-mix(in srgb, var(--el-color-primary) 24%, var(--el-border-color) 76%);
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgb(15 23 42 / 6%);
   }
 }
 
 .home-shortcut__icon {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
   width: 34px;
   height: 34px;
-  flex-shrink: 0;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--el-fill-color-light) 80%, transparent 20%);
-  color: var(--el-text-color-primary);
   font-size: 16px;
+  color: var(--el-text-color-primary);
+  background: color-mix(in srgb, var(--el-fill-color-light) 80%, transparent 20%);
+  border-radius: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .home-shortcut__body {
@@ -423,37 +450,37 @@ onMounted(() => {
 .home-shortcut__title {
   font-size: 13px;
   font-weight: 700;
-  color: var(--el-text-color-primary);
   line-height: 1.3;
+  color: var(--el-text-color-primary);
 }
 
 .home-shortcut__desc {
   margin-top: 3px;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  line-height: 1.5;
-  white-space: nowrap;
   overflow: hidden;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--el-text-color-secondary);
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ── 功能模块卡片 ────────────────────────── */
 .home-module {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
   padding: 16px 18px;
-  border-radius: 12px;
-  border: 1px solid color-mix(in srgb, var(--el-border-color) 50%, transparent 50%);
-  background: color-mix(in srgb, var(--el-bg-color) 97%, transparent 3%);
   cursor: pointer;
+  background: color-mix(in srgb, var(--el-bg-color) 97%, transparent 3%);
+  border: 1px solid color-mix(in srgb, var(--el-border-color) 50%, transparent 50%);
+  border-radius: 12px;
   transition:
     border-color 0.16s ease,
     box-shadow 0.16s ease;
+  flex-direction: column;
+  gap: 12px;
 
   &:hover {
     border-color: color-mix(in srgb, var(--el-color-primary) 24%, var(--el-border-color) 76%);
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+    box-shadow: 0 4px 14px rgb(15 23 42 / 6%);
   }
 }
 
@@ -465,22 +492,22 @@ onMounted(() => {
 
 .home-module__icon {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
   width: 36px;
   height: 36px;
-  flex-shrink: 0;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--el-fill-color-light) 80%, transparent 20%);
-  color: var(--el-text-color-primary);
   font-size: 17px;
+  color: var(--el-text-color-primary);
+  background: color-mix(in srgb, var(--el-fill-color-light) 80%, transparent 20%);
+  border-radius: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .home-module__title {
   font-size: 14px;
   font-weight: 700;
-  color: var(--el-text-color-primary);
   line-height: 1.3;
+  color: var(--el-text-color-primary);
 }
 
 .home-module__desc {
@@ -491,21 +518,21 @@ onMounted(() => {
 
 .home-module__features {
   display: flex;
+  padding: 0;
+  margin: 0;
+  list-style: none;
   flex-direction: column;
   gap: 0;
-  margin: 0;
-  padding: 0;
-  list-style: none;
 
   li {
     display: flex;
+    padding: 7px 0;
+    cursor: pointer;
+    border-top: 1px solid color-mix(in srgb, var(--el-border-color-lighter) 60%, transparent 40%);
+    transition: color 0.14s ease;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    padding: 7px 0;
-    border-top: 1px solid color-mix(in srgb, var(--el-border-color-lighter) 60%, transparent 40%);
-    cursor: pointer;
-    transition: color 0.14s ease;
 
     &:hover {
       color: var(--el-color-primary);
@@ -539,30 +566,5 @@ onMounted(() => {
   font-size: 12px;
   font-weight: 600;
   color: var(--el-color-primary);
-}
-
-/* ── 响应式 ──────────────────────────────── */
-@media (max-width: 1180px) {
-  .home-grid--shortcuts {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .home-grid--modules {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 767px) {
-  .home-stats {
-    grid-template-columns: 1fr;
-  }
-
-  .home-grid--shortcuts {
-    grid-template-columns: 1fr;
-  }
-
-  .home-stat__value {
-    font-size: 22px;
-  }
 }
 </style>

@@ -67,9 +67,9 @@ onUnmounted(() => {
   z-index: 3000;
   width: min(300px, calc(100vw - 36px));
   padding: 8px 10px;
+  background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-light);
   border-radius: 8px;
-  background: var(--el-bg-color);
   box-shadow: var(--el-box-shadow-light);
 }
 
@@ -82,9 +82,9 @@ onUnmounted(() => {
 }
 
 .global-upload-panel__title {
-  color: var(--el-text-color-primary);
   font-size: 12px;
   font-weight: 600;
+  color: var(--el-text-color-primary);
 }
 
 .global-upload-panel__list {
@@ -97,8 +97,8 @@ onUnmounted(() => {
 
 .global-upload-panel__item {
   padding: 6px 8px;
-  border-radius: 6px;
   background: var(--el-fill-color-lighter);
+  border-radius: 6px;
 }
 
 .global-upload-panel__item.is-running {
@@ -123,25 +123,25 @@ onUnmounted(() => {
 }
 
 .global-upload-panel__item-name {
-  color: var(--el-text-color-primary);
+  overflow: hidden;
   font-size: 12px;
   font-weight: 500;
-  overflow: hidden;
+  color: var(--el-text-color-primary);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .global-upload-panel__item-status {
-  flex-shrink: 0;
-  color: var(--el-text-color-secondary);
   font-size: 11px;
+  color: var(--el-text-color-secondary);
+  flex-shrink: 0;
 }
 
 .global-upload-panel__item-stage {
   margin-top: 3px;
-  color: var(--el-text-color-secondary);
-  font-size: 11px;
   overflow: hidden;
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

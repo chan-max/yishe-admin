@@ -293,13 +293,13 @@ const isImageError = (url: string) => {
 /* 顶部 Header：更加精致紧凑 */
 .page-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  padding: 12px 20px;
   background-color: var(--el-bg-color-overlay);
   border: 1px solid var(--el-border-color-light);
   border-radius: 8px;
-  padding: 12px 20px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 2%);
+  align-items: center;
+  justify-content: space-between;
 }
 
 .header-left {
@@ -310,13 +310,13 @@ const isImageError = (url: string) => {
 
 .header-icon-wrapper {
   display: flex;
-  align-items: center;
-  justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 8px;
-  background-color: var(--el-color-primary-light-9);
   color: var(--el-color-primary);
+  background-color: var(--el-color-primary-light-9);
+  border-radius: 8px;
+  align-items: center;
+  justify-content: center;
 }
 
 .header-icon {
@@ -331,7 +331,7 @@ const isImageError = (url: string) => {
 }
 
 .header-subtitle {
-  margin: 2px 0 0 0;
+  margin: 2px 0 0;
   font-size: 12px;
   color: var(--el-text-color-secondary);
 }
@@ -341,10 +341,10 @@ const isImageError = (url: string) => {
 }
 
 .search-input :deep(.el-input__wrapper) {
-  border-radius: 16px;
   background-color: var(--el-fill-color-light);
-  box-shadow: none;
   border: 1px solid transparent;
+  border-radius: 16px;
+  box-shadow: none;
   transition: all 0.2s ease;
 }
 
@@ -361,15 +361,15 @@ const isImageError = (url: string) => {
 }
 
 .category-section {
+  padding: 16px;
   background-color: var(--el-bg-color-overlay);
   border: 1px solid var(--el-border-color-light);
   border-radius: 8px;
-  padding: 16px;
 }
 
 .category-header {
-  margin-bottom: 12px;
   padding-bottom: 8px;
+  margin-bottom: 12px;
   border-bottom: 1px dashed var(--el-border-color-lighter);
 }
 
@@ -383,18 +383,18 @@ const isImageError = (url: string) => {
 }
 
 .category-icon {
-  color: var(--el-color-primary);
   font-size: 16px;
+  color: var(--el-color-primary);
 }
 
 .category-count {
+  padding: 1px 6px;
   margin-left: 4px;
   font-size: 12px;
+  font-weight: normal;
   color: var(--el-text-color-secondary);
   background-color: var(--el-fill-color);
-  padding: 1px 6px;
   border-radius: 10px;
-  font-weight: normal;
 }
 
 /* 链接网格：更加紧凑精美 */
@@ -405,17 +405,17 @@ const isImageError = (url: string) => {
 }
 
 .link-card {
+  position: relative;
   display: flex;
+  padding: 8px 10px;
+  overflow: hidden;
+  cursor: pointer;
+  background-color: var(--el-bg-color-page);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
   align-items: center;
   gap: 8px;
-  padding: 8px 10px;
-  border-radius: 6px;
-  border: 1px solid var(--el-border-color-lighter);
-  background-color: var(--el-bg-color-page);
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
-  position: relative;
-  overflow: hidden;
 }
 
 .link-card:hover {
@@ -424,14 +424,14 @@ const isImageError = (url: string) => {
 }
 
 .link-icon {
+  display: flex;
   width: 20px;
   height: 20px;
-  display: flex;
+  color: var(--el-text-color-secondary);
+  background-color: var(--el-fill-color-light);
+  border-radius: 4px;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
-  background-color: var(--el-fill-color-light);
-  color: var(--el-text-color-secondary);
   flex-shrink: 0;
 }
 
@@ -447,18 +447,18 @@ const isImageError = (url: string) => {
 }
 
 .link-info {
-  flex: 1;
-  min-width: 0; /* 允许文本截断 */
   display: flex;
+  min-width: 0; /* 允许文本截断 */
+  flex: 1;
   align-items: center;
 }
 
 .link-name {
+  overflow: hidden;
   font-size: 12px;
   color: var(--el-text-color-primary);
-  white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .link-card:hover .link-name {
@@ -481,19 +481,19 @@ const isImageError = (url: string) => {
 
 .action-btn {
   display: flex;
-  align-items: center;
-  justify-content: center;
   width: 20px;
   height: 20px;
-  border-radius: 4px;
   color: var(--el-text-color-secondary);
+  border-radius: 4px;
   transition: all 0.15s ease;
+  align-items: center;
+  justify-content: center;
 }
 
 .action-btn:hover {
-  background-color: var(--el-color-white);
   color: var(--el-color-primary);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background-color: var(--el-color-white);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 10%);
 }
 
 .empty-state {
@@ -512,7 +512,7 @@ const isImageError = (url: string) => {
 }
 
 .empty-state p {
-  font-size: 13px;
   margin: 0;
+  font-size: 13px;
 }
 </style>

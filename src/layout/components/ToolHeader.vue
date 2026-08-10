@@ -92,10 +92,65 @@ export default defineComponent({
 <style lang="scss" scoped>
 $prefix-cls: #{$namespace}-tool-header;
 
+@media (width >= 768px) and (width <= 1180px) {
+  .#{$prefix-cls} {
+    padding-right: 10px;
+    padding-left: 12px;
+  }
+
+  .tool-header-right {
+    gap: 8px;
+  }
+
+  .tool-header-left {
+    gap: 6px;
+  }
+
+  .tool-header-right {
+    padding-left: 8px;
+  }
+
+  .header-breadcrumb {
+    max-width: min(34vw, 280px);
+  }
+}
+
+@media (width <= 768px) {
+  .#{$prefix-cls} {
+    padding-right: 8px;
+    padding-left: 10px;
+  }
+
+  .tool-header-right {
+    gap: 4px;
+    padding-left: 4px;
+  }
+
+  .client-status-wrapper {
+    flex-shrink: 0;
+  }
+}
+
+@media (width <= 640px) {
+  .#{$prefix-cls} {
+    padding-right: 4px;
+    padding-left: 8px;
+  }
+
+  .tool-header-left {
+    gap: 4px;
+  }
+
+  .tool-header-right {
+    gap: 2px;
+    padding-left: 2px;
+  }
+}
+
 .#{$prefix-cls} {
   min-height: var(--top-tool-height);
-  padding-left: 14px;
   padding-right: 14px;
+  padding-left: 14px;
   color: var(--top-header-text-color);
 }
 
@@ -116,31 +171,31 @@ $prefix-cls: #{$namespace}-tool-header;
   display: inline-flex;
   width: var(--top-header-action-size);
   height: var(--top-header-action-size);
-  flex: 0 0 var(--top-header-action-size);
-  align-items: center;
-  justify-content: center;
   padding: 0;
-  border: 1px solid var(--left-menu-border-color);
-  border-radius: var(--top-header-action-radius);
-  background: transparent;
   color: var(--top-header-text-color);
   cursor: pointer;
+  background: transparent;
+  border: 1px solid var(--left-menu-border-color);
+  border-radius: var(--top-header-action-radius);
   transition:
     border-color 0.16s ease,
     background-color 0.16s ease;
+  flex: 0 0 var(--top-header-action-size);
+  align-items: center;
+  justify-content: center;
 }
 
 .tool-header-menu-toggle:hover,
 .tool-header-menu-toggle:focus-visible {
-  outline: none;
-  border-color: color-mix(in srgb, var(--el-color-primary) 36%, var(--left-menu-border-color));
   background: var(--top-header-hover-color);
+  border-color: color-mix(in srgb, var(--el-color-primary) 36%, var(--left-menu-border-color));
+  outline: none;
 }
 
 .tool-header-right {
-  gap: 10px;
-  overflow: visible;
   padding-left: 10px;
+  overflow: visible;
+  gap: 10px;
 }
 
 .tool-header-right > * {
@@ -162,68 +217,13 @@ $prefix-cls: #{$namespace}-tool-header;
 .client-status-wrapper {
   display: flex;
   min-width: 0;
+  padding-right: 2px;
+  white-space: nowrap;
   flex-shrink: 1;
   justify-content: flex-end;
-  white-space: nowrap;
-  padding-right: 2px;
 }
 
 .client-status-wrapper :deep(.header-connection-status__trigger) {
   max-width: 100%;
-}
-
-@media (min-width: 768px) and (max-width: 1180px) {
-  .#{$prefix-cls} {
-    padding-left: 12px;
-    padding-right: 10px;
-  }
-
-  .tool-header-right {
-    gap: 8px;
-  }
-
-  .tool-header-left {
-    gap: 6px;
-  }
-
-  .tool-header-right {
-    padding-left: 8px;
-  }
-
-  .header-breadcrumb {
-    max-width: min(34vw, 280px);
-  }
-}
-
-@media (max-width: 768px) {
-  .#{$prefix-cls} {
-    padding-left: 10px;
-    padding-right: 8px;
-  }
-
-  .tool-header-right {
-    gap: 4px;
-    padding-left: 4px;
-  }
-
-  .client-status-wrapper {
-    flex-shrink: 0;
-  }
-}
-
-@media (max-width: 640px) {
-  .#{$prefix-cls} {
-    padding-left: 8px;
-    padding-right: 4px;
-  }
-
-  .tool-header-left {
-    gap: 4px;
-  }
-
-  .tool-header-right {
-    gap: 2px;
-    padding-left: 2px;
-  }
 }
 </style>

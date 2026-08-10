@@ -147,7 +147,7 @@
       <el-image
         v-if="modelInfo.thumbnail || modelInfo.cover"
         :src="modelInfo.thumbnail || modelInfo.cover"
-        style="width: 260px; height: 260px; border-radius: 8px; margin-right: 48px; object-fit: cover;"
+        style="width: 260px; height: 260px; margin-right: 48px; border-radius: 8px; object-fit: cover;"
         fit="cover"
       />
       <el-form label-width="120px" style="flex: 1;">

@@ -8,12 +8,12 @@ html.light {
 
   --login-bg-color: #f3f7fd;
 
-  /* 全局白天模式 (Light Mode) 高对比度文本色彩 - 解决字体颜色偏浅问题 */
-  --el-text-color-primary: #0f172a;
-  --el-text-color-regular: #334155;
-  --el-text-color-secondary: #475569;
-  --el-text-color-placeholder: #64748b;
-  --el-text-color-disabled: #94a3b8;
+  /* 全局白天模式 (Light Mode) 高对比度文本色彩 - 加深字体颜色 */
+  --el-text-color-primary: #020617;
+  --el-text-color-regular: #1e293b;
+  --el-text-color-secondary: #334155;
+  --el-text-color-placeholder: #475569;
+  --el-text-color-disabled: #64748b;
 
   --left-menu-max-width: 280px;
   --left-menu-mobile-max-width: 232px;
@@ -21,16 +21,16 @@ html.light {
   --left-menu-bg-color: #f7f9fc;
   --left-menu-bg-light-color: #ffffff;
   --left-menu-bg-active-color: var(--el-color-primary-light-9);
-  --left-menu-text-color: #2d3846;
+  --left-menu-text-color: #1a2233;
   --left-menu-text-active-color: var(--el-color-primary);
   --left-menu-collapse-bg-active-color: var(--el-color-primary-light-9);
   --left-menu-border-color: #d9e1ec;
   --left-menu-divider-color: rgba(110, 129, 158, 0.16);
   --left-menu-hover-color: #eef3fa;
-  --left-menu-icon-color: #6f7f96;
-  --left-menu-title-color: #162033;
+  --left-menu-icon-color: #4a5568;
+  --left-menu-title-color: #0f172a;
   --left-menu-arrow-color: #8090a6;
-  --left-menu-link-text-color: #3c4553;
+  --left-menu-link-text-color: #1e293b;
   --left-menu-link-hover-color: #21304b;
   --left-menu-link-hover-bg: var(--el-color-primary-light-9);
   --left-menu-link-active-bg: var(--el-color-primary-light-8);
@@ -428,7 +428,7 @@ html.dark {
     var(--el-color-primary) 14%,
     #181818 86%
   );
-  --left-menu-text-color: #b9c0cc;
+  --left-menu-text-color: rgba(255, 255, 255, 0.72);
   --left-menu-text-active-color: var(--el-color-primary);
   --left-menu-collapse-bg-active-color: color-mix(
     in srgb,
@@ -441,8 +441,8 @@ html.dark {
   --left-menu-icon-color: #8e97a7;
   --left-menu-title-color: #f3f4f6;
   --left-menu-arrow-color: #7f8796;
-  --left-menu-link-text-color: rgba(255, 255, 255, 0.56);
-  --left-menu-link-hover-color: rgba(255, 255, 255, 0.88);
+  --left-menu-link-text-color: rgba(255, 255, 255, 0.64);
+  --left-menu-link-hover-color: rgba(255, 255, 255, 0.92);
   --left-menu-link-hover-bg: rgba(255, 255, 255, 0.035);
   --left-menu-link-active-bg: color-mix(
     in srgb,
@@ -472,9 +472,9 @@ html.dark {
   --tags-view-tool-hover-bg: rgba(255, 255, 255, 0.01);
   --tags-view-item-bg: rgba(255, 255, 255, 0.018);
   --tags-view-item-border-color: rgba(255, 255, 255, 0.03);
-  --tags-view-item-color: rgba(255, 255, 255, 0.6);
+  --tags-view-item-color: rgba(255, 255, 255, 0.68);
   --tags-view-item-hover-bg: rgba(255, 255, 255, 0.035);
-  --tags-view-item-hover-color: rgba(255, 255, 255, 0.92);
+  --tags-view-item-hover-color: rgba(255, 255, 255, 0.95);
   --tags-view-item-active-bg: transparent;
   --tags-view-item-active-border-color: rgba(125, 176, 255, 0.14);
   --tags-view-item-active-color: #d6e6ff;

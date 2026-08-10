@@ -84,7 +84,7 @@ const reset = (formEl: FormInstance | undefined) => {
   margin-top: 8px;
 }
 
-@media (max-width: 900px) {
+@media (width <= 900px) {
   .password-form__grid {
     grid-template-columns: 1fr;
   }

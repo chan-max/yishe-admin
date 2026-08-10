@@ -36,7 +36,7 @@
         :default-expanded-keys="expandedKeys"
         :highlight-current="true"
         :current-node-key="modelValue || getDefaultCurrentKey()"
-        style="max-height: calc(100vh - 300px); overflow-y: auto; overflow-x: hidden"
+        style="max-height: calc(100vh - 300px); overflow: hidden auto"
         class="sticker-folder-tree"
       >
         <template #default="{ node, data }">

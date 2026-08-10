@@ -165,58 +165,59 @@ onBeforeUnmount(() => {
   right: 0;
   bottom: 30px;
   display: flex;
-  flex-direction: column;
   width: min(400px, calc(100vw - 32px));
   height: min(600px, calc(100vh - 72px));
   overflow: hidden;
+  background: var(--el-bg-color-overlay, var(--el-bg-color, #fff));
   border: 1px solid var(--el-border-color-lighter, #e5e7eb);
   border-radius: 10px;
-  background: var(--el-bg-color-overlay, var(--el-bg-color, #ffffff));
   box-shadow:
-    0 18px 44px rgba(0, 0, 0, 0.16),
-    0 2px 8px rgba(0, 0, 0, 0.06);
+    0 18px 44px rgb(0 0 0 / 16%),
+    0 2px 8px rgb(0 0 0 / 6%);
+  animation: aiAssistantSlideUp 0.16s ease;
   transition:
     box-shadow 0.2s ease,
     opacity 0.2s ease;
-  animation: aiAssistantSlideUp 0.16s ease;
+  flex-direction: column;
 }
 
 :global(html.dark) .ai-assistant-popper {
   border-color: var(--el-border-color-darker, #363637);
   box-shadow:
-    0 18px 44px rgba(0, 0, 0, 0.5),
-    0 2px 8px rgba(0, 0, 0, 0.3);
+    0 18px 44px rgb(0 0 0 / 50%),
+    0 2px 8px rgb(0 0 0 / 30%);
 }
 
 @keyframes aiAssistantSlideUp {
   from { opacity: 0; transform: translateY(8px); }
+
   to { opacity: 1; transform: translateY(0); }
 }
 
 .ai-assistant-popper.dragging {
   opacity: 0.96;
   box-shadow:
-    0 24px 54px rgba(0, 0, 0, 0.25),
-    0 4px 12px rgba(0, 0, 0, 0.12);
+    0 24px 54px rgb(0 0 0 / 25%),
+    0 4px 12px rgb(0 0 0 / 12%);
   transition: none;
   user-select: none;
 }
 
 :global(html.dark) .ai-assistant-popper.dragging {
   box-shadow:
-    0 24px 54px rgba(0, 0, 0, 0.65),
-    0 4px 12px rgba(0, 0, 0, 0.4);
+    0 24px 54px rgb(0 0 0 / 65%),
+    0 4px 12px rgb(0 0 0 / 40%);
 }
 
 .popper-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
   min-height: 44px;
   padding: 0 12px;
-  border-bottom: 1px solid var(--el-border-color-lighter, #f0f0f0);
-  background: var(--el-bg-color-overlay, #ffffff);
   cursor: grab;
+  background: var(--el-bg-color-overlay, #fff);
+  border-bottom: 1px solid var(--el-border-color-lighter, #f0f0f0);
+  align-items: center;
+  justify-content: space-between;
   flex-shrink: 0;
 }
 
@@ -225,8 +226,8 @@ onBeforeUnmount(() => {
 }
 
 :global(html.dark) .popper-header {
-  border-bottom-color: var(--el-border-color-darker, #363637);
   background: var(--el-bg-color-overlay, #1d1e1f);
+  border-bottom-color: var(--el-border-color-darker, #363637);
 }
 
 .header-title {
@@ -239,16 +240,16 @@ onBeforeUnmount(() => {
 }
 
 .header-title::before {
-  content: "";
   width: 8px;
   height: 8px;
-  border-radius: 50%;
   background: var(--el-color-primary, #1677ff);
-  box-shadow: 0 0 0 3px rgba(22, 119, 255, 0.12);
+  border-radius: 50%;
+  content: "";
+  box-shadow: 0 0 0 3px rgb(22 119 255 / 12%);
 }
 
 :global(html.dark) .header-title::before {
-  box-shadow: 0 0 0 3px rgba(22, 119, 255, 0.25);
+  box-shadow: 0 0 0 3px rgb(22 119 255 / 25%);
 }
 
 .header-actions {
@@ -258,61 +259,61 @@ onBeforeUnmount(() => {
 
 .icon-btn {
   display: flex;
-  align-items: center;
-  justify-content: center;
   width: 26px;
   height: 26px;
-  border: none;
-  border-radius: 4px;
-  background: transparent;
   color: var(--el-text-color-secondary, #8f959e);
   cursor: pointer;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
   transition: all 0.15s ease;
+  align-items: center;
+  justify-content: center;
 }
 
 .icon-btn:hover {
-  background: var(--el-fill-color-light, #f5f7fa);
   color: var(--el-text-color-primary, #1f2329);
+  background: var(--el-fill-color-light, #f5f7fa);
 }
 
 :global(html.dark) .icon-btn:hover {
-  background: var(--el-fill-color-dark, #262727);
   color: var(--el-text-color-primary, #e5eaf3);
+  background: var(--el-fill-color-dark, #262727);
 }
 
 .floating-btn {
   position: relative;
   display: flex;
-  align-items: center;
-  justify-content: center;
   width: 24px;
   height: 24px;
   overflow: hidden;
-  background: var(--el-color-primary, #1677ff);
   color: #fff;
   cursor: pointer;
+  background: var(--el-color-primary, #1677ff);
   box-shadow:
-    -2px -2px 8px rgba(0, 0, 0, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    -2px -2px 8px rgb(0 0 0 / 15%),
+    inset 0 1px 0 rgb(255 255 255 / 20%);
   transition:
     background 0.2s ease,
     box-shadow 0.2s ease;
+  align-items: center;
+  justify-content: center;
 }
 
 .floating-btn::before {
-  content: "";
   position: absolute;
-  inset: 0;
   height: 50%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, transparent 100%);
   pointer-events: none;
+  background: linear-gradient(180deg, rgb(255 255 255 / 16%) 0%, transparent 100%);
+  content: "";
+  inset: 0;
 }
 
 .floating-btn:hover {
   background: var(--el-color-primary-dark-2, #0958d9);
   box-shadow:
-    -3px -3px 12px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    -3px -3px 12px rgb(0 0 0 / 20%),
+    inset 0 1px 0 rgb(255 255 255 / 25%);
 }
 
 .btn-icon {

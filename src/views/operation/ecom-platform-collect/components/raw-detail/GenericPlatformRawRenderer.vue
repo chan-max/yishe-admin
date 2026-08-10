@@ -226,9 +226,9 @@ const sourceUrl = computed(() => getRawLink(props.record));
 .platform-raw-renderer__hero,
 .platform-raw-renderer__section {
   padding: 16px;
+  background: var(--el-bg-color-overlay);
   border: 1px solid var(--el-border-color-light);
   border-radius: 12px;
-  background: var(--el-bg-color-overlay);
 }
 
 .platform-raw-renderer__hero {
@@ -242,56 +242,56 @@ const sourceUrl = computed(() => getRawLink(props.record));
 }
 
 .platform-raw-renderer__platform {
-  color: var(--el-color-primary);
   font-size: 12px;
   font-weight: 600;
   line-height: 1.4;
+  color: var(--el-color-primary);
 }
 
 .platform-raw-renderer__title {
   margin-top: 6px;
-  color: var(--el-text-color-primary);
   font-size: 20px;
   font-weight: 600;
   line-height: 1.5;
+  color: var(--el-text-color-primary);
   word-break: break-word;
 }
 
 .platform-raw-renderer__subtitle {
   margin-top: 8px;
-  color: var(--el-text-color-regular);
   font-size: 13px;
   line-height: 1.7;
+  color: var(--el-text-color-regular);
 }
 
 .platform-raw-renderer__hero-side {
-  flex: none;
-  min-width: 240px;
   display: flex;
+  min-width: 240px;
+  flex: none;
   flex-direction: column;
   gap: 10px;
 }
 
 .platform-raw-renderer__price {
-  color: var(--el-color-danger);
   font-size: 22px;
   font-weight: 700;
   line-height: 1.2;
+  color: var(--el-color-danger);
 }
 
 .platform-raw-renderer__meta {
   display: flex;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
   flex-direction: column;
   gap: 4px;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
 }
 
 .platform-raw-renderer__section-title {
   margin-bottom: 12px;
-  color: var(--el-text-color-primary);
   font-size: 14px;
   font-weight: 600;
+  color: var(--el-text-color-primary);
 }
 
 .platform-raw-renderer__image-grid,
@@ -305,28 +305,28 @@ const sourceUrl = computed(() => getRawLink(props.record));
 .platform-raw-renderer__snapshot-image {
   width: 100%;
   height: 140px;
-  border-radius: 10px;
   background: var(--el-fill-color-light);
+  border-radius: 10px;
 }
 
 .platform-raw-renderer__snapshot-card {
   overflow: hidden;
+  background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 12px;
-  background: var(--el-bg-color);
 }
 
 .platform-raw-renderer__snapshot-placeholder {
   display: flex;
-  align-items: center;
-  justify-content: center;
   width: 100%;
   height: 140px;
   padding: 12px;
-  background: var(--el-fill-color-light);
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
   text-align: center;
+  background: var(--el-fill-color-light);
+  align-items: center;
+  justify-content: center;
 }
 
 .platform-raw-renderer__snapshot-meta {
@@ -334,55 +334,55 @@ const sourceUrl = computed(() => getRawLink(props.record));
 }
 
 .platform-raw-renderer__snapshot-label {
-  color: var(--el-text-color-primary);
   font-size: 13px;
   font-weight: 500;
+  color: var(--el-text-color-primary);
 }
 
 .platform-raw-renderer__snapshot-key {
   margin-top: 6px;
-  color: var(--el-text-color-secondary);
   font-size: 11px;
   line-height: 1.5;
+  color: var(--el-text-color-secondary);
   word-break: break-all;
 }
 
 .platform-raw-renderer__snapshot-path {
   margin-top: 6px;
-  color: var(--el-text-color-secondary);
   font-size: 11px;
   line-height: 1.5;
+  color: var(--el-text-color-secondary);
   word-break: break-all;
 }
 
 .platform-raw-renderer__json {
   max-height: 420px;
-  overflow: auto;
-  margin: 0;
   padding: 14px;
-  border-radius: 10px;
-  background: var(--el-fill-color-light);
-  color: var(--el-text-color-primary);
+  margin: 0;
+  overflow: auto;
   font-size: 12px;
   line-height: 1.6;
-  white-space: pre-wrap;
+  color: var(--el-text-color-primary);
   word-break: break-word;
+  white-space: pre-wrap;
+  background: var(--el-fill-color-light);
+  border-radius: 10px;
 }
 
 .platform-raw-renderer__value {
-  white-space: pre-wrap;
   word-break: break-word;
+  white-space: pre-wrap;
 }
 
 .mono {
   font-family:
-    "SFMono-Regular",
+    SFMono-Regular,
     "Cascadia Code",
     "Source Code Pro",
     monospace;
 }
 
-@media (max-width: 900px) {
+@media (width <= 900px) {
   .platform-raw-renderer__hero {
     flex-direction: column;
   }

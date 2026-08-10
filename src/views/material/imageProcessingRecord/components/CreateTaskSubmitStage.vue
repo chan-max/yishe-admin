@@ -80,12 +80,12 @@ defineEmits(["cancel", "submit"]);
   display: flex;
   width: 28px;
   height: 28px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  background: var(--el-fill-color-light);
   font-size: 12px;
   font-weight: 600;
+  background: var(--el-fill-color-light);
+  border-radius: 999px;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
 
@@ -99,19 +99,19 @@ defineEmits(["cancel", "submit"]);
 .create-task-intro__title,
 .create-task-request-preview__title,
 .create-task-preview-chain__title {
-  color: var(--el-text-color-primary);
   font-size: 13px;
   font-weight: 600;
   line-height: 1.5;
+  color: var(--el-text-color-primary);
 }
 
 .create-task-stage__desc,
 .create-task-intro__desc,
 .create-task-preview-chain__desc,
 .create-task-actions__hint {
-  color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 1.6;
+  color: var(--el-text-color-secondary);
 }
 
 .create-task-submit-grid {
@@ -123,45 +123,45 @@ defineEmits(["cancel", "submit"]);
 
 .create-task-panel {
   min-height: 0;
-  gap: 14px;
+  padding: 16px 18px;
+  background: var(--el-bg-color-page);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 16px;
-  background: var(--el-bg-color-page);
-  padding: 16px 18px;
+  gap: 14px;
 }
 
 .create-task-panel--preview {
   padding: 0;
-  border: 0;
   background: transparent;
+  border: 0;
 }
 
 .create-task-intro,
 .create-task-panel {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-  background: transparent;
   padding: 0;
+  background: transparent;
   border: none;
   box-shadow: none;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .create-task-panel--preview {
   padding: 0;
-  border: 0;
   background: transparent;
+  border: 0;
 }
 
 .create-task-intro,
 .create-task-request-preview,
 .create-task-preview-chain {
   display: flex;
+  padding: 0;
+  background: transparent;
+  border: none;
   flex-direction: column;
   gap: 8px;
-  background: transparent;
-  padding: 0;
-  border: none;
 }
 
 .create-task-request-preview {
@@ -175,11 +175,11 @@ defineEmits(["cancel", "submit"]);
 }
 
 .create-task-preview-chip {
-  border-radius: 4px;
-  background: var(--el-fill-color-light);
   padding: 4px 10px;
-  color: var(--el-text-color-primary);
   font-size: 12px;
+  color: var(--el-text-color-primary);
+  background: var(--el-fill-color-light);
+  border-radius: 4px;
 }
 
 .create-task-preview-chip--more {
@@ -187,30 +187,30 @@ defineEmits(["cancel", "submit"]);
 }
 
 .create-task-json-block {
+  max-width: 100%;
+  padding: 10px 12px;
   margin: 0;
   overflow: auto;
-  max-width: 100%;
-  flex: 1;
-  border-radius: 6px;
-  background: var(--el-fill-color-extra-light);
-  padding: 10px 12px;
-  color: var(--el-text-color-regular);
   font-size: 12px;
   line-height: 1.5;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  color: var(--el-text-color-regular);
   word-break: break-word;
+  white-space: pre-wrap;
+  background: var(--el-fill-color-extra-light);
   border: 1px dashed var(--el-border-color-lighter);
+  border-radius: 6px;
+  flex: 1;
+  overflow-wrap: anywhere;
 }
 
 .create-task-actions {
   display: flex;
+  padding-top: 16px;
+  margin-top: 10px;
+  background: transparent;
+  border-top: 1px solid var(--el-border-color-extra-light);
   flex-direction: column;
   gap: 12px;
-  margin-top: 10px;
-  padding-top: 16px;
-  border-top: 1px solid var(--el-border-color-extra-light);
-  background: transparent;
 }
 
 .create-task-actions__buttons {
@@ -220,7 +220,7 @@ defineEmits(["cancel", "submit"]);
   flex-wrap: wrap;
 }
 
-@media (max-width: 1200px) {
+@media (width <= 1200px) {
   .create-task-submit-grid {
     grid-template-columns: 1fr;
   }
@@ -230,7 +230,7 @@ defineEmits(["cancel", "submit"]);
   }
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .create-task-panel,
   .create-task-actions {
     padding: 0;

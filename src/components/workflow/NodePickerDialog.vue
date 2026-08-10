@@ -4,6 +4,7 @@ import { Search, Close } from '@element-plus/icons-vue'
 import {
   SYSTEM_NODE_REGISTRY,
   NODE_CATEGORIES,
+  NODE_REQUIREMENTS,
   type SystemNodeCapability
 } from '@/views/workflow/editor/config/nodeRegistry'
 
@@ -45,6 +46,11 @@ const handleSelect = (cap: SystemNodeCapability) => {
   activeCategory.value = 'all'
 }
 
+const getReqStyle = (type: string) => {
+  const color = NODE_REQUIREMENTS[type].color
+  return { color, background: `color-mix(in srgb, ${color} 12%, transparent)` }
+}
+
 const handleClose = () => {
   emit('update:modelValue', false)
   searchQuery.value = ''
@@ -53,31 +59,17 @@ const handleClose = () => {
 </script>
 
 <template>
-  <el-dialog
-    :model-value="modelValue"
-    :show-close="false"
-    fullscreen
-    class="node-picker-dialog"
-    @close="handleClose"
-  >
+  <el-dialog :model-value="modelValue" :show-close="false" fullscreen class="node-picker-dialog" @close="handleClose">
     <div class="np-layout">
       <!-- 顶部栏 -->
       <div class="np-header">
-        <div class="np-header__left">
-          <span class="np-header__title">选择功能节点</span>
-          <span class="np-header__count">{{ SYSTEM_NODE_REGISTRY.length }} 个能力已集成</span>
-        </div>
+
         <div class="np-header__center">
-          <el-input
-            v-model="searchQuery"
-            placeholder="搜索节点..."
-            size="default"
-            clearable
-            autofocus
-            class="np-search"
-          >
+          <el-input v-model="searchQuery" placeholder="搜索节点..." size="default" clearable autofocus class="np-search">
             <template #prefix>
-              <el-icon><Search /></el-icon>
+              <el-icon>
+                <Search />
+              </el-icon>
             </template>
           </el-input>
         </div>
@@ -90,13 +82,8 @@ const handleClose = () => {
       <div class="np-body">
         <!-- 左侧分类 -->
         <div class="np-sidebar">
-          <div
-            v-for="cat in NODE_CATEGORIES"
-            :key="cat.key"
-            class="np-sidebar__item"
-            :class="{ 'is-active': activeCategory === cat.key }"
-            @click="activeCategory = cat.key"
-          >
+          <div v-for="cat in NODE_CATEGORIES" :key="cat.key" class="np-sidebar__item"
+            :class="{ 'is-active': activeCategory === cat.key }" @click="activeCategory = cat.key">
             <span class="np-sidebar__label">{{ cat.label }}</span>
             <span class="np-sidebar__count">{{ getCategoryCount(cat.key) }}</span>
           </div>
@@ -105,24 +92,36 @@ const handleClose = () => {
         <!-- 右侧节点网格 -->
         <div class="np-grid-wrap">
           <div v-if="filteredCapabilities.length === 0" class="np-empty">
-            <el-empty description="未找到匹配的节点" :image-size="60" />
+            <div class="np-empty__illustration">
+              <el-icon class="np-empty__icon">
+                <Search />
+              </el-icon>
+            </div>
+            <p class="np-empty__title">未找到匹配的节点</p>
+            <p class="np-empty__desc">尝试更换搜索词或切换分类</p>
           </div>
           <div v-else class="np-grid">
-            <div
-              v-for="cap in filteredCapabilities"
-              :key="cap.type"
-              class="np-card"
-              @click="handleSelect(cap)"
-            >
-              <div class="np-card__icon" :style="{ background: cap.color }">
-                <Icon :icon="cap.icon" />
+            <div v-for="cap in filteredCapabilities" :key="cap.type" class="np-card" @click="handleSelect(cap)">
+              <div class="np-card__icon">
+                <img v-if="cap.iconImage" :src="cap.iconImage" class="np-card__icon-img" />
+                <Icon v-else :icon="cap.icon" :style="{ color: cap.color }" />
               </div>
               <div class="np-card__body">
                 <div class="np-card__name">
                   {{ cap.name }}
-                  <span v-if="cap.badge" class="np-card__badge" :style="{ color: cap.color, borderColor: cap.color }">{{ cap.badge }}</span>
                 </div>
                 <div class="np-card__desc">{{ cap.description }}</div>
+                <div v-if="cap.requirements?.length" class="np-card__requirements">
+                  <span
+                    v-for="req in cap.requirements"
+                    :key="req.type"
+                    class="np-card__req-tag"
+                    :style="getReqStyle(req.type)"
+                    :title="req.description || req.label"
+                  >
+                    {{ NODE_REQUIREMENTS[req.type].label }}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -138,9 +137,10 @@ const handleClose = () => {
   .el-dialog__header {
     display: none;
   }
+
   .el-dialog__body {
-    padding: 0;
     height: 100vh;
+    padding: 0;
     overflow: hidden;
   }
 }
@@ -149,44 +149,26 @@ const handleClose = () => {
 <style scoped lang="scss">
 .np-layout {
   display: flex;
-  flex-direction: column;
   height: 100vh;
-  background: var(--el-bg-color);
   overflow: hidden;
+  background: var(--el-bg-color);
+  flex-direction: column;
 }
 
 /* 顶部栏 */
 .np-header {
   display: flex;
+  height: 56px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--el-border-color-light);
   align-items: center;
   gap: 16px;
-  padding: 0 20px;
-  height: 52px;
-  border-bottom: 1px solid var(--el-border-color-light);
   flex-shrink: 0;
-}
-
-.np-header__left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-.np-header__title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-}
-
-.np-header__count {
-  font-size: 11px;
-  color: var(--el-text-color-placeholder);
 }
 
 .np-header__center {
   flex: 1;
-  max-width: 400px;
+  max-width: 420px;
 }
 
 .np-search {
@@ -207,36 +189,38 @@ const handleClose = () => {
 
 /* 左侧分类列表 */
 .np-sidebar {
-  width: 160px;
-  flex-shrink: 0;
-  border-right: 1px solid var(--el-border-color-light);
-  padding: 10px 0;
+  width: 180px;
+  padding: 12px 8px;
   overflow-y: auto;
+  border-right: 1px solid var(--el-border-color-light);
+  flex-shrink: 0;
 }
 
 .np-sidebar__item {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 7px 16px;
-  cursor: pointer;
-  font-size: 12px;
+  padding: 12px;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 600;
   color: var(--el-text-color-regular);
+  cursor: pointer;
+  border-radius: 6px;
   transition: all 0.12s ease;
+  align-items: center;
 
   &:hover {
-    background: var(--el-fill-color-light);
     color: var(--el-text-color-primary);
+    background: color-mix(in srgb, var(--el-color-primary) 6%, transparent);
   }
 
   &.is-active {
-    color: var(--el-color-primary);
-    background: var(--el-color-primary-light-9);
     font-weight: 600;
+    color: var(--el-color-primary);
+    background: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
 
     .np-sidebar__count {
       color: var(--el-color-primary);
-      background: var(--el-color-primary-light-7);
+      background: color-mix(in srgb, var(--el-color-primary) 18%, transparent);
     }
   }
 }
@@ -250,97 +234,153 @@ const handleClose = () => {
 }
 
 .np-sidebar__count {
+  min-width: 22px;
+  padding: 2px 7px;
   font-size: 10px;
-  padding: 1px 5px;
-  border-radius: 999px;
-  background: var(--el-fill-color);
+  font-weight: 600;
   color: var(--el-text-color-placeholder);
-  margin-left: 4px;
+  text-align: center;
+  background: color-mix(in srgb, var(--el-text-color-secondary) 10%, transparent);
+  border-radius: 8px;
   flex-shrink: 0;
 }
 
 /* 右侧网格 */
 .np-grid-wrap {
-  flex: 1;
+  padding: 20px 24px;
   overflow-y: auto;
-  padding: 16px 20px;
+  flex: 1;
 }
 
 .np-empty {
-  padding: 60px 0;
   display: flex;
+  padding: 80px 0;
+  text-align: center;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
+  gap: 12px;
+}
+
+.np-empty__illustration {
+  display: flex;
+  width: 56px;
+  height: 56px;
+  background: color-mix(in srgb, var(--el-text-color-secondary) 8%, transparent);
+  border-radius: 14px;
+  align-items: center;
+  justify-content: center;
+}
+
+.np-empty__icon {
+  font-size: 24px;
+  color: var(--el-text-color-secondary);
+  opacity: 0.5;
+}
+
+.np-empty__title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--el-text-color-regular);
+}
+
+.np-empty__desc {
+  margin: 0;
+  font-size: 11px;
+  color: var(--el-text-color-placeholder);
 }
 
 .np-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
 }
 
-/* 节点卡片 */
+/* 节点卡片 - neumorphic style */
 .np-card {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px 14px;
-  border-radius: 6px;
-  border: 1px solid var(--el-border-color-light);
+  padding: 14px 16px;
   cursor: pointer;
-  transition: all 0.15s ease;
-  background: var(--el-bg-color);
+  background: var(--app-content-surface-color);
+  border: none;
+  border-radius: 14px;
+  box-shadow:
+    6px 6px 18px color-mix(in srgb, var(--el-text-color-primary) 10%, transparent),
+    -3px -3px 12px color-mix(in srgb, #ffffff, transparent);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.15s ease;
+  align-items: flex-start;
+  gap: 14px;
 
   &:hover {
-    border-color: var(--el-color-primary-light-5);
-    background: var(--el-color-primary-light-9);
+    background: color-mix(in srgb, var(--el-color-primary) 4%, var(--app-content-surface-color));
+    transform: translateY(-2px);
+    box-shadow:
+      10px 10px 28px color-mix(in srgb, var(--el-text-color-primary) 14%, transparent),
+      -5px -5px 18px color-mix(in srgb, #ffffff, transparent);
   }
 }
 
 .np-card__icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
   display: flex;
+  width: 36px;
+  height: 36px;
+  font-size: 18px;
+  border-radius: 8px;
   align-items: center;
   justify-content: center;
-  color: #fff;
-  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.np-card__icon-img {
+  width: 22px;
+  height: 22px;
   flex-shrink: 0;
 }
 
 .np-card__body {
-  flex: 1;
-  min-width: 0;
   display: flex;
+  min-width: 0;
+  flex: 1;
   flex-direction: column;
   gap: 4px;
 }
 
 .np-card__name {
-  font-size: 12px;
+  display: flex;
+  font-size: 13px;
   font-weight: 600;
   color: var(--el-text-color-primary);
-  display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
 }
 
-.np-card__badge {
-  font-size: 9px;
-  padding: 1px 4px;
-  border-radius: 3px;
-  border: 1px solid currentColor;
-  font-weight: 600;
-  line-height: 1.3;
-}
 
 .np-card__desc {
-  font-size: 11px;
-  color: var(--el-text-color-secondary);
-  line-height: 1.4;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
   overflow: hidden;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--el-text-color-secondary);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.np-card__requirements {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.np-card__req-tag {
+  display: inline-flex;
+  padding: 2px 8px;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  border-radius: 20px;
+  align-items: center;
 }
 </style>

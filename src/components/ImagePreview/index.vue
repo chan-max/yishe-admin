@@ -275,30 +275,27 @@ onUnmounted(() => {
 <style scoped>
 .image-preview-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(240, 240, 240, 0.95);
+  inset: 0;
+  z-index: 99999999;
+  display: flex;
+  background-color: rgb(240 240 240 / 95%);
   background-image: 
     linear-gradient(45deg, #b0b0b0 25%, transparent 25%), 
     linear-gradient(-45deg, #b0b0b0 25%, transparent 25%), 
     linear-gradient(45deg, transparent 75%, #b0b0b0 75%), 
     linear-gradient(-45deg, transparent 75%, #b0b0b0 75%);
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
   background-size: 20px 20px;
-  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-  z-index: 99999999;
-  display: flex;
+  outline: none;
   align-items: center;
   justify-content: center;
-  outline: none;
 }
 
 .image-preview-container {
   position: relative;
+  display: flex;
   width: 100%;
   height: 100%;
-  display: flex;
   align-items: center;
   justify-content: center;
 }
@@ -307,30 +304,30 @@ onUnmounted(() => {
   position: absolute;
   top: 20px;
   right: 20px;
+  z-index: 10;
+  display: flex;
   width: 48px;
   height: 48px;
-  background: rgba(0, 0, 0, 0.5);
-  border: none;
-  border-radius: 50%;
   color: white;
   cursor: pointer;
-  display: flex;
+  background: rgb(0 0 0 / 50%);
+  border: none;
+  border-radius: 50%;
   align-items: center;
   justify-content: center;
-  z-index: 10;
 }
 
 .image-preview-close:hover {
-  background: rgba(0, 0, 0, 0.7);
+  background: rgb(0 0 0 / 70%);
 }
 
 .image-preview-content {
+  display: flex;
   width: 100%;
   height: 100%;
-  display: flex;
+  overflow: hidden;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
 }
 
 .image-preview-img {
@@ -344,37 +341,37 @@ onUnmounted(() => {
   position: absolute;
   bottom: 20px;
   left: 50%;
-  transform: translateX(-50%);
+  z-index: 10;
   display: flex;
+  padding: 12px 16px;
+  background: rgb(0 0 0 / 70%);
+  border-radius: 24px;
+  transform: translateX(-50%);
   align-items: center;
   gap: 12px;
-  background: rgba(0, 0, 0, 0.7);
-  padding: 12px 16px;
-  border-radius: 24px;
-  z-index: 10;
 }
 
 .toolbar-btn {
+  display: flex;
   width: 40px;
   height: 40px;
+  color: white;
+  cursor: pointer;
   background: transparent;
   border: none;
   border-radius: 50%;
-  color: white;
-  cursor: pointer;
-  display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .toolbar-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgb(255 255 255 / 10%);
 }
 
 .zoom-text {
-  color: white;
-  font-size: 14px;
   min-width: 50px;
+  font-size: 14px;
+  color: white;
   text-align: center;
 }
 

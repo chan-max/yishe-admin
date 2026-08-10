@@ -225,7 +225,7 @@ html:not([data-loader]) .el-loading-spinner {
 
 // ---------- 按钮 loading（el-button 内的 el-icon.is-loading） ----------
 .el-button.is-loading .el-icon.is-loading {
-  --loader-color: var(--el-color-primary);
+  --loader-color: var(--el-button-text-color, var(--el-color-primary));
   position: relative;
   width: $loader-btn-size;
   height: $loader-btn-size;

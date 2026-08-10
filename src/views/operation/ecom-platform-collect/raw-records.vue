@@ -565,10 +565,10 @@ onActivated(() => {
 }
 
 .resource-toolbar__title {
-  color: var(--el-text-color-primary);
   font-size: 18px;
   font-weight: 600;
   line-height: 1.4;
+  color: var(--el-text-color-primary);
 }
 
 .resource-toolbar {
@@ -586,9 +586,9 @@ onActivated(() => {
 
 .resource-toolbar__desc {
   margin-top: 4px;
-  color: var(--el-text-color-secondary);
   font-size: 13px;
   line-height: 1.6;
+  color: var(--el-text-color-secondary);
 }
 
 .table-stack {
@@ -609,14 +609,14 @@ onActivated(() => {
 
 .mono {
   font-family:
-    "SFMono-Regular",
+    SFMono-Regular,
     "Cascadia Code",
     "Source Code Pro",
     monospace;
 }
 
 .mono-text {
-  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  font-family: "JetBrains Mono", SFMono-Regular, Consolas, monospace;
 }
 
 .primary-cell {
@@ -628,19 +628,19 @@ onActivated(() => {
 
 .primary-cell__title {
   overflow: hidden;
-  color: var(--el-text-color-primary);
   font-size: 12px;
   font-weight: 600;
   line-height: 1.35;
+  color: var(--el-text-color-primary);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .primary-cell__meta {
   overflow: hidden;
-  color: var(--el-text-color-placeholder);
   font-size: 10px;
   line-height: 1.2;
+  color: var(--el-text-color-placeholder);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -655,24 +655,24 @@ onActivated(() => {
 
 .info-chip {
   display: inline-flex;
-  align-items: center;
   max-width: 100%;
   min-height: 20px;
   padding: 0 7px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 6px;
-  color: var(--el-text-color-regular);
-  background: color-mix(in srgb, var(--el-fill-color-light) 72%, transparent);
   font-size: 11px;
   line-height: 1.2;
+  color: var(--el-text-color-regular);
   white-space: nowrap;
+  background: color-mix(in srgb, var(--el-fill-color-light) 72%, transparent);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  align-items: center;
 }
 
 .info-chip--platform {
-  color: var(--el-color-primary);
-  border-color: color-mix(in srgb, var(--el-color-primary) 34%, var(--el-border-color));
-  background: color-mix(in srgb, var(--el-color-primary) 12%, transparent);
   font-weight: 600;
+  color: var(--el-color-primary);
+  background: color-mix(in srgb, var(--el-color-primary) 12%, transparent);
+  border-color: color-mix(in srgb, var(--el-color-primary) 34%, var(--el-border-color));
 }
 
 .info-chip--task {
@@ -683,17 +683,17 @@ onActivated(() => {
 
 .metric-badge {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 28px;
   height: 22px;
+  min-width: 28px;
   padding: 0 8px;
-  border-radius: 999px;
-  color: var(--el-text-color-secondary);
-  background: color-mix(in srgb, var(--el-fill-color) 76%, transparent);
   font-size: 12px;
   font-weight: 700;
   line-height: 1;
+  color: var(--el-text-color-secondary);
+  background: color-mix(in srgb, var(--el-fill-color) 76%, transparent);
+  border-radius: 999px;
+  align-items: center;
+  justify-content: center;
 }
 
 .metric-badge--success {
@@ -706,20 +706,20 @@ onActivated(() => {
 }
 
 .summary-line {
-  overflow: hidden;
   display: inline-block;
   max-width: 100%;
-  color: var(--el-text-color-secondary);
+  overflow: hidden;
   font-size: 12px;
   line-height: 1.35;
+  color: var(--el-text-color-secondary);
   text-overflow: ellipsis;
-  vertical-align: middle;
   white-space: nowrap;
+  vertical-align: middle;
 }
 
 :deep(.ecom-raw-detail-dialog .el-dialog__header) {
-  margin-right: 0;
   padding: 16px 20px 10px;
+  margin-right: 0;
   border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
@@ -729,8 +729,8 @@ onActivated(() => {
 
 :deep(.ecom-raw-detail-dialog--fullscreen.el-dialog.is-fullscreen) {
   width: 100vw !important;
-  max-width: 100vw !important;
   height: 100vh !important;
+  max-width: 100vw !important;
   margin: 0 !important;
 }
 
@@ -740,8 +740,8 @@ onActivated(() => {
 }
 
 .ecom-raw-detail-dialog__body {
-  overflow: auto;
   display: flex;
+  overflow: auto;
   flex-direction: column;
 }
 
@@ -764,25 +764,25 @@ onActivated(() => {
 
 .raw-detail-snapshot-placeholder {
   display: flex;
+  height: 160px;
+  font-size: 13px;
+  color: var(--el-text-color-placeholder);
   align-items: center;
   justify-content: center;
-  height: 160px;
-  color: var(--el-text-color-placeholder);
-  font-size: 13px;
 }
 
 .raw-detail-snapshot-meta {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
   padding: 10px 12px;
-  color: var(--el-text-color-regular);
   font-size: 12px;
   line-height: 1.6;
+  color: var(--el-text-color-regular);
   word-break: break-word;
+  flex-direction: column;
+  gap: 6px;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   :deep(.ecom-raw-detail-dialog .el-dialog__header) {
     padding: 14px 16px 10px;
   }

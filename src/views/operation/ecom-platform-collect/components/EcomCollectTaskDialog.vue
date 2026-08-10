@@ -766,8 +766,8 @@ watch(
 
 .ecom-collect-task-dialog :deep(.el-dialog__header) {
   padding: 18px 28px 14px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
   background: var(--el-bg-color);
+  border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
 .ecom-collect-task-dialog :deep(.el-dialog__body) {
@@ -779,16 +779,16 @@ watch(
 }
 
 .ecom-collect-task-dialog :deep(.el-dialog__footer) {
-  flex: 0 0 auto;
   padding: 0;
-  border-top: 1px solid var(--el-border-color-lighter);
   background: var(--el-bg-color);
+  border-top: 1px solid var(--el-border-color-lighter);
+  flex: 0 0 auto;
 }
 
 .task-dialog-shell {
   height: 100%;
-  overflow: auto;
   padding: 24px 28px 28px;
+  overflow: auto;
   box-sizing: border-box;
 }
 
@@ -842,17 +842,17 @@ watch(
 }
 
 .field-toggle-panel__title {
-  color: var(--el-text-color-primary);
   font-size: 14px;
   font-weight: 500;
   line-height: 1.5;
+  color: var(--el-text-color-primary);
 }
 
 .field-toggle-panel__desc {
   margin-top: 4px;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 1.6;
+  color: var(--el-text-color-secondary);
 }
 
 .field-toggle-panel__action {
@@ -870,9 +870,9 @@ watch(
   position: sticky;
   top: 0;
   padding: 18px;
+  background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 16px;
-  background: var(--el-bg-color);
   box-shadow: 0 8px 24px rgb(15 23 42 / 6%);
 }
 
@@ -904,17 +904,17 @@ watch(
 }
 
 .capability-card__placeholder {
-  color: var(--el-text-color-secondary);
   line-height: 1.7;
+  color: var(--el-text-color-secondary);
 }
 
 .capability-warning {
   padding: 10px 12px;
-  border-radius: 10px;
-  background: var(--el-color-warning-light-9);
-  color: var(--el-color-warning-dark-2);
   font-size: 12px;
   line-height: 1.6;
+  color: var(--el-color-warning-dark-2);
+  background: var(--el-color-warning-light-9);
+  border-radius: 10px;
 }
 
 .capability-block {
@@ -930,41 +930,41 @@ watch(
 }
 
 .capability-block__text {
-  color: var(--el-text-color-regular);
   line-height: 1.7;
+  color: var(--el-text-color-regular);
 }
 
 .capability-block__text--muted {
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 .capability-kv {
   display: flex;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
   flex-direction: column;
   gap: 4px;
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
 }
 
 .capability-kv code {
   padding: 8px 10px;
-  border-radius: 10px;
-  background: var(--el-fill-color-light);
-  color: var(--el-text-color-primary);
   font-size: 12px;
+  color: var(--el-text-color-primary);
+  background: var(--el-fill-color-light);
+  border-radius: 10px;
   overflow-wrap: anywhere;
 }
 
 .capability-example__code {
-  margin: 10px 0 0;
   padding: 12px;
-  border-radius: 10px;
-  background: var(--el-fill-color);
-  color: var(--el-text-color-primary);
+  margin: 10px 0 0;
+  overflow: auto;
   font-size: 12px;
   line-height: 1.65;
-  overflow: auto;
+  color: var(--el-text-color-primary);
+  background: var(--el-fill-color);
+  border-radius: 10px;
 }
 
 .task-dialog-footer-bar {
@@ -979,9 +979,9 @@ watch(
 
 .form-hint {
   margin-top: 6px;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 1.6;
+  color: var(--el-text-color-secondary);
   overflow-wrap: anywhere;
 }
 
@@ -989,7 +989,7 @@ watch(
   margin-top: 4px;
 }
 
-@media (max-width: 1200px) {
+@media (width <= 1200px) {
   .task-dialog-layout {
     grid-template-columns: 1fr;
   }
@@ -999,7 +999,7 @@ watch(
   }
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .task-dialog-shell {
     padding: 16px;
   }
@@ -1009,8 +1009,8 @@ watch(
   }
 
   .task-dialog-footer-bar {
-    padding: 12px 16px 16px;
     min-height: 68px;
+    padding: 12px 16px 16px;
   }
 }
 </style>

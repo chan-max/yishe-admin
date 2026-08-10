@@ -462,16 +462,16 @@ const statusCodeRows = [
 }
 
 .docs-title {
+  margin: 0;
   font-size: 16px;
   font-weight: 700;
-  margin: 0;
   color: var(--el-text-color-primary);
 }
 
 .header-right {
+  display: flex;
   font-size: 12px;
   color: var(--el-text-color-secondary);
-  display: flex;
   align-items: center;
   gap: 6px;
 }
@@ -479,8 +479,8 @@ const statusCodeRows = [
 .endpoint-text {
   font-family: monospace;
   font-size: 13px;
-  color: var(--el-color-primary);
   font-weight: 600;
+  color: var(--el-color-primary);
 }
 
 .docs-main-layout {
@@ -491,10 +491,10 @@ const statusCodeRows = [
 
 .docs-v-menu {
   width: 210px;
-  flex-shrink: 0;
+  overflow: hidden;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 6px;
-  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .v-menu-instance {
@@ -510,16 +510,16 @@ const statusCodeRows = [
 
 :deep(.v-menu-instance .el-menu-item) {
   height: 38px;
-  line-height: 38px;
   font-size: 13px;
+  line-height: 38px;
 }
 
 .docs-detail-panel {
-  flex: 1;
   min-width: 0;
+  padding: 16px;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 6px;
-  padding: 16px;
+  flex: 1;
 }
 
 .api-detail-block {
@@ -537,17 +537,17 @@ const statusCodeRows = [
 }
 
 .detail-title {
+  margin: 0;
   font-size: 15px;
   font-weight: 700;
-  margin: 0;
   color: var(--el-text-color-primary);
 }
 
 .section-desc {
-  font-size: 13px;
-  color: var(--el-text-color-regular);
   margin: 0;
+  font-size: 13px;
   line-height: 1.5;
+  color: var(--el-text-color-regular);
 }
 
 .api-meta-clean {
@@ -598,9 +598,9 @@ const statusCodeRows = [
 }
 
 .code-clean-box {
+  padding: 10px 12px;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 6px;
-  padding: 10px 12px;
 }
 
 .code-text {
@@ -611,10 +611,11 @@ const statusCodeRows = [
   color: var(--el-text-color-primary);
 }
 
-@media (max-width: 800px) {
+@media (width <= 800px) {
   .docs-main-layout {
     flex-direction: column;
   }
+
   .docs-v-menu {
     width: 100%;
   }

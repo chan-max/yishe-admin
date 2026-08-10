@@ -261,9 +261,9 @@
     </el-dialog>
 
     <el-dialog v-model="aiGenDialogVisible" title="AI自动生成内容" width="500px" align-center :destroy-on-close="true">
-      <div style="margin-bottom: 16px; color: #888; font-size: 15px;">请输入你希望AI分析的内容风格或角度（如：偏艺术描述、简洁风格、突出色彩等）</div>
+      <div style="margin-bottom: 16px; font-size: 15px; color: #888;">请输入你希望AI分析的内容风格或角度（如：偏艺术描述、简洁风格、突出色彩等）</div>
       <el-input v-model="aiGenPrompt" type="textarea" :rows="6" placeholder="如：请用艺术化语言描述模型内容..."
-        style="font-size:16px;min-height:120px;width:100%;resize:vertical;" />
+        style="width:100%;min-height:120px;font-size:16px;resize:vertical;" />
       <template #footer>
         <el-button @click="aiGenDialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="aiGenDialogLoading" @click="submitAiGenDialog">确定</el-button>

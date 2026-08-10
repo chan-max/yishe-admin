@@ -19,7 +19,7 @@ export interface UserVO {
 
 // 查询用户管理列表
 export const getUserPage = (params: PageParam) => {
-  return request.get({ url: '/system/user/page', params })
+  return request.post({ url: '/user/page', data: params })
 }
 
 // 查询所有用户列表

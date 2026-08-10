@@ -7,7 +7,7 @@
     append-to-body
     class="wf-trigger-dialog"
   >
-    <el-tabs v-model="activeTab" class="wf-trigger-tabs" @tab-change="handleTabChange">
+    <el-tabs v-model="activeTab" class="wf-trigger-tabs">
       <!-- 1. 手动触发 -->
       <el-tab-pane label="手动触发" name="manual">
         <div class="wf-pane-content">
@@ -26,13 +26,20 @@
         </div>
       </el-tab-pane>
 
-      <!-- 2. 定时 Cron 触发器 -->
-      <el-tab-pane label="定时调度" name="cron">
+      <!-- 2. 定时触发 -->
+      <el-tab-pane name="cron">
+        <template #label>
+          <span class="wf-tab-label">
+            定时触发            <span :class="['wf-tab-status', cronConfigured ? 'wf-tab-status--on' : 'wf-tab-status--off']">
+              {{ cronConfigured ? '已设置' : '未设置' }}
+            </span>
+          </span>
+        </template>
         <div class="wf-pane-content">
           <div class="wf-setting-item">
             <div class="wf-setting-label">
-              <span>启用定时调度</span>
-              <span class="wf-setting-desc">基于 Redis ZSET 定时调度引擎自动按周期触发</span>
+              <span>启用定时触发</span>
+              <span class="wf-setting-desc">基于 Redis ZSET 定时触发引擎自动按周期触发</span>
             </div>
             <el-switch v-model="cronEnabled" size="small" @change="saveCronTrigger" />
           </div>
@@ -40,61 +47,18 @@
           <div class="wf-cron-form">
             <div class="flex items-center justify-between mb-3">
               <div class="flex flex-col">
-                <span class="text-xs font-500 text-[var(--el-text-color-regular)]">当前 Cron 表达式：</span>
+                <span class="text-xs font-500 text-[var(--el-text-color-regular)]">时间表达式：</span>
                 <span class="text-sm font-mono text-[var(--el-color-primary)] font-600 mt-0.5">
                   {{ cronExpression || '未设置' }}
                 </span>
               </div>
               <el-button size="small" type="primary" plain @click="advancedCronVisible = true">
-                配置 Cron 与快捷预设
+                配置时间
               </el-button>
             </div>
 
             <div v-if="cronNextRunTime" class="text-xs text-[var(--el-color-success)] pt-2 border-t border-[var(--app-content-border-color)]">
               下次预计触发时间：{{ formatDate(cronNextRunTime) }}
-            </div>
-          </div>
-        </div>
-      </el-tab-pane>
-
-      <!-- 3. 运行日志列表 -->
-      <el-tab-pane label="运行历史" name="executions">
-        <div class="wf-pane-content flex flex-col">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs text-[var(--el-text-color-secondary)]">共 {{ executions.length }} 条记录</span>
-            <el-button size="small" type="primary" text :loading="loadingExecutions" @click="loadExecutions">
-              刷新
-            </el-button>
-          </div>
-
-          <div v-loading="loadingExecutions" class="wf-exec-list">
-            <div v-if="executions.length === 0" class="text-center py-8 text-xs text-[var(--el-text-color-placeholder)]">
-              暂无运行历史
-            </div>
-
-            <div v-else class="divide-y divide-[var(--el-border-color-lighter)]">
-              <div v-for="item in executions" :key="item.id" class="wf-exec-row">
-                <div class="flex items-center justify-between py-1.5 px-1">
-                  <div class="flex items-center gap-2">
-                    <span class="wf-exec-dot" :class="'wf-exec-dot--' + item.status" />
-                    <span class="text-xs font-500 text-[var(--el-text-color-primary)]">
-                      {{ item.status === 'success' ? '成功' : item.status === 'failed' ? '失败' : '运行中' }}
-                    </span>
-                    <span class="text-xs text-[var(--el-text-color-secondary)] opacity-80">
-                      [{{ item.triggerType === 'cron' ? '定时' : '手动' }}]
-                    </span>
-                  </div>
-
-                  <div class="flex items-center gap-4 text-xs text-[var(--el-text-color-secondary)] font-mono">
-                    <span>{{ formatDate(item.createTime) }}</span>
-                    <span v-if="item.durationMs" class="w-16 text-right">{{ item.durationMs }}ms</span>
-                  </div>
-                </div>
-
-                <div v-if="item.errorText" class="text-xs text-[var(--el-color-danger)] font-mono px-1 pb-1">
-                  {{ item.errorText }}
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -112,7 +76,6 @@ import AdvancedCronDialog from './AdvancedCronDialog.vue'
 import {
   getWorkflowTriggersApi,
   saveWorkflowTriggerApi,
-  getWorkflowExecutionsApi,
 } from '@/api/workflow'
 
 const props = defineProps<{
@@ -136,6 +99,7 @@ const manualEnabled = ref(true)
 const cronEnabled = ref(false)
 const cronExpression = ref('0 8 * * *')
 const cronNextRunTime = ref<string | null>(null)
+const cronConfigured = ref(false)
 
 // 时间选择器
 const timePickerValue = ref<Date | null>(new Date(2026, 0, 1, 8, 0))
@@ -157,10 +121,6 @@ const cronTemplates = [
   { label: '每月 1 日 09:00', expr: '0 9 1 * *', desc: '每月 1 日上午 9 点' },
   { label: '每月最后一天 23:00', expr: '0 23 28-31 * *', desc: '需脚本内自行兜底最后一天判断' },
 ]
-
-// 运行日志状态
-const executions = ref<any[]>([])
-const loadingExecutions = ref(false)
 
 const handleTimePickerChange = (val: Date | null) => {
   if (val) {
@@ -199,31 +159,14 @@ const loadTriggers = async () => {
       cronEnabled.value = cron.enabled
       cronExpression.value = cron.config?.expression || '0 8 * * *'
       cronNextRunTime.value = cron.nextRunTime || null
+      cronConfigured.value = true
       parseCronToTimePicker(cronExpression.value)
     } else {
       cronEnabled.value = false
+      cronConfigured.value = false
     }
   } catch (error) {
     console.error('加载触发器配置失败', error)
-  }
-}
-
-const loadExecutions = async () => {
-  if (!props.workflowId) return
-  loadingExecutions.value = true
-  try {
-    const res = await getWorkflowExecutionsApi(props.workflowId, { currentPage: 1, pageSize: 20 })
-    executions.value = res?.list || []
-  } catch (err) {
-    console.error('获取运行日志失败', err)
-  } finally {
-    loadingExecutions.value = false
-  }
-}
-
-const handleTabChange = (name: any) => {
-  if (name === 'executions') {
-    loadExecutions()
   }
 }
 
@@ -249,7 +192,8 @@ const saveCronTrigger = async () => {
     if (res?.nextRunTime) {
       cronNextRunTime.value = res.nextRunTime
     }
-    ElMessage.success('定时调度配置已保存')
+    cronConfigured.value = true
+    ElMessage.success('定时触发配置已保存')
   } catch (err: any) {
     ElMessage.error(err.message || '保存失败，请检查 Cron 表达式')
   }
@@ -265,116 +209,122 @@ watch(
   (val) => {
     if (val) {
       loadTriggers()
-      if (activeTab.value === 'executions') {
-        loadExecutions()
-      }
     }
   }
 )
 </script>
 
 <style scoped>
+.wf-tab-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.wf-tab-status {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 3px;
+  line-height: 1.4;
+
+  &--on {
+    color: #16a34a;
+    background: rgba(22, 163, 74, 0.12);
+  }
+
+  &--off {
+    color: var(--el-text-color-placeholder);
+    background: var(--app-content-surface-muted-color);
+  }
+}
 .wf-pane-content {
   padding: 4px 0;
 }
+
 .wf-setting-item {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
   padding: 8px 12px;
+  margin-bottom: 10px;
   background: var(--app-content-surface-muted-color);
   border-radius: 6px;
-  margin-bottom: 10px;
+  align-items: center;
+  justify-content: space-between;
 }
+
 .wf-setting-label {
   display: flex;
   flex-direction: column;
   font-size: 12px;
   font-weight: 500;
 }
+
 .wf-setting-desc {
+  margin-top: 2px;
   font-size: 11px;
   color: var(--el-text-color-secondary);
-  margin-top: 2px;
 }
+
 .wf-code-box {
-  background: #1e1e1e;
-  color: #4ec9b0;
   padding: 10px 12px;
-  border-radius: 6px;
   font-family: monospace;
   font-size: 12px;
+  color: #4ec9b0;
+  background: #1e1e1e;
+  border-radius: 6px;
 }
+
 .wf-cron-form {
-  background: var(--app-content-surface-muted-color);
   padding: 10px 12px;
+  background: var(--app-content-surface-muted-color);
   border-radius: 6px;
 }
+
 .wf-template-card {
-  border: 1px solid var(--el-border-color-light);
-  background: var(--app-content-surface-color);
   padding: 8px 10px;
+  background: var(--app-content-surface-color);
+  border: 1px solid var(--el-border-color-light);
   border-radius: 6px;
 }
+
 .wf-reference-card {
-  border: 1px solid var(--el-border-color-light);
-  background: var(--app-content-surface-color);
   padding: 8px 10px;
+  background: var(--app-content-surface-color);
+  border: 1px solid var(--el-border-color-light);
   border-radius: 6px;
 }
+
 .wf-reference-list {
+  display: flex;
   max-height: 120px;
   overflow-y: auto;
-  display: flex;
   flex-direction: column;
   gap: 4px;
 }
+
 .wf-reference-item {
+  display: flex;
   font-size: 11px;
   color: var(--el-text-color-secondary);
-  display: flex;
   align-items: center;
   gap: 6px;
 }
+
 .wf-ref-label {
   font-weight: 500;
   color: var(--el-text-color-regular);
 }
+
 .wf-ref-expr {
+  padding: 0 4px;
   font-family: monospace;
   color: var(--el-color-primary);
   background: var(--app-content-surface-muted-color);
-  padding: 0 4px;
   border-radius: 3px;
 }
+
 .wf-ref-desc {
   opacity: 0.85;
 }
-.wf-exec-list {
-  max-height: 260px;
-  overflow-y: auto;
-  padding-right: 2px;
-}
-.wf-exec-row {
-  border-radius: 4px;
-  transition: background 0.15s ease;
-}
-.wf-exec-row:hover {
-  background: var(--app-content-surface-muted-color);
-}
-.wf-exec-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  display: inline-block;
-}
-.wf-exec-dot--success {
-  background: var(--el-color-success);
-}
-.wf-exec-dot--failed {
-  background: var(--el-color-danger);
-}
-.wf-exec-dot--running {
-  background: var(--el-color-warning);
-}
+
+
 </style>

@@ -45,13 +45,13 @@ const isDark = computed({
 
 :deep(.el-switch__core) {
   border: 1px solid var(--top-tool-border-color);
-  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08);
+  box-shadow: inset 0 1px 2px rgb(15 23 42 / 8%);
 }
 
 :deep(.el-switch__action) {
   color: var(--top-header-text-color);
   background: var(--app-content-surface-color);
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
+  box-shadow: 0 1px 3px rgb(15 23 42 / 18%);
 }
 
 :deep(.el-switch__inner) {

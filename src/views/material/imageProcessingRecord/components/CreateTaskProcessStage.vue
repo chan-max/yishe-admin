@@ -352,16 +352,17 @@ function appendQuickPreset(presetType: string) {
 }
 
 .create-task-quick-tag {
-  cursor: pointer;
-  user-select: none;
-  border-radius: 6px;
   padding: 4px 10px;
   font-size: 12px;
+  cursor: pointer;
+  border-radius: 6px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+
   &:hover {
     color: var(--el-color-primary);
-    border-color: var(--el-color-primary);
     background-color: var(--el-color-primary-light-9);
+    border-color: var(--el-color-primary);
     transform: translateY(-1px);
   }
 }
@@ -397,13 +398,13 @@ function appendQuickPreset(presetType: string) {
   display: flex;
   width: 24px;
   height: 24px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: var(--el-color-primary-light-9);
-  color: var(--el-color-primary);
   font-size: 12px;
   font-weight: 700;
+  color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
 
@@ -417,10 +418,10 @@ function appendQuickPreset(presetType: string) {
 .create-task-intro__title,
 .create-task-card__title,
 .create-task-empty__title {
-  color: var(--el-text-color-primary);
   font-size: 15px;
   font-weight: 600;
   line-height: 1.3;
+  color: var(--el-text-color-primary);
 }
 
 .create-task-stage__desc,
@@ -430,22 +431,22 @@ function appendQuickPreset(presetType: string) {
 .create-task-toolbar--plain,
 .create-task-param-card__label,
 .create-task-param-card__value {
-  color: var(--el-text-color-placeholder);
   font-size: 12px;
   line-height: 1.4;
+  color: var(--el-text-color-placeholder);
 }
 
 .create-task-block {
-  gap: 16px;
-  border: none;
-  background: transparent;
   padding: 0;
+  background: transparent;
+  border: none;
   box-shadow: none;
+  gap: 16px;
 }
 
 .create-task-block--optional {
-  margin-top: 10px;
   padding-top: 16px;
+  margin-top: 10px;
   border-top: 1px dashed var(--el-border-color-lighter);
 }
 
@@ -502,10 +503,10 @@ function appendQuickPreset(presetType: string) {
 
 .create-task-select-option {
   display: flex;
+  height: 100%;
+  min-width: 0;
   align-items: center;
   justify-content: space-between;
-  min-width: 0;
-  height: 100%;
   gap: 12px;
 }
 
@@ -518,23 +519,23 @@ function appendQuickPreset(presetType: string) {
 }
 
 .create-task-select-option__title {
-  color: var(--el-text-color-primary);
   font-weight: 500;
+  color: var(--el-text-color-primary);
 }
 
 .create-task-select-option__meta {
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
   flex-shrink: 0;
 }
 
 .create-task-pill,
 .create-task-card__step {
-  border-radius: 6px;
-  background: var(--el-fill-color-light);
   padding: 3px 8px;
   font-size: 12px;
   color: var(--el-text-color-regular);
+  background: var(--el-fill-color-light);
+  border-radius: 6px;
 }
 
 .create-task-chain-list {
@@ -543,13 +544,14 @@ function appendQuickPreset(presetType: string) {
 
 .create-task-card {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  padding: 12px 14px;
+  background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-extra-light);
   border-radius: 8px;
-  background: var(--el-bg-color);
-  padding: 12px 14px;
   transition: all 0.2s ease;
+  flex-direction: column;
+  gap: 8px;
+
   &:hover {
     border-color: var(--el-border-color-light);
   }
@@ -586,27 +588,27 @@ function appendQuickPreset(presetType: string) {
 }
 
 .create-task-param-card {
-  border-radius: 6px;
-  background: var(--el-fill-color-extra-light);
   padding: 6px 10px;
+  background: var(--el-fill-color-extra-light);
+  border-radius: 6px;
 }
 
 .create-task-empty {
   display: flex;
+  padding: 24px 16px;
+  text-align: center;
+  background: var(--el-fill-color-blank);
+  border: 1px dashed var(--el-border-color-light);
+  border-radius: 8px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border: 1px dashed var(--el-border-color-light);
-  border-radius: 8px;
-  background: var(--el-fill-color-blank);
-  padding: 24px 16px;
-  text-align: center;
 }
 
 .create-task-empty--simple {
-  border-style: solid;
   padding: 16px;
+  border-style: solid;
 }
 
 .create-task-filter {
@@ -619,7 +621,7 @@ function appendQuickPreset(presetType: string) {
   border-radius: 6px;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .create-task-block,
   .create-task-card {
     padding: 0;

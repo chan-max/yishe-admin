@@ -634,11 +634,11 @@ onMounted(() => {
 .text-document-content-snippet {
   display: -webkit-box;
   overflow: hidden;
-  color: var(--el-text-color-secondary);
   line-height: 1.5;
+  color: var(--el-text-color-secondary);
   word-break: break-all;
-  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .text-document-tags {
@@ -682,9 +682,9 @@ onMounted(() => {
 
 .text-document-editor-dialog :deep(.el-dialog__body) {
   height: calc(100vh - 104px);
+  padding: 16px 20px;
   overflow: auto;
   box-sizing: border-box;
-  padding: 16px 20px;
 }
 
 .text-document-editor-dialog :deep(.document-content-input .el-textarea__inner) {
@@ -702,8 +702,8 @@ onMounted(() => {
   padding: 12px;
   margin: 0;
   line-height: 1.7;
-  white-space: pre-wrap;
   word-break: break-word;
+  white-space: pre-wrap;
 }
 
 .html-preview {
@@ -722,14 +722,14 @@ onMounted(() => {
 
 :deep(.markdown-preview code) {
   padding: 2px 4px;
-  border-radius: 4px;
   background: var(--el-fill-color-light);
+  border-radius: 4px;
 }
 
 :deep(.markdown-preview pre) {
   padding: 10px;
   overflow: auto;
-  border-radius: 6px;
   background: var(--el-fill-color-light);
+  border-radius: 6px;
 }
 </style>

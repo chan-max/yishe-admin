@@ -402,20 +402,20 @@ onUnmounted(() => {
 }
 
 .toolkit-hero__card {
-  border: 1px solid var(--el-border-color-light);
+  padding: 10px 12px;
   background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-light);
   border-radius: 18px;
   box-shadow: var(--el-box-shadow-light);
-  padding: 10px 12px;
 }
 
 .toolkit-hero__label {
-  color: var(--el-text-color-regular);
+  display: flex;
+  padding-right: 12px;
   font-size: 11px;
   font-weight: 600;
+  color: var(--el-text-color-regular);
   text-wrap: nowrap;
-  padding-right: 12px;
-  display: flex;
   align-items: center;
 }
 
@@ -430,10 +430,10 @@ onUnmounted(() => {
 }
 
 .toolkit-hero__context-control {
-  flex: 1 1 auto;
+  display: flex;
   max-width: 760px;
   min-width: 0;
-  display: flex;
+  flex: 1 1 auto;
   flex-wrap: wrap;
   gap: 12px;
 }
@@ -453,11 +453,11 @@ onUnmounted(() => {
 }
 
 .toolkit-placeholder-workspace {
-  border: 1px solid var(--el-border-color-light);
+  padding: 16px;
   background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-light);
   border-radius: 18px;
   box-shadow: var(--el-box-shadow-light);
-  padding: 16px;
 }
 
 .toolkit-placeholder-workspace__head {
@@ -469,9 +469,9 @@ onUnmounted(() => {
 }
 
 .toolkit-placeholder-workspace__title {
-  color: var(--el-text-color-primary);
   font-size: 15px;
   font-weight: 700;
+  color: var(--el-text-color-primary);
 }
 
 .toolkit-placeholder-workspace__actions {
@@ -484,15 +484,15 @@ onUnmounted(() => {
   --toolkit-action-color: var(--el-color-primary);
 
   color: #fff;
-  border: 0;
   background: var(--toolkit-action-color);
+  border: 0;
 }
 
 .toolkit-placeholder-workspace__action-button:hover,
 .toolkit-placeholder-workspace__action-button:focus {
   color: #fff;
-  border: 0;
   background: var(--toolkit-action-color);
+  border: 0;
   filter: brightness(1.05);
 }
 
@@ -508,24 +508,24 @@ onUnmounted(() => {
 }
 
 .toolkit-placeholder-workspace__json {
-  margin: 10px 0 0;
   padding: 12px;
+  margin: 10px 0 0;
   overflow: auto;
-  border-radius: 12px;
-  border: 1px solid var(--el-border-color-light);
-  background: var(--el-fill-color-light);
-  color: var(--el-text-color-regular);
   font-size: 12px;
   line-height: 1.6;
-  white-space: pre-wrap;
+  color: var(--el-text-color-regular);
   word-break: break-all;
+  white-space: pre-wrap;
+  background: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 12px;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .toolkit-hero__context-control {
-    flex-basis: auto;
-    max-width: none;
     width: 100%;
+    max-width: none;
+    flex-basis: auto;
   }
 }
 </style>

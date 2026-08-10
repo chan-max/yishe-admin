@@ -82,39 +82,39 @@ const handleOpen = (key: string) => {
   right: 0;
   bottom: 0;
   display: flex;
-  align-items: center;
-  justify-content: center;
   width: 24px;
   height: 24px;
-  border-radius: 0;
-  background: var(--el-color-primary);
+  overflow: hidden;
   color: #fff;
   cursor: pointer;
-  box-shadow:
-    -2px -2px 8px rgba(0, 0, 0, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  transition: all 0.2s ease;
-  overflow: hidden;
+  background: var(--el-color-primary);
+  border-radius: 0;
   opacity: 1;
+  box-shadow:
+    -2px -2px 8px rgb(0 0 0 / 15%),
+    inset 0 1px 0 rgb(255 255 255 / 20%);
+  transition: all 0.2s ease;
+  align-items: center;
+  justify-content: center;
 }
 
 .tool-launcher-floating::before {
-  content: '';
   position: absolute;
   top: 0;
-  left: 0;
   right: 0;
+  left: 0;
   height: 50%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, transparent 100%);
-  border-radius: 0;
   pointer-events: none;
+  background: linear-gradient(180deg, rgb(255 255 255 / 15%) 0%, transparent 100%);
+  border-radius: 0;
+  content: '';
 }
 
 .tool-launcher-floating:hover {
   background: #3a8ee6;
   box-shadow:
-    -3px -3px 12px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    -3px -3px 12px rgb(0 0 0 / 20%),
+    inset 0 1px 0 rgb(255 255 255 / 25%);
 }
 
 .tool-launcher-floating-icon {
@@ -124,13 +124,13 @@ const handleOpen = (key: string) => {
 
 .tool-launcher-floating-backdrop {
   position: fixed;
-  inset: 0;
   display: flex;
+  padding: 0;
+  pointer-events: auto;
+  background: transparent;
+  inset: 0;
   align-items: flex-end;
   justify-content: flex-end;
-  padding: 0;
-  background: transparent;
-  pointer-events: auto;
 }
 
 .tool-launcher-floating-popper {
@@ -140,9 +140,9 @@ const handleOpen = (key: string) => {
   width: 280px;
   max-height: 60vh;
   overflow: hidden;
-  border-radius: 8px 0 8px 8px;
   background: var(--el-bg-color);
-  box-shadow: -4px -4px 16px rgba(0, 0, 0, 0.15);
+  border-radius: 8px 0 8px 8px;
+  box-shadow: -4px -4px 16px rgb(0 0 0 / 15%);
   animation: slideUp 0.15s ease;
 }
 
@@ -151,6 +151,7 @@ const handleOpen = (key: string) => {
     opacity: 0;
     transform: translateY(8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -173,38 +174,38 @@ const handleOpen = (key: string) => {
 
 .tool-launcher-floating-popper-close {
   display: flex;
-  align-items: center;
-  justify-content: center;
   width: 24px;
   height: 24px;
-  border: none;
-  border-radius: 4px;
-  background: transparent;
   color: var(--el-text-color-secondary);
   cursor: pointer;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
   transition: all 0.15s ease;
+  align-items: center;
+  justify-content: center;
 }
 
 .tool-launcher-floating-popper-close:hover {
-  background: var(--el-fill-color-light);
   color: var(--el-text-color-primary);
+  background: var(--el-fill-color-light);
 }
 
 .tool-launcher-floating-popper-list {
   max-height: calc(60vh - 40px);
-  overflow-y: auto;
   padding: 6px;
+  overflow-y: auto;
 }
 
 .tool-launcher-floating-popper-item {
   display: flex;
+  padding: 8px 10px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s ease;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 8px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.15s ease;
 }
 
 .tool-launcher-floating-popper-item:hover {
@@ -226,11 +227,11 @@ const handleOpen = (key: string) => {
 }
 
 .tool-launcher-floating-popper-item-tag {
-  flex-shrink: 0;
   padding: 1px 6px;
-  border-radius: 3px;
-  background: var(--el-fill-color);
   font-size: 10px;
   color: var(--el-text-color-secondary);
+  background: var(--el-fill-color);
+  border-radius: 3px;
+  flex-shrink: 0;
 }
 </style>

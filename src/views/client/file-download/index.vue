@@ -318,18 +318,18 @@ const formatTime = (date: Date): string => {
 
 <style scoped lang="scss">
 .file-download-console {
-  height: 100%;
   display: flex;
+  height: 100%;
   flex-direction: column;
 }
 
 .ops-header {
   display: flex;
+  padding: 16px 20px;
+  background: var(--el-bg-color);
+  border-bottom: 1px solid var(--el-border-color-lighter);
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-  background: var(--el-bg-color);
 
   &__title {
     font-size: 18px;
@@ -338,9 +338,9 @@ const formatTime = (date: Date): string => {
   }
 
   &__desc {
+    margin-top: 2px;
     font-size: 12px;
     color: var(--el-text-color-secondary);
-    margin-top: 2px;
   }
 
   &__actions {
@@ -358,38 +358,38 @@ const formatTime = (date: Date): string => {
 
 .inline-status {
   display: inline-flex;
-  align-items: center;
-  gap: 6px;
   padding: 4px 12px;
-  border-radius: 12px;
   font-size: 12px;
   background: var(--el-fill-color-light);
+  border-radius: 12px;
+  align-items: center;
+  gap: 6px;
 
   &.is-success {
-    background: var(--el-color-success-light-9);
     color: var(--el-color-success);
+    background: var(--el-color-success-light-9);
   }
 
   &.is-warning {
-    background: var(--el-color-warning-light-9);
     color: var(--el-color-warning);
+    background: var(--el-color-warning-light-9);
   }
 
   &.is-info {
-    background: var(--el-fill-color);
     color: var(--el-text-color-secondary);
+    background: var(--el-fill-color);
   }
 
   &.is-danger {
-    background: var(--el-color-danger-light-9);
     color: var(--el-color-danger);
+    background: var(--el-color-danger-light-9);
   }
 
   &__dot {
     width: 8px;
     height: 8px;
+    background: currentcolor;
     border-radius: 50%;
-    background: currentColor;
   }
 
   &__label {
@@ -409,25 +409,25 @@ const formatTime = (date: Date): string => {
 
 .ops-sidebar {
   width: 260px;
-  border-right: 1px solid var(--el-border-color-lighter);
   background: var(--el-bg-color);
+  border-right: 1px solid var(--el-border-color-lighter);
   flex-shrink: 0;
 }
 
 .ops-main {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px 20px;
   display: flex;
+  padding: 16px 20px;
+  overflow-y: auto;
+  flex: 1;
   flex-direction: column;
   gap: 16px;
 }
 
 .ops-panel {
+  padding: 16px;
   background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
-  padding: 16px;
 
   &--history {
     flex-shrink: 0;
@@ -447,9 +447,9 @@ const formatTime = (date: Date): string => {
   }
 
   &__sub {
+    margin-top: 2px;
     font-size: 12px;
     color: var(--el-text-color-secondary);
-    margin-top: 2px;
   }
 }
 
@@ -459,10 +459,10 @@ const formatTime = (date: Date): string => {
   gap: 12px;
 
   &__label {
+    margin-bottom: 4px;
     font-size: 13px;
     font-weight: 500;
     color: var(--el-text-color-regular);
-    margin-bottom: 4px;
   }
 
   &__actions {
@@ -473,23 +473,23 @@ const formatTime = (date: Date): string => {
 
 .download-result {
   margin-top: 16px;
+  overflow: hidden;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 6px;
-  overflow: hidden;
 
   &__head {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
     padding: 8px 12px;
-    background: var(--el-fill-color-light);
     font-size: 13px;
     font-weight: 500;
+    background: var(--el-fill-color-light);
+    align-items: center;
+    justify-content: space-between;
   }
 
   &__body {
-    padding: 12px;
     display: flex;
+    padding: 12px;
     flex-direction: column;
     gap: 8px;
   }
@@ -501,8 +501,8 @@ const formatTime = (date: Date): string => {
   }
 
   &__label {
-    color: var(--el-text-color-secondary);
     min-width: 70px;
+    color: var(--el-text-color-secondary);
     flex-shrink: 0;
   }
 
@@ -522,13 +522,13 @@ const formatTime = (date: Date): string => {
 
 .history-item {
   padding: 8px 12px;
+  font-size: 12px;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 6px;
-  font-size: 12px;
 
   &.is-failed {
-    border-color: var(--el-color-danger-light-5);
     background: var(--el-color-danger-light-9);
+    border-color: var(--el-color-danger-light-5);
   }
 
   &__head {
@@ -538,19 +538,19 @@ const formatTime = (date: Date): string => {
   }
 
   &__url {
-    flex: 1;
     overflow: hidden;
+    color: var(--el-text-color-primary);
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: var(--el-text-color-primary);
+    flex: 1;
   }
 
   &__meta {
     display: flex;
-    gap: 12px;
     margin-top: 4px;
-    color: var(--el-text-color-secondary);
     overflow: hidden;
+    color: var(--el-text-color-secondary);
+    gap: 12px;
 
     span {
       overflow: hidden;

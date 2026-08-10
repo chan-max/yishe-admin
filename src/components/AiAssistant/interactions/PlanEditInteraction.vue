@@ -130,12 +130,12 @@ function handleSubmit() {
 
 .plan-step {
   display: flex;
+  padding: 8px 10px;
+  background: var(--el-fill-color-lighter);
+  border-radius: 6px;
+  transition: opacity 0.2s;
   align-items: flex-start;
   gap: 10px;
-  padding: 8px 10px;
-  border-radius: 6px;
-  background: var(--el-fill-color-lighter);
-  transition: opacity 0.2s;
 }
 
 .plan-step.is-disabled {
@@ -143,27 +143,27 @@ function handleSubmit() {
 }
 
 .step-index {
+  display: flex;
   width: 22px;
   height: 22px;
-  border-radius: 50%;
-  background: var(--el-fill-color);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   font-size: 11px;
   font-weight: 600;
   color: var(--el-text-color-secondary);
+  background: var(--el-fill-color);
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
 
 .status-done .step-index {
-  background: var(--el-color-success-light-9);
   color: var(--el-color-success);
+  background: var(--el-color-success-light-9);
 }
 
 .status-running .step-index {
-  background: var(--el-color-primary-light-9);
   color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
 }
 
 .step-check { font-size: 12px; }
@@ -189,15 +189,15 @@ function handleSubmit() {
 .step-label {
   font-size: 12px;
   font-weight: 500;
-  color: var(--el-text-color-primary);
   line-height: 18px;
+  color: var(--el-text-color-primary);
 }
 
 .step-desc {
-  font-size: 11px;
-  color: var(--el-text-color-secondary);
-  line-height: 16px;
   margin-top: 2px;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--el-text-color-secondary);
 }
 
 .step-actions {
@@ -207,26 +207,26 @@ function handleSubmit() {
 }
 
 .step-btn {
+  display: flex;
   width: 22px;
   height: 22px;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
+  font-size: 12px;
   color: var(--el-text-color-secondary);
   cursor: pointer;
-  display: flex;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
 }
 
 .step-btn:hover {
-  background: var(--el-fill-color);
   color: var(--el-color-primary);
+  background: var(--el-fill-color);
 }
 
 .step-btn:disabled {
-  opacity: 0.3;
   cursor: not-allowed;
+  opacity: 0.3;
 }
 </style>

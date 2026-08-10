@@ -179,16 +179,16 @@ export const useUserStore = defineStore('admin-user', {
     },
     async setUserAvatarAction(avatar: string) {
       const userInfo = wsCache.get(CACHE_KEY.USER)
-      // NOTE: 是否需要像`setUserInfoAction`一样判断`userInfo != null`
+      if (!userInfo || !userInfo.id) return
       this.user.avatar = avatar
-      userInfo.user.avatar = avatar
+      userInfo.avatar = avatar
       wsCache.set(CACHE_KEY.USER, userInfo)
     },
     async setUserNicknameAction(nickname: string) {
       const userInfo = wsCache.get(CACHE_KEY.USER)
-      // NOTE: 是否需要像`setUserInfoAction`一样判断`userInfo != null`
+      if (!userInfo || !userInfo.id) return
       this.user.nickname = nickname
-      userInfo.user.nickname = nickname
+      userInfo.nickname = nickname
       wsCache.set(CACHE_KEY.USER, userInfo)
     },
     async loginOut() {

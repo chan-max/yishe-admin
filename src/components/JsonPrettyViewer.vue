@@ -66,9 +66,9 @@ const viewerClass = computed(() =>
 
 <style scoped lang="scss">
 .json-pretty-viewer {
+  padding: 12px 14px;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 10px;
-  padding: 12px 14px;
 }
 
 .json-pretty-viewer__inner {
@@ -78,7 +78,7 @@ const viewerClass = computed(() =>
 }
 
 .json-pretty-viewer:deep(.vjs-tree) {
-  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  font-family: "JetBrains Mono", SFMono-Regular, Consolas, monospace;
   font-size: 12px;
   line-height: 1.7;
 }
@@ -101,8 +101,8 @@ const viewerClass = computed(() =>
 }
 
 .json-pretty-viewer--light:deep(.vjs-tree-node:hover) {
-  background-color: var(--el-fill-color-light);
   color: var(--el-text-color-primary);
+  background-color: var(--el-fill-color-light);
 }
 
 .json-pretty-viewer--dark:deep(.vjs-tree) {
@@ -127,7 +127,7 @@ const viewerClass = computed(() =>
 }
 
 .json-pretty-viewer--dark:deep(.vjs-tree-node:hover) {
-  background-color: var(--el-fill-color);
   color: var(--el-text-color-primary);
+  background-color: var(--el-fill-color);
 }
 </style>

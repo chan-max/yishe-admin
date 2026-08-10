@@ -1171,8 +1171,8 @@ onBeforeUnmount(() => {
 }
 
 .run-detail-dialog {
-  height: calc(100vh - 120px);
   display: flex;
+  height: calc(100vh - 120px);
   min-height: 0;
   flex-direction: column;
   gap: 14px;
@@ -1180,17 +1180,17 @@ onBeforeUnmount(() => {
 
 .run-detail-dialog__summary {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  border: 1px solid rgb(from var(--el-border-color-light) r g b / 72%);
-  border-radius: 18px;
+  padding: 18px;
   background: linear-gradient(
     180deg,
     rgb(from var(--el-fill-color-lighter) r g b / 96%),
     rgb(from var(--el-fill-color) r g b / 78%)
   );
-  padding: 18px;
+  border: 1px solid rgb(from var(--el-border-color-light) r g b / 72%);
+  border-radius: 18px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .run-detail-dialog__summary-main {
@@ -1225,10 +1225,10 @@ onBeforeUnmount(() => {
 }
 
 .run-detail-dialog__meta-item {
-  border-radius: 14px;
-  background: rgb(from var(--el-bg-color) r g b / 76%);
-  padding: 14px 16px;
   min-height: 76px;
+  padding: 14px 16px;
+  background: rgb(from var(--el-bg-color) r g b / 76%);
+  border-radius: 14px;
 }
 
 .run-detail-dialog__meta-label {
@@ -1240,9 +1240,9 @@ onBeforeUnmount(() => {
 .run-detail-dialog__meta-value {
   margin-top: 8px;
   font-size: 14px;
+  font-weight: 600;
   line-height: 1.5;
   color: var(--el-text-color-primary);
-  font-weight: 600;
   word-break: break-all;
 }
 
@@ -1252,58 +1252,58 @@ onBeforeUnmount(() => {
 }
 
 .run-detail-dialog__content {
-  flex: 1;
-  min-height: 0;
   display: grid;
+  min-height: 0;
+  flex: 1;
   grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.7fr);
   gap: 14px;
 }
 
 .run-detail-side {
-  min-height: 0;
   display: grid;
+  min-height: 0;
   grid-template-rows: minmax(0, 0.9fr) minmax(0, 1.1fr);
   gap: 14px;
 }
 
 .run-detail-panel {
-  min-height: 0;
   display: flex;
-  flex-direction: column;
-  border-radius: 18px;
-  border: 1px solid rgb(from var(--el-border-color-light) r g b / 72%);
-  background: rgb(from var(--el-fill-color-lighter) r g b / 96%);
+  min-height: 0;
   padding: 16px;
+  background: rgb(from var(--el-fill-color-lighter) r g b / 96%);
+  border: 1px solid rgb(from var(--el-border-color-light) r g b / 72%);
+  border-radius: 18px;
+  flex-direction: column;
 }
 
 .run-detail-panel__title {
   margin-bottom: 10px;
   font-size: 14px;
-  line-height: 1.4;
   font-weight: 700;
+  line-height: 1.4;
   color: var(--el-text-color-primary);
 }
 
 .run-detail-panel__pre {
   margin: 0;
-  flex: 1;
   overflow: auto;
-  white-space: pre-wrap;
-  word-break: break-all;
   font-size: 12px;
   line-height: 1.7;
+  word-break: break-all;
+  white-space: pre-wrap;
+  flex: 1;
 }
 
 .run-detail-panel__log {
-  flex: 1;
   min-height: 0;
-  overflow: auto;
-  border-radius: 14px;
-  background: rgb(from var(--el-bg-color) r g b / 80%);
   padding: 12px 14px;
+  overflow: auto;
+  background: rgb(from var(--el-bg-color) r g b / 80%);
+  border-radius: 14px;
+  flex: 1;
 }
 
-@media (max-width: 1279px) {
+@media (width <= 1279px) {
   .run-detail-dialog__content {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1313,7 +1313,7 @@ onBeforeUnmount(() => {
   }
 }
 
-@media (max-width: 767px) {
+@media (width <= 767px) {
   .run-detail-dialog {
     height: calc(100vh - 108px);
   }
@@ -1336,39 +1336,39 @@ onBeforeUnmount(() => {
 @keyframes sandbox-status-breathe-success {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgb(103 194 58 / 12%);
     transform: scale(1);
+    box-shadow: 0 0 0 0 rgb(103 194 58 / 12%);
   }
 
   50% {
-    box-shadow: 0 0 0 5px rgb(103 194 58 / 0%);
     transform: scale(1.06);
+    box-shadow: 0 0 0 5px rgb(103 194 58 / 0%);
   }
 }
 
 @keyframes sandbox-status-breathe-warning {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgb(230 162 60 / 12%);
     transform: scale(1);
+    box-shadow: 0 0 0 0 rgb(230 162 60 / 12%);
   }
 
   50% {
-    box-shadow: 0 0 0 5px rgb(230 162 60 / 0%);
     transform: scale(1.06);
+    box-shadow: 0 0 0 5px rgb(230 162 60 / 0%);
   }
 }
 
 @keyframes sandbox-status-breathe-danger {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgb(245 108 108 / 10%);
     transform: scale(1);
+    box-shadow: 0 0 0 0 rgb(245 108 108 / 10%);
   }
 
   50% {
-    box-shadow: 0 0 0 5px rgb(245 108 108 / 0%);
     transform: scale(1.06);
+    box-shadow: 0 0 0 5px rgb(245 108 108 / 0%);
   }
 }
 </style>

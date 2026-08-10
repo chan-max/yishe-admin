@@ -163,10 +163,10 @@ defineExpose({ open })
   width: 72px;
   height: 72px;
   overflow: hidden;
+  cursor: zoom-in;
+  background: var(--el-fill-color-lighter);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 6px;
-  background: var(--el-fill-color-lighter);
-  cursor: zoom-in;
 }
 
 .related-psd-set-thumbnail__badge {
@@ -175,23 +175,23 @@ defineExpose({ open })
   bottom: 4px;
   height: 16px;
   padding: 0 5px;
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.68);
-  color: #fff;
   font-size: 10px;
   line-height: 16px;
+  color: #fff;
+  background: rgb(15 23 42 / 68%);
+  border-radius: 999px;
 }
 
 .related-psd-set-thumbnail__empty {
   display: inline-flex;
   width: 72px;
   height: 72px;
-  align-items: center;
-  justify-content: center;
+  font-size: 12px;
+  color: var(--el-text-color-placeholder);
+  background: var(--el-fill-color-lighter);
   border: 1px dashed var(--el-border-color);
   border-radius: 6px;
-  background: var(--el-fill-color-lighter);
-  color: var(--el-text-color-placeholder);
-  font-size: 12px;
+  align-items: center;
+  justify-content: center;
 }
 </style>

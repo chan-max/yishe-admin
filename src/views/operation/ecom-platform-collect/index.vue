@@ -568,10 +568,10 @@ onActivated(() => {
 }
 
 .resource-toolbar__title {
-  color: var(--el-text-color-primary);
   font-size: 18px;
   font-weight: 600;
   line-height: 1.4;
+  color: var(--el-text-color-primary);
 }
 
 .resource-toolbar {
@@ -589,9 +589,9 @@ onActivated(() => {
 
 .resource-toolbar__desc {
   margin-top: 4px;
-  color: var(--el-text-color-secondary);
   font-size: 13px;
   line-height: 1.6;
+  color: var(--el-text-color-secondary);
 }
 
 .table-stack {
@@ -619,25 +619,25 @@ onActivated(() => {
 
 .primary-cell__title {
   overflow: hidden;
-  color: var(--el-text-color-primary);
   font-size: 12px;
   font-weight: 600;
   line-height: 1.35;
+  color: var(--el-text-color-primary);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .primary-cell__meta {
   overflow: hidden;
-  color: var(--el-text-color-placeholder);
   font-size: 10px;
   line-height: 1.2;
+  color: var(--el-text-color-placeholder);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .mono-text {
-  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  font-family: "JetBrains Mono", SFMono-Regular, Consolas, monospace;
 }
 
 .inline-chip-list,
@@ -652,27 +652,27 @@ onActivated(() => {
 .info-chip,
 .config-chip {
   display: inline-flex;
-  align-items: center;
   max-width: 100%;
   min-height: 20px;
-  border-radius: 6px;
   font-size: 11px;
   line-height: 1.2;
   white-space: nowrap;
+  border-radius: 6px;
+  align-items: center;
 }
 
 .info-chip {
   padding: 0 7px;
-  border: 1px solid var(--el-border-color-lighter);
   color: var(--el-text-color-regular);
   background: color-mix(in srgb, var(--el-fill-color-light) 72%, transparent);
+  border: 1px solid var(--el-border-color-lighter);
 }
 
 .info-chip--platform {
-  color: var(--el-color-primary);
-  border-color: color-mix(in srgb, var(--el-color-primary) 34%, var(--el-border-color));
-  background: color-mix(in srgb, var(--el-color-primary) 12%, transparent);
   font-weight: 600;
+  color: var(--el-color-primary);
+  background: color-mix(in srgb, var(--el-color-primary) 12%, transparent);
+  border-color: color-mix(in srgb, var(--el-color-primary) 34%, var(--el-border-color));
 }
 
 .info-chip--task {
@@ -683,8 +683,8 @@ onActivated(() => {
 
 .config-chip {
   overflow: hidden;
-  border: 1px solid var(--el-border-color-extra-light);
   background: var(--el-bg-color-overlay);
+  border: 1px solid var(--el-border-color-extra-light);
 }
 
 .config-chip__label {
@@ -694,11 +694,11 @@ onActivated(() => {
 }
 
 .config-chip__value {
-  overflow: hidden;
   max-width: 220px;
   padding: 3px 6px;
-  color: var(--el-text-color-primary);
+  overflow: hidden;
   font-weight: 500;
+  color: var(--el-text-color-primary);
   text-overflow: ellipsis;
 }
 </style>

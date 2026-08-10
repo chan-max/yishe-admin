@@ -492,9 +492,9 @@ const handleSubmit = async () => {
 
 .task-dialog-form {
   padding: 18px 20px;
+  background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 14px;
-  background: var(--el-bg-color);
 }
 
 .task-dialog-alert {
@@ -503,25 +503,25 @@ const handleSubmit = async () => {
 
 .form-section-title {
   margin: 4px 0 14px;
-  color: var(--el-text-color-primary);
   font-size: 14px;
   font-weight: 600;
+  color: var(--el-text-color-primary);
 }
 
 .form-hint {
   margin-top: 4px;
-  color: var(--el-text-color-placeholder);
   font-size: 11px;
   line-height: 1.5;
+  color: var(--el-text-color-placeholder);
 }
 
 .preview-card {
   position: sticky;
   top: 0;
   padding: 18px;
+  background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 14px;
-  background: var(--el-bg-color);
 }
 
 .preview-card__header {
@@ -532,9 +532,9 @@ const handleSubmit = async () => {
 }
 
 .preview-card__title {
-  color: var(--el-text-color-primary);
   font-size: 15px;
   font-weight: 600;
+  color: var(--el-text-color-primary);
 }
 
 .preview-metrics {
@@ -546,23 +546,23 @@ const handleSubmit = async () => {
 
 .preview-metric {
   padding: 10px 12px;
-  border-radius: 10px;
   background: var(--el-fill-color-light);
   border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
 }
 
 .preview-metric__label {
   display: block;
-  color: var(--el-text-color-secondary);
   font-size: 11px;
+  color: var(--el-text-color-secondary);
 }
 
 .preview-metric strong {
   display: block;
   margin-top: 4px;
-  color: var(--el-text-color-primary);
   font-size: 18px;
   line-height: 1.2;
+  color: var(--el-text-color-primary);
 }
 
 .preview-block {
@@ -571,30 +571,30 @@ const handleSubmit = async () => {
 
 .preview-block__label {
   margin-bottom: 8px;
-  color: var(--el-text-color-primary);
   font-size: 13px;
   font-weight: 600;
+  color: var(--el-text-color-primary);
 }
 
 .preview-block__text {
-  color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 1.7;
+  color: var(--el-text-color-secondary);
 }
 
 .json-preview {
   max-height: calc(100vh - 360px);
-  overflow: auto;
-  margin: 0;
   padding: 14px;
-  border-radius: 12px;
-  border: 1px solid var(--el-border-color-lighter);
-  background: var(--el-fill-color-light);
-  color: var(--el-text-color-regular);
+  margin: 0;
+  overflow: auto;
   font-size: 12px;
   line-height: 1.6;
-  white-space: pre-wrap;
+  color: var(--el-text-color-regular);
   word-break: break-word;
+  white-space: pre-wrap;
+  background: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
 }
 
 .task-dialog-footer-bar {
@@ -604,7 +604,7 @@ const handleSubmit = async () => {
   width: 100%;
 }
 
-@media (max-width: 1200px) {
+@media (width <= 1200px) {
   .task-dialog-layout {
     grid-template-columns: 1fr;
   }

@@ -7,14 +7,18 @@ import {
   VueFlow,
   useVueFlow,
   type Node,
+  type Edge,
   type Connection,
-  type NodeMouseEvent
+  type NodeMouseEvent,
+  type EdgeMouseEvent
 } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import { MiniMap } from '@vue-flow/minimap'
 import { useAppStore } from '@/store/modules/app'
 import { getWorkflowDetailApi, updateWorkflowApi, runWorkflowApi } from '@/api/workflow'
+import { useWorkflowHistory } from '@/composables/useWorkflowHistory'
+import { useSmartSave } from '@/composables/useSmartSave'
 
 // 自定义节点
 import StartNode from '@/components/workflow/nodes/StartNode.vue'
@@ -24,6 +28,8 @@ import ConditionNode from '@/components/workflow/nodes/ConditionNode.vue'
 import LLMNode from '@/components/workflow/nodes/LLMNode.vue'
 import HttpNode from '@/components/workflow/nodes/HttpNode.vue'
 import CodeNode from '@/components/workflow/nodes/CodeNode.vue'
+import MessagePushNode from '@/components/workflow/nodes/MessagePushNode.vue'
+import HotsearchWeiboNode from '@/components/workflow/nodes/HotsearchWeiboNode.vue'
 
 import NodePanel from '@/components/workflow/NodePanel.vue'
 import ConfigPanel from '@/components/workflow/ConfigPanel.vue'
@@ -47,24 +53,32 @@ const {
   addNodes,
   addEdges,
   removeNodes,
+  removeEdges,
   setNodes,
   setEdges,
   setViewport,
   getViewport,
   onConnect,
   project,
-  findNode
+  findNode,
+  updateNodeData,
+  getSelectedNodes,
+  getSelectedEdges
 } = useVueFlow()
 
 // 状态
 const workflow = ref<any>(null)
 const loading = ref(true)
-const saveStatus = ref<'saved' | 'saving' | 'unsaved'>('saved')
 const selectedNode = ref<Node | null>(null)
+const selectedEdge = ref<Edge | null>(null)
 const canvasRef = ref<HTMLDivElement | null>(null)
 
 const triggerDialogVisible = ref(false)
 const nodePickerVisible = ref(false)
+
+const handleOpenNodePicker = () => {
+  nodePickerVisible.value = true
+}
 const runningWorkflow = ref(false)
 
 const handleRunWorkflow = async () => {
@@ -96,18 +110,55 @@ const nodeTypes = {
   condition: markRaw(ConditionNode),
   llm: markRaw(LLMNode),
   http: markRaw(HttpNode),
-  code: markRaw(CodeNode)
+  code: markRaw(CodeNode),
+  message_push: markRaw(MessagePushNode),
+  hotsearch_weibo: markRaw(HotsearchWeiboNode),
 }
+
+// ─── 撤销/重做历史 ─────────────────────────────────────────────
+const {
+  undo,
+  redo,
+  pushHistory,
+  clearHistory,
+  canUndo,
+  canRedo
+} = useWorkflowHistory(nodes, edges, setNodes, setEdges)
+
+// ─── 智能保存 ─────────────────────────────────────────────────
+const saveCanvasFn = async (canvas: { nodes: any[]; edges: any[]; viewport: any }) => {
+  await updateWorkflowApi({
+    id: workflowId.value,
+    canvas
+  })
+}
+
+const { saveStatus, saveNow: smartSaveNow, triggerSave, cancelSave } = useSmartSave(
+  nodes,
+  edges,
+  getViewport,
+  saveCanvasFn,
+  { debounceMs: 2000, maxRetries: 3 }
+)
 
 // ─── 复制/粘贴节点 ───────────────────────────────────────────
 const copiedNode = ref<Node | null>(null)
 
 // ─── 快捷点击添加能力节点 ──────────────────────────────────────
 const handleAddNodeFromLibrary = (capability: SystemNodeCapability) => {
+  pushHistory()
   const mappedType = nodeTypes[capability.type as keyof typeof nodeTypes] ? capability.type : 'default'
-  const centerPos = {
-    x: 280 + Math.random() * 60,
-    y: 160 + Math.random() * 60
+
+  // 计算当前视口中心点，使节点出现在用户可见区域
+  const canvasEl = canvasRef.value
+  let centerPos = { x: 280, y: 160 }
+  if (canvasEl) {
+    const rect = canvasEl.getBoundingClientRect()
+    const vp = getViewport()
+    centerPos = {
+      x: (rect.width / 2 - vp.x) / vp.zoom,
+      y: (rect.height / 2 - vp.y) / vp.zoom
+    }
   }
 
   const newNode: Node = {
@@ -148,6 +199,7 @@ const onDrop = (event: DragEvent) => {
 
   const mappedType = nodeTypes[type as keyof typeof nodeTypes] ? type : 'default'
 
+  pushHistory()
   const newNode: Node = {
     id: `${type}_${Date.now().toString(36)}`,
     type: mappedType,
@@ -168,18 +220,44 @@ const onDragOver = (event: DragEvent) => {
   if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'
 }
 
+// ─── 键盘事件处理 ─────────────────────────────────────────────
 const handleKeydown = (e: KeyboardEvent) => {
-  // 如果在输入框内，不触发画布快捷键
   const tag = (e.target as HTMLElement)?.tagName?.toLowerCase()
   if (tag === 'input' || tag === 'textarea') return
 
+  // 撤销 Ctrl+Z
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+    e.preventDefault()
+    if (canUndo()) {
+      undo()
+      ElMessage.info('已撤销')
+    }
+    return
+  }
+
+  // 重做 Ctrl+Shift+Z 或 Ctrl+Y
+  if ((e.metaKey || e.ctrlKey) && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
+    e.preventDefault()
+    if (canRedo()) {
+      redo()
+      ElMessage.info('已重做')
+    }
+    return
+  }
+
+  // 复制节点
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'c') {
     if (selectedNode.value) {
       copiedNode.value = JSON.parse(JSON.stringify(selectedNode.value))
       ElMessage.success('已复制节点')
     }
-  } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'v') {
+    return
+  }
+
+  // 粘贴节点
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'v') {
     if (copiedNode.value) {
+      pushHistory()
       const newNode: Node = {
         ...JSON.parse(JSON.stringify(copiedNode.value)),
         id: `node_${Date.now()}`,
@@ -192,8 +270,16 @@ const handleKeydown = (e: KeyboardEvent) => {
       selectedNode.value = newNode
       ElMessage.success('已粘贴节点')
     }
-  } else if (e.key === 'Delete' || e.key === 'Backspace') {
-    if (selectedNode.value) {
+    return
+  }
+
+  // 删除选中节点或连线
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (selectedEdge.value) {
+      e.preventDefault()
+      handleDeleteEdge(selectedEdge.value.id)
+    } else if (selectedNode.value) {
+      e.preventDefault()
       onNodeDelete(selectedNode.value.id)
     }
   }
@@ -202,6 +288,8 @@ const handleKeydown = (e: KeyboardEvent) => {
 // ─── 一键整理对齐布局 ─────────────────────────────────────────
 const autoLayout = () => {
   if (nodes.value.length === 0) return
+  pushHistory()
+
   const nodeMap = new Map(nodes.value.map((n) => [n.id, n]))
   const startNodes = nodes.value.filter(
     (n) => n.type === 'start' || !edges.value.some((e) => e.target === n.id)
@@ -280,6 +368,7 @@ const handleImportJson = (event: Event) => {
     try {
       const json = JSON.parse(e.target?.result as string)
       if (json.canvas) {
+        pushHistory()
         setNodes(json.canvas.nodes || [])
         setEdges(json.canvas.edges || [])
         if (json.canvas.viewport) setViewport(json.canvas.viewport)
@@ -299,10 +388,20 @@ const clearCanvas = async () => {
     cancelButtonText: '取消',
     type: 'warning'
   })
+  pushHistory()
   setNodes([])
   setEdges([])
   selectedNode.value = null
+  selectedEdge.value = null
   ElMessage.success('已清空画布')
+}
+
+// ─── 连线删除 ─────────────────────────────────────────────────
+const handleDeleteEdge = (edgeId: string) => {
+  pushHistory()
+  removeEdges([edgeId])
+  selectedEdge.value = null
+  ElMessage.success('连线已删除')
 }
 
 // ─── 加载工作流与注册键盘事件 ──────────────────────────────
@@ -318,6 +417,7 @@ onMounted(async () => {
         setViewport(res.canvas.viewport)
       }
     }
+    setTimeout(() => smartSaveNow(), 100)
   } catch (e) {
     ElMessage.error('工作流加载失败')
   } finally {
@@ -327,42 +427,16 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydown)
+  cancelSave()
 })
 
-// ─── 自动保存：debounce 2s ────────────────────────────────────
-let saveTimer: ReturnType<typeof setTimeout> | null = null
-
-const triggerAutoSave = () => {
-  saveStatus.value = 'unsaved'
-  if (saveTimer) clearTimeout(saveTimer)
-  saveTimer = setTimeout(saveCanvas, 2000)
-}
-
-const saveCanvas = async () => {
-  if (!workflowId.value) return
-  saveStatus.value = 'saving'
-  try {
-    await updateWorkflowApi({
-      id: workflowId.value,
-      canvas: {
-        nodes: nodes.value,
-        edges: edges.value,
-        viewport: getViewport()
-      }
-    })
-    saveStatus.value = 'saved'
-  } catch {
-    saveStatus.value = 'unsaved'
-    ElMessage.error('保存失败，请检查网络')
-  }
-}
-
-// 监听 nodes/edges 变化触发保存
-watch(nodes, triggerAutoSave, { deep: true })
-watch(edges, triggerAutoSave, { deep: true })
+// ─── 自动保存 ─────────────────────────────────────────────────
+watch(nodes, triggerSave, { deep: true })
+watch(edges, triggerSave, { deep: true })
 
 // ─── 节点连接 ─────────────────────────────────────────────────
 onConnect((params: Connection) => {
+  pushHistory()
   addEdges([{
     id: `e-${params.source}-${params.target}-${Date.now()}`,
     source: params.source,
@@ -378,39 +452,56 @@ onConnect((params: Connection) => {
 // ─── 节点点击（选中→配置面板）────────────────────────────────
 const onNodeClick = ({ node }: NodeMouseEvent) => {
   selectedNode.value = node
+  selectedEdge.value = null
+}
+
+// ─── 连线点击（选中→可删除）─────────────────────────────────
+const onEdgeClick = ({ edge }: EdgeMouseEvent) => {
+  selectedEdge.value = edge
+  selectedNode.value = null
 }
 
 const onPaneClick = () => {
   selectedNode.value = null
+  selectedEdge.value = null
 }
 
 // ─── 节点配置更新 ─────────────────────────────────────────────
 const onNodeUpdate = (updated: Node) => {
+  updateNodeData(updated.id, { ...updated.data })
   const node = findNode(updated.id)
-  if (node) node.data = { ...updated.data }
-  selectedNode.value = { ...updated }
+  if (node) selectedNode.value = { ...node }
 }
 
 // ─── 节点删除 ─────────────────────────────────────────────────
 const onNodeDelete = (nodeId: string) => {
+  pushHistory()
   removeNodes([nodeId])
   selectedNode.value = null
 }
 
 // ─── 标题编辑 ─────────────────────────────────────────────────
 const editingTitle = ref(false)
+const popoverVisible = ref(false)
 const titleInput = ref('')
 
 const startEditTitle = () => {
   titleInput.value = workflow.value?.name || ''
   editingTitle.value = true
+  popoverVisible.value = true
 }
 
 const saveTitle = async () => {
   if (!titleInput.value.trim()) return
   editingTitle.value = false
+  popoverVisible.value = false
   workflow.value.name = titleInput.value.trim()
   await updateWorkflowApi({ id: workflowId.value, name: workflow.value.name })
+}
+
+const cancelEditTitle = () => {
+  popoverVisible.value = false
+  editingTitle.value = false
 }
 
 const statusText = computed(() => {
@@ -432,20 +523,32 @@ const statusText = computed(() => {
         <div class="wf-divider" />
         <!-- 可编辑标题 -->
         <div class="wf-title-wrap">
-          <template v-if="editingTitle">
-            <el-input
-              v-model="titleInput"
-              size="small"
-              style="width: 220px"
-              autofocus
-              @blur="saveTitle"
-              @keyup.enter="saveTitle"
-            />
-          </template>
-          <template v-else>
-            <span class="wf-title" @click="startEditTitle">{{ workflow?.name || '...' }}</span>
-            <el-icon class="wf-title-edit-icon" @click="startEditTitle"><EditPen /></el-icon>
-          </template>
+          <el-popover
+            v-model:visible="popoverVisible"
+            placement="bottom-start"
+            :width="240"
+            :show-arrow="false"
+            trigger="manual"
+          >
+            <template #reference>
+              <span class="wf-title" @click="startEditTitle">
+                <span class="wf-title__text">{{ workflow?.name || '...' }}</span>
+                <el-icon class="wf-title__icon"><EditPen /></el-icon>
+              </span>
+            </template>
+            <div class="wf-title-edit">
+              <el-input
+                v-model="titleInput"
+                type="textarea"
+                :rows="3"
+                placeholder="工作流名称"
+              />
+              <div class="wf-title-edit__actions">
+                <el-button size="small" text @click="cancelEditTitle">取消</el-button>
+                <el-button size="small" type="primary" @click="saveTitle">确定</el-button>
+              </div>
+            </div>
+          </el-popover>
         </div>
       </div>
 
@@ -457,7 +560,11 @@ const statusText = computed(() => {
           <el-option label="直线" value="straight" />
         </el-select>
 
-        <!-- 整理与工具按纽 (无多余图标，简洁高密度) -->
+        <!-- 撤销/重做 -->
+        <el-button size="small" :disabled="!canUndo()" @click="undo" title="撤销 (Ctrl+Z)">撤销</el-button>
+        <el-button size="small" :disabled="!canRedo()" @click="redo" title="重做 (Ctrl+Shift+Z)">重做</el-button>
+
+        <!-- 整理与工具按纽 -->
         <el-button size="small" @click="autoLayout">对齐</el-button>
         <el-button size="small" type="primary" plain @click="nodePickerVisible = true">功能节点</el-button>
         <el-button size="small" @click="triggerDialogVisible = true">设置</el-button>
@@ -469,21 +576,22 @@ const statusText = computed(() => {
 
         <div class="wf-divider" />
 
-        <!-- 保存状态 -->
-        <span :class="['wf-save-status', `wf-save-status--${saveStatus}`]">
-          <el-icon v-if="saveStatus === 'saving'"><Loading /></el-icon>
-          <el-icon v-else-if="saveStatus === 'saved'"><Check /></el-icon>
-          <el-icon v-else><Warning /></el-icon>
+        <!-- 保存按钮（状态内置，固定宽度） -->
+        <el-button
+          size="small"
+          :class="['wf-save-btn', `wf-save-btn--${saveStatus}`]"
+          :loading="saveStatus === 'saving'"
+          @click="smartSaveNow"
+        >
           {{ statusText }}
-        </span>
-        <el-button size="small" type="primary" @click="saveCanvas">保存</el-button>
+        </el-button>
       </div>
     </div>
 
     <!-- 编辑器主体 -->
     <div class="wf-editor-body">
       <!-- 左侧基础节点面板 -->
-      <NodePanel />
+      <NodePanel @openNodePicker="handleOpenNodePicker" />
 
       <!-- 画布区 -->
       <div
@@ -499,6 +607,7 @@ const statusText = computed(() => {
           :max-zoom="4"
           :default-edge-options="{ animated: false, style: { stroke: '#94a3b8', strokeWidth: 2 } }"
           @node-click="onNodeClick"
+          @edge-click="onEdgeClick"
           @pane-click="onPaneClick"
         >
           <Background :pattern-color="patternColor" :gap="20" />
@@ -519,6 +628,7 @@ const statusText = computed(() => {
     <!-- 触发器与设置对话框 -->
     <TriggerConfigDialog v-model="triggerDialogVisible" :workflow-id="workflowId" />
 
+
     <!-- 功能节点选择弹窗 -->
     <NodePickerDialog
       v-model="nodePickerVisible"
@@ -528,30 +638,30 @@ const statusText = computed(() => {
 </template>
 
 <style>
-@import '@vue-flow/core/dist/style.css';
-@import '@vue-flow/core/dist/theme-default.css';
-@import '@vue-flow/controls/dist/style.css';
-@import '@vue-flow/minimap/dist/style.css';
+@import url('@vue-flow/core/dist/style.css');
+@import url('@vue-flow/core/dist/theme-default.css');
+@import url('@vue-flow/controls/dist/style.css');
+@import url('@vue-flow/minimap/dist/style.css');
 </style>
 
 <style scoped lang="scss">
 .workflow-editor {
   display: flex;
-  flex-direction: column;
   height: calc(100vh - var(--top-tool-height) - var(--tags-view-height));
   margin: calc(0px - var(--app-content-padding));
-  background: var(--app-content-bg-color);
   overflow: hidden;
+  background: var(--app-content-bg-color);
+  flex-direction: column;
 }
 
 .wf-editor-toolbar {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 12px;
   height: 36px;
+  padding: 0 12px;
   background: var(--app-content-surface-color);
   border-bottom: 1px solid var(--app-content-border-color);
+  align-items: center;
+  justify-content: space-between;
   flex-shrink: 0;
   gap: 8px;
 }
@@ -565,16 +675,16 @@ const statusText = computed(() => {
 
 .wf-editor-toolbar__right {
   :deep(.el-button--small) {
-    padding: 2px 7px;
     height: 24px;
+    padding: 2px 7px;
     font-size: 11px;
     border-radius: 4px;
   }
 
   :deep(.el-select--small) {
     .el-select__wrapper {
-      min-height: 24px;
       height: 24px;
+      min-height: 24px;
       padding: 0 6px;
       font-size: 11px;
       border-radius: 4px;
@@ -583,52 +693,103 @@ const statusText = computed(() => {
 }
 
 .wf-back-btn {
-  font-size: 11px;
-  padding: 2px 4px;
   height: 24px;
+  padding: 2px 4px;
+  font-size: 11px;
   color: var(--el-text-color-secondary);
 }
 
 .wf-divider {
   width: 1px;
   height: 12px;
-  background: var(--app-content-border-color);
   margin: 0 2px;
+  background: var(--app-content-border-color);
 }
 
 .wf-title-wrap {
   display: flex;
   align-items: center;
   gap: 4px;
+  min-width: 0;
 }
 
 .wf-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
   font-size: 13px;
   font-weight: 600;
   color: var(--el-text-color-primary);
   cursor: pointer;
-  padding: 1px 4px;
-  border-radius: 3px;
-  &:hover { background: var(--app-content-surface-muted-color); }
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+  max-width: 320px;
+
+  &:hover {
+    background: var(--app-content-surface-muted-color);
+  }
+
+  &__text {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  &__icon {
+    font-size: 11px;
+    color: var(--el-text-color-placeholder);
+    flex-shrink: 0;
+  }
 }
 
-.wf-title-edit-icon {
-  font-size: 12px;
-  color: var(--el-text-color-placeholder);
-  cursor: pointer;
-  &:hover { color: var(--el-color-primary); }
-}
-
-.wf-save-status {
+.wf-title-edit {
   display: flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 11px;
-  margin-right: 2px;
+  flex-direction: column;
+  gap: 8px;
+}
 
-  &--saved { color: var(--el-color-success); }
-  &--saving { color: var(--el-text-color-secondary); }
-  &--unsaved { color: var(--el-color-warning); }
+.wf-title-edit__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+
+  :deep(.el-button) {
+    height: 20px;
+    padding: 0 8px;
+    font-size: 11px;
+    border-radius: 3px;
+  }
+}
+
+
+
+.wf-save-btn {
+  display: inline-flex !important;
+  min-width: 100px !important;
+  text-align: center !important;
+  transition: all 0.25s ease;
+  align-items: center !important;
+  justify-content: center !important;
+
+  &--saved {
+    color: var(--el-color-success) !important;
+    background-color: color-mix(in srgb, var(--el-color-success) 10%, transparent) !important;
+    border-color: color-mix(in srgb, var(--el-color-success) 30%, transparent) !important;
+  }
+
+  &--saving {
+    color: var(--el-color-primary) !important;
+    background-color: color-mix(in srgb, var(--el-color-primary) 10%, transparent) !important;
+    border-color: color-mix(in srgb, var(--el-color-primary) 30%, transparent) !important;
+  }
+
+  &--unsaved {
+    color: var(--el-color-warning) !important;
+    background-color: color-mix(in srgb, var(--el-color-warning) 10%, transparent) !important;
+    border-color: color-mix(in srgb, var(--el-color-warning) 30%, transparent) !important;
+  }
 }
 
 .wf-editor-body {
@@ -638,26 +799,26 @@ const statusText = computed(() => {
 }
 
 .wf-canvas {
-  flex: 1;
+  position: relative;
   height: 100%;
   background: var(--app-content-bg-color);
-  position: relative;
+  flex: 1;
 }
 
 /* VueFlow 控件适配深色/浅色模式 */
 :deep(.vue-flow__controls) {
+  overflow: hidden;
   background: var(--app-content-surface-color);
   border: 1px solid var(--app-content-border-color);
   border-radius: 8px;
   box-shadow: var(--app-content-shadow);
-  overflow: hidden;
 }
 
 :deep(.vue-flow__controls-button) {
+  color: var(--el-text-color-primary);
   background: var(--app-content-surface-color);
   border-bottom: 1px solid var(--app-content-border-color);
   fill: var(--el-text-color-primary);
-  color: var(--el-text-color-primary);
 
   &:hover {
     background: var(--app-content-surface-muted-color);
@@ -669,9 +830,9 @@ const statusText = computed(() => {
 }
 
 :deep(.wf-minimap) {
+  overflow: hidden;
   background: var(--app-content-surface-color);
   border: 1px solid var(--app-content-border-color);
   border-radius: 8px;
-  overflow: hidden;
 }
 </style>

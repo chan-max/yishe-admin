@@ -247,16 +247,16 @@ onBeforeUnmount(() => {
 .command-popup {
   position: fixed;
   z-index: 9999;
-  max-height: 400px;
   display: flex;
-  flex-direction: column;
+  max-height: 400px;
+  overflow: hidden;
   background: var(--el-bg-color-overlay, #fff);
   border: 1px solid var(--el-border-color, #dcdfe6);
   border-radius: 8px;
   box-shadow:
-    0 4px 24px rgba(0, 0, 0, 0.1),
-    0 1px 4px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
+    0 4px 24px rgb(0 0 0 / 10%),
+    0 1px 4px rgb(0 0 0 / 5%);
+  flex-direction: column;
 }
 
 /* Search bar */
@@ -268,13 +268,13 @@ onBeforeUnmount(() => {
 
 .cmd-search-input {
   width: 100%;
-  border: none;
-  outline: none;
+  padding: 4px 2px;
   font-size: 13px;
+  line-height: 1.5;
   color: var(--el-text-color-primary, #303133);
   background: transparent;
-  padding: 4px 2px;
-  line-height: 1.5;
+  border: none;
+  outline: none;
 }
 
 .cmd-search-input::placeholder {
@@ -283,29 +283,29 @@ onBeforeUnmount(() => {
 
 /* Command list */
 .cmd-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 4px 0;
   min-height: 0;
+  padding: 4px 0;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .cmd-group-label {
   padding: 6px 12px 3px;
   font-size: 11px;
   font-weight: 600;
-  color: var(--el-text-color-secondary, #909399);
   letter-spacing: 0.3px;
+  color: var(--el-text-color-secondary, #909399);
   user-select: none;
 }
 
 .cmd-item {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  min-height: 36px;
   padding: 7px 12px;
   cursor: pointer;
   transition: background-color 0.08s;
-  min-height: 36px;
+  align-items: center;
+  gap: 12px;
 }
 
 .cmd-item:hover,
@@ -318,24 +318,24 @@ onBeforeUnmount(() => {
 }
 
 .cmd-alias {
-  flex-shrink: 0;
   min-width: 80px;
+  font-family: "SF Mono", Monaco, Menlo, Consolas, monospace;
   font-size: 12.5px;
   font-weight: 600;
-  color: var(--el-color-primary, #409eff);
-  font-family: "SF Mono", "Monaco", "Menlo", "Consolas", monospace;
   letter-spacing: 0.2px;
+  color: var(--el-color-primary, #409eff);
+  flex-shrink: 0;
 }
 
 .cmd-desc {
-  flex: 1;
   min-width: 0;
-  font-size: 12.5px;
-  color: var(--el-text-color-regular, #606266);
-  line-height: 1.4;
   overflow: hidden;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--el-text-color-regular, #606266);
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
 }
 
 /* Footer */
@@ -351,24 +351,24 @@ onBeforeUnmount(() => {
 
 .cmd-footer kbd {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
   height: 18px;
+  min-width: 18px;
   padding: 0 4px;
+  font-family: "SF Mono", Monaco, Menlo, monospace;
   font-size: 10px;
-  font-family: "SF Mono", "Monaco", "Menlo", monospace;
+  line-height: 1;
   color: var(--el-text-color-secondary, #909399);
   background: var(--el-fill-color, #f5f7fa);
   border: 1px solid var(--el-border-color-lighter, #e4e7ed);
   border-radius: 3px;
-  line-height: 1;
+  align-items: center;
+  justify-content: center;
 }
 
 .cmd-footer span {
+  margin-right: 6px;
   font-size: 11px;
   color: var(--el-text-color-placeholder, #c0c4cc);
-  margin-right: 6px;
 }
 
 .cmd-count {
@@ -384,6 +384,7 @@ onBeforeUnmount(() => {
     opacity 0.12s ease,
     transform 0.12s ease;
 }
+
 .cmd-popup-enter-from,
 .cmd-popup-leave-to {
   opacity: 0;

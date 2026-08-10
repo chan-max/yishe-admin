@@ -217,8 +217,8 @@ onMounted(init)
 
 <style scoped lang="scss">
 .settings-panel {
-  border-radius: 12px;
   background: var(--el-bg-color);
+  border-radius: 12px;
   box-shadow: var(--app-content-shadow);
 }
 
@@ -244,12 +244,12 @@ onMounted(init)
 
 .profile-avatar {
   position: relative;
-  flex-shrink: 0;
   width: 92px;
   height: 92px;
-  border-radius: 50%;
-  cursor: pointer;
   overflow: hidden;
+  cursor: pointer;
+  border-radius: 50%;
+  flex-shrink: 0;
 
   &.is-uploading {
     cursor: default;
@@ -259,19 +259,19 @@ onMounted(init)
 
 .profile-avatar__mask {
   position: absolute;
-  inset: 0;
   display: flex;
+  font-size: 12px;
+  line-height: 1;
+  color: #fff;
+  background: rgb(0 0 0 / 45%);
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  inset: 0;
   flex-direction: column;
   gap: 4px;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.45);
-  color: #fff;
-  font-size: 12px;
-  line-height: 1;
-  opacity: 0;
-  transition: opacity 0.2s ease;
 }
 
 .profile-avatar:hover .profile-avatar__mask,
@@ -300,13 +300,13 @@ onMounted(init)
 
 .profile-head__badge {
   display: inline-flex;
-  align-items: center;
   height: 22px;
   padding: 0 10px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
-  color: var(--el-color-primary);
   font-size: 12px;
+  color: var(--el-color-primary);
+  background: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
+  border-radius: 999px;
+  align-items: center;
 }
 
 .profile-head__sub {
@@ -352,7 +352,7 @@ onMounted(init)
   margin-top: 4px;
 }
 
-@media (max-width: 900px) {
+@media (width <= 900px) {
   .profile-head {
     flex-direction: column;
     align-items: flex-start;

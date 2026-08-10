@@ -121,42 +121,42 @@ const getProgressMeta = (item: { metadata?: Record<string, any> }) => {
   left: 50%;
   z-index: 3000;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
   width: auto;
   max-width: calc(100vw - 20px);
   padding: 8px;
-  transform: translateX(-50%);
   pointer-events: none;
+  transform: translateX(-50%);
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
 }
 
 .uiverse-toast {
-  box-sizing: border-box;
   display: flex;
-  align-items: flex-start;
   width: fit-content;
-  min-width: min(420px, calc(100vw - 36px));
   max-width: min(560px, calc(100vw - 36px));
+  min-width: min(420px, calc(100vw - 36px));
   padding: 8px 10px;
-  border-left: 4px solid;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  border-right: 1px solid rgba(255, 255, 255, 0.12);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+  font-family: inherit;
   pointer-events: auto;
+  border-top: 1px solid rgb(255 255 255 / 12%);
+  border-right: 1px solid rgb(255 255 255 / 12%);
+  border-bottom: 1px solid rgb(255 255 255 / 12%);
+  border-left: 4px solid;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgb(15 23 42 / 12%);
+  box-sizing: border-box;
   transition:
     background-color 300ms ease-in-out,
     transform 300ms ease-in-out,
     opacity 300ms ease-in-out,
     box-shadow 300ms ease-in-out;
-  font-family: inherit;
+  align-items: flex-start;
 }
 
 .uiverse-toast:hover {
   transform: translateY(1px);
-  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.14);
+  box-shadow: 0 10px 22px rgb(15 23 42 / 14%);
 }
 
 .uiverse-toast__icon {
@@ -174,19 +174,19 @@ const getProgressMeta = (item: { metadata?: Record<string, any> }) => {
 
 .uiverse-toast__title,
 .uiverse-toast__message {
-  margin: 0;
   min-width: 0;
+  margin: 0;
   color: inherit;
 }
 
 .uiverse-toast__title {
+  overflow: hidden;
+  font-family: inherit;
   font-size: 11px;
   font-weight: 600;
   line-height: 1.3;
-  font-family: inherit;
-  white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .uiverse-toast__message {
@@ -194,8 +194,8 @@ const getProgressMeta = (item: { metadata?: Record<string, any> }) => {
   font-size: 11px;
   font-weight: 500;
   line-height: 1.35;
-  white-space: normal;
   word-break: break-word;
+  white-space: normal;
   opacity: 0.92;
 }
 
@@ -207,14 +207,14 @@ const getProgressMeta = (item: { metadata?: Record<string, any> }) => {
   width: 100%;
   height: 6px;
   overflow: hidden;
+  background: rgb(255 255 255 / 26%);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.26);
 }
 
 .uiverse-toast__progress-bar {
   height: 100%;
+  background: rgb(255 255 255 / 92%);
   border-radius: inherit;
-  background: rgba(255, 255, 255, 0.92);
   transition: width 260ms ease;
 }
 
@@ -229,21 +229,21 @@ const getProgressMeta = (item: { metadata?: Record<string, any> }) => {
 }
 
 .uiverse-toast__close {
-  box-sizing: border-box;
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
   width: 18px;
   height: 18px;
+  padding: 0;
   margin-top: 0;
   margin-left: 8px;
-  padding: 0;
-  border: 0;
-  background: transparent;
   color: inherit;
   cursor: pointer;
-  opacity: 0.72;
+  background: transparent;
+  border: 0;
   border-radius: 4px;
+  opacity: 0.72;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
 }
 
 .uiverse-toast__close:hover {
@@ -256,13 +256,13 @@ const getProgressMeta = (item: { metadata?: Record<string, any> }) => {
 }
 
 .uiverse-toast.is-success {
+  color: #fff;
   background: #22c55e;
   border-left-color: #22c55e;
-  color: #ffffff;
 }
 
 .uiverse-toast.is-success .uiverse-toast__icon {
-  color: #ffffff;
+  color: #fff;
 }
 
 .uiverse-toast.is-success:hover {
@@ -270,13 +270,13 @@ const getProgressMeta = (item: { metadata?: Record<string, any> }) => {
 }
 
 .uiverse-toast.is-info {
+  color: #fff;
   background: var(--el-color-primary);
   border-left-color: var(--el-color-primary);
-  color: #ffffff;
 }
 
 .uiverse-toast.is-info .uiverse-toast__icon {
-  color: #ffffff;
+  color: #fff;
 }
 
 .uiverse-toast.is-info:hover {
@@ -284,13 +284,13 @@ const getProgressMeta = (item: { metadata?: Record<string, any> }) => {
 }
 
 .uiverse-toast.is-warning {
+  color: #fff;
   background: #f59e0b;
   border-left-color: #f59e0b;
-  color: #ffffff;
 }
 
 .uiverse-toast.is-warning .uiverse-toast__icon {
-  color: #ffffff;
+  color: #fff;
 }
 
 .uiverse-toast.is-warning:hover {
@@ -298,13 +298,13 @@ const getProgressMeta = (item: { metadata?: Record<string, any> }) => {
 }
 
 .uiverse-toast.is-error {
+  color: #fff;
   background: #ef4444;
   border-left-color: #ef4444;
-  color: #ffffff;
 }
 
 .uiverse-toast.is-error .uiverse-toast__icon {
-  color: #ffffff;
+  color: #fff;
 }
 
 .uiverse-toast.is-error:hover {
@@ -312,13 +312,13 @@ const getProgressMeta = (item: { metadata?: Record<string, any> }) => {
 }
 
 :global(html.dark) .uiverse-toast.is-success {
+  color: #fff;
   background: #22c55e;
   border-left-color: #15803d;
-  color: #ffffff;
 }
 
 :global(html.dark) .uiverse-toast.is-success .uiverse-toast__icon {
-  color: #ffffff;
+  color: #fff;
 }
 
 :global(html.dark) .uiverse-toast.is-success:hover {
@@ -326,13 +326,13 @@ const getProgressMeta = (item: { metadata?: Record<string, any> }) => {
 }
 
 :global(html.dark) .uiverse-toast.is-info {
+  color: #fff;
   background: var(--el-color-primary);
   border-left-color: var(--el-color-primary);
-  color: #ffffff;
 }
 
 :global(html.dark) .uiverse-toast.is-info .uiverse-toast__icon {
-  color: #ffffff;
+  color: #fff;
 }
 
 :global(html.dark) .uiverse-toast.is-info:hover {
@@ -340,13 +340,13 @@ const getProgressMeta = (item: { metadata?: Record<string, any> }) => {
 }
 
 :global(html.dark) .uiverse-toast.is-warning {
+  color: #fff;
   background: #f59e0b;
   border-left-color: #b45309;
-  color: #ffffff;
 }
 
 :global(html.dark) .uiverse-toast.is-warning .uiverse-toast__icon {
-  color: #ffffff;
+  color: #fff;
 }
 
 :global(html.dark) .uiverse-toast.is-warning:hover {
@@ -354,13 +354,13 @@ const getProgressMeta = (item: { metadata?: Record<string, any> }) => {
 }
 
 :global(html.dark) .uiverse-toast.is-error {
+  color: #fff;
   background: #000;
   border-left-color: #444;
-  color: #ffffff;
 }
 
 :global(html.dark) .uiverse-toast.is-error .uiverse-toast__icon {
-  color: #ffffff;
+  color: #fff;
 }
 
 :global(html.dark) .uiverse-toast.is-error:hover {
@@ -386,7 +386,7 @@ const getProgressMeta = (item: { metadata?: Record<string, any> }) => {
   transform: translateY(0) scale(1);
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .uiverse-toast-stack {
     padding: 8px;
   }

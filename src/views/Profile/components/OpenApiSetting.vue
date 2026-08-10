@@ -111,8 +111,8 @@ onMounted(loadConfig)
 
 <style scoped lang="scss">
 .settings-panel {
-  border-radius: 12px;
   background: var(--el-bg-color);
+  border-radius: 12px;
   box-shadow: var(--app-content-shadow);
 }
 
@@ -162,7 +162,7 @@ onMounted(loadConfig)
   margin-top: 16px;
 }
 
-@media (max-width: 900px) {
+@media (width <= 900px) {
   .open-api-head {
     flex-direction: column;
   }

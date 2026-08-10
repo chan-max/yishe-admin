@@ -14,19 +14,21 @@ defineProps<{ data: { label?: string; config?: any; selected?: boolean } }>()
 
 <style scoped>
 .wf-node--default {
+  min-width: 100px;
+  padding: 6px 12px;
+  text-align: center;
   background: var(--app-content-surface-color);
   border: 1px solid var(--app-content-border-color);
   border-radius: 6px;
-  padding: 6px 12px;
-  min-width: 100px;
-  text-align: center;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 4%);
   transition: all 0.15s ease;
 }
+
 .wf-node--default:hover,
 .wf-node--default.selected {
   border-color: var(--el-color-primary);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--el-color-primary) 30%, transparent);
 }
+
 .wf-node__label { font-size: 12px; font-weight: 500; color: var(--el-text-color-primary); }
 </style>

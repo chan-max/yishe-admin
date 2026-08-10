@@ -2,29 +2,28 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, MoreFilled, EditPen, Delete } from '@element-plus/icons-vue'
+import { MoreFilled, Clock } from '@element-plus/icons-vue'
 import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
+import ExecutionHistory from '@/components/workflow/ExecutionHistory.vue'
 import {
   getWorkflowPageApi,
   createWorkflowApi,
   deleteWorkflowApi,
+  toggleEnabledApi,
+  runWorkflowApi,
+  getWorkflowExecutionsApi,
+  deleteWorkflowExecutionApi,
+  clearWorkflowExecutionsApi,
   type WorkflowItem
 } from '@/api/workflow'
 
 const router = useRouter()
 
-// 列表数据
 const loading = ref(false)
 const list = ref<WorkflowItem[]>([])
 const total = ref(0)
-const params = reactive({
-  currentPage: 1,
-  pageSize: 20,
-  name: '',
-  status: ''
-})
+const params = reactive({ currentPage: 1, pageSize: 20, name: '' })
 
-// 创建对话框
 const createVisible = ref(false)
 const creating = ref(false)
 const createForm = reactive({ name: '', description: '' })
@@ -42,361 +41,603 @@ const fetchList = async () => {
 
 onMounted(fetchList)
 
-const handleSearch = () => {
-  params.currentPage = 1
-  fetchList()
-}
+const handleSearch = () => { params.currentPage = 1; fetchList() }
 
 const handleCreate = async () => {
-  if (!createForm.name.trim()) {
-    ElMessage.warning('请输入工作流名称')
-    return
-  }
+  if (!createForm.name.trim()) { ElMessage.warning('请输入工作流名称'); return }
   creating.value = true
   try {
-    const res: any = await createWorkflowApi({
-      name: createForm.name.trim(),
-      description: createForm.description.trim()
-    })
+    const res: any = await createWorkflowApi({ name: createForm.name.trim(), description: createForm.description.trim() })
     ElMessage.success('创建成功')
     createVisible.value = false
     createForm.name = ''
     createForm.description = ''
-    // 直接打开编辑器
     router.push(`/workflow/editor/${res.id}`)
-  } finally {
-    creating.value = false
-  }
+  } finally { creating.value = false }
 }
 
-const openEditor = (row: WorkflowItem) => {
-  router.push(`/workflow/editor/${row.id}`)
-}
+const openEditor = (row: WorkflowItem) => { router.push(`/workflow/editor/${row.id}`) }
 
 const handleDelete = async (row: WorkflowItem) => {
-  await ElMessageBox.confirm(`确定删除工作流「${row.name}」吗？`, '提示', {
-    confirmButtonText: '删除',
-    cancelButtonText: '取消',
-    type: 'warning',
-    confirmButtonClass: 'el-button--danger'
-  })
+  await ElMessageBox.confirm(`确定删除工作流「${row.name}」吗？`, '提示', { confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning', confirmButtonClass: 'el-button--danger' })
   await deleteWorkflowApi(row.id)
   ElMessage.success('已删除')
   fetchList()
 }
 
-const statusMap: Record<string, { label: string; type: string }> = {
-  draft: { label: '草稿', type: 'info' },
-  published: { label: '已发布', type: 'success' },
-  archived: { label: '已归档', type: 'warning' }
+const hasCronTrigger = (item: WorkflowItem) => item.triggers?.some((t) => t.type === 'cron' && t.enabled)
+
+const getCronText = (item: WorkflowItem) => {
+  const trigger = item.triggers?.find((t) => t.type === 'cron' && t.enabled)
+  const expr = trigger?.config?.expression || ''
+  if (!expr) return '定时'
+  const parts = expr.trim().split(/\s+/)
+  if (parts.length !== 5) return '定时'
+  const [min, hour, dom, month, dow] = parts
+
+  // 每N分钟
+  if (min.startsWith('*/') && hour === '*' && dom === '*' && month === '*' && dow === '*') {
+    return '每' + min.slice(2) + '分钟'
+  }
+  // 每小时
+  if (min === '0' && hour === '*' && dom === '*' && month === '*' && dow === '*') {
+    return '每小时'
+  }
+  // 每天
+  if (min === '0' && hour !== '*' && dom === '*' && month === '*' && dow === '*') {
+    return '每天 ' + hour + ':00'
+  }
+  // 每周
+  if (min === '0' && hour !== '*' && dom === '*' && month === '*' && dow !== '*') {
+    const weekDays = ['日', '一', '二', '三', '四', '五', '六']
+    const days = dow.split(',').map(d => weekDays[parseInt(d)] || d).join('、')
+    return '每周' + days + ' ' + hour + ':00'
+  }
+  // 每月
+  if (min === '0' && hour !== '*' && dom !== '*' && month === '*' && dow === '*') {
+    return '每月' + dom + '日 ' + hour + ':00'
+  }
+  return '定时'
+}
+
+const handleToggleEnabled = async (row: WorkflowItem) => {
+  if (row.isRunning) { ElMessage.warning('工作流正在运行中，无法禁用'); return }
+  try {
+    const res: any = await toggleEnabledApi(row.id)
+    row.isEnabled = res.isEnabled
+    ElMessage.success(row.isEnabled ? '已启用' : '已禁用')
+  } catch (err: any) { ElMessage.error(err.message || '操作失败') }
+}
+
+const historyDialogVisible = ref(false)
+const historyWorkflow = ref<WorkflowItem | null>(null)
+const executions = ref<any[]>([])
+const loadingHistory = ref(false)
+
+const handleRunWorkflow = async (row: WorkflowItem) => {
+  if (!row.isEnabled || row.isRunning) return
+  try {
+    const res: any = await runWorkflowApi(row.id)
+    ElMessage.success(`已触发执行，记录ID: ${res?.executionId || 'OK'}`)
+  } catch (err: any) {
+    ElMessage.error(err.message || '执行失败')
+  }
+}
+
+const handleShowHistory = async (row: WorkflowItem) => {
+  historyWorkflow.value = row
+  historyDialogVisible.value = true
+  await loadExecutions(row.id)
+}
+
+const loadExecutions = async (workflowId: string) => {
+  loadingHistory.value = true
+  try {
+    const res: any = await getWorkflowExecutionsApi(workflowId, { currentPage: 1, pageSize: 100 })
+    executions.value = res?.list ?? res?.data?.list ?? []
+  } catch (err) {
+    console.error('获取执行记录失败', err)
+  } finally {
+    loadingHistory.value = false
+  }
+}
+
+const handleDeleteExecution = async (executionId: string) => {
+  await ElMessageBox.confirm('确定删除这条执行记录吗？', '提示', { type: 'warning' })
+  try {
+    await deleteWorkflowExecutionApi(executionId)
+    ElMessage.success('已删除')
+    if (historyWorkflow.value) {
+      await loadExecutions(historyWorkflow.value.id)
+    }
+  } catch (err: any) {
+    ElMessage.error(err.message || '删除失败')
+  }
+}
+
+const handleClearHistory = async () => {
+  if (!historyWorkflow.value) return
+  await ElMessageBox.confirm('确定清空所有执行记录吗？此操作不可恢复。', '提示', { type: 'warning' })
+  try {
+    await clearWorkflowExecutionsApi(historyWorkflow.value.id)
+    ElMessage.success('已清空')
+    executions.value = []
+  } catch (err: any) {
+    ElMessage.error(err.message || '清空失败')
+  }
 }
 </script>
 
 <template>
   <ContentWrap :plain="true">
-    <div class="workflow-list-page">
+    <div class="wf-page">
       <!-- 页头 -->
-      <div class="wf-page-header">
-        <div class="wf-page-header__left">
-          <h1 class="wf-page-title">工作流</h1>
-          <p class="wf-page-subtitle">构建和管理自动化工作流程</p>
+      <div class="wf-page__header">
+        <h1 class="wf-page__title">工作流</h1>
+        <el-button type="primary" size="small" @click="createVisible = true">新建工作流</el-button>
+      </div>
+
+      <!-- 搜索 -->
+      <div class="wf-page__search">
+        <el-input v-model="params.name" placeholder="搜索..." size="small" clearable style="width: 200px" @keyup.enter="handleSearch" @clear="handleSearch" />
+      </div>
+
+      <!-- 卡片网格 -->
+      <div v-loading="loading" class="wf-grid">
+        <!-- 新建 -->
+        <div class="wf-card wf-card--add" @click="createVisible = true">
+          <span class="wf-card--add__icon">+</span>
+          <span class="wf-card--add__text">新建工作流</span>
         </div>
-        <el-button type="primary" size="small" @click="createVisible = true">
-          新建工作流
-        </el-button>
-      </div>
 
-    <!-- 搜索 -->
-    <div class="wf-search-bar">
-      <el-input
-        v-model="params.name"
-        placeholder="搜索工作流..."
-        size="small"
-        clearable
-        style="width: 220px"
-        @keyup.enter="handleSearch"
-        @clear="handleSearch"
-      />
-      <el-select v-model="params.status" size="small" placeholder="全部状态" clearable style="width: 110px" @change="handleSearch">
-        <el-option label="草稿" value="draft" />
-        <el-option label="已发布" value="published" />
-        <el-option label="已归档" value="archived" />
-      </el-select>
-      <el-button size="small" @click="handleSearch">查询</el-button>
-    </div>
-
-    <!-- 工作流卡片网格 (高密度极简) -->
-    <div v-loading="loading" class="wf-grid">
-      <!-- 新建卡片 -->
-      <div class="wf-card wf-card--new" @click="createVisible = true">
-        <span class="wf-card--new__title">+ 新建工作流</span>
-      </div>
-
-      <!-- 工作流卡片 -->
-      <div
-        v-for="item in list"
-        :key="item.id"
-        class="wf-card"
-        @click="openEditor(item)"
-      >
-        <!-- 卡片头部 (标题 + 状态) -->
-        <div class="wf-card__header">
-          <h3 class="wf-card__title" :title="item.name">{{ item.name }}</h3>
-          <div class="wf-card__status" :class="'wf-card__status--' + item.status">
-            <span class="wf-card__status-dot" />
-            <span>{{ statusMap[item.status]?.label || item.status }}</span>
+        <!-- 工作流卡片 -->
+        <div
+          v-for="item in list"
+          :key="item.id"
+          :class="[
+            'wf-card',
+            { 'wf-card--scheduled': hasCronTrigger(item) && item.isEnabled },
+            { 'wf-card--running': item.isRunning },
+            { 'wf-card--disabled': !item.isEnabled }
+          ]"
+          @click="openEditor(item)"
+        >
+          <div v-if="hasCronTrigger(item) && item.isEnabled" class="wf-card__blob"></div>
+          <div class="wf-card__bg"></div>
+          <div class="wf-card__hero">
+            <header class="wf-card__hero-header">
+              <span :class="['wf-card__badge', item.isRunning ? 'wf-card__badge--running' : item.isEnabled ? 'wf-card__badge--on' : 'wf-card__badge--off']">
+                <span class="wf-card__badge-dot"></span>{{ item.isRunning ? '运行中' : item.isEnabled ? '已启用' : '已禁用' }}
+              </span>
+              <div class="wf-card__icon">
+                <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+                  <path d="M853.333333 320a42.666667 42.666667 0 1 0-85.333333 0 42.666667 42.666667 0 0 0 85.333333 0z m-42.666666-128a128 128 0 1 1 0 256 128 128 0 0 1 0-256zM853.333333 725.333333a42.666667 42.666667 0 1 0-85.333333 0 42.666667 42.666667 0 0 0 85.333333 0z m-42.666666-128a128 128 0 1 1 0 256 128 128 0 0 1 0-256zM256 320a42.666667 42.666667 0 1 0-85.333333 0 42.666667 42.666667 0 0 0 85.333333 0z m-42.666667-128a128 128 0 1 1 0 256 128 128 0 0 1 0-256z"/>
+                  <path d="M704 277.333333l0 85.333334-211.626667 0c17.692444 31.175111 34.929778 70.542222 51.768889 109.056l14.791111 33.564444c22.698667 50.631111 45.511111 96.995556 71.68 130.446222 26.168889 33.450667 49.777778 46.933333 73.386667 46.933334l0 85.333333c-61.724444 0-107.406222-37.205333-140.629333-79.758222-33.223111-42.496-59.676444-97.507556-82.318223-148.138667l-16.497777-37.319111c-16.497778-37.717333-31.288889-71.338667-46.648889-98.304-9.955556-17.578667-18.602667-29.240889-25.884445-36.067556-4.778667-4.551111-7.395556-5.575111-8.135111-5.745777l-74.524444 0 0-85.333334L704 277.333333z"/>
+                </svg>
+              </div>
+            </header>
+            <h3 class="wf-card__title">{{ item.name }}</h3>
+            <p v-if="hasCronTrigger(item)" class="wf-card__cron">
+              <el-icon><Clock /></el-icon>{{ getCronText(item) }}
+            </p>
           </div>
-        </div>
-
-        <!-- 描述 -->
-        <p class="wf-card__desc" v-if="item.description">{{ item.description }}</p>
-
-        <!-- 极简底栏 -->
-        <div class="wf-card__footer">
-          <span class="wf-card__time">更新于 {{ new Date(item.updateTime).toLocaleDateString('zh-CN') }}</span>
-          <div class="wf-card__actions" @click.stop>
-            <el-dropdown trigger="click" placement="bottom-end">
-              <button type="button" class="wf-more-btn" title="更多">...</button>
+          <footer class="wf-card__footer">
+            <div class="wf-card__info">
+              <p v-if="item.description" class="wf-card__desc">{{ item.description }}</p>
+              <span class="wf-card__date">更新于 {{ new Date(item.updateTime).toLocaleDateString('zh-CN') }}</span>
+            </div>
+            <el-dropdown trigger="click" placement="bottom-end" @click.stop>
+              <button class="wf-card__more" @click.stop><el-icon><MoreFilled /></el-icon></button>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item @click="openEditor(item)">编辑</el-dropdown-item>
+                  <el-dropdown-item @click="handleRunWorkflow(item)" :disabled="!item.isEnabled || item.isRunning">
+                    {{ item.isRunning ? '运行中...' : '执行' }}
+                  </el-dropdown-item>
+                  <el-dropdown-item @click="handleShowHistory(item)">执行记录</el-dropdown-item>
+                  <el-dropdown-item divided @click="openEditor(item)">编辑</el-dropdown-item>
+                  <el-dropdown-item :disabled="item.isRunning" @click="handleToggleEnabled(item)">{{ item.isEnabled ? '禁用' : '启用' }}</el-dropdown-item>
                   <el-dropdown-item type="danger" divided @click="handleDelete(item)">删除</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
-          </div>
+          </footer>
         </div>
       </div>
-    </div>
 
-    <!-- 分页 -->
-    <div v-if="total > params.pageSize" class="wf-pagination">
-      <el-pagination
-        v-model:current-page="params.currentPage"
-        v-model:page-size="params.pageSize"
-        :total="total"
-        layout="total, prev, pager, next"
-        @change="fetchList"
+      <!-- 分页 -->
+      <div v-if="total > params.pageSize" class="wf-page__pagination">
+        <el-pagination v-model:current-page="params.currentPage" v-model:page-size="params.pageSize" :total="total" layout="total, prev, pager, next" @change="fetchList" />
+      </div>
+
+      <!-- 执行记录 - 全屏弹窗 -->
+    <el-dialog
+      v-model="historyDialogVisible"
+      :title="`${historyWorkflow?.name || ''} - 执行记录`"
+      fullscreen
+      class="wf-history-dialog"
+    >
+      <ExecutionHistory
+        :executions="executions"
+        :loading="loadingHistory"
+        :show-delete="true"
+        @refresh="historyWorkflow && loadExecutions(historyWorkflow.id)"
+        @delete="handleDeleteExecution"
+        @clear="handleClearHistory"
       />
-    </div>
-
-
-    <!-- 创建对话框 -->
-    <el-dialog v-model="createVisible" title="新建工作流" width="440px" align-center>
-      <el-form label-position="top" @submit.prevent="handleCreate">
-        <el-form-item label="工作流名称" required>
-          <el-input
-            v-model="createForm.name"
-            placeholder="例如：图片处理流程"
-            autofocus
-            maxlength="100"
-            show-word-limit
-          />
-        </el-form-item>
-        <el-form-item label="描述（可选）">
-          <el-input
-            v-model="createForm.description"
-            type="textarea"
-            placeholder="简单描述这个工作流的用途..."
-            :rows="3"
-            maxlength="500"
-            show-word-limit
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="createVisible = false">取消</el-button>
-        <el-button type="primary" :loading="creating" @click="handleCreate">创建并打开编辑器</el-button>
-      </template>
     </el-dialog>
-  </div>
+
+    <!-- 创建 -->
+      <el-dialog v-model="createVisible" title="新建工作流" width="440px" align-center>
+        <el-form label-position="top" @submit.prevent="handleCreate">
+          <el-form-item label="工作流名称" required>
+            <el-input v-model="createForm.name" placeholder="例如：图片处理流程" autofocus maxlength="100" show-word-limit />
+          </el-form-item>
+          <el-form-item label="描述（可选）">
+            <el-input v-model="createForm.description" type="textarea" placeholder="简单描述这个工作流的用途..." :rows="3" maxlength="500" show-word-limit />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="createVisible = false">取消</el-button>
+          <el-button type="primary" :loading="creating" @click="handleCreate">创建并打开编辑器</el-button>
+        </template>
+      </el-dialog>
+    </div>
   </ContentWrap>
 </template>
 
 <style scoped lang="scss">
-.workflow-list-page {
-  padding: 0;
+@keyframes wf-pulse {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+@keyframes wf-glow-pulse {
+  0%, 100% { box-shadow: 0 0 12px color-mix(in srgb, var(--el-color-primary) 40%, transparent); }
+  50% { box-shadow: 0 0 24px color-mix(in srgb, var(--el-color-primary) 60%, transparent); }
+}
+
+@keyframes wf-blob-bounce {
+  0%   { transform: translate(-100%, -100%) translate3d(0, 0, 0); }
+  25%  { transform: translate(-100%, -100%) translate3d(100%, 0, 0); }
+  50%  { transform: translate(-100%, -100%) translate3d(100%, 100%, 0); }
+  75%  { transform: translate(-100%, -100%) translate3d(0, 100%, 0); }
+  100% { transform: translate(-100%, -100%) translate3d(0, 0, 0); }
+}
+
+
+.wf-page {
   min-height: 100%;
-}
+  padding: 0;
 
-.wf-page-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
 
-.wf-page-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--el-text-color-primary);
-  margin: 0 0 2px;
-}
+  &__title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+  }
 
-.wf-page-subtitle {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  margin: 0;
-}
+  &__search {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
 
-.wf-search-bar {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 12px;
+  &__pagination {
+    display: flex;
+    justify-content: center;
+  }
 }
 
 .wf-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 10px;
-  margin-bottom: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+  padding: 4px;
 }
 
 .wf-card {
-  background: var(--app-content-surface-color);
-  border: 1px solid transparent;
-  box-shadow: none;
-  border-radius: 8px;
-  padding: 12px 14px;
-  cursor: pointer;
-  transition: all 0.15s ease;
+  position: relative;
+  border: none;
+  border-radius: 14px;
+  z-index: 1;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  min-height: 100px;
-
-  &:hover {
-    background: color-mix(in srgb, var(--el-color-primary) 7%, var(--app-content-surface-color));
-    border-color: color-mix(in srgb, var(--el-color-primary) 25%, transparent);
-
-    .wf-card__title {
-      color: var(--el-color-primary);
-    }
-  }
-}
-
-.wf-card--new {
-  background: var(--app-content-surface-color);
-  border: 1px dashed var(--app-content-border-color);
-  box-shadow: none;
-  align-items: center;
-  justify-content: center;
-  min-height: 100px;
-
-  &:hover {
-    background: color-mix(in srgb, var(--el-color-primary) 7%, var(--app-content-surface-color));
-    border-color: var(--el-color-primary);
-
-    .wf-card--new__title {
-      color: var(--el-color-primary);
-    }
-  }
-}
-
-.wf-card--new__title {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--el-text-color-secondary);
-  transition: color 0.15s ease;
-}
-
-.wf-card__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.wf-card__title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-  margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.wf-card__status {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  font-weight: 500;
-  flex-shrink: 0;
-
-  &--draft {
-    color: var(--el-text-color-placeholder);
-    .wf-card__status-dot { background: #94a3b8; }
-  }
-
-  &--published {
-    color: #16a34a;
-    .wf-card__status-dot { background: #22c55e; }
-  }
-
-  &--archived {
-    color: #d97706;
-    .wf-card__status-dot { background: #f59e0b; }
-  }
-}
-
-.wf-card__status-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-}
-
-.wf-card__desc {
-  font-size: 11px;
-  line-height: 1.4;
-  color: var(--el-text-color-secondary);
-  margin: 0;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-.wf-card__footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: auto;
-  padding-top: 4px;
-}
-
-.wf-card__time {
-  font-size: 10px;
-  color: var(--el-text-color-placeholder);
-}
-
-.wf-card__actions {
-  display: flex;
-  align-items: center;
-}
-
-.wf-more-btn {
-  border: none;
-  background: transparent;
-  color: var(--el-text-color-placeholder);
+  align-items: stretch;
+  justify-content: flex-start;
+  min-height: 200px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
   cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  font-size: 14px;
-  transition: all 0.15s ease;
+  box-shadow:
+    8px 8px 24px color-mix(in srgb, var(--el-text-color-primary) 10%, transparent),
+    -4px -4px 16px rgba(255, 255, 255, 0.8);
 
   &:hover {
+    transform: translateY(-3px);
+    box-shadow:
+      12px 12px 32px color-mix(in srgb, var(--el-text-color-primary) 14%, transparent),
+      -6px -6px 20px rgba(255, 255, 255, 0.9);
+  }
+
+  html.dark & {
+    box-shadow:
+      4px 4px 16px rgba(0, 0, 0, 0.5),
+      0 1px 4px rgba(0, 0, 0, 0.3) !important;
+
+    &:hover {
+      box-shadow:
+        6px 6px 24px rgba(0, 0, 0, 0.6),
+        0 2px 8px rgba(0, 0, 0, 0.4) !important;
+    }
+  }
+
+  /* Blob: dynamic border effect (visible in the 5px gap around bg) */
+  &__blob {
+    position: absolute;
+    z-index: 1;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 160%;
+    border-radius: 50%;
+    background-color: color-mix(in srgb, var(--el-color-primary) 60%, transparent);
+    opacity: 0.7;
+    filter: blur(10px);
+    animation: wf-blob-bounce 4s infinite ease;
+    pointer-events: none;
+  }
+
+  /* Inner bg layer: covers center, leaves 5px border gap */
+  &__bg {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    right: 5px;
+    bottom: 5px;
+    z-index: 2;
     background: var(--app-content-surface-color);
+    border-radius: 10px;
+    overflow: hidden;
+    outline: 2px solid var(--app-content-surface-color);
+    pointer-events: none;
+  }
+
+
+
+  /* Hero section */
+  &__hero {
+    position: relative;
+    z-index: 3;
+    background: transparent;
+    border-radius: 8px 8px 0 0;
+    padding: 16px 16px 14px;
+    flex: 1;
+  }
+
+  &__hero-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 12px;
+    font-weight: 700;
+  }
+
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 14px;
+    white-space: nowrap;
+
+    &-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentcolor;
+    }
+
+    &--on {
+      color: #15803d;
+      background: color-mix(in srgb, #22c55e 14%, transparent);
+    }
+    &--off {
+      color: var(--el-text-color-secondary);
+      background: var(--app-content-surface-muted-color);
+    }
+    &--running {
+      color: #2563eb;
+      background: color-mix(in srgb, #3b82f6 12%, transparent);
+      .wf-card__badge-dot { animation: wf-pulse 1.4s ease-in-out infinite; }
+    }
+  }
+
+  &__icon {
+    width: 20px;
+    height: 20px;
     color: var(--el-color-primary);
+    opacity: 0.8;
+  }
+
+  &__title {
+    margin: 14px 0 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    padding-right: 12px;
+  }
+
+  &__cron {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 6px 0 0;
+    font-size: 11px;
+    color: #b45309;
+    font-weight: 500;
+  }
+
+  /* Footer section */
+  &__footer {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    padding: 12px 12px 10px;
+    gap: 12px;
+  }
+
+  &__info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__desc {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--el-text-color-secondary);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  &__date {
+    font-size: 11px;
+    color: var(--el-text-color-placeholder);
+  }
+
+  &__more {
+    display: flex;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    color: var(--el-text-color-secondary);
+    background: none;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease;
+    flex-shrink: 0;
+
+    &:hover { background: var(--app-content-surface-muted-color); }
+    :deep(.el-icon) { font-size: 16px; }
   }
 }
 
-.wf-pagination {
-  display: flex;
-  justify-content: center;
+/* Status variants */
+.wf-card--scheduled {
+  .wf-card__blob {
+    background-color: color-mix(in srgb, var(--el-color-primary) 60%, transparent);
+  }
 }
+
+.wf-card--running {
+  box-shadow:
+    0 0 15px color-mix(in srgb, var(--el-color-primary) 30%, transparent),
+    8px 8px 24px color-mix(in srgb, var(--el-text-color-primary) 10%, transparent),
+    -4px -4px 16px color-mix(in srgb, #ffffff, transparent);
+}
+
+.wf-card--disabled {
+  opacity: 0.5;
+  filter: grayscale(1);
+
+  &:hover {
+    opacity: 0.65;
+    filter: grayscale(0.7);
+    transform: none;
+  }
+
+  .wf-card__blob { display: none; }
+}
+
+
+
+.wf-card--add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 180px;
+  background: transparent;
+  border: 1px dashed var(--app-content-border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+
+  &:hover { border-color: var(--el-color-primary); }
+
+  &__icon {
+    display: flex;
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+    color: var(--el-text-color-placeholder);
+    border-radius: 8px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__text {
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
+  }
+}
+
+.wf-history-dialog {
+  :deep(.el-dialog__body) {
+    padding: 20px 32px;
+    height: calc(100vh - 60px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+:global(html.dark) {
+  .wf-card--scheduled {
+    border-color: color-mix(in srgb, #fbbf24 25%, var(--app-content-border-color));
+    &:hover { border-color: color-mix(in srgb, #fbbf24 45%, var(--app-content-border-color)); }
+  }
+  .wf-card--running {
+    border-color: color-mix(in srgb, #60a5fa 30%, var(--app-content-border-color));
+    &:hover { border-color: color-mix(in srgb, #60a5fa 50%, var(--app-content-border-color)); }
+  }
+
+  .wf-tag {
+    &--cron { color: #fcd34d; background: color-mix(in srgb, #fbbf24 12%, transparent); }
+    &--running { color: #93c5fd; background: color-mix(in srgb, #60a5fa 12%, transparent); }
+    &--on { color: #86efac; background: color-mix(in srgb, #4ade80 12%, transparent); }
+  }
+}
+
+
 </style>

@@ -76,8 +76,8 @@ const iconStyle = computed(() => ({
   :deep(.el-empty__description p) {
     font-size: 13px;
     line-height: 1.7;
-    color: var(--el-text-color-secondary);
     letter-spacing: 0.01em;
+    color: var(--el-text-color-secondary);
   }
 
   :deep(.el-empty__bottom) {

@@ -451,8 +451,8 @@ onMounted(() => {
 
 .content-preview {
   font-size: 12px;
-  color: var(--el-text-color-secondary);
   line-height: 1.5;
+  color: var(--el-text-color-secondary);
 }
 
 .tags-input-wrapper {
@@ -463,13 +463,15 @@ onMounted(() => {
 }
 
 .mr-1 { margin-right: 4px; }
+
 .mb-1 { margin-bottom: 4px; }
+
 .mt-2 { margin-top: 8px; }
 
 /* 全屏弹窗样式 */
 .prompt-dialog :deep(.el-dialog__body) {
-  padding: 0;
   height: calc(100vh - 120px);
+  padding: 0;
   overflow: hidden;
 }
 
@@ -486,9 +488,9 @@ onMounted(() => {
 }
 
 .prompt-dialog-main {
-  flex: 1;
-  min-width: 0;
   display: flex;
+  min-width: 0;
+  flex: 1;
   flex-direction: column;
 }
 
@@ -499,16 +501,16 @@ onMounted(() => {
 }
 
 .sidebar-section {
-  margin-bottom: 24px;
   padding: 16px;
+  margin-bottom: 24px;
   background: var(--el-fill-color-lighter);
   border-radius: 8px;
 }
 
 .sidebar-section-title {
+  margin-bottom: 12px;
   font-size: 14px;
   font-weight: 600;
-  margin-bottom: 12px;
   color: var(--el-text-color-primary);
 }
 
@@ -529,7 +531,7 @@ onMounted(() => {
 .content-editor :deep(.el-textarea__inner) {
   height: 100% !important;
   min-height: 400px;
-  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-family: Monaco, Menlo, Consolas, monospace;
   font-size: 14px;
   line-height: 1.6;
 }

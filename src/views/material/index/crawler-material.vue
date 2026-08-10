@@ -144,9 +144,9 @@
                   style="
                     width: 120px;
                     height: auto;
-                    object-fit: contain;
-                    background: #f5f5f5;
                     cursor: pointer;
+                    background: #f5f5f5;
+                    object-fit: contain;
                   "
                   loading="lazy"
                   @click="openImagePreview(row.url, row.name)"
@@ -209,7 +209,7 @@
               </div>
             </template>
             <template #idSlot="{ row }">
-              <span style="color: #999; font-size: 12px">{{ row.id }}</span>
+              <span style=" font-size: 12px;color: #999">{{ row.id }}</span>
             </template>
             <template #suffixSlot="{ row }">
               <el-tag :type="getSuffixTagType(row.suffix)" size="small">{{
@@ -236,9 +236,9 @@
                   type="primary"
                   :underline="false"
                   style="
-                    font-size: 12px;
                     display: block;
                     margin-top: 4px;
+                    font-size: 12px;
                     word-break: break-all;
                   "
                 >
@@ -301,7 +301,7 @@
           <el-input
             v-model="editForm.name"
             placeholder="请输入名称"
-            style="font-size: 16px; height: 48px; width: 100%"
+            style=" width: 100%; height: 48px;font-size: 16px"
           />
         </el-form-item>
         <el-form-item label="描述">
@@ -310,28 +310,28 @@
             type="textarea"
             :rows="5"
             placeholder="请输入描述"
-            style="font-size: 16px; min-height: 100px; width: 100%"
+            style=" width: 100%; min-height: 100px;font-size: 16px"
           />
         </el-form-item>
         <el-form-item label="关键字">
           <el-input
             v-model="editForm.keywords"
             placeholder="请输入关键字（逗号分隔）"
-            style="font-size: 16px; height: 48px; width: 100%"
+            style=" width: 100%; height: 48px;font-size: 16px"
           />
         </el-form-item>
         <el-form-item label="来源">
           <el-input
             v-model="editForm.source"
             placeholder="请输入来源"
-            style="font-size: 16px; height: 48px; width: 100%"
+            style=" width: 100%; height: 48px;font-size: 16px"
           />
         </el-form-item>
         <el-form-item label="原始地址">
           <el-input
             v-model="editForm.originUrl"
             placeholder="请输入原始地址"
-            style="font-size: 16px; height: 48px; width: 100%"
+            style=" width: 100%; height: 48px;font-size: 16px"
           />
         </el-form-item>
       </el-form>
@@ -381,9 +381,9 @@
               style="width: 80px; height: 80px; object-fit: contain; background: #f5f5f5"
             />
             <div style="flex: 1; min-width: 0">
-              <div style="font-weight: 500; margin-bottom: 4px">{{ row.name || "未命名" }}</div>
+              <div style=" margin-bottom: 4px;font-weight: 500">{{ row.name || "未命名" }}</div>
               <div style="font-size: 12px; color: #999">ID: {{ row.id }}</div>
-              <div v-if="row.description" style="font-size: 12px; color: #666; margin-top: 4px">
+              <div v-if="row.description" style=" margin-top: 4px;font-size: 12px; color: #666">
                 {{ row.description }}
               </div>
             </div>
@@ -1138,6 +1138,52 @@ async function openShareRecordsDialog(row: any) {
 getList();
 </script>
 <style scoped>
+
+@media (width <= 600px) {
+  .pb-4.flex,
+  .search-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    padding-bottom: 8px !important;
+  }
+
+  .pb-4.flex > *,
+  .search-bar > * {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin-right: 0 !important;
+    margin-bottom: 8px !important;
+  }
+
+  .el-input,
+  .el-select,
+  .el-button,
+  .el-date-editor {
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+  }
+
+  .date-range-picker {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+  }
+
+  .date-range-picker .el-date-editor,
+  .date-range-picker .el-range-editor {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .content-container {
+    padding: 0 4px !important;
+  }
+}
+
 .crawler-material-page {
   gap: 10px;
   padding: 8px 0 0;
@@ -1163,48 +1209,10 @@ getList();
   flex-wrap: wrap;
   align-items: center;
 }
+
 .pb-4.flex > *,
 .search-bar > * {
   margin-bottom: 0;
-}
-@media (max-width: 600px) {
-  .pb-4.flex,
-  .search-bar {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 8px !important;
-    padding-bottom: 8px !important;
-  }
-  .pb-4.flex > *,
-  .search-bar > * {
-    width: 100% !important;
-    min-width: 0 !important;
-    margin-right: 0 !important;
-    margin-bottom: 8px !important;
-  }
-  .el-input,
-  .el-select,
-  .el-button,
-  .el-date-editor {
-    width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box;
-  }
-  .date-range-picker {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box;
-  }
-  .date-range-picker .el-date-editor,
-  .date-range-picker .el-range-editor {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-  }
-  .content-container {
-    padding: 0 4px !important;
-  }
 }
 
 /* 操作dropdown样式 */

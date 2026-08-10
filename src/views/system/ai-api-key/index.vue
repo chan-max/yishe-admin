@@ -147,6 +147,9 @@
                           <el-dropdown-item command="edit">
                             <span>编辑</span>
                           </el-dropdown-item>
+                          <el-dropdown-item command="apply-all">
+                            <span>一键应用</span>
+                          </el-dropdown-item>
                           <el-dropdown-item v-if="canManagePublic" command="share">
                             <span>分享给用户</span>
                           </el-dropdown-item>
@@ -193,6 +196,7 @@
 import { computed, onMounted, reactive, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
+  applyAiApiKeyToAllFeatures,
   deleteAiApiKey,
   getAiApiKeyDetail,
   getAiApiKeyList,
@@ -455,6 +459,10 @@ const handleOperationCommand = (command: string, row: AiApiKeyConfig) => {
     openShareDialog(row);
     return;
   }
+  if (command === "apply-all") {
+    handleApplyToAll(row);
+    return;
+  }
   if (command === "delete") {
     handleDelete(row.id as number);
   }
@@ -476,6 +484,26 @@ const handleDelete = async (id: number) => {
   } catch {
   } finally {
     deleteLoading.value = false;
+  }
+};
+
+const handleApplyToAll = async (row: AiApiKeyConfig) => {
+  if (!row.enabled) {
+    ElMessage.warning("该 Key 已停用，请先启用后再应用");
+    return;
+  }
+  try {
+    await ElMessageBox.confirm(
+      `确认将「${row.name}」应用到所有 AI 功能吗？这将覆盖所有功能场景的现有绑定。`,
+      "一键应用",
+      { type: "warning" },
+    );
+    const res: any = await applyAiApiKeyToAllFeatures(row.id as number);
+    ElMessage.success(`已应用到 ${res?.appliedCount || 0} 个功能场景`);
+  } catch (err: any) {
+    if (err !== "cancel") {
+      ElMessage.error(err?.message || "应用失败");
+    }
   }
 };
 

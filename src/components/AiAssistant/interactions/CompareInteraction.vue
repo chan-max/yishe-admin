@@ -107,12 +107,12 @@ function handleSubmit() {
 
 .compare-card {
   width: 100%;
-  text-align: left;
   padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
-  background: transparent;
-  cursor: pointer;
   transition: border-color 0.2s, background 0.2s;
 }
 
@@ -121,8 +121,8 @@ function handleSubmit() {
 }
 
 .compare-card.active {
-  border-color: var(--el-color-primary);
   background: var(--el-color-primary-light-9);
+  border-color: var(--el-color-primary);
 }
 
 .compare-header {
@@ -134,15 +134,15 @@ function handleSubmit() {
 .compare-radio {
   width: 14px;
   height: 14px;
-  border-radius: 50%;
   border: 2px solid var(--el-border-color);
-  flex-shrink: 0;
+  border-radius: 50%;
   transition: border-color 0.2s, background 0.2s;
+  flex-shrink: 0;
 }
 
 .compare-radio.checked {
-  border-color: var(--el-color-primary);
   background: var(--el-color-primary);
+  border-color: var(--el-color-primary);
 }
 
 .compare-title {
@@ -154,27 +154,27 @@ function handleSubmit() {
 .compare-desc {
   margin: 6px 0 0 22px;
   font-size: 12px;
-  color: var(--el-text-color-secondary);
   line-height: 1.5;
+  color: var(--el-text-color-secondary);
 }
 
 .compare-preview {
-  margin: 8px 0 0 22px;
+  max-height: 120px;
   padding: 8px 10px;
+  margin: 8px 0 0 22px;
+  overflow: auto;
   background: var(--el-fill-color-lighter);
   border-radius: 4px;
-  overflow: auto;
-  max-height: 120px;
 }
 
 .compare-preview pre {
   margin: 0;
+  font-family: Monaco, Menlo, Consolas, monospace;
   font-size: 11px;
   line-height: 1.5;
   color: var(--el-text-color-regular);
-  white-space: pre-wrap;
   word-break: break-word;
-  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  white-space: pre-wrap;
 }
 
 .compare-tags {
@@ -185,10 +185,10 @@ function handleSubmit() {
 }
 
 .compare-tag {
-  font-size: 10px;
   padding: 1px 6px;
-  border-radius: 4px;
-  background: var(--el-fill-color);
+  font-size: 10px;
   color: var(--el-text-color-secondary);
+  background: var(--el-fill-color);
+  border-radius: 4px;
 }
 </style>

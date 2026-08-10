@@ -236,9 +236,9 @@ async function handleSubmit() {
 
 .access-dialog__section--ai {
   padding: 14px;
+  background: var(--el-fill-color-extra-light);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 12px;
-  background: var(--el-fill-color-extra-light);
 }
 
 .access-dialog__heading {
@@ -255,8 +255,8 @@ async function handleSubmit() {
 
 .access-dialog__desc {
   margin-top: 4px;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 .access-dialog__toolbar {
@@ -272,8 +272,8 @@ async function handleSubmit() {
 }
 
 .access-dialog__ai-text {
-  color: var(--el-text-color-regular);
   font-size: 13px;
+  color: var(--el-text-color-regular);
 }
 
 .access-dialog__group {
@@ -297,7 +297,7 @@ async function handleSubmit() {
   justify-content: flex-end;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .access-dialog__heading {
     flex-direction: column;
     align-items: stretch;

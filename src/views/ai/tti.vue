@@ -667,13 +667,13 @@ onMounted(() => {
 }
 
 .tti-error-text {
-  cursor: help;
-  color: var(--el-color-danger);
   font-size: 12px;
+  color: var(--el-color-danger);
+  cursor: help;
 }
 
 :global(.tti-error-dialog .el-message-box__message) {
-  white-space: pre-wrap;
   word-break: break-word;
+  white-space: pre-wrap;
 }
 </style>

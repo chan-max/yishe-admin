@@ -346,7 +346,7 @@ onMounted(() => {
 .vendor-products-summary__names {
   margin-top: 4px;
   font-size: 12px;
-  color: var(--el-text-color-secondary);
   line-height: 1.4;
+  color: var(--el-text-color-secondary);
 }
 </style>

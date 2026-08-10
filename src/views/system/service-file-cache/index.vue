@@ -272,28 +272,28 @@ onMounted(() => {
 
 .service-file-cache-stat {
   display: flex;
+  min-width: 0;
+  padding: 10px 12px;
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  min-width: 0;
-  padding: 10px 12px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 6px;
-  background: var(--el-bg-color);
 }
 
 .service-file-cache-stat__label {
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
   white-space: nowrap;
 }
 
 .service-file-cache-stat__value {
   min-width: 0;
   overflow: hidden;
-  color: var(--el-text-color-primary);
   font-size: 13px;
   font-weight: 600;
+  color: var(--el-text-color-primary);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -309,7 +309,7 @@ onMounted(() => {
   white-space: nowrap;
 }
 
-@media (max-width: 900px) {
+@media (width <= 900px) {
   .service-file-cache-page__stats {
     grid-template-columns: 1fr;
   }

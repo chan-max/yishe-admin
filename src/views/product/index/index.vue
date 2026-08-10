@@ -1752,10 +1752,10 @@
               style="
                 max-width: 240px;
                 max-height: 240px;
-                border-radius: 12px;
-                box-shadow: 0 2px 8px #0001;
                 margin-bottom: 16px;
                 cursor: pointer;
+                border-radius: 12px;
+                box-shadow: 0 2px 8px #0001;
               "
               @click="preview(0, [customModelDetail.thumbnail])"
             />
@@ -1775,9 +1775,9 @@
                   style="
                     width: 60px;
                     height: 60px;
+                    cursor: pointer;
                     border-radius: 6px;
                     object-fit: cover;
-                    cursor: pointer;
                   "
                   @click="preview(idx as any, customModelDetail.images)"
                 />
@@ -1831,7 +1831,7 @@
         <div v-if="customModelDetail.meta" class="mt-6">
           <h4 class="font-medium mb-2">元数据</h4>
           <el-scrollbar style="max-height: 200px">
-            <pre style="background: none; padding: 0; margin: 0; font-size: 13px">{{
+            <pre style=" padding: 0; margin: 0; font-size: 13px;background: none">{{
               JSON.stringify(customModelDetail.meta, null, 2)
             }}</pre>
           </el-scrollbar>
@@ -1861,7 +1861,7 @@
             :show-header="true"
             border
             size="mini"
-            style="margin: 0; padding: 0; background: none"
+            style=" padding: 0;margin: 0; background: none"
             :columns="[
               {
                 field: 'thumbnail',
@@ -1893,9 +1893,9 @@
                   style="
                     width: 120px;
                     height: auto;
-                    object-fit: contain;
-                    background: #f5f5f5;
                     cursor: pointer;
+                    background: #f5f5f5;
+                    object-fit: contain;
                   "
                 />
                 <span v-else class="text-gray-400">无</span>
@@ -1933,7 +1933,7 @@
             :show-header="true"
             border
             size="mini"
-            style="margin: 0; padding: 0; background: none"
+            style=" padding: 0;margin: 0; background: none"
             :columns="[
               { field: 'url', title: '图片', width: '120', slots: { default: 'stickerImageSlot' } },
               { field: 'name', title: '名称', minWidth: 80 },
@@ -1959,9 +1959,9 @@
                   style="
                     width: 120px;
                     height: auto;
-                    object-fit: contain;
-                    background: #f5f5f5;
                     cursor: pointer;
+                    background: #f5f5f5;
+                    object-fit: contain;
                   "
                 />
                 <span v-else class="text-gray-400">无</span>
@@ -1996,7 +1996,7 @@
             :show-header="true"
             border
             size="mini"
-            style="margin: 0; padding: 0; background: none"
+            style=" padding: 0;margin: 0; background: none"
             :columns="psdSetDetailColumns"
           >
             <template #psdSetImagesSlot="{ row }">
@@ -2156,7 +2156,7 @@
       align-center
       :destroy-on-close="true"
     >
-      <div style="margin-bottom: 16px; color: #888; font-size: 15px">
+      <div style="margin-bottom: 16px; font-size: 15px; color: #888">
         请输入你希望AI分析的内容风格或角度（如：偏艺术描述、简洁风格、突出色彩等）
       </div>
       <el-input
@@ -2164,7 +2164,7 @@
         type="textarea"
         :rows="6"
         placeholder="如：请用艺术化语言描述商品内容..."
-        style="font-size: 16px; min-height: 120px; width: 100%; resize: vertical"
+        style=" width: 100%; min-height: 120px;font-size: 16px; resize: vertical"
       />
       <template #footer>
         <el-button @click="aiGenDialogVisible = false">取消</el-button>

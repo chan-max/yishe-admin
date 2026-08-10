@@ -193,11 +193,11 @@
                         style="
                           width: 160px;
                           height: auto;
-                          object-fit: contain;
-                          background: #f5f5f5;
                           cursor: pointer;
+                          background: #f5f5f5;
                           border-radius: 8px;
-                          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                          box-shadow: 0 2px 8px rgb(0 0 0 / 10%);
+                          object-fit: contain;
                         "
                         @click="openThumbnailPreview(row.thumbnail, row.name)"
                         @error="handleThumbnailError"
@@ -341,7 +341,7 @@
                       <el-icon
                         v-if="aiTableLoading?.[row?.id]"
                         class="is-loading ml-2"
-                        style="color: #67c23a; font-size: 18px"
+                        style=" font-size: 18px;color: #67c23a"
                       />
                     </div>
                   </template>
@@ -431,7 +431,7 @@
                 >
                   <div style="display: flex; justify-content: space-between; align-items: center">
                     <span>{{ lang.label }}</span>
-                    <span style="color: #909399; font-size: 12px; margin-left: 8px">
+                    <span style=" margin-left: 8px; font-size: 12px;color: #909399">
                       {{ lang.example }} - {{ lang.chineseName }}
                     </span>
                   </div>
@@ -480,7 +480,7 @@
       align-center
       :destroy-on-close="true"
     >
-      <div style="margin-bottom: 16px; color: #888; font-size: 15px">
+      <div style="margin-bottom: 16px; font-size: 15px; color: #888">
         请输入你希望AI分析的内容维度（默认已包含字体风格、字重、适用场景、设计特点等详细分析维度，可自行修改）
       </div>
       <el-input
@@ -488,7 +488,7 @@
         type="textarea"
         :rows="6"
         placeholder="请从字体风格、字重、情感调性、适用场景、设计特点等维度进行分析..."
-        style="font-size: 16px; min-height: 120px; width: 100%; resize: vertical"
+        style=" width: 100%; min-height: 120px;font-size: 16px; resize: vertical"
       />
       <template #footer>
         <el-button @click="aiGenDialogVisible = false">取消</el-button>
@@ -506,7 +506,7 @@
       align-center
       :destroy-on-close="true"
     >
-      <div style="margin-bottom: 16px; color: #888; font-size: 15px">
+      <div style="margin-bottom: 16px; font-size: 15px; color: #888">
         将为选中的 <strong>{{ ids.length }}</strong> 个字体模板进行AI内容补全
       </div>
       <el-input
@@ -514,15 +514,15 @@
         type="textarea"
         :rows="6"
         placeholder="请输入统一的AI分析提示词，已预设详细分析维度，可自行修改..."
-        style="font-size: 16px; min-height: 120px; width: 100%; resize: vertical"
+        style=" width: 100%; min-height: 120px;font-size: 16px; resize: vertical"
       />
 
       <!-- 进度显示 -->
       <div v-if="batchProgress.total > 0" style="margin-top: 16px">
         <div
           style="
-            margin-bottom: 8px;
             display: flex;
+            margin-bottom: 8px;
             justify-content: space-between;
             align-items: center;
           "
@@ -541,12 +541,12 @@
 
       <div
         style="
-          margin-top: 16px;
           padding: 12px;
-          background: #f5f7fa;
-          border-radius: 4px;
+          margin-top: 16px;
           font-size: 14px;
           color: #606266;
+          background: #f5f7fa;
+          border-radius: 4px;
         "
       >
         <div style="margin-bottom: 8px"><strong>操作说明：</strong></div>
@@ -649,15 +649,15 @@
 
           <div
             style="
-              margin-top: 12px;
               padding: 8px;
+              margin-top: 12px;
               background: color-mix(in srgb, var(--el-color-primary) 8%, transparent);
-              border-radius: 4px;
               border-left: 3px solid var(--el-color-primary);
+              border-radius: 4px;
             "
           >
-            <div style="font-size: 12px; color: var(--el-color-primary-dark-2); font-weight: 500">智能尺寸</div>
-            <div style="font-size: 11px; color: var(--el-color-primary); margin-top: 2px">
+            <div style="font-size: 12px; font-weight: 500; color: var(--el-color-primary-dark-2)">智能尺寸</div>
+            <div style=" margin-top: 2px;font-size: 11px; color: var(--el-color-primary)">
               画布尺寸将根据文字内容和字体大小自动计算
             </div>
           </div>
@@ -671,7 +671,7 @@
                 <el-icon class="is-loading" style="margin-right: 4px; color: var(--el-color-primary)">
                   <Loading />
                 </el-icon>
-                <span style="color: var(--el-color-primary); font-size: 12px">字体加载中...</span>
+                <span style=" font-size: 12px;color: var(--el-color-primary)">字体加载中...</span>
               </div>
             </div>
             <div class="preview-content compact">
@@ -783,14 +783,14 @@
             style="
               padding: 12px;
               background: #fef3c7;
-              border-radius: 4px;
               border-left: 3px solid #f59e0b;
+              border-radius: 4px;
             "
           >
-            <div style="margin-bottom: 8px; font-size: 13px; color: #92400e; font-weight: 500">
+            <div style="margin-bottom: 8px; font-size: 13px; font-weight: 500; color: #92400e">
               字体加载状态：
             </div>
-            <div style="font-size: 12px; color: #92400e; line-height: 1.5">
+            <div style="font-size: 12px; line-height: 1.5; color: #92400e">
               <div v-if="fontLoading">
                 <strong>🔄 字体加载中...</strong>
                 <div style="margin-top: 4px; font-size: 11px; color: #d97706">
@@ -818,9 +818,9 @@
             </div>
             <div
               style="
-                margin-top: 8px;
                 padding: 8px;
-                background: rgba(245, 158, 11, 0.1);
+                margin-top: 8px;
+                background: rgb(245 158 11 / 10%);
                 border-radius: 4px;
               "
             >
@@ -2515,6 +2515,97 @@ function closeImagePreview() {
 </script>
 
 <style scoped>
+
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@media (width <= 600px) {
+  .pb-4.flex,
+  .search-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    padding-bottom: 8px !important;
+  }
+
+  .pb-4.flex > *,
+  .search-bar > * {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin-right: 0 !important;
+    margin-bottom: 8px !important;
+  }
+
+  .el-input,
+  .el-select,
+  .el-button,
+  .el-date-editor {
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+  }
+
+  .content-container {
+    padding: 0 4px !important;
+  }
+}
+
+@media (width <= 768px) {
+  .preview-container {
+    padding: 12px;
+  }
+
+  .preview-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .preview-image.compact {
+    /* 在小屏幕上自适应高度 */
+    width: 640px !important;
+    height: auto !important;
+    max-width: 640px !important;
+    min-width: 640px !important;
+    min-height: 320px !important;
+  }
+
+  .preview-content.compact {
+    min-height: 380px;
+    padding: 20px 0;
+    align-items: flex-start;
+  }
+}
+
+@media (width <= 480px) {
+  .preview-image.compact {
+    /* 在更小的屏幕上自适应高度 */
+    width: 520px !important;
+    height: auto !important;
+    max-width: 520px !important;
+    min-width: 520px !important;
+    min-height: 260px !important;
+  }
+
+  .preview-content.compact {
+    min-height: 320px;
+    padding: 16px 0;
+    align-items: flex-start;
+  }
+}
+
 .font-template-page {
   gap: 10px;
   padding: 8px 0 0;
@@ -2550,37 +2641,6 @@ function closeImagePreview() {
   margin-bottom: 0;
 }
 
-@media (max-width: 600px) {
-  .pb-4.flex,
-  .search-bar {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 8px !important;
-    padding-bottom: 8px !important;
-  }
-
-  .pb-4.flex > *,
-  .search-bar > * {
-    width: 100% !important;
-    min-width: 0 !important;
-    margin-right: 0 !important;
-    margin-bottom: 8px !important;
-  }
-
-  .el-input,
-  .el-select,
-  .el-button,
-  .el-date-editor {
-    width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box;
-  }
-
-  .content-container {
-    padding: 0 4px !important;
-  }
-}
-
 /* 操作dropdown样式已移至公共样式文件 list-page-common.css */
 
 /* 自定义表单项样式 */
@@ -2591,9 +2651,9 @@ function closeImagePreview() {
 
   .form-label {
     font-size: 14px;
-    color: #606266;
     font-weight: 500;
     line-height: 1.4;
+    color: #606266;
   }
 
   .el-input-number,
@@ -2622,10 +2682,10 @@ function closeImagePreview() {
 
 /* 预览效果样式 */
 .preview-container {
-  border: 1px solid #e4e7ed;
-  border-radius: 6px;
   padding: 16px;
   background: #fafafa;
+  border: 1px solid #e4e7ed;
+  border-radius: 6px;
 }
 
 .preview-header {
@@ -2644,26 +2704,12 @@ function closeImagePreview() {
 /* 字体加载指示器样式 */
 .font-loading-indicator {
   display: flex;
-  align-items: center;
   padding: 4px 8px;
   background: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
-  border-radius: 4px;
   border: 1px solid color-mix(in srgb, var(--el-color-primary) 20%, transparent);
+  border-radius: 4px;
   animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.7;
-  }
-
-  100% {
-    opacity: 1;
-  }
+  align-items: center;
 }
 
 .preview-container.compact {
@@ -2689,52 +2735,52 @@ function closeImagePreview() {
 }
 
 .preview-content.compact {
-  min-height: 460px;
   display: flex;
+  min-height: 460px;
+  padding: 24px 0;
   justify-content: center;
   align-items: flex-start;
-  padding: 24px 0;
 }
 
 .preview-image {
   background: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 10%);
   transition: all 0.3s ease;
 }
 
 .preview-image.compact {
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-  word-break: break-word;
-  word-wrap: break-word;
   /* 自适应高度，固定宽度 */
   width: 800px !important;
-  min-width: 800px !important;
-  max-width: 800px !important;
-  min-height: 400px !important;
   height: auto !important;
+  max-width: 800px !important;
+  min-width: 800px !important;
+  min-height: 400px !important;
+  word-break: break-word;
+  word-wrap: break-word;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 10%);
 }
 
 .preview-image:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 15%);
 }
 
 .preview-image.compact:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 15%);
 }
 
 /* 文字内容区域样式 */
 .preview-text-content {
   display: flex;
+  width: 100%;
+  hyphens: auto;
+  text-align: center;
+  word-break: break-word;
+  word-wrap: break-word;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  text-align: center;
-  width: 100%;
-  word-break: break-word;
-  word-wrap: break-word;
-  hyphens: auto;
 }
 
 .form-item-wrapper {
@@ -2756,49 +2802,5 @@ function closeImagePreview() {
 
 .language-tag .el-icon {
   cursor: help;
-}
-
-@media (max-width: 768px) {
-  .preview-container {
-    padding: 12px;
-  }
-
-  .preview-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
-  .preview-image.compact {
-    /* 在小屏幕上自适应高度 */
-    width: 640px !important;
-    min-width: 640px !important;
-    max-width: 640px !important;
-    min-height: 320px !important;
-    height: auto !important;
-  }
-
-  .preview-content.compact {
-    min-height: 380px;
-    padding: 20px 0;
-    align-items: flex-start;
-  }
-}
-
-@media (max-width: 480px) {
-  .preview-image.compact {
-    /* 在更小的屏幕上自适应高度 */
-    width: 520px !important;
-    min-width: 520px !important;
-    max-width: 520px !important;
-    min-height: 260px !important;
-    height: auto !important;
-  }
-
-  .preview-content.compact {
-    min-height: 320px;
-    padding: 16px 0;
-    align-items: flex-start;
-  }
 }
 </style>

@@ -240,31 +240,31 @@ function removeTextContent(index) {
 
 <style scoped>
 .rich-text-editor {
+  padding: 20px;
   border: 1px solid #dcdfe6;
   border-radius: 4px;
-  padding: 20px;
 }
 
 .preview-item {
-  margin-bottom: 20px;
   padding: 10px;
+  margin-bottom: 20px;
   border: 1px solid #ebeef5;
   border-radius: 4px;
 }
 
 .image-placeholder {
   display: flex;
+  color: #909399;
+  background-color: #f5f7fa;
+  border: 1px dashed #c0c4cc;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: #f5f7fa;
-  border: 1px dashed #c0c4cc;
-  color: #909399;
 }
 
 .image-placeholder .el-icon {
-  font-size: 40px;
   margin-bottom: 10px;
+  font-size: 40px;
 }
 
 .item-actions {

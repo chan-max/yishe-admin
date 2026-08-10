@@ -791,12 +791,12 @@ onBeforeUnmount(() => {
 .websocket-toolbar__meta-item {
   display: inline-flex;
   min-height: 32px;
-  align-items: center;
-  gap: 8px;
   padding: 0 10px;
+  background: var(--app-content-surface-muted-color);
   border: 1px solid var(--app-content-border-color);
   border-radius: 8px;
-  background: var(--app-content-surface-muted-color);
+  align-items: center;
+  gap: 8px;
 }
 
 .websocket-toolbar__meta-item--switch {
@@ -822,14 +822,14 @@ onBeforeUnmount(() => {
 }
 
 .admin-connection-id {
+  font-family: Monaco, Menlo, monospace;
   font-size: 11px;
   color: var(--el-text-color-primary);
-  font-family: "Monaco", "Menlo", monospace;
 }
 
 .common-table {
-  border-radius: 8px;
   overflow: hidden;
+  border-radius: 8px;
 }
 
 .websocket-source-tags {
@@ -840,7 +840,7 @@ onBeforeUnmount(() => {
   gap: 6px;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .websocket-toolbar {
     flex-direction: column;
     align-items: stretch;

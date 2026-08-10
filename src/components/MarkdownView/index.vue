@@ -171,14 +171,15 @@ onBeforeUnmount(() => {
     var(--ai-border-color, var(--el-border-color-light)) 78%,
     transparent 22%
   );
+
+  max-width: 100%;
   font-family: "PingFang SC", "SF Pro Display", "Helvetica Neue", sans-serif;
   font-size: var(--markdown-font-size);
   font-weight: 400;
   line-height: var(--markdown-line-height);
   letter-spacing: var(--markdown-letter-spacing);
-  text-align: left;
   color: var(--markdown-text-color, var(--ai-text, var(--el-text-color-primary)));
-  max-width: 100%;
+  text-align: left;
   word-break: break-word;
 
   :global(html.dark) & {
@@ -192,7 +193,7 @@ onBeforeUnmount(() => {
     h4,
     h5,
     h6 {
-      color: #ffffff !important;
+      color: #fff !important;
     }
 
     ul,
@@ -203,15 +204,15 @@ onBeforeUnmount(() => {
     }
 
     code:not(.hljs) {
-      background: rgba(110, 118, 129, 0.3) !important;
       color: #58a6ff !important;
-      border-color: rgba(240, 246, 252, 0.15) !important;
+      background: rgb(110 118 129 / 30%) !important;
+      border-color: rgb(240 246 252 / 15%) !important;
     }
 
     .markdown-view__code-block {
       background: #161b22 !important;
       border-color: #30363d !important;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 2px 8px rgb(0 0 0 / 30%);
 
       code.hljs {
         color: #c9d1d9 !important;
@@ -221,6 +222,7 @@ onBeforeUnmount(() => {
         .hljs-subst {
           color: #ff7b72 !important;
         }
+
         .hljs-string,
         .hljs-title,
         .hljs-section,
@@ -232,12 +234,14 @@ onBeforeUnmount(() => {
         .hljs-addition {
           color: #a5d6ff !important;
         }
+
         .hljs-comment,
         .hljs-quote,
         .hljs-deletion,
         .hljs-meta {
           color: #8b949e !important;
         }
+
         .hljs-number,
         .hljs-regexp,
         .hljs-link {
@@ -247,31 +251,31 @@ onBeforeUnmount(() => {
     }
 
     .markdown-view__copy-button {
-      background: #21262d !important;
       color: #c9d1d9 !important;
+      background: #21262d !important;
       border-color: #363b42 !important;
 
       &:hover {
-        background: #30363d !important;
         color: #58a6ff !important;
+        background: #30363d !important;
         border-color: #58a6ff !important;
       }
     }
 
     blockquote {
       color: var(--el-text-color-secondary, #a8abb2) !important;
+      background: rgb(255 255 255 / 3%);
       border-left-color: var(--el-color-primary) !important;
-      background: rgba(255, 255, 255, 0.03);
     }
 
     th {
-      background: rgba(255, 255, 255, 0.08) !important;
-      color: #ffffff !important;
+      color: #fff !important;
+      background: rgb(255 255 255 / 8%) !important;
     }
 
     td,
     th {
-      border-color: rgba(255, 255, 255, 0.12) !important;
+      border-color: rgb(255 255 255 / 12%) !important;
     }
   }
 
@@ -291,13 +295,13 @@ onBeforeUnmount(() => {
     display: block;
     width: auto;
     max-width: 100%;
-    overflow-x: auto;
-    margin: 0;
-    border-radius: inherit;
     padding: 30px 12px 12px;
-    background: transparent;
+    margin: 0;
+    overflow-x: auto;
     font-size: var(--markdown-code-font-size);
     line-height: var(--markdown-code-line-height);
+    background: transparent;
+    border-radius: inherit;
   }
 
   a {
@@ -321,8 +325,8 @@ onBeforeUnmount(() => {
 
   :deep(.markdown-view__image-block) {
     display: block;
-    margin: var(--markdown-block-gap) 0;
     max-width: var(--markdown-image-max-width);
+    margin: var(--markdown-block-gap) 0;
   }
 
   :deep(.markdown-view__image) {
@@ -331,17 +335,17 @@ onBeforeUnmount(() => {
     height: auto !important;
     max-width: var(--markdown-image-max-width) !important;
     max-height: var(--markdown-image-max-height) !important;
+    overflow: hidden;
+    background: var(--ai-surface-soft, var(--el-fill-color-light));
     border: 1px solid var(--ai-line, var(--el-border-color-light));
     border-radius: 10px;
-    background: var(--ai-surface-soft, var(--el-fill-color-light));
     object-fit: contain;
-    overflow: hidden;
   }
 
   :deep(img) {
+    height: auto !important;
     max-width: var(--markdown-image-max-width) !important;
     max-height: var(--markdown-image-max-height) !important;
-    height: auto !important;
   }
 
   :deep(.markdown-view__image-caption) {
@@ -370,11 +374,11 @@ onBeforeUnmount(() => {
   h4,
   h5,
   h6 {
-    color: var(--markdown-heading-color, var(--ai-text, var(--el-text-color-primary, #1f2329)));
     margin: var(--markdown-heading-gap-top) 0 var(--markdown-heading-gap-bottom);
     font-weight: 600;
     line-height: 1.35;
     letter-spacing: -0.02em;
+    color: var(--markdown-heading-color, var(--ai-text, var(--el-text-color-primary, #1f2329)));
   }
 
   h1 {
@@ -400,16 +404,16 @@ onBeforeUnmount(() => {
 
   ul,
   ol {
-    margin: 0 0 var(--markdown-paragraph-gap);
     padding-left: calc(var(--markdown-list-indent) + 4px);
+    margin: 0 0 var(--markdown-paragraph-gap);
     font-size: inherit;
     line-height: inherit;
     color: var(--markdown-text-color, var(--ai-text, var(--el-text-color-primary, #1f2329)));
   }
 
   li {
-    margin: 0;
     padding-left: 2px;
+    margin: 0;
   }
 
   li + li {
@@ -437,10 +441,10 @@ onBeforeUnmount(() => {
   }
 
   blockquote {
-    margin: var(--markdown-block-gap) 0;
     padding-left: 12px;
-    border-left: 3px solid var(--markdown-quote-border);
+    margin: var(--markdown-block-gap) 0;
     color: var(--ai-text-secondary, var(--el-text-color-secondary));
+    border-left: 3px solid var(--markdown-quote-border);
   }
 
   blockquote > :last-child {
@@ -456,18 +460,18 @@ onBeforeUnmount(() => {
   table {
     width: 100%;
     margin: var(--markdown-block-gap) 0;
-    border-collapse: collapse;
-    table-layout: fixed;
     font-size: 12px;
     line-height: 1.6;
+    border-collapse: collapse;
+    table-layout: fixed;
   }
 
   th,
   td {
     padding: 7px 8px;
-    border: 1px solid var(--markdown-divider-color);
     text-align: left;
     vertical-align: top;
+    border: 1px solid var(--markdown-divider-color);
   }
 
   th {
@@ -483,24 +487,24 @@ onBeforeUnmount(() => {
     display: inline;
     padding: 2px 6px;
     margin: 0 2px;
-    border-radius: 4px;
-    background: rgba(175, 184, 193, 0.18);
-    color: var(--el-color-primary, #0969da);
-    border: 1px solid rgba(175, 184, 193, 0.28);
     font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
     font-size: 0.88em;
     font-weight: 500;
     line-height: 1.45;
+    color: var(--el-color-primary, #0969da);
+    background: rgb(175 184 193 / 18%);
+    border: 1px solid rgb(175 184 193 / 28%);
+    border-radius: 4px;
   }
 
   :deep(.markdown-view__code-block) {
     position: relative;
     margin: var(--markdown-block-gap) 0;
     overflow: hidden;
+    background: var(--el-fill-color-blank, #f6f8fa);
     border: 1px solid var(--el-border-color-light, #d0d7de);
     border-radius: 10px;
-    background: var(--el-fill-color-blank, #f6f8fa);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 2%);
 
     code.hljs {
       color: #24292f;
@@ -509,9 +513,10 @@ onBeforeUnmount(() => {
       .hljs-keyword,
       .hljs-selector-tag,
       .hljs-subst {
-        color: #cf222e;
         font-weight: 600;
+        color: #cf222e;
       }
+
       .hljs-string,
       .hljs-title,
       .hljs-section,
@@ -523,13 +528,15 @@ onBeforeUnmount(() => {
       .hljs-addition {
         color: #0a3069;
       }
+
       .hljs-comment,
       .hljs-quote,
       .hljs-deletion,
       .hljs-meta {
-        color: #6e7781;
         font-style: italic;
+        color: #6e7781;
       }
+
       .hljs-number,
       .hljs-regexp,
       .hljs-link {
@@ -542,22 +549,22 @@ onBeforeUnmount(() => {
     position: absolute;
     top: 8px;
     right: 8px;
-    border: 1px solid var(--el-border-color, #d0d7de);
-    border-radius: 6px;
     padding: 3px 9px;
-    background: var(--el-bg-color-overlay, #ffffff);
-    color: var(--el-text-color-regular, #57606a);
     font-size: 11px;
     font-weight: 500;
     line-height: 1.3;
+    color: var(--el-text-color-regular, #57606a);
     cursor: pointer;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    background: var(--el-bg-color-overlay, #fff);
+    border: 1px solid var(--el-border-color, #d0d7de);
+    border-radius: 6px;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
     transition: all 0.16s ease;
   }
 
   :deep(.markdown-view__copy-button:hover) {
-    background: var(--el-fill-color-light, #f3f4f6);
     color: var(--el-color-primary, #0969da);
+    background: var(--el-fill-color-light, #f3f4f6);
     border-color: var(--el-color-primary-light-5, #85b8ff);
   }
 }

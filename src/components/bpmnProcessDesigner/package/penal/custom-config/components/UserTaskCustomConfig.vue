@@ -497,9 +497,9 @@ onMounted(async () => {
 <style lang="scss" scoped>
 .button-setting-pane {
   display: flex;
-  flex-direction: column;
-  font-size: 14px;
   margin-top: 8px;
+  font-size: 14px;
+  flex-direction: column;
 
   .button-setting-desc {
     padding-right: 8px;

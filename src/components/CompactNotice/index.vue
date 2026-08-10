@@ -69,13 +69,13 @@ const handleActionClick = async (action: CompactNoticeAction) => {
 <style scoped lang="scss">
 .compact-notice {
   display: flex;
+  padding: 7px 10px;
+  background: var(--notice-bg-color, var(--el-fill-color-light));
+  border: 1px solid var(--notice-border-color, var(--el-border-color-lighter));
+  border-radius: 8px;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 7px 10px;
-  border: 1px solid var(--notice-border-color, var(--el-border-color-lighter));
-  border-radius: 8px;
-  background: var(--notice-bg-color, var(--el-fill-color-light));
 }
 
 .compact-notice__main {
@@ -85,8 +85,8 @@ const handleActionClick = async (action: CompactNoticeAction) => {
 
 .compact-notice__title {
   font-size: 12px;
-  line-height: 1.35;
   font-weight: 600;
+  line-height: 1.35;
   color: var(--notice-title-color, var(--el-text-color-primary));
 }
 
@@ -134,7 +134,7 @@ const handleActionClick = async (action: CompactNoticeAction) => {
   --notice-title-color: var(--el-color-danger-dark-2);
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .compact-notice {
     align-items: flex-start;
     flex-direction: column;

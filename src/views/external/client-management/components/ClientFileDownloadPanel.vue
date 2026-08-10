@@ -218,9 +218,9 @@ const formatTime = (date: Date): string =>
 }
 
 .path {
-  color: var(--el-text-color-secondary);
   max-width: 400px;
   overflow: hidden;
+  color: var(--el-text-color-secondary);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -236,11 +236,11 @@ const formatTime = (date: Date): string =>
 .history {
   &-head {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    margin-bottom: 6px;
     font-size: 12px;
     color: var(--el-text-color-secondary);
-    margin-bottom: 6px;
+    align-items: center;
+    justify-content: space-between;
   }
 
   &-list {
@@ -253,10 +253,10 @@ const formatTime = (date: Date): string =>
 
   &-item {
     display: flex;
+    padding: 4px 0;
+    font-size: 12px;
     align-items: center;
     gap: 8px;
-    font-size: 12px;
-    padding: 4px 0;
   }
 }
 
@@ -276,8 +276,8 @@ const formatTime = (date: Date): string =>
 }
 
 .type-tag {
-  font-size: 10px;
   padding: 0 5px;
+  font-size: 10px;
   border-radius: 2px;
   flex-shrink: 0;
 
@@ -293,11 +293,11 @@ const formatTime = (date: Date): string =>
 }
 
 .url {
-  flex: 1;
   overflow: hidden;
+  color: var(--el-text-color-regular);
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--el-text-color-regular);
+  flex: 1;
 }
 
 .history .path {

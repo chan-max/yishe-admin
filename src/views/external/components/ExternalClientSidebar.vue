@@ -82,11 +82,11 @@ defineEmits<{
 .sidebar__item {
   width: 100%;
   padding: 8px 10px;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
   text-align: left;
   cursor: pointer;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
   transition: background-color .15s;
 }
 
@@ -114,10 +114,10 @@ defineEmits<{
 }
 
 .sidebar__name {
+  overflow: hidden;
   font-size: 13px;
   font-weight: 600;
   color: var(--el-text-color-primary);
-  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -139,10 +139,10 @@ defineEmits<{
 
 .sidebar__meta {
   display: flex;
-  justify-content: space-between;
   margin-top: 3px;
   font-size: 11px;
-  color: var(--el-text-color-secondary);
   line-height: 1.3;
+  color: var(--el-text-color-secondary);
+  justify-content: space-between;
 }
 </style>

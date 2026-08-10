@@ -69,23 +69,23 @@ function InfoRow(props: { label: string; value?: string | number | null }) {
 }
 
 .section-title {
+  padding-bottom: 4px;
+  margin-bottom: 2px;
   font-size: 12px;
   font-weight: 600;
   color: var(--el-text-color-secondary);
-  padding-bottom: 4px;
-  margin-bottom: 2px;
   border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
 .info-row {
   display: flex;
-  font-size: 12px;
   padding: 2px 0;
+  font-size: 12px;
 }
 
 .info-label {
-  color: var(--el-text-color-placeholder);
   width: 70px;
+  color: var(--el-text-color-placeholder);
   flex-shrink: 0;
 }
 

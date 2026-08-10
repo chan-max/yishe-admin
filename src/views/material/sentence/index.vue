@@ -198,7 +198,7 @@
             <el-icon
               v-if="aiTableLoading?.[row?.id]"
               class="is-loading ml-2"
-              style="color: var(--el-color-primary); font-size: 18px"
+              style=" font-size: 18px;color: var(--el-color-primary)"
             />
           </div>
         </template>
@@ -264,7 +264,7 @@
       align-center
       :destroy-on-close="true"
     >
-      <div style="margin-bottom: 16px; color: #888; font-size: 15px">
+      <div style="margin-bottom: 16px; font-size: 15px; color: #888">
         请输入你希望AI分析的角度或要求（可选，留空则使用默认分析标准）
       </div>
       <el-input
@@ -272,7 +272,7 @@
         type="textarea"
         :rows="4"
         placeholder="如：请重点关注句子的情感色彩和主题..."
-        style="font-size: 16px; min-height: 100px; width: 100%; resize: vertical"
+        style=" width: 100%; min-height: 100px;font-size: 16px; resize: vertical"
       />
       <template #footer>
         <el-button @click="aiAnalyzeDialogVisible = false">取消</el-button>
@@ -1112,6 +1112,34 @@ const submitForm = async () => {
 </script>
 
 <style scoped>
+
+
+@media (width <= 600px) {
+  .shrink-0 {
+    width: 100%;
+  }
+
+  .shrink-0 > * {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin-bottom: 6px !important;
+  }
+
+  .el-input,
+  .el-select,
+  .el-button,
+  .el-date-editor {
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+  }
+
+  .sentence-content {
+    max-width: 100%;
+    margin: 0 4px;
+  }
+}
+
 :deep(.sentence-page) {
   gap: 10px;
   padding: 8px 0 0;
@@ -1137,36 +1165,10 @@ const submitForm = async () => {
 /* 句子内容样式优化 */
 .sentence-content {
   max-width: 300px;
-  word-break: break-all;
-  line-height: 1.6;
   font-size: 16px;
   font-weight: 500;
-}
-
-@media (max-width: 600px) {
-  .shrink-0 {
-    width: 100%;
-  }
-
-  .shrink-0 > * {
-    width: 100% !important;
-    min-width: 0 !important;
-    margin-bottom: 6px !important;
-  }
-
-  .el-input,
-  .el-select,
-  .el-button,
-  .el-date-editor {
-    width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box;
-  }
-
-  .sentence-content {
-    max-width: 100%;
-    margin: 0 4px;
-  }
+  line-height: 1.6;
+  word-break: break-all;
 }
 
 /* 操作列样式优化 */

@@ -259,8 +259,8 @@ const handleClose = () => {
     .color-preview {
       width: 100px;
       height: 100px;
-      border-radius: 8px;
       border: 2px solid #e4e7ed;
+      border-radius: 8px;
       flex-shrink: 0;
     }
 
@@ -305,9 +305,9 @@ const handleClose = () => {
 
       span {
         width: 30px;
-        text-align: right;
         font-weight: bold;
         color: #606266;
+        text-align: right;
       }
     }
   }
@@ -317,9 +317,9 @@ const handleClose = () => {
     margin-bottom: 16px;
 
     h4 {
-      margin: 0 0 12px 0;
-      color: #303133;
+      margin: 0 0 12px;
       font-size: 14px;
+      color: #303133;
     }
 
     .color-grid {
@@ -330,9 +330,9 @@ const handleClose = () => {
       .preset-color {
         width: 30px;
         height: 30px;
-        border-radius: 4px;
-        border: 1px solid #e4e7ed;
         cursor: pointer;
+        border: 1px solid #e4e7ed;
+        border-radius: 4px;
         transition: transform 0.2s ease;
 
         &:hover {

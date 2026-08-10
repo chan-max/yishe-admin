@@ -71,53 +71,55 @@ const riskLabel = computed(() => {
 <style scoped>
 .interaction-panel {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
   padding: 10px 12px;
-  border-radius: 8px;
   background: var(--el-fill-color-light);
   border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .interaction-question {
   font-size: 13px;
   line-height: 1.5;
   color: var(--el-text-color-primary);
-  white-space: pre-wrap;
   word-break: break-word;
+  white-space: pre-wrap;
 }
 
 .impact-preview {
+  padding: 8px 10px;
   background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-extra-light);
   border-radius: 6px;
-  padding: 8px 10px;
 }
 
 .impact-summary {
-  font-size: 12px;
-  color: var(--el-text-color-regular);
   margin-bottom: 4px;
+  font-size: 12px;
   line-height: 1.4;
+  color: var(--el-text-color-regular);
 }
 
 .impact-risk {
   display: inline-block;
+  padding: 2px 6px;
+  margin-bottom: 4px;
   font-size: 11px;
   font-weight: 500;
-  padding: 2px 6px;
   border-radius: 4px;
-  margin-bottom: 4px;
 }
 
-.risk-low { background: var(--el-color-success-light-9); color: var(--el-color-success); }
-.risk-medium { background: var(--el-color-warning-light-9); color: var(--el-color-warning); }
-.risk-high { background: var(--el-color-danger-light-9); color: var(--el-color-danger); }
+.risk-low { color: var(--el-color-success); background: var(--el-color-success-light-9); }
+
+.risk-medium { color: var(--el-color-warning); background: var(--el-color-warning-light-9); }
+
+.risk-high { color: var(--el-color-danger); background: var(--el-color-danger-light-9); }
 
 .impact-table {
   width: 100%;
-  border-collapse: collapse;
   font-size: 12px;
+  border-collapse: collapse;
 }
 
 .impact-table td {
@@ -126,10 +128,10 @@ const riskLabel = computed(() => {
 }
 
 .impact-label {
+  width: 1%;
+  padding-right: 10px !important;
   color: var(--el-text-color-secondary);
   white-space: nowrap;
-  padding-right: 10px !important;
-  width: 1%;
 }
 
 .impact-value {
@@ -138,7 +140,9 @@ const riskLabel = computed(() => {
 }
 
 .tone-positive { color: var(--el-color-success); }
+
 .tone-negative { color: var(--el-color-danger); }
+
 .tone-neutral { color: var(--el-text-color-regular); }
 
 .interaction-actions {
@@ -153,17 +157,17 @@ const riskLabel = computed(() => {
 .action-btn {
   height: 28px;
   padding: 0 10px;
-  border: none;
-  border-radius: 6px;
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
+  border: none;
+  border-radius: 6px;
   transition: all .12s;
 }
 
 .action-btn--ghost {
-  background: transparent;
   color: var(--el-text-color-secondary);
+  background: transparent;
 }
 
 .action-btn--ghost:hover {
@@ -172,10 +176,11 @@ const riskLabel = computed(() => {
 }
 
 .action-btn--primary {
-  background: var(--el-color-primary);
   color: #fff;
+  background: var(--el-color-primary);
 }
 
 .action-btn--primary:hover:not(:disabled) { opacity: .85; }
-.action-btn--primary:disabled { opacity: .4; cursor: not-allowed; }
+
+.action-btn--primary:disabled { cursor: not-allowed; opacity: .4; }
 </style>

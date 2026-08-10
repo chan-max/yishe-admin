@@ -316,24 +316,29 @@ defineExpose({ open, reload: loadConfig });
   justify-content: space-between;
   gap: 16px;
 }
+
 .ai-usage__header-left { flex: 1; }
+
 .ai-usage__title {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
   color: var(--el-text-color-primary);
 }
+
 .ai-usage__desc {
   margin: 4px 0 0;
   font-size: 13px;
   color: var(--el-text-color-secondary);
 }
+
 .ai-usage__header-right {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-shrink: 0;
 }
+
 .ai-usage__stat {
   font-size: 12px;
   color: var(--el-text-color-secondary);
@@ -341,9 +346,9 @@ defineExpose({ open, reload: loadConfig });
 
 .ai-usage__empty {
   padding: 20px;
-  text-align: center;
   font-size: 13px;
   color: var(--el-text-color-placeholder);
+  text-align: center;
   background: var(--el-fill-color-lighter);
   border-radius: 8px;
 }
@@ -357,10 +362,11 @@ defineExpose({ open, reload: loadConfig });
 
 /* ── Group ── */
 .ai-usage__group {
+  overflow: hidden;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
-  overflow: hidden;
 }
+
 .ai-usage__group-head {
   display: flex;
   align-items: center;
@@ -369,11 +375,13 @@ defineExpose({ open, reload: loadConfig });
   background: var(--el-fill-color-lighter);
   border-bottom: 1px solid var(--el-border-color-lighter);
 }
+
 .ai-usage__group-name {
   font-size: 13px;
   font-weight: 600;
   color: var(--el-text-color-primary);
 }
+
 .ai-usage__group-count {
   font-size: 12px;
   color: var(--el-text-color-secondary);
@@ -384,6 +392,7 @@ defineExpose({ open, reload: loadConfig });
   display: flex;
   flex-direction: column;
 }
+
 .ai-usage__rows--collapsed {
   max-height: 600px;
   overflow: hidden;
@@ -398,7 +407,9 @@ defineExpose({ open, reload: loadConfig });
   border-bottom: 1px solid var(--el-border-color-extra-light);
   transition: background .1s;
 }
+
 .ai-usage__row:last-child { border-bottom: none; }
+
 .ai-usage__row:hover { background: var(--el-fill-color-lighter); }
 
 .ai-usage__row-left {
@@ -408,6 +419,7 @@ defineExpose({ open, reload: loadConfig });
   min-width: 0;
   flex: 1;
 }
+
 .ai-usage__row-right {
   display: flex;
   align-items: center;
@@ -421,13 +433,15 @@ defineExpose({ open, reload: loadConfig });
   color: var(--el-text-color-primary);
   white-space: nowrap;
 }
+
 .ai-usage__row-desc {
+  overflow: hidden;
   font-size: 12px;
   color: var(--el-text-color-secondary);
-  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 .ai-usage__row-spec {
   display: flex;
   flex-direction: column;
@@ -435,33 +449,37 @@ defineExpose({ open, reload: loadConfig });
   gap: 2px;
   white-space: nowrap;
 }
+
 .ai-usage__row-spec-label {
   font-size: 12px;
   color: var(--el-text-color-regular);
 }
+
 .ai-usage__row-spec-meta {
   font-size: 11px;
   color: var(--el-text-color-secondary);
 }
+
 .ai-usage__row-select {
   width: 180px;
 }
 
 .ai-usage__toggle {
   display: flex;
-  align-items: center;
-  justify-content: center;
   width: 100%;
   padding: 8px 0;
   margin-top: 4px;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  cursor: pointer;
   font-size: 12px;
   color: var(--el-color-primary);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
   transition: background .1s;
+  align-items: center;
+  justify-content: center;
 }
+
 .ai-usage__toggle:hover {
   background: var(--el-fill-color-light);
 }
@@ -469,26 +487,29 @@ defineExpose({ open, reload: loadConfig });
 /* ── Tags ── */
 .ai-usage__tag {
   display: inline-flex;
-  align-items: center;
-  flex-shrink: 0;
-  padding: 0 8px;
   height: 20px;
-  border-radius: 4px;
+  padding: 0 8px;
   font-size: 11px;
   font-weight: 500;
   line-height: 20px;
+  border-radius: 4px;
+  align-items: center;
+  flex-shrink: 0;
 }
+
 .ai-usage__tag--bound {
-  background: var(--el-color-success-light-9);
   color: var(--el-color-success);
+  background: var(--el-color-success-light-9);
 }
+
 .ai-usage__tag--invalid {
-  background: var(--el-color-danger-light-9);
   color: var(--el-color-danger);
+  background: var(--el-color-danger-light-9);
 }
+
 .ai-usage__tag--unbound {
-  background: var(--el-fill-color);
   color: var(--el-text-color-placeholder);
+  background: var(--el-fill-color);
 }
 
 /* ── Footer ── */
@@ -497,6 +518,7 @@ defineExpose({ open, reload: loadConfig });
   align-items: center;
   justify-content: space-between;
 }
+
 .ai-usage__footer-hint {
   font-size: 12px;
   color: var(--el-color-success);

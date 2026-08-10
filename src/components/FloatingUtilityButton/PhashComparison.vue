@@ -146,13 +146,13 @@ const getSimilarityLevel = (similarity: number) => {
   }
 
   .comparison-result {
-    margin-top: 20px;
     padding: 16px;
+    margin-top: 20px;
     background-color: #f8f9fa;
     border-radius: 6px;
 
     h4 {
-      margin: 0 0 12px 0;
+      margin: 0 0 12px;
       color: #303133;
     }
 

@@ -459,3 +459,16 @@ html.light .vxe-table {
 .el-dropdown__popper .el-dropdown-menu__item {
   overflow: visible !important;
 }
+
+/* Global: ensure loading is vertically centered in all containers */
+.el-loading-container {
+  min-height: 150px;
+}
+
+.el-loading-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+}

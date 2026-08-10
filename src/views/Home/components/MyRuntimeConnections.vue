@@ -229,16 +229,16 @@ const refreshConnections = async () => {
 
 .home-section__desc {
   margin-top: 4px;
-  color: var(--el-text-color-secondary);
   font-size: 13px;
   line-height: 1.7;
+  color: var(--el-text-color-secondary);
 }
 
 .home-panel {
+  background: color-mix(in srgb, var(--el-bg-color) 96%, transparent 4%);
   border: 1px solid color-mix(in srgb, var(--el-border-color) 54%, transparent 46%);
   border-radius: 22px;
-  background: color-mix(in srgb, var(--el-bg-color) 96%, transparent 4%);
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 10px 28px rgb(15 23 42 / 4%);
 }
 
 .my-runtime-connections__toolbar {
@@ -293,8 +293,8 @@ const refreshConnections = async () => {
 
 .my-runtime-card__status,
 .my-runtime-card__time {
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
   white-space: nowrap;
 }
 
@@ -306,34 +306,34 @@ const refreshConnections = async () => {
 }
 
 .my-runtime-card__desc {
-  color: var(--el-text-color-secondary);
   font-size: 13px;
   line-height: 1.7;
+  color: var(--el-text-color-secondary);
   word-break: break-word;
 }
 
 .my-runtime-card__chip {
   display: inline-flex;
-  align-items: center;
   max-width: 100%;
   min-height: 28px;
   padding: 0 10px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--el-fill-color-light) 80%, transparent 20%);
-  color: var(--el-text-color-regular);
   font-size: 12px;
   line-height: 1.3;
+  color: var(--el-text-color-regular);
   word-break: break-word;
+  background: color-mix(in srgb, var(--el-fill-color-light) 80%, transparent 20%);
+  border-radius: 999px;
+  align-items: center;
 }
 
 .my-runtime-card__id {
   max-width: 58%;
   overflow: hidden;
-  color: var(--el-text-color-placeholder);
+  font-family: Monaco, Menlo, monospace;
   font-size: 12px;
+  color: var(--el-text-color-placeholder);
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: "Monaco", "Menlo", monospace;
 }
 
 .my-runtime-empty {
@@ -343,13 +343,13 @@ const refreshConnections = async () => {
   min-height: 196px;
 }
 
-@media (max-width: 1180px) {
+@media (width <= 1180px) {
   .my-runtime-connections__grid {
     grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 767px) {
+@media (width <= 767px) {
   .home-panel {
     border-radius: 18px;
   }

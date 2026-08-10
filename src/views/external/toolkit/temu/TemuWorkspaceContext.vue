@@ -239,80 +239,80 @@ const openMallPage = () => {
 }
 
 .temu-context-card__summary {
-  flex: 1 1 420px;
   display: flex;
+  max-width: 100%;
+  min-width: 0;
+  flex: 1 1 420px;
   align-items: center;
   align-content: center;
   flex-wrap: wrap;
   gap: 6px 12px;
-  min-width: 0;
-  max-width: 100%;
 }
 
 .temu-context-card__actions {
+  display: flex;
+  max-width: 100%;
+  margin-left: auto;
   flex: 0 1 auto;
   align-self: flex-start;
-  display: flex;
   align-items: center;
   gap: 4px;
   flex-wrap: wrap;
   justify-content: flex-end;
-  margin-left: auto;
-  max-width: 100%;
 }
 
 .temu-context-status {
   display: flex;
+  padding: 4px 8px 4px 6px;
+  white-space: nowrap;
+  background: var(--el-fill-color-blank);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 999px;
   align-items: center;
   gap: 6px;
   flex: 0 0 auto;
-  padding: 4px 8px 4px 6px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 999px;
-  background: var(--el-fill-color-blank);
-  white-space: nowrap;
 }
 
 .temu-context-meta {
   display: inline-flex;
+  max-width: 100%;
+  min-width: 0;
+  padding: 4px 8px;
+  white-space: normal;
+  background: var(--el-fill-color-blank);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 999px;
   align-items: center;
   flex-wrap: wrap;
   gap: 5px;
   flex: 0 1 auto;
-  padding: 4px 8px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 999px;
-  background: var(--el-fill-color-blank);
-  white-space: normal;
-  min-width: 0;
-  max-width: 100%;
 }
 
 .temu-context-meta__label {
   display: inline-flex;
-  align-items: center;
-  flex: 0 0 auto;
-  color: var(--el-text-color-secondary);
   font-size: 10px;
   line-height: 1;
+  color: var(--el-text-color-secondary);
   white-space: nowrap;
+  align-items: center;
+  flex: 0 0 auto;
 }
 
 .temu-context-meta__value {
   display: inline-flex;
-  align-items: center;
   min-width: 0;
-  color: var(--el-text-color-primary);
   font-size: 11px;
   font-weight: 600;
   line-height: 1.35;
+  color: var(--el-text-color-primary);
   white-space: normal;
+  align-items: center;
   overflow-wrap: anywhere;
 }
 
 .temu-context-meta__mall-link {
-  padding: 0 2px;
   min-height: auto;
+  padding: 0 2px;
   font-size: 10px;
   line-height: 1;
 }
@@ -326,11 +326,11 @@ const openMallPage = () => {
 }
 
 .temu-context-dot {
+  display: inline-block;
   width: 8px;
   height: 8px;
-  border-radius: 50%;
-  display: inline-block;
   background: var(--el-text-color-secondary);
+  border-radius: 50%;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--el-text-color-secondary) 14%, transparent);
 }
 
@@ -356,12 +356,12 @@ const openMallPage = () => {
 
 .temu-context-status__text {
   display: inline-flex;
-  align-items: center;
-  color: var(--el-text-color-secondary);
   font-size: 11px;
   font-weight: 600;
   line-height: 1;
+  color: var(--el-text-color-secondary);
   white-space: nowrap;
+  align-items: center;
 }
 
 .temu-context-status__text.is-success {
@@ -380,7 +380,7 @@ const openMallPage = () => {
   color: var(--el-text-color-secondary);
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .temu-context-card {
     flex-direction: column;
     align-items: stretch;
@@ -389,13 +389,13 @@ const openMallPage = () => {
 
   .temu-context-card__summary {
     display: none;
+    padding: 12px;
+    background: var(--el-fill-color-lighter);
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 8px;
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
-    padding: 12px;
-    background: var(--el-fill-color-lighter);
-    border-radius: 8px;
-    border: 1px solid var(--el-border-color-lighter);
   }
 
   .temu-context-card__summary.is-visible {
@@ -421,7 +421,7 @@ const openMallPage = () => {
   }
 }
 
-@media (max-width: 480px) {
+@media (width <= 480px) {
   .temu-context-card__actions .el-button {
     flex: 1 1 45%;
     min-height: 40px;

@@ -60,29 +60,30 @@ const services = computed<ServiceDisplayInfo[]>(() => {
 
 .svc-row {
   display: flex;
+  padding: 6px 0;
+  font-size: 12px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
   align-items: center;
   gap: 8px;
-  font-size: 12px;
-  padding: 6px 0;
-  border-bottom: 1px solid var(--el-border-color-lighter);
 
   &:last-child {
     border-bottom: none;
   }
 
   &__name {
-    font-weight: 500;
     min-width: 100px;
+    font-weight: 500;
     color: var(--el-text-color-primary);
   }
 
   &__dot {
     width: 5px;
     height: 5px;
-    border-radius: 50%;
     background: var(--el-text-color-placeholder);
+    border-radius: 50%;
 
     &--success { background: var(--el-color-success); }
+
     &--danger { background: var(--el-color-danger); }
   }
 
@@ -90,21 +91,23 @@ const services = computed<ServiceDisplayInfo[]>(() => {
     font-size: 11px;
 
     &--success { color: var(--el-color-success); }
+
     &--danger { color: var(--el-color-danger); }
+
     &--info { color: var(--el-text-color-secondary); }
   }
 
   &__state {
-    color: var(--el-text-color-secondary);
     font-size: 11px;
+    color: var(--el-text-color-secondary);
   }
 
   &__msg {
-    flex: 1;
-    color: var(--el-text-color-placeholder);
     overflow: hidden;
+    color: var(--el-text-color-placeholder);
     text-overflow: ellipsis;
     white-space: nowrap;
+    flex: 1;
   }
 }
 </style>

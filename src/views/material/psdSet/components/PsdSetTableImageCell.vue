@@ -247,15 +247,15 @@ onBeforeUnmount(() => {
 .psd-set-table-image-cell__card {
   position: relative;
   display: flex;
-  align-items: center;
-  justify-content: center;
   width: 160px;
   height: 112px;
   max-width: 100%;
   overflow: hidden;
+  background: var(--el-fill-color-lighter);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
-  background: var(--el-fill-color-lighter);
+  align-items: center;
+  justify-content: center;
   contain: layout paint;
 }
 
@@ -268,17 +268,17 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   padding: 8px;
-  border-radius: 8px;
-  object-fit: contain;
   cursor: zoom-in;
+  border-radius: 8px;
   box-sizing: border-box;
   user-select: none;
+  object-fit: contain;
 }
 
 .psd-set-table-image-cell__image--placeholder {
   cursor: default;
   background:
-    linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent),
+    linear-gradient(90deg, transparent, rgb(255 255 255 / 55%), transparent),
     var(--el-fill-color-light);
   background-size: 180px 100%, 100% 100%;
 }
@@ -288,21 +288,21 @@ onBeforeUnmount(() => {
   top: 50%;
   z-index: 3;
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
   width: 26px;
   height: 26px;
   padding: 0;
+  color: #fff;
+  cursor: pointer;
+  background: rgb(15 23 42 / 58%);
   border: 0;
   border-radius: 50%;
-  color: #fff;
-  background: rgba(15, 23, 42, 0.58);
-  cursor: pointer;
   opacity: 0;
   transform: translateY(-50%);
   transition:
     opacity 0.15s ease,
     background-color 0.15s ease;
+  align-items: center;
+  justify-content: center;
 }
 
 .psd-set-table-image-cell__card:hover .psd-set-table-image-cell__nav,
@@ -311,7 +311,7 @@ onBeforeUnmount(() => {
 }
 
 .psd-set-table-image-cell__nav:hover {
-  background: rgba(15, 23, 42, 0.78);
+  background: rgb(15 23 42 / 78%);
 }
 
 .psd-set-table-image-cell__nav:focus-visible {
@@ -339,68 +339,68 @@ onBeforeUnmount(() => {
 
 .psd-set-table-image-cell__badge {
   position: absolute;
-  right: 6px;
   top: 6px;
+  right: 6px;
   z-index: 2;
-  min-width: 24px;
   height: 16px;
+  min-width: 24px;
   padding: 0 5px;
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.58);
-  color: #fff;
   font-size: 9px;
   line-height: 16px;
+  color: #fff;
   text-align: center;
+  background: rgb(15 23 42 / 58%);
+  border-radius: 999px;
 }
 
 .psd-set-table-image-cell__count {
   position: absolute;
-  left: 6px;
   top: 6px;
+  left: 6px;
   z-index: 2;
   height: 16px;
   padding: 0 6px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--el-color-primary) 72%, transparent);
-  color: #fff;
   font-size: 9px;
   line-height: 16px;
+  color: #fff;
+  background: color-mix(in srgb, var(--el-color-primary) 72%, transparent);
+  border-radius: 999px;
 }
 
 .psd-set-table-image-cell__dimensions {
   position: absolute;
-  left: 50%;
   bottom: 6px;
+  left: 50%;
   z-index: 2;
-  max-width: calc(100% - 16px);
   height: 16px;
+  max-width: calc(100% - 16px);
   padding: 0 6px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.82);
-  color: var(--el-text-color-secondary);
   font-size: 9px;
   line-height: 16px;
+  color: var(--el-text-color-secondary);
   white-space: nowrap;
+  background: rgb(255 255 255 / 82%);
+  border-radius: 999px;
   transform: translateX(-50%);
 }
 
 .psd-set-table-image-cell__empty {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
   width: 160px;
   height: 112px;
-  border: 1px dashed var(--el-border-color);
-  border-radius: 8px;
+  font-size: 12px;
   color: var(--el-text-color-placeholder);
   background: var(--el-fill-color-lighter);
-  font-size: 12px;
+  border: 1px dashed var(--el-border-color);
+  border-radius: 8px;
+  align-items: center;
+  justify-content: center;
 }
 
 .psd-set-table-image-cell__action {
   height: 22px;
   padding: 0 8px;
-  border-radius: 999px;
   background: color-mix(in srgb, var(--el-color-primary) 8%, transparent);
+  border-radius: 999px;
 }
 </style>

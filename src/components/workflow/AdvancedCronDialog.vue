@@ -1,28 +1,24 @@
 <template>
   <el-dialog
     v-model="visible"
-    title="定时调度配置与预设模板"
+    title="定时触发配置"
     fullscreen
     destroy-on-close
     append-to-body
     class="wf-advanced-cron-dialog"
   >
     <div class="wf-cron-dialog-body" v-loading="loading">
-      <!-- 顶部当前 Cron 表达式与状态显示条 -->
-      <div class="wf-cron-status-bar mb-4">
-        <div class="flex items-center gap-4">
-          <div class="flex items-center gap-2">
-            <span class="text-xs font-500 text-[var(--el-text-color-regular)]">当前生效 Cron 表达式：</span>
-            <code class="wf-current-cron-tag">{{ form.expression || '未设置' }}</code>
-          </div>
-          <div v-if="nextRunPreview" class="text-xs text-[var(--el-color-success)] font-500">
-            下次预计触发时间：{{ nextRunPreview }}
-          </div>
-        </div>
+      <!-- 当前配置状态 -->
+      <div class="wf-cron-status">
+        <span class="wf-cron-status__label">时间表达式</span>
+        <code class="wf-cron-status__expr">{{ form.expression || '未设置' }}</code>
+        <span v-if="nextRunPreview" class="wf-cron-status__next">
+          下次：{{ nextRunPreview }}
+        </span>
       </div>
 
       <el-form label-position="top" size="small">
-        <!-- 1. 基础配置 -->
+        <!-- 基础配置 -->
         <div class="wf-clean-group">
           <div class="wf-group-title">基础配置</div>
           <div class="grid grid-cols-12 gap-4">
@@ -39,12 +35,12 @@
           </div>
         </div>
 
-        <!-- 2. 执行配置 -->
+        <!-- 时间配置 -->
         <div class="wf-clean-group mt-3">
-          <div class="wf-group-title">执行配置</div>
+          <div class="wf-group-title">时间配置</div>
           <div class="grid grid-cols-12 gap-4">
             <div class="col-span-4">
-              <el-form-item label="Cron 表达式">
+              <el-form-item label="时间表达式">
                 <el-input
                   v-model="form.expression"
                   placeholder="例如: 0 8 * * *"
@@ -92,9 +88,9 @@
           </div>
         </div>
 
-        <!-- 3. Cron 快捷模板 -->
+        <!-- 快捷预设 -->
         <div class="wf-clean-group mt-4">
-          <div class="wf-group-title">Cron 快捷模板</div>
+          <div class="wf-group-title">快捷预设</div>
           <div class="flex flex-wrap gap-2 mt-1">
             <el-button
               v-for="item in cronTemplates"
@@ -111,9 +107,9 @@
           </div>
         </div>
 
-        <!-- 4. Cron 参考说明 -->
+        <!-- 时间表达式参考 -->
         <div class="wf-clean-group mt-4">
-          <div class="wf-group-title">Cron 参考说明</div>
+          <div class="wf-group-title">时间表达式参考</div>
           <div class="wf-ref-grid">
             <div v-for="item in cronTemplates" :key="`${item.expr}-ref`" class="wf-ref-cell">
               <span class="font-500 text-[var(--el-text-color-regular)]">{{ item.label }}:</span>
@@ -155,7 +151,7 @@ const nextRunPreview = ref<string | null>(null)
 const timePickerValue = ref<Date | null>(new Date(2026, 0, 1, 8, 0))
 
 const form = ref({
-  name: '工作流定时调度',
+  name: '工作流定时触发',
   enabled: true,
   expression: '0 8 * * *',
   timeoutMs: 60000,
@@ -214,7 +210,7 @@ const loadTriggerConfig = async () => {
     const cron = (triggers || []).find((t: any) => t.type === 'cron')
     if (cron) {
       form.value.enabled = cron.enabled
-      form.value.name = cron.config?.name || '工作流定时调度'
+      form.value.name = cron.config?.name || '工作流定时触发'
       form.value.expression = cron.config?.expression || '0 8 * * *'
       form.value.timeoutMs = cron.config?.timeoutMs || 60000
       form.value.paramsOverride = cron.config?.paramsOverride
@@ -258,7 +254,7 @@ const handleSave = async () => {
     if (res?.nextRunTime) {
       nextRunPreview.value = new Date(res.nextRunTime).toLocaleString()
     }
-    ElMessage.success('定时调度预设配置保存成功')
+    ElMessage.success('定时触发配置已保存')
     emit('saved', res)
     visible.value = false
   } catch (err: any) {
@@ -279,52 +275,59 @@ watch(
 <style scoped>
 .wf-cron-dialog-body {
   height: calc(100vh - 130px);
-  overflow-y: auto;
   padding: 12px 24px;
+  overflow-y: auto;
 }
+
 .wf-cron-status-bar {
-  background: var(--app-content-surface-muted-color);
   padding: 10px 14px;
+  background: var(--app-content-surface-muted-color);
   border-radius: 6px;
 }
+
 .wf-current-cron-tag {
+  padding: 2px 8px;
   font-family: monospace;
   font-size: 13px;
   font-weight: 600;
   color: var(--el-color-primary);
   background: var(--app-content-surface-color);
-  padding: 2px 8px;
-  border-radius: 4px;
   border: 1px solid var(--el-border-color-light);
+  border-radius: 4px;
 }
+
 .wf-clean-group {
   display: flex;
   flex-direction: column;
 }
+
 .wf-group-title {
+  margin-bottom: 6px;
   font-size: 12px;
   font-weight: 600;
   color: var(--el-text-color-primary);
-  margin-bottom: 6px;
 }
+
 .wf-ref-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 8px 16px;
   padding: 2px 0;
 }
+
 .wf-ref-cell {
-  font-size: 11px;
   display: flex;
+  font-size: 11px;
   align-items: center;
   gap: 6px;
 }
+
 .wf-ref-code {
+  padding: 1px 5px;
   font-family: monospace;
+  font-size: 11px;
   color: var(--el-color-primary);
   background: var(--app-content-surface-muted-color);
-  padding: 1px 5px;
   border-radius: 4px;
-  font-size: 11px;
 }
 </style>

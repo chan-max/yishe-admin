@@ -352,19 +352,19 @@ onUnmounted(() => {
 
 .header-connection-status__trigger {
   display: inline-flex;
-  min-width: 0;
-  align-items: center;
-  gap: 8px;
-  padding: 0 10px;
   height: var(--top-header-action-size);
-  border: none;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--top-header-hover-color) 48%, transparent 52%);
+  min-width: 0;
+  padding: 0 10px;
   color: var(--top-header-text-color);
   cursor: pointer;
+  background: color-mix(in srgb, var(--top-header-hover-color) 48%, transparent 52%);
+  border: none;
+  border-radius: 12px;
   transition:
     background-color 0.18s ease,
     transform 0.18s ease;
+  align-items: center;
+  gap: 8px;
 }
 
 .header-connection-status__trigger:hover {
@@ -397,11 +397,11 @@ onUnmounted(() => {
 
 .header-connection-status__wave {
   position: absolute;
-  inset: 2px;
-  border-radius: 999px;
   background: color-mix(in srgb, var(--status-accent) 22%, transparent 78%);
+  border-radius: 999px;
   opacity: 0;
   animation: header-connection-status-wave 2.4s ease-out infinite;
+  inset: 2px;
 }
 
 .header-connection-status__wave.wave-2 {
@@ -414,10 +414,10 @@ onUnmounted(() => {
 
 .header-connection-status__signal {
   position: absolute;
-  inset: 6px;
-  border-radius: 999px;
   background: var(--status-accent);
+  border-radius: 999px;
   animation: header-connection-status-breathe 1.8s ease-in-out infinite;
+  inset: 6px;
 }
 
 .header-connection-status__trigger-copy {
@@ -437,9 +437,9 @@ onUnmounted(() => {
 .header-connection-status__trigger-subtitle {
   max-width: 146px;
   overflow: hidden;
-  color: var(--el-text-color-secondary);
   font-size: 10px;
   line-height: 1.2;
+  color: var(--el-text-color-secondary);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -467,18 +467,18 @@ onUnmounted(() => {
 
 .header-connection-status__section {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
   padding: 10px;
+  background: color-mix(in srgb, var(--el-fill-color-light) 38%, var(--el-bg-color) 62%);
   border: 1px solid color-mix(in srgb, var(--app-content-border-color) 62%, transparent 38%);
   border-radius: 12px;
-  background: color-mix(in srgb, var(--el-fill-color-light) 38%, var(--el-bg-color) 62%);
+  flex-direction: column;
+  gap: 8px;
 }
 
 .header-connection-status__section-title {
-  color: var(--el-text-color-primary);
   font-size: 11px;
   font-weight: 700;
+  color: var(--el-text-color-primary);
 }
 
 .header-connection-status__metrics {
@@ -490,29 +490,29 @@ onUnmounted(() => {
 .header-connection-status__metric {
   display: flex;
   min-width: 0;
-  flex-direction: column;
-  gap: 6px;
   padding: 8px 8px 7px;
-  border-radius: 10px;
   background: color-mix(in srgb, var(--el-bg-color) 54%, var(--el-fill-color-light) 46%);
+  border-radius: 10px;
   box-shadow: inset 0 0 0 1px
     color-mix(in srgb, var(--app-content-border-color) 36%, transparent 64%);
+  flex-direction: column;
+  gap: 6px;
 }
 
 .header-connection-status__metric-head {
   display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--el-text-color-secondary);
   font-size: 10px;
   font-weight: 600;
+  color: var(--el-text-color-secondary);
+  align-items: center;
+  gap: 5px;
 }
 
 .header-connection-status__metric-value {
-  color: var(--el-text-color-primary);
   font-size: 16px;
   font-weight: 700;
   line-height: 1;
+  color: var(--el-text-color-primary);
 }
 
 .header-connection-status__metric-dot {
@@ -561,14 +561,14 @@ onUnmounted(() => {
 
 .header-connection-status__status-line {
   display: flex;
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--el-bg-color) 58%, var(--el-fill-color-light) 42%);
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--app-content-border-color) 34%, transparent 66%);
   align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--el-bg-color) 58%, var(--el-fill-color-light) 42%);
-  box-shadow: inset 0 0 0 1px
-    color-mix(in srgb, var(--app-content-border-color) 34%, transparent 66%);
 }
 
 .header-connection-status__status-main {
@@ -583,17 +583,17 @@ onUnmounted(() => {
 }
 
 .header-connection-status__status-title {
-  color: var(--el-text-color-primary);
   font-size: 12px;
   font-weight: 600;
   line-height: 1.2;
+  color: var(--el-text-color-primary);
 }
 
 .header-connection-status__status-meta {
   margin-top: 2px;
-  color: var(--el-text-color-secondary);
   font-size: 10px;
   line-height: 1.35;
+  color: var(--el-text-color-secondary);
 }
 
 .header-connection-status__runtime-list {
@@ -606,13 +606,13 @@ onUnmounted(() => {
 
 .header-connection-status__runtime-item {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
   padding: 7px 8px;
-  border-radius: 10px;
   background: color-mix(in srgb, var(--el-bg-color) 58%, var(--el-fill-color-light) 42%);
+  border-radius: 10px;
   box-shadow: inset 0 0 0 1px
     color-mix(in srgb, var(--app-content-border-color) 32%, transparent 68%);
+  flex-direction: column;
+  gap: 3px;
 }
 
 .header-connection-status__runtime-main {
@@ -624,77 +624,77 @@ onUnmounted(() => {
 
 .header-connection-status__runtime-source {
   display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
   min-width: 48px;
   padding: 2px 7px;
-  border-radius: 999px;
-  border: 1px solid transparent;
   font-size: 9px;
   font-weight: 700;
   white-space: nowrap;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
 }
 
 .header-connection-status__runtime-source.is-extension {
-  border-color: color-mix(in srgb, #67c23a 34%, transparent);
-  background: color-mix(in srgb, #67c23a 12%, transparent);
   color: #4e9b2f;
+  background: color-mix(in srgb, #67c23a 12%, transparent);
+  border-color: color-mix(in srgb, #67c23a 34%, transparent);
 }
 
 .header-connection-status__runtime-source.is-admin {
-  border-color: color-mix(in srgb, var(--el-color-primary) 30%, transparent);
-  background: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
   color: var(--el-color-primary);
+  background: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
+  border-color: color-mix(in srgb, var(--el-color-primary) 30%, transparent);
 }
 
 .header-connection-status__runtime-source.is-client {
-  border-color: color-mix(in srgb, #e6a23c 30%, transparent);
-  background: color-mix(in srgb, #e6a23c 12%, transparent);
   color: #c78922;
+  background: color-mix(in srgb, #e6a23c 12%, transparent);
+  border-color: color-mix(in srgb, #e6a23c 30%, transparent);
 }
 
 .header-connection-status__runtime-source.is-unknown {
-  border-color: color-mix(in srgb, var(--el-text-color-secondary) 26%, transparent);
-  background: color-mix(in srgb, var(--el-text-color-secondary) 10%, transparent);
   color: var(--el-text-color-secondary);
+  background: color-mix(in srgb, var(--el-text-color-secondary) 10%, transparent);
+  border-color: color-mix(in srgb, var(--el-text-color-secondary) 26%, transparent);
 }
 
 .header-connection-status__runtime-title {
   min-width: 0;
-  flex: 1;
-  color: var(--el-text-color-primary);
+  overflow: hidden;
   font-size: 11px;
   font-weight: 600;
-  overflow: hidden;
+  color: var(--el-text-color-primary);
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
 }
 
 .header-connection-status__runtime-meta {
-  color: var(--el-text-color-secondary);
   font-size: 9px;
   line-height: 1.3;
+  color: var(--el-text-color-secondary);
 }
 
 .header-connection-status__runtime-empty {
-  color: var(--el-text-color-secondary);
+  padding: 8px 0 1px;
   font-size: 11px;
   line-height: 1.5;
+  color: var(--el-text-color-secondary);
   text-align: center;
-  padding: 8px 0 1px;
-  border-radius: 10px;
   background: color-mix(in srgb, var(--el-fill-color-light) 56%, transparent 44%);
+  border-radius: 10px;
 }
 
 :global(.header-connection-status-popover.el-popover.el-popper) {
   max-width: min(92vw, 344px);
-  border: 1px solid color-mix(in srgb, var(--app-content-border-color) 76%, transparent 24%) !important;
-  background: color-mix(in srgb, var(--el-bg-color) 98%, transparent 2%) !important;
-  box-shadow:
-    0 10px 28px rgba(15, 23, 42, 0.12),
-    0 1px 0 rgba(255, 255, 255, 0.04) inset !important;
   padding: 10px !important;
+  background: color-mix(in srgb, var(--el-bg-color) 98%, transparent 2%) !important;
+  border: 1px solid color-mix(in srgb, var(--app-content-border-color) 76%, transparent 24%) !important;
+  box-shadow:
+    0 10px 28px rgb(15 23 42 / 12%),
+    0 1px 0 rgb(255 255 255 / 4%) inset !important;
   backdrop-filter: blur(10px);
 }
 
@@ -724,8 +724,8 @@ onUnmounted(() => {
 
 @keyframes header-connection-status-wave {
   0% {
-    transform: scale(0.7);
     opacity: 0;
+    transform: scale(0.7);
   }
 
   25% {
@@ -733,8 +733,8 @@ onUnmounted(() => {
   }
 
   100% {
-    transform: scale(1.8);
     opacity: 0;
+    transform: scale(1.8);
   }
 }
 
@@ -751,13 +751,13 @@ onUnmounted(() => {
   }
 }
 
-@media (max-width: 1380px) {
+@media (width <= 1380px) {
   .header-connection-status__trigger-subtitle {
     max-width: 126px;
   }
 }
 
-@media (max-width: 1180px) {
+@media (width <= 1180px) {
   .header-connection-status__trigger {
     padding: 0 3px;
     gap: 6px;
@@ -772,7 +772,7 @@ onUnmounted(() => {
   }
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .header-connection-status__status-line {
     align-items: stretch;
     flex-direction: column;
@@ -780,7 +780,7 @@ onUnmounted(() => {
   }
 }
 
-@media (max-width: 420px) {
+@media (width <= 420px) {
   .header-connection-status__trigger-copy {
     display: none;
   }

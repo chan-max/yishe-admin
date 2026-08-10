@@ -32,10 +32,10 @@ const title = computed(() => appStore.getTitle);
   display: flex;
   width: 100%;
   height: var(--logo-height) !important;
-  align-items: center;
   overflow: hidden;
-  cursor: pointer;
   text-decoration: none;
+  cursor: pointer;
+  align-items: center;
 }
 
 .logo-mark {
@@ -44,15 +44,15 @@ const title = computed(() => appStore.getTitle);
 }
 
 .logo-title {
-  flex: 1;
   min-width: 0;
   margin-left: var(--logo-title-gap);
   overflow: hidden;
-  color: var(--logo-title-text-color);
   font-size: var(--logo-title-font-size);
   font-weight: 600;
   letter-spacing: 0.02em;
+  color: var(--logo-title-text-color);
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
 }
 </style>

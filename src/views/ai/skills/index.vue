@@ -873,225 +873,9 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.skills-page {
-  gap: 10px;
-  padding: 8px 0 0;
 
-  :deep(.list-page-layout__main) {
-    gap: 10px;
-  }
 
-  :deep(.list-page-filter--flat) {
-    gap: 10px;
-    padding-bottom: 10px;
-  }
-
-  :deep(.list-page-table-panel__pagination--flat) {
-    padding-top: 10px;
-  }
-}
-
-.permission-controls,
-.file-content__header > div {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.skill-name {
-  color: var(--el-text-color-primary);
-  font-weight: 600;
-}
-
-.skill-description {
-  max-width: 420px;
-  margin-top: 4px;
-  overflow: hidden;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.tag-gap {
-  margin: 2px 4px 2px 0;
-}
-
-.muted {
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-}
-
-/* ── 拖拽样式 ── */
-:deep(.template-drag-ghost) {
-  opacity: 0.4;
-}
-
-:deep(.template-drag-chosen) {
-  background: var(--el-color-primary-light-9) !important;
-}
-
-.skill-editor-form {
-  display: flex;
-  height: 100%;
-  min-height: 0;
-  flex-direction: column;
-}
-
-.skill-editor-meta {
-  display: grid;
-  padding: 8px 16px 4px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-  column-gap: 12px;
-  row-gap: 0;
-  grid-template-columns: 1fr 1fr 1fr;
-}
-
-.skill-editor-meta :deep(.el-form-item) {
-  margin-bottom: 6px;
-}
-
-.skill-editor-meta :deep(.el-form-item__label) {
-  line-height: 20px;
-  padding-bottom: 1px;
-  font-size: 12px;
-}
-
-.skill-editor-meta :deep(.el-input__wrapper),
-.skill-editor-meta :deep(.el-textarea__inner) {
-  --el-input-height: 28px;
-}
-
-.skill-editor-meta__wide {
-  grid-column: span 3;
-}
-
-.file-editor {
-  display: grid;
-  min-height: 0;
-  flex: 1;
-  overflow: hidden;
-  grid-template-columns: 260px minmax(0, 1fr);
-}
-
-.file-list {
-  overflow: auto;
-  border-right: 1px solid var(--el-border-color);
-  background: var(--el-fill-color-extra-light);
-}
-
-.file-list__header,
-.file-content__header {
-  display: flex;
-  height: 48px;
-  box-sizing: border-box;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 12px;
-  border-bottom: 1px solid var(--el-border-color);
-  font-weight: 600;
-  line-height: 1;
-}
-
-.file-list__header span {
-  line-height: 48px;
-}
-
-.file-list__header .el-button {
-  margin: 0;
-}
-
-.file-row {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  min-height: 42px;
-  padding: 8px 10px;
-  border: 0;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-  background: transparent;
-  color: var(--el-text-color-regular);
-  cursor: pointer;
-  font: inherit;
-  text-align: left;
-  gap: 0;
-}
-
-.file-row:hover,
-.file-row.is-active {
-  background: var(--el-color-primary-light-9);
-  color: var(--el-color-primary);
-}
-
-.file-row__path {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  padding: 0 6px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.entry-icon {
-  color: var(--el-color-warning);
-}
-
-.file-content {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-}
-
-.file-content__header > span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.file-textarea {
-  flex: 1;
-}
-
-.file-textarea :deep(.el-textarea__inner) {
-  height: 100%;
-  min-height: 100% !important;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  line-height: 1.65;
-}
-
-:global(.skill-editor-dialog) {
-  display: flex;
-  flex-direction: column;
-  background: var(--el-bg-color);
-}
-
-:global(.skill-editor-dialog .el-dialog__header) {
-  margin: 0;
-  padding: 14px 20px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-}
-
-:global(.skill-editor-dialog .el-dialog__title) {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-:global(.skill-editor-dialog .el-dialog__body) {
-  min-height: 0;
-  flex: 1;
-  overflow: hidden;
-  padding: 0;
-}
-
-:global(.skill-editor-dialog .el-dialog__footer) {
-  padding: 10px 20px;
-  border-top: 1px solid var(--el-border-color-lighter);
-}
-
-@media (max-width: 900px) {
+@media (width <= 900px) {
   .skill-editor-meta {
     grid-template-columns: 1fr 1fr;
   }
@@ -1101,7 +885,7 @@ onUnmounted(() => {
   }
 }
 
-@media (max-width: 640px) {
+@media (width <= 640px) {
   :global(.skill-editor-dialog .el-dialog__body) {
     overflow: auto;
   }
@@ -1129,5 +913,222 @@ onUnmounted(() => {
   .file-textarea :deep(.el-textarea__inner) {
     min-height: 420px !important;
   }
+}
+
+.skills-page {
+  gap: 10px;
+  padding: 8px 0 0;
+
+  :deep(.list-page-layout__main) {
+    gap: 10px;
+  }
+
+  :deep(.list-page-filter--flat) {
+    gap: 10px;
+    padding-bottom: 10px;
+  }
+
+  :deep(.list-page-table-panel__pagination--flat) {
+    padding-top: 10px;
+  }
+}
+
+.permission-controls,
+.file-content__header > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.skill-name {
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.skill-description {
+  max-width: 420px;
+  margin-top: 4px;
+  overflow: hidden;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tag-gap {
+  margin: 2px 4px 2px 0;
+}
+
+.muted {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+/* ── 拖拽样式 ── */
+:deep(.template-drag-ghost) {
+  opacity: 0.4;
+}
+
+:deep(.template-drag-chosen) {
+  background: var(--el-color-primary-light-9) !important;
+}
+
+.skill-editor-form {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.skill-editor-meta {
+  display: grid;
+  padding: 8px 16px 4px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  gap: 0 12px;
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.skill-editor-meta :deep(.el-form-item) {
+  margin-bottom: 6px;
+}
+
+.skill-editor-meta :deep(.el-form-item__label) {
+  padding-bottom: 1px;
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.skill-editor-meta :deep(.el-input__wrapper),
+.skill-editor-meta :deep(.el-textarea__inner) {
+  --el-input-height: 28px;
+}
+
+.skill-editor-meta__wide {
+  grid-column: span 3;
+}
+
+.file-editor {
+  display: grid;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+  grid-template-columns: 260px minmax(0, 1fr);
+}
+
+.file-list {
+  overflow: auto;
+  background: var(--el-fill-color-extra-light);
+  border-right: 1px solid var(--el-border-color);
+}
+
+.file-list__header,
+.file-content__header {
+  display: flex;
+  height: 48px;
+  padding: 0 12px;
+  font-weight: 600;
+  line-height: 1;
+  border-bottom: 1px solid var(--el-border-color);
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.file-list__header span {
+  line-height: 48px;
+}
+
+.file-list__header .el-button {
+  margin: 0;
+}
+
+.file-row {
+  display: flex;
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 10px;
+  font: inherit;
+  color: var(--el-text-color-regular);
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  align-items: center;
+  gap: 0;
+}
+
+.file-row:hover,
+.file-row.is-active {
+  color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+}
+
+.file-row__path {
+  min-width: 0;
+  padding: 0 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.entry-icon {
+  color: var(--el-color-warning);
+}
+
+.file-content {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.file-content__header > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-textarea {
+  flex: 1;
+}
+
+.file-textarea :deep(.el-textarea__inner) {
+  height: 100%;
+  min-height: 100% !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  line-height: 1.65;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+:global(.skill-editor-dialog) {
+  display: flex;
+  flex-direction: column;
+  background: var(--el-bg-color);
+}
+
+:global(.skill-editor-dialog .el-dialog__header) {
+  padding: 14px 20px;
+  margin: 0;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+:global(.skill-editor-dialog .el-dialog__title) {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+:global(.skill-editor-dialog .el-dialog__body) {
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  flex: 1;
+}
+
+:global(.skill-editor-dialog .el-dialog__footer) {
+  padding: 10px 20px;
+  border-top: 1px solid var(--el-border-color-lighter);
 }
 </style>

@@ -61,30 +61,30 @@ const handleOpen = (key: string) => {
 .tool-launcher-trigger {
   display: inline-flex;
   min-height: calc(var(--top-header-action-size) - 6px);
-  align-items: center;
-  gap: 5px;
   padding: 0 10px;
-  border: 1px solid color-mix(in srgb, var(--left-menu-border-color) 88%, transparent 12%);
-  border-radius: 3px;
-  background: color-mix(in srgb, var(--top-header-bg-color) 74%, var(--top-header-hover-color) 26%);
   color: var(--top-header-text-color);
   cursor: pointer;
-  box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 36%, transparent 64%);
+  background: color-mix(in srgb, var(--top-header-bg-color) 74%, var(--top-header-hover-color) 26%);
+  border: 1px solid color-mix(in srgb, var(--left-menu-border-color) 88%, transparent 12%);
+  border-radius: 3px;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 36%, transparent 64%);
   transition:
     border-color 0.18s ease,
     background-color 0.18s ease,
     color 0.18s ease,
     box-shadow 0.18s ease;
+  align-items: center;
+  gap: 5px;
 
   &:hover {
-    border-color: color-mix(in srgb, var(--el-color-primary) 28%, var(--left-menu-border-color));
+    color: var(--el-color-primary);
     background: color-mix(
       in srgb,
       var(--top-header-hover-color) 80%,
       var(--top-header-bg-color) 20%
     );
-    color: var(--el-color-primary);
-    box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 50%, transparent 50%);
+    border-color: color-mix(in srgb, var(--el-color-primary) 28%, var(--left-menu-border-color));
+    box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 50%, transparent 50%);
   }
 }
 
@@ -126,11 +126,11 @@ const handleOpen = (key: string) => {
 }
 
 .tool-launcher-menu__tag {
-  flex-shrink: 0;
   padding: 1px 6px;
-  border-radius: 3px;
-  background: var(--el-fill-color-light);
   font-size: 11px;
   color: var(--el-text-color-secondary);
+  background: var(--el-fill-color-light);
+  border-radius: 3px;
+  flex-shrink: 0;
 }
 </style>

@@ -95,3 +95,9 @@ export const shareAiApiKeyToUsers = (id: number, data: { userIds: Array<number |
   }>({ url: `/system/ai-api-key/${id}/share`, data });
 
 export const deleteAiApiKey = (id: number) => request.delete({ url: `/system/ai-api-key/${id}` });
+
+// 一键应用到所有 AI 功能
+export const applyAiApiKeyToAllFeatures = (id: number) =>
+  request.post({
+    url: `/system/ai-api-key/${id}/apply-to-all`,
+  });

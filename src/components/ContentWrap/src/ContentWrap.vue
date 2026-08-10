@@ -45,76 +45,7 @@ defineProps({
 <style lang="scss" scoped>
 $prefix-cls: #{$namespace}-content-wrap;
 
-.#{$prefix-cls} {
-  overflow: hidden;
-  border: 1px solid var(--app-content-border-color);
-  border-radius: 16px;
-  background: var(--app-content-surface-color);
-  box-shadow: var(--app-content-shadow);
-
-  :deep(.el-card__header) {
-    padding: 16px 18px;
-    border-bottom: 1px solid var(--app-content-border-color);
-    background: var(--app-content-surface-muted-color);
-  }
-
-  :deep(.el-card__body) {
-    padding: 0;
-    overflow: hidden;
-  }
-}
-
-.#{$prefix-cls}.is-plain {
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-
-  :deep(.el-card__header) {
-    padding: 0 0 14px;
-    border-bottom: 0;
-    background: transparent;
-  }
-
-  :deep(.el-card__body) {
-    padding: 0;
-    overflow: hidden;
-    background: transparent;
-  }
-}
-
-.content-wrap__header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.content-wrap__title-wrap {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: 6px;
-}
-
-.content-wrap__title {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--el-text-color-primary);
-  letter-spacing: 0.01em;
-}
-
-.content-wrap__tooltip {
-  color: var(--el-text-color-secondary);
-}
-
-.content-wrap__header-extra {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  justify-content: flex-end;
-}
-
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .#{$prefix-cls} {
     border-radius: 14px;
 
@@ -134,7 +65,7 @@ $prefix-cls: #{$namespace}-content-wrap;
   }
 }
 
-@media (max-width: 480px) {
+@media (width <= 480px) {
   .#{$prefix-cls} {
     border-radius: 12px;
 
@@ -146,5 +77,90 @@ $prefix-cls: #{$namespace}-content-wrap;
   .content-wrap__title {
     font-size: 13px;
   }
+}
+
+.#{$prefix-cls} {
+  overflow: hidden;
+  background: var(--app-content-surface-color);
+  border: 1px solid var(--app-content-border-color);
+  border-radius: 16px;
+  box-shadow: var(--app-content-shadow);
+
+  :deep(.el-card__header) {
+    padding: 16px 18px;
+    background: var(--app-content-surface-muted-color);
+    border-bottom: 1px solid var(--app-content-border-color);
+  }
+
+  :deep(.el-card__body) {
+    padding: 0;
+    overflow: hidden;
+    min-height: 200px;
+  }
+
+  :deep(.el-loading-mask) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  :deep(.el-loading-spinner) {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+  }
+}
+
+.#{$prefix-cls}.is-plain {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+
+  :deep(.el-card__header) {
+    padding: 0 0 14px;
+    background: transparent;
+    border-bottom: 0;
+  }
+
+  :deep(.el-card__body) {
+    padding: 0;
+    overflow: hidden;
+    background: transparent;
+    min-height: 200px;
+  }
+}
+
+.content-wrap__header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.content-wrap__title-wrap {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.content-wrap__title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--el-text-color-primary);
+}
+
+.content-wrap__tooltip {
+  color: var(--el-text-color-secondary);
+}
+
+.content-wrap__header-extra {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  justify-content: flex-end;
 }
 </style>

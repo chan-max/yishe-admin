@@ -248,6 +248,8 @@ src/
 | `editor/engine/types.ts` | 客户端执行引擎类型定义 |
 | `editor/engine/templateEvaluator.ts` | `{{ node_id.variable }}` 模板变量求值器 |
 | `components/workflow/NodeLibraryPanel.vue` | 左侧能力工具箱（搜索/分类/拖拽/快速添加） |
+| `components/workflow/NodePanel.vue` | 左侧组件库面板 + 底部「全部节点」按钮 |
+| `components/workflow/NodePickerDialog.vue` | 全屏节点选择弹窗（搜索 + 分类 + 网格） |
 | `components/workflow/ConfigPanel.vue` | 右侧配置面板（动态 Schema 表单 + 输出变量预览） |
 | `components/workflow/nodes/StartNode.vue` | 开始/触发节点（手动/Cron 定时） |
 | `components/workflow/nodes/LLMNode.vue` | AI 大模型节点 |
@@ -320,7 +322,7 @@ else if 节点只需要调用外部 API / 处理本地文件:
 |------|------|------|
 | `engine/types.ts` | ✅ 已完成 | 执行上下文、日志与结果类型定义 |
 | `engine/templateEvaluator.ts` | ✅ 已完成 | `{{ node.var }}` 变量模板求值 |
-| `engine/clientRunner.ts` | 🔨 建设中 | 拓扑排序调度引擎（主入口） |
+| `engine/clientRunner.ts` | 📋 计划中 | 拓扑排序调度引擎（主入口） |
 | `engine/executors/llmExecutor.ts` | 📋 计划中 | 浏览器直连 AI 大模型 |
 | `engine/executors/codeExecutor.ts` | 📋 计划中 | WebWorker JS 代码执行 |
 | `engine/executors/canvasExecutor.ts` | 📋 计划中 | Canvas 图像本地合成 |
@@ -427,12 +429,12 @@ npm run lint:format
 
 ### 🔨 近期 (本月内)
 
-| 优先级 | 功能 | 描述 |
-|--------|------|------|
-| P0 | **工作流客户端执行引擎** | 完成 `clientRunner.ts` 拓扑调度器 + `llmExecutor` + `codeExecutor` |
-| P0 | **工作流运行状态可视化** | 节点画布实时高亮运行状态（运行中/成功/失败/耗时） |
-| P1 | **节点变量引用 UI 选择器** | 下游节点配置时，可点击选择上游节点的输出变量 (`{{ node_id.var }}`) |
-| P1 | **工作流运行日志面板** | 底部抽屉显示逐节点入参/出参/耗时/错误堆栈 |
+| 优先级 | 功能 | 描述 | 状态 |
+|--------|------|------|------|
+| P0 | **工作流客户端执行引擎** | 完成 `clientRunner.ts` 拓扑调度器 + `llmExecutor` + `codeExecutor` | 🔨 建设中 |
+| P0 | **工作流运行状态可视化** | 节点画布实时高亮运行状态（运行中/成功/失败/耗时） | 📋 计划中 |
+| P1 | **节点变量引用 UI 选择器** | 下游节点配置时，可点击选择上游节点的输出变量 (`{{ node_id.var }}`) | 📋 计划中 |
+| P1 | **工作流运行日志面板** | 底部抽屉显示逐节点入参/出参/耗时/错误堆栈 | 📋 计划中 |
 
 ### 📋 中期 (1-2 个月)
 

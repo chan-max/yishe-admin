@@ -192,19 +192,19 @@ const copyResult = async () => {
 
 <style scoped lang="scss">
 .translator {
-  container-type: size;
-  align-self: stretch;
   display: flex;
-  flex-direction: column;
-  gap: 6px;
   width: 100%;
   height: 100%;
-  min-height: 0;
   min-width: 0;
+  min-height: 0;
   padding: clamp(3px, 1.2cqw, 7px);
-  background: var(--app-content-surface-color);
-  color: var(--el-text-color-primary);
   font-size: 13px;
+  color: var(--el-text-color-primary);
+  background: var(--app-content-surface-color);
+  container-type: size;
+  align-self: stretch;
+  flex-direction: column;
+  gap: 6px;
 }
 
 button,
@@ -239,11 +239,11 @@ button {
   height: 32px;
   min-width: 0;
   padding: 0 9px;
+  color: var(--el-text-color-primary);
+  background: var(--ep-cover-soft-bg);
   border: 1px solid var(--app-content-border-color);
   border-radius: 5px;
   outline: none;
-  background: var(--ep-cover-soft-bg);
-  color: var(--el-text-color-primary);
 
   &:focus {
     border-color: var(--el-color-primary);
@@ -254,11 +254,11 @@ button {
 .text-btn,
 .translate-btn {
   display: inline-flex;
+  cursor: pointer;
+  border-radius: 5px;
   align-items: center;
   justify-content: center;
   gap: 5px;
-  border-radius: 5px;
-  cursor: pointer;
 
   &:disabled {
     cursor: not-allowed;
@@ -269,13 +269,13 @@ button {
 .icon-btn {
   width: 32px;
   height: 32px;
-  border: 1px solid var(--app-content-border-color);
-  background: var(--ep-cover-soft-bg);
   color: var(--el-text-color-secondary);
+  background: var(--ep-cover-soft-bg);
+  border: 1px solid var(--app-content-border-color);
 
   &:hover:not(:disabled) {
-    border-color: var(--el-color-primary);
     color: var(--el-color-primary);
+    border-color: var(--el-color-primary);
   }
 }
 
@@ -289,13 +289,13 @@ button {
 
 .text-box {
   display: flex;
-  flex-direction: column;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
+  background: var(--ep-cover-soft-bg);
   border: 1px solid var(--app-content-border-color);
   border-radius: 6px;
-  background: var(--ep-cover-soft-bg);
+  flex-direction: column;
 
   &.result {
     border-color: color-mix(in srgb, var(--el-color-primary) 45%, transparent);
@@ -303,16 +303,16 @@ button {
 }
 
 .textarea {
-  flex: 1;
   min-height: 0;
   padding: 9px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--el-text-color-primary);
+  background: transparent;
   border: 0;
   outline: none;
   resize: none;
-  background: transparent;
-  color: var(--el-text-color-primary);
-  font-size: 14px;
-  line-height: 1.55;
+  flex: 1;
 
   &::placeholder {
     color: var(--el-text-color-placeholder);
@@ -325,34 +325,34 @@ button {
 
 .box-footer {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
   min-height: 30px;
   padding: 4px 7px;
-  border-top: 1px solid var(--app-content-border-color);
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
+  border-top: 1px solid var(--app-content-border-color);
+  align-items: center;
+  justify-content: space-between;
 }
 
 .text-btn {
   height: 24px;
   padding: 0 7px;
-  background: transparent;
   color: var(--el-text-color-secondary);
+  background: transparent;
 
   &:hover:not(:disabled) {
-    background: var(--ep-cover-soft-bg-hover);
     color: var(--el-text-color-primary);
+    background: var(--ep-cover-soft-bg-hover);
   }
 }
 
 .translate-btn {
   height: 32px;
   padding: 0 16px;
-  background: var(--el-color-primary);
-  color: var(--el-color-white);
   font-weight: 600;
+  color: var(--el-color-white);
   white-space: nowrap;
+  background: var(--el-color-primary);
 
   &:hover:not(:disabled) {
     background: color-mix(in srgb, var(--el-color-primary) 88%, #000);

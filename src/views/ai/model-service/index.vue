@@ -315,21 +315,25 @@ onUnmounted(() => {
     align-items: center;
     gap: 8px;
   }
+
   .status-info {
     display: flex;
-    gap: 24px;
-    margin-top: 8px;
     padding-left: 18px;
+    margin-top: 8px;
+    gap: 24px;
   }
+
   .info-item {
     display: flex;
     align-items: center;
     gap: 6px;
   }
+
   .info-label {
-    color: var(--el-text-color-secondary);
     font-size: 13px;
+    color: var(--el-text-color-secondary);
   }
+
   .info-value {
     font-size: 13px;
   }
@@ -339,7 +343,9 @@ onUnmounted(() => {
   width: 8px;
   height: 8px;
   border-radius: 50%;
+
   &--online { background: var(--el-color-success); }
+
   &--offline { background: var(--el-color-danger); }
 }
 
@@ -348,16 +354,17 @@ onUnmounted(() => {
 }
 
 .status-text {
-  color: var(--el-text-color-secondary);
   font-size: 13px;
+  color: var(--el-text-color-secondary);
 }
 
 .status-time {
-  color: var(--el-text-color-placeholder);
   font-size: 12px;
+  color: var(--el-text-color-placeholder);
 }
 
 .text-success { color: var(--el-color-success); }
+
 .text-muted { color: var(--el-text-color-placeholder); }
 
 /* 区块 */
@@ -371,20 +378,24 @@ onUnmounted(() => {
 }
 
 .section-title {
+  margin-bottom: 8px;
   font-size: 14px;
   font-weight: 500;
-  margin-bottom: 8px;
 }
 
 /* 方法标签 */
 .method-tag {
   display: inline-block;
   padding: 1px 6px;
-  font-size: 12px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+
   &--get { color: var(--el-color-success); }
+
   &--post { color: var(--el-color-primary); }
+
   &--put { color: var(--el-color-warning); }
+
   &--delete { color: var(--el-color-danger); }
 }
 
@@ -409,14 +420,14 @@ onUnmounted(() => {
 }
 
 .result-label {
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
   margin-right: 4px;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
 }
 
 .vector-preview {
-  margin-top: 12px;
   padding: 12px;
+  margin-top: 12px;
   background: var(--el-fill-color-lighter);
 }
 
@@ -425,13 +436,13 @@ onUnmounted(() => {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 12px;
   line-height: 1.6;
-  word-break: break-all;
   color: var(--el-text-color-regular);
+  word-break: break-all;
 }
 
 .test-error {
   margin-top: 8px;
-  color: var(--el-color-danger);
   font-size: 13px;
+  color: var(--el-color-danger);
 }
 </style>

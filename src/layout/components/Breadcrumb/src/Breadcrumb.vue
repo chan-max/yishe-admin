@@ -81,8 +81,8 @@ $prefix-cls: #{$elNamespace}-breadcrumb;
 .#{$prefix-cls} {
   min-width: 0;
   overflow: hidden;
-  white-space: nowrap;
   font-size: var(--top-header-breadcrumb-font-size);
+  white-space: nowrap;
 
   &__label {
     display: inline-flex;
@@ -95,8 +95,8 @@ $prefix-cls: #{$elNamespace}-breadcrumb;
 
   :deep(.#{$prefix-cls}__separator) {
     margin: 0 5px;
-    color: var(--top-header-breadcrumb-muted-color);
     font-size: var(--top-header-breadcrumb-separator-size);
+    color: var(--top-header-breadcrumb-muted-color);
   }
 
   :deep(.#{$prefix-cls}__item) {
@@ -106,10 +106,10 @@ $prefix-cls: #{$elNamespace}-breadcrumb;
     .#{$prefix-cls}__inner {
       display: flex;
       min-width: 0;
-      align-items: center;
-      color: var(--top-header-breadcrumb-color);
       font-size: var(--top-header-breadcrumb-font-size);
       font-weight: 400;
+      color: var(--top-header-breadcrumb-color);
+      align-items: center;
 
       &:hover {
         color: var(--top-header-text-color);
@@ -130,10 +130,10 @@ $prefix-cls: #{$elNamespace}-breadcrumb;
   :deep(.#{$prefix-cls}__item):last-child {
     .#{$prefix-cls}__inner {
       display: flex;
-      align-items: center;
-      color: var(--top-header-breadcrumb-active-color);
       font-size: var(--top-header-breadcrumb-font-size);
       font-weight: 500;
+      color: var(--top-header-breadcrumb-active-color);
+      align-items: center;
 
       &:hover {
         color: var(--top-header-breadcrumb-active-color);

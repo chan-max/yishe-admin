@@ -655,13 +655,13 @@ onMounted(() => {
 
 .vendor-product-dialog-main {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
   width: 100%;
+  height: 100%;
   min-width: 0;
   min-height: 0;
-  height: 100%;
   overflow: auto;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .vendor-product-form {
@@ -726,7 +726,7 @@ onMounted(() => {
   color: var(--el-text-color-secondary);
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .vendor-product-dialog-layout {
     padding: 0 8px 12px;
   }

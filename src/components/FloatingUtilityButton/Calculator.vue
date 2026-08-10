@@ -205,9 +205,9 @@ onUnmounted(() => {
 
     .display-input {
       :deep(.el-input__inner) {
-        text-align: right;
         font-size: 24px;
         font-weight: bold;
+        text-align: right;
         background-color: var(--ep-cover-soft-bg);
       }
     }
@@ -235,8 +235,8 @@ onUnmounted(() => {
       }
 
       &.operator {
-        background-color: var(--el-color-primary);
         color: var(--el-color-white);
+        background-color: var(--el-color-primary);
         border-color: var(--el-color-primary);
 
         &:hover {
@@ -246,8 +246,8 @@ onUnmounted(() => {
       }
 
       &.equals {
-        background-color: var(--el-color-primary);
         color: var(--el-color-white);
+        background-color: var(--el-color-primary);
         border-color: var(--el-color-primary);
 
         &:hover {

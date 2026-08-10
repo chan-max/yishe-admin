@@ -124,22 +124,22 @@ const handleCurrentChange = (val) => {
 .yishe-pagination {
   display: flex;
   width: 100%;
+  min-width: 0;
+  margin: 15px 0;
   flex-direction: column;
   align-items: flex-end;
   gap: 8px;
-  margin: 15px 0;
-  min-width: 0;
 }
 
 .yishe-pagination__summary {
   display: none;
   width: 100%;
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--el-text-color-secondary);
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-  line-height: 1.3;
 }
 
 .yishe-pagination__control {
@@ -153,7 +153,7 @@ const handleCurrentChange = (val) => {
   max-width: 100%;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .yishe-pagination {
     align-items: stretch;
   }
@@ -163,7 +163,7 @@ const handleCurrentChange = (val) => {
   }
 }
 
-@media (max-width: 640px) {
+@media (width <= 640px) {
   .yishe-pagination {
     margin: 10px 0;
     gap: 6px;
@@ -192,7 +192,7 @@ const handleCurrentChange = (val) => {
   }
 }
 
-@media (max-width: 420px) {
+@media (width <= 420px) {
   :deep(.el-pagination) {
     flex-wrap: nowrap;
     overflow: hidden;
@@ -201,9 +201,9 @@ const handleCurrentChange = (val) => {
   :deep(.el-pagination .btn-prev),
   :deep(.el-pagination .btn-next),
   :deep(.el-pagination .el-pager li) {
-    min-width: 26px;
     width: 26px;
     height: 26px;
+    min-width: 26px;
     padding: 0;
   }
 

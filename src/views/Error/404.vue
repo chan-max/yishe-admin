@@ -34,11 +34,11 @@ const { push, back } = router
 .error-404-card {
   width: min(100%, 480px);
   padding: 48px 32px 40px;
+  text-align: center;
+  background: var(--el-bg-color, #fff);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 12px;
-  background: var(--el-bg-color, #fff);
-  text-align: center;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 12px rgb(0 0 0 / 4%);
 }
 
 .error-404-code {
@@ -60,8 +60,8 @@ const { push, back } = router
 }
 
 .error-404-desc {
-  margin: 8px auto 0;
   max-width: 320px;
+  margin: 8px auto 0;
   font-size: 14px;
   line-height: 1.7;
   color: var(--el-text-color-secondary);
@@ -74,7 +74,7 @@ const { push, back } = router
   margin-top: 32px;
 }
 
-@media (max-width: 640px) {
+@media (width <= 640px) {
   .error-404-page {
     padding: 20px 16px;
   }

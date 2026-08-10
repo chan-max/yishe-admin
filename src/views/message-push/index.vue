@@ -4,6 +4,19 @@
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
           <div class="list-page-filter__row message-push-toolbar">
+            <div class="message-push-toolbar__filter">
+              <el-select
+                v-model="platformFilter"
+                placeholder="全部平台"
+                clearable
+                size="small"
+                style="width: 140px"
+                @change="handlePlatformFilterChange"
+              >
+                <el-option label="飞书" value="feishu" />
+                <el-option label="企业微信" value="wecom" />
+              </el-select>
+            </div>
             <div class="list-page-search-form__actions message-push-toolbar__actions">
               <el-button
                 size="small"
@@ -30,15 +43,20 @@
         >
           <div class="list-page-table-panel__body">
             <div class="common-table">
-              <vxe-grid v-bind="gridOptions" :data="list" :loading="loading">
+              <vxe-grid v-bind="gridOptions" :data="filteredList" :loading="loading">
                 <template #nameSlot="{ row }">
                   <span>{{ row.name }}</span>
                 </template>
 
                 <template #platformSlot="{ row }">
-                  <el-tag size="small">
-                    {{ platformLabelMap[row.platform] || row.platform }}
-                  </el-tag>
+                  <div class="platform-cell">
+                    <img
+                      :src="row.platform === 'feishu' ? feishuIcon : wecomIcon"
+                      class="platform-icon"
+                      :alt="row.platform"
+                    />
+                    <span class="platform-name">{{ platformLabelMap[row.platform] || row.platform }}</span>
+                  </div>
                 </template>
 
                 <template #enabledSlot="{ row }">
@@ -107,6 +125,7 @@ import {
   type MessagePushConfig,
   type MessagePushPlatform,
 } from "@/api/messagePush";
+import { feishuIcon, wecomIcon } from "@/assets/icons/apps";
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from "@/common/table";
 import { syncMessagePushMenuState } from "@/services/messagePushState";
 import MessagePushDialog from "./components/MessagePushDialog.vue";
@@ -116,6 +135,7 @@ import MessagePushTestDialog from "./components/MessagePushTestDialog.vue";
 const loading = ref(false);
 const deleteLoading = ref(false);
 const list = ref<MessagePushConfig[]>([]);
+const platformFilter = ref<MessagePushPlatform | "">("");
 const dialogRef = ref();
 const settingPanelRef = ref();
 const testDialogRef = ref();
@@ -128,7 +148,6 @@ const platformLabelMap: Record<MessagePushPlatform, string> = {
 const gridOptions = ref({
   ...commonGridOptions,
   columns: [
-    { title: "ID", field: "id", width: 80 },
     { title: "渠道名称", field: "name", minWidth: 200, slots: { default: "nameSlot" } },
     {
       title: "创建人",
@@ -157,6 +176,15 @@ const maskWebhook = (url?: string) => {
   if (!value) return "-";
   if (value.length <= 36) return value;
   return `${value.slice(0, 20)}...${value.slice(-12)}`;
+};
+
+const filteredList = computed(() => {
+  if (!platformFilter.value) return list.value;
+  return list.value.filter((item) => item.platform === platformFilter.value);
+});
+
+const handlePlatformFilterChange = () => {
+  // 筛选变化时自动通过 computed 更新
 };
 
 const getList = async () => {
@@ -247,11 +275,35 @@ onMounted(() => {
   word-break: break-all;
 }
 
+.platform-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.platform-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.platform-name {
+  font-size: 12px;
+  color: var(--el-text-color-primary);
+}
+
 .message-push-toolbar {
   display: flex;
-  align-items: center;
-  justify-content: flex-end;
+  width: 100%;
   min-height: 32px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.message-push-toolbar__filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .message-push-toolbar__actions {

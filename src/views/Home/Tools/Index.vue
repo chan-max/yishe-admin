@@ -122,11 +122,11 @@ function handleDownload(downloadUrl: string) {
 <style scoped lang="scss">
 .tools-page {
   display: flex;
+  width: 100%;
+  padding: 4px 0 16px;
+  box-sizing: border-box;
   flex-direction: column;
   gap: 18px;
-  padding: 4px 0 16px;
-  width: 100%;
-  box-sizing: border-box;
 }
 
 .tools-header {
@@ -138,8 +138,8 @@ function handleDownload(downloadUrl: string) {
   margin: 0;
   font-size: 22px;
   font-weight: 700;
-  letter-spacing: -0.02em;
   line-height: 1.2;
+  letter-spacing: -0.02em;
   color: var(--el-text-color-primary);
 }
 
@@ -167,6 +167,7 @@ function handleDownload(downloadUrl: string) {
 .tools-grid {
   display: grid;
   width: 100%;
+
   /* auto-fit 收起空列，1fr 均分剩余宽度，行内卡片拉满整行 */
   gap: clamp(12px, 1.4vw, 18px);
   grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 360px));
@@ -175,20 +176,20 @@ function handleDownload(downloadUrl: string) {
 
 .tools-card {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
   padding: 16px 17px;
-  border-radius: 16px;
-  border: 1px solid color-mix(in srgb, var(--el-border-color) 52%, transparent 48%);
   background: color-mix(in srgb, var(--el-bg-color) 97%, transparent 3%);
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+  border: 1px solid color-mix(in srgb, var(--el-border-color) 52%, transparent 48%);
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgb(15 23 42 / 5%);
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease;
+  flex-direction: column;
+  gap: 10px;
 
   &:hover:not(.is-disabled) {
     border-color: color-mix(in srgb, var(--el-color-primary) 20%, var(--el-border-color) 80%);
-    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.07);
+    box-shadow: 0 10px 28px rgb(15 23 42 / 7%);
   }
 
   &.is-disabled {
@@ -206,14 +207,14 @@ function handleDownload(downloadUrl: string) {
 
 .tools-card__icon {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
   width: 36px;
   height: 36px;
-  border-radius: 11px;
-  background: color-mix(in srgb, var(--el-fill-color-light) 82%, transparent 18%);
-  color: var(--el-text-color-primary);
   font-size: 17px;
+  color: var(--el-text-color-primary);
+  background: color-mix(in srgb, var(--el-fill-color-light) 82%, transparent 18%);
+  border-radius: 11px;
+  align-items: center;
+  justify-content: center;
 }
 
 .tools-card__headline {
@@ -226,42 +227,42 @@ function handleDownload(downloadUrl: string) {
 .tools-card__title {
   font-size: 15px;
   font-weight: 700;
+  line-height: 1.3;
   letter-spacing: -0.01em;
   color: var(--el-text-color-primary);
-  line-height: 1.3;
 }
 
 .tools-card__platform {
   font-size: 12px;
   font-weight: 600;
-  color: var(--el-color-primary);
   line-height: 1.25;
+  color: var(--el-color-primary);
 }
 
 .tools-card__desc {
+  display: -webkit-box;
+  min-height: 3.1em;
   margin: 0;
+  overflow: hidden;
   font-size: 13px;
   line-height: 1.65;
   color: var(--el-text-color-secondary);
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
-  overflow: hidden;
-  min-height: 3.1em;
+  -webkit-line-clamp: 3;
 }
 
 .tools-card__actions {
-  margin-top: auto;
-  padding-top: 4px;
   display: flex;
+  padding-top: 4px;
+  margin-top: auto;
   flex-wrap: wrap;
   gap: 10px;
 }
 
 .tools-card__actions :deep(.el-button) {
-  font-weight: 600;
   min-height: 38px;
   padding: 0 18px;
+  font-weight: 600;
   border-radius: 12px;
 }
 </style>

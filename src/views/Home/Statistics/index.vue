@@ -412,8 +412,8 @@ onMounted(() => {
 .module-statistics__top-dot {
   width: 3px;
   height: 3px;
-  border-radius: 50%;
   background: var(--el-text-color-placeholder);
+  border-radius: 50%;
 }
 
 .module-statistics__summary {
@@ -441,8 +441,8 @@ onMounted(() => {
 
 .module-statistics__summary-value {
   font-size: 13px;
-  font-weight: 600;
   font-style: normal;
+  font-weight: 600;
   color: var(--el-text-color-primary);
   font-variant-numeric: tabular-nums;
 
@@ -482,8 +482,8 @@ onMounted(() => {
   border-bottom: 1px solid var(--el-border-color-extra-light);
 
   &:last-child {
-    border-bottom: none;
     padding-bottom: 0;
+    border-bottom: none;
   }
 }
 
@@ -569,8 +569,8 @@ onMounted(() => {
 }
 
 .module-statistics__metrics {
-  border-collapse: collapse;
   font-size: 11px;
+  border-collapse: collapse;
 
   th,
   td {
@@ -587,9 +587,9 @@ onMounted(() => {
 
   tbody th {
     padding-left: 0;
-    text-align: left;
     font-weight: 500;
     color: var(--el-text-color-secondary);
+    text-align: left;
   }
 
   tbody td {

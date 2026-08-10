@@ -445,11 +445,11 @@ onMounted(() => {
 .design-inspiration-content {
   display: -webkit-box;
   overflow: hidden;
-  color: var(--el-text-color-secondary);
   line-height: 1.5;
+  color: var(--el-text-color-secondary);
   word-break: break-all;
-  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .design-inspiration-tags {
@@ -458,11 +458,11 @@ onMounted(() => {
   gap: 4px;
 }
 
-@media (max-width: 767px) {
+@media (width <= 767px) {
   .design-inspiration-dialog :deep(.el-dialog) {
     width: calc(100vw - 16px) !important;
-    margin: 8px auto !important;
     max-height: calc(100vh - 16px);
+    margin: 8px auto !important;
   }
 
   .design-inspiration-dialog :deep(.el-dialog__header) {

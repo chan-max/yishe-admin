@@ -217,9 +217,9 @@ initFormData();
 .step-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
-  background: var(--el-border-color);
   cursor: pointer;
+  background: var(--el-border-color);
+  border-radius: 50%;
   transition: background 0.2s, transform 0.2s;
 }
 

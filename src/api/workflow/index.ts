@@ -1,9 +1,25 @@
 import request from '@/config/axios'
 
 export interface WorkflowCanvas {
-  nodes: any[]
-  edges: any[]
+  nodes: WorkflowNode[]
+  edges: WorkflowEdge[]
   viewport?: { x: number; y: number; zoom: number }
+}
+
+export interface WorkflowNode {
+  id: string
+  type: string
+  position: { x: number; y: number }
+  data: Record<string, any>
+}
+
+export interface WorkflowEdge {
+  id: string
+  source: string
+  target: string
+  sourceHandle?: string
+  targetHandle?: string
+  type?: string
 }
 
 export interface WorkflowItem {
@@ -11,10 +27,25 @@ export interface WorkflowItem {
   name: string
   description?: string
   status: 'draft' | 'published' | 'archived'
+  isEnabled: boolean
+  isRunning: boolean
   userId: number
   canvas?: WorkflowCanvas
   createTime: string
   updateTime: string
+  /** 触发器列表（定时/手动/webhook） */
+  triggers?: WorkflowTrigger[]
+}
+
+export interface WorkflowTrigger {
+  id: string
+  type: 'manual' | 'cron' | 'webhook'
+  enabled: boolean
+  config?: {
+    expression?: string
+    name?: string
+  }
+  nextRunTime?: string
 }
 
 export interface WorkflowPageParams {
@@ -42,12 +73,17 @@ export const updateWorkflowApi = (data: {
   name?: string
   description?: string
   status?: string
+  isEnabled?: boolean
   canvas?: WorkflowCanvas
 }) => request.post({ url: '/workflow/update', data })
 
 // 删除工作流
 export const deleteWorkflowApi = (ids: string | string[]) =>
   request.post({ url: '/workflow/delete', data: { ids } })
+
+// 切换工作流启用状态
+export const toggleEnabledApi = (id: string) =>
+  request.put({ url: `/workflow/${id}/toggle-enabled` })
 
 // 🚀 手动运行工作流
 export const runWorkflowApi = (id: string, input?: Record<string, any>) =>
@@ -73,3 +109,10 @@ export const getWorkflowExecutionsApi = (
   data?: { currentPage?: number; pageSize?: number }
 ) => request.post({ url: `/workflow/${id}/executions`, data })
 
+// 删除单条执行记录
+export const deleteWorkflowExecutionApi = (executionId: string) =>
+  request.delete({ url: `/workflow/executions/${executionId}` })
+
+// 清空工作流执行记录
+export const clearWorkflowExecutionsApi = (workflowId: string) =>
+  request.delete({ url: `/workflow/${workflowId}/executions` })

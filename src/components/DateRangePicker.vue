@@ -194,8 +194,8 @@ watch(() => props.modelValue, (newVal) => {
 
 .enhanced-time-range-picker :deep(.el-date-editor) {
   width: 100%;
-  min-width: 0;
   max-width: 100%;
+  min-width: 0;
 }
 
 .enhanced-time-range-picker :deep(.el-date-editor.el-input__wrapper) {

@@ -56,10 +56,10 @@ export default {
 }
 
 .table-form-item-label {
-  font-weight: 500;
-  font-size: 12px;
-  text-wrap: nowrap;
   display: inline-block; /* 确保宽度生效 */
+  font-size: 12px;
+  font-weight: 500;
+  text-wrap: nowrap;
 }
 
 .form-item-content {

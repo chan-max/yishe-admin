@@ -2124,36 +2124,36 @@ onUnmounted(() => {
 }
 
 .toolkit-page-head__title {
-  color: var(--el-text-color-primary);
   font-size: 16px;
   font-weight: 700;
   line-height: 1.4;
+  color: var(--el-text-color-primary);
 }
 
 .toolkit-platform-hub__title {
-  color: var(--el-text-color-primary);
   font-size: 18px;
   font-weight: 700;
   line-height: 1.3;
+  color: var(--el-text-color-primary);
 }
 
 .toolkit-page-head__desc,
 .toolkit-platform-hub__desc {
   margin-top: 4px;
-  color: var(--el-text-color-secondary);
   font-size: 13px;
   line-height: 1.7;
+  color: var(--el-text-color-secondary);
 }
 
 .toolkit-platform-hub {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
   padding: 14px;
-  border: 1px solid var(--el-border-color-light);
   background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-light);
   border-radius: 16px;
   box-shadow: var(--el-box-shadow-light);
+  flex-direction: column;
+  gap: 10px;
 }
 
 .toolkit-platform-grid {
@@ -2164,40 +2164,40 @@ onUnmounted(() => {
 
 .toolkit-platform-card {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  flex: 0 0 190px;
   width: 190px;
   min-height: 96px;
   padding: 12px;
   text-align: left;
-  border: 1px solid var(--el-border-color-light);
-  background: var(--el-fill-color-blank);
-  border-radius: 14px;
   cursor: pointer;
+  background: var(--el-fill-color-blank);
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 14px;
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
     transform 0.2s ease,
     background-color 0.2s ease;
+  flex-direction: column;
+  gap: 6px;
+  flex: 0 0 190px;
 }
 
 .toolkit-platform-card:hover {
   border-color: var(--el-color-primary-light-7);
-  box-shadow: var(--el-box-shadow-light);
   transform: translateY(-1px);
+  box-shadow: var(--el-box-shadow-light);
 }
 
 .toolkit-platform-card__title {
-  color: var(--el-text-color-primary);
   font-size: 15px;
   font-weight: 700;
+  color: var(--el-text-color-primary);
 }
 
 .toolkit-platform-card__meta {
-  color: var(--el-text-color-secondary);
   font-size: 11px;
   line-height: 1.5;
+  color: var(--el-text-color-secondary);
 }
 
 .toolkit-platform-card__footer {
@@ -2209,9 +2209,9 @@ onUnmounted(() => {
 }
 
 .toolkit-platform-card__enter {
-  color: var(--el-color-primary);
   font-size: 12px;
   font-weight: 600;
+  color: var(--el-color-primary);
 }
 
 .toolkit-hero {
@@ -2227,8 +2227,8 @@ onUnmounted(() => {
 
 .toolkit-workspace-shell.is-locked .toolkit-workspace-shell__body {
   pointer-events: none;
-  user-select: none;
   filter: saturate(0.72);
+  user-select: none;
 }
 
 .toolkit-workspace-shell__body {
@@ -2249,49 +2249,49 @@ onUnmounted(() => {
 
 .toolkit-workspace-shell__mask-card {
   display: flex;
+  max-width: 420px;
+  padding: 16px 18px;
+  text-align: center;
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color);
+  border-radius: 14px;
+  box-shadow: var(--el-box-shadow-light);
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  max-width: 420px;
-  padding: 16px 18px;
-  border: 1px solid var(--el-border-color);
-  border-radius: 14px;
-  background: var(--el-bg-color);
-  box-shadow: var(--el-box-shadow-light);
-  text-align: center;
 }
 
 .toolkit-workspace-shell__mask-title {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  color: var(--el-text-color-primary);
   font-size: 15px;
   font-weight: 700;
   line-height: 1.5;
+  color: var(--el-text-color-primary);
   text-align: center;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .toolkit-workspace-shell__mask-icon {
-  color: var(--el-color-warning);
   font-size: 16px;
+  color: var(--el-color-warning);
 }
 
 .toolkit-workspace-shell__mask-desc {
   margin-top: 6px;
-  text-align: center;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 1.7;
+  color: var(--el-text-color-secondary);
+  text-align: center;
 }
 
 .toolkit-hero__card {
-  border: 1px solid var(--el-border-color-light);
+  padding: 10px 12px;
   background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-light);
   border-radius: 18px;
   box-shadow: var(--el-box-shadow-light);
-  padding: 10px 12px;
 }
 
 .toolkit-hero__card--selectors {
@@ -2300,13 +2300,12 @@ onUnmounted(() => {
 }
 
 .toolkit-hero__label {
-  color: var(--el-text-color-regular);
+  display: flex;
+  padding-right: 12px;
   font-size: 11px;
   font-weight: 600;
-
+  color: var(--el-text-color-regular);
   text-wrap: nowrap;
-  padding-right: 12px;
-  display: flex;
   align-items: center;
 }
 
@@ -2323,10 +2322,10 @@ onUnmounted(() => {
 }
 
 .toolkit-hero__context-control {
-  flex: 0 1 420px;
+  display: flex;
   max-width: 460px;
   min-width: 0;
-  display: flex;
+  flex: 0 1 420px;
   flex-wrap: wrap;
   gap: 12px;
 }
@@ -2353,27 +2352,27 @@ onUnmounted(() => {
 }
 
 .toolkit-hero__context {
-  min-width: 0;
   width: 100%;
+  min-width: 0;
 }
 
 .toolkit-option {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
   width: 100%;
   height: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
 }
 
 .toolkit-option__text,
 .toolkit-option__separator {
   display: inline-flex;
-  align-items: center;
-  color: var(--el-text-color-primary);
   font-size: 12px;
   font-weight: 500;
   line-height: 1;
+  color: var(--el-text-color-primary);
+  align-items: center;
 }
 
 .toolkit-option__text {
@@ -2408,23 +2407,23 @@ onUnmounted(() => {
 
 .toolkit-center__summary-item span {
   display: inline;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 .toolkit-center__summary-item strong {
   display: inline;
   margin-top: 0;
-  color: var(--el-text-color-primary);
   font-size: 13px;
   font-weight: 700;
+  color: var(--el-text-color-primary);
   word-break: break-word;
 }
 
 .toolkit-panel {
   padding: 0;
-  border: 0;
   background: transparent;
+  border: 0;
   box-shadow: none;
 }
 
@@ -2443,17 +2442,17 @@ onUnmounted(() => {
 
 .toolkit-panel__title,
 .toolkit-session-card__title {
-  color: var(--el-text-color-primary);
   font-size: 16px;
   font-weight: 700;
+  color: var(--el-text-color-primary);
 }
 
 .toolkit-panel__desc,
 .toolkit-session-card__desc {
   margin-top: 4px;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 1.7;
+  color: var(--el-text-color-secondary);
 }
 
 .toolkit-panel__actions {
@@ -2462,11 +2461,11 @@ onUnmounted(() => {
 }
 
 .toolkit-form-panel {
-  margin-top: 8px;
   padding: 0 0 8px;
-  border-radius: 0;
+  margin-top: 8px;
   background: transparent;
   border: 0;
+  border-radius: 0;
 }
 
 .toolkit-form-panel--acquire {
@@ -2483,16 +2482,16 @@ onUnmounted(() => {
 }
 
 .toolkit-form-panel__title {
-  color: var(--el-text-color-primary);
   font-size: 16px;
   font-weight: 700;
+  color: var(--el-text-color-primary);
 }
 
 .toolkit-form-panel__desc {
   margin-top: 2px;
-  color: var(--el-text-color-secondary);
   font-size: 11px;
   line-height: 1.5;
+  color: var(--el-text-color-secondary);
 }
 
 .toolkit-form {
@@ -2507,20 +2506,20 @@ onUnmounted(() => {
 
 .toolkit-runner {
   display: flex;
+  padding-top: 10px;
+  margin-top: 10px;
+  border-top: 1px solid var(--el-border-color-lighter);
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--el-border-color-lighter);
 }
 
 .toolkit-form :deep(.small-feature-field) {
   min-height: 100%;
-  gap: 6px;
   padding: 9px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--el-border-color-lighter);
   background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  gap: 6px;
 }
 
 .toolkit-form :deep(.small-feature-field.is-error) {
@@ -2549,24 +2548,24 @@ onUnmounted(() => {
 }
 
 .toolkit-form :deep(.small-feature-field .el-switch__label) {
-  white-space: normal;
-  line-height: 1.45;
   font-size: 11px;
+  line-height: 1.45;
+  white-space: normal;
 }
 
 .toolkit-session-card,
 .toolkit-userinfo-panel {
-  margin-top: 14px;
   padding-top: 14px;
+  margin-top: 14px;
   border-top: 1px solid var(--el-border-color-lighter);
 }
 
 .toolkit-session-overview {
   margin-top: 12px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 12px;
   overflow: hidden;
   background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
 }
 
 .toolkit-session-overview__head,
@@ -2579,10 +2578,10 @@ onUnmounted(() => {
 }
 
 .toolkit-session-overview__head {
-  background: var(--el-fill-color-light);
-  color: var(--el-text-color-secondary);
   font-size: 11px;
   font-weight: 600;
+  color: var(--el-text-color-secondary);
+  background: var(--el-fill-color-light);
 }
 
 .toolkit-session-overview__row {
@@ -2594,12 +2593,12 @@ onUnmounted(() => {
 }
 
 .toolkit-session-overview__cell {
-  min-width: 0;
   display: flex;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--el-text-color-primary);
   align-items: center;
   gap: 6px;
-  color: var(--el-text-color-primary);
-  font-size: 12px;
 }
 
 .toolkit-session-overview__cell--env {
@@ -2612,10 +2611,10 @@ onUnmounted(() => {
 }
 
 .toolkit-session-overview__primary {
-  color: var(--el-text-color-primary);
   font-size: 12px;
   font-weight: 600;
   line-height: 1.4;
+  color: var(--el-text-color-primary);
   word-break: break-word;
 }
 
@@ -2633,32 +2632,32 @@ onUnmounted(() => {
 }
 
 .toolkit-session-region__time {
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 .toolkit-session-region__json-box {
   padding: 12px;
-  border-radius: 12px;
-  border: 1px solid var(--el-border-color-lighter);
   background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
 }
 
 .toolkit-result-json,
 .toolkit-session-region__json-box pre {
-  margin: 0;
+  max-height: 280px;
   padding: 12px;
-  border-radius: 12px;
-  border: 1px solid var(--el-border-color-lighter);
-  background: var(--el-fill-color-light);
-  color: var(--el-text-color-primary);
+  margin: 0;
+  overflow: auto;
+  font-family:
+    SFMono-Regular, "JetBrains Mono", "Fira Code", Consolas, "Liberation Mono", Menlo, monospace;
   font-size: 12px;
   line-height: 1.65;
-  overflow: auto;
-  max-height: 280px;
-  font-family:
-    "SFMono-Regular", "JetBrains Mono", "Fira Code", Consolas, "Liberation Mono", Menlo, monospace;
+  color: var(--el-text-color-primary);
   word-break: break-word;
+  background: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
 }
 
 .toolkit-result-json {
@@ -2679,14 +2678,14 @@ onUnmounted(() => {
 }
 
 .toolkit-userinfo-panel__title {
-  color: var(--el-text-color-primary);
   font-size: 14px;
   font-weight: 700;
+  color: var(--el-text-color-primary);
 }
 
 .toolkit-userinfo-panel__desc {
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 .toolkit-userinfo-panel__desc {
@@ -2703,18 +2702,18 @@ onUnmounted(() => {
 
 .toolkit-mall-item {
   display: flex;
+  padding: 10px 12px;
+  background: var(--el-fill-color-blank);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 12px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 12px;
-  background: var(--el-fill-color-blank);
 }
 
 .toolkit-mall-item.is-current {
-  border-color: var(--el-color-success-light-5);
   background: var(--el-color-success-light-9);
+  border-color: var(--el-color-success-light-5);
 }
 
 .toolkit-mall-item__main {
@@ -2722,15 +2721,15 @@ onUnmounted(() => {
 }
 
 .toolkit-mall-item__name {
-  color: var(--el-text-color-primary);
   font-size: 13px;
   font-weight: 700;
+  color: var(--el-text-color-primary);
 }
 
 .toolkit-mall-item__meta {
   margin-top: 2px;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 .toolkit-mall-item__actions {
@@ -2742,23 +2741,23 @@ onUnmounted(() => {
 
 .toolkit-meta-chip {
   padding: 10px 12px;
-  border-radius: 12px;
   background: var(--el-fill-color-blank);
   border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
 }
 
 .toolkit-meta-chip span {
   display: block;
-  color: var(--el-text-color-secondary);
   font-size: 11px;
+  color: var(--el-text-color-secondary);
 }
 
 .toolkit-meta-chip strong {
   display: block;
   margin-top: 2px;
-  color: var(--el-text-color-primary);
   font-size: 13px;
   font-weight: 700;
+  color: var(--el-text-color-primary);
   word-break: break-word;
 }
 
@@ -2782,15 +2781,15 @@ onUnmounted(() => {
 }
 
 .toolkit-session-section__title {
-  color: var(--el-text-color-primary);
   font-size: 14px;
   font-weight: 700;
+  color: var(--el-text-color-primary);
 }
 
 .toolkit-session-section__meta {
-  color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 1.6;
+  color: var(--el-text-color-secondary);
 }
 
 .toolkit-session-dialog__regions {
@@ -2801,21 +2800,21 @@ onUnmounted(() => {
 
 .toolkit-session-region {
   padding: 14px;
-  border-radius: 16px;
   background: var(--el-fill-color-lighter);
   border: 1px solid var(--el-border-color-light);
+  border-radius: 16px;
 }
 
 .toolkit-session-region__title {
-  color: var(--el-text-color-primary);
   font-size: 14px;
   font-weight: 700;
+  color: var(--el-text-color-primary);
 }
 
 .toolkit-session-region__meta {
   margin-top: 4px;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 .toolkit-session-region__json-grid {
@@ -2827,9 +2826,9 @@ onUnmounted(() => {
 
 .toolkit-session-region__json-title {
   margin-bottom: 8px;
-  color: var(--el-text-color-primary);
   font-size: 12px;
   font-weight: 700;
+  color: var(--el-text-color-primary);
 }
 
 :deep(.toolkit-center-dialog .el-dialog__header) {
@@ -2840,7 +2839,7 @@ onUnmounted(() => {
   padding: 4px 20px 20px;
 }
 
-@media (max-width: 1180px) {
+@media (width <= 1180px) {
   .toolkit-form--acquire,
   .toolkit-session-region__json-grid {
     grid-template-columns: minmax(0, 1fr);
@@ -2851,7 +2850,7 @@ onUnmounted(() => {
   }
 }
 
-@media (max-width: 760px) {
+@media (width <= 760px) {
   .toolkit-page-head,
   .toolkit-platform-hub__head,
   .toolkit-panel__head,

@@ -146,25 +146,25 @@ const resetLoadingStyle = () => {
 <style scoped lang="scss">
 .personalization-trigger {
   display: inline-flex;
-  align-items: center;
-  gap: 4px;
   height: 22px;
   padding: 0 7px;
-  border: 1px solid var(--top-tool-border-color);
-  border-radius: 7px;
-  background: var(--top-header-hover-color);
   color: var(--top-header-text-color);
   cursor: pointer;
+  background: var(--top-header-hover-color);
+  border: 1px solid var(--top-tool-border-color);
+  border-radius: 7px;
   transition:
     background 0.18s ease,
     border-color 0.18s ease,
     color 0.18s ease;
+  align-items: center;
+  gap: 4px;
 
   &:hover,
   &:focus-visible {
-    outline: none;
-    border-color: color-mix(in srgb, var(--top-header-text-color) 14%, transparent 86%);
     color: var(--el-text-color-primary);
+    border-color: color-mix(in srgb, var(--top-header-text-color) 14%, transparent 86%);
+    outline: none;
   }
 }
 
@@ -179,7 +179,7 @@ const resetLoadingStyle = () => {
   height: 7px;
   flex: 0 0 auto;
   border-radius: 50%;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 12%);
 }
 
 .personalization-body {
@@ -209,11 +209,11 @@ const resetLoadingStyle = () => {
 
 .personalization-reset {
   padding: 0;
-  border: none;
-  background: transparent;
   font-size: 12px;
   color: var(--el-color-primary);
   cursor: pointer;
+  background: transparent;
+  border: none;
 
   &:hover {
     opacity: 0.8;
@@ -238,10 +238,10 @@ const resetLoadingStyle = () => {
   width: 26px;
   height: 26px;
   padding: 0;
+  cursor: pointer;
   border: none;
   border-radius: 8px;
-  cursor: pointer;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 10%);
   transition:
     transform 0.15s ease,
     box-shadow 0.15s ease;
@@ -252,7 +252,7 @@ const resetLoadingStyle = () => {
 
   &.active {
     box-shadow:
-      inset 0 0 0 1px rgba(0, 0, 0, 0.1),
+      inset 0 0 0 1px rgb(0 0 0 / 10%),
       0 0 0 2px var(--el-color-primary);
   }
 }
@@ -266,7 +266,7 @@ const resetLoadingStyle = () => {
   font-size: 12px;
   font-weight: 700;
   color: #fff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 35%);
 }
 
 .personalization-color-picker {
@@ -282,18 +282,18 @@ const resetLoadingStyle = () => {
 
 .personalization-loader {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
   padding: 10px 4px 8px;
+  cursor: pointer;
+  background: var(--app-content-surface-color);
   border: 1px solid var(--app-content-border-color);
   border-radius: 10px;
-  background: var(--app-content-surface-color);
-  cursor: pointer;
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease,
     transform 0.15s ease;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
 
   &:hover {
     border-color: color-mix(in srgb, var(--el-color-primary) 40%, transparent);
@@ -330,87 +330,87 @@ const resetLoadingStyle = () => {
 }
 
 .personalization-loader__preview[data-loader="ring"] .loader-preview::before {
-  content: "";
   display: block;
   width: 26px;
   height: 26px;
   margin: 0 auto;
-  border-radius: 50%;
   background:
     radial-gradient(farthest-side, var(--el-color-primary) 94%, transparent) top/5px 5px no-repeat,
     conic-gradient(transparent 30%, var(--el-color-primary));
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 0);
-  mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 0);
+  border-radius: 50%;
+  content: "";
   animation: yishe-loading-rotate 1s infinite linear;
+  mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 0);
+  mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 0);
 }
 
 .personalization-loader__preview[data-loader="dual-ring"] .loader-preview::before {
-  content: "";
   display: block;
   width: 26px;
   height: 26px;
   margin: 0 auto;
-  border-radius: 50%;
   border: 2px solid color-mix(in srgb, var(--el-color-primary) 20%, transparent);
   border-top-color: var(--el-color-primary);
+  border-radius: 50%;
+  content: "";
   animation: yishe-loading-rotate 0.9s infinite linear;
 }
 
 .personalization-loader__preview[data-loader="dual-ring"] .loader-preview::after {
-  content: "";
   position: absolute;
   top: 6px;
   left: 50%;
   width: 14px;
   height: 14px;
   margin-left: -7px;
-  border-radius: 50%;
   border: 2px solid color-mix(in srgb, var(--el-color-primary) 16%, transparent);
   border-bottom-color: var(--el-color-primary);
+  border-radius: 50%;
+  content: "";
   animation: yishe-loading-rotate-rev 1.3s infinite linear;
 }
 
 .personalization-loader__preview[data-loader="ripple"] .loader-preview::before {
-  content: "";
   display: block;
   width: 26px;
   height: 26px;
   margin: 0 auto;
-  border-radius: 50%;
   background: radial-gradient(circle, var(--el-color-primary) 0 3px, transparent 4px);
+  border-radius: 50%;
+  content: "";
 }
 
 .personalization-loader__preview[data-loader="ripple"] .loader-preview::after {
-  content: "";
   position: absolute;
   top: 0;
   left: 50%;
   width: 26px;
   height: 26px;
   margin-left: -13px;
-  border-radius: 50%;
   border: 2px solid var(--el-color-primary);
+  border-radius: 50%;
+  content: "";
   animation: yishe-loading-ripple 1.6s infinite ease-out;
 }
 
 .personalization-loader__preview[data-loader="dots"] .loader-preview::before {
-  content: "";
   display: block;
   width: 30px;
   height: 26px;
   margin: 0 auto;
+  content: "";
 }
 
 .personalization-loader__preview[data-loader="dots"] .loader-preview::after {
-  content: "";
   position: absolute;
   top: 10px;
   left: 50%;
   width: 6px;
   height: 6px;
   margin-left: -3px;
-  border-radius: 50%;
   background: var(--el-color-primary);
+  border-radius: 50%;
+  content: "";
   box-shadow:
     -9px 0 0 0 var(--el-color-primary),
     9px 0 0 0 var(--el-color-primary);
@@ -418,23 +418,23 @@ const resetLoadingStyle = () => {
 }
 
 .personalization-loader__preview[data-loader="bars"] .loader-preview::before {
-  content: "";
   display: block;
   width: 24px;
   height: 26px;
   margin: 0 auto;
+  content: "";
 }
 
 .personalization-loader__preview[data-loader="bars"] .loader-preview::after {
-  content: "";
   position: absolute;
   top: 6px;
   left: 50%;
   width: 4px;
   height: 14px;
   margin-left: -8px;
-  border-radius: 999px;
   background: var(--el-color-primary);
+  border-radius: 999px;
+  content: "";
   box-shadow:
     6px 0 0 -1px var(--el-color-primary),
     12px 0 0 -1px var(--el-color-primary);

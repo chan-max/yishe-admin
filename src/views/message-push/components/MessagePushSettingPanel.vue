@@ -214,15 +214,15 @@ defineExpose({ open });
 .notify-row__label {
   font-size: 13px;
   font-weight: 600;
-  color: var(--el-text-color-primary);
   line-height: 1.4;
+  color: var(--el-text-color-primary);
 }
 
 .notify-row__scene {
   margin-top: 2px;
   font-size: 11px;
-  color: var(--el-text-color-secondary);
   line-height: 1.4;
+  color: var(--el-text-color-secondary);
 }
 
 .notify-row__actions {
@@ -244,8 +244,8 @@ defineExpose({ open });
 }
 
 .notify-setting__empty {
-  margin-top: 12px;
   padding: 10px 12px;
+  margin-top: 12px;
   font-size: 12px;
   color: var(--el-text-color-secondary);
   text-align: center;

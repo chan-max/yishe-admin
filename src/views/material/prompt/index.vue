@@ -723,6 +723,16 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+
+
+@media (width <= 600px) {
+  .prompt-content,
+  .prompt-description,
+  .prompt-folder {
+    max-width: 100%;
+  }
+}
+
 :deep(.prompt-page) {
   gap: 10px;
   padding: 8px 0 0;
@@ -742,29 +752,29 @@ onMounted(async () => {
 }
 
 .prompt-title {
-  font-weight: 500;
-  color: var(--el-text-color-primary);
   max-width: 220px;
   overflow: hidden;
+  font-weight: 500;
+  color: var(--el-text-color-primary);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .prompt-content {
+  display: flex;
   width: 100%;
   max-width: none;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  gap: 6px;
   min-width: 0;
   padding: 4px 8px;
-  border-radius: 8px;
-  background: var(--el-fill-color-light);
-  line-height: 1.5;
   font-size: 12px;
+  line-height: 1.5;
   color: var(--el-text-color-regular);
   cursor: pointer;
+  background: var(--el-fill-color-light);
+  border-radius: 8px;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 6px;
 }
 
 .prompt-content:hover {
@@ -794,14 +804,14 @@ onMounted(async () => {
   max-width: min(720px, 80vw);
   max-height: 50vh;
   overflow: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
   color: var(--el-text-color-primary) !important;
+  word-break: break-word;
+  white-space: pre-wrap;
   background: var(--el-bg-color-overlay) !important;
   border: 1px solid var(--el-border-color-light) !important;
   box-shadow: var(--el-box-shadow-light);
-  transition: none !important;
   animation: none !important;
+  transition: none !important;
 }
 
 :global(.prompt-content-tooltip.el-popper.is-light .el-popper__arrow::before) {
@@ -823,8 +833,8 @@ onMounted(async () => {
 }
 
 .tags-container {
-  max-width: 220px;
   display: flex;
+  max-width: 220px;
   flex-wrap: wrap;
   align-items: center;
 }
@@ -842,9 +852,9 @@ onMounted(async () => {
 
 .prompt-editor-dialog :deep(.el-dialog__body) {
   height: calc(100vh - 104px);
+  padding: 18px 22px;
   overflow: auto;
   box-sizing: border-box;
-  padding: 18px 22px;
 }
 
 .prompt-editor-form {
@@ -858,26 +868,18 @@ onMounted(async () => {
 
 /* 拖拽样式 */
 :deep(.material-dnd-grid .vxe-table--body tbody tr.is-dragging-row) {
-  opacity: 0.5;
   background: var(--el-color-primary-light-9);
+  opacity: 0.5;
 }
 
 :deep(.material-drag-ghost) {
-  opacity: 0.8;
   background: var(--el-bg-color-overlay);
-  box-shadow: var(--el-box-shadow-light);
+  opacity: 0.8;
   transform: rotate(2deg);
+  box-shadow: var(--el-box-shadow-light);
 }
 
 :deep(.material-drag-chosen) {
   background: var(--el-color-primary-light-9);
-}
-
-@media (max-width: 600px) {
-  .prompt-content,
-  .prompt-description,
-  .prompt-folder {
-    max-width: 100%;
-  }
 }
 </style>

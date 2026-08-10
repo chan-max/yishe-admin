@@ -302,20 +302,35 @@ function handleImageError(event: Event) {
 </script>
 
 <style scoped>
+
+
+/* 响应式设计 */
+@media (width <= 768px) {
+  .preview-audio-shell {
+    padding: 20px 16px;
+  }
+
+  .preview-audio {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
 :deep(.file-preview-dialog.el-dialog) {
   --file-preview-footer-height: 54px;
+
+  display: flex;
   height: 100vh;
   margin: 0;
-  display: flex;
-  flex-direction: column;
   overflow: hidden;
+  flex-direction: column;
 }
 
 :deep(.file-preview-dialog .el-dialog__header) {
-  flex: 0 0 auto;
-  margin: 0;
   padding: 14px 48px 12px 18px;
+  margin: 0;
   border-bottom: 1px solid var(--el-border-color-lighter);
+  flex: 0 0 auto;
 }
 
 :deep(.file-preview-dialog .el-dialog__title) {
@@ -341,13 +356,13 @@ function handleImageError(event: Event) {
 
 .file-preview-container {
   display: flex;
-  justify-content: center;
-  align-items: center;
   width: 100%;
   height: 100%;
   min-height: 0;
-  background: var(--el-fill-color-blank);
   overflow: hidden;
+  background: var(--el-fill-color-blank);
+  justify-content: center;
+  align-items: center;
 }
 
 .file-preview-container--video,
@@ -373,20 +388,20 @@ function handleImageError(event: Event) {
 .preview-pdf {
   width: 100%;
   height: 100%;
-  border: 0;
   background: #fff;
+  border: 0;
 }
 
 .preview-audio-shell {
+  display: flex;
   width: min(720px, 100%);
   padding: 28px 24px;
-  display: flex;
+  color: var(--el-text-color-secondary);
+  background: linear-gradient(180deg, var(--el-color-primary-light-9) 0%, var(--el-fill-color-blank) 100%);
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 14px;
-  color: var(--el-text-color-secondary);
-  background: linear-gradient(180deg, var(--el-color-primary-light-9) 0%, var(--el-fill-color-blank) 100%);
 }
 
 .preview-audio-meta {
@@ -409,21 +424,21 @@ function handleImageError(event: Event) {
 }
 
 .preview-audio {
-  width: min(560px, 100%);
-  min-width: 280px;
-  height: 42px;
   display: block;
+  width: min(560px, 100%);
+  height: 42px;
+  min-width: 280px;
 }
 
 .file-preview-empty {
+  display: flex;
   min-height: 0;
   padding: 24px;
-  display: flex;
+  text-align: center;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  text-align: center;
 }
 
 .file-preview-empty__title {
@@ -447,21 +462,21 @@ function handleImageError(event: Event) {
 
 /* 文本文件预览样式 */
 .preview-text-shell {
+  display: flex;
   width: 100%;
   height: 100%;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
-  background: #1e1e1e;
   overflow: hidden;
+  background: #1e1e1e;
+  flex-direction: column;
 }
 
 .preview-excel-shell {
   width: 100%;
   height: 100%;
   min-height: 0;
-  overflow: auto;
   padding: 12px;
+  overflow: auto;
 }
 
 .preview-text-header {
@@ -483,7 +498,7 @@ function handleImageError(event: Event) {
 .preview-text-filename {
   font-size: 14px;
   font-weight: 600;
-  color: #ffffff;
+  color: #fff;
 }
 
 .preview-text-actions {
@@ -492,32 +507,32 @@ function handleImageError(event: Event) {
 }
 
 .preview-text-content {
-  flex: 1;
   min-height: 0;
-  overflow: auto;
   padding: 16px;
+  overflow: auto;
   background: #1e1e1e;
+  flex: 1;
 }
 
 .preview-text-loading {
-  flex: 1;
-  min-height: 0;
   display: flex;
+  min-height: 0;
+  color: #d4d4d4;
+  background: #1e1e1e;
+  flex: 1;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  color: #d4d4d4;
-  background: #1e1e1e;
 }
 
 .preview-text-content pre {
   margin: 0;
-  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-family: Consolas, Monaco, 'Courier New', monospace;
   font-size: 13px;
   line-height: 1.6;
   color: #d4d4d4;
-  white-space: pre-wrap;
   word-wrap: break-word;
+  white-space: pre-wrap;
   tab-size: 2;
 }
 
@@ -542,17 +557,5 @@ function handleImageError(event: Event) {
 
 .preview-text-content::-webkit-scrollbar-thumb:hover {
   background: #5e5e5e;
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .preview-audio-shell {
-    padding: 20px 16px;
-  }
-
-  .preview-audio {
-    min-width: 0;
-    width: 100%;
-  }
 }
 </style>

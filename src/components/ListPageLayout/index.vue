@@ -72,9 +72,9 @@ const hasSidebar = computed(() => Boolean(slots.sidebar));
 
 .list-page-layout__sidebar {
   width: var(--list-page-sidebar-width);
-  flex: 0 0 var(--list-page-sidebar-width);
-  min-height: 0;
   min-width: 0;
+  min-height: 0;
+  flex: 0 0 var(--list-page-sidebar-width);
 }
 
 .list-page-layout__main {
@@ -96,7 +96,7 @@ const hasSidebar = computed(() => Boolean(slots.sidebar));
   justify-content: flex-end;
 }
 
-@media (max-width: 1024px) {
+@media (width <= 1024px) {
   .list-page-layout {
     padding: 16px;
     gap: 16px;
@@ -112,7 +112,7 @@ const hasSidebar = computed(() => Boolean(slots.sidebar));
   }
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .list-page-layout {
     padding: 12px;
     gap: 12px;
@@ -127,7 +127,7 @@ const hasSidebar = computed(() => Boolean(slots.sidebar));
   }
 }
 
-@media (max-width: 480px) {
+@media (width <= 480px) {
   .list-page-layout {
     padding: 10px;
     gap: 10px;

@@ -313,6 +313,50 @@ defineExpose({ scrollToBottom, focusInput: () => textareaRef.value?.focus() });
 </template>
 
 <style scoped>
+
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: .4;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes bounce {
+
+  0%,
+  60%,
+  100% {
+    opacity: .4;
+    transform: translateY(0);
+  }
+
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+/* ── Responsive ── */
+@media (width <= 767px) {
+  .msg__row {
+    padding: 4px 12px;
+  }
+
+  .chat__input {
+    padding: 6px 12px 10px;
+  }
+
+  .msg__bubble--user {
+    max-width: 85%;
+  }
+}
+
 .chat {
   display: flex;
   flex-direction: column;
@@ -326,8 +370,8 @@ defineExpose({ scrollToBottom, focusInput: () => textareaRef.value?.focus() });
 }
 
 .chat__messages {
-  min-height: 100%;
   display: flex;
+  min-height: 100%;
   padding-top: 24px;
   flex-direction: column;
 }
@@ -365,18 +409,18 @@ defineExpose({ scrollToBottom, focusInput: () => textareaRef.value?.focus() });
 .chat__prompt {
   height: 30px;
   padding: 0 12px;
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+  cursor: pointer;
+  background: transparent;
   border: 1px solid var(--el-border-color);
   border-radius: 15px;
-  background: transparent;
-  color: var(--el-text-color-regular);
-  font-size: 12px;
-  cursor: pointer;
   transition: all .12s;
 }
 
 .chat__prompt:hover {
-  border-color: var(--el-color-primary);
   color: var(--el-color-primary);
+  border-color: var(--el-color-primary);
 }
 
 /* ── Message ── */
@@ -401,15 +445,15 @@ defineExpose({ scrollToBottom, focusInput: () => textareaRef.value?.focus() });
 
 /* ── Icon ── */
 .msg__icon {
-  flex-shrink: 0;
+  display: flex;
   width: 28px;
   height: 28px;
+  color: #fff;
+  background: var(--el-fill-color-dark, #333);
   border-radius: 6px;
-  display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  background: var(--el-fill-color-dark, #333);
-  color: #fff;
 }
 
 /* ── Content ── */
@@ -423,8 +467,8 @@ defineExpose({ scrollToBottom, focusInput: () => textareaRef.value?.focus() });
 }
 
 .msg__pending {
-  color: var(--el-text-color-placeholder);
   font-size: 13px;
+  color: var(--el-text-color-placeholder);
 }
 
 /* ── User Bubble ── */
@@ -432,25 +476,25 @@ defineExpose({ scrollToBottom, focusInput: () => textareaRef.value?.focus() });
   display: inline-block;
   max-width: 70%;
   padding: 8px 14px;
-  border-radius: 18px 18px 4px 18px;
-  background: var(--el-color-primary);
-  color: #fff;
   font-size: 14px;
   line-height: 1.5;
+  color: #fff;
   word-break: break-word;
   white-space: pre-wrap;
+  background: var(--el-color-primary);
+  border-radius: 18px 18px 4px;
 }
 
 /* ── Tool ── */
 .msg__tool {
   display: inline-flex;
-  align-items: center;
-  gap: 6px;
   padding: 4px 10px;
-  border-radius: 6px;
-  background: var(--el-fill-color-light);
   font-size: 12px;
   line-height: 1.4;
+  background: var(--el-fill-color-light);
+  border-radius: 6px;
+  align-items: center;
+  gap: 6px;
 }
 
 .msg__tool.is-running {
@@ -494,18 +538,6 @@ defineExpose({ scrollToBottom, focusInput: () => textareaRef.value?.focus() });
   color: var(--el-text-color-secondary);
 }
 
-@keyframes pulse {
-
-  0%,
-  100% {
-    opacity: .4;
-  }
-
-  50% {
-    opacity: 1;
-  }
-}
-
 /* ── Typing ── */
 .msg__typing {
   display: flex;
@@ -517,8 +549,8 @@ defineExpose({ scrollToBottom, focusInput: () => textareaRef.value?.focus() });
 .dot {
   width: 5px;
   height: 5px;
-  border-radius: 50%;
   background: var(--el-text-color-placeholder);
+  border-radius: 50%;
   animation: bounce 1.4s infinite;
 }
 
@@ -530,25 +562,10 @@ defineExpose({ scrollToBottom, focusInput: () => textareaRef.value?.focus() });
   animation-delay: .4s;
 }
 
-@keyframes bounce {
-
-  0%,
-  60%,
-  100% {
-    transform: translateY(0);
-    opacity: .4;
-  }
-
-  30% {
-    transform: translateY(-3px);
-    opacity: 1;
-  }
-}
-
 .msg__typing-text {
+  margin-left: 2px;
   font-size: 12px;
   color: var(--el-text-color-secondary);
-  margin-left: 2px;
 }
 
 /* ── Interaction ── */
@@ -565,13 +582,13 @@ defineExpose({ scrollToBottom, focusInput: () => textareaRef.value?.focus() });
 .chat__input-box {
   position: relative;
   display: flex;
-  align-items: flex-end;
-  gap: 8px;
   padding: 6px 8px 6px 14px;
+  background: var(--el-bg-color);
   border: 1px solid var(--el-border-color);
   border-radius: 22px;
-  background: var(--el-bg-color);
   transition: border-color .15s, box-shadow .15s;
+  align-items: flex-end;
+  gap: 8px;
 }
 
 .chat__input-box:focus-within {
@@ -580,18 +597,18 @@ defineExpose({ scrollToBottom, focusInput: () => textareaRef.value?.focus() });
 }
 
 .chat__textarea {
-  flex: 1;
-  min-height: 22px;
   max-height: 160px;
+  min-height: 22px;
   padding: 4px 0;
-  border: none;
-  outline: none;
-  background: transparent;
-  color: var(--el-text-color-primary);
+  font-family: inherit;
   font-size: 14px;
   line-height: 1.5;
+  color: var(--el-text-color-primary);
+  background: transparent;
+  border: none;
+  outline: none;
   resize: none;
-  font-family: inherit;
+  flex: 1;
 }
 
 .chat__textarea::placeholder {
@@ -599,17 +616,17 @@ defineExpose({ scrollToBottom, focusInput: () => textareaRef.value?.focus() });
 }
 
 .chat__send {
-  flex-shrink: 0;
   height: 28px;
   padding: 0 12px;
-  border: none;
-  border-radius: 14px;
-  background: var(--el-color-primary);
-  color: #fff;
-  cursor: pointer;
   font-size: 12px;
   font-weight: 500;
+  color: #fff;
+  cursor: pointer;
+  background: var(--el-color-primary);
+  border: none;
+  border-radius: 14px;
   transition: opacity .15s;
+  flex-shrink: 0;
 }
 
 .chat__send:hover:not(:disabled) {
@@ -617,29 +634,14 @@ defineExpose({ scrollToBottom, focusInput: () => textareaRef.value?.focus() });
 }
 
 .chat__send:disabled {
-  opacity: .3;
   cursor: not-allowed;
+  opacity: .3;
 }
 
 .chat__hint {
   margin: 6px 0 0;
-  text-align: center;
   font-size: 11px;
   color: var(--el-text-color-placeholder);
-}
-
-/* ── Responsive ── */
-@media (max-width: 767px) {
-  .msg__row {
-    padding: 4px 12px;
-  }
-
-  .chat__input {
-    padding: 6px 12px 10px;
-  }
-
-  .msg__bubble--user {
-    max-width: 85%;
-  }
+  text-align: center;
 }
 </style>

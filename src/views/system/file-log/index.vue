@@ -1024,9 +1024,9 @@ onMounted(async () => {
 
   :deep(.el-form-item__label) {
     margin-bottom: 4px;
-    color: var(--el-text-color-secondary);
     font-size: 12px;
     line-height: 18px;
+    color: var(--el-text-color-secondary);
   }
 
   :deep(.el-select),
@@ -1038,20 +1038,20 @@ onMounted(async () => {
 .file-log-sidebar {
   display: flex;
   height: min(640px, calc(100vh - 250px));
-  min-height: 360px;
   max-height: min(640px, calc(100vh - 250px));
-  flex-direction: column;
+  min-height: 360px;
   overflow: hidden;
+  flex-direction: column;
 }
 
 .file-log-sidebar__header {
   display: flex;
+  padding: 10px 12px 8px;
+  background: var(--el-fill-color-blank);
+  border-bottom: 1px solid var(--el-border-color-lighter);
   gap: 10px;
   align-items: flex-start;
   justify-content: space-between;
-  padding: 10px 12px 8px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-  background: var(--el-fill-color-blank);
 }
 
 .file-log-sidebar__title {
@@ -1067,18 +1067,18 @@ onMounted(async () => {
   max-width: 230px;
   margin-top: 4px;
   overflow: hidden;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 18px;
+  color: var(--el-text-color-secondary);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .file-log-sidebar__count {
-  flex: 0 0 auto;
   padding-top: 1px;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
+  flex: 0 0 auto;
 }
 
 .file-log-tree-scrollbar {
@@ -1088,6 +1088,7 @@ onMounted(async () => {
 
   :deep(.el-tree) {
     --el-tree-node-hover-bg-color: var(--el-fill-color-light);
+
     background: transparent;
   }
 
@@ -1097,19 +1098,19 @@ onMounted(async () => {
   }
 
   :deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content) {
-    background: var(--el-color-primary-light-9);
     color: var(--el-color-primary);
+    background: var(--el-color-primary-light-9);
   }
 }
 
 .file-log-tree-node {
   display: flex;
-  min-width: 0;
   width: 100%;
+  min-width: 0;
+  font-size: 13px;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  font-size: 13px;
 }
 
 .file-log-tree-node__main {
@@ -1120,9 +1121,9 @@ onMounted(async () => {
 }
 
 .file-log-tree-node__icon {
-  flex: 0 0 auto;
-  color: var(--el-text-color-secondary);
   font-size: 15px;
+  color: var(--el-text-color-secondary);
+  flex: 0 0 auto;
 }
 
 .file-log-tree-node.is-file .file-log-tree-node__icon {
@@ -1137,9 +1138,9 @@ onMounted(async () => {
 }
 
 .file-log-tree-node__meta {
-  flex: 0 0 auto;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
+  flex: 0 0 auto;
 }
 
 .file-log-table-panel {
@@ -1150,12 +1151,12 @@ onMounted(async () => {
 
 .file-log-table-toolbar {
   display: flex;
+  padding: 9px 12px;
+  background: var(--el-fill-color-blank);
+  border-bottom: 1px solid var(--el-border-color-lighter);
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 9px 12px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-  background: var(--el-fill-color-blank);
 }
 
 .file-log-current {
@@ -1166,25 +1167,25 @@ onMounted(async () => {
 }
 
 .file-log-current__label {
-  flex: 0 0 auto;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
+  flex: 0 0 auto;
 }
 
 .file-log-current__value {
   min-width: 0;
   overflow: hidden;
-  color: var(--el-text-color-primary);
   font-size: 13px;
   font-weight: 600;
+  color: var(--el-text-color-primary);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .file-log-current__stats {
-  flex: 0 0 auto;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
+  flex: 0 0 auto;
 }
 
 .file-log-table {
@@ -1218,8 +1219,8 @@ onMounted(async () => {
 
 .file-log-type-cell span:last-child {
   overflow: hidden;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1228,9 +1229,9 @@ onMounted(async () => {
   display: -webkit-box;
   overflow: hidden;
   line-height: 20px;
+  word-break: break-all;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  word-break: break-all;
 }
 
 .file-log-user-option {
@@ -1241,8 +1242,8 @@ onMounted(async () => {
 }
 
 .file-log-user-option__id {
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 .file-log-detail-header {
@@ -1253,16 +1254,16 @@ onMounted(async () => {
 }
 
 .file-log-detail-header__title {
-  color: var(--el-text-color-primary);
   font-size: 15px;
   font-weight: 600;
   line-height: 22px;
+  color: var(--el-text-color-primary);
 }
 
 .file-log-detail-header__sub {
   margin-top: 2px;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 .file-log-detail-meta {
@@ -1275,16 +1276,16 @@ onMounted(async () => {
 .file-log-detail-meta__item {
   min-width: 0;
   padding: 8px 10px;
+  background: var(--el-fill-color-blank);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 6px;
-  background: var(--el-fill-color-blank);
 }
 
 .file-log-detail-meta__item span {
   display: block;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 16px;
+  color: var(--el-text-color-secondary);
 }
 
 .file-log-detail-meta__item strong {
@@ -1292,10 +1293,10 @@ onMounted(async () => {
   min-width: 0;
   margin-top: 3px;
   overflow: hidden;
-  color: var(--el-text-color-primary);
   font-size: 12px;
   font-weight: 500;
   line-height: 18px;
+  color: var(--el-text-color-primary);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1310,24 +1311,24 @@ onMounted(async () => {
 
 .file-log-code {
   max-height: 52vh;
+  padding: 12px;
   margin: 0;
   overflow: auto;
-  padding: 12px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 6px;
-  background: #0f172a;
-  color: #dbeafe;
   font-size: 12px;
   line-height: 1.6;
-  white-space: pre-wrap;
+  color: #dbeafe;
   word-break: break-all;
+  white-space: pre-wrap;
+  background: #0f172a;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
 }
 
-@media (max-width: 1024px) {
+@media (width <= 1024px) {
   .file-log-sidebar {
     height: min(460px, calc(100vh - 220px));
-    min-height: 320px;
     max-height: min(460px, calc(100vh - 220px));
+    min-height: 320px;
   }
 
   .file-log-table-panel {

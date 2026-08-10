@@ -926,9 +926,9 @@ onMounted(() => {
 }
 
 :deep(.generation-template-psd-picker-dialog) {
+  display: flex;
   height: 100vh;
   margin: 0;
-  display: flex;
   flex-direction: column;
 }
 
@@ -970,34 +970,34 @@ onMounted(() => {
 
 .generation-template-psd-binding__empty {
   display: flex;
+  padding: 14px;
+  color: var(--el-text-color-secondary);
+  border: 1px dashed var(--el-border-color);
+  border-radius: 8px;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px;
-  border: 1px dashed var(--el-border-color);
-  border-radius: 8px;
-  color: var(--el-text-color-secondary);
 }
 
 .generation-template-psd-option {
   display: flex;
-  align-items: flex-start;
-  gap: 14px;
   min-width: 0;
   padding: 14px;
+  background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
-  background: var(--el-bg-color);
+  align-items: flex-start;
+  gap: 14px;
 }
 
 .generation-template-psd-option__preview {
   width: 60px;
   height: 60px;
-  flex: 0 0 60px;
   overflow: hidden;
+  background: var(--el-fill-color);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 6px;
-  background: var(--el-fill-color);
+  flex: 0 0 60px;
 }
 
 .generation-template-psd-option__image,
@@ -1009,12 +1009,12 @@ onMounted(() => {
 
 .generation-template-psd-option__placeholder {
   display: flex;
-  align-items: center;
-  justify-content: center;
   width: 100%;
   height: 100%;
-  color: var(--el-text-color-placeholder);
   font-size: 12px;
+  color: var(--el-text-color-placeholder);
+  align-items: center;
+  justify-content: center;
 }
 
 .generation-template-psd-option__main {
@@ -1029,18 +1029,18 @@ onMounted(() => {
 }
 
 .generation-template-psd-option__name {
-  color: var(--el-text-color-primary);
   font-size: 15px;
   font-weight: 600;
+  color: var(--el-text-color-primary);
 }
 
 .generation-template-psd-option__id,
 .generation-template-psd-option__meta,
 .generation-template-psd-option__desc {
   margin-top: 4px;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 1.5;
+  color: var(--el-text-color-secondary);
 }
 
 .generation-template-psd-option__id {
@@ -1087,24 +1087,24 @@ onMounted(() => {
 }
 
 .generation-template-psd-picker__body {
-  flex: 1;
   min-height: 0;
   overflow: hidden;
-  border-radius: 8px;
   background: var(--el-bg-color);
+  border-radius: 8px;
+  flex: 1;
 }
 
 .generation-template-psd-picker-preview {
   display: flex;
-  align-items: center;
-  justify-content: center;
   width: 96px;
   height: 96px;
   overflow: hidden;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
   color: var(--el-text-color-placeholder);
   background: var(--el-fill-color);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  align-items: center;
+  justify-content: center;
 }
 
 .generation-template-psd-picker-preview__image,
@@ -1128,9 +1128,9 @@ onMounted(() => {
 .generation-template-psd-picker-info__secondary,
 .generation-template-psd-picker-info__description {
   margin-top: 4px;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 1.5;
+  color: var(--el-text-color-secondary);
 }
 
 .generation-template-psd-picker-info__secondary {
@@ -1151,11 +1151,11 @@ onMounted(() => {
 
 .generation-template-psd-picker__total {
   margin-right: auto;
-  color: var(--el-text-color-secondary);
   font-size: 13px;
+  color: var(--el-text-color-secondary);
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .generation-template-psd-binding__selected {
     grid-template-columns: 1fr;
   }

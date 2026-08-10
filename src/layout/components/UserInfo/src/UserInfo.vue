@@ -173,18 +173,26 @@ function handleViewToken() {
 </template>
 
 <style scoped lang="scss">
-/* Trigger */
+
+
+@media (width <= 768px) {
+  .user-trigger {
+    padding: 2px;
+    gap: 0;
+  }
+}
+
 .user-trigger {
   display: flex;
+  padding: 2px 6px 2px 2px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s;
   align-items: center;
   gap: 8px;
-  padding: 2px 6px 2px 2px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.15s;
 
   &:hover {
-    background: rgba(0, 0, 0, 0.04);
+    background: rgb(0 0 0 / 4%);
   }
 }
 
@@ -231,12 +239,12 @@ function handleViewToken() {
 
 /* Dropdown */
 .ud-menu {
-  padding: 0 !important;
   min-width: 200px !important;
-  border-radius: 8px !important;
-  border: 1px solid var(--el-border-color-light) !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+  padding: 0 !important;
   overflow: hidden;
+  border: 1px solid var(--el-border-color-light) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 10%) !important;
 }
 
 .ud-profile {
@@ -257,28 +265,28 @@ function handleViewToken() {
 }
 
 .ud-name {
+  margin: 0;
+  overflow: hidden;
   font-size: 13px;
   font-weight: 600;
   color: var(--el-text-color-primary);
-  margin: 0;
-  white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ud-company {
+  margin: 3px 0 0;
+  overflow: hidden;
   font-size: 11px;
   color: var(--el-text-color-secondary);
-  margin: 3px 0 0;
-  white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ud-expire {
+  margin: 2px 0 0;
   font-size: 11px;
   color: var(--el-text-color-placeholder);
-  margin: 2px 0 0;
 
   &.is-forever {
     color: #10b981;
@@ -291,32 +299,32 @@ function handleViewToken() {
 
 .ud-sep {
   height: 1px;
-  background: var(--el-border-color-lighter);
   margin: 3px 0;
+  background: var(--el-border-color-lighter);
 }
 
 .ud-item {
   display: flex !important;
-  align-items: center !important;
-  gap: 7px !important;
   padding: 6px 10px !important;
-  border-radius: 5px !important;
   font-size: 12.5px !important;
   font-weight: 400 !important;
   color: var(--el-text-color-primary) !important;
+  border-radius: 5px !important;
   transition: background 0.12s !important;
+  align-items: center !important;
+  gap: 7px !important;
 
   &:hover {
-    background: var(--el-fill-color-light) !important;
     color: var(--el-text-color-primary) !important;
+    background: var(--el-fill-color-light) !important;
   }
 
   &--out {
     color: var(--el-color-danger) !important;
 
     &:hover {
-      background: var(--el-color-danger-light-9) !important;
       color: var(--el-color-danger) !important;
+      background: var(--el-color-danger-light-9) !important;
     }
   }
 }
@@ -330,12 +338,7 @@ function handleViewToken() {
   color: inherit;
 }
 
-@media (max-width: 768px) {
-  .user-trigger {
-    padding: 2px;
-    gap: 0;
-  }
-}
+/* Trigger */
 </style>
 
 <style lang="scss">

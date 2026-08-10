@@ -23,17 +23,13 @@ withDefaults(
   display: inline-flex;
   width: var(--table-row-drag-handle-size);
   height: var(--table-row-drag-handle-size);
-  align-items: center;
-  justify-content: center;
+  color: var(--table-row-drag-handle-color);
+  cursor: grab;
+  background: var(--table-row-drag-handle-bg);
   border: 1px solid var(--table-row-drag-handle-border-color);
   border-radius: var(--table-row-drag-handle-radius);
-  background: var(--table-row-drag-handle-bg);
-  color: var(--table-row-drag-handle-color);
-  box-shadow: var(--table-row-drag-handle-shadow);
-  cursor: grab;
   opacity: 0.78;
-  user-select: none;
-  touch-action: none;
+  box-shadow: var(--table-row-drag-handle-shadow);
   transition:
     color 0.18s ease,
     background-color 0.18s ease,
@@ -41,6 +37,10 @@ withDefaults(
     box-shadow 0.18s ease,
     transform 0.18s ease,
     opacity 0.18s ease;
+  user-select: none;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
   will-change: transform, opacity, background-color, border-color;
 }
 
@@ -54,8 +54,8 @@ withDefaults(
 .table-row-drag-handle__bar {
   width: 2px;
   height: 11px;
+  background: currentcolor;
   border-radius: 999px;
-  background: currentColor;
   opacity: 0.92;
   transition:
     transform 0.18s ease,
@@ -75,12 +75,12 @@ withDefaults(
 }
 
 .table-row-drag-handle:hover {
-  border-color: var(--table-row-drag-handle-hover-border-color);
-  background: var(--table-row-drag-handle-hover-bg);
   color: var(--table-row-drag-handle-hover-color);
-  box-shadow: var(--table-row-drag-handle-hover-shadow);
+  background: var(--table-row-drag-handle-hover-bg);
+  border-color: var(--table-row-drag-handle-hover-border-color);
   opacity: 1;
   transform: translateY(-1px);
+  box-shadow: var(--table-row-drag-handle-hover-shadow);
 }
 
 .table-row-drag-handle:hover .table-row-drag-handle__bar:nth-child(1),
@@ -94,11 +94,11 @@ withDefaults(
 }
 
 .table-row-drag-handle:active {
-  background: var(--table-row-drag-handle-active-bg);
   color: var(--table-row-drag-handle-active-color);
-  box-shadow: var(--table-row-drag-handle-active-shadow);
   cursor: grabbing;
-  transform: scale(0.96);
+  background: var(--table-row-drag-handle-active-bg);
   opacity: 1;
+  transform: scale(0.96);
+  box-shadow: var(--table-row-drag-handle-active-shadow);
 }
 </style>

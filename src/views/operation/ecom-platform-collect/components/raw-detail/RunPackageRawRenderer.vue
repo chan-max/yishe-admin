@@ -795,9 +795,9 @@ const packageJson = computed(() => formatJson(rawPackage.value));
 .run-package-renderer__hero,
 .run-package-renderer__section {
   padding: 16px;
+  background: var(--el-bg-color-overlay);
   border: 1px solid var(--el-border-color-light);
   border-radius: 12px;
-  background: var(--el-bg-color-overlay);
 }
 
 .run-package-renderer__hero {
@@ -811,42 +811,42 @@ const packageJson = computed(() => formatJson(rawPackage.value));
 }
 
 .run-package-renderer__eyebrow {
-  color: var(--el-color-primary);
   font-size: 12px;
   font-weight: 600;
   line-height: 1.4;
+  color: var(--el-color-primary);
 }
 
 .run-package-renderer__title {
   margin-top: 6px;
-  color: var(--el-text-color-primary);
   font-size: 20px;
   font-weight: 600;
   line-height: 1.5;
+  color: var(--el-text-color-primary);
   word-break: break-word;
 }
 
 .run-package-renderer__summary {
   margin-top: 8px;
-  color: var(--el-text-color-regular);
   font-size: 13px;
   line-height: 1.7;
+  color: var(--el-text-color-regular);
 }
 
 .run-package-renderer__hero-side {
-  min-width: 240px;
   display: flex;
+  min-width: 240px;
   flex-direction: column;
   gap: 12px;
 }
 
 .run-package-renderer__status {
   display: flex;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
 }
 
 .run-package-renderer__stat-grid {
@@ -857,25 +857,25 @@ const packageJson = computed(() => formatJson(rawPackage.value));
 
 .run-package-renderer__stat-card {
   padding: 12px;
-  border-radius: 10px;
-  background: var(--el-fill-color-light);
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
+  background: var(--el-fill-color-light);
+  border-radius: 10px;
 }
 
 .run-package-renderer__stat-card strong {
   display: block;
   margin-top: 6px;
-  color: var(--el-text-color-primary);
   font-size: 22px;
   line-height: 1.2;
+  color: var(--el-text-color-primary);
 }
 
 .run-package-renderer__section-title {
   margin-bottom: 12px;
-  color: var(--el-text-color-primary);
   font-size: 14px;
   font-weight: 600;
+  color: var(--el-text-color-primary);
 }
 
 .run-package-renderer__summary-value {
@@ -892,30 +892,30 @@ const packageJson = computed(() => formatJson(rawPackage.value));
 .run-package-renderer__insight-card,
 .run-package-renderer__coverage-item {
   display: flex;
+  padding: 12px;
+  background: var(--el-fill-color-light);
+  border-radius: 10px;
   flex-direction: column;
   gap: 8px;
-  padding: 12px;
-  border-radius: 10px;
-  background: var(--el-fill-color-light);
 }
 
 .run-package-renderer__insight-card span,
 .run-package-renderer__coverage-head span {
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 .run-package-renderer__insight-card strong,
 .run-package-renderer__coverage-head strong {
-  color: var(--el-text-color-primary);
   font-size: 18px;
   font-weight: 600;
+  color: var(--el-text-color-primary);
 }
 
 .run-package-renderer__insight-card small,
 .run-package-renderer__coverage-item small {
-  color: var(--el-text-color-secondary);
   line-height: 1.4;
+  color: var(--el-text-color-secondary);
 }
 
 .run-package-renderer__insight-block {
@@ -924,9 +924,9 @@ const packageJson = computed(() => formatJson(rawPackage.value));
 
 .run-package-renderer__insight-title {
   margin-bottom: 10px;
-  color: var(--el-text-color-primary);
   font-size: 13px;
   font-weight: 600;
+  color: var(--el-text-color-primary);
 }
 
 .run-package-renderer__tag-list {
@@ -943,22 +943,22 @@ const packageJson = computed(() => formatJson(rawPackage.value));
 }
 
 .run-package-renderer__ai-brief {
-  color: var(--el-text-color-regular);
   line-height: 1.7;
+  color: var(--el-text-color-regular);
 }
 
 .run-package-renderer__ai-list {
-  margin: 10px 0 0;
   padding-left: 18px;
-  color: var(--el-text-color-regular);
+  margin: 10px 0 0;
   line-height: 1.7;
+  color: var(--el-text-color-regular);
 }
 
 .run-package-renderer__field-catalog-hint {
   margin-bottom: 12px;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 1.6;
+  color: var(--el-text-color-secondary);
 }
 
 .run-package-renderer__field-catalog {
@@ -974,14 +974,14 @@ const packageJson = computed(() => formatJson(rawPackage.value));
 }
 
 .run-package-renderer__preview-card {
-  overflow: hidden;
   display: grid;
-  grid-template-columns: 96px minmax(0, 1fr);
-  gap: 12px;
   padding: 12px;
+  overflow: hidden;
+  background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 10px;
-  background: var(--el-bg-color);
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 12px;
 }
 
 .run-package-renderer__preview-media {
@@ -993,16 +993,16 @@ const packageJson = computed(() => formatJson(rawPackage.value));
 .run-package-renderer__preview-placeholder {
   width: 100%;
   height: 100%;
-  border-radius: 10px;
   background: var(--el-fill-color-light);
+  border-radius: 10px;
 }
 
 .run-package-renderer__preview-placeholder {
   display: flex;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
   align-items: center;
   justify-content: center;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
 }
 
 .run-package-renderer__preview-content {
@@ -1017,18 +1017,18 @@ const packageJson = computed(() => formatJson(rawPackage.value));
 
 .run-package-renderer__preview-title {
   min-width: 0;
-  color: var(--el-text-color-primary);
   font-size: 13px;
   font-weight: 600;
   line-height: 1.6;
+  color: var(--el-text-color-primary);
   word-break: break-word;
 }
 
 .run-package-renderer__preview-subtitle {
   margin-top: 6px;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 1.6;
+  color: var(--el-text-color-secondary);
 }
 
 .run-package-renderer__preview-footer {
@@ -1040,20 +1040,20 @@ const packageJson = computed(() => formatJson(rawPackage.value));
 }
 
 .run-package-renderer__preview-key {
-  flex: 1;
   min-width: 0;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
   overflow: hidden;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
 }
 
 .run-package-renderer__field-card {
   padding: 12px;
-  border-radius: 10px;
-  border: 1px solid var(--el-border-color-lighter);
   background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
 }
 
 .run-package-renderer__field-head {
@@ -1071,9 +1071,9 @@ const packageJson = computed(() => formatJson(rawPackage.value));
 .run-package-renderer__field-meta,
 .run-package-renderer__field-samples {
   margin-top: 8px;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 1.6;
+  color: var(--el-text-color-secondary);
 }
 
 .run-package-renderer__field-meta {
@@ -1090,24 +1090,24 @@ const packageJson = computed(() => formatJson(rawPackage.value));
 
 .run-package-renderer__field-review-card {
   padding: 12px;
-  border-radius: 10px;
-  border: 1px solid var(--el-border-color-lighter);
   background: var(--el-fill-color-extra-light);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
 }
 
 .run-package-renderer__field-review-label {
   margin-top: 8px;
-  color: var(--el-text-color-primary);
   font-size: 13px;
   font-weight: 500;
+  color: var(--el-text-color-primary);
 }
 
 .run-package-renderer__field-review-desc,
 .run-package-renderer__field-review-meta {
   margin-top: 6px;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 1.6;
+  color: var(--el-text-color-secondary);
 }
 
 .run-package-renderer__snapshot-grid {
@@ -1118,9 +1118,9 @@ const packageJson = computed(() => formatJson(rawPackage.value));
 
 .run-package-renderer__snapshot-card {
   overflow: hidden;
+  background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 12px;
-  background: var(--el-bg-color);
 }
 
 .run-package-renderer__snapshot-image {
@@ -1131,15 +1131,15 @@ const packageJson = computed(() => formatJson(rawPackage.value));
 
 .run-package-renderer__snapshot-placeholder {
   display: flex;
-  align-items: center;
-  justify-content: center;
   width: 100%;
   height: 140px;
   padding: 12px;
-  background: var(--el-fill-color-light);
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
   text-align: center;
+  background: var(--el-fill-color-light);
+  align-items: center;
+  justify-content: center;
 }
 
 .run-package-renderer__snapshot-meta {
@@ -1147,70 +1147,70 @@ const packageJson = computed(() => formatJson(rawPackage.value));
 }
 
 .run-package-renderer__snapshot-label {
-  color: var(--el-text-color-primary);
   font-size: 13px;
   font-weight: 500;
+  color: var(--el-text-color-primary);
 }
 
 .run-package-renderer__snapshot-ref {
   margin-top: 4px;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
   word-break: break-all;
 }
 
 .run-package-renderer__record-title {
-  min-width: 0;
   display: flex;
+  min-width: 0;
+  padding-right: 12px;
   align-items: center;
   gap: 12px;
-  padding-right: 12px;
 }
 
 .run-package-renderer__record-index {
-  color: var(--el-color-primary);
   font-size: 12px;
   font-weight: 600;
+  color: var(--el-color-primary);
 }
 
 .run-package-renderer__record-name {
-  flex: 1;
   min-width: 0;
-  color: var(--el-text-color-primary);
   overflow: hidden;
+  color: var(--el-text-color-primary);
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
 }
 
 .run-package-renderer__record-key {
-  flex: none;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
+  flex: none;
 }
 
 .run-package-renderer__json {
-  margin: 12px 0 0;
   padding: 16px;
+  margin: 12px 0 0;
   overflow: auto;
-  border-radius: 12px;
-  background: #111827;
-  color: #e5eefb;
   font-size: 12px;
   line-height: 1.6;
-  white-space: pre-wrap;
+  color: #e5eefb;
   word-break: break-word;
+  white-space: pre-wrap;
+  background: #111827;
+  border-radius: 12px;
 }
 
 .mono {
   font-family:
-    "SFMono-Regular",
+    SFMono-Regular,
     "JetBrains Mono",
-    "Consolas",
+    Consolas,
     "Liberation Mono",
     monospace;
 }
 
-@media (max-width: 900px) {
+@media (width <= 900px) {
   .run-package-renderer__hero {
     flex-direction: column;
   }

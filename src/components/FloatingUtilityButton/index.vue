@@ -119,12 +119,12 @@ onUnmounted(() => {
   .main-fab {
     width: 56px;
     height: 56px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgb(0 0 0 / 15%);
     transition: all 0.3s ease;
 
     &:hover {
       transform: scale(1.1);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 6px 16px rgb(0 0 0 / 20%);
     }
 
     &.is-open {
@@ -136,11 +136,11 @@ onUnmounted(() => {
     position: absolute;
     bottom: 70px;
     left: 0;
+    min-width: 160px;
+    padding: 8px;
     background: white;
     border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    padding: 8px;
-    min-width: 160px;
+    box-shadow: 0 4px 20px rgb(0 0 0 / 15%);
 
     .menu-item {
       display: flex;

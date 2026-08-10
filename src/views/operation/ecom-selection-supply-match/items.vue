@@ -589,15 +589,15 @@ onActivated(() => {
 
 .sidebar-card {
   padding: 16px;
+  background: var(--el-fill-color-lighter);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 14px;
-  background: var(--el-fill-color-lighter);
 }
 
 .sidebar-card__title {
-  color: var(--el-text-color-primary);
   font-size: 15px;
   font-weight: 600;
+  color: var(--el-text-color-primary);
 }
 
 .sidebar-metrics {
@@ -609,22 +609,22 @@ onActivated(() => {
 
 .sidebar-metric {
   padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--el-border-color-lighter);
   background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
 }
 
 .sidebar-metric span {
   display: block;
-  color: var(--el-text-color-secondary);
   font-size: 11px;
+  color: var(--el-text-color-secondary);
 }
 
 .sidebar-metric strong {
   display: block;
   margin-top: 4px;
-  color: var(--el-text-color-primary);
   font-size: 18px;
+  color: var(--el-text-color-primary);
 }
 
 .sidebar-block {
@@ -633,16 +633,16 @@ onActivated(() => {
 
 .sidebar-block__label {
   margin-bottom: 8px;
-  color: var(--el-text-color-primary);
   font-size: 13px;
   font-weight: 600;
+  color: var(--el-text-color-primary);
 }
 
 .sidebar-block__text,
 .table-meta-text {
-  color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 1.7;
+  color: var(--el-text-color-secondary);
 }
 
 .table-stack {
@@ -670,9 +670,9 @@ onActivated(() => {
 
 .detail-card {
   padding: 16px;
+  background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 14px;
-  background: var(--el-bg-color);
 }
 
 .detail-card--hero {
@@ -684,16 +684,16 @@ onActivated(() => {
 }
 
 .detail-card__title {
-  color: var(--el-text-color-primary);
   font-size: 15px;
   font-weight: 600;
+  color: var(--el-text-color-primary);
 }
 
 .detail-card__subtitle {
   margin-top: 8px;
-  color: var(--el-text-color-secondary);
   font-size: 13px;
   line-height: 1.7;
+  color: var(--el-text-color-secondary);
 }
 
 .detail-meta-grid {
@@ -705,22 +705,22 @@ onActivated(() => {
 
 .detail-meta-item {
   padding: 10px 12px;
-  border-radius: 10px;
   background: var(--el-fill-color-light);
+  border-radius: 10px;
 }
 
 .detail-meta-item span {
   display: block;
-  color: var(--el-text-color-secondary);
   font-size: 11px;
+  color: var(--el-text-color-secondary);
 }
 
 .detail-meta-item strong {
   display: block;
   margin-top: 4px;
-  color: var(--el-text-color-primary);
   font-size: 13px;
   line-height: 1.6;
+  color: var(--el-text-color-primary);
 }
 
 .detail-image-row {
@@ -731,8 +731,8 @@ onActivated(() => {
   width: 100px;
   height: 100px;
   overflow: hidden;
-  border-radius: 12px;
   border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
 }
 
 .detail-link-row {
@@ -747,45 +747,45 @@ onActivated(() => {
 
 .snapshot-card {
   padding: 14px;
+  background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 12px;
-  background: var(--el-bg-color);
 }
 
 .snapshot-card__title {
   margin-bottom: 8px;
-  color: var(--el-text-color-primary);
   font-size: 14px;
   font-weight: 600;
+  color: var(--el-text-color-primary);
 }
 
 .mini-json,
 .json-preview {
-  overflow: auto;
-  margin: 10px 0 0;
   padding: 14px;
-  border-radius: 12px;
-  border: 1px solid var(--el-border-color-lighter);
-  background: var(--el-fill-color-light);
-  color: var(--el-text-color-regular);
+  margin: 10px 0 0;
+  overflow: auto;
   font-size: 12px;
   line-height: 1.6;
-  white-space: pre-wrap;
+  color: var(--el-text-color-regular);
   word-break: break-word;
+  white-space: pre-wrap;
+  background: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
 }
 
 .json-preview {
   max-height: 460px;
 }
 
-@media (max-width: 1200px) {
+@media (width <= 1200px) {
   .detail-overview-grid,
   .snapshot-list {
     grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .sidebar-metrics,
   .detail-meta-grid {
     grid-template-columns: 1fr;

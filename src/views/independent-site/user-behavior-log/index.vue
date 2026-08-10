@@ -383,12 +383,12 @@ onMounted(() => {
 }
 
 .code-preview-box {
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 6px;
-  padding: 12px;
   max-height: 380px;
+  padding: 12px;
   overflow-y: auto;
   background-color: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
 }
 
 .json-code {

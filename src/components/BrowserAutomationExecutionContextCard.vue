@@ -230,17 +230,17 @@ watch(
 }
 
 .execution-context-card__title {
-  color: var(--el-text-color-primary);
   font-size: 15px;
   font-weight: 600;
   line-height: 1.5;
+  color: var(--el-text-color-primary);
 }
 
 .execution-context-card__description {
   margin-top: 4px;
-  color: var(--el-text-color-regular);
   font-size: 13px;
   line-height: 1.6;
+  color: var(--el-text-color-regular);
 }
 
 .execution-context-card__form {
@@ -256,9 +256,9 @@ watch(
 .execution-context-card__option-meta,
 .execution-context-card__hint,
 .execution-context-card__meta-code {
-  color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 1.6;
+  color: var(--el-text-color-secondary);
 }
 
 .execution-context-card__hint {
@@ -282,9 +282,9 @@ watch(
 
 :deep(.el-form-item__label) {
   padding-bottom: 8px;
-  color: var(--el-text-color-primary);
   font-size: 13px;
   font-weight: 500;
+  color: var(--el-text-color-primary);
 }
 
 :deep(.el-select),
