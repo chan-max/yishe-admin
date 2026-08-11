@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch, markRaw } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
-import { ArrowLeft, EditPen, Loading, Check, Warning , QuestionFilled } from '@element-plus/icons-vue'
+import { ArrowLeft, EditPen, Loading, Check, Warning , Reading } from '@element-plus/icons-vue'
 import {
   VueFlow,
   useVueFlow,
@@ -587,7 +587,7 @@ const statusText = computed(() => {
 
         <!-- 快捷键帮助 -->
         <el-button size="small" circle @click="shortcutGuideVisible = true" title="键盘快捷键 (?)">
-          <el-icon><QuestionFilled /></el-icon>
+          <el-icon><Reading /></el-icon>
         </el-button>
 
         <div class="wf-divider" />
