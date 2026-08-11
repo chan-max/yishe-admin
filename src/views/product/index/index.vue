@@ -6,55 +6,55 @@
           <el-form :model="queryParams" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
-                <el-form-item label="按ID搜索">
+                <el-form-item :label="t('product.searchById')">
                   <el-input
                     v-model="queryParams.id"
                     size="small"
                     clearable
-                    placeholder="输入ID"
+                    :placeholder="t('product.idPlaceholder')"
                     @keyup.enter="handleSearch"
                     @clear="handleSearch"
                   />
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="4">
-                <el-form-item label="按产品代码">
+                <el-form-item :label="t('product.searchByCode')">
                   <el-input
                     v-model="queryParams.code"
                     size="small"
                     clearable
-                    placeholder="输入产品代码"
+                    :placeholder="t('product.codePlaceholder')"
                     @keyup.enter="handleSearch"
                     @clear="handleSearch"
                   />
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="4">
-                <el-form-item label="按SKU">
+                <el-form-item :label="t('product.searchBySku')">
                   <el-input
                     v-model="queryParams.sku"
                     size="small"
                     clearable
-                    placeholder="输入SKU"
+                    :placeholder="t('product.skuPlaceholder')"
                     @keyup.enter="handleSearch"
                     @clear="handleSearch"
                   />
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="8" :lg="5">
-                <el-form-item label="搜索">
+                <el-form-item :label="t('common.search')">
                   <el-input
                     v-model="queryParams.searchText"
                     size="small"
                     clearable
-                    placeholder="请输入搜索内容"
+                    :placeholder="t('product.searchPlaceholder')"
                     @keyup.enter="handleSearch"
                     @clear="handleSearch"
                   />
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="12" :lg="5">
-                <el-form-item label="时间范围">
+                <el-form-item :label="t('product.timeRange')">
                   <DateRangePicker
                     @change="
                       (val) => {
@@ -67,14 +67,14 @@
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3">
-                <el-form-item label="随机顺序">
+                <el-form-item :label="t('product.randomOrder')">
                   <div class="product-page__switch">
                     <el-switch v-model="queryParams.random" size="small" @change="handleSearch" />
                   </div>
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3">
-                <el-form-item label="显示关联">
+                <el-form-item :label="t('product.showRelations')">
                   <div class="product-page__switch">
                     <el-switch
                       v-model="showRelations"
@@ -87,13 +87,13 @@
             </el-row>
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="4">
-                <el-form-item label="商品分类">
+                <el-form-item :label="t('product.category')">
                   <el-select
                     v-model="queryParams.categoryId"
                     size="small"
                     clearable
                     filterable
-                    placeholder="全部分类"
+                    :placeholder="t('product.allCategories')"
                     @change="handleSearch"
                     style="width: 100%"
                   >
@@ -107,12 +107,12 @@
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="4">
-                <el-form-item label="商品类型">
+                <el-form-item :label="t('product.productType')">
                   <el-input
                     v-model="queryParams.type"
                     size="small"
                     clearable
-                    placeholder="输入商品类型"
+                    :placeholder="t('product.typePlaceholder')"
                     @keyup.enter="handleSearch"
                     @clear="handleSearch"
                     style="width: 100%"
@@ -120,24 +120,24 @@
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="4">
-                <el-form-item label="品牌">
+                <el-form-item :label="t('product.brand')">
                   <el-input
                     v-model="queryParams.brand"
                     size="small"
                     clearable
-                    placeholder="输入品牌"
+                    :placeholder="t('product.brandPlaceholder')"
                     @keyup.enter="handleSearch"
                     @clear="handleSearch"
                   />
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="4">
-                <el-form-item label="商品状态">
+                <el-form-item :label="t('product.productStatus')">
                   <el-select
                     v-model="queryParams.status"
                     size="small"
                     clearable
-                    placeholder="全部状态"
+                    :placeholder="t('product.allStatus')"
                     @change="handleSearch"
                     style="width: 100%"
                   >
@@ -151,12 +151,12 @@
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="4">
-                <el-form-item label="库存状态">
+                <el-form-item :label="t('product.inventoryStatus')">
                   <el-select
                     v-model="queryParams.inventoryStatus"
                     size="small"
                     clearable
-                    placeholder="全部库存"
+                    :placeholder="t('product.allInventory')"
                     @change="handleSearch"
                     style="width: 100%"
                   >
@@ -170,22 +170,22 @@
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="4">
-                <el-form-item label="发布状态">
+                <el-form-item :label="t('product.publishStatus')">
                   <el-select
                     v-model="queryParams.isPublish"
                     size="small"
                     clearable
-                    placeholder="全部"
+                    :placeholder="t('product.all')"
                     @change="handleSearch"
                     style="width: 100%"
                   >
-                    <el-option label="已发布" :value="true" />
-                    <el-option label="未发布" :value="false" />
+                    <el-option :label="t('product.published')" :value="true" />
+                    <el-option :label="t('product.unpublished')" :value="false" />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="4">
-                <el-form-item label="价格区间">
+                <el-form-item :label="t('product.priceRange')">
                   <div class="flex gap-1 items-center">
                     <el-input-number
                       v-model="queryParams.priceMin"
@@ -193,7 +193,7 @@
                       :min="0"
                       :precision="2"
                       controls-position="right"
-                      placeholder="最低"
+                      :placeholder="t('product.minPrice')"
                       style="width: 100px"
                     />
                     <span class="text-gray-400">-</span>
@@ -203,14 +203,14 @@
                       :min="0"
                       :precision="2"
                       controls-position="right"
-                      placeholder="最高"
+                      :placeholder="t('product.maxPrice')"
                       style="width: 100px"
                     />
                   </div>
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3">
-                <el-form-item label="精选商品">
+                <el-form-item :label="t('product.featuredProducts')">
                   <div class="product-page__switch">
                     <el-switch
                       v-model="queryParams.isFeatured"
@@ -221,44 +221,44 @@
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3">
-                <el-form-item label="新品">
+                <el-form-item :label="t('product.newProduct')">
                   <div class="product-page__switch">
                     <el-switch v-model="queryParams.isNew" size="small" @change="handleSearch" />
                   </div>
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3">
-                <el-form-item label="热销">
+                <el-form-item :label="t('product.hotSale')">
                   <div class="product-page__switch">
                     <el-switch v-model="queryParams.isHot" size="small" @change="handleSearch" />
                   </div>
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3">
-                <el-form-item label="促销">
+                <el-form-item :label="t('product.onSale')">
                   <div class="product-page__switch">
                     <el-switch v-model="queryParams.isOnSale" size="small" @change="handleSearch" />
                   </div>
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="4">
-                <el-form-item label="排序">
+                <el-form-item :label="t('product.sort')">
                   <el-select
                     v-model="queryParams.sortBy"
                     size="small"
                     clearable
-                    placeholder="默认排序"
+                    :placeholder="t('product.defaultSort')"
                     @change="handleSearch"
                     style="width: 100%"
                   >
-                    <el-option label="创建时间" value="createTime" />
-                    <el-option label="更新时间" value="updateTime" />
-                    <el-option label="售价" value="salePrice" />
-                    <el-option label="销量" value="salesCount" />
-                    <el-option label="浏览量" value="viewCount" />
-                    <el-option label="评分" value="rating" />
-                    <el-option label="自定义排序" value="sort" />
-                    <el-option label="名称" value="name" />
+                    <el-option :label="t('common.createTime')" value="createTime" />
+                    <el-option :label="t('common.updateTime')" value="updateTime" />
+                    <el-option :label="t('product.salePrice')" value="salePrice" />
+                    <el-option :label="t('product.salesCount')" value="salesCount" />
+                    <el-option :label="t('product.viewCount')" value="viewCount" />
+                    <el-option :label="t('product.rating')" value="rating" />
+                    <el-option :label="t('product.customSort')" value="sort" />
+                    <el-option :label="t('product.name')" value="name" />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -270,7 +270,7 @@
                 @click="handleSearch"
                 :icon="Search"
                 :loading="loading"
-                >搜索</el-button
+                >{{ t('common.search') }}</el-button
               >
               <el-button
                 size="small"
@@ -278,7 +278,7 @@
                 :disabled="single"
                 @click="handleAdd"
                 :icon="Plus"
-                >新增</el-button
+                >{{ t('common.add') }}</el-button
               >
               <el-button
                 size="small"
@@ -286,7 +286,7 @@
                 :icon="Delete"
                 :disabled="loading"
                 @click="handleDelete(null)"
-                >批量删除</el-button
+                >{{ t('common.batchDelete') }}</el-button
               >
               <el-button
                 size="small"
@@ -294,7 +294,7 @@
                 :disabled="!selectedRows.length"
                 @click="batchPublish"
                 :icon="Check"
-                >批量标记发布</el-button
+                >{{ t('product.batchMarkPublish') }}</el-button
               >
               <el-button
                 size="small"
@@ -302,7 +302,7 @@
                 :disabled="!selectedRows.length"
                 @click="batchUnpublish"
                 :icon="Refresh"
-                >批量下架</el-button
+                >{{ t('product.batchUnpublish') }}</el-button
               >
             </div>
           </el-form>
@@ -370,7 +370,7 @@
                     @command="(command) => handleOperationCommand(String(command), row)"
                   >
                     <el-button type="primary" link size="small" class="operation-trigger-button"
-                      >操作</el-button
+                      >{{ t('common.operation') }}</el-button
                     >
                     <template #dropdown>
                       <el-dropdown-menu class="operation-menu-compact">
@@ -379,13 +379,13 @@
                           <el-icon>
                             <View />
                           </el-icon>
-                          <span>查看详情</span>
+                          <span>{{ t('product.viewDetail') }}</span>
                         </el-dropdown-item>
                         <el-dropdown-item command="edit" divided>
                           <el-icon>
                             <Edit />
                           </el-icon>
-                          <span>编辑</span>
+                          <span>{{ t('common.edit') }}</span>
                         </el-dropdown-item>
                         <el-dropdown-item
                           v-if="userStore.user?.isAdmin"
@@ -395,7 +395,7 @@
                           <el-icon>
                             <Delete />
                           </el-icon>
-                          <span>删除</span>
+                          <span>{{ t('common.delete') }}</span>
                         </el-dropdown-item>
 
                         <!-- 发布状态标记 -->
@@ -403,13 +403,13 @@
                           <el-icon>
                             <Share />
                           </el-icon>
-                          <span>发布状态：标记为已发布</span>
+                          <span>{{ t('product.markAsPublished') }}</span>
                         </el-dropdown-item>
                         <el-dropdown-item command="mark-unpublished">
                           <el-icon>
                             <Refresh />
                           </el-icon>
-                          <span>发布状态：标记为未发布</span>
+                          <span>{{ t('product.markAsUnpublished') }}</span>
                         </el-dropdown-item>
 
                         <!-- 工具类 -->
@@ -417,13 +417,13 @@
                           <el-icon>
                             <MagicStick />
                           </el-icon>
-                          <span>AI生成内容</span>
+                          <span>{{ t('product.aiGenerateContent') }}</span>
                         </el-dropdown-item>
                         <el-dropdown-item command="generate-code">
                           <el-icon>
                             <Refresh />
                           </el-icon>
-                          <span>生成产品代码</span>
+                          <span>{{ t('product.generateProductCode') }}</span>
                         </el-dropdown-item>
                         <el-dropdown-item
                           v-if="getProductSourcePsdSetId(row)"
@@ -432,7 +432,7 @@
                           <el-icon>
                             <Picture />
                           </el-icon>
-                          <span>复制关联PSD套图信息到商品</span>
+                          <span>{{ t('product.copyPsdSetImagesToProduct') }}</span>
                         </el-dropdown-item>
                       </el-dropdown-menu>
                     </template>
@@ -441,10 +441,10 @@
 
                 <template #searchKeywordsHeader>
                   <div class="flex items-center gap-1">
-                    <span>搜索关键字</span>
+                    <span>{{ t('product.searchKeyword') }}</span>
                     <el-tooltip
                       effect="dark"
-                      content="搜索关键词 不会显示在商品信息中，只会在搜索时供搜索引擎使用"
+                      :content="t('product.searchKeywordTooltip')"
                       placement="top"
                     >
                       <el-icon class="text-gray-400 cursor-help">
@@ -480,11 +480,11 @@
                         </div>
                       </el-carousel-item>
                     </el-carousel>
-                    <span v-else class="table-preview-placeholder">暂无图片</span>
+                    <span v-else class="table-preview-placeholder">{{ t('product.noImages') }}</span>
 
                     <el-tooltip
                       v-if="row.images && row.images.length > 0"
-                      content="批量下载该商品的所有图片"
+                      :content="t('product.downloadAllImagesTooltip')"
                       placement="top"
                     >
                       <el-button
@@ -494,7 +494,7 @@
                         class="table-preview-action"
                         @click.stop="handleDownloadRowImages(row)"
                       >
-                        全部下载
+                        {{ t('product.downloadAll') }}
                       </el-button>
                     </el-tooltip>
                   </div>
@@ -527,7 +527,7 @@
                         </div>
                       </el-carousel-item>
                     </el-carousel>
-                    <span v-else class="table-preview-placeholder">暂无视频</span>
+                    <span v-else class="table-preview-placeholder">{{ t('product.noVideos') }}</span>
                   </div>
                 </template>
 
@@ -544,7 +544,7 @@
                   <el-tag v-if="row.code" type="info" size="small">
                     {{ row.code }}
                   </el-tag>
-                  <span v-else class="table-cell-empty">未生成</span>
+                  <span v-else class="table-cell-empty">{{ t('product.notGenerated') }}</span>
                 </template>
 
                 <template #nameSlot="{ row }">
@@ -552,10 +552,10 @@
                     <div
                       class="table-copy-row"
                       :class="{ 'table-copy-row--empty': !row.name }"
-                      @click.stop="row.name && copyText(row.name, '商品名称')"
+                      @click.stop="row.name && copyText(row.name, t('product.productName'))"
                     >
-                      <span class="table-copy-label">中：</span>
-                      <span class="table-copy-text">{{ row.name || "未设置" }}</span>
+                      <span class="table-copy-label">{{ t('product.zhLabel') }}</span>
+                      <span class="table-copy-text">{{ row.name || t('product.notSet') }}</span>
                       <el-icon v-if="row.name" class="table-copy-icon">
                         <DocumentCopy />
                       </el-icon>
@@ -563,10 +563,10 @@
                     <div
                       class="table-copy-row"
                       :class="{ 'table-copy-row--empty': !row.enName }"
-                      @click.stop="row.enName && copyText(row.enName, '英文名称')"
+                      @click.stop="row.enName && copyText(row.enName, t('product.enName'))"
                     >
                       <span class="table-copy-label">En:</span>
-                      <span class="table-copy-text">{{ row.enName || "未设置" }}</span>
+                      <span class="table-copy-text">{{ row.enName || t('product.notSet') }}</span>
                       <el-icon v-if="row.enName" class="table-copy-icon">
                         <DocumentCopy />
                       </el-icon>
@@ -579,10 +579,10 @@
                     <div
                       class="table-copy-row table-copy-row--multiline"
                       :class="{ 'table-copy-row--empty': !row.description }"
-                      @click.stop="row.description && copyText(row.description, '商品描述')"
+                      @click.stop="row.description && copyText(row.description, t('product.productDescription'))"
                     >
-                      <span class="table-copy-label">中：</span>
-                      <span class="table-copy-text">{{ row.description || "未设置" }}</span>
+                      <span class="table-copy-label">{{ t('product.zhLabel') }}</span>
+                      <span class="table-copy-text">{{ row.description || t('product.notSet') }}</span>
                       <el-icon v-if="row.description" class="table-copy-icon">
                         <DocumentCopy />
                       </el-icon>
@@ -590,10 +590,10 @@
                     <div
                       class="table-copy-row table-copy-row--multiline"
                       :class="{ 'table-copy-row--empty': !row.enDescription }"
-                      @click.stop="row.enDescription && copyText(row.enDescription, '英文描述')"
+                      @click.stop="row.enDescription && copyText(row.enDescription, t('product.enDescription'))"
                     >
                       <span class="table-copy-label">En:</span>
-                      <span class="table-copy-text">{{ row.enDescription || "未设置" }}</span>
+                      <span class="table-copy-text">{{ row.enDescription || t('product.notSet') }}</span>
                       <el-icon v-if="row.enDescription" class="table-copy-icon">
                         <DocumentCopy />
                       </el-icon>
@@ -606,10 +606,10 @@
                     <div
                       class="table-copy-row table-copy-row--multiline"
                       :class="{ 'table-copy-row--empty': !row.keywords }"
-                      @click.stop="row.keywords && copyText(row.keywords, '关键词')"
+                      @click.stop="row.keywords && copyText(row.keywords, t('product.keywords'))"
                     >
-                      <span class="table-copy-label">中：</span>
-                      <span class="table-copy-text">{{ row.keywords || "未设置" }}</span>
+                      <span class="table-copy-label">{{ t('product.zhLabel') }}</span>
+                      <span class="table-copy-text">{{ row.keywords || t('product.notSet') }}</span>
                       <el-icon v-if="row.keywords" class="table-copy-icon">
                         <DocumentCopy />
                       </el-icon>
@@ -617,10 +617,10 @@
                     <div
                       class="table-copy-row table-copy-row--multiline"
                       :class="{ 'table-copy-row--empty': !row.enKeywords }"
-                      @click.stop="row.enKeywords && copyText(row.enKeywords, '英文关键词')"
+                      @click.stop="row.enKeywords && copyText(row.enKeywords, t('product.enKeywords'))"
                     >
                       <span class="table-copy-label">En:</span>
-                      <span class="table-copy-text">{{ row.enKeywords || "未设置" }}</span>
+                      <span class="table-copy-text">{{ row.enKeywords || t('product.notSet') }}</span>
                       <el-icon v-if="row.enKeywords" class="table-copy-icon">
                         <DocumentCopy />
                       </el-icon>
@@ -633,10 +633,10 @@
                     <div
                       class="table-copy-row table-copy-row--multiline"
                       :class="{ 'table-copy-row--empty': !row.searchKeywords }"
-                      @click.stop="row.searchKeywords && copyText(row.searchKeywords, '搜索关键字')"
+                      @click.stop="row.searchKeywords && copyText(row.searchKeywords, t('product.searchKeyword'))"
                     >
-                      <span class="table-copy-label">中：</span>
-                      <span class="table-copy-text">{{ row.searchKeywords || "未设置" }}</span>
+                      <span class="table-copy-label">{{ t('product.zhLabel') }}</span>
+                      <span class="table-copy-text">{{ row.searchKeywords || t('product.notSet') }}</span>
                       <el-icon v-if="row.searchKeywords" class="table-copy-icon">
                         <DocumentCopy />
                       </el-icon>
@@ -645,11 +645,11 @@
                       class="table-copy-row table-copy-row--multiline"
                       :class="{ 'table-copy-row--empty': !row.enSearchKeywords }"
                       @click.stop="
-                        row.enSearchKeywords && copyText(row.enSearchKeywords, '英文搜索关键字')
+                        row.enSearchKeywords && copyText(row.enSearchKeywords, t('product.enSearchKeyword'))
                       "
                     >
                       <span class="table-copy-label">En:</span>
-                      <span class="table-copy-text">{{ row.enSearchKeywords || "未设置" }}</span>
+                      <span class="table-copy-text">{{ row.enSearchKeywords || t('product.notSet') }}</span>
                       <el-icon v-if="row.enSearchKeywords" class="table-copy-icon">
                         <DocumentCopy />
                       </el-icon>
@@ -665,7 +665,7 @@
 
                 <template #publishStatusSlot="{ row }">
                   <el-tag :type="row.isPublish ? 'success' : 'warning'" size="small" effect="plain">
-                    {{ row.isPublish ? "已发布" : "未发布" }}
+                    {{ row.isPublish ? t('product.published') : t('product.unpublished') }}
                   </el-tag>
                 </template>
 
@@ -675,11 +675,11 @@
                     :class="{ 'table-copy-row--empty': !getProductSourceMaterialCodesText(row) }"
                     @click.stop="
                       getProductSourceMaterialCodesText(row) &&
-                      copyText(getProductSourceMaterialCodesText(row), '素材图编码')
+                      copyText(getProductSourceMaterialCodesText(row), t('product.sourceMaterialCode'))
                     "
                   >
                     <span class="table-copy-text">{{
-                      getProductSourceMaterialCodesText(row) || "未关联"
+                      getProductSourceMaterialCodesText(row) || t('product.notRelated')
                     }}</span>
                     <el-icon v-if="getProductSourceMaterialCodesText(row)" class="table-copy-icon">
                       <DocumentCopy />
@@ -689,7 +689,7 @@
 
                 <template #isFeaturedSlot="{ row }">
                   <el-tag v-if="row.isFeatured" type="warning" size="small" effect="plain"
-                    >精选</el-tag
+                    >{{ t('product.featured') }}</el-tag
                   >
                   <span v-else class="table-cell-empty">-</span>
                 </template>
@@ -700,31 +700,31 @@
                     <div v-if="hasProductRelationInfo(row)" class="relations-info">
                       <div class="relation-source-card">
                         <div class="relation-source-row">
-                          <span class="relation-source-label">来源</span>
+                          <span class="relation-source-label">{{ t('product.source') }}</span>
                           <span class="relation-source-value">{{
                             formatSourceType(row.sourceType)
                           }}</span>
                         </div>
                         <div class="relation-source-row">
-                          <span class="relation-source-label">套图</span>
+                          <span class="relation-source-label">{{ t('product.psdSet') }}</span>
                           <span class="relation-source-value">{{
                             getProductSourcePsdSetText(row)
                           }}</span>
                         </div>
                         <div class="relation-source-row">
-                          <span class="relation-source-label">素材编码</span>
+                          <span class="relation-source-label">{{ t('product.materialCode') }}</span>
                           <span class="relation-source-value">{{
-                            getProductSourceMaterialCodesText(row) || "未关联"
+                            getProductSourceMaterialCodesText(row) || t('product.notRelated')
                           }}</span>
                         </div>
                         <div class="relation-source-row">
-                          <span class="relation-source-label">商品模板</span>
+                          <span class="relation-source-label">{{ t('product.productTemplate') }}</span>
                           <span class="relation-source-value">{{
                             getProductSourceTemplateText(row)
                           }}</span>
                         </div>
                         <div class="relation-source-row">
-                          <span class="relation-source-label">发布配置</span>
+                          <span class="relation-source-label">{{ t('product.publishConfig') }}</span>
                           <span class="relation-source-value">{{
                             getProductSourcePublishConfigText(row)
                           }}</span>
@@ -733,7 +733,7 @@
                       <!-- PSD 套图 -->
                       <div v-if="row.psdSet" class="relation-section-item">
                         <div class="relation-header">
-                          <span class="relation-label">PSD套图：</span>
+                          <span class="relation-label">{{ t('product.psdSetColon') }}</span>
                         </div>
                         <vxe-grid
                           :data="[row.psdSet]"
@@ -760,7 +760,7 @@
                                   class="relation-thumb-image"
                                   fit="contain"
                                 />
-                                <span v-else class="text-gray-400 text-xs">无</span>
+                                <span v-else class="text-gray-400 text-xs">{{ t('product.none') }}</span>
                               </div>
                               <span
                                 v-if="getPsdSetImages(psdRow).length > 3"
@@ -770,14 +770,14 @@
                               <span
                                 v-if="!getPsdSetImages(psdRow).length"
                                 class="text-gray-400 text-xs"
-                                >无</span
+                                >{{ t('product.none') }}</span
                               >
                             </div>
                           </template>
                         </vxe-grid>
                       </div>
                     </div>
-                    <span v-else class="text-gray-400 text-sm">无关联</span>
+                    <span v-else class="text-gray-400 text-sm">{{ t('product.noRelation') }}</span>
                   </div>
                 </template>
 
@@ -824,33 +824,33 @@
           <section class="product-editor-section product-editor-section--primary">
             <div class="product-editor-section__header">
               <div>
-                <div class="product-editor-section__title">核心信息</div>
-                <div class="product-editor-section__meta">独立站展示与发布所需的主要内容</div>
+                <div class="product-editor-section__title">{{ t('product.coreInfo') }}</div>
+                <div class="product-editor-section__meta">{{ t('product.coreInfoMeta') }}</div>
               </div>
-              <el-tag type="danger" effect="plain" size="small">优先填写</el-tag>
+              <el-tag type="danger" effect="plain" size="small">{{ t('product.priorityFill') }}</el-tag>
             </div>
 
             <el-row :gutter="20">
               <el-col :xs="24" :md="12" :lg="10">
-                <el-form-item label="商品名称" prop="name">
+                <el-form-item :label="t('product.productName')" prop="name">
                   <el-input
                     v-model="form.name"
-                    placeholder="请输入商品名称"
+                    :placeholder="t('product.nameInputPlaceholder')"
                     maxlength="200"
                     show-word-limit
                   />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :md="12" :lg="7">
-                <el-form-item label="商品类型" prop="type">
-                  <el-input v-model="form.type" placeholder="如：T恤、地毯、鼠标垫" clearable />
+                <el-form-item :label="t('product.productType')" prop="type">
+                  <el-input v-model="form.type" :placeholder="t('product.typeExample')" clearable />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :md="12" :lg="7">
-                <el-form-item label="商品分类" prop="categoryId">
+                <el-form-item :label="t('product.category')" prop="categoryId">
                   <el-select
                     v-model="form.categoryId"
-                    placeholder="请选择商品分类"
+                    :placeholder="t('product.selectCategoryPlaceholder')"
                     clearable
                     filterable
                     style="width: 100%"
@@ -866,7 +866,7 @@
               </el-col>
 
               <el-col :span="24">
-                <el-form-item label="商品图片" prop="images">
+                <el-form-item :label="t('product.productImages')" prop="images">
                   <ProductImageUpload
                     ref="productImageUploadRef"
                     v-model="form.images"
@@ -877,23 +877,23 @@
               </el-col>
 
               <el-col :span="24">
-                <el-form-item label="商品描述" prop="description">
+                <el-form-item :label="t('product.productDescription')" prop="description">
                   <el-input
                     v-model="form.description"
                     type="textarea"
                     :rows="4"
                     maxlength="2000"
                     show-word-limit
-                    placeholder="描述商品外观、图案、用途和适用场景"
+                    :placeholder="t('product.descriptionPlaceholder')"
                   />
                 </el-form-item>
               </el-col>
 
               <el-col :span="24">
-                <el-form-item label="关键词" prop="keywords">
+                <el-form-item :label="t('product.keywords')" prop="keywords">
                   <el-input
                     v-model="form.keywords"
-                    placeholder="多个关键词用逗号分隔，如：极简,猫咪,T恤,礼物"
+                    :placeholder="t('product.keywordsExample')"
                   />
                 </el-form-item>
               </el-col>
@@ -903,24 +903,24 @@
           <section class="product-editor-section">
             <div class="product-editor-section__header">
               <div>
-                <div class="product-editor-section__title">定价与库存</div>
-                <div class="product-editor-section__meta">用于独立站价格展示和库存筛选</div>
+                <div class="product-editor-section__title">{{ t('product.pricingInventory') }}</div>
+                <div class="product-editor-section__meta">{{ t('product.pricingInventoryMeta') }}</div>
               </div>
             </div>
 
             <el-row :gutter="20">
               <el-col :xs="24" :sm="12" :lg="4">
-                <el-form-item label="售价" prop="salePrice">
+                <el-form-item :label="t('product.salePrice')" prop="salePrice">
                   <el-input-number v-model="form.salePrice" :min="0" :precision="2" :step="1" />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :lg="4">
-                <el-form-item label="原价" prop="price">
+                <el-form-item :label="t('product.originalPrice')" prop="price">
                   <el-input-number v-model="form.price" :min="0" :precision="2" :step="1" />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :lg="4">
-                <el-form-item label="划线价" prop="compareAtPrice">
+                <el-form-item :label="t('product.compareAtPrice')" prop="compareAtPrice">
                   <el-input-number
                     v-model="form.compareAtPrice"
                     :min="0"
@@ -930,21 +930,21 @@
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :lg="4">
-                <el-form-item label="币种" prop="currency">
+                <el-form-item :label="t('product.currency')" prop="currency">
                   <el-select v-model="form.currency" filterable allow-create style="width: 100%">
-                    <el-option label="人民币 CNY" value="CNY" />
-                    <el-option label="美元 USD" value="USD" />
-                    <el-option label="欧元 EUR" value="EUR" />
+                    <el-option :label="t('product.currencyCny')" value="CNY" />
+                    <el-option :label="t('product.currencyUsd')" value="USD" />
+                    <el-option :label="t('product.currencyEur')" value="EUR" />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :lg="4">
-                <el-form-item label="库存" prop="stock">
+                <el-form-item :label="t('product.stock')" prop="stock">
                   <el-input-number v-model="form.stock" :min="0" :step="1" />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :lg="4">
-                <el-form-item label="库存状态" prop="inventoryStatus">
+                <el-form-item :label="t('product.inventoryStatus')" prop="inventoryStatus">
                   <el-select v-model="form.inventoryStatus" style="width: 100%">
                     <el-option
                       v-for="item in inventoryStatusOptions"
@@ -961,49 +961,49 @@
           <section class="product-editor-section">
             <div class="product-editor-section__header">
               <div>
-                <div class="product-editor-section__title">商品资料</div>
+                <div class="product-editor-section__title">{{ t('product.productInfo') }}</div>
                 <div class="product-editor-section__meta">
-                  有明确资料时填写，内容会展示在商品详情中
+                  {{ t('product.productInfoMeta') }}
                 </div>
               </div>
             </div>
 
             <el-row :gutter="20">
               <el-col :xs="24" :sm="12" :lg="4">
-                <el-form-item label="品牌" prop="brand">
-                  <el-input v-model="form.brand" placeholder="品牌名称" />
+                <el-form-item :label="t('product.brand')" prop="brand">
+                  <el-input v-model="form.brand" :placeholder="t('product.brandPlaceholder')" />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :lg="4">
-                <el-form-item label="材质" prop="material">
-                  <el-input v-model="form.material" placeholder="如：纯棉、陶瓷" />
+                <el-form-item :label="t('product.material')" prop="material">
+                  <el-input v-model="form.material" :placeholder="t('product.materialExample')" />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :lg="4">
-                <el-form-item label="尺寸规格" prop="dimensions">
-                  <el-input v-model="form.dimensions" placeholder="如：120x60cm" />
+                <el-form-item :label="t('product.dimensions')" prop="dimensions">
+                  <el-input v-model="form.dimensions" :placeholder="t('product.dimensionsExample')" />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :lg="4">
-                <el-form-item label="计量单位" prop="unit">
+                <el-form-item :label="t('product.unit')" prop="unit">
                   <el-select v-model="form.unit" style="width: 100%">
-                    <el-option label="件" value="件" />
-                    <el-option label="个" value="个" />
-                    <el-option label="套" value="套" />
-                    <el-option label="对" value="对" />
-                    <el-option label="条" value="条" />
-                    <el-option label="箱" value="箱" />
+                    <el-option :label="t('product.unitPiece')" value="件" />
+                    <el-option :label="t('product.unitItem')" value="个" />
+                    <el-option :label="t('product.unitSet')" value="套" />
+                    <el-option :label="t('product.unitPair')" value="对" />
+                    <el-option :label="t('product.unitBar')" value="条" />
+                    <el-option :label="t('product.unitBox')" value="箱" />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :lg="4">
-                <el-form-item label="重量（克）" prop="weight">
+                <el-form-item :label="t('product.weight')" prop="weight">
                   <el-input-number v-model="form.weight" :min="0" :precision="2" :step="10" />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :lg="4">
-                <el-form-item label="产地" prop="origin">
-                  <el-input v-model="form.origin" placeholder="如：中国" />
+                <el-form-item :label="t('product.origin')" prop="origin">
+                  <el-input v-model="form.origin" :placeholder="t('product.originExample')" />
                 </el-form-item>
               </el-col>
             </el-row>
@@ -1012,8 +1012,8 @@
           <section class="product-editor-section product-editor-section--advanced">
             <div class="product-editor-section__header">
               <div>
-                <div class="product-editor-section__title">更多设置</div>
-                <div class="product-editor-section__meta">低频字段按需展开</div>
+                <div class="product-editor-section__title">{{ t('product.moreSettings') }}</div>
+                <div class="product-editor-section__meta">{{ t('product.moreSettingsMeta') }}</div>
               </div>
             </div>
 
@@ -1021,17 +1021,17 @@
               <el-collapse-item name="operation">
                 <template #title>
                   <div class="product-editor-collapse-title">
-                    <span>运营与搜索</span>
-                    <small>状态、推荐标记、搜索词和 SEO</small>
+                    <span>{{ t('product.operationAndSearch') }}</span>
+                    <small>{{ t('product.operationAndSearchMeta') }}</small>
                   </div>
                 </template>
 
                 <el-row :gutter="20">
                   <el-col :xs="24" :sm="12" :lg="6">
-                    <el-form-item label="商品状态" prop="status">
+                    <el-form-item :label="t('product.productStatus')" prop="status">
                       <el-select
                         v-model="form.status"
-                        placeholder="请选择商品状态"
+                        :placeholder="t('product.selectStatusPlaceholder')"
                         style="width: 100%"
                       >
                         <el-option
@@ -1044,56 +1044,56 @@
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :sm="12" :lg="6">
-                    <el-form-item label="排序值" prop="sort">
+                    <el-form-item :label="t('product.sortValue')" prop="sort">
                       <el-input-number v-model="form.sort" :min="0" :step="1" />
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :lg="12">
-                    <el-form-item label="推荐标记">
+                    <el-form-item :label="t('product.recommendFlags')">
                       <div class="product-editor-switches">
-                        <el-checkbox v-model="form.isFeatured" label="精选推荐" />
-                        <el-checkbox v-model="form.isNew" label="新品" />
-                        <el-checkbox v-model="form.isHot" label="热销" />
-                        <el-checkbox v-model="form.isOnSale" label="促销" />
+                        <el-checkbox v-model="form.isFeatured" :label="t('product.featuredRecommend')" />
+                        <el-checkbox v-model="form.isNew" :label="t('product.newProduct')" />
+                        <el-checkbox v-model="form.isHot" :label="t('product.hotSale')" />
+                        <el-checkbox v-model="form.isOnSale" :label="t('product.onSale')" />
                       </div>
                     </el-form-item>
                   </el-col>
 
                   <el-col :span="24">
-                    <el-form-item label="商品标签" prop="tags">
-                      <el-input v-model="form.tags" placeholder="多个标签用逗号分隔" />
+                    <el-form-item :label="t('product.productTags')" prop="tags">
+                      <el-input v-model="form.tags" :placeholder="t('product.tagsSeparateHint')" />
                     </el-form-item>
                   </el-col>
                   <el-col :span="24">
-                    <el-form-item label="搜索关键字" prop="searchKeywords">
+                    <el-form-item :label="t('product.searchKeyword')" prop="searchKeywords">
                       <el-input
                         v-model="form.searchKeywords"
                         type="textarea"
                         :rows="3"
-                        placeholder="颜色、材质、风格、适用人群、使用场景等，多个词用逗号分隔"
+                        :placeholder="t('product.searchKeywordPlaceholder')"
                       />
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :lg="12">
-                    <el-form-item label="URL 别名" prop="slug">
-                      <el-input v-model="form.slug" placeholder="如：minimal-cat-tshirt" />
+                    <el-form-item :label="t('product.urlAlias')" prop="slug">
+                      <el-input v-model="form.slug" :placeholder="t('product.slugExample')" />
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :lg="12">
-                    <el-form-item label="SEO 标题" prop="seoTitle">
+                    <el-form-item :label="t('product.seoTitle')" prop="seoTitle">
                       <el-input
                         v-model="form.seoTitle"
-                        placeholder="留空时独立站会根据商品信息生成"
+                        :placeholder="t('product.seoTitlePlaceholder')"
                       />
                     </el-form-item>
                   </el-col>
                   <el-col :span="24">
-                    <el-form-item label="SEO 描述" prop="seoDescription">
+                    <el-form-item :label="t('product.seoDescription')" prop="seoDescription">
                       <el-input
                         v-model="form.seoDescription"
                         type="textarea"
                         :rows="3"
-                        placeholder="留空时独立站会使用商品描述"
+                        :placeholder="t('product.seoDescriptionPlaceholder')"
                       />
                     </el-form-item>
                   </el-col>
@@ -1103,29 +1103,29 @@
               <el-collapse-item name="specifications">
                 <template #title>
                   <div class="product-editor-collapse-title">
-                    <span>规格与属性</span>
-                    <small>结构化规格和扩展属性</small>
+                    <span>{{ t('product.specAndAttributes') }}</span>
+                    <small>{{ t('product.specAndAttributesMeta') }}</small>
                   </div>
                 </template>
 
                 <el-row :gutter="20">
                   <el-col :xs="24" :lg="12">
-                    <el-form-item label="规格配置" prop="specifications">
+                    <el-form-item :label="t('product.specifications')" prop="specifications">
                       <el-input
                         v-model="form.specificationsText"
                         type="textarea"
                         :rows="6"
-                        placeholder='JSON，例如 {"options":[{"name":"Size","values":["S","M"]}]}'
+                        :placeholder="t('product.jsonExample')"
                       />
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :lg="12">
-                    <el-form-item label="商品属性" prop="attributes">
+                    <el-form-item :label="t('product.productAttributes')" prop="attributes">
                       <el-input
                         v-model="form.attributesText"
                         type="textarea"
                         :rows="6"
-                        placeholder='JSON，例如 {"color":"black","style":"minimal"}'
+                        :placeholder="t('product.jsonExample')"
                       />
                     </el-form-item>
                   </el-col>
@@ -1135,44 +1135,44 @@
               <el-collapse-item name="multilingual">
                 <template #title>
                   <div class="product-editor-collapse-title">
-                    <span>多语言与扩展媒体</span>
-                    <small>英文内容、详情图片和商品视频</small>
+                    <span>{{ t('product.multilingual') }}</span>
+                    <small>{{ t('product.multilingualMeta') }}</small>
                   </div>
                 </template>
 
                 <el-row :gutter="20">
                   <el-col :xs="24" :lg="12">
-                    <el-form-item label="英文名称" prop="enName">
-                      <el-input v-model="form.enName" placeholder="请输入英文名称" />
+                    <el-form-item :label="t('product.enName')" prop="enName">
+                      <el-input v-model="form.enName" :placeholder="t('product.enNamePlaceholder')" />
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :lg="12">
-                    <el-form-item label="英文关键词" prop="enKeywords">
-                      <el-input v-model="form.enKeywords" placeholder="多个关键词用逗号分隔" />
+                    <el-form-item :label="t('product.enKeywords')" prop="enKeywords">
+                      <el-input v-model="form.enKeywords" :placeholder="t('product.keywordsSeparateHint')" />
                     </el-form-item>
                   </el-col>
                   <el-col :span="24">
-                    <el-form-item label="英文描述" prop="enDescription">
+                    <el-form-item :label="t('product.enDescription')" prop="enDescription">
                       <el-input
                         v-model="form.enDescription"
                         type="textarea"
                         :rows="4"
-                        placeholder="请输入英文描述"
+                        :placeholder="t('product.enDescriptionPlaceholder')"
                       />
                     </el-form-item>
                   </el-col>
                   <el-col :span="24">
-                    <el-form-item label="英文搜索关键字" prop="enSearchKeywords">
+                    <el-form-item :label="t('product.enSearchKeyword')" prop="enSearchKeywords">
                       <el-input
                         v-model="form.enSearchKeywords"
                         type="textarea"
                         :rows="3"
-                        placeholder="多个英文搜索词用逗号分隔"
+                        :placeholder="t('product.enSearchKeywordPlaceholder')"
                       />
                     </el-form-item>
                   </el-col>
                   <el-col :span="24">
-                    <el-form-item label="详情图片" prop="detailImages">
+                    <el-form-item :label="t('product.detailImages')" prop="detailImages">
                       <ProductImageUpload
                         v-model="form.detailImages"
                         :max-count="30"
@@ -1181,7 +1181,7 @@
                     </el-form-item>
                   </el-col>
                   <el-col :span="24">
-                    <el-form-item label="商品视频" prop="videos">
+                    <el-form-item :label="t('product.productVideos')" prop="videos">
                       <ProductVideoUpload
                         ref="productVideoUploadRef"
                         v-model="form.videos"
@@ -1196,65 +1196,65 @@
               <el-collapse-item name="system">
                 <template #title>
                   <div class="product-editor-collapse-title">
-                    <span>编码、成本与履约</span>
-                    <small>系统字段和暂未用于独立站展示的资料</small>
+                    <span>{{ t('product.codeCostFulfillment') }}</span>
+                    <small>{{ t('product.codeCostFulfillmentMeta') }}</small>
                   </div>
                 </template>
 
                 <el-row :gutter="20">
                   <el-col :xs="24" :sm="12" :lg="6">
-                    <el-form-item label="商品番号" prop="code">
+                    <el-form-item :label="t('product.productCode')" prop="code">
                       <el-input
                         v-model="form.code"
                         disabled
-                        :placeholder="isEdit ? '暂无编码' : '保存后自动生成'"
+                        :placeholder="isEdit ? t('product.noCodePlaceholder') : t('product.autoGeneratePlaceholder')"
                       >
                         <template #prefix>
                           <el-icon><Lock /></el-icon>
                         </template>
                       </el-input>
-                      <div class="product-editor-field-hint">系统自动生成，不支持手动修改</div>
+                      <div class="product-editor-field-hint">{{ t('product.codeAutoGeneratedHint') }}</div>
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :sm="12" :lg="6">
                     <el-form-item label="SKU" prop="sku">
-                      <el-input v-model="form.sku" placeholder="标准 SKU" />
+                      <el-input v-model="form.sku" :placeholder="t('product.standardSku')" />
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :sm="12" :lg="6">
                     <el-form-item label="SPU" prop="spu">
-                      <el-input v-model="form.spu" placeholder="标准 SPU" />
+                      <el-input v-model="form.spu" :placeholder="t('product.standardSpu')" />
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :sm="12" :lg="6">
-                    <el-form-item label="条码" prop="barcode">
-                      <el-input v-model="form.barcode" placeholder="商品条码" />
+                    <el-form-item :label="t('product.barcode')" prop="barcode">
+                      <el-input v-model="form.barcode" :placeholder="t('product.barcodePlaceholder')" />
                     </el-form-item>
                   </el-col>
 
                   <el-col :xs="24" :sm="12" :lg="6">
-                    <el-form-item label="成本价" prop="costPrice">
+                    <el-form-item :label="t('product.costPrice')" prop="costPrice">
                       <el-input-number v-model="form.costPrice" :min="0" :precision="2" :step="1" />
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :sm="12" :lg="6">
-                    <el-form-item label="低库存阈值" prop="lowStockThreshold">
+                    <el-form-item :label="t('product.lowStockThreshold')" prop="lowStockThreshold">
                       <el-input-number v-model="form.lowStockThreshold" :min="0" :step="1" />
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :sm="12" :lg="6">
-                    <el-form-item label="起订量" prop="minOrderQuantity">
+                    <el-form-item :label="t('product.minOrderQuantity')" prop="minOrderQuantity">
                       <el-input-number v-model="form.minOrderQuantity" :min="1" :step="1" />
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :sm="12" :lg="6">
-                    <el-form-item label="运费模板" prop="shippingTemplateId">
-                      <el-input v-model="form.shippingTemplateId" placeholder="运费模板 ID" />
+                    <el-form-item :label="t('product.shippingTemplate')" prop="shippingTemplateId">
+                      <el-input v-model="form.shippingTemplateId" :placeholder="t('product.shippingTemplatePlaceholder')" />
                     </el-form-item>
                   </el-col>
 
                   <el-col :xs="24" :sm="12" :lg="6">
-                    <el-form-item label="包裹重量（克）" prop="packageWeight">
+                    <el-form-item :label="t('product.packageWeight')" prop="packageWeight">
                       <el-input-number
                         v-model="form.packageWeight"
                         :min="0"
@@ -1264,7 +1264,7 @@
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :sm="12" :lg="6">
-                    <el-form-item label="包裹长" prop="packageLength">
+                    <el-form-item :label="t('product.packageLength')" prop="packageLength">
                       <el-input-number
                         v-model="form.packageLength"
                         :min="0"
@@ -1274,7 +1274,7 @@
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :sm="12" :lg="6">
-                    <el-form-item label="包裹宽" prop="packageWidth">
+                    <el-form-item :label="t('product.packageWidth')" prop="packageWidth">
                       <el-input-number
                         v-model="form.packageWidth"
                         :min="0"
@@ -1284,7 +1284,7 @@
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :sm="12" :lg="6">
-                    <el-form-item label="包裹高" prop="packageHeight">
+                    <el-form-item :label="t('product.packageHeight')" prop="packageHeight">
                       <el-input-number
                         v-model="form.packageHeight"
                         :min="0"
@@ -1295,20 +1295,20 @@
                   </el-col>
 
                   <el-col :xs="24" :lg="12">
-                    <el-form-item label="来源" prop="sourceType">
+                    <el-form-item :label="t('product.source')" prop="sourceType">
                       <el-select v-model="form.sourceType" disabled style="width: 100%">
-                        <el-option label="手动创建" value="manual" />
-                        <el-option label="PSD套图" value="psd_set" />
-                        <el-option label="导入" value="import" />
+                        <el-option :label="t('product.manualCreate')" value="manual" />
+                        <el-option :label="t('product.psdSet')" value="psd_set" />
+                        <el-option :label="t('common.import')" value="import" />
                       </el-select>
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :lg="12">
-                    <el-form-item label="素材图编码" prop="sourceMaterialCodes">
+                    <el-form-item :label="t('product.sourceMaterialCode')" prop="sourceMaterialCodes">
                       <el-input
                         v-model="form.sourceMaterialCodes"
                         disabled
-                        placeholder="套图转商品后自动写入"
+                        :placeholder="t('product.sourceMaterialCodePlaceholder')"
                       />
                     </el-form-item>
                   </el-col>
@@ -1321,9 +1321,9 @@
 
       <template #footer>
         <div class="product-editor-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
+          <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
           <el-button type="primary" :icon="Check" @click="submitForm" :loading="submitLoading">
-            保存商品
+            {{ t('product.saveProduct') }}
           </el-button>
         </div>
       </template>
@@ -1331,7 +1331,7 @@
 
     <!-- 发布弹窗 -->
     <el-dialog
-      title="发布到多媒体平台"
+      :title="t('product.publishToPlatform')"
       v-model="publishDialogVisible"
       width="100%"
       :fullscreen="true"
@@ -1340,15 +1340,15 @@
     >
       <div class="p-3">
         <el-alert
-          title="多媒体说明"
-          description="默认引用设计模型缩略图、相关截图和视频，可勾选选择图片和视频"
+          :title="t('product.multimediaDesc')"
+          :description="t('product.multimediaDescDetail')"
           type="info"
           :closable="false"
           show-icon
           class="mb-3"
         />
 
-        <h3 class="text-base font-bold my-2 text-[var(--el-text-color-primary)]">选择发布平台</h3>
+        <h3 class="text-base font-bold my-2 text-[var(--el-text-color-primary)]">{{ t('product.selectPlatform') }}</h3>
 
         <!-- 平台选择 (视觉优化版) -->
         <div class="platform-selector-visual mb-6">
@@ -1435,24 +1435,24 @@
                 size="small"
                 :data-platform="platform"
               >
-                <el-form-item v-if="platform !== 'weibo'" label="标题" required>
+                <el-form-item v-if="platform !== 'weibo'" :label="t('product.title')" required>
                   <el-input
                     v-model="publishForm[platform].title"
-                    :placeholder="`请输入${getPlatformName(platform)}标题`"
+                    :placeholder="t('product.enterTitle', { name: getPlatformName(platform) })"
                   />
                 </el-form-item>
-                <el-form-item label="内容" required>
+                <el-form-item :label="t('product.content')" required>
                   <el-input
                     v-model="publishForm[platform].content"
                     type="textarea"
                     :rows="2"
                     :autosize="{ minRows: 2, maxRows: 8 }"
-                    :placeholder="`请输入${getPlatformName(platform)}内容`"
+                    :placeholder="t('product.enterContent', { name: getPlatformName(platform) })"
                     @input="handleContentInput(platform)"
                   />
                 </el-form-item>
 
-                <el-form-item label="商品图片">
+                <el-form-item :label="t('product.productImages')">
                   <div class="flex flex-wrap gap-1">
                     <div
                       v-for="(url, index) in publishForm[platform].images"
@@ -1486,7 +1486,7 @@
                 </el-form-item>
 
                 <el-form-item
-                  label="商品视频"
+                  :label="t('product.productVideos')"
                   v-if="publishForm[platform].videos && publishForm[platform].videos.length > 0"
                 >
                   <div class="flex flex-wrap gap-1">
@@ -1542,15 +1542,15 @@
       </div>
 
       <template #footer>
-        <el-button @click="publishDialogVisible = false">取消</el-button>
+        <el-button @click="publishDialogVisible = false">{{ t('common.cancel') }}</el-button>
         <el-button type="primary" @click="handlePublishSubmit" :loading="publishLoading"
-          >确定发布</el-button
+          >{{ t('product.confirmPublish') }}</el-button
         >
       </template>
     </el-dialog>
 
     <!-- 发布结果弹窗 -->
-    <el-dialog v-model="publishResultVisible" title="发布结果" width="900px">
+    <el-dialog v-model="publishResultVisible" :title="t('product.publishResult')" width="900px">
       <div class="p-4 publish-result-dark-bg">
         <div v-if="publishResults.length > 0">
           <div class="flex flex-wrap gap-4 mb-4">
@@ -1586,7 +1586,7 @@
                       'text-red-400': !result.success,
                     }"
                   >
-                    {{ result.success ? "发布成功" : "发布失败" }}
+                    {{ result.success ? t('product.publishSuccess') : t('product.publishFailed') }}
                   </div>
                   <div
                     class="text-xs mt-1 max-w-[180px] break-words"
@@ -1620,7 +1620,7 @@
                 {{ publishSummary.message }}
               </div>
               <div class="text-sm text-[var(--el-text-color-secondary)] mt-1">
-                成功：{{ publishSummary.successCount }} 个，失败：{{ publishSummary.failCount }} 个
+                {{ t('product.publishSummaryText', { success: publishSummary.successCount, fail: publishSummary.failCount }) }}
               </div>
             </div>
           </div>
@@ -1628,12 +1628,12 @@
       </div>
 
       <template #footer>
-        <el-button type="primary" @click="closePublishResultDialog">确认</el-button>
+        <el-button type="primary" @click="closePublishResultDialog">{{ t('common.confirm') }}</el-button>
       </template>
     </el-dialog>
 
     <!-- 图片预览 -->
-    <el-dialog v-model="previewVisible" title="预览" width="90%" :close-on-click-modal="true">
+    <el-dialog v-model="previewVisible" :title="t('product.preview')" width="90%" :close-on-click-modal="true">
       <div v-if="previewList.length > 0" class="flex flex-col items-center">
         <el-image
           :src="previewList[previewIndex]"
@@ -1647,13 +1647,13 @@
           <el-button
             @click="previewIndex = Math.max(0, previewIndex - 1)"
             :disabled="previewIndex === 0"
-            >上一张</el-button
+            >{{ t('product.prevImage') }}</el-button
           >
           <span>{{ previewIndex + 1 }} / {{ previewList.length }}</span>
           <el-button
             @click="previewIndex = Math.min(previewList.length - 1, previewIndex + 1)"
             :disabled="previewIndex === previewList.length - 1"
-            >下一张</el-button
+            >{{ t('product.nextImage') }}</el-button
           >
         </div>
       </div>
@@ -1665,7 +1665,7 @@
     <!-- 视频预览弹窗 -->
     <el-dialog
       v-model="videoPreviewVisible"
-      title="视频预览"
+      :title="t('product.videoPreview')"
       width="100%"
       :fullscreen="true"
       :close-on-click-modal="true"
@@ -1687,7 +1687,7 @@
                 )
               "
             >
-              删除
+              {{ t('common.delete') }}
             </el-button>
           </div>
         </div>
@@ -1726,12 +1726,12 @@
           </span>
         </div>
       </div>
-      <div v-else class="text-center text-gray-400 py-8">暂无视频</div>
+      <div v-else class="text-center text-gray-400 py-8">{{ t('product.noVideos') }}</div>
     </el-dialog>
 
     <el-dialog
       v-model="customModelDetailVisible"
-      title="关联设计模型详情"
+      :title="t('product.customModelDetail')"
       width="100%"
       :fullscreen="true"
       :close-on-click-modal="false"
@@ -1763,7 +1763,7 @@
               v-else
               class="w-[240px] h-[240px] flex items-center justify-center bg-gray-100 text-gray-400 rounded mb-4"
             >
-              无缩略图
+              {{ t('product.noThumbnail') }}
             </div>
             <!-- 预留更多图片展示（如有） -->
             <template v-if="customModelDetail.images && customModelDetail.images.length">
@@ -1788,17 +1788,17 @@
           <el-col :span="16">
             <el-descriptions :column="2" border>
               <el-descriptions-item label="ID">{{ customModelDetail.id }}</el-descriptions-item>
-              <el-descriptions-item label="名称">{{ customModelDetail.name }}</el-descriptions-item>
-              <el-descriptions-item label="描述" :span="2">{{
-                customModelDetail.description || "无"
+              <el-descriptions-item :label="t('product.name')">{{ customModelDetail.name }}</el-descriptions-item>
+              <el-descriptions-item :label="t('common.description')" :span="2">{{
+                customModelDetail.description || t('product.none')
               }}</el-descriptions-item>
-              <el-descriptions-item label="关键词">{{
-                customModelDetail.keywords || "无"
+              <el-descriptions-item :label="t('product.keywords')">{{
+                customModelDetail.keywords || t('product.none')
               }}</el-descriptions-item>
-              <el-descriptions-item label="标签">{{
-                customModelDetail.tags || "无"
+              <el-descriptions-item :label="t('product.tags')">{{
+                customModelDetail.tags || t('product.none')
               }}</el-descriptions-item>
-              <el-descriptions-item label="作者">
+              <el-descriptions-item :label="t('product.author')">
                 <template
                   v-if="
                     customModelDetail.uploader &&
@@ -1807,21 +1807,21 @@
                 >
                   {{ customModelDetail.uploader.name || customModelDetail.uploader.account }}
                 </template>
-                <template v-else>无</template>
+                <template v-else>{{ t('product.none') }}</template>
               </el-descriptions-item>
-              <el-descriptions-item label="创建时间">{{
+              <el-descriptions-item :label="t('common.createTime')">{{
                 customModelDetail.createTime
                   ? (customModelDetail.createTime + "").replace("T", " ").slice(0, 19)
-                  : "无"
+                  : t('product.none')
               }}</el-descriptions-item>
-              <el-descriptions-item label="更新时间">{{
+              <el-descriptions-item :label="t('common.updateTime')">{{
                 customModelDetail.updateTime
                   ? (customModelDetail.updateTime + "").replace("T", " ").slice(0, 19)
-                  : "无"
+                  : t('product.none')
               }}</el-descriptions-item>
-              <el-descriptions-item v-if="customModelDetail.url" label="模型文件">
+              <el-descriptions-item v-if="customModelDetail.url" :label="t('product.modelFile')">
                 <el-link :href="customModelDetail.url" target="_blank" type="primary"
-                  >下载/预览</el-link
+                  >{{ t('product.downloadPreview') }}</el-link
                 >
               </el-descriptions-item>
             </el-descriptions>
@@ -1829,7 +1829,7 @@
         </el-row>
         <!-- 元数据结构化展示 -->
         <div v-if="customModelDetail.meta" class="mt-6">
-          <h4 class="font-medium mb-2">元数据</h4>
+          <h4 class="font-medium mb-2">{{ t('product.metadata') }}</h4>
           <el-scrollbar style="max-height: 200px">
             <pre style=" padding: 0; margin: 0; font-size: 13px;background: none">{{
               JSON.stringify(customModelDetail.meta, null, 2)
@@ -1837,16 +1837,16 @@
           </el-scrollbar>
         </div>
       </div>
-      <div v-else class="p-8 text-center text-gray-400">暂无详情</div>
+      <div v-else class="p-8 text-center text-gray-400">{{ t('product.noDetail') }}</div>
       <template #footer>
-        <el-button @click="customModelDetailVisible = false">关闭</el-button>
+        <el-button @click="customModelDetailVisible = false">{{ t('common.close') }}</el-button>
       </template>
     </el-dialog>
 
     <!-- 关联信息详情弹窗 -->
     <el-dialog
       v-model="relationsDetailVisible"
-      title="关联信息详情"
+      :title="t('product.relationsDetail')"
       width="90%"
       :close-on-click-modal="false"
       align-center
@@ -1855,7 +1855,7 @@
       <div v-if="currentRelationsRow" class="relations-detail-content">
         <!-- 关联设计模型 -->
         <div v-if="currentRelationsRow.customModel" class="relation-section">
-          <h3 class="relation-section-title">关联设计模型</h3>
+          <h3 class="relation-section-title">{{ t('product.relationsCustomModel') }}</h3>
           <vxe-grid
             :data="[currentRelationsRow.customModel]"
             :show-header="true"
@@ -1865,16 +1865,16 @@
             :columns="[
               {
                 field: 'thumbnail',
-                title: '缩略图',
+                title: t('product.thumbnail'),
                 width: '120',
                 slots: { default: 'customModelThumbnailSlot' },
               },
-              { field: 'name', title: '名称', minWidth: 80 },
-              { field: 'description', title: '描述', minWidth: 120 },
-              { field: 'keywords', title: '关键词', minWidth: 100 },
+              { field: 'name', title: t('product.name'), minWidth: 80 },
+              { field: 'description', title: t('common.description'), minWidth: 120 },
+              { field: 'keywords', title: t('product.keywords'), minWidth: 100 },
               {
                 field: 'updateTime',
-                title: '更新时间',
+                title: t('common.updateTime'),
                 minWidth: 120,
                 slots: { default: 'customModelUpdateTimeSlot' },
               },
@@ -1898,18 +1898,18 @@
                     object-fit: contain;
                   "
                 />
-                <span v-else class="text-gray-400">无</span>
+                <span v-else class="text-gray-400">{{ t('product.none') }}</span>
               </div>
             </template>
             <template #customModelUpdateTimeSlot="{ row }">
               <span>{{
-                row.updateTime ? (row.updateTime + "").replace("T", " ").slice(0, 19) : "无"
+                row.updateTime ? (row.updateTime + "").replace("T", " ").slice(0, 19) : t('product.none')
               }}</span>
             </template>
             <template #customModelOperationSlot="{ row }">
               <div class="flex gap-2">
                 <el-button type="primary" link size="small" @click="showCustomModelDrafts(row)"
-                  >查看草稿截图</el-button
+                  >{{ t('product.viewDraftScreenshots') }}</el-button
                 >
                 <el-button
                   v-if="row.thumbnail"
@@ -1918,7 +1918,7 @@
                   size="small"
                   @click="downloadThumbnail(row.thumbnail, row.name || '缩略图')"
                 >
-                  下载缩略图
+                  {{ t('product.downloadThumbnail') }}
                 </el-button>
               </div>
             </template>
@@ -1927,7 +1927,7 @@
 
         <!-- 关联贴纸 -->
         <div v-if="currentRelationsRow.sticker" class="relation-section">
-          <h3 class="relation-section-title">关联贴纸</h3>
+          <h3 class="relation-section-title">{{ t('product.relationsSticker') }}</h3>
           <vxe-grid
             :data="[currentRelationsRow.sticker]"
             :show-header="true"
@@ -1935,14 +1935,14 @@
             size="mini"
             style=" padding: 0;margin: 0; background: none"
             :columns="[
-              { field: 'url', title: '图片', width: '120', slots: { default: 'stickerImageSlot' } },
-              { field: 'name', title: '名称', minWidth: 80 },
-              { field: 'description', title: '描述', minWidth: 120 },
-              { field: 'keywords', title: '关键词', minWidth: 100 },
-              { field: 'suffix', title: '后缀', width: 80 },
+              { field: 'url', title: t('product.image'), width: '120', slots: { default: 'stickerImageSlot' } },
+              { field: 'name', title: t('product.name'), minWidth: 80 },
+              { field: 'description', title: t('common.description'), minWidth: 120 },
+              { field: 'keywords', title: t('product.keywords'), minWidth: 100 },
+              { field: 'suffix', title: t('product.suffix'), width: 80 },
               {
                 field: 'updateTime',
-                title: '更新时间',
+                title: t('common.updateTime'),
                 minWidth: 120,
                 slots: { default: 'stickerUpdateTimeSlot' },
               },
@@ -1964,12 +1964,12 @@
                     object-fit: contain;
                   "
                 />
-                <span v-else class="text-gray-400">无</span>
+                <span v-else class="text-gray-400">{{ t('product.none') }}</span>
               </div>
             </template>
             <template #stickerUpdateTimeSlot="{ row }">
               <span>{{
-                row.updateTime ? (row.updateTime + "").replace("T", " ").slice(0, 19) : "无"
+                row.updateTime ? (row.updateTime + "").replace("T", " ").slice(0, 19) : t('product.none')
               }}</span>
             </template>
             <template #stickerOperationSlot="{ row }">
@@ -1981,7 +1981,7 @@
                   size="small"
                   @click="preview(0, [row.url])"
                 >
-                  预览
+                  {{ t('product.preview') }}
                 </el-button>
               </div>
             </template>
@@ -1990,7 +1990,7 @@
 
         <!-- 关联 PSD 套图 -->
         <div v-if="currentRelationsRow.psdSet" class="relation-section">
-          <h3 class="relation-section-title">关联PSD套图</h3>
+          <h3 class="relation-section-title">{{ t('product.relationsPsdSet') }}</h3>
           <vxe-grid
             :data="[currentRelationsRow.psdSet]"
             :show-header="true"
@@ -2016,12 +2016,12 @@
                     class="relation-thumb-image"
                     fit="contain"
                   />
-                  <span v-else class="text-gray-400 text-xs">无</span>
+                  <span v-else class="text-gray-400 text-xs">{{ t('product.none') }}</span>
                 </div>
                 <span v-if="getPsdSetImages(row).length > 3" class="text-xs text-gray-500"
                   >+{{ getPsdSetImages(row).length - 3 }}</span
                 >
-                <span v-if="!getPsdSetImages(row).length" class="text-gray-400 text-xs">无</span>
+                <span v-if="!getPsdSetImages(row).length" class="text-gray-400 text-xs">{{ t('product.none') }}</span>
               </div>
             </template>
           </vxe-grid>
@@ -2035,18 +2035,18 @@
           "
           class="text-center py-8 text-gray-400"
         >
-          无关联信息
+          {{ t('product.noRelationsInfo') }}
         </div>
       </div>
       <template #footer>
-        <el-button @click="relationsDetailVisible = false">关闭</el-button>
+        <el-button @click="relationsDetailVisible = false">{{ t('common.close') }}</el-button>
       </template>
     </el-dialog>
 
     <!-- 查看源信息对话框 -->
     <el-dialog
       v-model="relationsSourceInfoVisible"
-      title="关联信息源数据"
+      :title="t('product.relationsSourceInfo')"
       width="80%"
       :close-on-click-modal="false"
       align-center
@@ -2054,42 +2054,42 @@
     >
       <div v-if="currentSourceInfoRow" class="source-info-content">
         <el-tabs v-model="activeSourceTab" type="border-card">
-          <el-tab-pane v-if="currentSourceInfoRow.customModel" label="设计模型" name="customModel">
+          <el-tab-pane v-if="currentSourceInfoRow.customModel" :label="t('product.customModel')" name="customModel">
             <div class="source-info-section">
-              <h4 class="source-info-title">设计模型原始数据</h4>
+              <h4 class="source-info-title">{{ t('product.customModelRawData') }}</h4>
               <pre class="source-info-json">{{ formatJSON(currentSourceInfoRow.customModel) }}</pre>
             </div>
           </el-tab-pane>
-          <el-tab-pane v-if="currentSourceInfoRow.sticker" label="贴纸" name="sticker">
+          <el-tab-pane v-if="currentSourceInfoRow.sticker" :label="t('product.sticker')" name="sticker">
             <div class="source-info-section">
-              <h4 class="source-info-title">贴纸原始数据</h4>
+              <h4 class="source-info-title">{{ t('product.stickerRawData') }}</h4>
               <pre class="source-info-json">{{ formatJSON(currentSourceInfoRow.sticker) }}</pre>
             </div>
           </el-tab-pane>
-          <el-tab-pane v-if="currentSourceInfoRow.psdSet" label="PSD套图" name="psdSet">
+          <el-tab-pane v-if="currentSourceInfoRow.psdSet" :label="t('product.psdSet')" name="psdSet">
             <div class="source-info-section">
-              <h4 class="source-info-title">PSD套图原始数据</h4>
+              <h4 class="source-info-title">{{ t('product.psdSetRawData') }}</h4>
               <pre class="source-info-json">{{ formatJSON(currentSourceInfoRow.psdSet) }}</pre>
             </div>
           </el-tab-pane>
         </el-tabs>
       </div>
       <template #footer>
-        <el-button @click="relationsSourceInfoVisible = false">关闭</el-button>
-        <el-button type="primary" @click="copySourceInfo">复制JSON</el-button>
+        <el-button @click="relationsSourceInfoVisible = false">{{ t('common.close') }}</el-button>
+        <el-button type="primary" @click="copySourceInfo">{{ t('product.copyJson') }}</el-button>
       </template>
     </el-dialog>
 
     <el-dialog
       v-model="customModelDraftDialogVisible"
-      title="关联草稿"
+      :title="t('product.relatedDrafts')"
       width="80%"
       :close-on-click-modal="false"
       align-center
       :destroy-on-close="true"
     >
       <div v-if="customModelDrafts.length === 0" class="empty-state text-center py-8">
-        <el-empty description="暂无关联草稿" />
+        <el-empty :description="t('product.noRelatedDrafts')" />
       </div>
       <div v-else class="draft-grid">
         <div v-for="draft in customModelDrafts" :key="draft.id" class="draft-item">
@@ -2129,7 +2129,7 @@
           <div class="draft-info p-3">
             <div class="draft-header flex justify-between items-start mb-2">
               <div class="draft-name text-sm font-medium truncate flex-1">
-                {{ draft.name || "未命名" }}
+                {{ draft.name || t('product.unnamed') }}
               </div>
             </div>
             <div
@@ -2145,31 +2145,31 @@
         </div>
       </div>
       <template #footer>
-        <el-button @click="customModelDraftDialogVisible = false">关闭</el-button>
+        <el-button @click="customModelDraftDialogVisible = false">{{ t('common.close') }}</el-button>
       </template>
     </el-dialog>
 
     <el-dialog
       v-model="aiGenDialogVisible"
-      title="AI自动生成内容"
+      :title="t('product.aiAutoGenerateContent')"
       width="500px"
       align-center
       :destroy-on-close="true"
     >
       <div style="margin-bottom: 16px; font-size: 15px; color: #888">
-        请输入你希望AI分析的内容风格或角度（如：偏艺术描述、简洁风格、突出色彩等）
+        {{ t('product.aiGenerateHint') }}
       </div>
       <el-input
         v-model="aiGenPrompt"
         type="textarea"
         :rows="6"
-        placeholder="如：请用艺术化语言描述商品内容..."
+        :placeholder="t('product.aiGeneratePlaceholder')"
         style=" width: 100%; min-height: 120px;font-size: 16px; resize: vertical"
       />
       <template #footer>
-        <el-button @click="aiGenDialogVisible = false">取消</el-button>
+        <el-button @click="aiGenDialogVisible = false">{{ t('common.cancel') }}</el-button>
         <el-button type="primary" :loading="aiGenDialogLoading" @click="submitAiGenDialog"
-          >确定</el-button
+          >{{ t('common.confirm') }}</el-button
         >
       </template>
     </el-dialog>
@@ -2177,7 +2177,7 @@
     <!-- 产品详情弹窗 -->
     <el-dialog
       v-model="productDetailVisible"
-      title="产品详情"
+      :title="t('product.productDetail')"
       width="90%"
       :fullscreen="true"
       :close-on-click-modal="false"
@@ -2190,7 +2190,7 @@
           <el-icon class="is-loading" style="font-size: 32px">
             <Loading />
           </el-icon>
-          <span class="ml-2">加载中...</span>
+          <span class="ml-2">{{ t('product.loading') }}</span>
         </div>
         <div v-else-if="productDetail" class="product-detail-content">
           <!-- 基本信息 -->
@@ -2199,7 +2199,7 @@
               <el-icon>
                 <Document />
               </el-icon>
-              <span>基本信息</span>
+              <span>{{ t('product.basicInfo') }}</span>
             </div>
             <div class="product-info-list">
               <div class="product-info-item">
@@ -2207,143 +2207,143 @@
                 <div class="product-info-value">{{ productDetail.id }}</div>
               </div>
               <div class="product-info-item">
-                <div class="product-info-label">产品代码</div>
+                <div class="product-info-label">{{ t('product.productCodeLabel') }}</div>
                 <div class="product-info-value">
                   <el-tag v-if="productDetail.code" type="info" size="small">{{
                     productDetail.code
                   }}</el-tag>
-                  <span v-else class="text-gray-400">未生成</span>
+                  <span v-else class="text-gray-400">{{ t('product.notGenerated') }}</span>
                 </div>
               </div>
               <div class="product-info-item">
-                <div class="product-info-label">商品名称</div>
-                <div class="product-info-value">{{ productDetail.name || "未设置" }}</div>
+                <div class="product-info-label">{{ t('product.productName') }}</div>
+                <div class="product-info-value">{{ productDetail.name || t('product.notSet') }}</div>
               </div>
               <div class="product-info-item">
-                <div class="product-info-label">英文名称</div>
-                <div class="product-info-value">{{ productDetail.enName || "未设置" }}</div>
+                <div class="product-info-label">{{ t('product.enName') }}</div>
+                <div class="product-info-value">{{ productDetail.enName || t('product.notSet') }}</div>
               </div>
               <div class="product-info-item">
-                <div class="product-info-label">商品类型</div>
+                <div class="product-info-label">{{ t('product.productType') }}</div>
                 <div class="product-info-value">
                   {{ normalizeProductType(productDetail.type) }}
                 </div>
               </div>
               <div class="product-info-item">
-                <div class="product-info-label">原价</div>
+                <div class="product-info-label">{{ t('product.originalPrice') }}</div>
                 <div class="product-info-value">{{ formatMoney(productDetail.price) }}</div>
               </div>
               <div class="product-info-item">
-                <div class="product-info-label">售价</div>
+                <div class="product-info-label">{{ t('product.salePrice') }}</div>
                 <div class="product-info-value">{{ formatMoney(productDetail.salePrice) }}</div>
               </div>
               <div class="product-info-item">
-                <div class="product-info-label">库存</div>
+                <div class="product-info-label">{{ t('product.stock') }}</div>
                 <div class="product-info-value">{{ productDetail.stock ?? 0 }}</div>
               </div>
               <div class="product-info-item">
-                <div class="product-info-label">来源</div>
+                <div class="product-info-label">{{ t('product.source') }}</div>
                 <div class="product-info-value">
                   {{ formatSourceType(productDetail.sourceType) }}
                 </div>
               </div>
               <div class="product-info-item">
-                <div class="product-info-label">来源套图</div>
+                <div class="product-info-label">{{ t('product.sourcePsdSet') }}</div>
                 <div class="product-info-value">
-                  {{ productDetail.meta?.psdSet?.name || productDetail.meta?.psdSetId || "未关联" }}
+                  {{ productDetail.meta?.psdSet?.name || productDetail.meta?.psdSetId || t('product.notRelated') }}
                 </div>
               </div>
               <div class="product-info-item">
-                <div class="product-info-label">素材图编码</div>
+                <div class="product-info-label">{{ t('product.sourceMaterialCode') }}</div>
                 <div class="product-info-value">
-                  {{ getProductSourceMaterialCodesText(productDetail) || "未关联" }}
+                  {{ getProductSourceMaterialCodesText(productDetail) || t('product.notRelated') }}
                 </div>
               </div>
               <div class="product-info-item">
-                <div class="product-info-label">生成模板</div>
+                <div class="product-info-label">{{ t('product.generationTemplate') }}</div>
                 <div class="product-info-value">
                   {{
                     productDetail.meta?.productGenerationTemplateName ||
                     productDetail.meta?.productGenerationTemplateId ||
-                    "未关联"
+                    t('product.notRelated')
                   }}
                 </div>
               </div>
               <div class="product-info-item">
-                <div class="product-info-label">关联发布配置</div>
+                <div class="product-info-label">{{ t('product.relatedPublishConfig') }}</div>
                 <div class="product-info-value">
                   {{ formatSourceIdList(productDetail.meta?.publishConfigIds) }}
                 </div>
               </div>
               <div class="product-info-item">
-                <div class="product-info-label">发布状态</div>
+                <div class="product-info-label">{{ t('product.publishStatus') }}</div>
                 <div class="product-info-value">
-                  <el-tag v-if="productDetail.isPublish" type="success" size="small">已发布</el-tag>
-                  <el-tag v-else type="warning" size="small">未发布</el-tag>
+                  <el-tag v-if="productDetail.isPublish" type="success" size="small">{{ t('product.published') }}</el-tag>
+                  <el-tag v-else type="warning" size="small">{{ t('product.unpublished') }}</el-tag>
                 </div>
               </div>
               <div class="product-info-item">
-                <div class="product-info-label">商品描述</div>
-                <div class="product-info-value">{{ productDetail.description || "未设置" }}</div>
+                <div class="product-info-label">{{ t('product.productDescription') }}</div>
+                <div class="product-info-value">{{ productDetail.description || t('product.notSet') }}</div>
               </div>
               <div class="product-info-item">
-                <div class="product-info-label">英文描述</div>
-                <div class="product-info-value">{{ productDetail.enDescription || "未设置" }}</div>
+                <div class="product-info-label">{{ t('product.enDescription') }}</div>
+                <div class="product-info-value">{{ productDetail.enDescription || t('product.notSet') }}</div>
               </div>
               <div class="product-info-item">
-                <div class="product-info-label">关键词</div>
-                <div class="product-info-value">{{ productDetail.keywords || "未设置" }}</div>
+                <div class="product-info-label">{{ t('product.keywords') }}</div>
+                <div class="product-info-value">{{ productDetail.keywords || t('product.notSet') }}</div>
               </div>
               <div class="product-info-item">
-                <div class="product-info-label">英文关键词</div>
-                <div class="product-info-value">{{ productDetail.enKeywords || "未设置" }}</div>
+                <div class="product-info-label">{{ t('product.enKeywords') }}</div>
+                <div class="product-info-value">{{ productDetail.enKeywords || t('product.notSet') }}</div>
               </div>
               <div class="product-info-item">
-                <div class="product-info-label">搜索关键字</div>
-                <div class="product-info-value">{{ productDetail.searchKeywords || "未设置" }}</div>
+                <div class="product-info-label">{{ t('product.searchKeyword') }}</div>
+                <div class="product-info-value">{{ productDetail.searchKeywords || t('product.notSet') }}</div>
               </div>
               <div class="product-info-item">
-                <div class="product-info-label">英文搜索关键字</div>
+                <div class="product-info-label">{{ t('product.enSearchKeyword') }}</div>
                 <div class="product-info-value">
-                  {{ productDetail.enSearchKeywords || "未设置" }}
+                  {{ productDetail.enSearchKeywords || t('product.notSet') }}
                 </div>
               </div>
               <div class="product-info-item">
-                <div class="product-info-label">URL别名</div>
-                <div class="product-info-value">{{ productDetail.slug || "未设置" }}</div>
+                <div class="product-info-label">{{ t('product.urlAlias') }}</div>
+                <div class="product-info-value">{{ productDetail.slug || t('product.notSet') }}</div>
               </div>
               <div class="product-info-item">
-                <div class="product-info-label">SEO标题</div>
-                <div class="product-info-value">{{ productDetail.seoTitle || "未设置" }}</div>
+                <div class="product-info-label">{{ t('product.seoTitle') }}</div>
+                <div class="product-info-value">{{ productDetail.seoTitle || t('product.notSet') }}</div>
               </div>
               <div class="product-info-item">
-                <div class="product-info-label">SEO描述</div>
-                <div class="product-info-value">{{ productDetail.seoDescription || "未设置" }}</div>
+                <div class="product-info-label">{{ t('product.seoDescription') }}</div>
+                <div class="product-info-value">{{ productDetail.seoDescription || t('product.notSet') }}</div>
               </div>
               <div class="product-info-item">
-                <div class="product-info-label">创建人</div>
+                <div class="product-info-label">{{ t('product.creator') }}</div>
                 <div class="product-info-value">
                   {{
                     productDetail?.uploader?.account ||
                     productDetail?.uploader?.name ||
                     productDetail?.userId ||
-                    "未设置"
+                    t('product.notSet')
                   }}
                 </div>
               </div>
               <div class="product-info-item">
-                <div class="product-info-label">创建时间</div>
+                <div class="product-info-label">{{ t('common.createTime') }}</div>
                 <div class="product-info-value">
                   {{
-                    productDetail.createTime ? formatTimestamp(productDetail.createTime) : "未设置"
+                    productDetail.createTime ? formatTimestamp(productDetail.createTime) : t('product.notSet')
                   }}
                 </div>
               </div>
               <div class="product-info-item">
-                <div class="product-info-label">修改时间</div>
+                <div class="product-info-label">{{ t('product.modifiedTime') }}</div>
                 <div class="product-info-value">
                   {{
-                    productDetail.updateTime ? formatTimestamp(productDetail.updateTime) : "未设置"
+                    productDetail.updateTime ? formatTimestamp(productDetail.updateTime) : t('product.notSet')
                   }}
                 </div>
               </div>
@@ -2360,10 +2360,10 @@
                 <el-icon>
                   <Picture />
                 </el-icon>
-                <span>商品图片 ({{ productDetail.images.length }})</span>
+                <span>{{ t('product.productImagesCount', { count: productDetail.images.length }) }}</span>
               </div>
               <el-button type="primary" link size="small" @click="handleDownloadAllProductImages">
-                批量下载所有图片
+                {{ t('product.downloadAllImages') }}
               </el-button>
             </div>
             <div class="flex flex-wrap gap-2">
@@ -2389,7 +2389,7 @@
               <el-icon>
                 <Picture />
               </el-icon>
-              <span>详情图片 ({{ productDetail.detailImages.length }})</span>
+              <span>{{ t('product.detailImagesCount', { count: productDetail.detailImages.length }) }}</span>
             </div>
             <div class="flex flex-wrap gap-2">
               <el-image
@@ -2415,7 +2415,7 @@
               <el-icon>
                 <VideoPlay />
               </el-icon>
-              <span>商品视频 ({{ productDetail.videos.length }})</span>
+              <span>{{ t('product.productVideosCount', { count: productDetail.videos.length }) }}</span>
             </div>
             <div class="flex flex-wrap gap-2">
               <div
@@ -2450,7 +2450,7 @@
               <el-icon>
                 <Box />
               </el-icon>
-              <span>关联信息</span>
+              <span>{{ t('product.relations') }}</span>
             </div>
             <div class="relations-detail-content">
               <div
@@ -2477,26 +2477,26 @@
                       class="relation-card__image"
                       fit="contain"
                     />
-                    <span v-else class="relation-card__empty">无图</span>
+                    <span v-else class="relation-card__empty">{{ t('product.noImage') }}</span>
                   </div>
                   <div class="relation-card__body">
                     <div class="relation-card__head">
-                      <span class="relation-card__type">设计模型</span>
+                      <span class="relation-card__type">{{ t('product.customModel') }}</span>
                       <span class="relation-card__title">{{
-                        productDetail.customModel.name || "未命名"
+                        productDetail.customModel.name || t('product.unnamed')
                       }}</span>
                     </div>
                     <div class="relation-card__fields">
                       <div class="relation-card__field">
-                        <span>描述</span>
+                        <span>{{ t('common.description') }}</span>
                         <strong>{{ productDetail.customModel.description || "-" }}</strong>
                       </div>
                       <div class="relation-card__field">
-                        <span>关键词</span>
+                        <span>{{ t('product.keywords') }}</span>
                         <strong>{{ productDetail.customModel.keywords || "-" }}</strong>
                       </div>
                       <div class="relation-card__field">
-                        <span>更新时间</span>
+                        <span>{{ t('common.updateTime') }}</span>
                         <strong>{{
                           productDetail.customModel.updateTime
                             ? formatTimestamp(productDetail.customModel.updateTime)
@@ -2519,30 +2519,30 @@
                       class="relation-card__image"
                       fit="contain"
                     />
-                    <span v-else class="relation-card__empty">无图</span>
+                    <span v-else class="relation-card__empty">{{ t('product.noImage') }}</span>
                   </div>
                   <div class="relation-card__body">
                     <div class="relation-card__head">
-                      <span class="relation-card__type">贴纸</span>
+                      <span class="relation-card__type">{{ t('product.sticker') }}</span>
                       <span class="relation-card__title">{{
-                        productDetail.sticker.name || "未命名"
+                        productDetail.sticker.name || t('product.unnamed')
                       }}</span>
                     </div>
                     <div class="relation-card__fields">
                       <div class="relation-card__field">
-                        <span>描述</span>
+                        <span>{{ t('common.description') }}</span>
                         <strong>{{ productDetail.sticker.description || "-" }}</strong>
                       </div>
                       <div class="relation-card__field">
-                        <span>关键词</span>
+                        <span>{{ t('product.keywords') }}</span>
                         <strong>{{ productDetail.sticker.keywords || "-" }}</strong>
                       </div>
                       <div class="relation-card__field">
-                        <span>格式</span>
+                        <span>{{ t('product.format') }}</span>
                         <strong>{{ productDetail.sticker.suffix || "-" }}</strong>
                       </div>
                       <div class="relation-card__field">
-                        <span>更新时间</span>
+                        <span>{{ t('common.updateTime') }}</span>
                         <strong>{{
                           productDetail.sticker.updateTime
                             ? formatTimestamp(productDetail.sticker.updateTime)
@@ -2556,9 +2556,9 @@
                 <div v-if="productDetail.meta?.psdSet" class="relation-card relation-card--wide">
                   <div class="relation-card__body">
                     <div class="relation-card__head">
-                      <span class="relation-card__type">PSD套图</span>
+                      <span class="relation-card__type">{{ t('product.psdSet') }}</span>
                       <span class="relation-card__title">{{
-                        productDetail.meta.psdSet.name || "未命名"
+                        productDetail.meta.psdSet.name || t('product.unnamed')
                       }}</span>
                     </div>
                     <div class="relation-card__gallery">
@@ -2582,7 +2582,7 @@
                       <span
                         v-if="!getPsdSetImages(productDetail.meta.psdSet).length"
                         class="relation-card__empty"
-                        >无图</span
+                        >{{ t('product.noImage') }}</span
                       >
                     </div>
                     <div class="relation-card__fields">
@@ -2591,11 +2591,11 @@
                         <strong>{{ productDetail.meta.psdSet.id || "-" }}</strong>
                       </div>
                       <div class="relation-card__field">
-                        <span>描述</span>
+                        <span>{{ t('common.description') }}</span>
                         <strong>{{ productDetail.meta.psdSet.description || "-" }}</strong>
                       </div>
                       <div class="relation-card__field">
-                        <span>更新时间</span>
+                        <span>{{ t('common.updateTime') }}</span>
                         <strong>{{
                           productDetail.meta.psdSet.updateTime
                             ? formatTimestamp(productDetail.meta.psdSet.updateTime)
@@ -2610,11 +2610,11 @@
           </div>
         </div>
         <div v-else-if="!productDetailLoading" class="text-center py-20 text-gray-400">
-          暂无数据
+          {{ t('product.noData') }}
         </div>
       </div>
       <template #footer>
-        <el-button @click="productDetailVisible = false">关闭</el-button>
+        <el-button @click="productDetailVisible = false">{{ t('common.close') }}</el-button>
       </template>
     </el-dialog>
   </ContentWrap>
@@ -2622,10 +2622,12 @@
 
 <script setup lang="tsx">
 import { ref, reactive, computed, watchEffect, nextTick } from "vue";
+import { useI18n } from "@/hooks/web/useI18n";
 import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { useUserStore } from "@/store/modules/user";
 const userStore = useUserStore();
+const { t } = useI18n();
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
   Search,
@@ -2716,15 +2718,15 @@ const queryParams = reactive({
 });
 
 const productStatusOptions = [
-  { label: "在售", value: "active" },
-  { label: "草稿", value: "draft" },
-  { label: "归档", value: "archived" },
+  { label: t('product.statusActive'), value: 'active' },
+  { label: t('product.draft'), value: 'draft' },
+  { label: t('product.archived'), value: 'archived' },
 ];
 
 const inventoryStatusOptions = [
-  { label: "有库存", value: "in_stock" },
-  { label: "无库存", value: "out_of_stock" },
-  { label: "预售", value: "preorder" },
+  { label: t('product.inStock'), value: 'in_stock' },
+  { label: t('product.outOfStock'), value: 'out_of_stock' },
+  { label: t('product.preorder'), value: 'preorder' },
 ];
 
 const optionLabel = (options: Array<{ label: string; value: string }>, value?: string) =>
@@ -2765,7 +2767,7 @@ const baseColumns: any[] = [
   },
   { type: "checkbox", width: 42, showOverflow: true },
   {
-    title: "商品图片",
+    title: t('product.productImages'),
     field: "images",
     width: 180,
     slots: {
@@ -2773,7 +2775,7 @@ const baseColumns: any[] = [
     },
   },
   {
-    title: "商品视频",
+    title: t('product.productVideos'),
     field: "videos",
     width: "auto",
     slots: {
@@ -2781,28 +2783,28 @@ const baseColumns: any[] = [
     },
   },
   {
-    title: "商品名称",
+    title: t('product.productName'),
     field: "name",
     width: 280,
     showOverflow: false,
     slots: { default: "nameSlot" },
   },
   {
-    title: "商品描述",
+    title: t('product.productDescription'),
     field: "description",
     width: 300,
     showOverflow: false,
     slots: { default: "descriptionSlot" },
   },
   {
-    title: "关键词",
+    title: t('product.keywords'),
     field: "keywords",
     width: 280,
     showOverflow: false,
     slots: { default: "keywordsSlot" },
   },
   {
-    title: "搜索关键字",
+    title: t('product.searchKeyword'),
     field: "searchKeywords",
     minWidth: 300,
     width: 300,
@@ -2813,14 +2815,14 @@ const baseColumns: any[] = [
 
 // 关联信息列
 const relationsColumn = {
-  title: "关联信息",
+  title: t('product.relations'),
   field: "relations",
   width: "auto",
   slots: { default: "relationsSlot" },
 };
 
 const sourceMaterialCodesColumn = {
-  title: "素材图编码",
+  title: t('product.sourceMaterialCode'),
   field: "sourceMaterialCodes",
   width: 180,
   showOverflow: true,
@@ -2836,7 +2838,7 @@ const gridColumns = computed(() => {
   columns.push(sourceMaterialCodesColumn);
   columns.push(
     {
-      title: "产品代码",
+      title: t('product.productCodeLabel'),
       field: "code",
       width: 120,
       showOverflow: true,
@@ -2850,14 +2852,14 @@ const gridColumns = computed(() => {
       formatter: ({ row }) => [row.sku, row.spu].filter(Boolean).join(" / ") || "-",
     },
     {
-      title: "商品类型",
+      title: t('product.productType'),
       field: "type",
       width: 140,
       showOverflow: true,
       slots: { default: "typeSlot" },
     },
     {
-      title: "分类",
+      title: t('product.category'),
       field: "categoryId",
       width: 120,
       showOverflow: true,
@@ -2867,20 +2869,20 @@ const gridColumns = computed(() => {
       },
     },
     {
-      title: "品牌",
+      title: t('product.brand'),
       field: "brand",
       width: 100,
       showOverflow: true,
       formatter: ({ cellValue }) => cellValue || "-",
     },
     {
-      title: "状态",
+      title: t('common.status'),
       field: "status",
       width: 80,
       formatter: ({ cellValue }) => optionLabel(productStatusOptions, cellValue),
     },
     {
-      title: "原价",
+      title: t('product.originalPrice'),
       field: "price",
       width: 90,
       align: "right",
@@ -2890,7 +2892,7 @@ const gridColumns = computed(() => {
       },
     },
     {
-      title: "售价",
+      title: t('product.salePrice'),
       field: "salePrice",
       width: 90,
       align: "right",
@@ -2900,7 +2902,7 @@ const gridColumns = computed(() => {
       },
     },
     {
-      title: "划线价",
+      title: t('product.compareAtPrice'),
       field: "compareAtPrice",
       width: 90,
       align: "right",
@@ -2910,42 +2912,42 @@ const gridColumns = computed(() => {
       },
     },
     {
-      title: "库存",
+      title: t('product.stock'),
       field: "stock",
       width: 70,
       align: "right",
     },
     {
-      title: "库存状态",
+      title: t('product.inventoryStatus'),
       field: "inventoryStatus",
       width: 90,
       formatter: ({ cellValue }) => optionLabel(inventoryStatusOptions, cellValue),
     },
     {
-      title: "销量",
+      title: t('product.salesCount'),
       field: "salesCount",
       width: 70,
       align: "right",
       formatter: ({ cellValue }) => cellValue || 0,
     },
     {
-      title: "精选",
+      title: t('product.featured'),
       field: "isFeatured",
       width: 60,
       align: "center",
       slots: { default: "isFeaturedSlot" },
     },
     {
-      title: "标签",
+      title: t('product.tags'),
       field: "commerceFlags",
       width: 120,
       formatter: ({ row }) =>
-        [row.isNew ? "新品" : "", row.isHot ? "热销" : "", row.isOnSale ? "促销" : ""]
+        [row.isNew ? t('product.newProduct') : '', row.isHot ? t('product.hotSale') : '', row.isOnSale ? t('product.onSale') : '']
           .filter(Boolean)
           .join(" / ") || "-",
     },
     {
-      title: "发布状态",
+      title: t('product.publishStatus'),
       field: "isPublish",
       width: 100,
       align: "center",
@@ -2959,14 +2961,14 @@ const gridColumns = computed(() => {
       slots: { default: "idSlot" },
     },
     {
-      title: "创建人",
+      title: t('product.creator'),
       field: "uploader",
       minWidth: 100,
       showOverflow: true,
       formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
     },
     {
-      title: "创建时间",
+      title: t('common.createTime'),
       field: "createTime",
       width: 150,
       className: "table-time-cell",
@@ -2976,7 +2978,7 @@ const gridColumns = computed(() => {
       },
     },
     {
-      title: "修改时间",
+      title: t('product.modifiedTime'),
       field: "updateTime",
       width: 150,
       className: "table-time-cell",
@@ -3008,19 +3010,19 @@ const gridOptions = computed(() => ({
 
 // PSD 套图列配置（关联列表 & 详情弹窗共用）
 const psdSetBaseColumns = [
-  { field: "images", title: "套图图片", width: 240, slots: { default: "psdSetImagesSlot" } },
-  { field: "name", title: "名称", minWidth: 120, showOverflow: true },
-  { field: "description", title: "描述", minWidth: 150, showOverflow: true },
-  { field: "keywords", title: "关键词", minWidth: 120, showOverflow: true },
+  { field: "images", title: t('product.psdSetImages'), width: 240, slots: { default: "psdSetImagesSlot" } },
+  { field: "name", title: t('product.name'), minWidth: 120, showOverflow: true },
+  { field: "description", title: t('common.description'), minWidth: 150, showOverflow: true },
+  { field: "keywords", title: t('product.keywords'), minWidth: 120, showOverflow: true },
   {
     field: "updateTime",
-    title: "更新时间",
+    title: t('common.updateTime'),
     minWidth: 140,
     formatter: ({ cellValue }) => formatTimestamp(cellValue),
   },
 ];
 const psdSetColumns = psdSetBaseColumns;
-const psdSetDetailColumns = [...psdSetBaseColumns, { field: "id", title: "关联ID", minWidth: 120 }];
+const psdSetDetailColumns = [...psdSetBaseColumns, { field: "id", title: t('product.relationId'), minWidth: 120 }];
 const relationGridOptions = {
   border: "inner",
   round: false,
@@ -3109,12 +3111,12 @@ async function handleFolderDrop(payload: { data: any }) {
       ids: movingIds,
       folderId: convertFolderIdToApiParam(targetFolderId) as string,
     });
-    ElMessage.success(`已移动 ${movingIds.length} 个商品到 ${targetPath || "未分组"}`);
+    ElMessage.success(t('product.movedProducts', { count: movingIds.length, target: targetPath || t('product.ungrouped') }));
     await getList();
     ids.value = [];
     selectedRows.value = [];
   } catch (error) {
-    ElMessage.error((error as Error).message || "移动失败");
+    ElMessage.error((error as Error).message || t('product.moveFailed'));
   } finally {
     resetAfterDrop();
   }
@@ -3174,10 +3176,10 @@ const publishSummary = computed(() => {
     failed: failCount === total,
     message:
       successCount === total
-        ? "所有平台发布成功！"
+        ? t('product.allPlatformsPublished')
         : successCount > 0
-          ? `部分平台发布成功`
-          : "所有平台发布失败",
+          ? t('product.partialPlatformsPublished')
+          : t('product.allPlatformsPublishFailed'),
     successCount,
     failCount,
   };
@@ -3384,13 +3386,13 @@ const validateProductImages = (_rule: any, _value: unknown, callback: (error?: E
     callback();
     return;
   }
-  callback(new Error("请至少添加一张商品图片"));
+  callback(new Error(t('product.addAtLeastOneImage')));
 };
 
 const rules = {
-  name: [{ required: true, message: "请输入商品名称", trigger: "blur" }],
-  description: [{ required: false, message: "请输入商品描述", trigger: "blur" }],
-  type: [{ required: true, message: "请输入商品类型", trigger: "blur" }],
+  name: [{ required: true, message: t('product.nameInputPlaceholder'), trigger: "blur" }],
+  description: [{ required: false, message: t('product.descriptionInputPlaceholder'), trigger: "blur" }],
+  type: [{ required: true, message: t('product.typeInputPlaceholder'), trigger: "blur" }],
   images: [{ validator: validateProductImages, trigger: "change" }],
 };
 
@@ -3460,7 +3462,7 @@ const submitForm = async () => {
       try {
         formData.specifications = JSON.parse(form.value.specificationsText);
       } catch (error) {
-        ElMessage.error("规格配置必须是合法 JSON");
+        ElMessage.error(t('product.specificationsInvalidJson'));
         return;
       }
     } else {
@@ -3471,7 +3473,7 @@ const submitForm = async () => {
       try {
         formData.attributes = JSON.parse(form.value.attributesText);
       } catch (error) {
-        ElMessage.error("商品属性必须是合法 JSON");
+        ElMessage.error(t('product.attributesInvalidJson'));
         return;
       }
     } else {
@@ -3499,7 +3501,7 @@ const submitForm = async () => {
           });
           return result.url;
         } catch (error) {
-          ElMessage.error(`图片 ${file.name} 上传失败`);
+          ElMessage.error(t('product.imageNameUploadFailed', { name: file.name }));
           throw error;
         }
       });
@@ -3507,7 +3509,7 @@ const submitForm = async () => {
         const results = await Promise.all(uploadPromises);
         newImageUrls = results.filter((url) => url !== null);
       } catch (error) {
-        ElMessage.error("图片上传失败，请重试");
+        ElMessage.error(t('product.imageUploadFailed'));
         return;
       }
     }
@@ -3525,7 +3527,7 @@ const submitForm = async () => {
           });
           return result.url;
         } catch (error) {
-          ElMessage.error(`视频 ${file.name} 上传失败`);
+          ElMessage.error(t('product.videoNameUploadFailed', { name: file.name }));
           throw error;
         }
       });
@@ -3533,7 +3535,7 @@ const submitForm = async () => {
         const results = await Promise.all(uploadPromises);
         newVideoUrls = results.filter((url) => url !== null);
       } catch (error) {
-        ElMessage.error("视频上传失败，请重试");
+        ElMessage.error(t('product.videoUploadFailed'));
         return;
       }
     }
@@ -3550,7 +3552,7 @@ const submitForm = async () => {
           });
           return result.url;
         } catch (error) {
-          ElMessage.error(`详情图片 ${file.name} 上传失败`);
+          ElMessage.error(t('product.detailImageNameUploadFailed', { name: file.name }));
           throw error;
         }
       });
@@ -3558,7 +3560,7 @@ const submitForm = async () => {
         const results = await Promise.all(uploadPromises);
         newDetailImageUrls = results.filter((url) => url !== null);
       } catch (error) {
-        ElMessage.error("详情图片上传失败，请重试");
+        ElMessage.error(t('product.detailImageUploadFailed'));
         return;
       }
     }
@@ -3569,18 +3571,18 @@ const submitForm = async () => {
     formData.detailImages = [...form.value.detailImages, ...newDetailImageUrls];
     if (isEdit.value) {
       await updateProduct(formData);
-      ElMessage.success("更新成功");
+      ElMessage.success(t('common.updateSuccess'));
     } else {
       delete formData.id;
       await createProduct(formData);
-      ElMessage.success("添加成功");
+      ElMessage.success(t('common.addSuccess'));
     }
     dialogVisible.value = false;
     resetQuery(); // 重置查询参数
     getList(); // 重新获取列表
     productImageUploadRef.value?.reset(); // 重置图片上传组件
   } catch (e) {
-    ElMessage.error("操作失败");
+    ElMessage.error(t('common.operationFailed'));
   } finally {
     submitLoading.value = false;
   }
@@ -3596,16 +3598,16 @@ const copyUrl = (url: string) => {
 
 const formatMoney = (value: any) => {
   const amount = Number(value || 0);
-  return amount > 0 ? amount.toFixed(2) : "未设置";
+  return amount > 0 ? amount.toFixed(2) : t('product.notSet');
 };
 
 const formatSourceType = (value?: string) => {
   const map: Record<string, string> = {
-    manual: "手动创建",
-    psd_set: "PSD套图",
-    import: "导入",
+    manual: t('product.manualCreate'),
+    psd_set: t('product.psdSet'),
+    import: t('common.import'),
   };
-  return map[value || ""] || value || "未设置";
+  return map[value || ''] || value || t('product.notSet');
 };
 
 const formatSourceIdList = (value?: any) => {
@@ -3615,7 +3617,7 @@ const formatSourceIdList = (value?: any) => {
       ? value.split(/[,，\s]+/)
       : [];
   const normalized = list.map((item) => String(item || "").trim()).filter(Boolean);
-  return normalized.length ? normalized.join("、") : "未关联";
+  return normalized.length ? normalized.join('、') : t('product.notRelated');
 };
 
 const normalizeRelationIdList = (value?: any): string[] => {
@@ -3650,7 +3652,7 @@ const getPsdSetAutomationConfigIds = (row: any, actionType: string, key: string)
 
 const getProductSourcePsdSetText = (row: any) => {
   const { meta } = getProductSourceMeta(row);
-  return meta.psdSet?.name || meta.psdSetId || "未关联";
+  return meta.psdSet?.name || meta.psdSetId || t('product.notRelated');
 };
 
 const getProductSourceTemplateIds = (row: any) => {
@@ -3683,7 +3685,7 @@ const formatRelationNames = (ids: string[], map: Record<string, any>, fallbackNa
       return item?.name || item?.taskType || item?.platform || id;
     })
     .filter(Boolean);
-  return values.length ? values.join("、") : "未关联";
+  return values.length ? values.join('、') : t('product.notRelated');
 };
 
 const getProductSourceTemplateText = (row: any) => {
@@ -3756,7 +3758,7 @@ async function copyId(id: string) {
   if (!id) return;
   try {
     await navigator.clipboard.writeText(id);
-    ElMessage.success("ID 已复制到剪贴板");
+    ElMessage.success(t('product.idCopiedToClipboard'));
   } catch (e) {
     // 降级方案
     const textarea = document.createElement("textarea");
@@ -3765,7 +3767,7 @@ async function copyId(id: string) {
     textarea.select();
     document.execCommand("copy");
     document.body.removeChild(textarea);
-    ElMessage.success("ID 已复制到剪贴板");
+    ElMessage.success(t('product.idCopiedToClipboard'));
   }
 }
 
@@ -3774,7 +3776,7 @@ async function copyText(text: string, label?: string) {
   if (!text) return;
   try {
     await navigator.clipboard.writeText(text);
-    ElMessage.success(`${label || "内容"}已复制到剪贴板`);
+    ElMessage.success(t('product.labelCopiedToClipboard', { label: label || t('product.content') }));
   } catch (e) {
     // 降级方案
     const textarea = document.createElement("textarea");
@@ -3783,7 +3785,7 @@ async function copyText(text: string, label?: string) {
     textarea.select();
     document.execCommand("copy");
     document.body.removeChild(textarea);
-    ElMessage.success(`${label || "内容"}已复制到剪贴板`);
+    ElMessage.success(t('product.labelCopiedToClipboard', { label: label || t('product.content') }));
   }
 }
 
@@ -3888,7 +3890,7 @@ async function getList() {
     ids.value = [];
     nextTick(setupRowDrag);
   } catch (error) {
-    ElMessage.error("获取列表失败");
+    ElMessage.error(t('product.fetchListFailed'));
     dataSource.value = [];
     total.value = 0;
   } finally {
@@ -3943,7 +3945,7 @@ const handleShowRelationsChange = () => {
 // 查看产品详情
 async function handleViewDetail(row: any) {
   if (!row?.id) {
-    ElMessage.warning("产品ID不存在");
+    ElMessage.warning(t('product.productIdNotExist'));
     return;
   }
 
@@ -3962,12 +3964,12 @@ async function handleViewDetail(row: any) {
     if (res && res.list && res.list.length > 0) {
       productDetail.value = res.list[0];
     } else {
-      ElMessage.error("未找到产品详情");
+      ElMessage.error(t('product.productDetailNotFound'));
       productDetailVisible.value = false;
     }
   } catch (error: any) {
     console.error("获取产品详情失败:", error);
-    ElMessage.error(error?.message || "获取产品详情失败");
+    ElMessage.error(error?.message || t('product.fetchProductDetailFailed'));
     productDetailVisible.value = false;
   } finally {
     productDetailLoading.value = false;
@@ -3979,23 +3981,23 @@ function handleDelete(row?) {
   if (row) {
     delIds = [row.id];
   } else if (!ids.value.length) {
-    return ElMessage.warning("请选择要删除的数据");
+    return ElMessage.warning(t('common.delNoData'));
   } else {
     delIds = [...ids.value];
   }
 
-  ElMessageBox.confirm(`确认删除选中的${delIds.length}条数据吗`, "删除提示", {
-    confirmButtonText: "确认",
-    cancelButtonText: "取消",
+  ElMessageBox.confirm(t('product.confirmDeleteSelected', { count: delIds.length }), t('product.deleteTip'), {
+    confirmButtonText: t('common.confirm'),
+    cancelButtonText: t('common.cancel'),
     type: "error",
   })
     .then(async () => {
       try {
         await deleteProduct(delIds);
-        ElMessage.success("删除成功");
+        ElMessage.success(t('common.deleteSuccess'));
         getList();
       } catch (error) {
-        ElMessage.error("删除失败");
+        ElMessage.error(t('common.deleteFailed'));
       }
     })
     .catch(() => {});
@@ -4005,7 +4007,7 @@ function handleAdd() {
   isEdit.value = false;
   productEditorAdvancedSections.value = ["operation", "specifications", "multilingual", "system"];
   dialogVisible.value = true;
-  dialogTitle.value = "新建商品";
+  dialogTitle.value = t('product.createProduct');
   form.value = {
     code: "",
     name: "",
@@ -4075,7 +4077,7 @@ function handleEdit(row) {
   isEdit.value = true;
   productEditorAdvancedSections.value = ["operation", "specifications", "multilingual", "system"];
   dialogVisible.value = true;
-  dialogTitle.value = "编辑商品";
+  dialogTitle.value = t('product.editProduct');
   const images = Array.isArray(row.images) ? row.images : [];
   const videos = Array.isArray(row.videos) ? row.videos : [];
   const detailImages = Array.isArray(row.detailImages) ? row.detailImages : [];
@@ -4148,11 +4150,11 @@ function handleEdit(row) {
 
 // 处理发布/下架切换
 async function handleTogglePublish(row) {
-  const action = row.isPublish ? "下架" : "发布";
+  const action = row.isPublish ? t('product.unpublish') : t('product.publish');
   try {
-    await ElMessageBox.confirm(`确认${action}商品"${row.name}"吗？`, `${action}确认`, {
-      confirmButtonText: "确认",
-      cancelButtonText: "取消",
+    await ElMessageBox.confirm(t('product.confirmTogglePublish', { action, name: row.name }), t('product.togglePublishTitle', { action }), {
+      confirmButtonText: t('common.confirm'),
+      cancelButtonText: t('common.cancel'),
       type: "warning",
     });
 
@@ -4162,11 +4164,11 @@ async function handleTogglePublish(row) {
       isPublish: !row.isPublish,
     });
 
-    ElMessage.success(`${action}成功`);
+    ElMessage.success(t('product.togglePublishSuccess', { action }));
     getList(); // 重新获取列表
   } catch (error) {
     if (error !== "cancel") {
-      ElMessage.error(`${action}失败`);
+      ElMessage.error(t('product.togglePublishFailed', { action }));
     }
   }
 }
@@ -4271,14 +4273,14 @@ async function initPublishForm(row, platforms) {
 // 获取平台名称
 const getPlatformName = (platform: string) => {
   const platformNames: Record<string, string> = {
-    douyin: "抖音",
-    xiaohongshu: "小红书",
-    weibo: "微博",
-    kuaishou: "快手",
-    doudian: "抖店",
-    kuaishou_shop: "快手小店",
-    bilibili: "B站",
-    xianyu: "咸鱼",
+    douyin: t('product.platformDouyin'),
+    xiaohongshu: t('product.platformXiaohongshu'),
+    weibo: t('product.platformWeibo'),
+    kuaishou: t('product.platformKuaishou'),
+    doudian: t('product.platformDoudian'),
+    kuaishou_shop: t('product.platformKuaishouShop'),
+    bilibili: t('product.platformBilibili'),
+    xianyu: t('product.platformXianyu'),
     tiktok: "TikTok",
     youtube: "YouTube",
   };
@@ -4340,11 +4342,11 @@ function handleContentInput(platform: string) {
 // 修改发布提交方法
 async function handlePublishSubmit() {
   if (!currentPublishRow.value?.id) {
-    return ElMessage.warning("商品ID不存在");
+    return ElMessage.warning(t('product.productIdNotExist'));
   }
 
   if (selectedPlatforms.value.length === 0) {
-    return ElMessage.warning("请至少选择一个发布平台");
+    return ElMessage.warning(t('product.selectAtLeastOnePlatform'));
   }
 
   // 验证每个选中平台的表单
@@ -4353,13 +4355,13 @@ async function handlePublishSubmit() {
     if (!pForm) continue;
 
     if (platform !== "weibo" && (!pForm.title || !pForm.content)) {
-      return ElMessage.warning(`请完善${getPlatformName(platform)}的发布内容`);
+      return ElMessage.warning(t('product.completePublishContent', { name: getPlatformName(platform) }));
     }
     if (platform === "weibo" && !pForm.content) {
-      return ElMessage.warning(`请完善${getPlatformName(platform)}的发布内容`);
+      return ElMessage.warning(t('product.completePublishContent', { name: getPlatformName(platform) }));
     }
     if (pForm.selectedImages.length === 0 && pForm.selectedVideos.length === 0) {
-      return ElMessage.warning(`请至少选择一张图片或一个视频用于${getPlatformName(platform)}发布`);
+      return ElMessage.warning(t('product.selectMediaForPublish', { name: getPlatformName(platform) }));
     }
   }
 
@@ -4410,18 +4412,18 @@ async function handlePublishSubmit() {
     const failedCount = Math.max(totalCount - successCount, 0);
 
     if (successCount === totalCount) {
-      ElMessage.success(`成功创建 ${successCount}/${totalCount} 个发布任务，已添加到发布队列`);
+      ElMessage.success(t('product.tasksCreated', { success: successCount, total: totalCount }));
       publishDialogVisible.value = false;
     } else if (successCount > 0) {
       ElMessage.warning(
-        `部分创建成功：${successCount}/${totalCount} 个发布任务，失败 ${failedCount} 个`,
+        t('product.tasksPartiallyCreated', { success: successCount, total: totalCount, failed: failedCount }),
       );
     } else {
-      ElMessage.error(`发布任务创建失败：0/${totalCount}`);
+      ElMessage.error(t('product.tasksCreateFailed', { total: totalCount }));
     }
   } catch (error: any) {
     console.error("手动创建发布任务失败:", error);
-    ElMessage.error(error?.message || "发布任务创建失败");
+    ElMessage.error(error?.message || t('product.publishTaskCreateFailed'));
   } finally {
     publishLoading.value = false;
   }
@@ -4479,7 +4481,7 @@ async function showCustomModelDetail(id: string) {
     customModelDetail.value = res.data || res; // 兼容不同返回结构
     customModelDetailVisible.value = true;
   } catch (e) {
-    ElMessage.error("获取模型详情失败");
+    ElMessage.error(t('product.fetchModelDetailFailed'));
   }
 }
 
@@ -4498,7 +4500,7 @@ async function showCustomModelDrafts(model) {
     });
     customModelDrafts.value = res.list || [];
   } catch (error) {
-    ElMessage.error("获取关联草稿失败");
+    ElMessage.error(t('product.fetchRelatedDraftsFailed'));
     customModelDrafts.value = [];
   }
 }
@@ -4549,14 +4551,14 @@ async function submitAiGenDialog() {
       aiGenRow.value.price = resultData.price;
       aiGenRow.value.salePrice = resultData.salePrice;
       aiGenRow.value.compareAtPrice = resultData.compareAtPrice;
-      ElMessage.success("AI自动生成内容成功");
+      ElMessage.success(t('product.aiGenerateSuccess'));
       getList();
     } else {
-      ElMessage.error("AI生成内容失败，未返回有效数据");
+      ElMessage.error(t('product.aiGenerateNoData'));
     }
     aiGenDialogVisible.value = false;
   } catch (e) {
-    ElMessage.error("AI自动生成内容失败");
+    ElMessage.error(t('product.aiGenerateFailed'));
   } finally {
     aiGenDialogLoading.value = false;
     aiGenRow.value = null;
@@ -4602,12 +4604,12 @@ function handleOperationCommand(command: string, row: any) {
 async function batchPublish(rows?: any[]) {
   const list = rows && rows.length ? rows : selectedRows.value;
   if (!list || list.length === 0) {
-    return ElMessage.warning("请先选择要发布的记录");
+    return ElMessage.warning(t('product.selectRecordsToPublish'));
   }
   try {
-    await ElMessageBox.confirm(`确定将选中的 ${list.length} 条商品标记为发布吗？`, "批量发布确认", {
-      confirmButtonText: "确定发布",
-      cancelButtonText: "取消",
+    await ElMessageBox.confirm(t('product.batchPublishConfirm', { count: list.length }), t('product.batchPublishTitle'), {
+      confirmButtonText: t('product.confirmPublish'),
+      cancelButtonText: t('common.cancel'),
       type: "warning",
     });
   } catch {
@@ -4616,10 +4618,10 @@ async function batchPublish(rows?: any[]) {
   try {
     const tasks = list.map((item) => updatePublishStatus({ id: item.id, isPublish: true }));
     await Promise.all(tasks);
-    ElMessage.success(`已发布 ${list.length} 条记录`);
+    ElMessage.success(t('product.publishedRecords', { count: list.length }));
     getList();
   } catch (e) {
-    ElMessage.error("批量发布失败，请重试");
+    ElMessage.error(t('product.batchPublishFailed'));
   }
 }
 
@@ -4627,15 +4629,15 @@ async function batchPublish(rows?: any[]) {
 async function batchUnpublish(rows?: any[]) {
   const list = rows && rows.length ? rows : selectedRows.value;
   if (!list || list.length === 0) {
-    return ElMessage.warning("请先选择要下架的记录");
+    return ElMessage.warning(t('product.selectRecordsToUnpublish'));
   }
   try {
     await ElMessageBox.confirm(
-      `确定将选中的 ${list.length} 条商品下架吗？下架后商品将不再对外展示。`,
-      "批量下架确认",
+      t('product.batchUnpublishConfirm', { count: list.length }),
+      t('product.batchUnpublishTitle'),
       {
-        confirmButtonText: "确定下架",
-        cancelButtonText: "取消",
+        confirmButtonText: t('product.confirmUnpublish'),
+        cancelButtonText: t('common.cancel'),
         type: "warning",
       },
     );
@@ -4645,10 +4647,10 @@ async function batchUnpublish(rows?: any[]) {
   try {
     const tasks = list.map((item) => updatePublishStatus({ id: item.id, isPublish: false }));
     await Promise.all(tasks);
-    ElMessage.success(`已下架 ${list.length} 条记录`);
+    ElMessage.success(t('product.unpublishedRecords', { count: list.length }));
     getList();
   } catch (e) {
-    ElMessage.error("批量下架失败，请重试");
+    ElMessage.error(t('product.batchUnpublishFailed'));
   }
 }
 
@@ -4658,13 +4660,13 @@ async function handleGenerateProductCode(row: any) {
     const res = await generateProductCode({ id: row.id });
     if (res && res.code) {
       row.code = res.code;
-      ElMessage.success("产品代码生成成功");
+      ElMessage.success(t('product.productCodeGenerated'));
       getList();
     } else {
-      ElMessage.warning("未返回产品代码，请重试");
+      ElMessage.warning(t('product.productCodeNotReturned'));
     }
   } catch (error: any) {
-    ElMessage.error(error?.message || "生成产品代码失败");
+    ElMessage.error(error?.message || t('product.generateProductCodeFailed'));
   }
 }
 
@@ -4682,9 +4684,9 @@ async function submitGenerateVideo() {
 async function handleDeleteVideo(row: any, url: string) {
   if (!row?.id || !url) return;
   try {
-    await ElMessageBox.confirm("确认删除该视频吗？", "删除确认", {
-      confirmButtonText: "确定",
-      cancelButtonText: "取消",
+    await ElMessageBox.confirm(t('product.confirmDeleteVideo'), t('product.deleteConfirmTitle'), {
+      confirmButtonText: t('common.confirm'),
+      cancelButtonText: t('common.cancel'),
       type: "warning",
     });
     deletingVideoKey.value = `${row.id}-${url}`;
@@ -4709,11 +4711,11 @@ async function handleDeleteVideo(row: any, url: string) {
       }
     }
 
-    ElMessage.success("视频已删除");
+    ElMessage.success(t('product.videoDeleted'));
     getList();
   } catch (error: any) {
     if (error !== "cancel") {
-      ElMessage.error(error?.message || "删除视频失败");
+      ElMessage.error(error?.message || t('product.deleteVideoFailed'));
     }
   } finally {
     deletingVideoKey.value = "";
@@ -4724,7 +4726,7 @@ async function handleDeleteVideo(row: any, url: string) {
 async function handleCopyImagesFromPsdSet(row: any) {
   if (!row?.id) return;
   if (!getProductSourcePsdSetId(row)) {
-    return ElMessage.warning("该商品未关联PSD套图");
+    return ElMessage.warning(t('product.notRelatedPsdSet'));
   }
   try {
     await request.post({
@@ -4742,10 +4744,10 @@ async function handleCopyImagesFromPsdSet(row: any) {
         },
       },
     });
-    ElMessage.success("复制成功");
+    ElMessage.success(t('common.copySuccess'));
     getList();
   } catch (e) {
-    ElMessage.error(e?.message || "复制失败");
+    ElMessage.error(e?.message || t('common.copyError'));
   }
 }
 
@@ -4792,7 +4794,7 @@ function toggleVideoSelection(platform: string, url: string) {
 // 下载缩略图
 async function downloadThumbnail(url: string, filename: string) {
   try {
-    ElMessage.info("正在准备下载...");
+    ElMessage.info(t('product.preparingDownload'));
 
     const result = await downloadImageEnhanced(url, filename, {
       showMessage: false, // 关闭通用方法的console消息，使用我们的ElMessage
@@ -4800,7 +4802,7 @@ async function downloadThumbnail(url: string, filename: string) {
     });
 
     if (result.success) {
-      ElMessage.success("下载完成");
+      ElMessage.success(t('product.downloadComplete'));
     } else if (result.fallback) {
       ElMessage.warning(result.message);
     } else {
@@ -4808,26 +4810,26 @@ async function downloadThumbnail(url: string, filename: string) {
     }
   } catch (error) {
     console.error("下载失败:", error);
-    ElMessage.error("下载失败，请重试");
+    ElMessage.error(t('product.downloadFailedRetry'));
   }
 }
 
 // 批量下载某一行商品的所有图片（列表中“批量下载”按钮）
 async function handleDownloadRowImages(row: any) {
   if (!row || !Array.isArray(row.images) || !row.images.length) {
-    ElMessage.warning("暂无可下载的商品图片");
+    ElMessage.warning(t('product.noDownloadableImages'));
     return;
   }
 
   const images: string[] = row.images.filter((u: any) => typeof u === "string" && u.trim());
   if (!images.length) {
-    ElMessage.warning("暂无可下载的商品图片");
+    ElMessage.warning(t('product.noDownloadableImages'));
     return;
   }
 
   const baseName = row.name || "商品图片";
 
-  ElMessage.info(`开始下载 ${images.length} 张图片，请稍候...`);
+  ElMessage.info(t('product.startDownloadingImages', { count: images.length }));
 
   for (let i = 0; i < images.length; i++) {
     const url = images[i];
@@ -4845,7 +4847,7 @@ async function handleDownloadRowImages(row: any) {
     }
   }
 
-  ElMessage.success("商品图片批量下载任务已完成");
+  ElMessage.success(t('product.batchDownloadComplete'));
 }
 
 // 预览图片
@@ -4960,7 +4962,7 @@ function showRelationsSourceInfo(row: any) {
 
 // 格式化JSON显示
 function formatJSON(obj: any): string {
-  if (!obj) return "无数据";
+  if (!obj) return t('product.noDataText');
   try {
     return JSON.stringify(obj, null, 2);
   } catch (e) {
@@ -4984,7 +4986,7 @@ async function copySourceInfo() {
   if (jsonText) {
     try {
       await navigator.clipboard.writeText(jsonText);
-      ElMessage.success("已复制到剪贴板");
+      ElMessage.success(t('product.copiedToClipboard'));
     } catch (e) {
       // 降级方案
       const textarea = document.createElement("textarea");
@@ -4993,7 +4995,7 @@ async function copySourceInfo() {
       textarea.select();
       document.execCommand("copy");
       document.body.removeChild(textarea);
-      ElMessage.success("已复制到剪贴板");
+      ElMessage.success(t('product.copiedToClipboard'));
     }
   }
 }
@@ -5004,10 +5006,10 @@ async function handleUpdatePublishStatus(row: any, isPublish: boolean) {
       id: row.id,
       isPublish: isPublish,
     });
-    ElMessage.success(`发布状态已更新为：${isPublish ? "已发布" : "未发布"}`);
+    ElMessage.success(t('product.publishStatusUpdated', { status: isPublish ? t('product.published') : t('product.unpublished') }));
     getList();
   } catch (e) {
-    ElMessage.error("更新发布状态失败");
+    ElMessage.error(t('product.updatePublishStatusFailed'));
   }
 }
 
@@ -5031,44 +5033,44 @@ const PUBLISH_PLATFORM_LOGOS: Record<string, string> = {
 // 发布平台选项（任务类型命名：{action}-{object}-{platform}，便于任务队列查询）
 const publishPlatforms = [
   {
-    label: "抖音",
+    label: t('product.platformDouyin'),
     value: "douyin",
     icon: "抖",
     color: "#000000",
     logoUrl: PUBLISH_PLATFORM_LOGOS.douyin,
   },
   {
-    label: "小红书",
+    label: t('product.platformXiaohongshu'),
     value: "xiaohongshu",
     icon: "红",
     color: "#FF2442",
     logoUrl: PUBLISH_PLATFORM_LOGOS.xiaohongshu,
   },
   {
-    label: "微博",
+    label: t('product.platformWeibo'),
     value: "weibo",
     icon: "微",
     color: "#E6162D",
     logoUrl: PUBLISH_PLATFORM_LOGOS.weibo,
   },
   {
-    label: "快手",
+    label: t('product.platformKuaishou'),
     value: "kuaishou",
     icon: "快",
     color: "#FF6600",
     logoUrl: PUBLISH_PLATFORM_LOGOS.kuaishou,
   },
-  { label: "抖店", value: "doudian", icon: "店", color: "#2F54EB", logoUrl: undefined },
-  { label: "快手小店", value: "kuaishou_shop", icon: "店", color: "#FA8C16", logoUrl: undefined },
+  { label: t('product.platformDoudian'), value: "doudian", icon: "店", color: "#2F54EB", logoUrl: undefined },
+  { label: t('product.platformKuaishouShop'), value: "kuaishou_shop", icon: "店", color: "#FA8C16", logoUrl: undefined },
   {
-    label: "B站",
+    label: t('product.platformBilibili'),
     value: "bilibili",
     icon: "B",
     color: "#FB7299",
     logoUrl: PUBLISH_PLATFORM_LOGOS.bilibili,
   },
   {
-    label: "知乎",
+    label: t('product.platformZhihu'),
     value: "zhihu",
     icon: "知",
     color: "#0084FF",
@@ -5083,7 +5085,7 @@ const publishPlatforms = [
   },
   { label: "Temu", value: "temu", icon: "T", color: "#FF6B35", logoUrl: undefined },
   {
-    label: "淘宝",
+    label: t('product.platformTaobao'),
     value: "taobao",
     icon: "淘",
     color: "#FF4400",
@@ -5118,28 +5120,28 @@ const publishPlatforms = [
     logoUrl: PUBLISH_PLATFORM_LOGOS.twitter,
   },
   {
-    label: "视频号",
+    label: t('product.platformWechatChannels'),
     value: "wechat_channels",
     icon: "视",
     color: "#07C160",
     logoUrl: PUBLISH_PLATFORM_LOGOS.wechat,
   },
-  { label: "百家号", value: "baijiahao", icon: "百", color: "#105BFD", logoUrl: undefined },
-  { label: "咸鱼", value: "xianyu", icon: "咸", color: "#FFDA44", logoUrl: undefined },
-  { label: "京东", value: "jd", icon: "京", color: "#E4393C", logoUrl: undefined },
-  { label: "拼多多", value: "pinduoduo", icon: "拼", color: "#E02E24", logoUrl: undefined },
-  { label: "今日头条", value: "toutiao", icon: "头", color: "#ED4040", logoUrl: undefined },
-  { label: "大鱼号", value: "dayu", icon: "大", color: "#3A76D2", logoUrl: undefined },
-  { label: "企鹅号", value: "penguin", icon: "企", color: "#2783F4", logoUrl: undefined },
-  { label: "搜狐号", value: "sohu", icon: "搜", color: "#FFC335", logoUrl: undefined },
-  { label: "网易号", value: "netease", icon: "网", color: "#D22923", logoUrl: undefined },
-  { label: "度小视", value: "duxiaoshi", icon: "度", color: "#33BEFF", logoUrl: undefined },
-  { label: "美拍", value: "meipai", icon: "美", color: "#FF547D", logoUrl: undefined },
-  { label: "秒拍", value: "miaopai", icon: "秒", color: "#FFD705", logoUrl: undefined },
-  { label: "A站", value: "acfun", icon: "A", color: "#FD4C5D", logoUrl: undefined },
-  { label: "西瓜视频", value: "xigua", icon: "西", color: "#FE3059", logoUrl: undefined },
-  { label: "好看视频", value: "haokan", icon: "好", color: "#EE3333", logoUrl: undefined },
-  { label: "全民小视频", value: "quanmin", icon: "全", color: "#FD3756", logoUrl: undefined },
+  { label: t('product.platformBaijiahao'), value: "baijiahao", icon: "百", color: "#105BFD", logoUrl: undefined },
+  { label: t('product.platformXianyu'), value: "xianyu", icon: "咸", color: "#FFDA44", logoUrl: undefined },
+  { label: t('product.platformJd'), value: "jd", icon: "京", color: "#E4393C", logoUrl: undefined },
+  { label: t('product.platformPinduoduo'), value: "pinduoduo", icon: "拼", color: "#E02E24", logoUrl: undefined },
+  { label: t('product.platformToutiao'), value: "toutiao", icon: "头", color: "#ED4040", logoUrl: undefined },
+  { label: t('product.platformDayu'), value: "dayu", icon: "大", color: "#3A76D2", logoUrl: undefined },
+  { label: t('product.platformPenguin'), value: "penguin", icon: "企", color: "#2783F4", logoUrl: undefined },
+  { label: t('product.platformSohu'), value: "sohu", icon: "搜", color: "#FFC335", logoUrl: undefined },
+  { label: t('product.platformNetease'), value: "netease", icon: "网", color: "#D22923", logoUrl: undefined },
+  { label: t('product.platformDuxiaoshi'), value: "duxiaoshi", icon: "度", color: "#33BEFF", logoUrl: undefined },
+  { label: t('product.platformMeipai'), value: "meipai", icon: "美", color: "#FF547D", logoUrl: undefined },
+  { label: t('product.platformMiaopai'), value: "miaopai", icon: "秒", color: "#FFD705", logoUrl: undefined },
+  { label: t('product.platformAcfun'), value: "acfun", icon: "A", color: "#FD4C5D", logoUrl: undefined },
+  { label: t('product.platformXigua'), value: "xigua", icon: "西", color: "#FE3059", logoUrl: undefined },
+  { label: t('product.platformHaokan'), value: "haokan", icon: "好", color: "#EE3333", logoUrl: undefined },
+  { label: t('product.platformQuanmin'), value: "quanmin", icon: "全", color: "#FD3756", logoUrl: undefined },
 ];
 
 // 格式化平台名称

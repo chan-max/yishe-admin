@@ -4,29 +4,25 @@ import { Handle, Position } from '@vue-flow/core'
 
 const props = defineProps<{ data: { label?: string; config?: any } }>()
 
-// 输出端口：根据配置动态生成，默认 True/False
+// 输出端口：根据 cases 动态生成 + 默认
 const outputs = computed(() => {
-  const conditions = props.data?.config?.conditions || []
-  if (conditions.length > 0) {
-    return conditions.map((c: any, i: number) => ({
-      id: c.handleId || `condition-${i}`,
-      label: c.label || `条件${i + 1}`,
-      color: c.color || '#f59e0b',
-    }))
-  }
-  return [
-    { id: 'true', label: 'True', color: '#22c55e' },
-    { id: 'false', label: 'False', color: '#ef4444' },
-  ]
+  const cases = props.data?.config?.cases || []
+  const result = cases.map((c: any, i: number) => ({
+    id: `case-${i}`,
+    label: c.label || c.value || `情况${i + 1}`,
+    color: '#64748b',
+  }))
+  result.push({ id: 'default', label: '默认', color: '#94a3b8' })
+  return result
 })
 </script>
 
 <template>
-  <div class="wf-node wf-node--condition">
+  <div class="wf-node wf-node--switch">
     <Handle type="target" :position="Position.Top" />
     <div class="wf-node__header">
-      <span class="wf-node__dot" style="background: #f59e0b" />
-      <span class="wf-node__title">{{ data.label || '条件分支' }}</span>
+      <span class="wf-node__dot" style="background: #06b6d4" />
+      <span class="wf-node__title">{{ data.label || '多路切换' }}</span>
     </div>
     <div class="wf-node__handles">
       <div
@@ -43,19 +39,19 @@ const outputs = computed(() => {
 </template>
 
 <style scoped>
-.wf-node--condition {
+.wf-node--switch {
   position: relative;
   min-width: 130px;
   padding: 6px 10px;
   background: var(--app-content-surface-color);
-  border: 1px solid color-mix(in srgb, #f59e0b 40%, var(--app-content-border-color));
+  border: 1px solid color-mix(in srgb, #06b6d4 40%, var(--app-content-border-color));
   border-radius: 6px;
   transition: all 0.15s ease;
 }
 
-.wf-node--condition:hover {
-  border-color: #f59e0b;
-  box-shadow: 0 0 0 2px color-mix(in srgb, #f59e0b 20%, transparent);
+.wf-node--switch:hover {
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #06b6d4 20%, transparent);
 }
 
 .wf-node__header { display: flex; align-items: center; gap: 5px; margin-bottom: 4px; }

@@ -9,11 +9,11 @@
           <el-form :model="queryParams" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="10" :lg="8">
-                <el-form-item label="搜索">
+                <el-form-item :label="t('common.search')">
                   <el-input
                     v-model="queryParams.searchKeyword"
                     size="small"
-                    placeholder="搜索字体 ID、名称、描述、关键字"
+                    :placeholder="t('materialFontTemplate.searchPlaceholder')"
                     clearable
                     @keyup.enter="handleSearch"
                     @clear="handleSearch"
@@ -25,7 +25,7 @@
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="8" :lg="6">
-                <el-form-item label="时间范围">
+                <el-form-item :label="t('materialFontTemplate.timeRange')">
                   <DateRangePicker
                     @change="
                       (val) => {
@@ -45,11 +45,11 @@
                 @click="handleSearch"
                 :icon="Search"
                 :loading="loading"
-                >搜索</el-button
+                >{{ t('common.search') }}</el-button
               >
-              <el-button size="small" :disabled="loading" @click="handleReset">重置</el-button>
+              <el-button size="small" :disabled="loading" @click="handleReset">{{ t('common.reset') }}</el-button>
               <el-button size="small" type="primary" @click="handleAdd" :icon="Plus">
-                新增字体
+                {{ t('materialFontTemplate.addFont') }}
               </el-button>
               <el-dropdown
                 v-if="isAdmin"
@@ -63,24 +63,24 @@
                   :loading="batchGenerateThumbnailLoading"
                 >
                   <template v-if="batchGenerateThumbnailLoading">
-                    生成中 {{ batchGenerateThumbnailProgress.processed }}/{{
-                      batchGenerateThumbnailProgress.total
-                    }}
+                    {{ t('materialFontTemplate.generating') }} {{
+                      batchGenerateThumbnailProgress.processed
+                    }}/{{ batchGenerateThumbnailProgress.total }}
                   </template>
                   <template v-else>
-                    批量生成 {{ ids.length ? `(${ids.length})` : "" }}
+                    {{ t('materialFontTemplate.batchGenerate') }} {{ ids.length ? `(${ids.length})` : "" }}
                   </template>
                   <el-icon class="el-icon--right"><ArrowDown /></el-icon>
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item command="thumbnail-only">仅生成缩略图</el-dropdown-item>
-                    <el-dropdown-item command="thumbnail-skip-existing">仅生成缺失缩略图（跳过已有）</el-dropdown-item>
+                    <el-dropdown-item command="thumbnail-only">{{ t('materialFontTemplate.thumbnailOnly') }}</el-dropdown-item>
+                    <el-dropdown-item command="thumbnail-skip-existing">{{ t('materialFontTemplate.thumbnailSkipExisting') }}</el-dropdown-item>
                     <el-dropdown-item command="thumbnail-ai">
-                      生成缩略图并 AI 补全
+                      {{ t('materialFontTemplate.thumbnailAi') }}
                     </el-dropdown-item>
                     <el-dropdown-item command="ai-only" :disabled="!ids.length">
-                      仅 AI 补全选中项
+                      {{ t('materialFontTemplate.aiOnly') }}
                     </el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
@@ -91,7 +91,7 @@
                 type="warning"
                 @click="cancelBatchGenerateThumbnail"
               >
-                取消生成
+                {{ t('materialFontTemplate.cancelGenerate') }}
               </el-button>
               <el-button
                 size="small"
@@ -99,7 +99,7 @@
                 @click="handleBatchDelete"
                 :loading="batchDeleteLoading"
               >
-                批量删除 ({{ ids.length }})
+                {{ t('common.batchDelete') }} ({{ ids.length }})
               </el-button>
               <el-dropdown
                 trigger="click"
@@ -107,22 +107,22 @@
                 @command="handleBatchActionCommand"
               >
                 <el-button size="small" type="success" :disabled="!ids.length">
-                  分享 ({{ ids.length }})
+                  {{ t('materialFontTemplate.share') }} ({{ ids.length }})
                   <el-icon class="el-icon--right"><ArrowDown /></el-icon>
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item command="share-to-user">
                       <el-icon><Share /></el-icon>
-                      <span>共享</span>
+                      <span>{{ t('materialFontTemplate.shareToUser') }}</span>
                     </el-dropdown-item>
                     <el-dropdown-item command="copy-to-user">
                       <el-icon><DocumentCopy /></el-icon>
-                      <span>转存副本</span>
+                      <span>{{ t('materialFontTemplate.copyToUser') }}</span>
                     </el-dropdown-item>
                     <el-dropdown-item command="move-to-user">
                       <el-icon><TopRight /></el-icon>
-                      <span>移交所有人</span>
+                      <span>{{ t('materialFontTemplate.moveToUser') }}</span>
                     </el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
@@ -220,17 +220,17 @@
                   <template #shareTypeSlot="{ row }">
                     <el-tooltip
                       v-if="row.shareType === 'shared'"
-                      content="这是共享快捷引用，请将资源转存副本备份，防止源文件删除导致丢失"
+                      :content="t('materialFontTemplate.sharedRefTooltip')"
                       placement="top"
                     >
                       <el-tag type="warning" size="small" effect="light" style="cursor: help">
-                        由【{{ row.sourceUser?.name || row.sourceUser?.account || ('用户' + row.sourceUserId) }}】共享
+                        {{ t('materialFontTemplate.sharedByUser', { user: row.sourceUser?.name || row.sourceUser?.account || (t('materialFontTemplate.userPrefix') + row.sourceUserId) }) }}
                       </el-tag>
                     </el-tooltip>
                     <el-tag v-else-if="row.shareType === 'copy' || (row.sourceUserId && row.sourceUserId !== row.userId)" type="success" size="small" effect="light">
-                      由【{{ row.sourceUser?.name || row.sourceUser?.account || ('用户' + row.sourceUserId) }}】转存
+                      {{ t('materialFontTemplate.copiedByUser', { user: row.sourceUser?.name || row.sourceUser?.account || (t('materialFontTemplate.userPrefix') + row.sourceUserId) }) }}
                     </el-tag>
-                    <el-tag v-else type="info" size="small" effect="plain">我上传的</el-tag>
+                    <el-tag v-else type="info" size="small" effect="plain">{{ t('materialFontTemplate.mine') }}</el-tag>
                   </template>
 
                   <template #languagesSlot="{ row }">
@@ -256,7 +256,7 @@
                       <span
                         v-if="!row.languages || row.languages.length === 0"
                         class="text-gray-400 text-xs"
-                        >未设置</span
+                        >{{ t('materialFontTemplate.notSet') }}</span
                       >
                     </div>
                   </template>
@@ -269,7 +269,7 @@
                         class="operation-dropdown"
                       >
                         <el-button type="primary" link size="small" class="operation-trigger-button"
-                          >操作</el-button
+                          >{{ t('common.operation') }}</el-button
                         >
                         <template #dropdown>
                           <el-dropdown-menu class="operation-menu-compact">
@@ -277,53 +277,53 @@
                               <el-icon>
                                 <Edit />
                               </el-icon>
-                              <span>编辑</span>
+                              <span>{{ t('common.edit') }}</span>
                             </el-dropdown-item>
                             <el-dropdown-item v-if="isAdmin" command="generate-thumbnail">
                               <el-icon>
                                 <Picture />
                               </el-icon>
-                              <span>生成缩略图</span>
+                              <span>{{ t('materialFontTemplate.generateThumbnail') }}</span>
                             </el-dropdown-item>
                             <el-dropdown-item command="download">
                               <el-icon>
                                 <Download />
                               </el-icon>
-                              <span>下载源文件</span>
+                              <span>{{ t('materialFontTemplate.downloadSource') }}</span>
                             </el-dropdown-item>
                             <el-dropdown-item command="copy-url">
                               <el-icon>
                                 <DocumentCopy />
                               </el-icon>
-                              <span>复制源文件地址</span>
+                              <span>{{ t('materialFontTemplate.copySourceUrl') }}</span>
                             </el-dropdown-item>
                             <el-dropdown-item v-if="isAdmin" command="ai-generate">
                               <el-icon>
                                 <MagicStick />
                               </el-icon>
-                              <span>AI生成内容</span>
+                              <span>{{ t('materialFontTemplate.aiGenerateContent') }}</span>
                             </el-dropdown-item>
                             <el-dropdown-item command="share-to-user">
                               <el-icon>
                                 <Share />
                               </el-icon>
-                              <span>共享</span>
+                              <span>{{ t('materialFontTemplate.shareToUser') }}</span>
                             </el-dropdown-item>
                             <el-dropdown-item command="copy-to-user">
                               <el-icon>
                                 <DocumentCopy />
                               </el-icon>
-                              <span>转存副本</span>
+                              <span>{{ t('materialFontTemplate.copyToUser') }}</span>
                             </el-dropdown-item>
                             <el-dropdown-item v-if="isAdmin" command="move-to-user">
                               <el-icon>
                                 <TopRight />
                               </el-icon>
-                              <span>移交所有人</span>
+                              <span>{{ t('materialFontTemplate.moveToUser') }}</span>
                             </el-dropdown-item>
                             <el-dropdown-item command="view-shared">
                               <el-icon><Connection /></el-icon>
-                              <span>查看分享</span>
+                              <span>{{ t('materialFontTemplate.viewShared') }}</span>
                             </el-dropdown-item>
                             <el-dropdown-item
                               command="delete"
@@ -333,7 +333,7 @@
                               <el-icon>
                                 <Delete />
                               </el-icon>
-                              <span>删除</span>
+                              <span>{{ t('common.delete') }}</span>
                             </el-dropdown-item>
                           </el-dropdown-menu>
                         </template>
@@ -356,7 +356,7 @@
                         @click="copyUrl(row.url)"
                         class="shrink-0"
                       >
-                        复制
+                        {{ t('common.copy') }}
                       </el-button>
                     </div>
                   </template>
@@ -391,25 +391,25 @@
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
         <el-row>
           <el-col :span="24">
-            <el-form-item label="模板名称" prop="name">
-              <el-input v-model="form.name" placeholder="请输入模板名称" />
+            <el-form-item :label="t('materialFontTemplate.templateName')" prop="name">
+              <el-input v-model="form.name" :placeholder="t('materialFontTemplate.templateNamePlaceholder')" />
             </el-form-item>
           </el-col>
 
           <el-col :span="24">
-            <el-form-item label="描述" prop="description">
+            <el-form-item :label="t('common.description')" prop="description">
               <el-input
                 v-model="form.description"
                 type="textarea"
                 :rows="3"
-                placeholder="请输入字体模板描述"
+                :placeholder="t('materialFontTemplate.descriptionPlaceholder')"
               />
             </el-form-item>
           </el-col>
 
           <el-col :span="24">
-            <el-form-item label="关键字" prop="keywords">
-              <el-input v-model="form.keywords" placeholder="请输入关键字，多个关键字用逗号分隔" />
+            <el-form-item :label="t('materialFontTemplate.keywords')" prop="keywords">
+              <el-input v-model="form.keywords" :placeholder="t('materialFontTemplate.keywordsPlaceholder')" />
             </el-form-item>
           </el-col>
 
@@ -975,6 +975,7 @@ import { formatTimestamp } from "@/common/date";
 import { useUserStore } from "@/store/modules/user";
 import { defaultSortingValue } from "@/common/sort";
 import { ElMessage, ElMessageBox, ElNotification } from "element-plus";
+import { useI18n } from "@/hooks/web/useI18n";
 import FolderTree from "@/components/material/FolderTree.vue";
 import TableRowDragHandle from "@/components/TableRowDragHandle/index.vue";
 // import { getShopProductCategoryList, deleteShopProductCategory, editShopProductCategory, addShopProductCategory } from "@/api/shop";
@@ -1076,6 +1077,8 @@ const LANGUAGE_OPTIONS = [
 function getLanguageByCode(code: string) {
   return LANGUAGE_OPTIONS.find((lang) => lang.code === code);
 }
+
+const { t } = useI18n();
 
 const userStore = useUserStore();
 

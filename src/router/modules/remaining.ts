@@ -458,6 +458,17 @@ const remainingRouter: AppRouteRecordRaw[] = [
         },
       },
       {
+        path: "sandbox",
+        component: () => import("@/views/material/sandbox/index.vue"),
+        name: "Sandbox",
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: "沙箱服务",
+        },
+      },
+      {
         path: "remotion-video-record",
         component: () => import("@/views/material/remotionVideoRecord/index.vue"),
         name: "RemotionVideoRecord",

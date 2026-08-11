@@ -3,7 +3,9 @@
     <section class="temu-workspace__action-shell">
       <div class="temu-workspace__toolbar">
         <div class="temu-workspace__toolbar-main">
-          <div class="temu-workspace__section-title">业务动作</div>
+          <div class="temu-workspace__section-title">
+            {{ t("externalToolkit.businessActions") }}
+          </div>
         </div>
 
         <div class="temu-workspace__toolbar-side">
@@ -11,15 +13,15 @@
             v-model="actionSearchKeyword"
             clearable
             class="temu-workspace__search"
-            placeholder="搜索动作"
-          />
+            :placeholder="t('externalToolkit.searchActionPlaceholder')"
+          />          />
           <el-button
             text
             size="small"
             :loading="catalogLoading || !!toolsLoading"
             @click="refreshWorkspaceActions"
           >
-            刷新目录
+            {{ t("externalToolkit.refreshCatalog") }}
           </el-button>
         </div>
       </div>
@@ -47,25 +49,32 @@
                 v-if="isToolAction(action)"
                 class="temu-function-button__runtime"
               >
-                需浏览器
+                 {{ t("externalToolkit.requiresBrowser") }}
               </span>
               <span class="temu-function-button__status">
-                {{ action.status === "available" ? "可用" : "规划中" }}
+                {{
+                  action.status === "available"
+                    ? t("externalToolkit.available")
+                    : t("externalToolkit.planning")
+                }}
               </span>
             </span>
           </span>
           <span class="temu-function-button__desc">
-            {{ action.description || "当前动作暂无额外说明" }}
+            {{
+              action.description ||
+              t("externalToolkit.actionNoDescription")
+            }}
           </span>
         </button>
       </div>
 
       <div v-else-if="actionSearchKeyword" class="temu-workspace__filter-empty">
-        当前筛选条件下没有可展示的动作，换个关键词试试。
+        {{ t("externalToolkit.noActionsForFilter") }}
       </div>
 
       <div v-else-if="!catalogLoading" class="temu-workspace__filter-empty">
-        当前暂无可展示的动作。
+        {{ t("externalToolkit.noActions") }}
       </div>
 
       <div v-if="selectedAction" class="temu-workspace__editor">
@@ -81,7 +90,7 @@
               v-if="isToolAction(selectedAction)"
               class="temu-workspace__editor-runtime-hint"
             >
-              该动作需要客户端浏览器参与执行。
+               {{ t("externalToolkit.browserRequiredHint") }}
             </div>
           </div>
 
@@ -95,14 +104,18 @@
               effect="plain"
               type="warning"
             >
-              需浏览器
+               {{ t("externalToolkit.requiresBrowser") }}
             </el-tag>
             <el-tag
               size="small"
               effect="plain"
               :type="selectedAction.status === 'available' ? 'success' : 'info'"
             >
-              {{ selectedAction.status === "available" ? "可用" : "规划中" }}
+              {{
+                selectedAction.status === "available"
+                  ? t("externalToolkit.available")
+                  : t("externalToolkit.planning")
+              }}
             </el-tag>
           </div>
         </div>
@@ -127,7 +140,9 @@
             v-if="formSeedActions.length"
             class="temu-workspace__helper-panel"
           >
-            <div class="temu-workspace__helper-label">快捷填充</div>
+            <div class="temu-workspace__helper-label">
+              {{ t("externalToolkit.quickFill") }}
+            </div>
             <div class="temu-workspace__helper-actions">
               <button
                 v-for="seed in formSeedActions"
@@ -166,7 +181,9 @@
                 clearable
                 :multiple="field.multiple"
                 class="temu-field__control"
-                :placeholder="field.placeholder || `请选择${field.label}`"
+                :placeholder="
+                  field.placeholder || t('externalToolkit.selectWithLabel', { label: field.label })
+                "
               >
                 <el-option
                   v-for="option in resolveFieldOptions(field)"
@@ -206,7 +223,9 @@
                       }
                     : undefined
                 "
-                :placeholder="field.placeholder || `请输入${field.label}`"
+                :placeholder="
+                  field.placeholder || t('externalToolkit.inputWithLabel', { label: field.label })
+                "
               />
 
               <div v-if="field.hint" class="temu-field__hint">
@@ -226,7 +245,7 @@
           </div>
 
           <div class="temu-workspace__runner">
-            <el-button @click="resetFormState">重置参数</el-button>
+            <el-button @click="resetFormState">{{ t("common.reset") }}</el-button>
             <el-button
               v-if="selectedAction?.key === 'compliance.page-query'"
               :loading="complianceFetchingAll"
@@ -237,7 +256,7 @@
               "
               @click="fetchAllComplianceRows"
             >
-              一键获取全部
+               {{ t("externalToolkit.fetchAllAtOnce") }}
             </el-button>
             <el-button
               v-if="selectedAction?.key === 'goods.real-picture.list'"
@@ -249,7 +268,7 @@
               "
               @click="fetchAllRealPictureRows"
             >
-              一键获取全部
+               {{ t("externalToolkit.fetchAllAtOnce") }}
             </el-button>
             <el-button
               v-if="selectedAction?.key === 'goods.price-review.list'"
@@ -261,7 +280,7 @@
               "
               @click="fetchAllPriceReviewRows"
             >
-              一键获取全部
+               {{ t("externalToolkit.fetchAllAtOnce") }}
             </el-button>
             <el-button
               v-if="selectedAction?.key === 'jit.list'"
@@ -271,7 +290,7 @@
               "
               @click="fetchAllJitRows"
             >
-              一键获取全部
+               {{ t("externalToolkit.fetchAllAtOnce") }}
             </el-button>
             <el-button
               v-if="selectedAction?.key === 'goods.confirmation.list'"
@@ -283,7 +302,7 @@
               "
               @click="fetchAllConfirmationRows"
             >
-              一键获取全部
+               {{ t("externalToolkit.fetchAllAtOnce") }}
             </el-button>
             <el-button
               v-if="selectedAction?.key === 'goods.published-site.list'"
@@ -295,7 +314,7 @@
               "
               @click="fetchAllPublishedSiteRows"
             >
-              一键获取全部
+               {{ t("externalToolkit.fetchAllAtOnce") }}
             </el-button>
             <el-button
               type="primary"
@@ -303,25 +322,35 @@
               :disabled="!canRunSelectedAction || activeActionRunning"
               @click="runAction"
             >
-              {{ canRunSelectedAction ? "执行动作" : runButtonLabel }}
+              {{
+                canRunSelectedAction
+                  ? t("externalToolkit.runAction")
+                  : runButtonLabel
+              }}
             </el-button>
           </div>
         </div>
 
         <div v-else class="temu-workspace__unsupported">
-          当前动作已经接到目录里了，但前端还没有配置专用表单。后续可以继续把它可视化。
+          {{
+            t("externalToolkit.actionNotConfigured")
+          }}
         </div>
 
         <div v-if="showInlineActionResult" class="temu-workspace__result">
           <div class="temu-workspace__result-head">
             <div class="temu-workspace__result-title">
-              <span>原始结果</span>
+              <span>{{ t("externalToolkit.rawResult") }}</span>
               <el-tag
                 size="small"
                 effect="plain"
                 :type="activeActionResult.success ? 'success' : 'danger'"
               >
-                {{ activeActionResult.success ? "成功" : "失败" }}
+                {{
+                  activeActionResult.success
+                    ? t("common.success")
+                    : t("common.error")
+                }}
               </el-tag>
             </div>
 
@@ -330,16 +359,16 @@
                 v-if="canCopyPublishTemplate"
                 text
                 size="small"
-                @click="copyText('商品模板', publishTemplateText)"
+                @click="copyText(t('externalToolkit.productTemplate'), publishTemplateText)"
               >
-                复制商品模板
+                {{ t("externalToolkit.copyProductTemplate") }}
               </el-button>
               <el-button
                 text
                 size="small"
-                @click="copyText('原始结果', actionResultText)"
+                @click="copyText(t('externalToolkit.rawResult'), actionResultText)"
               >
-                复制结果
+                {{ t("externalToolkit.copyResult") }}
               </el-button>
             </div>
           </div>
@@ -351,18 +380,17 @@
           <div class="temu-workspace__task-head">
             <div>
               <div class="temu-workspace__result-title">
-                <span>执行记录</span>
+                <span>{{ t("externalToolkit.taskRuns") }}</span>
                 <el-tag size="small" effect="plain">{{ taskRunTotal }}</el-tag>
               </div>
               <div class="temu-workspace__editor-desc">
-                Temu
-                服务端动作会先创建执行记录，再异步执行；运行中的记录会自动刷新。
+                {{ t("externalToolkit.taskRunsHint") }}
               </div>
             </div>
 
             <div class="temu-workspace__task-tools">
               <el-checkbox v-model="onlyCurrentActionRuns"
-                >仅当前动作</el-checkbox
+                >{{ t("externalToolkit.onlyCurrentAction") }}</el-checkbox
               >
               <el-button
                 text
@@ -372,7 +400,7 @@
                 :loading="batchDeletingTaskRuns"
                 @click="deleteSelectedTaskRuns"
               >
-                批量删除
+                {{ t("externalToolkit.batchDeleteRuns") }}
               </el-button>
               <el-button
                 text
@@ -380,7 +408,7 @@
                 :loading="taskRunLoading || taskRunDetailLoading"
                 @click="refreshTaskRuns"
               >
-                刷新记录
+                {{ t("externalToolkit.refreshRuns") }}
               </el-button>
             </div>
           </div>
@@ -436,7 +464,7 @@
                   text
                   size="small"
                   @click.stop="openTaskRunDetail(row.id)"
-                  >详情</el-button
+                  >{{ t("common.detail") }}</el-button
                 >
                 <el-button
                   text
@@ -444,7 +472,7 @@
                   :loading="retryingTaskRunId === row.id"
                   @click.stop="retryTaskRunById(row.id)"
                 >
-                  重跑
+                  {{ t("externalToolkit.reRun") }}
                 </el-button>
                 <el-button
                   text
@@ -453,7 +481,7 @@
                   :loading="deletingTaskRunId === row.id"
                   @click.stop="deleteTaskRunById(row.id)"
                 >
-                  删除
+                  {{ t("common.delete") }}
                 </el-button>
               </template>
             </vxe-grid>
@@ -463,7 +491,7 @@
             v-if="!taskRunList.length && !taskRunLoading"
             class="temu-workspace__filter-empty"
           >
-            当前条件下还没有 Temu 执行记录。
+            {{ t("externalToolkit.noTaskRuns") }}
           </div>
 
           <div
@@ -490,7 +518,11 @@
       destroy-on-close
       class="temu-workspace__task-dialog"
       :title="
-        activeTaskRunDetail ? `记录详情 #${activeTaskRunDetail.id}` : '记录详情'
+        activeTaskRunDetail
+          ? t('externalToolkit.taskRunDetailTitle', {
+              id: activeTaskRunDetail.id,
+            })
+          : t('externalToolkit.taskRunDetailTitlePlain')
       "
     >
       <div
@@ -505,33 +537,33 @@
             <div class="temu-workspace__task-head-side">
               <div class="temu-workspace__task-meta-compact">
                 <div>
-                  <span>记录编号</span>
+                  <span>{{ t("externalToolkit.runNo") }}</span>
                   <strong>#{{ activeTaskRunDetail.id }}</strong>
                 </div>
                 <div>
-                  <span>环境</span>
+                  <span>{{ t("externalToolkit.environment") }}</span>
                   <strong>{{ activeTaskRunDetail.profileId || "-" }}</strong>
                 </div>
                 <div>
-                  <span>区域</span>
+                  <span>{{ t("externalToolkit.region") }}</span>
                   <strong>{{
                     resolveRegionLabel(activeTaskRunDetail.region)
                   }}</strong>
                 </div>
                 <div>
-                  <span>开始时间</span>
+                  <span>{{ t("common.startTimeText") }}</span>
                   <strong>{{
                     formatDateTime(activeTaskRunDetail.startedAt)
                   }}</strong>
                 </div>
                 <div>
-                  <span>结束时间</span>
+                  <span>{{ t("common.endTimeText") }}</span>
                   <strong>{{
                     formatDateTime(activeTaskRunDetail.finishedAt)
                   }}</strong>
                 </div>
                 <div>
-                  <span>耗时</span>
+                  <span>{{ t("externalToolkit.cost") }}</span>
                   <strong>{{
                     formatDuration(activeTaskRunDetail.durationMs)
                   }}</strong>
@@ -546,16 +578,18 @@
                   popper-class="temu-task-json-popover"
                 >
                   <template #reference>
-                    <el-button text size="small">请求参数</el-button>
+                    <el-button text size="small">{{
+                      t("externalToolkit.requestParams")
+                    }}</el-button>
                   </template>
                   <div class="temu-task-log-popover__head">
-                    <strong>请求参数</strong>
+                    <strong>{{ t("externalToolkit.requestParams") }}</strong>
                     <el-button
                       text
                       size="small"
-                      @click="copyText('任务参数', taskRunParamsText)"
+                      @click="copyText(t('externalToolkit.taskParams'), taskRunParamsText)"
                     >
-                      复制
+                      {{ t("common.copy") }}
                     </el-button>
                   </div>
                   <pre
@@ -570,16 +604,18 @@
                   popper-class="temu-task-json-popover"
                 >
                   <template #reference>
-                    <el-button text size="small">任务结果</el-button>
+                    <el-button text size="small">{{
+                      t("externalToolkit.taskResult")
+                    }}</el-button>
                   </template>
                   <div class="temu-task-log-popover__head">
-                    <strong>任务结果</strong>
+                    <strong>{{ t("externalToolkit.taskResult") }}</strong>
                     <el-button
                       text
                       size="small"
-                      @click="copyText('任务结果', taskRunResultText)"
+                      @click="copyText(t('externalToolkit.taskResult'), taskRunResultText)"
                     >
-                      复制
+                      {{ t("common.copy") }}
                     </el-button>
                   </div>
                   <pre
@@ -594,16 +630,18 @@
                   popper-class="temu-task-log-popover"
                 >
                   <template #reference>
-                    <el-button text size="small">执行日志</el-button>
+                    <el-button text size="small">{{
+                      t("externalToolkit.taskLog")
+                    }}</el-button>
                   </template>
                   <div class="temu-task-log-popover__head">
-                    <strong>执行日志</strong>
+                    <strong>{{ t("externalToolkit.taskLog") }}</strong>
                     <el-button
                       text
                       size="small"
-                      @click="copyText('任务日志', taskRunLogsText)"
+                      @click="copyText(t('externalToolkit.taskLog'), taskRunLogsText)"
                     >
-                      复制
+                      {{ t("common.copy") }}
                     </el-button>
                   </div>
                   <div
@@ -638,7 +676,7 @@
                     </div>
                   </div>
                   <div v-else class="temu-workspace__unsupported">
-                    当前记录暂无执行日志。
+                    {{ t("externalToolkit.noTaskLog") }}
                   </div>
                 </el-popover>
                 <el-button
@@ -647,7 +685,7 @@
                   :loading="retryingTaskRunId === activeTaskRunDetail.id"
                   @click="retryTaskRunById(activeTaskRunDetail.id)"
                 >
-                  重跑
+                  {{ t("externalToolkit.reRun") }}
                 </el-button>
                 <el-button
                   text
@@ -656,7 +694,7 @@
                   :loading="deletingTaskRunId === activeTaskRunDetail.id"
                   @click="deleteTaskRunById(activeTaskRunDetail.id)"
                 >
-                  删除
+                  {{ t("common.delete") }}
                 </el-button>
               </div>
             </div>
@@ -670,7 +708,7 @@
               class="temu-workspace__section-title temu-workspace__price-review-list-head"
             >
               <div class="temu-workspace__section-title-main">
-                <span>任务结果列表</span>
+                <span>{{ t("externalToolkit.taskResultList") }}</span>
                 <el-tag size="small" effect="plain">{{
                   taskRunPriceReviewPreviewRows.length
                 }}</el-tag>
@@ -683,7 +721,8 @@
                   effect="plain"
                   type="warning"
                 >
-                  全部 {{ taskRunPriceReviewTotalCount }}
+                  {{ t("externalToolkit.all") }}
+                  {{ taskRunPriceReviewTotalCount }}
                 </el-tag>
                 <el-tag
                   v-if="selectedPriceReviewRows.length"
@@ -691,7 +730,8 @@
                   effect="plain"
                   type="success"
                 >
-                  已选 {{ selectedPriceReviewRows.length }}
+                  {{ t("externalToolkit.selected") }}
+                  {{ selectedPriceReviewRows.length }}
                 </el-tag>
                 <el-tag
                   v-if="priceReviewBatchSubmitting"
@@ -707,7 +747,7 @@
                   <div class="temu-workspace__price-review-filter-slider">
                     <span
                       class="temu-workspace__price-review-filter-slider-label"
-                      >价差比</span
+                      >{{ t("externalToolkit.priceDiffRatio") }}</span
                     >
                     <div
                       class="temu-workspace__price-review-filter-slider-group"
@@ -736,7 +776,7 @@
                       :max="priceReviewRiskRangeDragging[1]"
                       :step="5"
                       controls-position="right"
-                      placeholder="最小%"
+                      :placeholder="t('externalToolkit.minPercent')"
                       @change="onPriceReviewRiskRangeConfirm"
                       @blur="onPriceReviewRiskRangeConfirm"
                     />
@@ -752,7 +792,7 @@
                       :max="100"
                       :step="5"
                       controls-position="right"
-                      placeholder="最大%"
+                      :placeholder="t('externalToolkit.maxPercent')"
                       @change="onPriceReviewRiskRangeConfirm"
                       @blur="onPriceReviewRiskRangeConfirm"
                     />
@@ -761,32 +801,32 @@
                     v-model="priceReviewStatusFilter"
                     class="temu-workspace__price-review-filter"
                     size="small"
-                    placeholder="处理状态"
+                    :placeholder="t('externalToolkit.processStatus')"
                   >
-                    <el-option label="全部状态" value="all" />
-                    <el-option label="待处理" value="pending" />
-                    <el-option label="已处理" value="processed" />
+                    <el-option :label="t('externalToolkit.allStatus')" value="all" />
+                    <el-option :label="t('externalToolkit.pending')" value="pending" />
+                    <el-option :label="t('externalToolkit.processed')" value="processed" />
                   </el-select>
                   <el-select
                     v-model="priceReviewSortMode"
                     class="temu-workspace__price-review-filter"
                     size="small"
-                    placeholder="排序"
+                    :placeholder="t('externalToolkit.sort')"
                   >
-                    <el-option label="默认排序" value="default" />
+                    <el-option :label="t('externalToolkit.defaultSort')" value="default" />
                     <el-option
-                      label="差价绝对值从高到低"
+                      :label="t('externalToolkit.diffAbsDesc')"
                       value="difference-desc"
                     />
                     <el-option
-                      label="差价绝对值从低到高"
+                      :label="t('externalToolkit.diffAbsAsc')"
                       value="difference-asc"
                     />
                     <el-option
-                      label="差价率绝对值从高到低"
+                      :label="t('externalToolkit.ratioAbsDesc')"
                       value="ratio-desc"
                     />
-                    <el-option label="差价率绝对值从低到高" value="ratio-asc" />
+                    <el-option :label="t('externalToolkit.ratioAbsAsc')" value="ratio-asc" />
                   </el-select>
                   <el-input-number
                     v-model="priceReviewAmountFilterMin"
@@ -795,7 +835,7 @@
                     :precision="2"
                     :step="1"
                     controls-position="right"
-                    placeholder="最小价差"
+                    :placeholder="t('externalToolkit.minPriceDiff')"
                   />
                   <el-input-number
                     v-model="priceReviewAmountFilterMax"
@@ -804,7 +844,7 @@
                     :precision="2"
                     :step="1"
                     controls-position="right"
-                    placeholder="最大价差"
+                    :placeholder="t('externalToolkit.maxPriceDiff')"
                   />
                   <el-input-number
                     v-model="priceReviewCurrentPriceMin"
@@ -813,7 +853,7 @@
                     :precision="2"
                     :step="1"
                     controls-position="right"
-                    placeholder="最低当前价"
+                    :placeholder="t('externalToolkit.minCurrentPrice')"
                   />
                   <el-input-number
                     v-model="priceReviewCurrentPriceMax"
@@ -822,10 +862,10 @@
                     :precision="2"
                     :step="1"
                     controls-position="right"
-                    placeholder="最高当前价"
+                    :placeholder="t('externalToolkit.maxCurrentPrice')"
                   />
                   <el-button size="small" text @click="resetPriceReviewFilters"
-                    >重置</el-button
+                    >{{ t("common.reset") }}</el-button
                   >
                 </div>
                 <div
@@ -842,7 +882,7 @@
                     :loading="priceReviewBatchSubmittingMode === 'confirm'"
                     @click="submitSelectedPriceReviewRows('confirm')"
                   >
-                    批量确认核价
+                     {{ t("externalToolkit.batchConfirmPricing") }}
                   </el-button>
                   <el-button
                     size="small"
@@ -854,7 +894,7 @@
                     :loading="priceReviewBatchSubmittingMode === 'reprice'"
                     @click="submitSelectedPriceReviewRows('reprice')"
                   >
-                    批量重新报价
+                     {{ t("externalToolkit.batchReprice") }}
                   </el-button>
                   <el-button
                     size="small"
@@ -866,7 +906,7 @@
                     :loading="priceReviewBatchSubmittingMode === 'abandon'"
                     @click="submitSelectedPriceReviewRows('abandon')"
                   >
-                    批量不核价
+                     {{ t("externalToolkit.batchAbandonPricing") }}
                   </el-button>
                 </div>
               </div>
@@ -902,7 +942,7 @@
                 <template #priceReviewIdentitySlot="{ row }">
                   <div class="temu-workspace__price-review-identity">
                     <div>
-                      <span>核价单号</span>
+                      <span>{{ t("externalToolkit.priceOrderNo") }}</span>
                       <strong>{{ row.priceOrderId }}</strong>
                     </div>
                     <div>
@@ -928,15 +968,15 @@
                   >
                     <div class="temu-workspace__price-review-prices">
                       <div>
-                        <span>当前价</span>
+                        <span>{{ t("externalToolkit.currentPrice") }}</span>
                         <strong>¥{{ row.currentPrice }}</strong>
                       </div>
                       <div>
-                        <span>建议价</span>
+                        <span>{{ t("externalToolkit.suggestPrice") }}</span>
                         <strong>¥{{ row.suggestPrice }}</strong>
                       </div>
                       <div class="temu-workspace__price-review-diff">
-                        <span>差价</span>
+                        <span>{{ t("externalToolkit.priceDiff") }}</span>
                         <strong>{{ row.priceDifferenceDisplay }}</strong>
                       </div>
                     </div>
@@ -970,7 +1010,7 @@
                     effect="plain"
                     :type="row.invalid ? 'info' : 'success'"
                   >
-                    {{ row.invalid ? row.invalidReason : "可操作" }}
+                    {{ row.invalid ? row.invalidReason : t("externalToolkit.operable") }}
                   </el-tag>
                 </template>
 
@@ -986,7 +1026,7 @@
                       :disabled="!canSubmitPriceReviewRow(row) || row.invalid"
                       @click="submitPriceReviewRow(row, 'confirm')"
                     >
-                      确认核价
+                       {{ t("externalToolkit.confirmPricing") }}
                     </el-button>
                     <el-button
                       text
@@ -998,7 +1038,7 @@
                       :disabled="!canRepricePriceReviewRow(row) || row.invalid"
                       @click="submitRepricePriceReviewRow(row)"
                     >
-                      重新报价
+                       {{ t("externalToolkit.reprice") }}
                     </el-button>
                     <el-button
                       text
@@ -1010,7 +1050,7 @@
                       :disabled="!row.rawPriceOrderId || row.invalid"
                       @click="submitPriceReviewRow(row, 'abandon')"
                     >
-                      不核价
+                       {{ t("externalToolkit.abandonPricing") }}
                     </el-button>
                   </div>
                 </template>
@@ -1026,7 +1066,7 @@
               class="temu-workspace__section-title temu-workspace__price-review-list-head"
             >
               <div class="temu-workspace__section-title-main">
-                <span>JIT 待处理列表</span>
+                <span>{{ t("externalToolkit.jitPendingList") }}</span>
                 <el-tag size="small" effect="plain">{{
                   taskRunJitRows.length
                 }}</el-tag>
@@ -1036,7 +1076,7 @@
                   effect="plain"
                   type="warning"
                 >
-                  全部 {{ taskRunJitTotalCount }}
+                  {{ t("externalToolkit.all") }} {{ taskRunJitTotalCount }}
                 </el-tag>
                 <el-tag
                   v-if="selectedJitRows.length"
@@ -1044,7 +1084,8 @@
                   effect="plain"
                   type="success"
                 >
-                  已选 {{ selectedJitRows.length }}
+                  {{ t("externalToolkit.selected") }}
+                  {{ selectedJitRows.length }}
                 </el-tag>
                 <el-tag
                   v-if="jitBatchSubmitting"
@@ -1061,21 +1102,39 @@
                   size="small"
                   class="temu-workspace__jit-status-filter"
                 >
-                  <el-option label="全部 JIT 状态" value="all" />
-                  <el-option label="未开通 JIT" value="pending" />
-                  <el-option label="已开通 JIT" value="opened" />
+                  <el-option
+                    :label="t('externalToolkit.allJitStatus')"
+                    value="all"
+                  />
+                  <el-option
+                    :label="t('externalToolkit.jitNotOpened')"
+                    value="pending"
+                  />
+                  <el-option
+                    :label="t('externalToolkit.jitOpened')"
+                    value="opened"
+                  />
                 </el-select>
                 <el-select
                   v-model="jitStockStatusFilter"
                   size="small"
                   class="temu-workspace__jit-status-filter"
                 >
-                  <el-option label="全部库存状态" value="all" />
-                  <el-option label="未维护库存" value="pending" />
-                  <el-option label="已维护库存" value="maintained" />
+                  <el-option
+                    :label="t('externalToolkit.allStockStatus')"
+                    value="all"
+                  />
+                  <el-option
+                    :label="t('externalToolkit.stockNotMaintained')"
+                    value="pending"
+                  />
+                  <el-option
+                    :label="t('externalToolkit.stockMaintained')"
+                    value="maintained"
+                  />
                 </el-select>
                 <label class="temu-workspace__jit-stock-field">
-                  <span>目标库存</span>
+                  <span>{{ t("externalToolkit.targetStock") }}</span>
                   <el-input-number
                     v-model="jitStockFinalNum"
                     size="small"
@@ -1092,7 +1151,7 @@
                   :loading="jitBatchSubmitting"
                   @click="submitSelectedJitOpenAndStockRows"
                 >
-                  批量开通并维护库存
+                   {{ t("externalToolkit.batchOpenAndMaintainStock") }}
                 </el-button>
               </div>
             </div>
@@ -1114,7 +1173,7 @@
                     preview-teleported
                     class="temu-workspace__preview-image"
                   />
-                  <span v-else class="temu-workspace__muted">无图</span>
+                  <span v-else class="temu-workspace__muted">{{ t("externalToolkit.noImage") }}</span>
                 </template>
                 <template #jitIdentitySlot="{ row }">
                   <div class="temu-workspace__price-review-identity">
@@ -1125,9 +1184,9 @@
                       <span>SKC</span><strong>{{ row.skcId }}</strong>
                     </div>
                     <div>
-                      <span>SKC货号</span><strong>{{ row.skcExtCode }}</strong>
-                    </div>
-                  </div>
+                      <span>{{ t("externalToolkit.skcExtCode") }}</span
+                      ><strong>{{ row.skcExtCode }}</strong>
+                    </div>                  </div>
                 </template>
                 <template #jitStatusSlot="{ row }">
                   <div class="temu-workspace__submit-status">
@@ -1197,7 +1256,11 @@
                       :disabled="jitBatchSubmitting || row.jitOpened"
                       @click="submitJitRows([row], false)"
                     >
-                      {{ row.jitOpened ? "已开通" : "开通 JIT" }}
+                      {{
+                        row.jitOpened
+                          ? t("externalToolkit.jitOpenedShort")
+                          : t("externalToolkit.openJit")
+                      }}
                     </el-button>
                     <el-button
                       text
@@ -1211,7 +1274,11 @@
                       "
                       @click="submitJitStockRow(row)"
                     >
-                      {{ row.stockMaintained ? "已维护" : "维护库存" }}
+                      {{
+                        row.stockMaintained
+                          ? t("externalToolkit.stockMaintainedShort")
+                          : t("externalToolkit.maintainStock")
+                      }}
                     </el-button>
                   </div>
                 </template>
@@ -1227,7 +1294,7 @@
               class="temu-workspace__section-title temu-workspace__price-review-list-head"
             >
               <div class="temu-workspace__section-title-main">
-                <span>实拍图治理列表</span>
+                <span>{{ t("externalToolkit.realPictureList") }}</span>
                 <el-tag size="small" effect="plain">{{
                   taskRunRealPictureRows.length
                 }}</el-tag>
@@ -1240,7 +1307,8 @@
                   effect="plain"
                   type="warning"
                 >
-                  全部 {{ taskRunRealPictureTotalCount }}
+                  {{ t("externalToolkit.all") }}
+                  {{ taskRunRealPictureTotalCount }}
                 </el-tag>
                 <el-tag
                   v-if="selectedRealPictureRows.length"
@@ -1248,7 +1316,8 @@
                   effect="plain"
                   type="success"
                 >
-                  已选 {{ selectedRealPictureRows.length }}
+                  {{ t("externalToolkit.selected") }}
+                  {{ selectedRealPictureRows.length }}
                 </el-tag>
                 <el-tag
                   v-if="realPictureBatchSubmitting"
@@ -1269,7 +1338,7 @@
                   "
                   @click="openRealPictureUploader(selectedRealPictureRows)"
                 >
-                  批量上传
+                   {{ t("externalToolkit.batchUpload") }}
                 </el-button>
               </div>
             </div>
@@ -1305,7 +1374,8 @@
                       <span>SKU</span><strong>{{ row.skuSummary }}</strong>
                     </div>
                     <div>
-                      <span>同图</span><strong>{{ row.isSameSku }}</strong>
+                      <span>{{ t("externalToolkit.sameImage") }}</span
+                      ><strong>{{ row.isSameSku }}</strong>
                     </div>
                   </div>
                 </template>
@@ -1341,7 +1411,7 @@
                       :disabled="realPictureBatchSubmitting"
                       @click="openRealPictureUploader([row])"
                     >
-                      上传
+                       {{ t("externalToolkit.upload") }}
                     </el-button>
                   </div>
                 </template>
@@ -1370,7 +1440,8 @@
                   effect="plain"
                   type="warning"
                 >
-                  全部 {{ taskRunComplianceTotalCount }}
+                  {{ t("externalToolkit.all") }}
+                  {{ taskRunComplianceTotalCount }}
                 </el-tag>
                 <el-tag
                   v-if="taskRunComplianceFilteredCount > 0"
@@ -1378,7 +1449,11 @@
                   effect="plain"
                   type="info"
                 >
-                  已过滤无关数据 {{ taskRunComplianceFilteredCount }} 条
+                  {{
+                    t("externalToolkit.filteredIrrelevantCount", {
+                      count: taskRunComplianceFilteredCount,
+                    })
+                  }}
                 </el-tag>
                 <el-tag
                   v-if="selectedComplianceRows.length"
@@ -1386,7 +1461,8 @@
                   effect="plain"
                   type="success"
                 >
-                  已选 {{ selectedComplianceRows.length }}
+                  {{ t("externalToolkit.selected") }}
+                  {{ selectedComplianceRows.length }}
                 </el-tag>
                 <el-tag
                   v-if="complianceBatchSubmitting"
@@ -1399,7 +1475,7 @@
               </div>
               <div class="temu-workspace__price-review-batch-actions">
                 <el-checkbox v-model="complianceIgnoreUselessInfo" size="small">
-                  忽略无用信息
+                  {{ t("externalToolkit.ignoreUselessInfo") }}
                 </el-checkbox>
                 <el-button
                   size="small"
@@ -1412,7 +1488,7 @@
                   "
                   @click="openComplianceBatchEditor"
                 >
-                  批量处理
+                   {{ t("externalToolkit.batchProcess") }}
                 </el-button>
               </div>
             </div>
@@ -1430,10 +1506,12 @@
                       <span>SPU</span><strong>{{ row.spuId }}</strong>
                     </div>
                     <div>
-                      <span>类目</span><strong>{{ row.categoryName }}</strong>
+                      <span>{{ t("externalToolkit.category") }}</span
+                      ><strong>{{ row.categoryName }}</strong>
                     </div>
                     <div>
-                      <span>类目ID</span><strong>{{ row.categoryId }}</strong>
+                      <span>{{ t("externalToolkit.categoryId") }}</span
+                      ><strong>{{ row.categoryId }}</strong>
                     </div>
                     <div>
                       <span>goodsId</span><strong>{{ row.goodsId }}</strong>
@@ -1469,7 +1547,7 @@
                       :disabled="!isActionableComplianceRow(row)"
                       @click="openComplianceEditor(row)"
                     >
-                      处理
+                       {{ t("externalToolkit.process") }}
                     </el-button>
                   </div>
                 </template>
@@ -1485,7 +1563,7 @@
               class="temu-workspace__section-title temu-workspace__price-review-list-head"
             >
               <div class="temu-workspace__section-title-main">
-                <span>商品确认列表</span>
+                <span>{{ t("externalToolkit.confirmationList") }}</span>
                 <el-tag size="small" effect="plain">{{
                   taskRunConfirmationRows.length
                 }}</el-tag>
@@ -1498,7 +1576,8 @@
                   effect="plain"
                   type="warning"
                 >
-                  全部 {{ taskRunConfirmationTotalCount }}
+                  {{ t("externalToolkit.all") }}
+                  {{ taskRunConfirmationTotalCount }}
                 </el-tag>
                 <el-tag
                   v-if="unconfirmedConfirmationRows.length"
@@ -1506,7 +1585,8 @@
                   effect="plain"
                   type="info"
                 >
-                  未确认 {{ unconfirmedConfirmationRows.length }}
+                  {{ t("externalToolkit.unconfirmed") }}
+                  {{ unconfirmedConfirmationRows.length }}
                 </el-tag>
               </div>
               <div class="flex gap-4">
@@ -1517,7 +1597,7 @@
                   style="width: 110px"
                   placeholder="siteVersion"
                 >
-                  <el-option label="空" :value="null" />
+                  <el-option :label="t('externalToolkit.empty')" :value="null" />
                   <el-option label="1" :value="1" />
                   <el-option label="10001" :value="10001" />
                   <el-option label="10002" :value="10002" />
@@ -1531,7 +1611,11 @@
                   :disabled="!selectedConfirmationRows.length"
                   @click="submitSelectedConfirmationRows"
                 >
-                  批量确认 ({{ selectedConfirmationRows.length }})
+                  {{
+                    t("externalToolkit.batchConfirmWithCount", {
+                      count: selectedConfirmationRows.length,
+                    })
+                  }}
                 </el-button>
               </div>
             </div>
@@ -1564,7 +1648,8 @@
                       <span>SKC</span><strong>{{ row.skcId }}</strong>
                     </div>
                     <div>
-                      <span>货号</span><strong>{{ row.extCode }}</strong>
+                      <span>{{ t("externalToolkit.extCode") }}</span
+                      ><strong>{{ row.extCode }}</strong>
                     </div>
                   </div>
                 </template>
@@ -1576,7 +1661,7 @@
                       effect="plain"
                       type="success"
                     >
-                      已确认
+                      {{ t("externalToolkit.confirmed") }}
                     </el-tag>
                     <el-tag
                       v-else-if="row.submitStatus === '失败'"
@@ -1584,10 +1669,10 @@
                       effect="plain"
                       type="danger"
                     >
-                      确认失败
+                      {{ t("externalToolkit.confirmFailed") }}
                     </el-tag>
                     <el-tag v-else size="small" effect="plain" type="info">
-                      待确认
+                      {{ t("externalToolkit.pendingConfirm") }}
                     </el-tag>
                     <small v-if="row.submitMessage">{{
                       row.submitMessage
@@ -1606,7 +1691,11 @@
                       :disabled="confirmationBatchSubmitting || row.confirmed"
                       @click="submitSingleConfirmationRow(row)"
                     >
-                      {{ row.confirmed ? "已确认" : "确认" }}
+                      {{
+                        row.confirmed
+                          ? t("externalToolkit.confirmed")
+                          : t("externalToolkit.confirm")
+                      }}
                     </el-button>
                   </div>
                 </template>
@@ -1624,7 +1713,7 @@
             class="temu-workspace__section-title temu-workspace__price-review-list-head"
           >
             <div class="temu-workspace__section-title-main">
-              <span>已发布站点商品</span>
+              <span>{{ t("externalToolkit.publishedSiteProducts") }}</span>
               <el-tag size="small" effect="plain">{{
                 filteredPublishedSiteRows.length
               }}</el-tag>
@@ -1637,7 +1726,8 @@
                 effect="plain"
                 type="warning"
               >
-                全部 {{ taskRunPublishedSiteTotalCount }}
+                {{ t("externalToolkit.all") }}
+                {{ taskRunPublishedSiteTotalCount }}
               </el-tag>
               <el-tag
                 v-if="publishedSiteOffSaleSubmitting"
@@ -1651,8 +1741,8 @@
                 v-model="publishedSiteCreateDateRange"
                 type="daterange"
                 range-separator="~"
-                start-placeholder="创建开始日期"
-                end-placeholder="创建结束日期"
+                :start-placeholder="t('externalToolkit.createStartDate')"
+                :end-placeholder="t('externalToolkit.createEndDate')"
                 size="small"
                 value-format="YYYY-MM-DD"
                 style="width: 260px; margin-left: 8px"
@@ -1666,8 +1756,12 @@
                 :disabled="!selectedPublishedSiteRows.length"
                 @click="submitPublishedSiteOffSale(selectedPublishedSiteRows)"
               >
-                批量下架 ({{ selectedPublishedSiteRows.length }})
-              </el-button>
+                  {{
+                    t("externalToolkit.batchOffSale", {
+                      count: selectedPublishedSiteRows.length,
+                    })
+                  }}
+                </el-button>
             </div>
           </div>
           <div class="common-table">
@@ -1712,13 +1806,17 @@
           <div class="temu-workspace__panel-head">
             <div>
               <div class="temu-workspace__panel-title">
-                <span>活动报名</span>
+                <span>{{ t("externalToolkit.activityEnroll") }}</span>
                 <el-tag size="small" effect="plain">
-                  {{ activityPanelActivities.length }} 个活动
+                  {{
+                    t("externalToolkit.activityCount", {
+                      count: activityPanelActivities.length,
+                    })
+                  }}
                 </el-tag>
               </div>
               <div class="temu-workspace__editor-desc">
-                选择活动后查询可报名商品，勾选后一键报名。
+                {{ t("externalToolkit.activityEnrollHint") }}
               </div>
             </div>
             <div class="temu-workspace__panel-tools">
@@ -1727,7 +1825,7 @@
                 :loading="activityPanelLoading"
                 @click="loadActivityPanelActivities"
               >
-                刷新活动列表
+                 {{ t("externalToolkit.refreshActivityList") }}
               </el-button>
             </div>
           </div>
@@ -1741,7 +1839,7 @@
                 v-if="activityPanelActivities.length === 0"
                 class="temu-workspace__empty-state"
               >
-                暂无活动，请点击"刷新活动列表"
+                {{ t("externalToolkit.noActivityList") }}
               </div>
               <div v-else class="temu-workspace__activity-cards">
                 <div
@@ -1754,7 +1852,9 @@
                     {{ act.activityName }}
                   </div>
                   <div class="temu-workspace__activity-card-type">
-                    类型：{{ act.activityType }}
+                    {{ t("externalToolkit.activityTypePrefix") }}：{{
+                      act.activityType
+                    }}
                   </div>
                   <div
                     v-if="act.activityThematicId"
@@ -1763,7 +1863,9 @@
                     {{ act.activityThematicName }}
                   </div>
                   <div class="temu-workspace__activity-card-stock">
-                    库存阈值：{{ act.stockThreshold || "-" }}
+                    {{ t("externalToolkit.stockThreshold") }}：{{
+                      act.stockThreshold || "-"
+                    }}
                   </div>
                 </div>
               </div>
@@ -1771,7 +1873,9 @@
 
             <template v-else>
               <div class="temu-workspace__activity-selector">
-                <span class="temu-workspace__activity-label">当前活动：</span>
+                <span class="temu-workspace__activity-label"
+                  >{{ t("externalToolkit.currentActivity") }}：</span
+                >
                 <el-tag type="primary" size="large">
                   {{ activityPanelSelectedActivity.activityName }} ({{
                     activityPanelSelectedActivity.activityType
@@ -1781,23 +1885,23 @@
                   </span>
                 </el-tag>
                 <el-button size="small" @click="resetActivityPanelSelection">
-                  切换活动
+                  {{ t("externalToolkit.switchActivity") }}
                 </el-button>
               </div>
 
               <div class="temu-workspace__match-config">
                 <el-form :inline="true" size="small">
-                  <el-form-item label="库存阈值">
+                  <el-form-item :label="t('externalToolkit.stockThreshold')">
                     <el-input-number
                       v-model="activityPanelStockThreshold"
                       :min="1"
                       :max="9999"
                     />
                   </el-form-item>
-                  <el-form-item label="SPU ID（可选）">
+                  <el-form-item :label="t('externalToolkit.spuIdOptional')">
                     <el-input
                       v-model="activityPanelSpuIdInput"
-                      placeholder="留空查询全部"
+                      :placeholder="t('externalToolkit.blankQueryAll')"
                       style="width: 200px"
                     />
                   </el-form-item>
@@ -1807,7 +1911,7 @@
                       :loading="activityPanelMatching"
                       @click="loadActivityPanelMatchProducts"
                     >
-                      查询可报名商品
+                      {{ t("externalToolkit.queryEnrollProducts") }}
                     </el-button>
                   </el-form-item>
                 </el-form>
@@ -1819,16 +1923,20 @@
               >
                 <div class="temu-workspace__match-toolbar">
                   <span
-                    >找到 {{ activityPanelMatchProducts.length }} 个商品</span
+                    >{{
+                      t("externalToolkit.foundProducts", {
+                        count: activityPanelMatchProducts.length,
+                      })
+                    }}</span
                   >
                   <div>
                     <el-button size="small" @click="activityPanelSelectAll"
-                      >全选</el-button
+                      >{{ t("externalToolkit.selectAll") }}</el-button
                     >
                     <el-button
                       size="small"
                       @click="activityPanelSelectedProducts = []"
-                      >清空</el-button
+                      >{{ t("common.clear") }}</el-button
                     >
                     <el-button
                       type="success"
@@ -1836,7 +1944,11 @@
                       :loading="activityPanelSubmitting"
                       @click="submitActivityPanelEnroll"
                     >
-                      批量报名（{{ activityPanelSelectedProducts.length }}）
+                      {{
+                        t("externalToolkit.batchEnroll", {
+                          count: activityPanelSelectedProducts.length,
+                        })
+                      }}
                     </el-button>
                   </div>
                 </div>
@@ -1860,14 +1972,14 @@
         </div>
 
         <div v-else class="temu-workspace__unsupported">
-          正在加载记录详情...
+          {{ t("externalToolkit.loadingDetail") }}
         </div>
       </div>
     </el-dialog>
 
     <el-dialog
       v-model="priceReviewBatchRepriceVisible"
-      title="批量重新报价"
+      :title="t('externalToolkit.batchReprice')"
       width="820px"
       append-to-body
       destroy-on-close
@@ -1875,12 +1987,21 @@
     >
       <div class="temu-workspace__batch-reprice-head">
         <span v-if="priceReviewBatchSubmittingMode === 'reprice'">
-          处理中 {{ priceReviewBatchFinishedCount }}/{{
-            priceReviewBatchTotalCount
+          {{
+            t("externalToolkit.processingProgress", {
+              finished: priceReviewBatchFinishedCount,
+              total: priceReviewBatchTotalCount,
+            })
           }}
         </span>
-        <span v-else>已选 {{ priceReviewBatchRepriceRows.length }} 条</span>
-        <small>默认按各自当前价减 0.01，可逐行修改。</small>
+        <span v-else>
+          {{
+            t("externalToolkit.selectedCount", {
+              count: priceReviewBatchRepriceRows.length,
+            })
+          }}
+        </span>
+        <small>{{ t("externalToolkit.repriceHint") }}</small>
       </div>
       <div class="common-table">
         <vxe-grid
@@ -1912,7 +2033,7 @@
           :disabled="priceReviewBatchSubmittingMode === 'reprice'"
           @click="priceReviewBatchRepriceVisible = false"
         >
-          取消
+          {{ t("common.cancel") }}
         </el-button>
         <el-button
           type="warning"
@@ -1920,25 +2041,28 @@
           :disabled="priceReviewBatchSubmittingMode === 'reprice'"
           @click="confirmBatchRepriceRows"
         >
-          提交重新报价
+          {{ t("externalToolkit.submitReprice") }}
         </el-button>
       </template>
     </el-dialog>
 
     <el-dialog
       v-model="realPictureUploadVisible"
-      title="上传实拍图"
+      :title="t('externalToolkit.uploadRealPictures')"
       width="720px"
       append-to-body
       destroy-on-close
       class="temu-workspace__real-picture-dialog"
     >
       <div class="temu-workspace__batch-reprice-head">
-        <span>已选 {{ realPictureUploadRows.length }} 条</span>
-        <small
-          >填写一组 HTTP
-          图片，会同时上传到商品主体实拍图和商品外包装实拍图。</small
-        >
+        <span>
+          {{
+            t("externalToolkit.selectedCount", {
+              count: realPictureUploadRows.length,
+            })
+          }}
+        </span>
+        <small>{{ t("externalToolkit.realPictureUploadHint") }}</small>
       </div>
       <el-form label-position="top" class="temu-workspace__real-picture-form">
         <div
@@ -1947,13 +2071,17 @@
           class="temu-workspace__real-picture-position-item"
         >
           <el-form-item
-            :label="index === 0 ? 'HTTP 图片地址' : 'HTTP 图片地址补充'"
+            :label="
+              index === 0
+                ? t('externalToolkit.httpImageAddress')
+                : t('externalToolkit.httpImageAddressExtra')
+            "
           >
             <el-input
               v-model="positionItem.imageUrlsText"
               type="textarea"
               :rows="4"
-              placeholder="每行一个 HTTP 图片地址，会同时提交到商品主体实拍图和商品外包装实拍图"
+              :placeholder="t('externalToolkit.realPictureUrlPlaceholder')"
               :disabled="realPictureBatchSubmitting"
             />
           </el-form-item>
@@ -1966,7 +2094,7 @@
             "
             @click="removeRealPicturePositionItem(index)"
           >
-            删除
+            {{ t("common.delete") }}
           </el-button>
         </div>
         <el-button
@@ -1975,14 +2103,14 @@
           :disabled="realPictureBatchSubmitting"
           @click="addRealPicturePositionItem"
         >
-          添加图片输入框
+          {{ t("externalToolkit.addImageInput") }}
         </el-button>
       </el-form>
       <template #footer>
         <el-button
           :disabled="realPictureBatchSubmitting"
           @click="realPictureUploadVisible = false"
-          >取消</el-button
+          >{{ t("common.cancel") }}</el-button
         >
         <el-button
           type="primary"
@@ -1990,14 +2118,14 @@
           :disabled="realPictureBatchSubmitting"
           @click="submitRealPictureUploadRows"
         >
-          上传
+          {{ t("externalToolkit.upload") }}
         </el-button>
       </template>
     </el-dialog>
 
     <el-dialog
       v-model="complianceEditorVisible"
-      title="合规信息处理"
+      :title="t('externalToolkit.complianceProcess')"
       width="980px"
       append-to-body
       destroy-on-close
@@ -2016,11 +2144,11 @@
               <span>SPU</span><strong>{{ activeComplianceRow.spuId }}</strong>
             </div>
             <div>
-              <span>类目</span
+              <span>{{ t("externalToolkit.category") }}</span
               ><strong>{{ activeComplianceRow.categoryName }}</strong>
             </div>
             <div>
-              <span>类目ID</span
+              <span>{{ t("externalToolkit.categoryId") }}</span
               ><strong>{{ activeComplianceRow.categoryId }}</strong>
             </div>
             <div>
@@ -2078,7 +2206,9 @@
                     clearable
                     :disabled="field.disabled || !field.options.length"
                     :placeholder="
-                      field.options.length ? '请选择' : '暂无可选值'
+                      field.options.length
+                        ? t('common.selectText')
+                        : t('externalToolkit.noSelectableValue')
                     "
                     class="temu-workspace__compliance-control"
                   >
@@ -2093,17 +2223,17 @@
                     v-else
                     v-model="complianceEditorForm[field.key]"
                     clearable
-                    placeholder="请输入"
+                    :placeholder="t('common.inputText')"
                     class="temu-workspace__compliance-control"
                   />
                 </el-form-item>
                 <el-empty
                   v-if="!selectedComplianceFields.length"
-                  description="当前模板未解析到可填写字段"
+                  :description="t('externalToolkit.noParsableFields')"
                 />
               </el-form>
             </template>
-            <el-empty v-else description="请选择一个合规项" />
+            <el-empty v-else :description="t('externalToolkit.selectComplianceItem')" />
           </div>
         </div>
       </div>
@@ -2111,7 +2241,7 @@
         <el-button
           :disabled="complianceBatchSubmitting"
           @click="complianceEditorVisible = false"
-          >关闭</el-button
+          >{{ t("common.close") }}</el-button
         >
         <el-button
           type="primary"
@@ -2119,7 +2249,11 @@
           :disabled="complianceEditorLoading || !activeComplianceRow"
           @click="submitComplianceEditor"
         >
-          {{ complianceBatchMode ? "批量提交" : "提交" }}
+          {{
+            complianceBatchMode
+              ? t("externalToolkit.batchSubmit")
+              : t("externalToolkit.submit")
+          }}
         </el-button>
       </template>
     </el-dialog>
@@ -2137,6 +2271,7 @@ import {
   watch,
 } from "vue";
 import { useLocalStorage } from "@vueuse/core";
+import { useI18n } from "@/hooks/web/useI18n";
 import type { VxeGridInstance, VxeGridProps } from "vxe-table";
 import type { ToolkitToolItem } from "@/api/external/toolkit";
 import {
@@ -2446,6 +2581,8 @@ const emit = defineEmits<{
   ): void;
 }>();
 
+const { t } = useI18n();
+
 const resetReactiveRecord = (
   target: Record<string, any>,
   nextValue: Record<string, any> = {},
@@ -2605,8 +2742,8 @@ const priceReviewRiskRangeDragging = ref<PriceReviewRiskRange>([0, 100]);
 
 const priceReviewRiskLabel = computed(() => {
   const [min, max] = priceReviewRiskRange.value;
-  if (min <= 0 && max >= 100) return "全部";
-  return `降幅 ${min}% ~ ${max}%`;
+  if (min <= 0 && max >= 100) return t("externalToolkit.all");
+  return t("externalToolkit.declineRange", { min, max });
 });
 
 const onPriceReviewRiskRangeConfirm = () => {
@@ -2676,55 +2813,55 @@ const taskRunGridOptions = ref<VxeGridProps<TemuTaskRunSummary>>({
     { type: "checkbox", width: 48 },
     { title: "#", field: "id", width: 76 },
     {
-      title: "动作",
+      title: t("externalToolkit.action"),
       field: "actionLabel",
       minWidth: 180,
       slots: { default: "taskRunActionSlot" },
     },
     {
-      title: "状态",
+      title: t("common.status"),
       field: "status",
       width: 112,
       align: "center",
       slots: { default: "taskRunStatusSlot" },
     },
     {
-      title: "环境",
+      title: t("externalToolkit.environment"),
       field: "profileId",
       minWidth: 140,
       showOverflow: "tooltip",
       slots: { default: "taskRunProfileSlot" },
     },
     {
-      title: "区域",
+      title: t("externalToolkit.region"),
       field: "region",
       width: 110,
       align: "center",
       slots: { default: "taskRunRegionSlot" },
     },
     {
-      title: "耗时",
+      title: t("externalToolkit.cost"),
       field: "durationMs",
       width: 110,
       align: "center",
       slots: { default: "taskRunDurationSlot" },
     },
     {
-      title: "创建时间",
+      title: t("common.createTime"),
       field: "createdAt",
       width: 176,
       align: "center",
       slots: { default: "taskRunCreatedAtSlot" },
     },
     {
-      title: "失败原因",
+      title: t("externalToolkit.failReason"),
       field: "errorText",
       minWidth: 220,
       showOverflow: "tooltip",
       slots: { default: "taskRunErrorSlot" },
     },
     {
-      title: "操作",
+      title: t("common.operation"),
       field: "operation",
       width: 210,
       fixed: "right",
@@ -2751,14 +2888,14 @@ const priceReviewPreviewGridOptions = ref<VxeGridProps<PriceReviewPreviewRow>>({
   columns: [
     { type: "checkbox", width: 46, fixed: "left" },
     {
-      title: "图片",
+      title: t("externalToolkit.image"),
       field: "imageUrl",
       width: 112,
       align: "center",
       slots: { default: "priceReviewImageSlot" },
     },
     {
-      title: "价格判断",
+      title: t("externalToolkit.priceDecision"),
       field: "priceDifference",
       minWidth: 280,
       align: "left",
@@ -2766,53 +2903,53 @@ const priceReviewPreviewGridOptions = ref<VxeGridProps<PriceReviewPreviewRow>>({
       slots: { default: "priceReviewPricingSlot" },
     },
     {
-      title: "商品",
+      title: t("externalToolkit.product"),
       field: "productName",
       minWidth: 260,
       showOverflow: "tooltip",
       slots: { default: "priceReviewProductSlot" },
     },
     {
-      title: "核价信息",
+      title: t("externalToolkit.pricingInfo"),
       field: "priceOrderId",
       minWidth: 210,
       slots: { default: "priceReviewIdentitySlot" },
     },
     {
-      title: "SKC货号",
+      title: t("externalToolkit.skcExtCode"),
       field: "skcExtCode",
       minWidth: 140,
       showOverflow: "tooltip",
     },
     {
-      title: "SKU货号",
+      title: t("externalToolkit.skuExtCode"),
       field: "skuExtCode",
       minWidth: 150,
       showOverflow: "tooltip",
     },
     {
-      title: "SKU属性",
+      title: t("externalToolkit.skuProperties"),
       field: "skuProperties",
       minWidth: 180,
       showOverflow: "tooltip",
     },
-    { title: "次数", field: "times", width: 80, align: "center" },
+    { title: t("externalToolkit.times"), field: "times", width: 80, align: "center" },
     {
-      title: "有效性",
+      title: t("externalToolkit.validity"),
       field: "invalidReason",
       width: 96,
       align: "center",
       slots: { default: "priceReviewValiditySlot" },
     },
     {
-      title: "处理状态",
+      title: t("externalToolkit.processStatus"),
       field: "submitStatus",
       minWidth: 170,
       showOverflow: "tooltip",
       slots: { default: "priceReviewSubmitStatusSlot" },
     },
     {
-      title: "操作",
+      title: t("common.operation"),
       field: "operation",
       width: 230,
       fixed: "right",
@@ -2829,27 +2966,27 @@ const priceReviewBatchRepriceGridOptions = ref<
   maxHeight: 520,
   columns: [
     {
-      title: "SKU",
+      title: t("externalToolkit.sku"),
       field: "skuId",
       minWidth: 180,
       slots: { default: "batchRepriceIdentitySlot" },
     },
     {
-      title: "当前价",
+      title: t("externalToolkit.currentPrice"),
       field: "currentPrice",
       width: 110,
       align: "right",
       formatter: ({ row }) => `¥${row.currentPrice}`,
     },
     {
-      title: "默认新价",
+      title: t("externalToolkit.defaultNewPrice"),
       field: "rowKey",
       width: 160,
       align: "right",
       slots: { default: "batchRepriceInputSlot" },
     },
     {
-      title: "商品",
+      title: t("externalToolkit.product"),
       field: "productName",
       minWidth: 220,
       showOverflow: "tooltip",
@@ -2872,38 +3009,38 @@ const realPicturePreviewGridOptions = ref<VxeGridProps<RealPicturePreviewRow>>({
   columns: [
     { type: "checkbox", width: 46, fixed: "left" },
     {
-      title: "图片",
+      title: t("externalToolkit.image"),
       field: "imageUrl",
       width: 112,
       align: "center",
       slots: { default: "realPictureImageSlot" },
     },
     {
-      title: "商品信息",
+      title: t("externalToolkit.productInfo"),
       field: "spuId",
       minWidth: 240,
       slots: { default: "realPictureIdentitySlot" },
     },
     {
-      title: "异常/规则",
+      title: t("externalToolkit.anomalyRules"),
       field: "ruleSummary",
       minWidth: 280,
       slots: { default: "realPictureRulesSlot" },
     },
     {
-      title: "上传标注",
+      title: t("externalToolkit.uploadMark"),
       field: "submitStatus",
       minWidth: 180,
       slots: { default: "realPictureUploadMarkSlot" },
     },
     {
-      title: "商品名称",
+      title: t("externalToolkit.productName"),
       field: "productName",
       minWidth: 260,
       showOverflow: "tooltip",
     },
     {
-      title: "操作",
+      title: t("common.operation"),
       field: "operation",
       width: 96,
       fixed: "right",
@@ -2927,50 +3064,50 @@ const jitPreviewGridOptions = ref<VxeGridProps<JitPreviewRow>>({
   columns: [
     { type: "checkbox", width: 46, fixed: "left" },
     {
-      title: "商品图",
+      title: t("externalToolkit.productImage"),
       field: "imageUrl",
       width: 112,
       align: "center",
       slots: { default: "jitImageSlot" },
     },
     {
-      title: "商品信息",
+      title: t("externalToolkit.productInfo"),
       field: "spuId",
       minWidth: 260,
       slots: { default: "jitIdentitySlot" },
     },
     {
-      title: "JIT 状态",
+      title: t("externalToolkit.jitStatus"),
       field: "jitStatusText",
       minWidth: 200,
       slots: { default: "jitStatusSlot" },
     },
     {
-      title: "库存状态",
+      title: t("externalToolkit.stockStatus"),
       field: "stockStatusText",
       minWidth: 280,
       slots: { default: "jitStockStatusSlot" },
     },
     {
-      title: "商品名称",
+      title: t("externalToolkit.productName"),
       field: "productName",
       minWidth: 260,
       showOverflow: "tooltip",
     },
     {
-      title: "类目",
+      title: t("externalToolkit.category"),
       field: "categoryName",
       minWidth: 180,
       showOverflow: "tooltip",
     },
     {
-      title: "处理状态",
+      title: t("externalToolkit.processStatus"),
       field: "submitStatus",
       minWidth: 180,
       showOverflow: "tooltip",
     },
     {
-      title: "操作",
+      title: t("common.operation"),
       field: "operation",
       width: 190,
       fixed: "right",
@@ -2996,45 +3133,45 @@ const confirmationPreviewGridOptions = ref<
   columns: [
     { type: "checkbox", width: 46, fixed: "left" },
     {
-      title: "商品图",
+      title: t("externalToolkit.productImage"),
       field: "imageUrl",
       width: 112,
       align: "center",
       slots: { default: "confirmationImageSlot" },
     },
     {
-      title: "商品信息",
+      title: t("externalToolkit.productInfo"),
       field: "spuId",
       minWidth: 260,
       slots: { default: "confirmationIdentitySlot" },
     },
     {
-      title: "商品名称",
+      title: t("externalToolkit.productName"),
       field: "productName",
       minWidth: 260,
       showOverflow: "tooltip",
     },
     {
-      title: "类目",
+      title: t("externalToolkit.category"),
       field: "categoryName",
       minWidth: 180,
       showOverflow: "tooltip",
     },
     {
-      title: "确认状态",
+      title: t("externalToolkit.confirmationStatus"),
       field: "submitStatus",
       minWidth: 200,
       align: "center",
       slots: { default: "confirmationStatusSlot" },
     },
     {
-      title: "创建时间",
+      title: t("common.createTime"),
       field: "createTime",
       width: 160,
       showOverflow: "tooltip",
     },
     {
-      title: "操作",
+      title: t("common.operation"),
       field: "operation",
       width: 120,
       fixed: "right",
@@ -3057,25 +3194,25 @@ const compliancePreviewGridOptions = ref<VxeGridProps<CompliancePreviewRow>>({
   columns: [
     { type: "checkbox", width: 48 },
     {
-      title: "商品信息",
+      title: t("externalToolkit.productInfo"),
       field: "spuId",
       minWidth: 300,
       slots: { default: "complianceIdentitySlot" },
     },
     {
-      title: "上传状态",
+      title: t("externalToolkit.uploadStatus"),
       field: "statusText",
       minWidth: 320,
       slots: { default: "complianceStatusSlot" },
     },
     {
-      title: "商品名称",
+      title: t("externalToolkit.productName"),
       field: "productName",
       minWidth: 280,
       showOverflow: "tooltip",
     },
     {
-      title: "操作",
+      title: t("common.operation"),
       field: "rowKey",
       width: 96,
       fixed: "right",
@@ -3098,56 +3235,56 @@ const publishedSitePreviewGridOptions = ref<VxeGridProps<PublishedSitePreviewRow
   columns: [
     { type: "checkbox", width: 46, fixed: "left" },
     {
-      title: "商品图",
+      title: t("externalToolkit.productImage"),
       field: "imageUrl",
       width: 96,
       align: "center",
       slots: { default: "publishedSiteImageSlot" },
     },
     {
-      title: "商品信息",
+      title: t("externalToolkit.productInfo"),
       field: "productId",
       minWidth: 200,
       slots: { default: "publishedSiteIdentitySlot" },
     },
     {
-      title: "商品名称",
+      title: t("externalToolkit.productName"),
       field: "productName",
       minWidth: 260,
       showOverflow: "tooltip",
     },
     {
-      title: "类目",
+      title: t("externalToolkit.category"),
       field: "leafCategoryName",
       minWidth: 160,
       showOverflow: "tooltip",
     },
     {
-      title: "供应价",
+      title: t("externalToolkit.supplierPrice"),
       field: "supplierPrice",
       width: 140,
       align: "center",
     },
     {
-      title: "SKC数",
+      title: t("externalToolkit.skcCount"),
       field: "skcCount",
       width: 80,
       align: "center",
     },
     {
-      title: "已发站点",
+      title: t("externalToolkit.publishedSites"),
       field: "addedSiteCount",
       width: 90,
       align: "center",
     },
     {
-      title: "联系人",
+      title: t("externalToolkit.contact"),
       field: "contact",
       width: 120,
       showOverflow: "tooltip",
     },
     {
-      title: "创建时间",
+      title: t("common.createTime"),
       field: "createTime",
       width: 160,
       showOverflow: "tooltip",
@@ -3176,9 +3313,9 @@ const activityPanelMatchGridOptions = ref<VxeGridProps<any>>({
   columns: [
     { type: "checkbox", width: 64, fixed: "left" },
     { title: "SPU ID", field: "productId", minWidth: 220 },
-    { title: "SKU 数量", field: "skuCount", minWidth: 140, align: "center" },
+    { title: t("externalToolkit.skuCount"), field: "skuCount", minWidth: 140, align: "center" },
     {
-      title: "推荐价范围",
+      title: t("externalToolkit.recommendPriceRange"),
       field: "priceRange",
       minWidth: 260,
       slots: { default: "matchPriceSlot" },
@@ -3241,13 +3378,13 @@ const publishDetailToolAction = computed<TemuWorkspaceAction>(() => {
   const rawName = String(item?.name || "").trim();
   const label =
     rawName.replace(/^temu\s*/i, "").trim() ||
-    "根据商品spuId 获取 商品发布模板";
+    t("externalToolkit.publishDetailToolLabel");
   return {
     key: TEMU_PUBLISH_DETAIL_REQUEST_CAPTURE_ACTION_KEY,
     label,
     description:
       String(item?.description || "").trim() ||
-      "输入商品 spuId 后打开商品发布详情页，自动点击“提交”，并返回商品发布模板请求里的 POST 参数。",
+      t("externalToolkit.publishDetailToolDesc"),
     endpoint: "__tool__",
     method: "POST",
     regionHints: ["global"],
@@ -3268,8 +3405,8 @@ const mergedCatalog = computed<TemuWorkspaceActionGroup[]>(() => {
     (() => {
       const nextGroup: TemuWorkspaceActionGroup = {
         key: "goods",
-        label: "商品与上新",
-        description: "商品相关动作。",
+        label: t("externalToolkit.goodsGroupLabel"),
+        description: t("externalToolkit.goodsGroupDesc"),
         actions: [],
       };
       groups.unshift(nextGroup);
@@ -5176,7 +5313,10 @@ const confirmationBatchProgressText = computed(() => {
   ) {
     return "";
   }
-  return `处理中 ${confirmationBatchFinishedCount.value}/${confirmationBatchTotalCount.value}`;
+  return t("externalToolkit.processingProgress", {
+    finished: confirmationBatchFinishedCount.value,
+    total: confirmationBatchTotalCount.value,
+  });
 });
 const selectedPublishedSiteRows = computed(() => {
   const selectedKeys = new Set(selectedPublishedSiteRowKeys.value);
@@ -5191,7 +5331,10 @@ const publishedSiteOffSaleProgressText = computed(() => {
   ) {
     return "";
   }
-  return `下架中 ${publishedSiteOffSaleFinishedCount.value}/${publishedSiteOffSaleTotalCount.value}`;
+  return t("externalToolkit.offsaleProgress", {
+    finished: publishedSiteOffSaleFinishedCount.value,
+    total: publishedSiteOffSaleTotalCount.value,
+  });
 });
 const confirmationBatchProgressPercent = computed(() => {
   if (confirmationBatchTotalCount.value <= 0) {
@@ -5264,7 +5407,10 @@ const complianceBatchProgressText = computed(() => {
   ) {
     return "";
   }
-  return `处理中 ${complianceBatchFinishedCount.value}/${complianceBatchTotalCount.value}`;
+  return t("externalToolkit.processingProgress", {
+    finished: complianceBatchFinishedCount.value,
+    total: complianceBatchTotalCount.value,
+  });
 });
 const complianceBatchRemainingCount = computed(() =>
   Math.max(
@@ -5291,7 +5437,10 @@ const realPictureBatchProgressText = computed(() => {
   ) {
     return "";
   }
-  return `处理中 ${realPictureBatchFinishedCount.value}/${realPictureBatchTotalCount.value}`;
+  return t("externalToolkit.processingProgress", {
+    finished: realPictureBatchFinishedCount.value,
+    total: realPictureBatchTotalCount.value,
+  });
 });
 const realPictureBatchRemainingCount = computed(() =>
   Math.max(
@@ -5315,7 +5464,10 @@ const jitBatchProgressText = computed(() => {
   if (!jitBatchSubmitting.value || jitBatchTotalCount.value <= 0) {
     return "";
   }
-  return `处理中 ${jitBatchFinishedCount.value}/${jitBatchTotalCount.value}`;
+  return t("externalToolkit.processingProgress", {
+    finished: jitBatchFinishedCount.value,
+    total: jitBatchTotalCount.value,
+  });
 });
 const jitBatchRemainingCount = computed(() =>
   Math.max(0, jitBatchTotalCount.value - jitBatchFinishedCount.value),
@@ -5594,19 +5746,22 @@ const priceReviewBatchProgressText = computed(() => {
   ) {
     return "";
   }
-  return `处理中 ${priceReviewBatchFinishedCount.value}/${priceReviewBatchTotalCount.value}`;
+  return t("externalToolkit.processingProgress", {
+    finished: priceReviewBatchFinishedCount.value,
+    total: priceReviewBatchTotalCount.value,
+  });
 });
 const priceReviewBatchActionText = computed(() => {
   if (priceReviewBatchSubmittingMode.value === "confirm") {
-    return "批量确认核价";
+    return t("externalToolkit.batchConfirmPricing");
   }
   if (priceReviewBatchSubmittingMode.value === "abandon") {
-    return "批量不核价";
+    return t("externalToolkit.batchAbandonPricing");
   }
   if (priceReviewBatchSubmittingMode.value === "reprice") {
-    return "批量重新报价";
+    return t("externalToolkit.batchReprice");
   }
-  return "批量处理中";
+  return t("externalToolkit.batchProcessing");
 });
 const priceReviewBatchRemainingCount = computed(() =>
   Math.max(
@@ -5697,7 +5852,7 @@ const liveFloatingBatchProgressItems = computed<TemuBatchProgressItem[]>(() => {
   if (realPictureBatchSubmitting.value) {
     items.push({
       key: "real-picture",
-      title: "批量上传实拍图",
+      title: t("externalToolkit.batchUploadRealPictureTitle"),
       progressText: realPictureBatchProgressText.value,
       percent: realPictureBatchProgressPercent.value,
       successCount: realPictureBatchSuccessCount.value,
@@ -5709,7 +5864,7 @@ const liveFloatingBatchProgressItems = computed<TemuBatchProgressItem[]>(() => {
   if (complianceBatchSubmitting.value) {
     items.push({
       key: "compliance",
-      title: "批量处理合规",
+      title: t("externalToolkit.batchProcessComplianceTitle"),
       progressText: complianceBatchProgressText.value,
       percent: complianceBatchProgressPercent.value,
       successCount: complianceBatchSuccessCount.value,
@@ -5721,7 +5876,7 @@ const liveFloatingBatchProgressItems = computed<TemuBatchProgressItem[]>(() => {
   if (confirmationBatchSubmitting.value) {
     items.push({
       key: "confirmation",
-      title: "批量确认商品",
+      title: t("externalToolkit.batchConfirmProductsTitle"),
       progressText: confirmationBatchProgressText.value,
       percent: confirmationBatchProgressPercent.value,
       successCount: confirmationBatchSuccessCount.value,
@@ -5739,8 +5894,11 @@ const floatingBatchProgressItems = computed<TemuBatchProgressItem[]>(() =>
 );
 const floatingProgressTitle = computed(() =>
   floatingBatchProgressItems.value.length > 1
-    ? `批量任务 ${floatingBatchProgressItems.value.length} 个`
-    : floatingBatchProgressItems.value[0]?.title || "批量任务",
+    ? t("externalToolkit.batchTasksCount", {
+        count: floatingBatchProgressItems.value.length,
+      })
+    : floatingBatchProgressItems.value[0]?.title ||
+      t("externalToolkit.batchTasksTitle"),
 );
 const floatingProgressSummary = computed(() => {
   const items = floatingBatchProgressItems.value;
@@ -5750,7 +5908,11 @@ const floatingProgressSummary = computed(() => {
   );
   const totalSuccess = items.reduce((sum, item) => sum + item.successCount, 0);
   const totalFailed = items.reduce((sum, item) => sum + item.failedCount, 0);
-  return `成功 ${totalSuccess} / 失败 ${totalFailed} / 剩余 ${totalRemaining}`;
+  return t("externalToolkit.batchSummary", {
+    success: totalSuccess,
+    failed: totalFailed,
+    remaining: totalRemaining,
+  });
 });
 let batchProgressSyncTimer: number | null = null;
 let batchProgressSyncLastAt = 0;
@@ -5833,9 +5995,11 @@ const clearFloatingBatchProgress = async () => {
   persistedFloatingBatchProgressItems.value = [];
   try {
     await clearTemuBatchProgress(props.profileId);
-    ElMessage.success("已清理批量进度，并终止当前页面批量循环");
+    ElMessage.success(t("externalToolkit.clearedBatchProgress"));
   } catch (error: any) {
-    ElMessage.error(extractRequestErrorMessage(error, "清理批量进度失败"));
+    ElMessage.error(
+      extractRequestErrorMessage(error, t("externalToolkit.clearBatchProgressFailed")),
+    );
   }
 };
 const clearFloatingBatchProgressSilently = async () => {
@@ -5871,11 +6035,18 @@ const withPriceReviewRowTimeout = async <T,>(
         timeoutId = setTimeout(() => {
           const positionText =
             context.index && context.total
-              ? `第 ${context.index}/${context.total} 条`
-              : "当前行";
+              ? t("externalToolkit.timeoutPosition", {
+                  index: context.index,
+                  total: context.total,
+                })
+              : t("externalToolkit.currentRow");
           reject(
             new Error(
-              `${positionText}核价在「${context.stage}」阶段超过 ${Math.round(timeoutMs / 1000)} 秒未返回`,
+              t("externalToolkit.timeoutError", {
+                position: positionText,
+                stage: context.stage,
+                seconds: Math.round(timeoutMs / 1000),
+              }),
             ),
           );
         }, timeoutMs);
@@ -5936,15 +6107,15 @@ const canRunSelectedAction = computed(() => {
 });
 const runButtonLabel = computed(() => {
   if (!props.clientId) {
-    return "先选择客户端";
+    return t("externalToolkit.selectClientFirst");
   }
   if (!props.profileId) {
-    return "先选择环境";
+    return t("externalToolkit.selectEnvironmentFirst");
   }
   if (!hasUsableSession.value) {
-    return "先准备会话";
+    return t("externalToolkit.prepareSessionFirst");
   }
-  return "执行动作";
+  return t("externalToolkit.runAction");
 });
 
 const hasPresetForAction = (actionKey?: string | null) =>
@@ -5970,8 +6141,8 @@ const buildRegionOptions = (regionHints: TemuRegionKey[] = []) => {
       value: region,
       label:
         region === "seller"
-          ? `${REGION_LABELS[region]} · 复用主会话`
-          : `${REGION_LABELS[region]} · Cookie ${cookieCount}`,
+          ? `${REGION_LABELS[region]} · ${t("externalToolkit.reuseMainSession")}`
+          : `${REGION_LABELS[region]} · ${t("externalToolkit.cookieCount", { count: cookieCount })}`,
     };
   });
 };
@@ -6017,10 +6188,10 @@ const resolveRegionLabel = (region?: string | null) => {
 
 const resolveTaskRunStatusLabel = (status?: string | null) => {
   const normalizedStatus = String(status || "").trim();
-  if (normalizedStatus === "completed") return "已完成";
-  if (normalizedStatus === "failed") return "失败";
-  if (normalizedStatus === "running") return "执行中";
-  return "待执行";
+  if (normalizedStatus === "completed") return t("externalToolkit.completed");
+  if (normalizedStatus === "failed") return t("externalToolkit.failed");
+  if (normalizedStatus === "running") return t("externalToolkit.running");
+  return t("externalToolkit.pendingRun");
 };
 
 const resolveTaskRunStatusTagType = (status?: string | null) => {
@@ -6033,10 +6204,10 @@ const resolveTaskRunStatusTagType = (status?: string | null) => {
 
 const resolveTaskRunLogLabel = (level?: string | null) => {
   const normalizedLevel = String(level || "").trim();
-  if (normalizedLevel === "success") return "成功";
-  if (normalizedLevel === "warning") return "提醒";
-  if (normalizedLevel === "error") return "错误";
-  return "信息";
+  if (normalizedLevel === "success") return t("common.success");
+  if (normalizedLevel === "warning") return t("externalToolkit.reminder");
+  if (normalizedLevel === "error") return t("common.error");
+  return t("externalToolkit.info");
 };
 
 const resolveTaskRunLogTagType = (level?: string | null) => {
@@ -6244,13 +6415,13 @@ const applyFormSeed = (seed: TemuFormSeedAction) => {
     state.formState[key] = value;
     state.formErrors[key] = "";
   });
-  ElMessage.success(`${seed.label} 已带入`);
+  ElMessage.success(t("externalToolkit.seedFilled", { label: seed.label }));
 };
 
 const copyText = async (label: string, text: string) => {
   const normalized = String(text || "").trim();
   if (!normalized) {
-    ElMessage.warning(`${label} 暂无可复制内容`);
+    ElMessage.warning(t("externalToolkit.nothingToCopy", { label }));
     return;
   }
 
@@ -6777,7 +6948,7 @@ const submitJitStockRows = async (
   let successCount = 0;
   let failedCount = 0;
   if (batchMode) {
-    resetJitBatchProgress("批量维护库存", rows.length);
+    resetJitBatchProgress(t("externalToolkit.batchMaintainStock"), rows.length);
   }
   const batchToken = batchAbortToken.value;
   const ownerRunId = Number(activeTaskRunDetail.value?.id || 0);
@@ -6796,7 +6967,7 @@ const submitJitStockRows = async (
         break;
       }
       if (batchMode) {
-        setJitBatchCurrent("维护库存中", row);
+        setJitBatchCurrent(t("externalToolkit.maintainingStockStage"), row);
       } else {
         jitStockSubmittingKey.value = row.rowKey;
       }
@@ -6915,8 +7086,8 @@ const submitJitRows = async (inputRows: JitPreviewRow[], batchMode = false) => {
   }
 
   if (batchMode) {
-    resetJitBatchProgress("批量开通 JIT", rows.length);
-    setJitBatchCurrent("批量开通请求中");
+    resetJitBatchProgress(t("externalToolkit.batchOpenJit"), rows.length);
+      setJitBatchCurrent(t("externalToolkit.batchOpeningStage"));
   } else {
     jitSubmittingKey.value = rows[0]?.rowKey || "";
   }
@@ -7115,7 +7286,7 @@ const submitSelectedJitOpenAndStockRows = async () => {
   const openRows = rows.filter((row) => isOpenableJitRow(row));
   const alreadyOpenRows = rows.filter((row) => isStockMaintainableJitRow(row));
   // Phase 1 total: openRows; will update total after phase 1 completes
-  resetJitBatchProgress("批量开通并维护库存", openRows.length);
+  resetJitBatchProgress(t("externalToolkit.batchOpenMaintainStock"), openRows.length);
   const batchToken = batchAbortToken.value;
   const ownerRunId = Number(activeTaskRunDetail.value?.id || 0);
   try {
@@ -7133,7 +7304,7 @@ const submitSelectedJitOpenAndStockRows = async () => {
     }> = [];
 
     if (openRows.length) {
-      setJitBatchCurrent("批量开通请求中");
+    setJitBatchCurrent(t("externalToolkit.batchOpeningStage"));
       const response = normalizeTemuActionResponse(
         await runTemuClientAction("jit.open", buildJitOpenPayload(openRows)),
       );
@@ -7150,7 +7321,7 @@ const submitSelectedJitOpenAndStockRows = async () => {
         if (shouldAbortBatch(batchToken)) {
           break;
         }
-        setJitBatchCurrent("记录开通结果", row);
+        setJitBatchCurrent(t("externalToolkit.recordingOpenResultStage"), row);
         const failedItem = failedItems.find(
           (item) =>
             Number(item?.productSkcId || item?.skcId || 0) === row.rawSkcId,
@@ -7211,7 +7382,7 @@ const submitSelectedJitOpenAndStockRows = async () => {
       if (shouldAbortBatch(batchToken)) {
         break;
       }
-      setJitBatchCurrent("维护库存中", row);
+      setJitBatchCurrent(t("externalToolkit.maintainingStockStage"), row);
       try {
         const response = await runTemuClientAction(
           "jit.stock.update",
@@ -8676,7 +8847,7 @@ const submitPriceReviewRowWithoutConfirm = async (
         mode,
         index: options.batchIndex,
         total: options.batchTotal,
-        stage: "客户端执行 goods.modify-price",
+        stage: t("externalToolkit.clientExecutePriceStage"),
         timeoutMs: options.timeoutMs,
         ownerRunId,
       },

@@ -1,8 +1,8 @@
 <template>
   <ContentWrap :plain="true">
     <el-tabs v-model="materialViewMode" class="material-view-mode-tabs" style="margin-bottom: 8px;">
-      <el-tab-pane label="单图列表" name="single" />
-      <el-tab-pane label="按组查看" name="group" />
+      <el-tab-pane :label="t('material.singleList')" name="single" />
+      <el-tab-pane :label="t('material.groupView')" name="group" />
     </el-tabs>
 
     <KeepAlive>
@@ -17,8 +17,8 @@
           <el-form :model="queryParams" label-position="top" class="list-page-search-form material-index-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
-                <el-form-item label="搜索">
-                  <el-input v-model="queryParams.searchText" size="small" placeholder="名称、描述、关键词" clearable @change="
+                <el-form-item :label="t('common.search')">
+                  <el-input v-model="queryParams.searchText" size="small" :placeholder="t('material.nameDescKeyword')" clearable @change="
                     (val) => {
                       if (!val) getList();
                     }
@@ -27,17 +27,17 @@
               </el-col>
 
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4" :xl="3">
-                <el-form-item label="排序">
-                  <el-select v-model="queryParams.sortingFields" size="small" placeholder="排序" @change="getList">
-                    <el-option label="创建时间倒序" value="createTime DESC" />
-                    <el-option label="创建时间正序" value="createTime ASC" />
+                <el-form-item :label="t('material.sort')">
+                  <el-select v-model="queryParams.sortingFields" size="small" :placeholder="t('material.sort')" @change="getList">
+                    <el-option :label="t('material.createTimeDesc')" value="createTime DESC" />
+                    <el-option :label="t('material.createTimeAsc')" value="createTime ASC" />
                   </el-select>
                 </el-form-item>
               </el-col>
 
               <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="12" :lg="5" :xl="4">
-                <el-form-item label="后缀">
-                  <el-select v-model="queryParams.suffix" size="small" placeholder="后缀" multiple clearable collapse-tags
+                <el-form-item :label="t('material.suffix')">
+                  <el-select v-model="queryParams.suffix" size="small" :placeholder="t('material.suffix')" multiple clearable collapse-tags
                     collapse-tags-tooltip @change="getList">
                     <el-option label="jpg" value="jpg" />
                     <el-option label="jpeg" value="jpeg" />
@@ -52,8 +52,8 @@
               </el-col>
 
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3" :xl="2">
-                <el-form-item label="ID">
-                  <el-input v-model="queryParams.id" size="small" placeholder="ID" clearable @change="
+                <el-form-item :label="t('common.id')">
+                  <el-input v-model="queryParams.id" size="small" :placeholder="t('common.id')" clearable @change="
                     (val) => {
                       if (!val) getList();
                     }
@@ -62,22 +62,22 @@
               </el-col>
 
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3" :xl="3">
-                <el-form-item label="自定义">
-                  <el-select v-model="queryParams.isCustom" size="small" placeholder="自定义" clearable @change="getList">
-                    <el-option label="全部" value="" />
-                    <el-option label="是" :value="true" />
-                    <el-option label="否" :value="false" />
+                <el-form-item :label="t('material.custom')">
+                  <el-select v-model="queryParams.isCustom" size="small" :placeholder="t('material.custom')" clearable @change="getList">
+                    <el-option :label="t('material.all')" value="" />
+                    <el-option :label="t('material.yes')" :value="true" />
+                    <el-option :label="t('material.no')" :value="false" />
                   </el-select>
                 </el-form-item>
               </el-col>
 
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3" :xl="3">
-                <el-form-item label="侵权">
-                  <el-select v-model="queryParams.isInfringement" size="small" placeholder="侵权" clearable
+                <el-form-item :label="t('material.infringement')">
+                  <el-select v-model="queryParams.isInfringement" size="small" :placeholder="t('material.infringement')" clearable
                     @change="getList">
-                    <el-option label="全部" value="" />
-                    <el-option label="侵权" :value="true" />
-                    <el-option label="非侵权" :value="false" />
+                    <el-option :label="t('material.all')" value="" />
+                    <el-option :label="t('material.infringement')" :value="true" />
+                    <el-option :label="t('material.notInfringement')" :value="false" />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -2882,6 +2882,7 @@ import { sortTypeOptions, defaultSortingValue } from "@/common/sort";
 import { saveAs } from "file-saver";
 
 import { useUserStore } from "@/store/modules/user";
+import { useI18n } from "@/hooks/web/useI18n";
 import listUpload from "./listUpload.vue";
 
 import { ElButton, ElNotification, ElMessage, ElMessageBox } from "element-plus";
@@ -2948,6 +2949,7 @@ import { derivePublishTaskTypeByPlatform, getTaskTypeLabel } from "@/config/task
 import { useServiceHealthState } from "@/services/serviceHealthState";
 
 const userStore = useUserStore();
+const { t } = useI18n();
 const router = useRouter();
 const FOLDER_CATEGORY = "sticker";
 
