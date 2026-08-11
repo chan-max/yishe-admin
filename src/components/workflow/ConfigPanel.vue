@@ -344,19 +344,18 @@ const getShortcutLabel = (win: string, mac: string) => {
                 </template>
 
                 <template v-else-if="field.type === 'textarea'">
-                  <el-input
-                    v-model="form.config[field.field]"
-                    type="textarea"
-                    :rows="3"
-                    :placeholder="field.placeholder || '支持 {{ node_id.variable }}'"
-                    @input="handleDataChange"
-                  >
-                    <template #suffix>
-                      <button class="config-panel__insert-var-icon" @click="openVariableSelector(field.field)" title="插入变量">
-                        <el-icon :size="14"><Plus /></el-icon>
-                      </button>
-                    </template>
-                  </el-input>
+                  <div class="config-panel__textarea-wrapper">
+                    <el-input
+                      v-model="form.config[field.field]"
+                      type="textarea"
+                      :rows="3"
+                      :placeholder="field.placeholder || '支持 {{ node_id.variable }}'"
+                      @input="handleDataChange"
+                    />
+                    <button class="config-panel__insert-var-icon--textarea" @click="openVariableSelector(field.field)" title="插入变量">
+                      <el-icon :size="14"><Plus /></el-icon>
+                    </button>
+                  </div>
                 </template>
 
                 <template v-else-if="field.type === 'number'">
@@ -705,6 +704,35 @@ const getShortcutLabel = (win: string, mac: string) => {
   &:hover {
     color: var(--el-color-primary);
     background: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
+  }
+}
+
+.config-panel__textarea-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.config-panel__insert-var-icon--textarea {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  color: var(--el-text-color-placeholder);
+  background: color-mix(in srgb, var(--app-content-surface-color, #141518) 85%, transparent);
+  border: 1px solid var(--app-content-border-color, rgb(255 255 255 / 8%));
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    color: var(--el-color-primary);
+    background: color-mix(in srgb, var(--el-color-primary) 12%, transparent);
+    border-color: color-mix(in srgb, var(--el-color-primary) 30%, transparent);
   }
 }
 
