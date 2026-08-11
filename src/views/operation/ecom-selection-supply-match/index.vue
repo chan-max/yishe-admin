@@ -236,7 +236,7 @@ const updateSelectedIds = (records: EcomSelectionSupplyMatchTask[] = []) => {
   selectedIds.value = Array.from(
     new Set(records.map((item) => String(item.id || "").trim()).filter(Boolean)),
   );
-});
+};
 
 const tableData = computed(() => {
   if (list.value.length <= filters.pageSize) {

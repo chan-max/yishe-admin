@@ -5,7 +5,7 @@ import type { Node } from '@vue-flow/core'
 import AdvancedCronDialog from './AdvancedCronDialog.vue'
 import VariableSelector from './VariableSelector.vue'
 import {
-  SYSTEM_NODE_REGISTRY,
+  NODE_MANIFEST_REGISTRY,
   type NodeManifest,
   type NodeIOSchemaField
 } from '@/views/workflow/editor/config/node-manifest'
@@ -94,7 +94,16 @@ const loadMessagePushChannels = async () => {
   if (channelsLoaded.value) return
   try {
     const list = await getMessagePushList()
-    messagePushChannels.value = Array.isArray(list) ? list.filter((c) => c.enabled) : []
+    const enabledChannels = Array.isArray(list) ? list.filter((c) => c.enabled) : []
+
+    // 根据节点类型对应的平台过滤渠道
+    const platform = currentCapability.value?.platform
+    if (platform) {
+      messagePushChannels.value = enabledChannels.filter((c) => c.platform === platform)
+    } else {
+      messagePushChannels.value = enabledChannels
+    }
+
     channelsLoaded.value = true
   } catch (e) {
     messagePushChannels.value = []
@@ -105,7 +114,7 @@ const loadMessagePushChannels = async () => {
 const currentCapability = computed<NodeManifest | undefined>(() => {
   if (!props.node) return undefined
   const capType = props.node.data?.capabilityType || props.node.type
-  return SYSTEM_NODE_REGISTRY.find((item) => item.type === capType)
+  return NODE_MANIFEST_REGISTRY.find((item) => item.type === capType)
 })
 
 // 是否是消息推送类节点

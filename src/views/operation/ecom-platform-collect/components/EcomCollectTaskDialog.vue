@@ -408,7 +408,7 @@ const resetTaskForm = () => {
   taskForm.taskType = "";
   advancedJsonText.value = "";
   replaceFieldValues({});
-});
+};
 
 const replaceFieldValues = (nextValues: Record<string, any>) => {
   Object.keys(fieldValues).forEach((key) => {

@@ -24,8 +24,8 @@
         class="ads-radios"
         @change="handleRadioChange"
       >
-        <el-radio-button label="self">{{ t("layout.dataScope.myData") }}</el-radio-button>
-        <el-radio-button label="all">{{ t("layout.dataScope.allData") }}</el-radio-button>
+        <el-radio-button value="self">{{ t("layout.dataScope.myData") }}</el-radio-button>
+        <el-radio-button value="all">{{ t("layout.dataScope.allData") }}</el-radio-button>
       </el-radio-group>
       <el-select
         v-if="userOptions.length"

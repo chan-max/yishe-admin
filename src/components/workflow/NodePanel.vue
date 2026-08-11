@@ -2,6 +2,7 @@
 import { Connection } from '@element-plus/icons-vue'
 const emit = defineEmits<{
   (e: 'openNodePicker'): void
+  (e: 'openAiGenerate'): void
 }>()
 
 const NODE_GROUPS: Array<{ title: string; items: Array<{ type: string; label: string; color: string }> }> = [
@@ -62,8 +63,14 @@ const onDragStart = (event: DragEvent, type: string, label: string) => {
       </div>
     </div>
 
-    <!-- 底部：打开全部节点 -->
+    <!-- 底部：AI 生成 + 全部节点 -->
     <div class="node-panel__footer">
+      <button class="node-panel__ai-btn" @click="emit('openAiGenerate')">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L14.5 9.5 22 12 14.5 14.5 12 22 9.5 14.5 2 12 9.5 9.5z"/>
+        </svg>
+        AI 生成
+      </button>
       <button class="node-panel__all-btn" @click="emit('openNodePicker')">
         全部节点
       </button>
@@ -197,6 +204,30 @@ const onDragStart = (event: DragEvent, type: string, label: string) => {
   padding-top: 8px;
   border-top: 1px solid var(--app-content-border-color);
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.node-panel__ai-btn {
+  display: flex;
+  width: 100%;
+  padding: 5px 0;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.1s ease;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--el-text-color-primary);
+  background: transparent;
+  border: 1px solid var(--el-border-color);
+
+  &:hover {
+    background: var(--app-content-surface-muted-color);
+  }
 }
 
 .node-panel__all-btn {

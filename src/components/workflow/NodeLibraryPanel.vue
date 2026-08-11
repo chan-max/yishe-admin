@@ -251,6 +251,17 @@ const handleQuickAdd = (capability: SystemNodeCapability) => {
       transform: scale(1);
     }
   }
+}
+
+html.dark .node-library-card {
+  border-color: transparent;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--el-color-primary) 30%, transparent);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4), 0 0 0 1px color-mix(in srgb, var(--el-color-primary) 15%, transparent);
+    transform: translateY(-1px);
+  }
 
   &:active {
     cursor: grabbing;

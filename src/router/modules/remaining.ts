@@ -1070,15 +1070,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
           order: 8,
         },
       },
-      {
-        path: "public-user-behavior-log",
-        component: () => import("@/views/system/public-user-behavior-log/index.vue"),
-        name: "PublicUserBehaviorLog",
-        meta: {
-          title: "开放用户行为日志",
-          order: 9,
-        },
-      },
+      // {
+      //   path: "public-user-behavior-log",
+      //   component: () => import("@/views/system/public-user-behavior-log/index.vue"),
+      //   name: "PublicUserBehaviorLog",
+      //   meta: {
+      //     title: "开放用户行为日志",
+      //     order: 9,
+      //   },
+      // },
     ],
   },
   {

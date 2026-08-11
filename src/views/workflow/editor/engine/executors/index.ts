@@ -6,12 +6,18 @@ import { hotsearchWeiboExecutor } from './hotsearchWeiboExecutor'
  * 节点执行器调度表
  * 根据 capabilityType 或 node.type 路由到对应执行器
  */
+const hotsearchPlatforms = [
+  'hotsearch_weibo', 'hotsearch_douyin', 'hotsearch_bilibili', 'hotsearch_zhihu',
+  'hotsearch_toutiao', 'hotsearch_douban', 'hotsearch_kuaishou', 'hotsearch_v2ex',
+  'hotsearch_36kr', 'hotsearch_ithome',
+]
+
 const executorMap: Record<string, (
   node: any,
   context: WorkflowExecutionContext
 ) => Promise<NodeExecutionResult>> = {
   message_push: messagePushExecutor,
-  hotsearch_weibo: hotsearchWeiboExecutor,
+  ...Object.fromEntries(hotsearchPlatforms.map(p => [p, hotsearchWeiboExecutor])),
 }
 
 /**

@@ -181,7 +181,8 @@ const handleClearHistory = async () => {
 
       <!-- 搜索 -->
       <div class="wf-page__search">
-        <el-input v-model="params.name" :placeholder="t('workflow.search')" size="small" clearable style="width: 200px" @keyup.enter="handleSearch" @clear="handleSearch" />
+        <el-input v-model="params.name" :placeholder="t('workflow.search')" size="small" clearable style="width: 200px"
+          @keyup.enter="handleSearch" @clear="handleSearch" />
       </div>
 
       <!-- 卡片网格 -->
@@ -193,52 +194,61 @@ const handleClearHistory = async () => {
         </div>
 
         <!-- 工作流卡片 -->
-        <div
-          v-for="item in list"
-          :key="item.id"
-          :class="[
-            'wf-card',
-            { 'wf-card--scheduled': hasCronTrigger(item) && item.isEnabled },
-            { 'wf-card--running': item.isRunning },
-            { 'wf-card--disabled': !item.isEnabled }
-          ]"
-          @click="openEditor(item)"
-        >
+        <div v-for="item in list" :key="item.id" :class="[
+          'wf-card',
+          { 'wf-card--scheduled': hasCronTrigger(item) && item.isEnabled },
+          { 'wf-card--running': item.isRunning },
+          { 'wf-card--disabled': !item.isEnabled }
+        ]" @click="openEditor(item)">
           <div v-if="hasCronTrigger(item) && item.isEnabled" class="wf-card__blob"></div>
           <div class="wf-card__bg"></div>
           <div class="wf-card__hero">
             <header class="wf-card__hero-header">
-              <span :class="['wf-card__badge', item.isRunning ? 'wf-card__badge--running' : item.isEnabled ? 'wf-card__badge--on' : 'wf-card__badge--off']">
-                <span class="wf-card__badge-dot"></span>{{ item.isRunning ? t('workflow.running') : item.isEnabled ? t('workflow.enabled') : t('workflow.disabled') }}
+              <span
+                :class="['wf-card__badge', item.isRunning ? 'wf-card__badge--running' : item.isEnabled ? 'wf-card__badge--on' : 'wf-card__badge--off']">
+                <span class="wf-card__badge-dot"></span>{{ item.isRunning ? t('workflow.running') : item.isEnabled ?
+                  t('workflow.enabled') : t('workflow.disabled') }}
               </span>
               <div class="wf-card__icon">
                 <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                  <path d="M853.333333 320a42.666667 42.666667 0 1 0-85.333333 0 42.666667 42.666667 0 0 0 85.333333 0z m-42.666666-128a128 128 0 1 1 0 256 128 128 0 0 1 0-256zM853.333333 725.333333a42.666667 42.666667 0 1 0-85.333333 0 42.666667 42.666667 0 0 0 85.333333 0z m-42.666666-128a128 128 0 1 1 0 256 128 128 0 0 1 0-256zM256 320a42.666667 42.666667 0 1 0-85.333333 0 42.666667 42.666667 0 0 0 85.333333 0z m-42.666667-128a128 128 0 1 1 0 256 128 128 0 0 1 0-256z"/>
-                  <path d="M704 277.333333l0 85.333334-211.626667 0c17.692444 31.175111 34.929778 70.542222 51.768889 109.056l14.791111 33.564444c22.698667 50.631111 45.511111 96.995556 71.68 130.446222 26.168889 33.450667 49.777778 46.933333 73.386667 46.933334l0 85.333333c-61.724444 0-107.406222-37.205333-140.629333-79.758222-33.223111-42.496-59.676444-97.507556-82.318223-148.138667l-16.497777-37.319111c-16.497778-37.717333-31.288889-71.338667-46.648889-98.304-9.955556-17.578667-18.602667-29.240889-25.884445-36.067556-4.778667-4.551111-7.395556-5.575111-8.135111-5.745777l-74.524444 0 0-85.333334L704 277.333333z"/>
+                  <path
+                    d="M853.333333 320a42.666667 42.666667 0 1 0-85.333333 0 42.666667 42.666667 0 0 0 85.333333 0z m-42.666666-128a128 128 0 1 1 0 256 128 128 0 0 1 0-256zM853.333333 725.333333a42.666667 42.666667 0 1 0-85.333333 0 42.666667 42.666667 0 0 0 85.333333 0z m-42.666666-128a128 128 0 1 1 0 256 128 128 0 0 1 0-256zM256 320a42.666667 42.666667 0 1 0-85.333333 0 42.666667 42.666667 0 0 0 85.333333 0z m-42.666667-128a128 128 0 1 1 0 256 128 128 0 0 1 0-256z" />
+                  <path
+                    d="M704 277.333333l0 85.333334-211.626667 0c17.692444 31.175111 34.929778 70.542222 51.768889 109.056l14.791111 33.564444c22.698667 50.631111 45.511111 96.995556 71.68 130.446222 26.168889 33.450667 49.777778 46.933333 73.386667 46.933334l0 85.333333c-61.724444 0-107.406222-37.205333-140.629333-79.758222-33.223111-42.496-59.676444-97.507556-82.318223-148.138667l-16.497777-37.319111c-16.497778-37.717333-31.288889-71.338667-46.648889-98.304-9.955556-17.578667-18.602667-29.240889-25.884445-36.067556-4.778667-4.551111-7.395556-5.575111-8.135111-5.745777l-74.524444 0 0-85.333334L704 277.333333z" />
                 </svg>
               </div>
             </header>
             <h3 class="wf-card__title">{{ item.name }}</h3>
             <p v-if="hasCronTrigger(item)" class="wf-card__cron">
-              <el-icon><Clock /></el-icon>{{ getCronText(item) }}
+              <el-icon>
+                <Clock />
+              </el-icon>{{ getCronText(item) }}
             </p>
           </div>
           <footer class="wf-card__footer">
             <div class="wf-card__info">
               <p v-if="item.description" class="wf-card__desc">{{ item.description }}</p>
-              <span class="wf-card__date">{{ t('workflow.updatedAt', { date: new Date(item.updateTime).toLocaleDateString('zh-CN') }) }}</span>
+              <span class="wf-card__date">{{ t('workflow.updatedAt', {
+                date: new
+                  Date(item.updateTime).toLocaleDateString('zh-CN')
+              }) }}</span>
             </div>
             <el-dropdown trigger="click" placement="bottom-end" @click.stop>
-              <button class="wf-card__more" @click.stop><el-icon><MoreFilled /></el-icon></button>
+              <button class="wf-card__more" @click.stop><el-icon>
+                  <MoreFilled />
+                </el-icon></button>
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item @click="handleRunWorkflow(item)" :disabled="!item.isEnabled || item.isRunning">
                     {{ item.isRunning ? t('workflow.executing') : t('workflow.execute') }}
                   </el-dropdown-item>
-                  <el-dropdown-item @click="handleShowHistory(item)">{{ t('workflow.executionHistory') }}</el-dropdown-item>
+                  <el-dropdown-item @click="handleShowHistory(item)">{{ t('workflow.executionHistory')
+                  }}</el-dropdown-item>
                   <el-dropdown-item divided @click="openEditor(item)">{{ t('workflow.edit') }}</el-dropdown-item>
-                  <el-dropdown-item :disabled="item.isRunning" @click="handleToggleEnabled(item)">{{ item.isEnabled ? t('workflow.disable') : t('workflow.enable') }}</el-dropdown-item>
-                  <el-dropdown-item type="danger" divided @click="handleDelete(item)">{{ t('workflow.delete') }}</el-dropdown-item>
+                  <el-dropdown-item :disabled="item.isRunning" @click="handleToggleEnabled(item)">{{ item.isEnabled ?
+                    t('workflow.disable') : t('workflow.enable') }}</el-dropdown-item>
+                  <el-dropdown-item type="danger" divided @click="handleDelete(item)">{{ t('workflow.delete')
+                  }}</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -248,39 +258,35 @@ const handleClearHistory = async () => {
 
       <!-- 分页 -->
       <div v-if="total > params.pageSize" class="wf-page__pagination">
-        <el-pagination v-model:current-page="params.currentPage" v-model:page-size="params.pageSize" :total="total" layout="total, prev, pager, next" @change="fetchList" />
+        <el-pagination v-model:current-page="params.currentPage" v-model:page-size="params.pageSize" :total="total"
+          layout="total, prev, pager, next" @change="fetchList" />
       </div>
 
       <!-- 执行记录 - 全屏弹窗 -->
-    <el-dialog
-      v-model="historyDialogVisible"
-      :title="`${historyWorkflow?.name || ''} - ${t('workflow.executionHistory')}`"
-      fullscreen
-      class="wf-history-dialog"
-    >
-      <ExecutionHistory
-        :executions="executions"
-        :loading="loadingHistory"
-        :show-delete="true"
-        @refresh="historyWorkflow && loadExecutions(historyWorkflow.id)"
-        @delete="handleDeleteExecution"
-        @clear="handleClearHistory"
-      />
-    </el-dialog>
+      <el-dialog v-model="historyDialogVisible"
+        :title="`${historyWorkflow?.name || ''} - ${t('workflow.executionHistory')}`" fullscreen
+        class="wf-history-dialog">
+        <ExecutionHistory :executions="executions" :loading="loadingHistory" :show-delete="true"
+          @refresh="historyWorkflow && loadExecutions(historyWorkflow.id)" @delete="handleDeleteExecution"
+          @clear="handleClearHistory" />
+      </el-dialog>
 
-    <!-- 创建 -->
+      <!-- 创建 -->
       <el-dialog v-model="createVisible" :title="t('workflow.create')" width="440px" align-center>
         <el-form label-position="top" @submit.prevent="handleCreate">
           <el-form-item :label="t('workflow.name')" required>
-            <el-input v-model="createForm.name" :placeholder="t('workflow.namePlaceholder')" autofocus maxlength="100" show-word-limit />
+            <el-input v-model="createForm.name" :placeholder="t('workflow.namePlaceholder')" autofocus maxlength="100"
+              show-word-limit />
           </el-form-item>
           <el-form-item :label="t('workflow.description')">
-            <el-input v-model="createForm.description" type="textarea" :placeholder="t('workflow.descriptionPlaceholder')" :rows="3" maxlength="500" show-word-limit />
+            <el-input v-model="createForm.description" type="textarea"
+              :placeholder="t('workflow.descriptionPlaceholder')" :rows="3" maxlength="500" show-word-limit />
           </el-form-item>
         </el-form>
         <template #footer>
           <el-button @click="createVisible = false">{{ t('common.cancel') }}</el-button>
-          <el-button type="primary" :loading="creating" @click="handleCreate">{{ t('workflow.createAndOpen') }}</el-button>
+          <el-button type="primary" :loading="creating" @click="handleCreate">{{ t('workflow.createAndOpen')
+          }}</el-button>
         </template>
       </el-dialog>
     </div>
@@ -289,21 +295,51 @@ const handleClearHistory = async () => {
 
 <style scoped lang="scss">
 @keyframes wf-pulse {
-  0%, 100% { opacity: 0.7; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.85); }
+
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
 }
 
 @keyframes wf-glow-pulse {
-  0%, 100% { box-shadow: 0 0 12px color-mix(in srgb, var(--el-color-primary) 40%, transparent); }
-  50% { box-shadow: 0 0 24px color-mix(in srgb, var(--el-color-primary) 60%, transparent); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 12px color-mix(in srgb, var(--el-color-primary) 40%, transparent);
+  }
+
+  50% {
+    box-shadow: 0 0 24px color-mix(in srgb, var(--el-color-primary) 60%, transparent);
+  }
 }
 
 @keyframes wf-blob-bounce {
-  0%   { transform: translate(-100%, -100%) translate3d(0, 0, 0); }
-  25%  { transform: translate(-100%, -100%) translate3d(100%, 0, 0); }
-  50%  { transform: translate(-100%, -100%) translate3d(100%, 100%, 0); }
-  75%  { transform: translate(-100%, -100%) translate3d(0, 100%, 0); }
-  100% { transform: translate(-100%, -100%) translate3d(0, 0, 0); }
+  0% {
+    transform: translate(-100%, -100%) translate3d(0, 0, 0);
+  }
+
+  25% {
+    transform: translate(-100%, -100%) translate3d(100%, 0, 0);
+  }
+
+  50% {
+    transform: translate(-100%, -100%) translate3d(100%, 100%, 0);
+  }
+
+  75% {
+    transform: translate(-100%, -100%) translate3d(0, 100%, 0);
+  }
+
+  100% {
+    transform: translate(-100%, -100%) translate3d(0, 0, 0);
+  }
 }
 
 
@@ -348,7 +384,7 @@ const handleClearHistory = async () => {
 .wf-card {
   position: relative;
   border: none;
-  border-radius: 14px;
+  border-radius: 8px;
   z-index: 1;
   overflow: hidden;
   display: flex;
@@ -371,8 +407,8 @@ const handleClearHistory = async () => {
 
   html.dark & {
     box-shadow:
-      4px 4px 16px rgba(0, 0, 0, 0.5),
-      0 1px 4px rgba(0, 0, 0, 0.3) !important;
+      4px 4px 16px rgba(0, 0, 0, 0.3),
+      0 1px 4px rgba(0, 0, 0, 0.1) !important;
 
     &:hover {
       box-shadow:
@@ -455,14 +491,19 @@ const handleClearHistory = async () => {
       color: #15803d;
       background: color-mix(in srgb, #22c55e 14%, transparent);
     }
+
     &--off {
       color: var(--el-text-color-secondary);
       background: var(--app-content-surface-muted-color);
     }
+
     &--running {
       color: #2563eb;
       background: color-mix(in srgb, #3b82f6 12%, transparent);
-      .wf-card__badge-dot { animation: wf-pulse 1.4s ease-in-out infinite; }
+
+      .wf-card__badge-dot {
+        animation: wf-pulse 1.4s ease-in-out infinite;
+      }
     }
   }
 
@@ -502,10 +543,10 @@ const handleClearHistory = async () => {
     z-index: 3;
     display: flex;
     justify-content: space-between;
-    align-items: flex-end;
+    align-items: center;
     flex-direction: row;
     flex-wrap: nowrap;
-    padding: 12px 12px 10px;
+    padding: 12px 16px;
     gap: 12px;
   }
 
@@ -548,8 +589,13 @@ const handleClearHistory = async () => {
     transition: background-color 0.15s ease;
     flex-shrink: 0;
 
-    &:hover { background: var(--app-content-surface-muted-color); }
-    :deep(.el-icon) { font-size: 16px; }
+    &:hover {
+      background: var(--app-content-surface-muted-color);
+    }
+
+    :deep(.el-icon) {
+      font-size: 16px;
+    }
   }
 }
 
@@ -577,7 +623,9 @@ const handleClearHistory = async () => {
     transform: none;
   }
 
-  .wf-card__blob { display: none; }
+  .wf-card__blob {
+    display: none;
+  }
 }
 
 
@@ -595,7 +643,9 @@ const handleClearHistory = async () => {
   cursor: pointer;
   transition: border-color 0.2s ease;
 
-  &:hover { border-color: var(--el-color-primary); }
+  &:hover {
+    border-color: var(--el-color-primary);
+  }
 
   &__icon {
     display: flex;
@@ -627,19 +677,35 @@ const handleClearHistory = async () => {
 :global(html.dark) {
   .wf-card--scheduled {
     border-color: color-mix(in srgb, #fbbf24 25%, var(--app-content-border-color));
-    &:hover { border-color: color-mix(in srgb, #fbbf24 45%, var(--app-content-border-color)); }
+
+    &:hover {
+      border-color: color-mix(in srgb, #fbbf24 45%, var(--app-content-border-color));
+    }
   }
+
   .wf-card--running {
     border-color: color-mix(in srgb, #60a5fa 30%, var(--app-content-border-color));
-    &:hover { border-color: color-mix(in srgb, #60a5fa 50%, var(--app-content-border-color)); }
+
+    &:hover {
+      border-color: color-mix(in srgb, #60a5fa 50%, var(--app-content-border-color));
+    }
   }
 
   .wf-tag {
-    &--cron { color: #fcd34d; background: color-mix(in srgb, #fbbf24 12%, transparent); }
-    &--running { color: #93c5fd; background: color-mix(in srgb, #60a5fa 12%, transparent); }
-    &--on { color: #86efac; background: color-mix(in srgb, #4ade80 12%, transparent); }
+    &--cron {
+      color: #fcd34d;
+      background: color-mix(in srgb, #fbbf24 12%, transparent);
+    }
+
+    &--running {
+      color: #93c5fd;
+      background: color-mix(in srgb, #60a5fa 12%, transparent);
+    }
+
+    &--on {
+      color: #86efac;
+      background: color-mix(in srgb, #4ade80 12%, transparent);
+    }
   }
 }
-
-
 </style>

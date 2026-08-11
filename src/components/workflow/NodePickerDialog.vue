@@ -5,8 +5,8 @@ import {
   SYSTEM_NODE_REGISTRY,
   NODE_CATEGORIES,
   NODE_REQUIREMENTS,
-  type NodeManifest,
-} from '@/views/workflow/editor/config/node-manifest'
+  type SystemNodeCapability,
+} from '@/views/workflow/editor/config/nodeRegistry'
 
 const props = defineProps<{
   modelValue: boolean
@@ -14,7 +14,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:modelValue', val: boolean): void
-  (e: 'select', capability: NodeManifest): void
+  (e: 'select', capability: SystemNodeCapability): void
 }>()
 
 const searchQuery = ref('')
@@ -39,7 +39,7 @@ const getCategoryCount = (key: string) => {
   return SYSTEM_NODE_REGISTRY.filter(n => n.category === key).length
 }
 
-const handleSelect = (cap: NodeManifest) => {
+const handleSelect = (cap: SystemNodeCapability) => {
   emit('select', cap)
   emit('update:modelValue', false)
   searchQuery.value = ''
@@ -105,13 +105,13 @@ const handleClose = () => {
               <div class="np-card__media">
                 <div class="np-card__icon-wrap">
                   <img v-if="cap.iconImage" :src="cap.iconImage" class="np-card__icon-img" />
-                  <Icon v-else :icon="cap.icon" :style="{ color: cap.color }" />
+                  <span v-else class="np-card__icon-text" :style="{ color: cap.color }">{{ cap.name?.charAt(0) || '?' }}</span>
+                  
                 </div>
               </div>
               <div class="np-card__content">
                 <div class="np-card__header">
                   <span class="np-card__title">{{ cap.name }}</span>
-                  <span v-if="cap.badge" class="np-card__badge" :style="{ color: cap.color, borderColor: cap.color }">{{ cap.badge }}</span>
                 </div>
                 <div class="np-card__desc">{{ cap.description }}</div>
                 <div v-if="cap.requirements?.length" class="np-card__requirements">
@@ -300,41 +300,35 @@ const handleClose = () => {
   gap: 12px;
 }
 
-/* 节点卡片 - neumorphic style */
+/* 节点卡片 - 简洁风格 */
 .np-card {
   display: grid;
-  grid-template-columns: 40px 1fr;
+  grid-template-columns: 36px 1fr;
   grid-template-rows: auto;
-  padding: 14px 16px;
+  padding: 10px 12px;
   cursor: pointer;
   background: var(--app-content-surface-color);
-  border: none;
-  border-radius: 14px;
-  box-shadow:
-    6px 6px 18px color-mix(in srgb, var(--el-text-color-primary) 10%, transparent),
-    -3px -3px 12px color-mix(in srgb, #ffffff, transparent);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.15s ease;
-  gap: 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.15s ease;
+  gap: 10px;
   align-items: start;
 
   &:hover {
-    background: color-mix(in srgb, var(--el-color-primary) 4%, var(--app-content-surface-color));
-    transform: translateY(-2px);
-    box-shadow:
-      10px 10px 28px color-mix(in srgb, var(--el-text-color-primary) 14%, transparent),
-      -5px -5px 18px color-mix(in srgb, #ffffff, transparent);
+    border-color: var(--el-border-color);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
   }
+}
 
-  html.dark & {
-    box-shadow:
-      4px 4px 16px rgba(0, 0, 0, 0.5),
-      0 1px 4px rgba(0, 0, 0, 0.3);
+html.dark .np-card {
+  border-color: transparent;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 
-    &:hover {
-      box-shadow:
-        6px 6px 24px rgba(0, 0, 0, 0.6),
-        0 2px 8px rgba(0, 0, 0, 0.4);
-    }
+  &:hover {
+    border-color: color-mix(in srgb, var(--el-color-primary) 30%, transparent);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4), 0 0 0 1px color-mix(in srgb, var(--el-color-primary) 15%, transparent);
+    transform: translateY(-1px);
   }
 }
 
@@ -342,8 +336,8 @@ const handleClose = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
 }
 
 .np-card__icon-wrap {
@@ -352,6 +346,19 @@ const handleClose = () => {
   justify-content: center;
   width: 28px;
   height: 28px;
+}
+
+.np-card__icon-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
 }
 
 .np-card__icon-img {
@@ -390,15 +397,6 @@ const handleClose = () => {
   line-height: 1.4;
 }
 
-.np-card__badge {
-  padding: 1px 6px;
-  font-size: 9px;
-  font-weight: 600;
-  line-height: 1.4;
-  white-space: nowrap;
-  border: 1px solid currentColor;
-  border-radius: 20px;
-}
 
 
 .np-card__desc {

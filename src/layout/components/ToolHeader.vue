@@ -95,10 +95,10 @@ const { t } = useI18n();
           v-if="screenfull && !mobile"
           color="var(--top-header-text-color)"
         />
-      </div>
 
-      <!-- 语言切换 -->
-      <LocaleDropdown v-if="!mobile" />
+        <!-- 语言切换 — 图标 + 文字 -->
+        <LocaleDropdown v-if="!mobile" />
+      </div>
 
       <UserInfo />
     </div>
@@ -168,7 +168,8 @@ $prefix-cls: #{$namespace}-tool-header;
 
 /* ===== 统一操作按钮：上方图标、下方文字（Past 风格） ===== */
 .th-actions :deep(button),
-.th-actions :deep(.v-screenfull) {
+.th-actions :deep(.v-screenfull),
+.th-actions :deep(.locale-dropdown-trigger) {
   display: inline-flex;
   flex-direction: column;
   align-items: center;

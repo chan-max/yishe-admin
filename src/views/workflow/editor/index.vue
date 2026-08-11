@@ -30,13 +30,16 @@ import LLMNode from '@/components/workflow/nodes/LLMNode.vue'
 import HttpNode from '@/components/workflow/nodes/HttpNode.vue'
 import CodeNode from '@/components/workflow/nodes/CodeNode.vue'
 import MessagePushNode from '@/components/workflow/nodes/MessagePushNode.vue'
-import HotsearchWeiboNode from '@/components/workflow/nodes/HotsearchWeiboNode.vue'
+import HotsearchNode from '@/components/workflow/nodes/HotsearchNode.vue'
+import FeishuNode from '@/components/workflow/nodes/FeishuNode.vue'
+import WecomNode from '@/components/workflow/nodes/WecomNode.vue'
 
 import NodePanel from '@/components/workflow/NodePanel.vue'
 import ConfigPanel from '@/components/workflow/ConfigPanel.vue'
 import NodePickerDialog from '@/components/workflow/NodePickerDialog.vue'
 import TriggerConfigDialog from '@/components/workflow/TriggerConfigDialog.vue'
 import ShortcutGuide from '@/components/workflow/ShortcutGuide.vue'
+import AiGenerateDialog from '@/components/workflow/AiGenerateDialog.vue'
 import type { NodeManifest } from './config/node-manifest'
 
 const appStore = useAppStore()
@@ -62,9 +65,11 @@ const {
   setViewport,
   getViewport,
   onConnect,
+  onEdgeUpdate,
   project,
   findNode,
   updateNodeData,
+  updateEdge,
   getSelectedNodes,
   getSelectedEdges
 } = useVueFlow()
@@ -84,6 +89,34 @@ const handleOpenNodePicker = () => {
   nodePickerVisible.value = true
 }
 const runningWorkflow = ref(false)
+const aiGenerateVisible = ref(false)
+
+const handleAiGenerated = (data: { nodes: any[]; edges: any[]; description: string }) => {
+  pushHistory()
+  // If canvas has existing nodes, merge (append new after existing)
+  const existingNodes = nodes.value
+  if (existingNodes.length > 0) {
+    // Offset new nodes below existing ones
+    const maxY = Math.max(...existingNodes.map((n) => n.position?.y || 0))
+    const offsetY = maxY + 200
+    const newNodes = data.nodes.map((n: any) => ({
+      ...n,
+      position: { x: n.position?.x || 300, y: (n.position?.y || 100) + offsetY },
+    }))
+    addNodes(newNodes)
+    addEdges(data.edges || [])
+  } else {
+    // Fresh canvas, apply directly with default viewport
+    addNodes(data.nodes)
+    addEdges(data.edges || [])
+  }
+  ElMessage.success('AI 工作流已生成到画布')
+}
+
+
+const handleOpenAiGenerate = () => {
+  aiGenerateVisible.value = true
+}
 
 const handleRunWorkflow = async () => {
   if (!workflowId.value) return
@@ -104,7 +137,7 @@ const handleRunWorkflow = async () => {
 }
 
 // 连线类型与配置
-const edgeType = ref<'default' | 'smoothstep' | 'straight'>('smoothstep')
+const edgeType = ref<'default' | 'smoothstep' | 'straight'>('default')
 
 // 自定义节点类型映射 (使用 markRaw 避免 Vue 响应式代理警告)
 const nodeTypes = {
@@ -116,7 +149,19 @@ const nodeTypes = {
   http: markRaw(HttpNode),
   code: markRaw(CodeNode),
   message_push: markRaw(MessagePushNode),
-  hotsearch_weibo: markRaw(HotsearchWeiboNode),
+  // 所有国内热搜平台使用通用 HotsearchNode
+  hotsearch_weibo: markRaw(HotsearchNode),
+  hotsearch_douyin: markRaw(HotsearchNode),
+  hotsearch_bilibili: markRaw(HotsearchNode),
+  hotsearch_zhihu: markRaw(HotsearchNode),
+  hotsearch_toutiao: markRaw(HotsearchNode),
+  hotsearch_douban: markRaw(HotsearchNode),
+  hotsearch_kuaishou: markRaw(HotsearchNode),
+  hotsearch_v2ex: markRaw(HotsearchNode),
+  hotsearch_36kr: markRaw(HotsearchNode),
+  hotsearch_ithome: markRaw(HotsearchNode),
+  message_push_feishu: markRaw(FeishuNode),
+  message_push_wecom: markRaw(WecomNode),
 }
 
 // ─── 撤销/重做历史 ─────────────────────────────────────────────
@@ -165,6 +210,10 @@ const handleAddNodeFromLibrary = (capability: NodeManifest) => {
     }
   }
 
+  // 热搜平台节点：从类型中提取 platform 字段传递给 UI 组件
+  const isHotsearch = capability.type.startsWith('hotsearch_')
+  const platformKey = isHotsearch ? capability.type.replace('hotsearch_', '') : undefined
+
   const newNode: Node = {
     id: `${capability.type}_${Date.now().toString(36)}`,
     type: mappedType,
@@ -172,7 +221,8 @@ const handleAddNodeFromLibrary = (capability: NodeManifest) => {
     data: {
       label: capability.name,
       capabilityType: capability.type,
-      config: { ...(capability.defaultData || {}) }
+      config: { ...(capability.defaultData || {}) },
+      ...(isHotsearch ? { platform: platformKey } : {})
     }
   }
 
@@ -203,6 +253,10 @@ const onDrop = (event: DragEvent) => {
 
   const mappedType = nodeTypes[type as keyof typeof nodeTypes] ? type : 'default'
 
+  // 热搜平台节点：从类型中提取 platform 字段
+  const isHotsearchDrop = type.startsWith('hotsearch_')
+  const platformKeyDrop = isHotsearchDrop ? type.replace('hotsearch_', '') : undefined
+
   pushHistory()
   const newNode: Node = {
     id: `${type}_${Date.now().toString(36)}`,
@@ -211,7 +265,8 @@ const onDrop = (event: DragEvent) => {
     data: {
       label: label || type,
       capabilityType: type,
-      config: { ...defaultData }
+      config: { ...defaultData },
+      ...(isHotsearchDrop ? { platform: platformKeyDrop } : {})
     }
   }
 
@@ -445,6 +500,19 @@ onBeforeUnmount(() => {
 watch(nodes, triggerSave, { deep: true })
 watch(edges, triggerSave, { deep: true })
 
+// ─── 连线类型切换：同步更新已有连线 ─────────────────────────
+watch(edgeType, (newType) => {
+  const currentEdges = edges.value
+  if (currentEdges.length === 0) return
+  setEdges(
+    currentEdges.map((e) => ({
+      ...e,
+      type: newType,
+    }))
+  )
+})
+
+
 // ─── 节点连接 ─────────────────────────────────────────────────
 onConnect((params: Connection) => {
   pushHistory()
@@ -458,6 +526,17 @@ onConnect((params: Connection) => {
     animated: false,
     style: { stroke: '#94a3b8', strokeWidth: 2 }
   }])
+})
+
+// ─── 连线更新（重新连接）────────────────────────────────────
+onEdgeUpdate((oldEdge: Edge, newConnection: Connection) => {
+  pushHistory()
+  updateEdge(oldEdge, {
+    source: newConnection.source,
+    target: newConnection.target,
+    sourceHandle: newConnection.sourceHandle,
+    targetHandle: newConnection.targetHandle,
+  })
 })
 
 // ─── 节点点击（选中→配置面板）────────────────────────────────
@@ -607,7 +686,10 @@ const statusText = computed(() => {
     <!-- 编辑器主体 -->
     <div class="wf-editor-body">
       <!-- 左侧基础节点面板 -->
-      <NodePanel @openNodePicker="handleOpenNodePicker" />
+      <NodePanel
+        @openNodePicker="handleOpenNodePicker"
+        @openAiGenerate="handleOpenAiGenerate"
+      />
 
       <!-- 画布区 -->
       <div
@@ -630,6 +712,7 @@ const statusText = computed(() => {
           <Controls />
           <MiniMap class="wf-minimap" />
         </VueFlow>
+
       </div>
 
       <!-- 右侧配置面板 -->
@@ -641,7 +724,7 @@ const statusText = computed(() => {
         :selected-edge="selectedEdge"
         @update="onNodeUpdate"
         @delete="onNodeDelete"
-        @update-edge="onEdgeUpdate"
+        
       />
     </div>
 
@@ -655,6 +738,13 @@ const statusText = computed(() => {
       v-model="nodePickerVisible"
       @select="handleAddNodeFromLibrary"
     />
+
+    <!-- AI 生成工作流弹窗 -->
+    <AiGenerateDialog
+      v-model="aiGenerateVisible"
+      :current-canvas="{ nodes: nodes, edges: edges, viewport: getViewport() }"
+      @generated="handleAiGenerated"
+    />
   </div>
 </template>
 
@@ -663,6 +753,7 @@ const statusText = computed(() => {
 @import url('@vue-flow/core/dist/theme-default.css');
 @import url('@vue-flow/controls/dist/style.css');
 @import url('@vue-flow/minimap/dist/style.css');
+
 </style>
 
 <style scoped lang="scss">
