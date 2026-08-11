@@ -2,9 +2,9 @@
   <div class="home-dashboard">
     <!-- 标题栏 -->
     <header class="home-topbar">
-      <h1 class="home-topbar__title">工作台</h1>
+      <h1 class="home-topbar__title">{{ t('home.title') }}</h1>
       <ElButton text type="primary" @click="goTo('/home/statistics')">
-        数据统计 <Icon icon="ep:arrow-right" class="home-topbar__arrow" />
+        {{ t('home.statistics') }} <Icon icon="ep:arrow-right" class="home-topbar__arrow" />
       </ElButton>
     </header>
 
@@ -12,13 +12,13 @@
     <section class="home-stats">
       <div v-for="item in statItems" :key="item.label" class="home-stat">
         <div class="home-stat__value">{{ formatNumber(item.value) }}</div>
-        <div class="home-stat__label">{{ item.label }}</div>
+        <div class="home-stat__label">{{ t(item.label) }}</div>
       </div>
     </section>
 
     <!-- 快捷入口 -->
     <section class="home-section">
-      <div class="home-section__title">快捷入口</div>
+      <div class="home-section__title">{{ t('home.shortcuts') }}</div>
       <div class="home-grid home-grid--shortcuts">
         <button
           v-for="item in shortcuts"
@@ -31,8 +31,8 @@
             <Icon :icon="item.icon" />
           </span>
           <div class="home-shortcut__body">
-            <div class="home-shortcut__title">{{ item.title }}</div>
-            <div class="home-shortcut__desc">{{ item.description }}</div>
+            <div class="home-shortcut__title">{{ t(item.title) }}</div>
+            <div class="home-shortcut__desc">{{ t(item.description) }}</div>
           </div>
         </button>
       </div>
@@ -40,7 +40,7 @@
 
     <!-- 功能模块 -->
     <section class="home-section">
-      <div class="home-section__title">功能模块</div>
+      <div class="home-section__title">{{ t('home.modules') }}</div>
       <div class="home-grid home-grid--modules">
         <article
           v-for="mod in modules"
@@ -53,18 +53,18 @@
               <Icon :icon="mod.icon" />
             </span>
             <div>
-              <div class="home-module__title">{{ mod.title }}</div>
-              <div class="home-module__desc">{{ mod.description }}</div>
+              <div class="home-module__title">{{ t(mod.title) }}</div>
+              <div class="home-module__desc">{{ t(mod.description) }}</div>
             </div>
           </div>
           <ul class="home-module__features">
             <li v-for="f in mod.features" :key="f.name" @click.stop="goTo(f.route)">
-              <span class="home-module__feature-name">{{ f.name }}</span>
-              <span class="home-module__feature-desc">{{ f.desc }}</span>
+              <span class="home-module__feature-name">{{ t(f.name) }}</span>
+              <span class="home-module__feature-desc">{{ t(f.desc) }}</span>
             </li>
           </ul>
           <div class="home-module__footer">
-            <span class="home-module__link">进入模块</span>
+            <span class="home-module__link">{{ t('home.enterModule') }}</span>
             <Icon icon="ep:arrow-right" />
           </div>
         </article>
@@ -76,10 +76,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { getModuleStatisticsApi } from "@/api/statistics";
 
 defineOptions({ name: "HomeIndex" });
 
+const { t } = useI18n();
 const router = useRouter();
 const goTo = (route: string) => router.push(route);
 const formatNumber = (v: number) => new Intl.NumberFormat("zh-CN").format(v);
@@ -93,9 +95,9 @@ const stats = ref<{ moduleCount: number; todayCreated: number; todayUpdated: num
 });
 
 const statItems = computed(() => [
-  { label: "模块总数", value: stats.value.moduleCount },
-  { label: "今日新增", value: stats.value.todayCreated },
-  { label: "今日修改", value: stats.value.todayUpdated },
+  { label: "home.stat.moduleCount", value: stats.value.moduleCount },
+  { label: "home.stat.todayCreated", value: stats.value.todayCreated },
+  { label: "home.stat.todayUpdated", value: stats.value.todayUpdated },
 ]);
 
 const loadStats = async () => {
@@ -127,64 +129,64 @@ interface ShortcutItem {
 const shortcuts: ShortcutItem[] = [
   {
     key: "tools",
-    title: "工具",
-    description: "客户端与插件下载",
+    title: "home.shortcut.tools.title",
+    description: "home.shortcut.tools.desc",
     route: "/home/tools/index",
     icon: "ep:tools",
   },
   {
     key: "toolkit",
-    title: "工具集",
-    description: "按平台进入业务工具",
+    title: "home.shortcut.toolkit.title",
+    description: "home.shortcut.toolkit.desc",
     route: "/operation/toolkit",
     icon: "ep:box",
   },
   {
     key: "browser-automation",
-    title: "浏览器自动化",
-    description: "环境管理与调试",
+    title: "home.shortcut.browserAutomation.title",
+    description: "home.shortcut.browserAutomation.desc",
     route: "/external/browser-automation",
     icon: "ep:connection",
   },
   {
     key: "queue",
-    title: "任务中心",
-    description: "发布任务与执行日志",
+    title: "home.shortcut.queue.title",
+    description: "home.shortcut.queue.desc",
     route: "/product-publish/queue",
     icon: "ep:data-analysis",
   },
   {
     key: "psd-set",
-    title: "套图制作",
-    description: "PS 自动制作流程",
+    title: "home.shortcut.psdSet.title",
+    description: "home.shortcut.psdSet.desc",
     route: "/product-publish/psd-set",
     icon: "ep:picture",
   },
   {
     key: "ai-api-key",
-    title: "AI API Key",
-    description: "平台密钥管理",
+    title: "home.shortcut.aiApiKey.title",
+    description: "home.shortcut.aiApiKey.desc",
     route: "/system/ai-api-key",
     icon: "ep:key",
   },
   {
     key: "statistics",
-    title: "数据统计",
-    description: "模块数据趋势",
+    title: "home.shortcut.statistics.title",
+    description: "home.shortcut.statistics.desc",
     route: "/home/statistics",
     icon: "ep:trend-charts",
   },
   {
     key: "hot-search",
-    title: "热搜管理",
-    description: "多平台热搜采集分析",
+    title: "home.shortcut.hotSearch.title",
+    description: "home.shortcut.hotSearch.desc",
     route: "/home/hot-search",
     icon: "ep:hot-water",
   },
   {
     key: "design-inspiration",
-    title: "设计灵感",
-    description: "灵感收集与管理",
+    title: "home.shortcut.designInspiration.title",
+    description: "home.shortcut.designInspiration.desc",
     route: "/resource/design-inspiration",
     icon: "ep:edit",
   },
@@ -209,75 +211,75 @@ interface ModuleItem {
 const modules: ModuleItem[] = [
   {
     key: "resource",
-    title: "资源中心",
-    description: "素材管理与设计资源",
+    title: "home.module.resource.title",
+    description: "home.module.resource.desc",
     icon: "ep:collection",
     route: "/resource/material",
     features: [
-      { name: "图片素材", desc: "图片资源管理", route: "/resource/material" },
-      { name: "采集素材", desc: "自动化采集", route: "/resource/crawler-material" },
-      { name: "设计灵感", desc: "灵感收集", route: "/resource/design-inspiration" },
-      { name: "3D资源", desc: "三维模型管理", route: "/resource/asset-3d" },
+      { name: "home.module.resource.feature.imageMaterial", desc: "home.module.resource.feature.imageMaterialDesc", route: "/resource/material" },
+      { name: "home.module.resource.feature.crawlerMaterial", desc: "home.module.resource.feature.crawlerMaterialDesc", route: "/resource/crawler-material" },
+      { name: "home.module.resource.feature.designInspiration", desc: "home.module.resource.feature.designInspirationDesc", route: "/resource/design-inspiration" },
+      { name: "home.module.resource.feature.asset3d", desc: "home.module.resource.feature.asset3dDesc", route: "/resource/asset-3d" },
     ],
   },
   {
     key: "ai",
-    title: "AI 创作",
-    description: "AI 工具与智能服务",
+    title: "home.module.ai.title",
+    description: "home.module.ai.desc",
     icon: "ep:cpu",
     route: "/ai/mcp",
     features: [
-      { name: "MCP 工具", desc: "模型上下文协议", route: "/ai/mcp" },
-      { name: "Skills", desc: "AI 技能管理", route: "/ai/skills" },
-      { name: "AI 配置", desc: "模型与参数设置", route: "/ai/model-service" },
+      { name: "home.module.ai.feature.mcp", desc: "home.module.ai.feature.mcpDesc", route: "/ai/mcp" },
+      { name: "home.module.ai.feature.skills", desc: "home.module.ai.feature.skillsDesc", route: "/ai/skills" },
+      { name: "home.module.ai.feature.aiConfig", desc: "home.module.ai.feature.aiConfigDesc", route: "/ai/model-service" },
     ],
   },
   {
     key: "independent-site",
-    title: "独立站",
-    description: "独立站商品与店铺",
+    title: "home.module.independentSite.title",
+    description: "home.module.independentSite.desc",
     icon: "ep:shop",
     route: "/independent-site/product",
     features: [
-      { name: "商品管理", desc: "独立站商品", route: "/independent-site/product" },
-      { name: "商品分类", desc: "分类体系维护", route: "/independent-site/category" },
-      { name: "商品生成模板", desc: "模板配置", route: "/independent-site/generation-template" },
+      { name: "home.module.independentSite.feature.product", desc: "home.module.independentSite.feature.productDesc", route: "/independent-site/product" },
+      { name: "home.module.independentSite.feature.category", desc: "home.module.independentSite.feature.categoryDesc", route: "/independent-site/category" },
+      { name: "home.module.independentSite.feature.generationTemplate", desc: "home.module.independentSite.feature.generationTemplateDesc", route: "/independent-site/generation-template" },
     ],
   },
   {
     key: "product-publish",
-    title: "商品发布",
-    description: "发布任务与套图流程",
+    title: "home.module.productPublish.title",
+    description: "home.module.productPublish.desc",
     icon: "ep:shopping-bag",
     route: "/product-publish/queue",
     features: [
-      { name: "发布队列", desc: "任务列表管理", route: "/product-publish/queue" },
-      { name: "发布配置", desc: "队列状态监控", route: "/product-publish/publish-config" },
-      { name: "套图制作", desc: "PS 自动制作", route: "/product-publish/psd-set" },
+      { name: "home.module.productPublish.feature.queue", desc: "home.module.productPublish.feature.queueDesc", route: "/product-publish/queue" },
+      { name: "home.module.productPublish.feature.publishConfig", desc: "home.module.productPublish.feature.publishConfigDesc", route: "/product-publish/publish-config" },
+      { name: "home.module.productPublish.feature.psdSet", desc: "home.module.productPublish.feature.psdSetDesc", route: "/product-publish/psd-set" },
     ],
   },
   {
     key: "external",
-    title: "客户端功能",
-    description: "浏览器与客户端能力",
+    title: "home.module.external.title",
+    description: "home.module.external.desc",
     icon: "ep:connection",
     route: "/external/browser-automation",
     features: [
-      { name: "浏览器自动化", desc: "环境与调试", route: "/external/browser-automation" },
-      { name: "PS 自动化", desc: "PS 远程控制", route: "/external/ps-automation" },
-      { name: "客户端管理", desc: "节点状态", route: "/external/client-management" },
+      { name: "home.module.external.feature.browserAutomation", desc: "home.module.external.feature.browserAutomationDesc", route: "/external/browser-automation" },
+      { name: "home.module.external.feature.psAutomation", desc: "home.module.external.feature.psAutomationDesc", route: "/external/ps-automation" },
+      { name: "home.module.external.feature.clientManagement", desc: "home.module.external.feature.clientManagementDesc", route: "/external/client-management" },
     ],
   },
   {
     key: "operation",
-    title: "运营支持",
-    description: "运营工具与平台对接",
+    title: "home.module.operation.title",
+    description: "home.module.operation.desc",
     icon: "ep:shop",
     route: "/operation/link-navigation",
     features: [
-      { name: "链接导航", desc: "常用平台入口", route: "/operation/link-navigation" },
-      { name: "工具集", desc: "平台业务工具", route: "/operation/toolkit" },
-      { name: "电商数据", desc: "数据链路管理", route: "/ecom-platform-collect/tasks" },
+      { name: "home.module.operation.feature.linkNavigation", desc: "home.module.operation.feature.linkNavigationDesc", route: "/operation/link-navigation" },
+      { name: "home.module.operation.feature.toolkit", desc: "home.module.operation.feature.toolkitDesc", route: "/operation/toolkit" },
+      { name: "home.module.operation.feature.ecomData", desc: "home.module.operation.feature.ecomDataDesc", route: "/ecom-platform-collect/tasks" },
     ],
   },
 ];

@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     :model-value="modelValue"
-    :title="currentTask?.id ? '编辑找同款任务' : '新建找同款任务'"
+    :title="currentTask?.id ? t('operation.editSupplyMatchTask') : t('operation.createSupplyMatchTask')"
     fullscreen
     append-to-body
     destroy-on-close
@@ -14,51 +14,51 @@
         <div class="task-dialog-main">
           <CompactNotice
             type="info"
-            title="支持独立运行，也支持复用历史数据"
-            description="可以直接填写关键词种子独立执行；也可以复用之前的分析运行或原始记录。找同款不再强依赖热门选品分析。"
+            :title="t('operation.supportIndependentRunOrReuseHistory')"
+            :description="t('operation.supplyMatchTaskDesc')"
             class="task-dialog-alert"
           />
 
           <CompactNotice
             v-if="hasSourceItemWithoutAnalysisRun"
             type="warning"
-            title="已填写来源商品 ID，但未选择分析运行"
-            description="`sourceItemIds` 需要配合 `analysisRunId` 使用，否则服务端不会知道这些来源商品属于哪次分析结果。"
+            :title="t('operation.filledSourceItemIdButNoAnalysisRun')"
+            :description="t('operation.sourceItemIdsNeedAnalysisRunId')"
             class="task-dialog-alert"
           />
 
           <el-form label-position="top" class="task-dialog-form">
             <el-row :gutter="20">
               <el-col :xs="24" :lg="16">
-                <el-form-item label="任务名称" required>
-                  <el-input v-model="taskForm.name" placeholder="例如：热门耳机 多平台找同款" />
+                <el-form-item :label="t('operation.taskName')" required>
+                  <el-input v-model="taskForm.name" :placeholder="t('operation.supplyMatchTaskNamePlaceholder')"/>
                   <div class="form-hint">
-                    建议写清来源品类和目标供货平台，后续回看历史任务时会更容易定位。
+                    {{ t('operation.taskNameHint') }}
                   </div>
                 </el-form-item>
               </el-col>
 
               <el-col :xs="24" :lg="8">
-                <el-form-item label="匹配类型">
+                <el-form-item :label="t('operation.matchType')">
                   <el-select v-model="taskForm.matchType" disabled>
-                    <el-option label="找同款" value="supply_match" />
+                    <el-option :label="t('operation.supplyMatch')" value="supply_match" />
                   </el-select>
                   <div class="form-hint">
-                    当前固定为“找同款”，后续如果扩展为找替代款、找差异款，也会沿用同一套任务结构。
+                    {{ t('operation.matchTypeHint') }}
                   </div>
                 </el-form-item>
               </el-col>
             </el-row>
 
-            <div class="form-section-title">来源范围</div>
+            <div class="form-section-title">{{ t('operation.sourceRange') }}</div>
             <el-row :gutter="20">
               <el-col :xs="24" :lg="12">
-                <el-form-item label="来源分析运行">
+                <el-form-item :label="t('operation.sourceAnalysisRun')">
                   <el-select
                     v-model="taskForm.sourceConfig.analysisRunId"
                     filterable
                     clearable
-                    placeholder="优先从热门选品分析结果中找同款"
+                    :placeholder="t('operation.sourceAnalysisRunPlaceholder')"
                   >
                     <el-option
                       v-for="item in analysisRunOptions"
@@ -68,50 +68,48 @@
                     />
                   </el-select>
                   <div class="form-hint">
-                    可直接选择一份选品分析结果作为来源；如果不想依赖分析结果，也可以直接填写右侧原始记录
-                    ID。
+                    {{ t('operation.sourceAnalysisRunHint') }}
                   </div>
                 </el-form-item>
               </el-col>
 
               <el-col :xs="24" :lg="12">
-                <el-form-item label="直接指定原始记录 ID">
+                <el-form-item :label="t('operation.directSpecifyRawRecordIds')">
                   <el-input
                     v-model="rawRecordIdsText"
                     type="textarea"
                     :rows="5"
-                    placeholder="一行一个 rawRecordId，用于绕过分析结果直接找同款"
+                    :placeholder="t('operation.rawRecordIdsPlaceholder')"
                   />
                   <div class="form-hint">
-                    不依赖选品分析结果时使用。至少需要提供 `analysisRunId` 或 `rawRecordIds`
-                    其中之一。
+                    {{ t('operation.directSpecifyRawRecordIdsHint') }}
                   </div>
                 </el-form-item>
               </el-col>
 
               <el-col :xs="24" :lg="12">
-                <el-form-item label="关键词 / 标题种子">
+                <el-form-item :label="t('operation.keywordOrTitleSeeds')">
                   <el-input
                     v-model="keywordSeedsText"
                     type="textarea"
                     :rows="5"
-                    placeholder="一行一个关键词或商品标题，例如：无线蓝牙耳机"
+                    :placeholder="t('operation.keywordOrTitleSeedsPlaceholder')"
                   />
                   <div class="form-hint">
-                    不依赖历史分析也可以直接运行。服务端会把这些种子转成独立来源商品，再由客户端执行供货搜索和详情补抓。
+                    {{ t('operation.keywordOrTitleSeedsHint') }}
                   </div>
                 </el-form-item>
               </el-col>
 
               <el-col :xs="24" :lg="12">
-                <el-form-item label="供货平台">
+                <el-form-item :label="t('operation.supplierPlatforms')">
                   <el-select
                     v-model="taskForm.optionsData.supplierPlatforms"
                     multiple
                     collapse-tags
                     collapse-tags-tooltip
                     clearable
-                    placeholder="请选择供货平台"
+                    :placeholder="t('operation.selectSupplierPlatforms')"
                     :loading="catalogLoading"
                   >
                     <el-option
@@ -123,34 +121,34 @@
                     />
                   </el-select>
                   <div class="form-hint">
-                    供货平台来自客户端浏览器自动化能力上报；新增平台后这里会自动出现，不再前端写死。
+                    {{ t('operation.supplierPlatformsHint') }}
                   </div>
                   <div
                     v-if="!supplierPlatformOptions.length"
                     class="form-hint"
                   >
-                    当前还没有上报可用于找同款的供货平台能力，请先连接并同步浏览器自动化客户端。
+                    {{ t('operation.noSupplierPlatformsAvailable') }}
                   </div>
                 </el-form-item>
               </el-col>
 
               <el-col :xs="24" :lg="12">
-                <el-form-item label="限定来源商品 ID">
+                <el-form-item :label="t('operation.limitSourceItemIds')">
                   <el-input
                     v-model="sourceItemIdsText"
                     type="textarea"
                     :rows="5"
-                    placeholder="一行一个 sourceItemId，可从选品分析推荐商品中带入"
+                    :placeholder="t('operation.sourceItemIdsPlaceholder')"
                   />
-                  <div class="form-hint">不填则从分析运行中自动挑选前若干来源商品。</div>
+                  <div class="form-hint">{{ t('operation.limitSourceItemIdsHint') }}</div>
                 </el-form-item>
               </el-col>
             </el-row>
 
-            <div class="form-section-title">匹配执行参数</div>
+            <div class="form-section-title">{{ t('operation.matchingExecutionParams') }}</div>
             <el-row :gutter="20">
               <el-col :xs="24" :lg="4">
-                <el-form-item label="来源商品数">
+                <el-form-item :label="t('operation.sourceItemCount')">
                   <el-input-number
                     v-model="taskForm.optionsData.maxSourceItems"
                     :min="1"
@@ -158,13 +156,13 @@
                     controls-position="right"
                   />
                   <div class="form-hint">
-                    控制这次最多拿多少个来源商品去扩展同款，先小批量验证会更稳。
+                    {{ t('operation.sourceItemCountHint') }}
                   </div>
                 </el-form-item>
               </el-col>
 
               <el-col :xs="24" :lg="4">
-                <el-form-item label="每个来源最大匹配">
+                <el-form-item :label="t('operation.maxMatchesPerSource')">
                   <el-input-number
                     v-model="taskForm.optionsData.maxMatchesPerSource"
                     :min="1"
@@ -172,13 +170,13 @@
                     controls-position="right"
                   />
                   <div class="form-hint">
-                    每个来源商品最多保留多少个候选同款，值越大结果越全，但噪声也可能变多。
+                    {{ t('operation.maxMatchesPerSourceHint') }}
                   </div>
                 </el-form-item>
               </el-col>
 
               <el-col :xs="24" :lg="4">
-                <el-form-item label="每个来源最大详情数">
+                <el-form-item :label="t('operation.maxDetailsPerSource')">
                   <el-input-number
                     v-model="taskForm.optionsData.maxDetailPerSource"
                     :min="0"
@@ -186,13 +184,13 @@
                     controls-position="right"
                   />
                   <div class="form-hint">
-                    会继续进入多少个候选详情页补抓信息。设为 0 时只保留搜索卡片数据。
+                    {{ t('operation.maxDetailsPerSourceHint') }}
                   </div>
                 </el-form-item>
               </el-col>
 
               <el-col :xs="24" :lg="6">
-                <el-form-item label="每次搜索最多卡片">
+                <el-form-item :label="t('operation.maxCardsPerQuery')">
                   <el-input-number
                     v-model="taskForm.optionsData.maxSearchItemsPerQuery"
                     :min="1"
@@ -200,13 +198,13 @@
                     controls-position="right"
                   />
                   <div class="form-hint">
-                    每条查询词在搜索页最多读取多少张卡片，适合控制风控和整体执行时长。
+                    {{ t('operation.maxCardsPerQueryHint') }}
                   </div>
                 </el-form-item>
               </el-col>
 
               <el-col :xs="24" :lg="6">
-                <el-form-item label="查询词扩展数">
+                <el-form-item :label="t('operation.queryExpansionCount')">
                   <el-input-number
                     v-model="taskForm.optionsData.queryCount"
                     :min="1"
@@ -214,13 +212,13 @@
                     controls-position="right"
                   />
                   <div class="form-hint">
-                    会基于来源标题、品牌和属性自动生成多条供货查询词。商品越泛，通常可适当多给一点。
+                    {{ t('operation.queryExpansionCountHint') }}
                   </div>
                 </el-form-item>
               </el-col>
 
               <el-col :xs="24" :lg="6">
-                <el-form-item label="执行超时（分钟）">
+                <el-form-item :label="t('operation.executionTimeoutMinutes')">
                   <el-input-number
                     v-model="taskForm.optionsData.timeoutMinutes"
                     :min="5"
@@ -228,28 +226,28 @@
                     controls-position="right"
                   />
                   <div class="form-hint">
-                    防止平台卡顿或风控时任务长时间挂起。常规同款任务 20-30 分钟通常就够用。
+                    {{ t('operation.executionTimeoutMinutesHint') }}
                   </div>
                 </el-form-item>
               </el-col>
 
               <el-col :xs="24" :lg="6">
-                <el-form-item label="是否截图">
+                <el-form-item :label="t('operation.captureSnapshots')">
                   <el-switch v-model="taskForm.optionsData.captureSnapshots" />
-                  <div class="form-hint">默认关闭，只有需要质检或回溯时再开启，避免存储膨胀。</div>
+                  <div class="form-hint">{{ t('operation.captureSnapshotsHint') }}</div>
                 </el-form-item>
               </el-col>
 
               <el-col :xs="24">
-                <el-form-item label="执行备注">
+                <el-form-item :label="t('operation.executionNotes')">
                   <el-input
                     v-model="taskForm.optionsData.notes"
                     type="textarea"
                     :rows="4"
-                    placeholder="例如：优先找工厂店、支持小批量起订、优先保留有详情页与参数图的供货商品"
+                    :placeholder="t('operation.executionNotesPlaceholder')"
                   />
                   <div class="form-hint">
-                    这里相当于给执行策略补充偏好说明，不改变来源范围，但会影响查询词构造和结果筛选倾向。
+                    {{ t('operation.executionNotesHint') }}
                   </div>
                 </el-form-item>
               </el-col>
@@ -261,40 +259,40 @@
         <div class="task-dialog-side">
           <div class="preview-card">
             <div class="preview-card__header">
-              <div class="preview-card__title">执行预览</div>
-              <el-tag size="small" type="info">客户端执行</el-tag>
+              <div class="preview-card__title">{{ t('operation.executionPreview') }}</div>
+              <el-tag size="small" type="info">{{ t('operation.clientExecution') }}</el-tag>
             </div>
 
             <div class="preview-metrics">
               <div class="preview-metric">
-                <span class="preview-metric__label">分析运行</span>
+                <span class="preview-metric__label">{{ t('operation.analysisRun') }}</span>
                 <strong>{{ taskForm.sourceConfig.analysisRunId ? 1 : 0 }}</strong>
               </div>
               <div class="preview-metric">
-                <span class="preview-metric__label">来源商品</span>
+                <span class="preview-metric__label">{{ t('operation.sourceProducts') }}</span>
                 <strong>{{
                   parsedSourceItemIds.length || taskForm.optionsData.maxSourceItems
                 }}</strong>
               </div>
               <div class="preview-metric">
-                <span class="preview-metric__label">原始记录</span>
+                <span class="preview-metric__label">{{ t('operation.rawRecords') }}</span>
                 <strong>{{ parsedRawRecordIds.length }}</strong>
               </div>
               <div class="preview-metric">
-                <span class="preview-metric__label">截图</span>
-                <strong>{{ taskForm.optionsData.captureSnapshots ? "开启" : "关闭" }}</strong>
+                <span class="preview-metric__label">{{ t('operation.snapshot') }}</span>
+                <strong>{{ taskForm.optionsData.captureSnapshots ? t('operation.enabled') : t('operation.disabled') }}</strong>
               </div>
             </div>
 
             <div class="preview-block">
-              <div class="preview-block__label">执行说明</div>
+              <div class="preview-block__label">{{ t('operation.executionDescription') }}</div>
               <div class="preview-block__text">
-                任务保存后由服务端调度客户端浏览器自动化执行，同款列表、详情、对比得分与截图都按统一结果结构回传。
+                {{ t('operation.executionDescriptionText') }}
               </div>
             </div>
 
             <div class="preview-block">
-              <div class="preview-block__label">请求体</div>
+              <div class="preview-block__label">{{ t('operation.requestBody') }}</div>
               <pre class="json-preview">{{ requestPreviewText }}</pre>
             </div>
           </div>
@@ -304,14 +302,14 @@
 
     <template #footer>
       <div class="task-dialog-footer-bar">
-        <el-button @click="emit('update:modelValue', false)">取消</el-button>
+        <el-button @click="emit('update:modelValue', false)">{{ t('common.cancel') }}</el-button>
         <el-button
           type="primary"
           :loading="submitting"
           :disabled="!canSubmit"
           @click="handleSubmit"
         >
-          保存
+          {{ t('common.save') }}
         </el-button>
       </div>
     </template>
@@ -320,6 +318,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from "vue";
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from "element-plus";
 import {
   createEcomSelectionSupplyMatchTask,
@@ -335,6 +334,8 @@ import {
   getRunStatusLabel,
   parseTextareaList,
 } from "@/views/operation/ecom-data/shared";
+
+const { t } = useI18n();
 
 type SupplyMatchTaskForm = {
   name: string;
@@ -372,7 +373,7 @@ const emit = defineEmits<{
 }>();
 
 const catalog = ref<EcomSelectionSupplyMatchCatalog>({
-  matchTypes: [{ label: "找同款", value: "supply_match" }],
+  matchTypes: [{ label: t('operation.supplyMatch'), value: "supply_match" }],
   supplierPlatforms: [],
 });
 
@@ -445,7 +446,7 @@ const analysisRunOptions = computed(() => {
 
   const currentId = String(taskForm.sourceConfig.analysisRunId || "").trim();
   if (currentId && !map.has(currentId)) {
-    map.set(currentId, `分析运行: ${currentId}`);
+    map.set(currentId, `${t('operation.analysisRun')}: ${currentId}`);
   }
 
   return Array.from(map.entries()).map(([value, label]) => ({ value, label }));
@@ -516,7 +517,7 @@ const loadCatalog = async () => {
     catalog.value = {
       matchTypes: Array.isArray(data?.matchTypes) && data.matchTypes.length
         ? data.matchTypes
-        : [{ label: "找同款", value: "supply_match" }],
+        : [{ label: t('operation.supplyMatch'), value: "supply_match" }],
       supplierPlatforms: Array.isArray(data?.supplierPlatforms) ? data.supplierPlatforms : [],
       meta: data?.meta || {},
     };
@@ -602,7 +603,7 @@ watch(
 
 const handleSubmit = async () => {
   if (!taskForm.name.trim()) {
-    ElMessage.warning("请先填写任务名称");
+    ElMessage.warning(t('operation.pleaseFillTaskNameFirst'));
     return;
   }
 
@@ -611,7 +612,7 @@ const handleSubmit = async () => {
     !parsedRawRecordIds.value.length &&
     !parsedKeywordSeeds.value.length
   ) {
-    ElMessage.warning("请至少选择分析运行、填写原始记录 ID，或填写关键词种子");
+    ElMessage.warning(t('operation.pleaseSelectAnalysisRunOrFillRawRecordIdsOrKeywordSeeds'));
     return;
   }
 
@@ -619,10 +620,10 @@ const handleSubmit = async () => {
   try {
     if (currentTask.value?.id) {
       await updateEcomSelectionSupplyMatchTask(currentTask.value.id, normalizedPayload.value);
-      ElMessage.success("找同款任务已更新");
+      ElMessage.success(t('operation.supplyMatchTaskUpdated'));
     } else {
       await createEcomSelectionSupplyMatchTask(normalizedPayload.value);
-      ElMessage.success("找同款任务已创建");
+      ElMessage.success(t('operation.supplyMatchTaskCreated'));
     }
 
     emit("success");

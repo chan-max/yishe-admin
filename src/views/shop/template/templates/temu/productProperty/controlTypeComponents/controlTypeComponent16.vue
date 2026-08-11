@@ -3,20 +3,20 @@
     <div>
       <div class="flex flex-col gap-2">
         <div class="flex gap-2" v-for="form, index in formList">
-          <el-select style="width: 160px" placeholder="请选择" v-model="form.vid" @change="change">
+          <el-select style="width: 160px" :placeholder="t('common.selectPlaceholder')" v-model="form.vid" @change="change">
             <el-option v-for="item in config.values" :key="item.vid" :label="item.value" :value="item.vid"
               :disabled="isSelectOptionDisabled(item)" />
           </el-select>
           <numberInput :min="Number(config.minValue)" :max="Number(config.maxValue)" :precision="config.valuePrecision"
-            v-model="form.input" style="width: 120px;" placeholder="请输入" @input="change"></numberInput>
-          <el-select style="width: 100px" placeholder="单位" v-model="form.unit" @change="change">
+            v-model="form.input" style="width: 120px;" :placeholder="t('common.inputPlaceholder')" @input="change"></numberInput>
+          <el-select style="width: 100px" :placeholder="t('shop.unit')" v-model="form.unit" @change="change">
             <el-option v-for="item in config.valueUnit" :key="item" :label="item" :value="item" />
           </el-select>
           <el-button v-if="index != 0" :icon="Delete" type="danger" link @click="deleteItem(index)"></el-button>
         </div>
       </div>
       <div class="pt-4">
-        <el-button @click="addItem" type="primary"> 添加 </el-button>
+        <el-button @click="addItem" type="primary"> {{ t('common.add') }} </el-button>
       </div>
     </div>
   </el-form-item>
@@ -24,6 +24,9 @@
 <script setup lang="ts">
 import { Delete } from '@element-plus/icons-vue'
 import numberInput from './numberInput.vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps({
   config: {
@@ -120,7 +123,7 @@ defineExpose({
       }, 0)
 
       if (res != 100) {
-        throw ElMessage.warning('所有比例之和需等于100')
+        throw ElMessage.warning(t('shop.totalRatioMustBe100'))
       }
     }
   }

@@ -6,7 +6,7 @@
     <div class="flex gap-4 flex-wrap">
       <div v-for="options, level in displayOptionsList" class="flex flex-col gap-2" style="width:220px;">
         <div style="width:100%;">
-          <el-input :prefix-icon="Search" v-model="searchList[level]" placeholder="搜索类目" clearable></el-input>
+          <el-input :prefix-icon="Search" v-model="searchList[level]" :placeholder="t('shop.searchCategory')" clearable></el-input>
         </div>
         <el-cascader-panel v-model="modelList[level]" size="small" :options="options" :props="{ value: 'catId' }"
           @change="cascaderChange(level, $event)">
@@ -20,10 +20,10 @@
           </template>
           <template #empty>
             <div v-if="singleLoading">
-              加载中...
+              {{ t('shop.loading') }}
             </div>
             <div v-else>
-              暂无类目~
+              {{ t('shop.noCategory') }}
             </div>
           </template>
         </el-cascader-panel>
@@ -36,6 +36,9 @@
 import { ref } from 'vue';
 import { getTemuTemplateCategoryList } from '@/api/publish/template';
 import { ArrowRight, Search } from '@element-plus/icons-vue';
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps({
   shopId: {
@@ -162,7 +165,7 @@ function getPostData() {
 <style lang="less">
 .temu-category-cascader {
   .el-cascader-menu__wrap.el-scrollbar__wrap {
-    height: 280px;
+    height: 2800px;
   }
 
   .el-cascader-menu {

@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     :model-value="modelValue"
-    :title="currentTask?.id ? '编辑选品分析任务' : '新建选品分析任务'"
+    :title="currentTask?.id ? t('operation.editSelectionAnalysisTask') : t('operation.createSelectionAnalysisTask')"
     fullscreen
     append-to-body
     destroy-on-close
@@ -15,22 +15,22 @@
           <CompactNotice
             v-if="!collectTasks.length && !collectRuns.length"
             type="warning"
-            title="当前没有可选的采集任务或运行"
-            description="你仍可直接填写原始记录 ID 创建分析任务。"
+            :title="t('operation.noCollectTasksOrRunsAvailable')"
+            :description="t('operation.fillRawRecordIdDirectly')"
             class="task-dialog-alert"
           />
 
           <el-form label-position="top" class="task-dialog-form">
-            <div class="form-section-title">基础信息</div>
+            <div class="form-section-title">{{ t('operation.basicInfo') }}</div>
             <el-row :gutter="20">
               <el-col :xs="24" :lg="14">
-                <el-form-item label="任务名称" required>
-                  <el-input v-model="taskForm.name" placeholder="例如：无线耳机热门选品" />
+                <el-form-item :label="t('operation.taskName')" required>
+                  <el-input v-model="taskForm.name" :placeholder="t('operation.taskNamePlaceholder')" />
                 </el-form-item>
               </el-col>
 
               <el-col :xs="24" :lg="10">
-                <el-form-item label="分析类型">
+                <el-form-item :label="t('operation.analysisType')">
                   <el-select v-model="taskForm.analysisType">
                     <el-option
                       v-for="item in analysisTypeOptions"
@@ -43,10 +43,10 @@
               </el-col>
             </el-row>
 
-            <div class="form-section-title">数据范围</div>
+            <div class="form-section-title">{{ t('operation.dataRange') }}</div>
             <el-row :gutter="20">
               <el-col :xs="24" :lg="12">
-                <el-form-item label="采集任务">
+                <el-form-item :label="t('operation.collectTask')">
                   <el-select
                     v-model="taskForm.sourceConfig.taskIds"
                     multiple
@@ -54,7 +54,7 @@
                     collapse-tags-tooltip
                     filterable
                     clearable
-                    placeholder="按采集任务筛选"
+                    :placeholder="t('operation.filterByCollectTask')"
                   >
                     <el-option
                       v-for="item in collectTaskOptions"
@@ -63,12 +63,12 @@
                       :value="item.value"
                     />
                   </el-select>
-                  <div class="form-hint">不选时，可继续通过采集运行或原始记录 ID 收窄范围。</div>
+                  <div class="form-hint">{{ t('operation.dataRangeHint1') }}</div>
                 </el-form-item>
               </el-col>
 
               <el-col :xs="24" :lg="12">
-                <el-form-item label="采集运行">
+                <el-form-item :label="t('operation.collectRun')">
                   <el-select
                     v-model="taskForm.sourceConfig.runIds"
                     multiple
@@ -76,7 +76,7 @@
                     collapse-tags-tooltip
                     filterable
                     clearable
-                    placeholder="按采集运行筛选"
+                    :placeholder="t('operation.filterByCollectRun')"
                   >
                     <el-option
                       v-for="item in collectRunOptions"
@@ -85,24 +85,24 @@
                       :value="item.value"
                     />
                   </el-select>
-                  <div class="form-hint">适合锁定某几次明确的采集执行结果。</div>
+                  <div class="form-hint">{{ t('operation.dataRangeHint2') }}</div>
                 </el-form-item>
               </el-col>
 
               <el-col :xs="24">
-                <el-form-item label="原始记录 ID">
+                <el-form-item :label="t('operation.rawRecordIds')">
                   <el-input
                     v-model="rawRecordIdsText"
                     type="textarea"
                     :rows="4"
-                    placeholder="一行一个 rawRecordId"
+                    :placeholder="t('operation.rawRecordIdsPlaceholder')"
                   />
-                  <div class="form-hint">直接基于指定原始记录做分析时使用。</div>
+                  <div class="form-hint">{{ t('operation.dataRangeHint3') }}</div>
                 </el-form-item>
               </el-col>
 
               <el-col :xs="24" :lg="8">
-                <el-form-item label="最大样本数">
+                <el-form-item :label="t('operation.maxSampleSize')">
                   <el-input-number
                     v-model="taskForm.sourceConfig.limit"
                     :min="1"
@@ -113,22 +113,22 @@
               </el-col>
 
               <el-col :xs="24" :lg="8">
-                <el-form-item label="仅保留详情样本">
+                <el-form-item :label="t('operation.requireDetailOnly')">
                   <el-switch v-model="taskForm.sourceConfig.requireDetail" />
                 </el-form-item>
               </el-col>
 
               <el-col :xs="24" :lg="8">
-                <el-form-item label="目标市场">
-                  <el-input v-model="taskForm.analysisConfig.targetMarket" placeholder="例如：US" />
+                <el-form-item :label="t('operation.targetMarket')">
+                  <el-input v-model="taskForm.analysisConfig.targetMarket" :placeholder="t('operation.targetMarketPlaceholder')" />
                 </el-form-item>
               </el-col>
             </el-row>
 
-            <div class="form-section-title">分析参数</div>
+            <div class="form-section-title">{{ t('operation.analysisParams') }}</div>
             <el-row :gutter="20">
               <el-col v-if="isHotSellingAnalysis" :xs="24" :lg="8">
-                <el-form-item label="输出 Top N">
+                <el-form-item :label="t('operation.outputTopN')">
                   <el-input-number
                     v-model="taskForm.analysisConfig.topN"
                     :min="1"
@@ -139,23 +139,23 @@
               </el-col>
 
               <el-col v-if="isCustomPromptAnalysis" :xs="24">
-                <el-form-item label="自定义提示词" required>
+                <el-form-item :label="t('operation.customPrompt')" required>
                   <el-input
                     v-model="taskForm.analysisConfig.customPrompt"
                     type="textarea"
                     :rows="6"
-                    placeholder="例如：提取主图、来源链接和适合做找同款的关键信息"
+                    :placeholder="t('operation.customPromptPlaceholder')"
                   />
                 </el-form-item>
               </el-col>
 
               <el-col v-if="isCustomPromptAnalysis || isPodPatternAnalysis" :xs="24">
-                <el-form-item label="输出结构说明">
+                <el-form-item :label="t('operation.outputStructureDesc')">
                   <el-input
                     v-model="taskForm.analysisConfig.customOutputSchema"
                     type="textarea"
                     :rows="4"
-                    placeholder="例如：返回 gallery 视图，并保留 imageUrl、sourceUrl、title"
+                    :placeholder="t('operation.outputStructurePlaceholder')"
                   />
                 </el-form-item>
               </el-col>
@@ -177,38 +177,38 @@
         <div class="task-dialog-side">
           <div class="preview-card">
             <div class="preview-card__header">
-              <div class="preview-card__title">任务预览</div>
+              <div class="preview-card__title">{{ t('operation.taskPreview') }}</div>
               <el-tag size="small" type="info">{{ analysisTypeLabel }}</el-tag>
             </div>
 
             <div class="preview-metrics">
               <div class="preview-metric">
-                <span class="preview-metric__label">采集任务</span>
+                <span class="preview-metric__label">{{ t('operation.collectTask') }}</span>
                 <strong>{{ taskForm.sourceConfig.taskIds.length }}</strong>
               </div>
               <div class="preview-metric">
-                <span class="preview-metric__label">采集运行</span>
+                <span class="preview-metric__label">{{ t('operation.collectRun') }}</span>
                 <strong>{{ taskForm.sourceConfig.runIds.length }}</strong>
               </div>
               <div class="preview-metric">
-                <span class="preview-metric__label">原始记录</span>
+                <span class="preview-metric__label">{{ t('operation.rawRecords') }}</span>
                 <strong>{{ parsedRawRecordIds.length }}</strong>
               </div>
               <div class="preview-metric">
-                <span class="preview-metric__label">样本上限</span>
+                <span class="preview-metric__label">{{ t('operation.sampleLimit') }}</span>
                 <strong>{{ taskForm.sourceConfig.limit }}</strong>
               </div>
             </div>
 
             <div class="preview-block">
-              <div class="preview-block__label">说明</div>
+              <div class="preview-block__label">{{ t('operation.description') }}</div>
               <div class="preview-block__text">
-                任务只负责定义数据范围和分析要求。运行态与结果会分开存储。
+                {{ t('operation.taskPreviewDesc') }}
               </div>
             </div>
 
             <div class="preview-block">
-              <div class="preview-block__label">请求体</div>
+              <div class="preview-block__label">{{ t('operation.requestBody') }}</div>
               <pre class="json-preview">{{ requestPreviewText }}</pre>
             </div>
           </div>
@@ -218,14 +218,14 @@
 
     <template #footer>
       <div class="task-dialog-footer-bar">
-        <el-button @click="emit('update:modelValue', false)">取消</el-button>
+        <el-button @click="emit('update:modelValue', false)">{{ t('common.cancel') }}</el-button>
         <el-button
           type="primary"
           :loading="submitting"
           :disabled="!canSubmit"
           @click="handleSubmit"
         >
-          保存
+          {{ t('common.save') }}
         </el-button>
       </div>
     </template>
@@ -234,6 +234,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from "vue";
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from "element-plus";
 import type {
   EcomPlatformCollectCatalog,
@@ -253,6 +254,8 @@ import {
   parseTextareaList,
 } from "@/views/operation/ecom-data/shared";
 import { getTaskTypeLabel } from "@/views/operation/ecom-platform-collect/shared";
+
+const { t } = useI18n();
 
 type AnalysisTaskForm = {
   name: string;
@@ -309,9 +312,9 @@ const submitting = ref(false);
 
 const currentTask = computed(() => props.task || null);
 const analysisTypeOptions = [
-  { label: "热门选品", value: "hot_selling_selection" },
-  { label: "POD 图案分析", value: "pod_pattern_analysis" },
-  { label: "自定义提示词分析", value: "custom_prompt_extract" },
+  { label: t('operation.hotSellingSelection'), value: "hot_selling_selection" },
+  { label: t('operation.podPatternAnalysis'), value: "pod_pattern_analysis" },
+  { label: t('operation.customPromptAnalysis'), value: "custom_prompt_extract" },
 ];
 
 const isHotSellingAnalysis = computed(() => taskForm.analysisType === "hot_selling_selection");
@@ -326,13 +329,13 @@ const analysisTypeLabel = computed(() => {
 });
 
 const notesLabel = computed(() =>
-  isPodPatternAnalysis.value ? "图案分析补充说明" : "分析补充说明",
+  isPodPatternAnalysis.value ? t('operation.patternAnalysisNotes') : t('operation.analysisNotes'),
 );
 
 const notesPlaceholder = computed(() =>
   isPodPatternAnalysis.value
-    ? "例如：更关注图案主题、视觉元素、主配色和裂变方向"
-    : "例如：更关注价格带、评论规模和差异化卖点",
+    ? t('operation.patternAnalysisNotesPlaceholder')
+    : t('operation.analysisNotesPlaceholder'),
 );
 
 const collectTaskOptions = computed(() =>
@@ -446,12 +449,12 @@ watch(
 
 const handleSubmit = async () => {
   if (!taskForm.name.trim()) {
-    ElMessage.warning("请先填写任务名称");
+    ElMessage.warning(t('operation.pleaseFillTaskNameFirst'));
     return;
   }
 
   if (isCustomPromptAnalysis.value && !taskForm.analysisConfig.customPrompt.trim()) {
-    ElMessage.warning("请填写自定义提示词");
+    ElMessage.warning(t('operation.pleaseFillCustomPrompt'));
     return;
   }
 
@@ -459,10 +462,10 @@ const handleSubmit = async () => {
   try {
     if (currentTask.value?.id) {
       await updateEcomSelectionAnalysisTask(currentTask.value.id, normalizedPayload.value);
-      ElMessage.success("分析任务已更新");
+      ElMessage.success(t('operation.analysisTaskUpdated'));
     } else {
       await createEcomSelectionAnalysisTask(normalizedPayload.value);
-      ElMessage.success("分析任务已创建");
+      ElMessage.success(t('operation.analysisTaskCreated'));
     }
 
     emit("success");

@@ -1,25 +1,19 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from "vue";
-import { useGlobalNotificationStore } from "@/store/modules/globalNotification";
+import { onMounted, onUnmounted, ref } from "vue";
 import { getUnreadNotifyMessageCount } from "@/api/system/notify/message";
 
 defineOptions({ name: "GlobalNotificationCenter" });
 
+const { t } = useI18n();
+
 const { push } = useRouter()
-const notificationStore = useGlobalNotificationStore();
 
-// WS 通知未读
-const wsUnreadCount = computed(() => notificationStore.unreadCount);
-// 站内信未读
-const messageUnreadCount = ref(0);
+const unreadCount = ref(0);
 
-// 总未读 = WS + 站内信
-const totalUnread = computed(() => wsUnreadCount.value + messageUnreadCount.value);
-
-const fetchMessageUnreadCount = async () => {
+const fetchUnreadCount = async () => {
   try {
-    const count = await getUnreadNotifyMessageCount();
-    messageUnreadCount.value = count || 0;
+    const data = await getUnreadNotifyMessageCount();
+    unreadCount.value = typeof data === 'number' ? data : (data?.data || 0);
   } catch {
     // ignore
   }
@@ -30,9 +24,8 @@ const handleClick = () => {
 }
 
 onMounted(() => {
-  fetchMessageUnreadCount();
-  // 每 30 秒轮询一次站内信未读数量
-  const timer = setInterval(fetchMessageUnreadCount, 30_000);
+  fetchUnreadCount();
+  const timer = setInterval(fetchUnreadCount, 30_000);
   onUnmounted(() => clearInterval(timer));
 });
 </script>
@@ -41,13 +34,17 @@ onMounted(() => {
   <button
     class="notification-trigger"
     type="button"
-    :class="{ 'has-unread': totalUnread > 0 }"
+    :class="{ 'has-unread': unreadCount > 0 }"
+    :aria-label="t('layout.notification.message')"
     @click="handleClick"
   >
-    <Icon icon="ep:bell" :size="16" />
-    <span v-if="totalUnread > 0" class="notification-trigger__badge">{{
-      totalUnread > 99 ? "99+" : totalUnread
-    }}</span>
+    <span class="th-action-icon">
+      <Icon icon="ep:bell" :size="18" />
+      <span v-if="unreadCount > 0" class="notification-trigger__badge">{{
+        unreadCount > 99 ? "99+" : unreadCount
+      }}</span>
+    </span>
+    <span class="th-action-label">{{ t("layout.notification.message") }}</span>
   </button>
 </template>
 
@@ -55,40 +52,43 @@ onMounted(() => {
 .notification-trigger {
   position: relative;
   display: inline-flex;
-  width: 34px;
-  height: 34px;
-  color: var(--top-header-text-color);
-  cursor: pointer;
-  background: var(--top-header-hover-color);
-  border: 1px solid var(--top-tool-border-color);
-  border-radius: 10px;
-  transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    color 0.18s ease;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  color: inherit;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease;
 }
 
-.notification-trigger:hover,
+.th-action-icon {
+  position: relative;
+  display: inline-flex;
+  line-height: 1;
+}
+
 .notification-trigger.has-unread {
-  color: var(--el-text-color-primary);
-  border-color: color-mix(in srgb, var(--top-header-text-color) 14%, transparent 86%);
+  color: var(--el-color-primary);
 }
 
 .notification-trigger__badge {
   position: absolute;
   top: -4px;
-  right: -5px;
-  height: 15px;
-  min-width: 15px;
+  right: -7px;
+  height: 13px;
+  min-width: 13px;
   padding: 0 3px;
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 700;
-  line-height: 15px;
+  line-height: 13px;
   color: #fff;
   text-align: center;
   background: #ef4444;
   border-radius: 999px;
+  box-shadow: 0 0 0 2px var(--top-header-bg-color, var(--el-bg-color));
 }
 </style>

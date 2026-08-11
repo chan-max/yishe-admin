@@ -1,12 +1,12 @@
 <template>
   <div class="tools-page">
     <header class="tools-header">
-      <h1 class="tools-header__title">工具</h1>
+      <h1 class="tools-header__title">{{ t('home.tools.title') }}</h1>
     </header>
 
     <section class="tools-section" aria-labelledby="tools-downloads-heading">
       <div class="tools-section__head">
-        <h2 id="tools-downloads-heading" class="tools-section__title">下载</h2>
+        <h2 id="tools-downloads-heading" class="tools-section__title">{{ t('home.tools.download') }}</h2>
       </div>
 
       <div class="tools-grid">
@@ -26,16 +26,16 @@
               round
               :type="item.actions.some((action) => action.downloadUrl) ? 'success' : 'info'"
             >
-              {{ item.actions.some((action) => action.downloadUrl) ? "可用" : "未配置" }}
+              {{ item.actions.some((action) => action.downloadUrl) ? t('home.tools.available') : t('home.tools.unconfigured') }}
             </el-tag>
           </div>
 
           <div class="tools-card__headline">
-            <span class="tools-card__title">{{ item.title }}</span>
-            <span class="tools-card__platform">{{ item.platform }}</span>
+            <span class="tools-card__title">{{ t(item.title) }}</span>
+            <span class="tools-card__platform">{{ t(item.platform) }}</span>
           </div>
 
-          <p class="tools-card__desc">{{ item.description }}</p>
+          <p class="tools-card__desc">{{ t(item.description) }}</p>
 
           <div class="tools-card__actions">
             <el-button
@@ -46,7 +46,7 @@
               :disabled="!action.downloadUrl"
               @click="handleDownload(action.downloadUrl)"
             >
-              {{ action.label }}
+              {{ t(action.label) }}
             </el-button>
           </div>
         </article>
@@ -56,9 +56,12 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { Icon } from "@/components/Icon";
 
 defineOptions({ name: "ToolsIndex" });
+
+const { t } = useI18n()
 
 interface DownloadCard {
   key: string;
@@ -76,21 +79,20 @@ interface DownloadCard {
 const downloadCards: DownloadCard[] = [
   {
     key: "client-unified",
-    title: "YiShe 客户端",
-    platform: "Windows / macOS",
-    description:
-      "统一版客户端，浏览器自动化已内置，直接下载对应系统安装包即可。",
+    title: "home.tools.client.title",
+    platform: "home.tools.client.platform",
+    description: "home.tools.client.description",
     icon: "ep:monitor",
     actions: [
       {
         key: "windows",
-        label: "Windows 安装包",
+        label: "home.tools.client.windowsInstaller",
         downloadUrl:
           "https://github.com/1s-design/yishe-client/releases/latest/download/yishe-client.exe",
       },
       {
         key: "macos",
-        label: "macOS 安装包",
+        label: "home.tools.client.macosInstaller",
         downloadUrl:
           "https://github.com/1s-design/yishe-client/releases/latest/download/yishe-client.dmg",
       },
@@ -98,14 +100,14 @@ const downloadCards: DownloadCard[] = [
   },
   {
     key: "chrome-extension",
-    title: "YiShe 浏览器插件",
-    platform: "Chrome / Edge",
-    description: "下载后解压，在扩展页通过“加载已解压的扩展程序”导入即可。",
+    title: "home.tools.extension.title",
+    platform: "home.tools.extension.platform",
+    description: "home.tools.extension.description",
     icon: "mdi:puzzle",
     actions: [
       {
         key: "extension-zip",
-        label: "插件 zip",
+        label: "home.tools.extension.zip",
         downloadUrl:
           "https://github.com/1s-design/yishe-extensions/releases/latest/download/yishe-extensions.zip",
       },

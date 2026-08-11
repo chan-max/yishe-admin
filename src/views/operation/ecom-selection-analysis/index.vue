@@ -5,38 +5,38 @@
         <div class="list-page-filter list-page-filter--flat">
           <div class="resource-toolbar">
             <div class="resource-toolbar__meta">
-              <div class="resource-toolbar__title">电商分析任务</div>
+              <div class="resource-toolbar__title">{{ t('operation.ecomAnalysisTasks') }}</div>
             </div>
           </div>
 
           <el-form :model="filters" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col :xs="24" :sm="12" :md="8" :lg="8">
-                <el-form-item label="任务名称 / 创建人">
+                <el-form-item :label="t('operation.taskNameOrCreator')">
                   <el-input
                     v-model="filters.keyword"
                     clearable
-                    placeholder="搜索任务名称 / 创建人"
+                    :placeholder="t('operation.searchTaskNameOrCreator')"
                     @keyup.enter="handleSearch"
                   />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :md="8" :lg="6">
-                <el-form-item label="分析类型">
-                  <el-select v-model="filters.analysisType" clearable placeholder="全部类型">
-                    <el-option label="热门选品" value="hot_selling_selection" />
-                    <el-option label="POD 图案分析" value="pod_pattern_analysis" />
-                    <el-option label="自定义提示词分析" value="custom_prompt_extract" />
+                <el-form-item :label="t('operation.analysisType')">
+                  <el-select v-model="filters.analysisType" clearable :placeholder="t('operation.allTypes')">
+                    <el-option :label="t('operation.hotSellingSelection')" value="hot_selling_selection" />
+                    <el-option :label="t('operation.podPatternAnalysis')" value="pod_pattern_analysis" />
+                    <el-option :label="t('operation.customPromptAnalysis')" value="custom_prompt_extract" />
                   </el-select>
                 </el-form-item>
               </el-col>
             </el-row>
 
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" @click="handleSearch">查询</el-button>
-              <el-button size="small" @click="handleReset">重置</el-button>
+              <el-button size="small" type="primary" @click="handleSearch">{{ t('common.query') }}</el-button>
+              <el-button size="small" @click="handleReset">{{ t('common.reset') }}</el-button>
               <el-button size="small" type="primary" @click="openTaskDialog()">
-                新建任务
+                {{ t('operation.createTask') }}
               </el-button>
               <el-button
                 size="small"
@@ -44,7 +44,7 @@
                 :disabled="!selectedIds.length"
                 @click="handleBatchDelete"
               >
-                批量删除 ({{ selectedIds.length }})
+                {{ t('operation.batchDelete') }}({{ selectedIds.length }})
               </el-button>
             </div>
           </el-form>
@@ -80,10 +80,10 @@
                     <span class="table-meta-text">
                       {{
                         row.analysisConfig?.customPrompt
-                          ? "已设置自定义提示词"
+                          ? t('operation.customPromptSet')
                           : row.analysisConfig?.customOutputSchema
-                            ? "已设置输出结构"
-                            : "默认配置"
+                            ? t('operation.outputStructureSet')
+                            : t('operation.defaultConfig')
                       }}
                     </span>
                   </div>
@@ -98,7 +98,7 @@
                     >
                       {{ getRunStatusLabel(row.lastRunStatus) }}
                     </el-tag>
-                    <span v-else class="table-meta-text">未执行</span>
+                    <span v-else class="table-meta-text">{{ t('operation.notExecuted') }}</span>
                     <span class="table-meta-text">
                       {{ formatDateTime(row.lastRunAt) }}
                     </span>
@@ -126,7 +126,7 @@
                         class="operation-trigger-button"
                         :loading="triggeringTaskId === row.id"
                       >
-                        操作
+                        {{ t('common.operation') }}
                       </el-button>
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
@@ -134,13 +134,13 @@
                             <el-icon>
                               <VideoPlay />
                             </el-icon>
-                            <span>立即分析</span>
+                            <span>{{ t('operation.analyzeNow') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item command="edit">
                             <el-icon>
                               <Edit />
                             </el-icon>
-                            <span>编辑</span>
+                            <span>{{ t('common.edit') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item
                             command="delete"
@@ -150,7 +150,7 @@
                             <el-icon>
                               <Delete />
                             </el-icon>
-                            <span>删除</span>
+                            <span>{{ t('common.delete') }}</span>
                           </el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
@@ -190,6 +190,7 @@
 
 <script setup lang="ts">
 import { computed, onActivated, onMounted, reactive, ref } from "vue";
+import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox, ElNotification } from "element-plus";
 import { Delete, Edit, VideoPlay } from "@element-plus/icons-vue";
 import type { VxeGridProps } from "vxe-table";
@@ -218,6 +219,8 @@ import {
   getRunStatusTagType,
   loadEcomCollectCatalog,
 } from "@/views/operation/ecom-data/shared";
+
+const { t } = useI18n();
 
 defineOptions({ name: "EcomSelectionAnalysisTaskPage" });
 
@@ -258,19 +261,19 @@ const getSourceSummary = (task: EcomSelectionAnalysisTask) => {
   const sourceConfig = task.sourceConfig || {};
   const parts = [
     Array.isArray(sourceConfig.taskIds) && sourceConfig.taskIds.length
-      ? `任务 ${sourceConfig.taskIds.length} 个`
+      ? `${t('operation.task')} ${sourceConfig.taskIds.length} ${t('operation.items')}`
       : "",
     Array.isArray(sourceConfig.runIds) && sourceConfig.runIds.length
-      ? `运行 ${sourceConfig.runIds.length} 次`
+      ? `${t('operation.run')} ${sourceConfig.runIds.length} ${t('operation.times')}`
       : "",
     Array.isArray(sourceConfig.rawRecordIds) && sourceConfig.rawRecordIds.length
-      ? `原始记录 ${sourceConfig.rawRecordIds.length} 条`
+      ? `${t('operation.rawRecords')} ${sourceConfig.rawRecordIds.length} ${t('operation.items')}`
       : "",
-    sourceConfig.requireDetail ? "仅详情数据" : "",
-    sourceConfig.limit ? `样本 ${sourceConfig.limit}` : "",
+    sourceConfig.requireDetail ? t('operation.detailDataOnly') : "",
+    sourceConfig.limit ? `${t('operation.sample')} ${sourceConfig.limit}` : "",
   ].filter(Boolean);
 
-  return parts.join(" | ") || "当前账号下全部采集原始数据";
+  return parts.join(" | ") || t('operation.allCollectRawDataUnderAccount');
 };
 
 const getOptionsSummary = (task: EcomSelectionAnalysisTask) => {
@@ -278,28 +281,28 @@ const getOptionsSummary = (task: EcomSelectionAnalysisTask) => {
   const parts = [
     options.topN ? `Top ${options.topN}` : "",
     options.targetMarket ? options.targetMarket : "",
-    options.notes ? "含分析备注" : "",
+    options.notes ? t('operation.containsAnalysisNotes') : "",
   ].filter(Boolean);
 
   if (task.analysisType === "custom_prompt_extract") {
     const customParts = [
-      options.customPrompt ? "自定义提示词" : "",
-      options.customOutputSchema ? "指定输出结构" : "",
+      options.customPrompt ? t('operation.customPrompt') : "",
+      options.customOutputSchema ? t('operation.specifiedOutputStructure') : "",
       options.targetMarket ? options.targetMarket : "",
     ].filter(Boolean);
-    return customParts.join(" | ") || "使用默认自定义提示词配置";
+    return customParts.join(" | ") || t('operation.useDefaultCustomPromptConfig');
   }
 
   if (task.analysisType === "pod_pattern_analysis") {
     const podParts = [
-      options.notes ? "图案分析备注" : "",
-      options.customOutputSchema ? "指定输出结构" : "",
+      options.notes ? t('operation.patternAnalysisNotes') : "",
+      options.customOutputSchema ? t('operation.specifiedOutputStructure') : "",
       options.targetMarket ? options.targetMarket : "",
     ].filter(Boolean);
-    return podParts.join(" | ") || "使用默认 POD 图案分析配置";
+    return podParts.join(" | ") || t('operation.useDefaultPodPatternAnalysisConfig');
   }
 
-  return parts.join(" | ") || "使用默认热门选品参数";
+  return parts.join(" | ") || t('operation.useDefaultHotSellingSelectionParams');
 };
 
 const getResultSummary = (task: EcomSelectionAnalysisTask) => {
@@ -308,10 +311,10 @@ const getResultSummary = (task: EcomSelectionAnalysisTask) => {
     summary?.overviewSummary ||
     (summary?.resultCount
       ? task.analysisType === "pod_pattern_analysis"
-        ? `已输出 ${summary.resultCount} 条图案结果`
+        ? `${t('operation.output')} ${summary.resultCount} ${t('operation.patternResults')}`
         : task.analysisType === "custom_prompt_extract"
-          ? `已输出 ${summary.resultCount} 条自定义结果`
-          : `已推荐 ${summary.resultCount} 个候选方向`
+          ? `${t('operation.output')} ${summary.resultCount} ${t('operation.customResults')}`
+          : `${t('operation.recommended')} ${summary.resultCount} ${t('operation.candidateDirections')}`
       : "") ||
     summary?.errorMessage ||
     "-"
@@ -329,48 +332,48 @@ const gridOptions = ref<VxeGridProps<EcomSelectionAnalysisTask>>({
   },
   columns: [
     { type: "checkbox", width: 48 },
-    { title: "任务名称", field: "name", minWidth: 220, showOverflow: "tooltip" },
+    { title: t('operation.taskName'), field: "name", minWidth: 220, showOverflow: "tooltip" },
     {
-      title: "类型",
+      title: t('operation.type'),
       field: "analysisType",
       width: 110,
       slots: { default: "typeSlot" },
     },
     {
-      title: "数据源范围",
+      title: t('operation.dataSourceRange'),
       field: "sourceConfig",
       minWidth: 280,
       showOverflow: "tooltip",
       slots: { default: "sourceSlot" },
     },
     {
-      title: "分析配置",
+      title: t('operation.analysisConfig'),
       field: "analysisConfig",
       minWidth: 260,
       showOverflow: "tooltip",
       slots: { default: "optionsSlot" },
     },
     {
-      title: "最近运行",
+      title: t('operation.latestRun'),
       field: "lastRunStatus",
       width: 120,
       slots: { default: "lastRunSlot" },
     },
     {
-      title: "结果摘要",
+      title: t('operation.resultSummary'),
       field: "lastRunSummary",
       minWidth: 260,
       showOverflow: "tooltip",
       slots: { default: "summarySlot" },
     },
     {
-      title: "创建人",
+      title: t('operation.creator'),
       field: "creator",
       width: 120,
       formatter: ({ row }) => row.creator || "-",
     },
     {
-      ...buildTimeColumn("更新时间", "updateTime", 180),
+      ...buildTimeColumn(t('operation.updateTime'), "updateTime", 180),
       formatter: ({ cellValue }) => formatDateTime(cellValue as string),
     },
     buildOperationColumn("operationSlot", 120),
@@ -467,7 +470,7 @@ const handleTriggerTask = async (row: EcomSelectionAnalysisTask) => {
   triggeringTaskId.value = row.id;
   const loadingMessage = ElMessage({
     type: "info",
-    message: `正在提交分析：${row.name}`,
+    message: `${t('operation.submittingAnalysis')}: ${row.name}`,
     duration: 0,
     showClose: true,
   });
@@ -476,17 +479,17 @@ const handleTriggerTask = async (row: EcomSelectionAnalysisTask) => {
     const result = await triggerEcomSelectionAnalysisTask(row.id);
     loadingMessage.close();
     ElNotification({
-      title: result?.status === "failed" ? "分析失败" : "分析已开始",
+      title: result?.status === "failed" ? t('operation.analysisFailed') : t('operation.analysisStarted'),
       type: result?.status === "failed" ? "warning" : "success",
       duration: 5000,
       message: result?.id
-        ? `运行记录：${result.id}${result.errorMessage ? `，${result.errorMessage}` : ""}`
-        : "任务已触发，请前往分析运行或分析结果查看",
+        ? `${t('operation.runRecord')}: ${result.id}${result.errorMessage ? `，${result.errorMessage}` : ""}`
+        : t('operation.taskTriggeredPleaseCheck'),
     });
     await loadList();
   } catch (error: any) {
     loadingMessage.close();
-    ElMessage.error(error?.message || "触发失败");
+    ElMessage.error(error?.message || t('operation.triggerFailed'));
   } finally {
     triggeringTaskId.value = "";
   }
@@ -495,12 +498,12 @@ const handleTriggerTask = async (row: EcomSelectionAnalysisTask) => {
 const handleDelete = async (row: EcomSelectionAnalysisTask) => {
   try {
     await ElMessageBox.confirm(
-      `确认删除分析任务「${row.name}」吗？将同步清理关联分析运行和分析结果。`,
-      "提示",
+      `${t('operation.confirmDeleteAnalysisTask')}「${row.name}」${t('operation.deleteAnalysisTaskWarning')}`,
+      t('common.tip'),
       { type: "warning" },
     );
     await deleteEcomSelectionAnalysisTask(row.id);
-    ElMessage.success("分析任务已删除");
+    ElMessage.success(t('operation.analysisTaskDeleted'));
     await loadList();
   } catch {}
 };
@@ -509,12 +512,12 @@ const handleBatchDelete = async () => {
   if (!selectedIds.value.length) return;
   try {
     await ElMessageBox.confirm(
-      `确认批量删除 ${selectedIds.value.length} 个分析任务吗？将同步清理关联分析运行和分析结果。`,
-      "提示",
+      `${t('operation.confirmBatchDeleteAnalysisTasks')} ${selectedIds.value.length} ${t('operation.batchDeleteAnalysisTasksWarning')}`,
+      t('common.tip'),
       { type: "warning" },
     );
     await batchDeleteEcomSelectionAnalysisTask(selectedIds.value);
-    ElMessage.success("批量删除成功");
+    ElMessage.success(t('operation.batchDeleteSuccess'));
     await loadList();
   } catch {}
 };

@@ -7,6 +7,8 @@ import { useDesign } from '@/hooks/web/useDesign'
 
 defineOptions({ name: 'ScreenFull' })
 
+const { t } = useI18n();
+
 const { getPrefixCls } = useDesign()
 
 const prefixCls = getPrefixCls('screenfull')
@@ -51,11 +53,44 @@ watch(isFullscreen, (val) => {
 </script>
 
 <template>
-  <div :class="prefixCls" @click="toggleFullscreen">
-    <Icon
-      :color="color"
-      :icon="isFullscreen ? 'zmdi:fullscreen-exit' : 'zmdi:fullscreen'"
-      :size="18"
-    />
+  <div
+    :class="prefixCls"
+    role="button"
+    tabindex="0"
+    :aria-label="isFullscreen ? t('layout.screenfull.exitFullscreen') : t('layout.screenfull.fullscreen')"
+    @click="toggleFullscreen"
+    @keydown.enter="toggleFullscreen"
+  >
+    <span class="th-action-icon">
+      <Icon
+        :color="color"
+        :icon="isFullscreen ? 'zmdi:fullscreen-exit' : 'zmdi:fullscreen'"
+        :size="18"
+      />
+    </span>
+    <span class="th-action-label">{{ t("layout.screenfull.fullscreen") }}</span>
   </div>
 </template>
+
+<style lang="scss" scoped>
+$prefix-cls: #{$namespace}-screenfull;
+
+.#{$prefix-cls} {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+
+  &:active {
+    transform: scale(0.94);
+  }
+}
+</style>

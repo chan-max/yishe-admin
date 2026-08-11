@@ -447,6 +447,78 @@ export default {
     btn_scale_y: 'Flip vertical',
     btn_zoom_in: 'Zoom in',
     btn_zoom_out: 'Zoom out',
-    preview: 'Preivew'
+    preview: 'Preview'
+  },
+  workflow: {
+    title: 'Workflow',
+    create: 'Create Workflow',
+    search: 'Search...',
+    status: 'Status',
+    draft: 'Draft',
+    published: 'Published',
+    archived: 'Archived',
+    enabled: 'Enabled',
+    disabled: 'Disabled',
+    running: 'Running',
+    scheduled: 'Scheduled',
+    execute: 'Execute',
+    executing: 'Running...',
+    edit: 'Edit',
+    delete: 'Delete',
+    enable: 'Enable',
+    disable: 'Disable',
+    history: 'Execution History',
+    description: 'Description',
+    updateTime: 'Updated at',
+    cron: 'Scheduled',
+    confirm: {
+      delete: 'Confirm delete',
+      clearAll: 'Are you sure to clear all execution records? This action cannot be undone.',
+      disable: 'Workflow is running, cannot disable'
+    },
+    message: {
+      enterName: 'Please enter workflow name',
+      deleted: 'Deleted',
+      enabled: 'Enabled',
+      disabled: 'Disabled',
+      triggered: 'Triggered execution',
+      deleteFailed: 'Delete failed',
+      clearFailed: 'Clear failed',
+      executeFailed: 'Execute failed',
+      fetchHistoryFailed: 'Failed to fetch execution history'
+    },
+    dialog: {
+      createTitle: 'Create Workflow',
+      nameLabel: 'Workflow Name',
+      namePlaceholder: 'e.g., Image Processing Flow',
+      descLabel: 'Description (Optional)',
+      descPlaceholder: 'Briefly describe the purpose of this workflow...',
+      createBtn: 'Create & Open Editor',
+      cancel: 'Cancel',
+      confirm: 'Confirm'
+    },
+    historyDialog: {
+      title: 'Execution History',
+      count: '{{count}} records',
+      empty: 'No execution records',
+      emptyDesc: 'Try changing search terms or switching categories',
+      refresh: 'Refresh',
+      clear: 'Clear',
+      delete: 'Delete',
+      confirmDelete: 'Are you sure to delete this execution record?',
+      status: {
+        success: 'Success',
+        failed: 'Failed',
+        running: 'Running'
+      },
+      trigger: {
+        cron: 'Scheduled',
+        webhook: 'Webhook',
+        manual: 'Manual'
+      },
+      time: 'Execution Time',
+      duration: 'Duration',
+      error: 'Error Message'
+    }
   }
 }

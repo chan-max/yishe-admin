@@ -1,22 +1,22 @@
 <template>
   <Dialog v-model="dialogVisible" :title="dialogTitle">
     <el-form ref="formRef" :model="formData" :rules="formRules" label-width="100px" v-loading="formLoading">
-      <el-form-item label="店铺名称" prop="name">
-        <el-input v-model="formData.name" placeholder="请输入店铺名称" />
+      <el-form-item :label="t('shop.name')" prop="name">
+        <el-input v-model="formData.name" :placeholder="t('shop.namePlaceholder')" />
       </el-form-item>
-      <el-form-item label="店铺描述" prop="description">
-        <el-input v-model="formData.description" type="textarea" placeholder="请输入店铺描述" />
+      <el-form-item :label="t('shop.description')" prop="description">
+        <el-input v-model="formData.description" type="textarea" :placeholder="t('shop.descriptionPlaceholder')" />
       </el-form-item>
-      <el-form-item label="店铺Logo" prop="logo">
+      <el-form-item :label="t('shop.logo')" prop="logo">
         <UploadImg v-model="formData.logo" />
       </el-form-item>
-      <el-form-item label="轮播图" prop="carousel">
+      <el-form-item :label="t('shop.carousel')" prop="carousel">
         <UploadImgs v-model="formData.carousel" />
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="dialogVisible = false">取消</el-button>
-      <el-button type="primary" @click="submitForm" :loading="formLoading">确定</el-button>
+      <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
+      <el-button type="primary" @click="submitForm" :loading="formLoading">{{ t('common.confirm') }}</el-button>
     </template>
   </Dialog>
 </template>
@@ -27,6 +27,9 @@ import { ElMessage } from 'element-plus'
 import { createShop, updateShop, getShopDetail } from '@/api/shop'
 import UploadImg from '@/components/UploadFile/src/UploadImg.vue'
 import UploadImgs from '@/components/UploadFile/src/UploadImgs.vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const emit = defineEmits(['success'])
 
@@ -43,12 +46,12 @@ const formData = reactive({
 })
 
 const formRules = {
-  name: [{ required: true, message: '请输入店铺名称', trigger: 'blur' }]
+  name: [{ required: true, message: t('shop.nameRequired'), trigger: 'blur' }]
 }
 
 const open = async (id?: number) => {
   dialogVisible.value = true
-  dialogTitle.value = id ? '编辑店铺' : '新增店铺'
+  dialogTitle.value = id ? t('shop.editShop') : t('shop.addShop')
   resetForm()
   if (id) {
     formLoading.value = true
@@ -79,10 +82,10 @@ const submitForm = async () => {
         const data = { ...formData }
         if (data.id) {
           await updateShop(data.id, data)
-          ElMessage.success('修改成功')
+          ElMessage.success(t('common.updateSuccess'))
         } else {
           await createShop(data)
-          ElMessage.success('新增成功')
+          ElMessage.success(t('common.addSuccess'))
         }
         dialogVisible.value = false
         emit('success')

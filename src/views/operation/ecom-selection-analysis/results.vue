@@ -5,15 +5,15 @@
         <div class="list-page-filter list-page-filter--flat">
           <div class="resource-toolbar">
             <div class="resource-toolbar__meta">
-              <div class="resource-toolbar__title">选品分析结果</div>
+              <div class="resource-toolbar__title">{{ t('operation.selectionAnalysisResults') }}</div>
             </div>
           </div>
 
           <el-form :model="filters" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col :xs="24" :sm="12" :md="8" :lg="7">
-                <el-form-item label="分析任务">
-                  <el-select v-model="filters.taskId" clearable filterable placeholder="全部任务">
+                <el-form-item :label="t('operation.analysisTask')">
+                  <el-select v-model="filters.taskId" clearable filterable :placeholder="t('operation.allTasks')">
                     <el-option
                       v-for="item in taskOptions"
                       :key="item.value"
@@ -24,30 +24,30 @@
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :md="8" :lg="6">
-                <el-form-item label="运行 ID">
-                  <el-input v-model="filters.runId" clearable placeholder="运行 ID" />
+                <el-form-item :label="t('operation.runId')">
+                  <el-input v-model="filters.runId" clearable :placeholder="t('operation.runId')" />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :md="8" :lg="5">
-                <el-form-item label="分析类型">
-                  <el-select v-model="filters.analysisType" clearable placeholder="全部类型">
-                    <el-option label="热门选品" value="hot_selling_selection" />
-                    <el-option label="POD 图案分析" value="pod_pattern_analysis" />
-                    <el-option label="自定义提示词分析" value="custom_prompt_extract" />
+                <el-form-item :label="t('operation.analysisType')">
+                  <el-select v-model="filters.analysisType" clearable :placeholder="t('operation.allTypes')">
+                    <el-option :label="t('operation.hotSellingSelection')" value="hot_selling_selection" />
+                    <el-option :label="t('operation.podPatternAnalysis')" value="pod_pattern_analysis" />
+                    <el-option :label="t('operation.customPromptAnalysis')" value="custom_prompt_extract" />
                   </el-select>
                 </el-form-item>
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" @click="handleSearch">查询</el-button>
-              <el-button size="small" @click="handleReset">重置</el-button>
+              <el-button size="small" type="primary" @click="handleSearch">{{ t('common.query') }}</el-button>
+              <el-button size="small" @click="handleReset">{{ t('common.reset') }}</el-button>
               <el-button
                 size="small"
                 type="danger"
                 :disabled="!selectedIds.length"
                 @click="handleBatchDelete"
               >
-                批量删除 ({{ selectedIds.length }})
+                {{ t('operation.batchDelete') }}({{ selectedIds.length }})
               </el-button>
             </div>
           </el-form>
@@ -91,20 +91,20 @@
                       @command="(command) => handleOperationCommand(String(command), row)"
                     >
                       <el-button type="primary" link size="small" class="operation-trigger-button">
-                        操作
+                        {{ t('common.operation') }}
                       </el-button>
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
                           <el-dropdown-item command="detail">
                             <el-icon><View /></el-icon>
-                            <span>详情</span>
+                            <span>{{ t('common.detail') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item
                             v-if="row.analysisType === 'hot_selling_selection'"
                             command="supply-match"
                           >
                             <el-icon><Link /></el-icon>
-                            <span>创建找同款</span>
+                            <span>{{ t('operation.createSupplyMatch') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item
                             command="delete"
@@ -112,7 +112,7 @@
                             class="operation-menu-item--danger"
                           >
                             <el-icon><Delete /></el-icon>
-                            <span>删除</span>
+                            <span>{{ t('common.delete') }}</span>
                           </el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
@@ -144,7 +144,7 @@
       fullscreen
       destroy-on-close
       class="analysis-result-detail-dialog"
-      title="分析结果详情"
+      :title="t('operation.analysisResultDetails')"
       @closed="handleDetailClosed"
     >
       <div v-loading="detailLoading" class="detail-shell">
@@ -152,8 +152,8 @@
           <CompactNotice
             v-if="currentRunStatus === 'failed'"
             type="danger"
-            title="本次分析执行失败"
-            :description="currentRunErrorMessage || '请检查采集样本或 AI 模型配置后重试。'"
+            :title="t('operation.analysisExecutionFailed')"
+            :description="currentRunErrorMessage || t('operation.checkCollectSampleOrAiConfig')"
             class="detail-notice"
           />
 
@@ -183,7 +183,7 @@
 
               <div class="metric-grid">
                 <div class="metric-card">
-                  <span>样本数</span>
+                  <span>{{ t('operation.sampleCount') }}</span>
                   <strong>{{ detailSourceSummary.itemCount || 0 }}</strong>
                 </div>
                 <div class="metric-card">
@@ -195,7 +195,7 @@
                   <strong>{{ supportMetricValue }}</strong>
                 </div>
                 <div class="metric-card">
-                  <span>结果时间</span>
+                  <span>{{ t('operation.resultTime') }}</span>
                   <strong>{{
                     formatDateTime(currentDetail.analyzedAt || currentDetail.runFinishedAt)
                   }}</strong>
@@ -204,28 +204,28 @@
             </div>
 
             <div class="detail-card">
-              <div class="detail-card__title">结果摘要</div>
+              <div class="detail-card__title">{{ t('operation.resultSummary') }}</div>
               <div class="stats-list">
                 <div class="stats-item">
-                  <span>结果 ID</span>
+                  <span>{{ t('operation.resultId') }}</span>
                   <strong>{{ currentDetail.id || "-" }}</strong>
                 </div>
                 <div class="stats-item">
-                  <span>运行 ID</span>
+                  <span>{{ t('operation.runId') }}</span>
                   <strong>{{ currentDetail.runId || "-" }}</strong>
                 </div>
                 <div class="stats-item">
-                  <span>任务数</span>
+                  <span>{{ t('operation.taskCount') }}</span>
                   <strong>{{ detailSourceSummary.taskCount || 0 }}</strong>
                 </div>
                 <div class="stats-item">
-                  <span>运行数</span>
+                  <span>{{ t('operation.runCount') }}</span>
                   <strong>{{ detailSourceSummary.runCount || 0 }}</strong>
                 </div>
               </div>
 
               <div class="detail-mini-section" v-if="detailSourceSummary.platformBreakdown?.length">
-                <div class="detail-mini-section__title">平台分布</div>
+                <div class="detail-mini-section__title">{{ t('operation.platformDistribution') }}</div>
                 <div class="chip-list">
                   <el-tag
                     v-for="item in detailSourceSummary.platformBreakdown"
@@ -241,12 +241,12 @@
 
           <div class="detail-toolbar" v-if="currentDetail.analysisType === 'hot_selling_selection'">
             <el-button type="primary" @click="handleCreateSupplyMatchTask(currentDetail)">
-              基于本次分析创建找同款任务
+              {{ t('operation.createSupplyMatchTaskBasedOnAnalysis') }}
             </el-button>
           </div>
 
           <el-tabs>
-            <el-tab-pane label="结果预览">
+            <el-tab-pane :label="t('operation.resultPreview')">
               <div v-if="recommendedProducts.length" class="simple-list">
                 <div
                   v-for="item in recommendedProducts"
@@ -267,26 +267,26 @@
                   class="simple-card"
                 >
                   <div class="simple-card__title">
-                    {{ item?.title || item?.name || item?.label || `结果 ${index + 1}` }}
+                    {{ item?.title || item?.name || item?.label || `${t('operation.result')} ${index + 1}` }}
                   </div>
                   <div class="simple-card__text">{{ formatCustomResultCell(item) }}</div>
                 </div>
               </div>
 
-              <el-empty v-else description="暂无结果预览" />
+              <el-empty v-else :description="t('operation.noResultPreview')" />
             </el-tab-pane>
 
-            <el-tab-pane label="来源商品">
+            <el-tab-pane :label="t('operation.sourceProducts')">
               <pre class="json-preview">{{ formatJson(normalizedItems) }}</pre>
             </el-tab-pane>
 
-            <el-tab-pane label="结果 JSON">
+            <el-tab-pane :label="t('operation.resultJson')">
               <pre class="json-preview">{{ formatJson(currentDetail.output) }}</pre>
             </el-tab-pane>
           </el-tabs>
         </template>
 
-        <el-empty v-else description="暂无详情数据" />
+        <el-empty v-else :description="t('operation.noDetailData')" />
       </div>
     </el-dialog>
   </ContentWrap>
@@ -294,6 +294,7 @@
 
 <script setup lang="ts">
 import { computed, onActivated, onMounted, reactive, ref, watch } from "vue";
+import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Delete, Link, View } from "@element-plus/icons-vue";
@@ -318,6 +319,8 @@ import {
   getRunStatusLabel,
   getRunStatusTagType,
 } from "@/views/operation/ecom-data/shared";
+
+const { t } = useI18n();
 
 defineOptions({ name: "EcomSelectionAnalysisResultPage" });
 
@@ -391,7 +394,7 @@ const normalizedItems = computed(() => {
 });
 
 const resultCountLabel = computed(() =>
-  currentDetail.value?.analysisType === "hot_selling_selection" ? "推荐商品" : "结果条数",
+  currentDetail.value?.analysisType === "hot_selling_selection" ? t('operation.recommendedProducts') : t('operation.resultCount'),
 );
 const resultCountValue = computed(() =>
   currentDetail.value?.analysisType === "hot_selling_selection"
@@ -399,7 +402,7 @@ const resultCountValue = computed(() =>
     : customResultItems.value.length,
 );
 const supportMetricLabel = computed(() =>
-  currentDetail.value?.analysisType === "hot_selling_selection" ? "热门关键词" : "来源商品",
+  currentDetail.value?.analysisType === "hot_selling_selection" ? t('operation.hotKeywords') : t('operation.sourceProducts'),
 );
 const supportMetricValue = computed(() =>
   currentDetail.value?.analysisType === "hot_selling_selection"
@@ -411,7 +414,7 @@ const detailOverviewSummary = computed(
   () =>
     currentDetail.value?.output?.overview?.summary ||
     currentRunErrorMessage.value ||
-    "暂无结论摘要",
+    t('operation.noSummaryAvailable'),
 );
 const formatCustomResultCell = (value: unknown) => {
   if (value == null || value === "") {
@@ -432,21 +435,21 @@ const getOverviewText = (row: EcomSelectionAnalysisResult) => {
   const resultCount = getListResultCount(row);
   if (resultCount > 0) {
     return row.analysisType === "pod_pattern_analysis"
-      ? `已输出 ${resultCount} 条图案结果`
+      ? `${t('operation.output')} ${resultCount} ${t('operation.patternResults')}`
       : row.analysisType === "custom_prompt_extract"
-        ? `已输出 ${resultCount} 条自定义结果`
-        : `已推荐 ${resultCount} 个候选方向`;
+        ? `${t('operation.output')} ${resultCount} ${t('operation.customResults')}`
+        : `${t('operation.recommended')} ${resultCount} ${t('operation.candidateDirections')}`;
   }
 
   if (row?.sourceSummary?.itemCount) {
-    return `样本 ${row.sourceSummary.itemCount} 个`;
+    return `${t('operation.sample')} ${row.sourceSummary.itemCount} ${t('operation.items')}`;
   }
 
   if (row.runErrorMessage) {
     return row.runErrorMessage;
   }
 
-  return "暂无摘要";
+  return t('operation.noSummary');
 };
 
 const getListResultCount = (row: EcomSelectionAnalysisResult) => {
@@ -468,44 +471,44 @@ const gridOptions = ref<VxeGridProps<EcomSelectionAnalysisResult>>({
   },
   columns: [
     { type: "checkbox", width: 48 },
-    { title: "任务名称", field: "taskName", minWidth: 220, showOverflow: "tooltip" },
+    { title: t('operation.taskName'), field: "taskName", minWidth: 220, showOverflow: "tooltip" },
     {
-      title: "类型",
+      title: t('operation.type'),
       field: "analysisType",
       width: 110,
       slots: { default: "typeSlot" },
     },
     {
-      title: "运行状态",
+      title: t('operation.runStatus'),
       field: "runStatus",
       width: 100,
       slots: { default: "statusSlot" },
     },
     {
-      title: "AI 模型",
+      title: t('operation.aiModel'),
       field: "aiModel",
       minWidth: 140,
       formatter: ({ row }) => row.aiModel || "-",
     },
     {
-      title: "样本数",
+      title: t('operation.sampleCount'),
       field: "sourceSummary",
       width: 88,
       formatter: ({ row }) => Number(row.sourceSummary?.itemCount || 0),
     },
     {
-      title: "结果量",
+      title: t('operation.resultCount'),
       field: "output",
       width: 88,
       formatter: ({ row }) => getListResultCount(row),
     },
     {
-      ...buildTimeColumn("结果时间", "analyzedAt", 180),
+      ...buildTimeColumn(t('operation.resultTime'), "analyzedAt", 180),
       formatter: ({ row }) =>
         formatDateTime((row as EcomSelectionAnalysisResult).analyzedAt || row.runFinishedAt),
     },
     {
-      title: "摘要",
+      title: t('operation.summary'),
       field: "summaryText",
       minWidth: 220,
       showOverflow: "tooltip",
@@ -600,7 +603,7 @@ const handleCreateSupplyMatchTask = async (
   productName?: string,
 ) => {
   if (result.analysisType !== "hot_selling_selection") {
-    ElMessage.warning("只有“热门选品”分析结果可以继续创建找同款任务");
+    ElMessage.warning(t('operation.onlyHotSellingCanCreateSupplyMatch'));
     return;
   }
 
@@ -618,12 +621,12 @@ const handleCreateSupplyMatchTask = async (
 const handleDelete = async (row: EcomSelectionAnalysisResult) => {
   try {
     await ElMessageBox.confirm(
-      "确认删除这条分析结果吗？删除后将无法再基于它创建找同款任务。",
-      "提示",
+      t('operation.confirmDeleteAnalysisResult'),
+      t('common.tip'),
       { type: "warning" },
     );
     await deleteEcomSelectionAnalysisResult(row.id);
-    ElMessage.success("分析结果已删除");
+    ElMessage.success(t('operation.analysisResultDeleted'));
     await loadList();
   } catch {}
 };
@@ -631,11 +634,11 @@ const handleDelete = async (row: EcomSelectionAnalysisResult) => {
 const handleBatchDelete = async () => {
   if (!selectedIds.value.length) return;
   try {
-    await ElMessageBox.confirm(`确认批量删除 ${selectedIds.value.length} 条分析结果吗？`, "提示", {
-      type: "warning",
-    });
+    await ElMessageBox.confirm(`${t('operation.confirmBatchDeleteResults')} ${selectedIds.value.length} ${t('operation.items')}`, t('common.tip'), {
+      type: "warning" },
+    );
     await batchDeleteEcomSelectionAnalysisResult(selectedIds.value);
-    ElMessage.success("批量删除成功");
+    ElMessage.success(t('operation.batchDeleteSuccess'));
     await loadList();
   } catch {}
 };

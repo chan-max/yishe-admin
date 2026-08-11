@@ -69,7 +69,6 @@ export default {
   setting: {
     projectSetting: '项目配置',
     theme: '主题',
-    notification: '通知',
     layout: '布局',
     systemTheme: '系统主题',
     menuTheme: '菜单主题',
@@ -445,77 +444,5 @@ export default {
     btn_zoom_out: '缩小',
     preview: '预览'
   },
-  'OAuth 2.0': 'OAuth 2.0', // 避免菜单名是 OAuth 2.0 时，一直 warn 报错
-  workflow: {
-    title: '工作流',
-    create: '新建工作流',
-    search: '搜索...',
-    status: '状态',
-    draft: '草稿',
-    published: '已发布',
-    archived: '已归档',
-    enabled: '已启用',
-    disabled: '已禁用',
-    running: '运行中',
-    scheduled: '定时',
-    execute: '执行',
-    executing: '运行中...',
-    edit: '编辑',
-    delete: '删除',
-    enable: '启用',
-    disable: '禁用',
-    history: '执行记录',
-    description: '描述',
-    updateTime: '更新于',
-    cron: '定时',
-    confirm: {
-      delete: '确定删除',
-      clearAll: '确定清空所有执行记录吗？此操作不可恢复。',
-      disable: '工作流正在运行中，无法禁用'
-    },
-    message: {
-      enterName: '请输入工作流名称',
-      deleted: '已删除',
-      enabled: '已启用',
-      disabled: '已禁用',
-      triggered: '已触发执行',
-      deleteFailed: '删除失败',
-      clearFailed: '清空失败',
-      executeFailed: '执行失败',
-      fetchHistoryFailed: '获取执行记录失败'
-    },
-    dialog: {
-      createTitle: '新建工作流',
-      nameLabel: '工作流名称',
-      namePlaceholder: '例如：图片处理流程',
-      descLabel: '描述（可选）',
-      descPlaceholder: '简单描述这个工作流的用途...',
-      createBtn: '创建并打开编辑器',
-      cancel: '取消',
-      confirm: '确定'
-    },
-    historyDialog: {
-      title: '执行记录',
-      count: '共 {{count}} 条记录',
-      empty: '暂无执行记录',
-      emptyDesc: '尝试更换搜索词或切换分类',
-      refresh: '刷新',
-      clear: '清空',
-      delete: '删除',
-      confirmDelete: '确定删除这条执行记录吗？',
-      status: {
-        success: '成功',
-        failed: '失败',
-        running: '运行中'
-      },
-      trigger: {
-        cron: '定时触发',
-        webhook: 'Webhook',
-        manual: '手动触发'
-      },
-      time: '执行时间',
-      duration: '耗时',
-      error: '错误信息'
-    }
-  }
+  'OAuth 2.0': 'OAuth 2.0' // 避免菜单名是 OAuth 2.0 时，一直 warn 报错
 }

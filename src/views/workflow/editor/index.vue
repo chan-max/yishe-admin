@@ -16,6 +16,7 @@ import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import { MiniMap } from '@vue-flow/minimap'
 import { useAppStore } from '@/store/modules/app'
+import { useI18n } from 'vue-i18n'
 import { getWorkflowDetailApi, updateWorkflowApi, runWorkflowApi } from '@/api/workflow'
 import { useWorkflowHistory } from '@/composables/useWorkflowHistory'
 import { useSmartSave } from '@/composables/useSmartSave'
@@ -35,9 +36,10 @@ import NodePanel from '@/components/workflow/NodePanel.vue'
 import ConfigPanel from '@/components/workflow/ConfigPanel.vue'
 import NodePickerDialog from '@/components/workflow/NodePickerDialog.vue'
 import TriggerConfigDialog from '@/components/workflow/TriggerConfigDialog.vue'
-import type { SystemNodeCapability } from './config/nodeRegistry'
+import type { NodeManifest } from './config/node-manifest'
 
 const appStore = useAppStore()
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const workflowId = computed(() => route.params.id as string)
@@ -87,13 +89,13 @@ const handleRunWorkflow = async () => {
   try {
     const res: any = await runWorkflowApi(workflowId.value)
     ElNotification({
-      title: '工作流触发成功',
-      message: `运行记录ID: ${res?.executionId || 'OK'}, 耗时: ${res?.durationMs || 0}ms`,
+      title: t('workflow.triggerSuccess'),
+      message: `${t('workflow.runRecordId', { id: res?.executionId || 'OK', duration: res?.durationMs || 0 })}`,
       type: 'success',
       duration: 3000,
     })
   } catch (err: any) {
-    ElMessage.error(err.message || '触发失败')
+    ElMessage.error(err.message || t('workflow.triggerFailed'))
   } finally {
     runningWorkflow.value = false
   }
@@ -145,7 +147,7 @@ const { saveStatus, saveNow: smartSaveNow, triggerSave, cancelSave } = useSmartS
 const copiedNode = ref<Node | null>(null)
 
 // ─── 快捷点击添加能力节点 ──────────────────────────────────────
-const handleAddNodeFromLibrary = (capability: SystemNodeCapability) => {
+const handleAddNodeFromLibrary = (capability: NodeManifest) => {
   pushHistory()
   const mappedType = nodeTypes[capability.type as keyof typeof nodeTypes] ? capability.type : 'default'
 
@@ -230,7 +232,7 @@ const handleKeydown = (e: KeyboardEvent) => {
     e.preventDefault()
     if (canUndo()) {
       undo()
-      ElMessage.info('已撤销')
+      ElMessage.info(t('common.undone'))
     }
     return
   }
@@ -240,7 +242,7 @@ const handleKeydown = (e: KeyboardEvent) => {
     e.preventDefault()
     if (canRedo()) {
       redo()
-      ElMessage.info('已重做')
+      ElMessage.info(t('common.redone'))
     }
     return
   }
@@ -249,7 +251,7 @@ const handleKeydown = (e: KeyboardEvent) => {
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'c') {
     if (selectedNode.value) {
       copiedNode.value = JSON.parse(JSON.stringify(selectedNode.value))
-      ElMessage.success('已复制节点')
+      ElMessage.success(t('workflow.nodeCopied'))
     }
     return
   }
@@ -268,7 +270,7 @@ const handleKeydown = (e: KeyboardEvent) => {
       }
       addNodes([newNode])
       selectedNode.value = newNode
-      ElMessage.success('已粘贴节点')
+      ElMessage.success(t('workflow.nodePasted'))
     }
     return
   }
@@ -328,7 +330,7 @@ const autoLayout = () => {
       }
     })
   })
-  ElMessage.success('画布已一键整理对齐')
+  ElMessage.success(t('workflow.canvasAligned'))
 }
 
 // ─── 导出 / 导入 JSON ────────────────────────────────────────
@@ -352,7 +354,7 @@ const exportJson = () => {
   a.download = `workflow_${workflowId.value}.json`
   a.click()
   URL.revokeObjectURL(url)
-  ElMessage.success('已导出 JSON 文件')
+  ElMessage.success(t('workflow.jsonExported'))
 }
 
 const fileInputRef = ref<HTMLInputElement | null>(null)
@@ -372,10 +374,10 @@ const handleImportJson = (event: Event) => {
         setNodes(json.canvas.nodes || [])
         setEdges(json.canvas.edges || [])
         if (json.canvas.viewport) setViewport(json.canvas.viewport)
-        ElMessage.success('导入 JSON 成功')
+        ElMessage.success(t('workflow.jsonImported'))
       }
     } catch {
-      ElMessage.error('JSON 解析失败，请检查文件格式')
+      ElMessage.error(t('workflow.jsonParseError'))
     }
   }
   reader.readAsText(file)
@@ -383,9 +385,9 @@ const handleImportJson = (event: Event) => {
 
 // ─── 清空画布 ────────────────────────────────────────────────
 const clearCanvas = async () => {
-  await ElMessageBox.confirm('确定要清空画布中的所有节点和连线吗？', '提示', {
-    confirmButtonText: '清空',
-    cancelButtonText: '取消',
+  await ElMessageBox.confirm(t('workflow.clearCanvasConfirm'), t('common.tip'), {
+    confirmButtonText: t('common.clear'),
+    cancelButtonText: t('common.cancel'),
     type: 'warning'
   })
   pushHistory()
@@ -393,7 +395,7 @@ const clearCanvas = async () => {
   setEdges([])
   selectedNode.value = null
   selectedEdge.value = null
-  ElMessage.success('已清空画布')
+  ElMessage.success(t('workflow.canvasCleared'))
 }
 
 // ─── 连线删除 ─────────────────────────────────────────────────
@@ -401,7 +403,7 @@ const handleDeleteEdge = (edgeId: string) => {
   pushHistory()
   removeEdges([edgeId])
   selectedEdge.value = null
-  ElMessage.success('连线已删除')
+  ElMessage.success(t('workflow.edgeDeleted'))
 }
 
 // ─── 加载工作流与注册键盘事件 ──────────────────────────────
@@ -419,7 +421,7 @@ onMounted(async () => {
     }
     setTimeout(() => smartSaveNow(), 100)
   } catch (e) {
-    ElMessage.error('工作流加载失败')
+    ElMessage.error(t('workflow.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -505,9 +507,9 @@ const cancelEditTitle = () => {
 }
 
 const statusText = computed(() => {
-  if (saveStatus.value === 'saving') return '保存中...'
-  if (saveStatus.value === 'unsaved') return '未保存'
-  return '已保存'
+  if (saveStatus.value === 'saving') return t('workflow.saving')
+  if (saveStatus.value === 'unsaved') return t('workflow.unsaved')
+  return t('workflow.saved')
 })
 </script>
 
@@ -518,7 +520,7 @@ const statusText = computed(() => {
       <div class="wf-editor-toolbar__left">
         <el-button text @click="router.push('/workflow')" class="wf-back-btn">
           <el-icon><ArrowLeft /></el-icon>
-          工作流
+          {{ t('workflow.title') }}
         </el-button>
         <div class="wf-divider" />
         <!-- 可编辑标题 -->
@@ -541,11 +543,11 @@ const statusText = computed(() => {
                 v-model="titleInput"
                 type="textarea"
                 :rows="3"
-                placeholder="工作流名称"
+                :placeholder="t('workflow.name')"
               />
               <div class="wf-title-edit__actions">
-                <el-button size="small" text @click="cancelEditTitle">取消</el-button>
-                <el-button size="small" type="primary" @click="saveTitle">确定</el-button>
+                <el-button size="small" text @click="cancelEditTitle">{{ t('common.cancel') }}</el-button>
+                <el-button size="small" type="primary" @click="saveTitle">{{ t('common.confirm') }}</el-button>
               </div>
             </div>
           </el-popover>
@@ -554,25 +556,25 @@ const statusText = computed(() => {
 
       <div class="wf-editor-toolbar__right">
         <!-- 连线类型 -->
-        <el-select v-model="edgeType" size="small" style="width: 72px" placeholder="连线">
-          <el-option label="折线" value="smoothstep" />
-          <el-option label="曲线" value="default" />
-          <el-option label="直线" value="straight" />
+        <el-select v-model="edgeType" size="small" style="width: 72px" :placeholder="t('workflow.edge')">
+          <el-option :label="t('workflow.polyline')" value="smoothstep" />
+          <el-option :label="t('workflow.curve')" value="default" />
+          <el-option :label="t('workflow.straight')" value="straight" />
         </el-select>
 
         <!-- 撤销/重做 -->
-        <el-button size="small" :disabled="!canUndo()" @click="undo" title="撤销 (Ctrl+Z)">撤销</el-button>
-        <el-button size="small" :disabled="!canRedo()" @click="redo" title="重做 (Ctrl+Shift+Z)">重做</el-button>
+        <el-button size="small" :disabled="!canUndo()" @click="undo" :title="t('common.undo') + ' (Ctrl+Z)'">{{ t('common.undo') }}</el-button>
+        <el-button size="small" :disabled="!canRedo()" @click="redo" :title="t('common.redo') + ' (Ctrl+Shift+Z)'">{{ t('common.redo') }}</el-button>
 
         <!-- 整理与工具按纽 -->
-        <el-button size="small" @click="autoLayout">对齐</el-button>
-        <el-button size="small" type="primary" plain @click="nodePickerVisible = true">功能节点</el-button>
-        <el-button size="small" @click="triggerDialogVisible = true">设置</el-button>
-        <el-button size="small" type="success" :loading="runningWorkflow" @click="handleRunWorkflow">运行</el-button>
-        <el-button size="small" @click="exportJson">导出</el-button>
-        <el-button size="small" @click="triggerImportJson">导入</el-button>
+        <el-button size="small" @click="autoLayout">{{ t('workflow.align') }}</el-button>
+        <el-button size="small" type="primary" plain @click="nodePickerVisible = true">{{ t('workflow.featureNode') }}</el-button>
+        <el-button size="small" @click="triggerDialogVisible = true">{{ t('common.settings') }}</el-button>
+        <el-button size="small" type="success" :loading="runningWorkflow" @click="handleRunWorkflow">{{ t('workflow.run') }}</el-button>
+        <el-button size="small" @click="exportJson">{{ t('common.export') }}</el-button>
+        <el-button size="small" @click="triggerImportJson">{{ t('common.import') }}</el-button>
         <input ref="fileInputRef" type="file" accept=".json" style="display: none" @change="handleImportJson" />
-        <el-button size="small" type="danger" text @click="clearCanvas">清空</el-button>
+        <el-button size="small" type="danger" text @click="clearCanvas">{{ t('common.clear') }}</el-button>
 
         <div class="wf-divider" />
 
@@ -620,8 +622,12 @@ const statusText = computed(() => {
       <ConfigPanel
         :node="selectedNode"
         :workflow-id="workflowId"
+        :all-nodes="nodes"
+        :all-edges="edges"
+        :selected-edge="selectedEdge"
         @update="onNodeUpdate"
         @delete="onNodeDelete"
+        @update-edge="onEdgeUpdate"
       />
     </div>
 

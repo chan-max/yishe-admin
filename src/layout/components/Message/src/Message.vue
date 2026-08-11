@@ -8,6 +8,8 @@ import {
 
 defineOptions({ name: 'Message' })
 
+const { t } = useI18n();
+
 const { push } = useRouter()
 const userStore = useUserStoreWithOut()
 const unreadCount = ref(0)
@@ -86,8 +88,8 @@ onMounted(() => {
       </template>
       <div class="message-panel">
         <div class="message-panel__header">
-          <span class="message-panel__title">我的消息</span>
-          <span v-if="unreadCount > 0" class="message-panel__badge">{{ unreadCount }} 条未读</span>
+          <span class="message-panel__title">{{ t("layout.message.myMessages") }}</span>
+          <span v-if="unreadCount > 0" class="message-panel__badge">{{ t("layout.message.unreadCount", { count: unreadCount }) }}</span>
         </div>
         <el-scrollbar class="message-panel__list">
           <template v-if="list.length > 0">
@@ -108,11 +110,11 @@ onMounted(() => {
             </div>
           </template>
           <div v-else class="message-panel__empty">
-            <el-empty description="暂无未读消息" :image-size="60" />
+            <el-empty :description="t('layout.message.noUnreadMessages')" :image-size="60" />
           </div>
         </el-scrollbar>
         <div class="message-panel__footer">
-          <XButton preIcon="ep:view" title="查看全部" type="primary" @click="goMyList" />
+          <XButton preIcon="ep:view" :title="t('layout.message.viewAll')" type="primary" @click="goMyList" />
         </div>
       </div>
     </ElPopover>

@@ -14,6 +14,9 @@
   <!-- {{ config }} -->
 </template>
 <script lang="ts" setup>
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 /**
  * 因为可以多选，所以始终向外部抛出一个数组
@@ -111,7 +114,7 @@ defineExpose({
 
     if (props.config.required) {
       if (!checked.value?.length && !singleChecked.value) {
-        throw ElMessage.warning(`商品属性缺少 ${props.config.name}`)
+        throw ElMessage.warning(`${t('shop.productPropertyMissing')} ${props.config.name}`)
       }
     }
   }

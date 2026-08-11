@@ -1,25 +1,25 @@
 <template>
   <div>
     <el-checkbox-group v-model="checkList">
-      <el-checkbox label="高" :value="20002" />
-      <el-checkbox label="宽" :value="20003" disabled />
-      <el-checkbox label="长" :value="20004" disabled />
+      <el-checkbox :label="t('shop.height')" :value="20002" />
+      <el-checkbox :label="t('shop.width')" :value="20003" disabled />
+      <el-checkbox :label="t('shop.length')" :value="20004" disabled />
     </el-checkbox-group>
     <el-table :data="tableData" style="width: 100%">
-      <el-table-column prop="101" label="自定义尺码" width="240" />
-      <el-table-column prop="20002" label="高" width="240" v-if="checkList.includes(20002)">
+      <el-table-column prop="101" :label="t('shop.customSize')" width="240" />
+      <el-table-column prop="20002" :label="t('shop.height')" width="240" v-if="checkList.includes(20002)">
         <template #default="scope">
-          <el-input v-model="scope.row[20002]" type="number" min="0" placeholder="请输入"></el-input>
+          <el-input v-model="scope.row[20002]" type="number" min="0" :placeholder="t('common.inputPlaceholder')"></el-input>
         </template>
       </el-table-column>
-      <el-table-column prop="20003" label="宽" width="120">
+      <el-table-column prop="20003" :label="t('shop.width')" width="120">
         <template #default="scope">
-          <el-input v-model="scope.row[20003]" type="number" min="0" placeholder="请输入"></el-input>
+          <el-input v-model="scope.row[20003]" type="number" min="0" :placeholder="t('common.inputPlaceholder')"></el-input>
         </template>
       </el-table-column>
-      <el-table-column prop="20004" label="长" width="120">
+      <el-table-column prop="20004" :label="t('shop.length')" width="120">
         <template #default="scope">
-          <el-input v-model="scope.row[20004]" type="number" min="0" placeholder="请输入"></el-input>
+          <el-input v-model="scope.row[20004]" type="number" min="0" :placeholder="t('common.inputPlaceholder')"></el-input>
         </template>
       </el-table-column>
     </el-table>
@@ -27,6 +27,10 @@
 </template>
 <script lang="ts" setup>
 import { defineProps } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps({
   config: {
     default: {}

@@ -12,23 +12,26 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import { useI18n } from 'vue-i18n';
 import type { EcomPlatformRawRecord } from "@/api/operation/ecomPlatformCollect";
 import GenericPlatformRawRenderer from "../GenericPlatformRawRenderer.vue";
 import { getRawPlatform } from "../../../shared";
+
+const { t } = useI18n();
 
 const props = defineProps<{
   record: EcomPlatformRawRecord;
   platformLabel?: string;
 }>();
 
-const platformLabel = computed(() => props.platformLabel || getRawPlatform(props.record) || "平台数据");
+const platformLabel = computed(() => props.platformLabel || getRawPlatform(props.record) || t('operation.platformData'));
 
 const detailFields = [
-  { label: "店铺/卖家", paths: ["shopName", "sellerName", "brand"] },
-  { label: "价格", paths: ["priceText", "price", "salePrice", "currentPrice"] },
-  { label: "销量", paths: ["salesText", "soldText", "orderCount"] },
-  { label: "评分", paths: ["rating", "ratingText"] },
-  { label: "标签", paths: ["tags", "badges"] },
-  { label: "附加说明", paths: ["descriptionText", "summaryText"] },
+  { label: t('operation.shopOrSeller'), paths: ["shopName", "sellerName", "brand"] },
+  { label: t('operation.price'), paths: ["priceText", "price", "salePrice", "currentPrice"] },
+  { label: t('operation.sales'), paths: ["salesText", "soldText", "orderCount"] },
+  { label: t('operation.rating'), paths: ["rating", "ratingText"] },
+  { label: t('operation.tags'), paths: ["tags", "badges"] },
+  { label: t('operation.additionalNotes'), paths: ["descriptionText", "summaryText"] },
 ];
 </script>

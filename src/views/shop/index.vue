@@ -6,9 +6,9 @@
           <div class="resource-toolbar">
             <div class="resource-toolbar__meta">
               <div class="resource-toolbar__actions">
-                <el-button size="small" type="primary" @click="openDialog()">新增店铺</el-button>
+                <el-button size="small" type="primary" @click="openDialog()">{{ t('shop.addShop') }}</el-button>
                 <el-button size="small" type="danger" plain :disabled="!selectedIds.length" @click="handleBatchDelete">
-                  批量删除
+                  {{ t('common.batchDelete') }}
                 </el-button>
               </div>
             </div>
@@ -70,14 +70,14 @@
               placement="bottom-end"
               @command="(command) => handleOperationCommand(String(command), row)"
             >
-              <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
+              <el-button type="primary" link size="small" class="operation-trigger-button">{{ t('common.operation') }}</el-button>
               <template #dropdown>
                 <el-dropdown-menu class="operation-menu-compact">
                   <el-dropdown-item command="edit">
-                    <span>编辑</span>
+                    <span>{{ t('common.edit') }}</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="delete" divided class="operation-menu-item--danger">
-                    <span>删除</span>
+                    <span>{{ t('common.delete') }}</span>
                   </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -103,6 +103,9 @@ import { batchDeleteShop, deleteShop, getShopList } from '@/api/shop'
 import ShopDialog from './components/ShopDialog.vue'
 import { formatDate } from '@/utils/formatTime'
 import ListPageLayout from '@/components/ListPageLayout/index.vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const list = ref<any[]>([])
@@ -123,12 +126,12 @@ const gridOptions = ref({
   },
   columns: [
     { type: 'checkbox', width: 48 },
-    { title: 'ID', field: 'id', width: 80 },
-    { title: '店铺名称', field: 'name', minWidth: 180 },
-    { title: 'Logo', field: 'logo', width: 100, slots: { default: 'logoSlot' } },
-    { title: '轮播图', field: 'carousel', width: 180, slots: { default: 'carouselSlot' } },
-    { title: '描述', field: 'description', minWidth: 240, showOverflow: 'tooltip' },
-    { ...buildTimeColumn('创建时间', 'createTime', 180), slots: { default: 'createTimeSlot' } },
+    { title: t('common.id'), field: 'id', width: 80 },
+    { title: t('shop.name'), field: 'name', minWidth: 180 },
+    { title: t('shop.logo'), field: 'logo', width: 100, slots: { default: 'logoSlot' } },
+    { title: t('shop.carousel'), field: 'carousel', width: 180, slots: { default: 'carouselSlot' } },
+    { title: t('common.description'), field: 'description', minWidth: 240, showOverflow: 'tooltip' },
+    { ...buildTimeColumn(t('common.createTime'), 'createTime', 180), slots: { default: 'createTimeSlot' } },
     buildOperationColumn('operationSlot')
   ]
 })
@@ -168,9 +171,9 @@ const handleCheckboxAll = ({ records }: any) => {
 
 const handleDelete = async (id: number) => {
   try {
-    await ElMessageBox.confirm('确认删除该店铺吗？', '提示', { type: 'warning' })
+    await ElMessageBox.confirm(t('shop.confirmDelete'), t('common.tip'), { type: 'warning' })
     await deleteShop(id)
-    ElMessage.success('删除成功')
+    ElMessage.success(t('common.deleteSuccess'))
     await getList()
   } catch {}
 }
@@ -178,9 +181,9 @@ const handleDelete = async (id: number) => {
 const handleBatchDelete = async () => {
   if (!selectedIds.value.length) return
   try {
-    await ElMessageBox.confirm(`确认批量删除 ${selectedIds.value.length} 个店铺吗？`, '提示', { type: 'warning' })
+    await ElMessageBox.confirm(t('shop.confirmBatchDelete', { count: selectedIds.value.length }), t('common.tip'), { type: 'warning' })
     await batchDeleteShop(selectedIds.value)
-    ElMessage.success('批量删除成功')
+    ElMessage.success(t('common.batchDeleteSuccess'))
     await getList()
   } catch {}
 }

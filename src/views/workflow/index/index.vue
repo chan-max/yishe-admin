@@ -3,6 +3,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { MoreFilled, Clock } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
 import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
 import ExecutionHistory from '@/components/workflow/ExecutionHistory.vue'
 import {
@@ -18,6 +19,7 @@ import {
 } from '@/api/workflow'
 
 const router = useRouter()
+const { t } = useI18n()
 
 const loading = ref(false)
 const list = ref<WorkflowItem[]>([])
@@ -44,11 +46,11 @@ onMounted(fetchList)
 const handleSearch = () => { params.currentPage = 1; fetchList() }
 
 const handleCreate = async () => {
-  if (!createForm.name.trim()) { ElMessage.warning('请输入工作流名称'); return }
+  if (!createForm.name.trim()) { ElMessage.warning(t('workflow.nameRequired')); return }
   creating.value = true
   try {
     const res: any = await createWorkflowApi({ name: createForm.name.trim(), description: createForm.description.trim() })
-    ElMessage.success('创建成功')
+    ElMessage.success(t('workflow.createSuccess'))
     createVisible.value = false
     createForm.name = ''
     createForm.description = ''
@@ -59,9 +61,9 @@ const handleCreate = async () => {
 const openEditor = (row: WorkflowItem) => { router.push(`/workflow/editor/${row.id}`) }
 
 const handleDelete = async (row: WorkflowItem) => {
-  await ElMessageBox.confirm(`确定删除工作流「${row.name}」吗？`, '提示', { confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning', confirmButtonClass: 'el-button--danger' })
+  await ElMessageBox.confirm(`${t('workflow.deleteConfirm', { name: row.name })}`, t('common.tip'), { confirmButtonText: t('workflow.delete'), cancelButtonText: t('common.cancel'), type: 'warning', confirmButtonClass: 'el-button--danger' })
   await deleteWorkflowApi(row.id)
-  ElMessage.success('已删除')
+  ElMessage.success(t('workflow.deleted'))
   fetchList()
 }
 
@@ -70,43 +72,43 @@ const hasCronTrigger = (item: WorkflowItem) => item.triggers?.some((t) => t.type
 const getCronText = (item: WorkflowItem) => {
   const trigger = item.triggers?.find((t) => t.type === 'cron' && t.enabled)
   const expr = trigger?.config?.expression || ''
-  if (!expr) return '定时'
+  if (!expr) return t('workflow.cron')
   const parts = expr.trim().split(/\s+/)
-  if (parts.length !== 5) return '定时'
+  if (parts.length !== 5) return t('workflow.cron')
   const [min, hour, dom, month, dow] = parts
 
   // 每N分钟
   if (min.startsWith('*/') && hour === '*' && dom === '*' && month === '*' && dow === '*') {
-    return '每' + min.slice(2) + '分钟'
+    return t('workflow.everyNMinutes', { n: min.slice(2) })
   }
   // 每小时
   if (min === '0' && hour === '*' && dom === '*' && month === '*' && dow === '*') {
-    return '每小时'
+    return t('workflow.everyHour')
   }
   // 每天
   if (min === '0' && hour !== '*' && dom === '*' && month === '*' && dow === '*') {
-    return '每天 ' + hour + ':00'
+    return t('workflow.everyDay', { hour })
   }
   // 每周
   if (min === '0' && hour !== '*' && dom === '*' && month === '*' && dow !== '*') {
     const weekDays = ['日', '一', '二', '三', '四', '五', '六']
     const days = dow.split(',').map(d => weekDays[parseInt(d)] || d).join('、')
-    return '每周' + days + ' ' + hour + ':00'
+    return t('workflow.everyWeek', { days, hour })
   }
   // 每月
   if (min === '0' && hour !== '*' && dom !== '*' && month === '*' && dow === '*') {
-    return '每月' + dom + '日 ' + hour + ':00'
+    return t('workflow.everyMonth', { dom, hour })
   }
-  return '定时'
+  return t('workflow.cron')
 }
 
 const handleToggleEnabled = async (row: WorkflowItem) => {
-  if (row.isRunning) { ElMessage.warning('工作流正在运行中，无法禁用'); return }
+  if (row.isRunning) { ElMessage.warning(t('workflow.runningCannotDisable')); return }
   try {
     const res: any = await toggleEnabledApi(row.id)
     row.isEnabled = res.isEnabled
-    ElMessage.success(row.isEnabled ? '已启用' : '已禁用')
-  } catch (err: any) { ElMessage.error(err.message || '操作失败') }
+    ElMessage.success(row.isEnabled ? t('workflow.enabled') : t('workflow.disabled'))
+  } catch (err: any) { ElMessage.error(err.message || t('common.operationFailed')) }
 }
 
 const historyDialogVisible = ref(false)
@@ -118,9 +120,9 @@ const handleRunWorkflow = async (row: WorkflowItem) => {
   if (!row.isEnabled || row.isRunning) return
   try {
     const res: any = await runWorkflowApi(row.id)
-    ElMessage.success(`已触发执行，记录ID: ${res?.executionId || 'OK'}`)
+    ElMessage.success(`${t('workflow.triggeredWithId', { id: res?.executionId || 'OK' })}`)
   } catch (err: any) {
-    ElMessage.error(err.message || '执行失败')
+    ElMessage.error(err.message || t('workflow.executeFailed'))
   }
 }
 
@@ -136,34 +138,34 @@ const loadExecutions = async (workflowId: string) => {
     const res: any = await getWorkflowExecutionsApi(workflowId, { currentPage: 1, pageSize: 100 })
     executions.value = res?.list ?? res?.data?.list ?? []
   } catch (err) {
-    console.error('获取执行记录失败', err)
+    console.error(t('workflow.fetchHistoryFailed'), err)
   } finally {
     loadingHistory.value = false
   }
 }
 
 const handleDeleteExecution = async (executionId: string) => {
-  await ElMessageBox.confirm('确定删除这条执行记录吗？', '提示', { type: 'warning' })
+  await ElMessageBox.confirm(t('workflow.deleteExecutionConfirm'), t('common.tip'), { type: 'warning' })
   try {
     await deleteWorkflowExecutionApi(executionId)
-    ElMessage.success('已删除')
+    ElMessage.success(t('workflow.deleted'))
     if (historyWorkflow.value) {
       await loadExecutions(historyWorkflow.value.id)
     }
   } catch (err: any) {
-    ElMessage.error(err.message || '删除失败')
+    ElMessage.error(err.message || t('common.deleteFailed'))
   }
 }
 
 const handleClearHistory = async () => {
   if (!historyWorkflow.value) return
-  await ElMessageBox.confirm('确定清空所有执行记录吗？此操作不可恢复。', '提示', { type: 'warning' })
+  await ElMessageBox.confirm(t('workflow.clearHistoryConfirm'), t('common.tip'), { type: 'warning' })
   try {
     await clearWorkflowExecutionsApi(historyWorkflow.value.id)
-    ElMessage.success('已清空')
+    ElMessage.success(t('workflow.historyCleared'))
     executions.value = []
   } catch (err: any) {
-    ElMessage.error(err.message || '清空失败')
+    ElMessage.error(err.message || t('common.clearFailed'))
   }
 }
 </script>
@@ -173,13 +175,13 @@ const handleClearHistory = async () => {
     <div class="wf-page">
       <!-- 页头 -->
       <div class="wf-page__header">
-        <h1 class="wf-page__title">工作流</h1>
-        <el-button type="primary" size="small" @click="createVisible = true">新建工作流</el-button>
+        <h1 class="wf-page__title">{{ t('workflow.title') }}</h1>
+        <el-button type="primary" size="small" @click="createVisible = true">{{ t('workflow.create') }}</el-button>
       </div>
 
       <!-- 搜索 -->
       <div class="wf-page__search">
-        <el-input v-model="params.name" placeholder="搜索..." size="small" clearable style="width: 200px" @keyup.enter="handleSearch" @clear="handleSearch" />
+        <el-input v-model="params.name" :placeholder="t('workflow.search')" size="small" clearable style="width: 200px" @keyup.enter="handleSearch" @clear="handleSearch" />
       </div>
 
       <!-- 卡片网格 -->
@@ -187,7 +189,7 @@ const handleClearHistory = async () => {
         <!-- 新建 -->
         <div class="wf-card wf-card--add" @click="createVisible = true">
           <span class="wf-card--add__icon">+</span>
-          <span class="wf-card--add__text">新建工作流</span>
+          <span class="wf-card--add__text">{{ t('workflow.create') }}</span>
         </div>
 
         <!-- 工作流卡片 -->
@@ -207,7 +209,7 @@ const handleClearHistory = async () => {
           <div class="wf-card__hero">
             <header class="wf-card__hero-header">
               <span :class="['wf-card__badge', item.isRunning ? 'wf-card__badge--running' : item.isEnabled ? 'wf-card__badge--on' : 'wf-card__badge--off']">
-                <span class="wf-card__badge-dot"></span>{{ item.isRunning ? '运行中' : item.isEnabled ? '已启用' : '已禁用' }}
+                <span class="wf-card__badge-dot"></span>{{ item.isRunning ? t('workflow.running') : item.isEnabled ? t('workflow.enabled') : t('workflow.disabled') }}
               </span>
               <div class="wf-card__icon">
                 <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
@@ -224,19 +226,19 @@ const handleClearHistory = async () => {
           <footer class="wf-card__footer">
             <div class="wf-card__info">
               <p v-if="item.description" class="wf-card__desc">{{ item.description }}</p>
-              <span class="wf-card__date">更新于 {{ new Date(item.updateTime).toLocaleDateString('zh-CN') }}</span>
+              <span class="wf-card__date">{{ t('workflow.updatedAt', { date: new Date(item.updateTime).toLocaleDateString('zh-CN') }) }}</span>
             </div>
             <el-dropdown trigger="click" placement="bottom-end" @click.stop>
               <button class="wf-card__more" @click.stop><el-icon><MoreFilled /></el-icon></button>
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item @click="handleRunWorkflow(item)" :disabled="!item.isEnabled || item.isRunning">
-                    {{ item.isRunning ? '运行中...' : '执行' }}
+                    {{ item.isRunning ? t('workflow.executing') : t('workflow.execute') }}
                   </el-dropdown-item>
-                  <el-dropdown-item @click="handleShowHistory(item)">执行记录</el-dropdown-item>
-                  <el-dropdown-item divided @click="openEditor(item)">编辑</el-dropdown-item>
-                  <el-dropdown-item :disabled="item.isRunning" @click="handleToggleEnabled(item)">{{ item.isEnabled ? '禁用' : '启用' }}</el-dropdown-item>
-                  <el-dropdown-item type="danger" divided @click="handleDelete(item)">删除</el-dropdown-item>
+                  <el-dropdown-item @click="handleShowHistory(item)">{{ t('workflow.executionHistory') }}</el-dropdown-item>
+                  <el-dropdown-item divided @click="openEditor(item)">{{ t('workflow.edit') }}</el-dropdown-item>
+                  <el-dropdown-item :disabled="item.isRunning" @click="handleToggleEnabled(item)">{{ item.isEnabled ? t('workflow.disable') : t('workflow.enable') }}</el-dropdown-item>
+                  <el-dropdown-item type="danger" divided @click="handleDelete(item)">{{ t('workflow.delete') }}</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -252,7 +254,7 @@ const handleClearHistory = async () => {
       <!-- 执行记录 - 全屏弹窗 -->
     <el-dialog
       v-model="historyDialogVisible"
-      :title="`${historyWorkflow?.name || ''} - 执行记录`"
+      :title="`${historyWorkflow?.name || ''} - ${t('workflow.executionHistory')}`"
       fullscreen
       class="wf-history-dialog"
     >
@@ -267,18 +269,18 @@ const handleClearHistory = async () => {
     </el-dialog>
 
     <!-- 创建 -->
-      <el-dialog v-model="createVisible" title="新建工作流" width="440px" align-center>
+      <el-dialog v-model="createVisible" :title="t('workflow.create')" width="440px" align-center>
         <el-form label-position="top" @submit.prevent="handleCreate">
-          <el-form-item label="工作流名称" required>
-            <el-input v-model="createForm.name" placeholder="例如：图片处理流程" autofocus maxlength="100" show-word-limit />
+          <el-form-item :label="t('workflow.name')" required>
+            <el-input v-model="createForm.name" :placeholder="t('workflow.namePlaceholder')" autofocus maxlength="100" show-word-limit />
           </el-form-item>
-          <el-form-item label="描述（可选）">
-            <el-input v-model="createForm.description" type="textarea" placeholder="简单描述这个工作流的用途..." :rows="3" maxlength="500" show-word-limit />
+          <el-form-item :label="t('workflow.description')">
+            <el-input v-model="createForm.description" type="textarea" :placeholder="t('workflow.descriptionPlaceholder')" :rows="3" maxlength="500" show-word-limit />
           </el-form-item>
         </el-form>
         <template #footer>
-          <el-button @click="createVisible = false">取消</el-button>
-          <el-button type="primary" :loading="creating" @click="handleCreate">创建并打开编辑器</el-button>
+          <el-button @click="createVisible = false">{{ t('common.cancel') }}</el-button>
+          <el-button type="primary" :loading="creating" @click="handleCreate">{{ t('workflow.createAndOpen') }}</el-button>
         </template>
       </el-dialog>
     </div>

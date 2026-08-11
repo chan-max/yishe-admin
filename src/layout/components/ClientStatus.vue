@@ -14,21 +14,15 @@
         <button
           type="button"
           class="header-connection-status__trigger"
-          :class="[isRemoteConnected ? 'is-online' : 'is-offline', { 'is-active': popoverVisible }]"
-          :title="isRemoteConnected ? '查看连接状态' : '远程已断开，点击重连'"
+          :class="isRemoteConnected ? 'is-online' : 'is-offline'"
+          :title="triggerSummaryText"
+          :aria-label="t('layout.connection.connectionStatus')"
           @click="handleTriggerClick"
         >
-          <span class="header-connection-status__orb" aria-hidden="true">
-            <span class="header-connection-status__wave wave-1" />
-            <span class="header-connection-status__wave wave-2" />
-            <span class="header-connection-status__wave wave-3" />
-            <span class="header-connection-status__signal" />
+          <span class="th-action-icon">
+            <span class="header-connection-status__signal" aria-hidden="true" />
           </span>
-
-          <span class="header-connection-status__trigger-copy">
-            <span class="header-connection-status__trigger-label">连接状态</span>
-            <span class="header-connection-status__trigger-subtitle">{{ triggerSummaryText }}</span>
-          </span>
+          <span class="th-action-label">{{ t("layout.connection.connection") }}</span>
         </button>
       </template>
 
@@ -45,28 +39,28 @@
             <div class="header-connection-status__metric">
               <div class="header-connection-status__metric-head">
                 <span class="header-connection-status__metric-dot is-plugin" />
-                <span>插件端</span>
+                <span>{{ t("layout.connection.extension") }}</span>
               </div>
               <span class="header-connection-status__metric-value">{{ extensionCount }}</span>
             </div>
             <div class="header-connection-status__metric">
               <div class="header-connection-status__metric-head">
                 <span class="header-connection-status__metric-dot is-admin" />
-                <span>管理端</span>
+                <span>{{ t("layout.connection.admin") }}</span>
               </div>
               <span class="header-connection-status__metric-value">{{ adminCount }}</span>
             </div>
             <div class="header-connection-status__metric">
               <div class="header-connection-status__metric-head">
                 <span class="header-connection-status__metric-dot is-client" />
-                <span>客户端</span>
+                <span>{{ t("layout.connection.client") }}</span>
               </div>
               <span class="header-connection-status__metric-value">{{ clientRuntimeCount }}</span>
             </div>
             <div class="header-connection-status__metric">
               <div class="header-connection-status__metric-head">
                 <span class="header-connection-status__metric-dot is-design-tool" />
-                <span>设计工具</span>
+                <span>{{ t("layout.connection.designTool") }}</span>
               </div>
               <span class="header-connection-status__metric-value">{{ designToolCount }}</span>
             </div>
@@ -74,7 +68,7 @@
         </section>
 
         <section class="header-connection-status__section">
-          <div class="header-connection-status__section-title">连接概览</div>
+          <div class="header-connection-status__section-title">{{ t("layout.connection.connectionOverview") }}</div>
           <div class="header-connection-status__status-lines">
             <div class="header-connection-status__status-line">
               <div class="header-connection-status__status-main">
@@ -83,7 +77,7 @@
                   :class="isRemoteConnected ? 'is-online' : 'is-offline'"
                 />
                 <div class="header-connection-status__status-copy">
-                  <div class="header-connection-status__status-title">管理端</div>
+                  <div class="header-connection-status__status-title">{{ t("layout.connection.admin") }}</div>
                   <div class="header-connection-status__status-meta">
                     {{ remoteStatusText }} · {{ remoteStatusMeta }}
                   </div>
@@ -101,7 +95,7 @@
                   :class="onlineClientCount > 0 ? 'is-online' : 'is-offline'"
                 />
                 <div class="header-connection-status__status-copy">
-                  <div class="header-connection-status__status-title">客户端</div>
+                  <div class="header-connection-status__status-title">{{ t("layout.connection.client") }}</div>
                   <div class="header-connection-status__status-meta">
                     {{ clientNodeStatusText }} · {{ clientNodeMeta }}
                   </div>
@@ -119,7 +113,7 @@
                   :class="extensionCount > 0 ? 'is-online' : 'is-offline'"
                 />
                 <div class="header-connection-status__status-copy">
-                  <div class="header-connection-status__status-title">插件端</div>
+                  <div class="header-connection-status__status-title">{{ t("layout.connection.extension") }}</div>
                   <div class="header-connection-status__status-meta">
                     {{ extensionStatusText }} · {{ extensionStatusMeta }}
                   </div>
@@ -134,7 +128,7 @@
                   :class="designToolCount > 0 ? 'is-online' : 'is-offline'"
                 />
                 <div class="header-connection-status__status-copy">
-                  <div class="header-connection-status__status-title">设计工具</div>
+                  <div class="header-connection-status__status-title">{{ t("layout.connection.designTool") }}</div>
                   <div class="header-connection-status__status-meta">
                     {{ designToolStatusText }} · {{ designToolStatusMeta }}
                   </div>
@@ -172,6 +166,8 @@ import { useMyRuntimeConnectionStoreRefs } from "@/store/modules/myRuntimeConnec
 import { resolveRuntimeConnectionSourceKey } from "@/utils/websocketConnection";
 
 defineOptions({ name: "ClientStatus" });
+
+const { t } = useI18n();
 
 const popoverVisible = ref(false);
 const clientDialogVisible = ref(false);
@@ -217,57 +213,57 @@ const triggerSummaryText = computed(() => {
   return isRemoteConnected.value ? `已连接 · ${nodeText}` : `远程未连接`;
 });
 const clientNodeStatusText = computed(() => {
-  return `${clientRuntimeCount.value} 个连接`;
+  return t("layout.connection.connectionCount", { count: clientRuntimeCount.value });
 });
 const clientNodeMeta = computed(() => {
   if (!clientRecordCount.value) {
-    return "暂无节点";
+    return t("layout.connection.noNodes");
   }
 
   if (onlineClientCount.value === clientRecordCount.value) {
-    return `${clientRecordCount.value} 个节点在线`;
+    return t("layout.connection.nodesOnline", { count: clientRecordCount.value });
   }
 
   if (onlineClientCount.value > 0) {
     return `节点 ${onlineClientCount.value}/${clientRecordCount.value} 在线`;
   }
 
-  return `${offlineClientCount.value} 个节点离线`;
+  return t("layout.connection.nodesOffline", { count: offlineClientCount.value });
 });
-const extensionStatusText = computed(() => `${extensionCount.value} 个连接`);
+const extensionStatusText = computed(() => t("layout.connection.connectionCount", { count: extensionCount.value }));
 const extensionStatusMeta = computed(() =>
-  extensionCount.value > 0 ? "当前账号在线" : "进入远程连接页查看",
+  extensionCount.value > 0 ? t("layout.connection.currentAccountOnline") : t("layout.connection.viewInRemoteConnectionPage"),
 );
-const designToolStatusText = computed(() => `${designToolCount.value} 个连接`);
+const designToolStatusText = computed(() => t("layout.connection.connectionCount", { count: designToolCount.value }));
 const designToolStatusMeta = computed(() =>
-  designToolCount.value > 0 ? "当前账号在线" : "暂无连接",
+  designToolCount.value > 0 ? t("layout.connection.currentAccountOnline") : t("layout.connection.noConnections"),
 );
 
 let timers: { localTimer: number; remoteTimer: number } | null = null;
 let runtimeRefreshTimer: ReturnType<typeof setInterval> | null = null;
 
-const remoteStatusText = computed(() => `${adminCount.value} 个连接`);
+const remoteStatusText = computed(() => t("layout.connection.connectionCount", { count: adminCount.value }));
 
 const remoteStatusMeta = computed(() => {
   if (isRemoteConnected.value) {
     if (adminCount.value > 1) {
-      return `含当前页面 ${adminCount.value} 个在线`;
+      return t("layout.connection.includesCurrentPage", { count: adminCount.value });
     }
 
     return websocketClient.state.connectedAt
       ? formatPast(websocketClient.state.connectedAt)
-      : "连接正常";
+      : t("layout.connection.connectionNormal");
   }
 
   switch (websocketClient.state.status) {
     case "connecting":
-      return "正在建立";
+      return t("layout.connection.connecting");
     case "reconnecting":
-      return "正在恢复";
+      return t("layout.connection.reconnecting");
     case "error":
-      return "连接异常";
+      return t("layout.connection.connectionError");
     default:
-      return "等待连接";
+      return t("layout.connection.waitingForConnection");
   }
 });
 
@@ -292,7 +288,7 @@ function reconnectRemote() {
 
   const status = websocketClient.state.status;
   if (status === "connecting" || status === "reconnecting") {
-    ElMessage.info("远程连接正在恢复中");
+    ElMessage.info(t("layout.connection.remoteConnectionRestoring"));
     return;
   }
 
@@ -352,28 +348,20 @@ onUnmounted(() => {
 
 .header-connection-status__trigger {
   display: inline-flex;
-  height: var(--top-header-action-size);
-  min-width: 0;
-  padding: 0 10px;
-  color: var(--top-header-text-color);
-  cursor: pointer;
-  background: color-mix(in srgb, var(--top-header-hover-color) 48%, transparent 52%);
-  border: none;
-  border-radius: 12px;
-  transition:
-    background-color 0.18s ease,
-    transform 0.18s ease;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-}
+  justify-content: center;
+  color: inherit;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
 
-.header-connection-status__trigger:hover {
-  background: color-mix(in srgb, var(--top-header-hover-color) 82%, transparent 18%);
-}
-
-.header-connection-status__trigger.is-active {
-  background: color-mix(in srgb, var(--top-header-hover-color) 96%, transparent 4%);
-  transform: translateY(-1px);
+  &:active {
+    transform: scale(0.94);
+  }
 }
 
 .header-connection-status__trigger.is-online {
@@ -384,64 +372,14 @@ onUnmounted(() => {
   --status-accent: #f56c6c;
 }
 
-.header-connection-status__orb {
-  position: relative;
-  display: inline-flex;
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-}
-
-.header-connection-status__wave {
-  position: absolute;
-  background: color-mix(in srgb, var(--status-accent) 22%, transparent 78%);
-  border-radius: 999px;
-  opacity: 0;
-  animation: header-connection-status-wave 2.4s ease-out infinite;
-  inset: 2px;
-}
-
-.header-connection-status__wave.wave-2 {
-  animation-delay: 0.8s;
-}
-
-.header-connection-status__wave.wave-3 {
-  animation-delay: 1.6s;
-}
-
-.header-connection-status__signal {
-  position: absolute;
+.th-action-icon .header-connection-status__signal {
+  display: block;
+  width: 10px;
+  height: 10px;
   background: var(--status-accent);
   border-radius: 999px;
-  animation: header-connection-status-breathe 1.8s ease-in-out infinite;
-  inset: 6px;
-}
-
-.header-connection-status__trigger-copy {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1px;
-}
-
-.header-connection-status__trigger-label {
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.header-connection-status__trigger-subtitle {
-  max-width: 146px;
-  overflow: hidden;
-  font-size: 10px;
-  line-height: 1.2;
-  color: var(--el-text-color-secondary);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--status-accent) 25%, transparent 75%);
+  animation: header-connection-status-breathe 2s ease-in-out infinite;
 }
 
 .header-connection-status__panel {
@@ -722,22 +660,6 @@ onUnmounted(() => {
   transform: translateY(-6px) scale(0.98);
 }
 
-@keyframes header-connection-status-wave {
-  0% {
-    opacity: 0;
-    transform: scale(0.7);
-  }
-
-  25% {
-    opacity: 0.28;
-  }
-
-  100% {
-    opacity: 0;
-    transform: scale(1.8);
-  }
-}
-
 @keyframes header-connection-status-breathe {
   0%,
   100% {
@@ -751,38 +673,11 @@ onUnmounted(() => {
   }
 }
 
-@media (width <= 1380px) {
-  .header-connection-status__trigger-subtitle {
-    max-width: 126px;
-  }
-}
-
-@media (width <= 1180px) {
-  .header-connection-status__trigger {
-    padding: 0 3px;
-    gap: 6px;
-  }
-
-  .header-connection-status__trigger-label {
-    font-size: 11px;
-  }
-
-  .header-connection-status__trigger-subtitle {
-    display: none;
-  }
-}
-
 @media (width <= 768px) {
   .header-connection-status__status-line {
     align-items: stretch;
     flex-direction: column;
     gap: 6px;
-  }
-}
-
-@media (width <= 420px) {
-  .header-connection-status__trigger-copy {
-    display: none;
   }
 }
 </style>

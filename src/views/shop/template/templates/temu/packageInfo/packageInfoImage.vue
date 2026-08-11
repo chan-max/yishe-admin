@@ -34,11 +34,11 @@
         :on-change="handleChange" :multiple="multiple" :disabled="uploading || deletingIndex !== null" accept="image/*"
         class="upload-btn">
         <el-button type="primary" :icon="Plus" :loading="uploading">
-          {{ uploading ? '上传中...' : '添加图片' }}
+          {{ uploading ? t('shop.uploading') : t('shop.addImage') }}
         </el-button>
         <template #tip>
           <div class="upload-tip">
-            最多上传 {{ maxCount }} 张图片 ({{ modelValue.length }}/{{ maxCount }})
+            {{ t('shop.maxUploadTip', { maxCount: maxCount, current: modelValue.length }) }}
           </div>
         </template>
       </el-upload>
@@ -51,6 +51,9 @@ import { ref, computed } from 'vue'
 import { Plus, Delete, Picture, Top, Loading } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { uploadOSSFile, deleteOSSFile } from '@/api/oss'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps({
   modelValue: {
@@ -86,12 +89,12 @@ const previewSrcList = computed(() => {
 // 处理文件变化
 const handleChange = async (file) => {
   if (!file.raw.type.startsWith('image/')) {
-    ElMessage.error('请上传图片文件')
+    ElMessage.error(t('shop.uploadImageFile'))
     return
   }
 
   if (props.modelValue?.length >= props.maxCount) {
-    ElMessage.warning(`最多只能上传 ${props.maxCount} 张图片`)
+    ElMessage.warning(t('shop.maxUploadWarning', { maxCount: props.maxCount }))
     return
   }
 
@@ -111,7 +114,7 @@ const handleChange = async (file) => {
 
   } catch (error) {
     console.error('上传出错:', error)
-    ElMessage.error('上传出错，请重试')
+    ElMessage.error(t('shop.uploadError'))
   } finally {
     uploading.value = false
     uploadingIndex.value = -1
@@ -123,9 +126,9 @@ const removeImage = async (index) => {
   try {
     const item = props.modelValue[index]
 
-    await ElMessageBox.confirm('确定要删除这张图片吗?', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
+    await ElMessageBox.confirm(t('shop.confirmDeleteImage'), t('common.tip'), {
+      confirmButtonText: t('common.confirm'),
+      cancelButtonText: t('common.cancel'),
       type: 'warning'
     })
 
@@ -138,11 +141,11 @@ const removeImage = async (index) => {
     // 从数组中移除
     emit('update:modelValue', props.modelValue.filter((_, i) => i !== index))
 
-    ElMessage.success('删除成功')
+    ElMessage.success(t('common.deleteSuccess'))
   } catch (error) {
     if (error !== 'cancel') {
       console.error('删除出错:', error)
-      ElMessage.error('删除失败，请重试')
+      ElMessage.error(t('shop.deleteError'))
     }
   } finally {
     deletingIndex.value = null

@@ -5,15 +5,15 @@
         <div class="list-page-filter list-page-filter--flat">
           <div class="resource-toolbar">
             <div class="resource-toolbar__actions">
-              <el-button size="small" @click="loadData">刷新</el-button>
+              <el-button size="small" @click="loadData">{{ t('common.refresh') }}</el-button>
             </div>
           </div>
 
           <el-form :model="filters" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col :xs="24" :sm="12" :md="8" :lg="6">
-                <el-form-item label="任务">
-                  <el-select v-model="filters.taskId" clearable filterable placeholder="全部任务">
+                <el-form-item :label="t('operation.task')">
+                  <el-select v-model="filters.taskId" clearable filterable :placeholder="t('operation.allTasks')">
                     <el-option
                       v-for="item in taskOptions"
                       :key="item.value"
@@ -24,17 +24,17 @@
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :md="8" :lg="6">
-                <el-form-item label="运行 ID">
-                  <el-input v-model="filters.runId" clearable placeholder="运行 ID" />
+                <el-form-item :label="t('operation.runId')">
+                  <el-input v-model="filters.runId" clearable :placeholder="t('operation.runId')" />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :md="8" :lg="5">
-                <el-form-item label="供货平台">
+                <el-form-item :label="t('operation.supplierPlatform')">
                   <el-select
                     v-model="filters.supplierPlatform"
                     clearable
                     filterable
-                    placeholder="全部平台"
+                    :placeholder="t('operation.allPlatforms')"
                   >
                     <el-option
                       v-for="item in supplierPlatformOptions"
@@ -46,19 +46,19 @@
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :md="8" :lg="7">
-                <el-form-item label="关键词">
+                <el-form-item :label="t('operation.keyword')">
                   <el-input
                     v-model="filters.keyword"
                     clearable
-                    placeholder="匹配标题 / 链接 / 查询词"
+                    :placeholder="t('operation.matchTitleOrLinkOrQuery')"
                     @keyup.enter="handleSearch"
                   />
                 </el-form-item>
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" @click="handleSearch">查询</el-button>
-              <el-button size="small" @click="handleReset">重置</el-button>
+              <el-button size="small" type="primary" @click="handleSearch">{{ t('common.query') }}</el-button>
+              <el-button size="small" @click="handleReset">{{ t('common.reset') }}</el-button>
             </div>
           </el-form>
         </div>
@@ -66,16 +66,16 @@
 
       <template #sidebar>
         <div class="sidebar-card">
-          <div class="sidebar-card__title">运行摘要</div>
+          <div class="sidebar-card__title">{{ t('operation.runSummary') }}</div>
 
           <template v-if="activeRun">
             <div class="sidebar-metrics">
               <div class="sidebar-metric">
-                <span>状态</span>
+                <span>{{ t('operation.status') }}</span>
                 <strong>{{ getRunStatusLabel(activeRun.status) }}</strong>
               </div>
               <div class="sidebar-metric">
-                <span>来源商品</span>
+                <span>{{ t('operation.sourceProducts') }}</span>
                 <strong>{{
                   activeRun.summaryData?.sourceSummary?.sourceCount ||
                   activeRun.sourceItemsData?.length ||
@@ -83,26 +83,26 @@
                 }}</strong>
               </div>
               <div class="sidebar-metric">
-                <span>匹配结果</span>
+                <span>{{ t('operation.matchResults') }}</span>
                 <strong>{{
                   activeRun.summaryData?.matchedItemsCount || activeRun.items?.length || 0
                 }}</strong>
               </div>
               <div class="sidebar-metric">
-                <span>命中来源</span>
+                <span>{{ t('operation.matchedSources') }}</span>
                 <strong>{{ activeRun.summaryData?.matchedSourceCount || 0 }}</strong>
               </div>
             </div>
 
             <div class="sidebar-block">
-              <div class="sidebar-block__label">说明</div>
+              <div class="sidebar-block__label">{{ t('operation.description') }}</div>
               <div class="sidebar-block__text">
                 {{ activeRun.summaryData?.message || "-" }}
               </div>
             </div>
 
             <div class="sidebar-block" v-if="activeRun.summaryData?.supplierPlatforms?.length">
-              <div class="sidebar-block__label">供货平台</div>
+              <div class="sidebar-block__label">{{ t('operation.supplierPlatforms') }}</div>
               <div class="chip-list">
                 <el-tag
                   v-for="platform in activeRun.summaryData?.supplierPlatforms"
@@ -119,7 +119,7 @@
               class="sidebar-block"
               v-if="activeRun.summaryData?.sourceSummary?.platformBreakdown?.length"
             >
-              <div class="sidebar-block__label">来源平台</div>
+              <div class="sidebar-block__label">{{ t('operation.sourcePlatforms') }}</div>
               <div class="chip-list">
                 <el-tag
                   v-for="item in activeRun.summaryData?.sourceSummary?.platformBreakdown"
@@ -132,7 +132,7 @@
             </div>
           </template>
 
-          <el-empty v-else description="输入运行 ID 后可查看本次结果摘要" />
+          <el-empty v-else :description="t('operation.inputRunIdToViewSummary')" />
         </div>
       </template>
 
@@ -155,7 +155,7 @@
                       target="_blank"
                       type="primary"
                     >
-                      来源链接
+                      {{ t('operation.sourceLink') }}
                     </el-link>
                   </div>
                 </template>
@@ -175,7 +175,7 @@
                     <el-tag size="small" type="success">
                       {{ row.matchScore ?? "-" }}
                     </el-tag>
-                    <span class="table-meta-text">排名 {{ row.matchRank ?? "-" }}</span>
+                    <span class="table-meta-text">{{ t('operation.rank') }} {{ row.matchRank ?? "-" }}</span>
                   </div>
                 </template>
 
@@ -188,7 +188,7 @@
                 <template #operationSlot="{ row }">
                   <div class="flex justify-start">
                     <el-button type="primary" link size="small" @click="openDetail(row)">
-                      详情
+                      {{ t('common.detail') }}
                     </el-button>
                   </div>
                 </template>
@@ -217,30 +217,30 @@
       width="1180px"
       destroy-on-close
       class="match-item-detail-dialog"
-      title="同款结果详情"
+      :title="t('operation.supplyMatchResultDetails')"
       @closed="handleDetailClosed"
     >
       <div v-loading="detailLoading" class="detail-shell">
         <template v-if="currentDetail">
           <div class="detail-overview-grid">
             <div class="detail-card">
-              <div class="detail-card__title">来源商品</div>
+              <div class="detail-card__title">{{ t('operation.sourceProduct') }}</div>
               <div class="detail-card__subtitle">{{ currentDetail.sourceTitle || "-" }}</div>
               <div class="detail-meta-grid">
                 <div class="detail-meta-item">
-                  <span>平台</span>
+                  <span>{{ t('operation.platform') }}</span>
                   <strong>{{ currentDetail.sourcePlatform || "-" }}</strong>
                 </div>
                 <div class="detail-meta-item">
-                  <span>来源记录</span>
+                  <span>{{ t('operation.sourceRecord') }}</span>
                   <strong>{{ currentDetail.sourceRecordId || "-" }}</strong>
                 </div>
                 <div class="detail-meta-item">
-                  <span>查询词</span>
+                  <span>{{ t('operation.queryWord') }}</span>
                   <strong>{{ currentDetail.sourceQuery || "-" }}</strong>
                 </div>
                 <div class="detail-meta-item">
-                  <span>来源链接</span>
+                  <span>{{ t('operation.sourceLink') }}</span>
                   <strong>{{ getShortUrl(currentDetail.sourceUrl) }}</strong>
                 </div>
               </div>
@@ -250,28 +250,28 @@
                 target="_blank"
                 type="primary"
               >
-                打开来源链接
+                {{ t('operation.openSourceLink') }}
               </el-link>
             </div>
 
             <div class="detail-card detail-card--hero">
-              <div class="detail-card__title">供货商品</div>
+              <div class="detail-card__title">{{ t('operation.supplierProduct') }}</div>
               <div class="detail-card__subtitle">{{ currentDetail.title || "-" }}</div>
               <div class="detail-meta-grid">
                 <div class="detail-meta-item">
-                  <span>平台</span>
+                  <span>{{ t('operation.platform') }}</span>
                   <strong>{{ currentDetail.supplierPlatform || "-" }}</strong>
                 </div>
                 <div class="detail-meta-item">
-                  <span>价格</span>
+                  <span>{{ t('operation.price') }}</span>
                   <strong>{{ currentDetail.priceText || "-" }}</strong>
                 </div>
                 <div class="detail-meta-item">
-                  <span>店铺</span>
+                  <span>{{ t('operation.shop') }}</span>
                   <strong>{{ currentDetail.shopName || "-" }}</strong>
                 </div>
                 <div class="detail-meta-item">
-                  <span>匹配分数</span>
+                  <span>{{ t('operation.matchScore') }}</span>
                   <strong>{{ currentDetail.matchScore ?? "-" }}</strong>
                 </div>
               </div>
@@ -293,27 +293,27 @@
                   target="_blank"
                   type="primary"
                 >
-                  打开供货链接
+                  {{ t('operation.openSupplierLink') }}
                 </el-link>
               </div>
             </div>
           </div>
 
           <div class="detail-card detail-card--compare" v-if="currentDetail.comparisonData">
-            <div class="detail-card__title">对比信息</div>
+            <div class="detail-card__title">{{ t('operation.comparisonInfo') }}</div>
             <pre class="mini-json">{{ formatJson(currentDetail.comparisonData) }}</pre>
           </div>
 
           <el-tabs>
-            <el-tab-pane label="列表信息">
+            <el-tab-pane :label="t('operation.listingInfo')">
               <pre class="json-preview">{{ formatJson(currentDetail.listingData) }}</pre>
             </el-tab-pane>
 
-            <el-tab-pane label="详情信息">
+            <el-tab-pane :label="t('operation.detailInfo')">
               <pre class="json-preview">{{ formatJson(currentDetail.detailData) }}</pre>
             </el-tab-pane>
 
-            <el-tab-pane :label="`截图 (${detailSnapshots.length})`">
+            <el-tab-pane :label="`${t('operation.snapshot')} (${detailSnapshots.length})`">
               <div v-if="detailSnapshots.length" class="snapshot-list">
                 <div
                   v-for="(item, index) in detailSnapshots"
@@ -327,21 +327,21 @@
                     target="_blank"
                     type="primary"
                   >
-                    打开截图
+                    {{ t('operation.openScreenshot') }}
                   </el-link>
                   <pre class="mini-json">{{ formatJson(item) }}</pre>
                 </div>
               </div>
-              <el-empty v-else description="暂无截图数据" />
+              <el-empty v-else :description="t('operation.noScreenshotData')" />
             </el-tab-pane>
 
-            <el-tab-pane label="原始回传">
+            <el-tab-pane :label="t('operation.rawPayload')">
               <pre class="json-preview">{{ formatJson(currentDetail.rawPayload) }}</pre>
             </el-tab-pane>
           </el-tabs>
         </template>
 
-        <el-empty v-else description="暂无详情数据" />
+        <el-empty v-else :description="t('operation.noDetailData')" />
       </div>
     </el-dialog>
   </ContentWrap>
@@ -349,6 +349,7 @@
 
 <script setup lang="ts">
 import { computed, onActivated, onMounted, reactive, ref, watch } from "vue";
+import { useI18n } from 'vue-i18n';
 import { useRoute } from "vue-router";
 import {
   getEcomSelectionSupplyMatchItemDetail,
@@ -372,6 +373,8 @@ import {
   getSnapshotUrl,
   normalizeSnapshotList,
 } from "@/views/operation/ecom-data/shared";
+
+const { t } = useI18n();
 
 defineOptions({ name: "EcomSelectionSupplyMatchItemPage" });
 
@@ -437,40 +440,40 @@ const gridOptions = ref<VxeGridProps<EcomSelectionSupplyMatchItem>>({
   },
   columns: [
     {
-      title: "来源商品",
+      title: t('operation.sourceProduct'),
       field: "sourceTitle",
       minWidth: 220,
       showOverflow: "tooltip",
       slots: { default: "sourceSlot" },
     },
     {
-      title: "供货商品",
+      title: t('operation.supplierProduct'),
       field: "title",
       minWidth: 260,
       showOverflow: "tooltip",
       slots: { default: "supplierSlot" },
     },
     {
-      title: "匹配分数",
+      title: t('operation.matchScore'),
       field: "matchScore",
       width: 110,
       slots: { default: "scoreSlot" },
     },
     {
-      title: "查询词",
+      title: t('operation.queryWord'),
       field: "sourceQuery",
       minWidth: 160,
       showOverflow: "tooltip",
       formatter: ({ row }) => row.sourceQuery || "-",
     },
     {
-      title: "截图数",
+      title: t('operation.snapshotCount'),
       field: "snapshotData",
       width: 86,
       slots: { default: "snapshotSlot" },
     },
     {
-      ...buildTimeColumn("采集时间", "capturedAt", 180),
+      ...buildTimeColumn(t('operation.collectTime'), "capturedAt", 180),
       formatter: ({ cellValue }) => formatDateTime(cellValue as string),
     },
     buildOperationColumn("operationSlot", 88),

@@ -6,7 +6,7 @@
           <el-form :model="queryParams" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="5" :xl="4">
-                <el-form-item label="排序方式">
+                <el-form-item :label="t('shop.sortType')">
                   <el-select v-model="queryParams.sortingFields" @change="getList">
                     <el-option v-for="item in sortTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
                   </el-select>
@@ -14,8 +14,8 @@
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button type="primary" :disabled="single" @click="handleAdd" :icon="Plus">新增</el-button>
-              <el-button type="danger" :icon="Delete" :loading="deleteLoading" @click="handleDelete(null)">批量删除</el-button>
+              <el-button type="primary" :disabled="single" @click="handleAdd" :icon="Plus">{{ t('common.add') }}</el-button>
+              <el-button type="danger" :icon="Delete" :loading="deleteLoading" @click="handleDelete(null)">{{ t('common.batchDelete') }}</el-button>
             </div>
           </el-form>
         </div>
@@ -35,11 +35,11 @@
                 <template #operationDefaultSlot="{ row }">
                   <div class="flex justify-start">
                     <el-dropdown class="operation-dropdown" placement="bottom-end">
-                      <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
+                      <el-button type="primary" link size="small" class="operation-trigger-button">{{ t('common.operation') }}</el-button>
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
-                          <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
-                          <el-dropdown-item divided @click="handleDelete(row)" class="operation-menu-item--danger">删除</el-dropdown-item>
+                          <el-dropdown-item @click="handleEdit(row)">{{ t('common.edit') }}</el-dropdown-item>
+                          <el-dropdown-item divided @click="handleDelete(row)" class="operation-menu-item--danger">{{ t('common.delete') }}</el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
                     </el-dropdown>
@@ -68,16 +68,16 @@
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
         <el-row>
           <el-col :span="24">
-            <el-form-item label="平台名称" prop="platformName">
-              <el-input v-model="form.platformName" placeholder="请输入平台名称" />
+            <el-form-item :label="t('shop.platformName')" prop="platformName">
+              <el-input v-model="form.platformName" :placeholder="t('shop.platformNamePlaceholder')" />
             </el-form-item>
           </el-col>
         </el-row>
       </el-form>
 
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitForm" :loading="submitLoading">确定</el-button>
+        <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="submitForm" :loading="submitLoading">{{ t('common.confirm') }}</el-button>
       </template>
     </el-dialog>
 </template>
@@ -95,6 +95,9 @@ import { useWindowSize } from "@vueuse/core";
 import { ShopPlatformApi } from "@/api/shop/platform";
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 // 查询条件
 const queryParams = reactive({
@@ -166,24 +169,24 @@ async function handleDelete(row?) {
   if (row) {
     delIds = [row.id];
   } else if (!ids.value.length) {
-    return ElMessage.warning('请选择要删除的数据');
+    return ElMessage.warning(t('shop.selectDataToDelete'));
   } else {
     delIds = [...ids.value];
   }
 
   try {
     await ElMessageBox.confirm(
-      "确认删除该数据吗",
-      '删除提示',
+      t('shop.confirmDelete'),
+      t('shop.deleteTip'),
       {
-        confirmButtonText: '确认',
-        cancelButtonText: '取消',
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
         type: 'error',
       }
     )
     deleteLoading.value = true
     await ShopPlatformApi.deleteShopPlatform({ ids: delIds });
-    ElMessage.success("删除成功");
+    ElMessage.success(t('common.deleteSuccess'));
     await getList();
   } catch (error) {
   } finally {
@@ -194,14 +197,14 @@ async function handleDelete(row?) {
 function handleAdd() {
   isEdit.value = false;
   dialogVisible.value = true;
-  dialogTitle.value = "新建";
+  dialogTitle.value = t('shop.create');
   form.value = {};
 }
 
 function handleEdit(row) {
   isEdit.value = true;
   dialogVisible.value = true;
-  dialogTitle.value = "修改";
+  dialogTitle.value = t('shop.edit');
   form.value = {
     ...row
   };
@@ -215,7 +218,7 @@ function cancel() {
 const form = ref({});
 
 const rules = {
-  platformName: [{ required: true, message: "请输入平台名称", trigger: "blur" }],
+  platformName: [{ required: true, message: t('shop.platformNameRequired'), trigger: "blur" }],
 };
 
 const dialogClose = () => {
@@ -239,12 +242,12 @@ const submitForm = async () => {
       await ShopPlatformApi.updateShopPlatform({
         ...form.value,
       });
-      ElMessage.success("更新成功");
+      ElMessage.success(t('common.updateSuccess'));
     } else {
       await ShopPlatformApi.createShopPlatform({
         ...form.value,
       });
-      ElMessage.success("添加成功");
+      ElMessage.success(t('common.addSuccess'));
     }
 
     dialogVisible.value = false;

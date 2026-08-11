@@ -6,21 +6,21 @@
           <el-form :model="filters" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col :xs="24" :sm="12" :md="8" :lg="7">
-                <el-form-item label="运行 ID / 任务名称">
+                <el-form-item :label="t('operation.runIdOrTaskName')">
                   <el-input
                     v-model="filters.keyword"
                     clearable
-                    placeholder="搜索运行 ID / 任务名称"
+                    :placeholder="t('operation.searchRunIdOrTaskName')"
                     @keyup.enter="handleSearch"
                   />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :md="8" :lg="5">
-                <el-form-item label="平台">
+                <el-form-item :label="t('operation.platform')">
                   <el-select
                     v-model="filters.platform"
                     clearable
-                    placeholder="平台"
+                    :placeholder="t('operation.platform')"
                     @change="handlePlatformFilterChange"
                   >
                     <el-option
@@ -33,12 +33,12 @@
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :md="8" :lg="5">
-                <el-form-item label="任务类型">
+                <el-form-item :label="t('operation.taskType')">
                   <el-select
                     v-model="filters.taskType"
                     clearable
                     filterable
-                    placeholder="任务类型"
+                    :placeholder="t('operation.taskType')"
                   >
                     <el-option
                       v-for="item in availableTaskTypeOptions"
@@ -50,27 +50,27 @@
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :md="8" :lg="4">
-                <el-form-item label="任务 ID">
-                  <el-input v-model="filters.taskId" clearable placeholder="任务 ID" />
+                <el-form-item :label="t('operation.taskId')">
+                  <el-input v-model="filters.taskId" clearable :placeholder="t('operation.taskId')" />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :md="8" :lg="4">
-                <el-form-item label="运行 ID">
-                  <el-input v-model="filters.runId" clearable placeholder="运行 ID" />
+                <el-form-item :label="t('operation.runId')">
+                  <el-input v-model="filters.runId" clearable :placeholder="t('operation.runId')" />
                 </el-form-item>
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" @click="handleSearch">查询</el-button>
-              <el-button size="small" @click="handleReset">重置</el-button>
-              <el-button size="small" @click="loadData">刷新</el-button>
+              <el-button size="small" type="primary" @click="handleSearch">{{ t('common.query') }}</el-button>
+              <el-button size="small" @click="handleReset">{{ t('common.reset') }}</el-button>
+              <el-button size="small" @click="loadData">{{ t('common.refresh') }}</el-button>
               <el-button
                 size="small"
                 type="danger"
                 :disabled="!selectedIds.length"
                 @click="handleBatchDelete"
               >
-                批量删除 ({{ selectedIds.length }})
+                {{ t('operation.batchDelete') }}({{ selectedIds.length }})
               </el-button>
             </div>
           </el-form>
@@ -141,17 +141,17 @@
                         size="small"
                         class="operation-trigger-button"
                       >
-                        操作
+                        {{ t('common.operation') }}
                       </el-button>
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
                           <el-dropdown-item command="json">
                             <el-icon><View /></el-icon>
-                            <span>查看 JSON</span>
+                            <span>{{ t('operation.viewJson') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item command="snapshots">
                             <el-icon><Picture /></el-icon>
-                            <span>查看截图</span>
+                            <span>{{ t('operation.viewScreenshots') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item
                             command="delete"
@@ -159,7 +159,7 @@
                             class="operation-menu-item--danger"
                           >
                             <el-icon><Delete /></el-icon>
-                            <span>删除</span>
+                            <span>{{ t('common.delete') }}</span>
                           </el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
@@ -188,7 +188,7 @@
 
     <el-dialog
       v-model="jsonDialogVisible"
-      title="完整 JSON"
+      :title="t('operation.fullJson')"
       fullscreen
       append-to-body
       destroy-on-close
@@ -203,13 +203,13 @@
           :show-double-quotes="false"
           :show-length="true"
         />
-        <el-empty v-else description="暂无详情数据" />
+        <el-empty v-else :description="t('operation.noDetailData')" />
       </div>
     </el-dialog>
 
     <el-dialog
       v-model="snapshotDialogVisible"
-      title="执行截图"
+      :title="t('operation.executionScreenshots')"
       fullscreen
       append-to-body
       destroy-on-close
@@ -231,13 +231,13 @@
               :preview-src-list="snapshotUrls"
               class="raw-detail-snapshot-image"
             />
-            <div v-else class="raw-detail-snapshot-placeholder">本地截图未上传</div>
+            <div v-else class="raw-detail-snapshot-placeholder">{{ t('operation.localScreenshotNotUploaded') }}</div>
             <div class="raw-detail-snapshot-meta">
               <div>{{ formatDateTime(snapshot.createdAt) }}</div>
             </div>
           </div>
         </div>
-        <el-empty v-else description="暂无执行截图" />
+        <el-empty v-else :description="t('operation.noScreenshots')" />
       </div>
     </el-dialog>
   </ContentWrap>
@@ -245,6 +245,7 @@
 
 <script setup lang="ts">
 import { computed, onActivated, onMounted, reactive, ref, watch } from "vue";
+import { useI18n } from 'vue-i18n';
 import { useRoute } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Delete, Picture, View } from "@element-plus/icons-vue";
@@ -275,6 +276,8 @@ import {
   loadEcomCollectCatalog,
 } from "./shared";
 import { normalizeSnapshotItems } from "./components/raw-detail/helpers";
+
+const { t } = useI18n();
 
 defineOptions({ name: "EcomPlatformCollectRawPage" });
 
@@ -337,42 +340,42 @@ const gridOptions = ref<VxeGridProps<EcomPlatformRawRecord>>({
   columns: [
     { type: "checkbox", width: 48 },
     {
-      title: "运行 ID",
+      title: t('operation.runId'),
       field: "runId",
       minWidth: 220,
       showOverflow: "tooltip",
       slots: { default: "runIdSlot" },
     },
     {
-      title: "平台 / 任务类型",
+      title: t('operation.platformOrTaskType'),
       field: "collectData",
       width: 300,
       slots: { default: "platformSceneSlot" },
     },
     {
-      title: "执行摘要",
+      title: t('operation.executionSummary'),
       field: "collectData",
       minWidth: 240,
       showOverflow: "tooltip",
       slots: { default: "summarySlot" },
     },
     {
-      title: "记录数",
+      title: t('operation.recordCount'),
       field: "recordsCount",
       width: 90,
       align: "center",
       slots: { default: "recordsSlot" },
     },
     {
-      ...buildTimeColumn("采集时间", "capturedAt", 180),
+      ...buildTimeColumn(t('operation.collectTime'), "capturedAt", 180),
       formatter: ({ cellValue }) => formatDateTime(cellValue as string),
     },
     {
-      ...buildTimeColumn("完成时间", "finishedAt", 180),
+      ...buildTimeColumn(t('operation.finishTime'), "finishedAt", 180),
       formatter: ({ row }) => formatDateTime(getRawFinishedAt(row)),
     },
     {
-      title: "截图数",
+      title: t('operation.snapshotCount'),
       field: "snapshotData",
       width: 80,
       align: "center",
@@ -502,12 +505,12 @@ const snapshotUrls = computed(() =>
 const handleDelete = async (row: EcomPlatformRawRecord) => {
   try {
     await ElMessageBox.confirm(
-      "确认删除这条原始数据吗？将同步删除关联截图文件。",
-      "提示",
+      t('operation.confirmDeleteRawData'),
+      t('common.tip'),
       { type: "warning" },
     );
     await deleteEcomPlatformRawRecord(row.id);
-    ElMessage.success("原始数据已删除");
+    ElMessage.success(t('operation.rawDataDeleted'));
     await loadList();
   } catch {}
 };
@@ -516,12 +519,12 @@ const handleBatchDelete = async () => {
   if (!selectedIds.value.length) return;
   try {
     await ElMessageBox.confirm(
-      `确认批量删除 ${selectedIds.value.length} 条原始数据吗？将同步删除关联截图文件。`,
-      "提示",
+      `${t('operation.confirmBatchDeleteRawData')} ${selectedIds.value.length} ${t('operation.batchDeleteRawDataWarning')}`,
+      t('common.tip'),
       { type: "warning" },
     );
     await batchDeleteEcomPlatformRawRecord(selectedIds.value);
-    ElMessage.success("批量删除成功");
+    ElMessage.success(t('operation.batchDeleteSuccess'));
     await loadList();
   } catch {}
 };

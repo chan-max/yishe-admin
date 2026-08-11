@@ -6,6 +6,8 @@ import { useFullscreen } from "@vueuse/core";
 
 defineOptions({ name: "AppView" });
 
+const { t } = useI18n();
+
 const appStore = useAppStore();
 const tagsViewStore = useTagsViewStore();
 
@@ -100,16 +102,14 @@ provide("reload", reload);
     ]"
   >
     <!-- 全屏按钮 - 极简小图标 -->
-    <div class="absolute right-2 top-1.5 z-20 opacity-40 hover:opacity-100 transition-opacity">
-      <button
-        type="button"
-        class="flex h-4 w-4 items-center justify-center text-[var(--el-text-color-secondary)] hover:text-[var(--el-color-primary)] transition-colors p-0 border-none bg-transparent cursor-pointer"
-        @click.stop="toggleFullscreen"
-        :title="isFullscreen ? '退出全屏' : '全屏'"
-      >
-        <Icon :icon="isFullscreen ? 'zmdi:fullscreen-exit' : 'zmdi:fullscreen'" :size="12" />
-      </button>
-    </div>
+    <button
+      type="button"
+      class="absolute right-0 top-0 z-20 flex h-6 w-6 items-center justify-center text-[var(--el-text-color-secondary)] hover:text-[var(--el-color-primary)] opacity-0 hover:opacity-100 transition-all duration-200 p-0 border-none bg-transparent cursor-pointer"
+      @click.stop="toggleFullscreen"
+      :title="isFullscreen ? t('layout.screenfull.exitFullscreen') : t('layout.screenfull.fullscreen')"
+    >
+      <Icon :icon="isFullscreen ? 'zmdi:fullscreen-exit' : 'zmdi:fullscreen'" :size="14" />
+    </button>
 
     <router-view v-if="routerAlive">
       <template #default="{ Component, route }">

@@ -12,6 +12,9 @@
 
 <script setup>
 import { ref, watch, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps({
   modelValue: [Number, String],
@@ -29,7 +32,7 @@ const props = defineProps({
   },
   placeholder: {
     type: String,
-    default: '请输入'
+    default: () => t('common.inputPlaceholder')
   }
 })
 

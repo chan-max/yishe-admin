@@ -3,25 +3,25 @@
     <div v-loading="loading" class="capability-page">
       <div class="capability-page__hero">
         <div class="capability-page__hero-main">
-          <div class="capability-page__eyebrow">Capability Schema</div>
-          <div class="capability-page__title">平台能力总览</div>
+          <div class="capability-page__eyebrow">{{ t('operation.capabilitySchema') }}</div>
+          <div class="capability-page__title">{{ t('operation.platformCapabilityOverview') }}</div>
           <div class="capability-page__desc">
-            这里展示的是浏览器自动化端声明的实时能力协议：每个平台支持哪些 taskType、需要什么参数、理论上会返回哪些字段、有哪些登录/验证码/风控限制，以及适合做哪些分析。
+            {{ t('operation.capabilityDescription') }}
           </div>
           <div class="capability-page__meta">
-            <span>能力客户端 {{ catalog.meta?.onlineCapabilityClientCount || 0 }} / {{ catalog.meta?.capabilityClientCount || 0 }}</span>
-            <span>生成时间 {{ formatDateTime(catalog.meta?.generatedAt || catalog.generatedAt) }}</span>
+            <span>{{ t('operation.capabilityClient') }} {{ catalog.meta?.onlineCapabilityClientCount || 0 }} / {{ catalog.meta?.capabilityClientCount || 0 }}</span>
+            <span>{{ t('operation.generatedAt') }} {{ formatDateTime(catalog.meta?.generatedAt || catalog.generatedAt) }}</span>
           </div>
         </div>
         <div class="capability-page__hero-actions">
-          <el-button size="small" @click="loadData">刷新</el-button>
+          <el-button size="small" @click="loadData">{{ t('common.refresh') }}</el-button>
         </div>
       </div>
 
       <CompactNotice
         type="info"
-        title="怎么看这页"
-        description="这页看的是 capability 声明，用来判断平台和任务类型是否值得继续开发；真实运行后到底返回了哪些字段，请到原始数据详情里的“字段对照”和“记录 JSON”确认。"
+        :title="t('operation.howToReadThisPage')"
+        :description="t('operation.capabilityNoticeDesc')"
         class="capability-page__notice"
       />
 
@@ -29,17 +29,17 @@
         <el-form :model="filters" label-position="top" class="capability-filter-form">
           <el-row :gutter="12">
             <el-col :xs="24" :sm="12" :md="10" :lg="10">
-              <el-form-item label="关键词">
+              <el-form-item :label="t('operation.keyword')">
                 <el-input
                   v-model="filters.keyword"
                   clearable
-                  placeholder="搜索平台 / taskType / 字段名 / 说明"
+                  :placeholder="t('operation.searchPlaceholder')"
                 />
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="12" :md="6" :lg="5">
-              <el-form-item label="平台">
-                <el-select v-model="filters.platform" clearable placeholder="全部平台">
+              <el-form-item :label="t('operation.platform')">
+                <el-select v-model="filters.platform" clearable :placeholder="t('operation.allPlatforms')">
                   <el-option
                     v-for="item in catalog.platforms"
                     :key="item.value"
@@ -50,22 +50,22 @@
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="12" :md="8" :lg="5">
-              <el-form-item label="聚焦视角">
-                <el-select v-model="filters.focus" placeholder="全部">
-                  <el-option label="全部" value="all" />
-                  <el-option label="可直接执行" value="runnable" />
-                  <el-option label="受限 / 未实现" value="blocked" />
-                  <el-option label="POD 图案可分析" value="pod_ready" />
-                  <el-option label="高风险验证码" value="captcha_risk" />
+              <el-form-item :label="t('operation.focusPerspective')">
+                <el-select v-model="filters.focus" :placeholder="t('operation.all')">
+                  <el-option :label="t('operation.all')" value="all" />
+                  <el-option :label="t('operation.directlyRunnable')" value="runnable" />
+                  <el-option :label="t('operation.blockedOrUnimplemented')" value="blocked" />
+                  <el-option :label="t('operation.podPatternAnalyzable')" value="pod_ready" />
+                  <el-option :label="t('operation.highRiskCaptcha')" value="captcha_risk" />
                 </el-select>
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="12" :md="8" :lg="4">
-              <el-form-item label="声明字段视图">
-                <el-select v-model="filters.fieldMode" placeholder="展开全部">
-                  <el-option label="全部字段" value="all" />
-                  <el-option label="仅 records[]" value="records" />
-                  <el-option label="仅 collectData" value="package" />
+              <el-form-item :label="t('operation.declaredFieldView')">
+                <el-select v-model="filters.fieldMode" :placeholder="t('operation.expandAll')">
+                  <el-option :label="t('operation.allFields')" value="all" />
+                  <el-option :label="t('operation.recordsOnly')" value="records" />
+                  <el-option :label="t('operation.collectDataOnly')" value="package" />
                 </el-select>
               </el-form-item>
             </el-col>
@@ -75,19 +75,19 @@
 
       <div class="capability-page__stats">
         <div class="stat-card">
-          <span>平台数</span>
+          <span>{{ t('operation.platformCount') }}</span>
           <strong>{{ stats.platformCount }}</strong>
         </div>
         <div class="stat-card">
-          <span>taskType 数</span>
+          <span>{{ t('operation.taskTypeCount') }}</span>
           <strong>{{ stats.taskTypeCount }}</strong>
         </div>
         <div class="stat-card">
-          <span>可执行</span>
+          <span>{{ t('operation.runnable') }}</span>
           <strong>{{ stats.runnableCount }}</strong>
         </div>
         <div class="stat-card">
-          <span>POD 可分析</span>
+          <span>{{ t('operation.podAnalyzable') }}</span>
           <strong>{{ stats.podReadyCount }}</strong>
         </div>
       </div>
@@ -95,12 +95,12 @@
       <div class="feature-panel">
         <div class="feature-panel__header">
           <div>
-            <div class="feature-panel__title">小功能目录</div>
+            <div class="feature-panel__title">{{ t('operation.featureDirectory') }}</div>
             <div class="feature-panel__desc">
-              每一行都是可独立调用的采集功能，平台只是分组；后续测试、AI 调用和组合任务都应优先使用 taskType。
+              {{ t('operation.featureDirectoryDesc') }}
             </div>
           </div>
-          <el-tag effect="plain" type="info">共 {{ featureCards.length }} 个</el-tag>
+          <el-tag effect="plain" type="info">{{ t('operation.total') }} {{ featureCards.length }} {{ t('operation.items') }}</el-tag>
         </div>
         <el-table
           v-if="featureCards.length"
@@ -110,7 +110,7 @@
           max-height="420"
           class="feature-table"
         >
-          <el-table-column label="小功能" min-width="220">
+          <el-table-column :label="t('operation.feature')" min-width="220">
             <template #default="{ row }">
               <div class="feature-name-cell">
                 <strong>{{ row.label }}</strong>
@@ -118,30 +118,30 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="平台" prop="platformLabel" width="140" />
-          <el-table-column label="场景" width="130">
+          <el-table-column :label="t('operation.platform')" prop="platformLabel" width="140" />
+          <el-table-column :label="t('operation.scene')" width="130">
             <template #default="{ row }">
               {{ row.collectScene || "-" }}
             </template>
           </el-table-column>
-          <el-table-column label="状态" width="120">
+          <el-table-column :label="t('operation.status')" width="120">
             <template #default="{ row }">
               <el-tag size="small" effect="plain" :type="getCapabilityStatusTagType(row.availability)">
                 {{ row.availabilityLabel || getCapabilityStatusLabel(row.availability) }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="验证" width="110">
+          <el-table-column :label="t('operation.verification')" width="110">
             <template #default="{ row }">
               {{ row.verificationLabel || row.verification || "-" }}
             </template>
           </el-table-column>
-          <el-table-column label="参数" width="90">
+          <el-table-column :label="t('operation.parameter')" width="90">
             <template #default="{ row }">
               {{ Array.isArray(row.fields) ? row.fields.length : 0 }}
             </template>
           </el-table-column>
-          <el-table-column label="说明" min-width="260">
+          <el-table-column :label="t('operation.description')" min-width="260">
             <template #default="{ row }">
               <span class="feature-table__desc">
                 {{ row.description || row.docs?.overview || row.reason || "-" }}
@@ -149,7 +149,7 @@
             </template>
           </el-table-column>
         </el-table>
-        <el-empty v-else description="当前筛选条件下暂无小功能" />
+        <el-empty v-else :description="t('operation.noFeaturesUnderFilter')" />
       </div>
 
       <div v-if="platformCards.length" class="platform-card-list">
@@ -165,7 +165,7 @@
                 <span class="platform-card__code">{{ platform.value }}</span>
               </div>
               <div class="platform-card__summary">
-                {{ platform.docs?.overview || "当前平台能力由浏览器自动化端维护。" }}
+                {{ platform.docs?.overview || t('operation.platformCapabilityMaintainedByClient') }}
               </div>
             </div>
             <div class="platform-card__tags">
@@ -189,10 +189,10 @@
           </div>
 
           <div class="platform-card__metrics">
-            <span>taskType {{ platform.taskCards.length }}</span>
-            <span>可执行 {{ platform.runnableCount }}</span>
-            <span>受限 {{ platform.blockedCount }}</span>
-            <span>POD {{ platform.podReadyCount }}</span>
+            <span>{{ t('operation.taskType') }} {{ platform.taskCards.length }}</span>
+            <span>{{ t('operation.runnable') }} {{ platform.runnableCount }}</span>
+            <span>{{ t('operation.blocked') }} {{ platform.blockedCount }}</span>
+            <span>{{ t('operation.pod') }} {{ platform.podReadyCount }}</span>
           </div>
 
           <div v-if="platform.noteList.length" class="platform-card__notes">
@@ -235,7 +235,7 @@
                 <div class="task-card__overview">
                   <div class="task-card__overview-main">
                     <div class="task-card__overview-text">
-                      {{ task.docs?.overview || task.description || "暂无额外功能说明。" }}
+                      {{ task.docs?.overview || task.description || t('operation.noAdditionalFeatureDesc') }}
                     </div>
                     <div class="task-card__use-hint">
                       {{ task.digest.useSuggestion }}
@@ -243,7 +243,7 @@
                   </div>
                   <div class="task-card__overview-stats">
                     <div class="task-mini-stat">
-                      <span>参数</span>
+                      <span>{{ t('operation.parameter') }}</span>
                       <strong>{{ task.digest.parameterCount }}</strong>
                     </div>
                     <div class="task-mini-stat">
@@ -281,7 +281,7 @@
                   v-if="task.digest.analysisHints.length"
                   class="task-card__section"
                 >
-                  <div class="task-card__section-title">推荐分析方向</div>
+                  <div class="task-card__section-title">{{ t('operation.recommendedAnalysisDirection') }}</div>
                   <ul class="task-card__list">
                     <li v-for="item in task.digest.analysisHints" :key="item">
                       {{ item }}
@@ -293,7 +293,7 @@
                   v-if="task.digest.notes.length"
                   class="task-card__section"
                 >
-                  <div class="task-card__section-title">限制与说明</div>
+                  <div class="task-card__section-title">{{ t('operation.limitationsAndNotes') }}</div>
                   <ul class="task-card__list">
                     <li v-for="item in task.digest.notes" :key="item">
                       {{ item }}
@@ -305,7 +305,7 @@
                   v-if="Array.isArray(task.fields) && task.fields.length"
                   class="task-card__section"
                 >
-                  <div class="task-card__section-title">参数字段</div>
+                  <div class="task-card__section-title">{{ t('operation.parameterFields') }}</div>
                   <div class="field-grid">
                     <div
                       v-for="field in task.fields"
@@ -320,7 +320,7 @@
                           effect="plain"
                           type="danger"
                         >
-                          必填
+                          {{ t('operation.required') }}
                         </el-tag>
                       </div>
                       <div class="field-card__label">{{ field.label || field.key }}</div>
@@ -338,7 +338,7 @@
                   v-if="filters.fieldMode !== 'package' && task.recordFields.length"
                   class="task-card__section"
                 >
-                  <div class="task-card__section-title">records[] 字段</div>
+                  <div class="task-card__section-title">{{ t('operation.recordsFields') }}</div>
                   <div class="field-grid">
                     <div
                       v-for="field in task.recordFields"
@@ -364,7 +364,7 @@
                   v-if="filters.fieldMode !== 'records' && task.packageFields.length"
                   class="task-card__section"
                 >
-                  <div class="task-card__section-title">collectData 字段</div>
+                  <div class="task-card__section-title">{{ t('operation.collectDataFields') }}</div>
                   <div class="field-grid">
                     <div
                       v-for="field in task.packageFields"
@@ -390,7 +390,7 @@
                   v-if="Array.isArray(task.docs?.examples) && task.docs.examples.length"
                   class="task-card__section"
                 >
-                  <div class="task-card__section-title">示例</div>
+                  <div class="task-card__section-title">{{ t('operation.example') }}</div>
                   <div class="task-card__examples">
                     <div
                       v-for="(example, index) in task.docs.examples"
@@ -398,7 +398,7 @@
                       class="task-card__example"
                     >
                       <div class="task-card__example-title">
-                        {{ example.title || `示例 ${index + 1}` }}
+                        {{ example.title || `${t('operation.example')} ${index + 1}` }}
                       </div>
                       <div v-if="example.description" class="task-card__example-desc">
                         {{ example.description }}
@@ -412,13 +412,14 @@
         </div>
       </div>
 
-      <el-empty v-else description="当前筛选条件下暂无可展示的能力定义" />
+      <el-empty v-else :description="t('operation.noCapabilityDefinitionsUnderFilter')" />
     </div>
   </ContentWrap>
 </template>
 
 <script setup lang="ts">
 import { computed, onActivated, onMounted, reactive, ref } from "vue";
+import { useI18n } from 'vue-i18n';
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import CompactNotice from "@/components/CompactNotice/index.vue";
 import {
@@ -443,6 +444,8 @@ import {
   getTaskTypeSchemas,
   loadEcomCollectCatalog,
 } from "./shared";
+
+const { t } = useI18n();
 
 defineOptions({ name: "EcomPlatformCollectCapabilityPage" });
 

@@ -1,9 +1,9 @@
 <template>
   <ContentWrap :plain="true">
     <div class="hotsearch-placeholder">
-      <el-empty description="热搜采集功能待开发">
+      <el-empty :description="t('home.hotSearch.developing')">
         <div class="hotsearch-placeholder__tips">
-          该功能正在重新设计中，后续版本将开放多平台热搜采集与工作流节点能力。
+          {{ t('home.hotSearch.tips') }}
         </div>
       </el-empty>
     </div>
@@ -11,9 +11,12 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 
 defineOptions({ name: "HotSearch" });
+
+const { t } = useI18n()
 </script>
 
 <style scoped lang="scss">

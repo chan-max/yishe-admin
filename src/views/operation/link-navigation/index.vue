@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
+
+const { t } = useI18n();
 
 interface LinkItem {
   name: string
@@ -48,45 +51,45 @@ const getLogoUrl = (url: string): string => {
 const linkCategories = [
   {
     key: 'social-media',
-    label: '自媒体平台',
+    label: t('operation.socialMediaPlatforms'),
     icon: 'vscode-icons:folder-type-view',
     links: [
-      { name: '微博', url: 'https://weibo.com', platform: 'weibo', icon: 'mdi-sina-weibo' },
-      { name: '小红书', url: 'https://www.xiaohongshu.com', platform: 'xiaohongshu', icon: 'mdi-book-open-variant' },
-      { name: '抖音', url: 'https://www.douyin.com', platform: 'douyin', icon: 'mdi-music-note' },
-      { name: '快手', url: 'https://www.kuaishou.com', platform: 'kuaishou', icon: 'mdi-lightning-bolt' },
-      { name: 'B站', url: 'https://www.bilibili.com', icon: 'mdi-play-circle' },
-      { name: '知乎', url: 'https://www.zhihu.com', icon: 'mdi-help-circle' },
-      { name: '今日头条', url: 'https://www.toutiao.com', icon: 'mdi-newspaper' },
-      { name: '百家号', url: 'https://baijiahao.baidu.com', icon: 'mdi-file-document-edit' }
+      { name: t('operation.weibo'), url: 'https://weibo.com', platform: 'weibo', icon: 'mdi-sina-weibo' },
+      { name: t('operation.xiaohongshu'), url: 'https://www.xiaohongshu.com', platform: 'xiaohongshu', icon: 'mdi-book-open-variant' },
+      { name: t('operation.douyin'), url: 'https://www.douyin.com', platform: 'douyin', icon: 'mdi-music-note' },
+      { name: t('operation.kuaishou'), url: 'https://www.kuaishou.com', platform: 'kuaishou', icon: 'mdi-lightning-bolt' },
+      { name: t('operation.bilibili'), url: 'https://www.bilibili.com', icon: 'mdi-play-circle' },
+      { name: t('operation.zhihu'), url: 'https://www.zhihu.com', icon: 'mdi-help-circle' },
+      { name: t('operation.toutiao'), url: 'https://www.toutiao.com', icon: 'mdi-newspaper' },
+      { name: t('operation.baijiahao'), url: 'https://baijiahao.baidu.com', icon: 'mdi-file-document-edit' }
     ]
   },
   {
     key: 'cross-border',
-    label: '跨境电商平台',
+    label: t('operation.crossBorderEcommercePlatforms'),
     icon: 'vscode-icons:folder-type-global',
     links: [
       { name: 'Amazon', url: 'https://www.amazon.com', platform: 'amazon', icon: 'mdi-cart' },
       { name: 'Temu', url: 'https://www.temu.com', icon: 'mdi-shopping' },
-        { name: 'Temu 开放平台', url: 'https://partner.kuajingmaihuo.com/', icon: 'mdi-api' },
-      { name: 'Temu 卖家中心', url: 'https://agentseller.temu.com/', icon: 'mdi-store-cog' },
+        { name: t('operation.temuOpenPlatform'), url: 'https://partner.kuajingmaihuo.com/', icon: 'mdi-api' },
+      { name: t('operation.temuSellerCenter'), url: 'https://agentseller.temu.com/', icon: 'mdi-store-cog' },
       { name: 'Shein', url: 'https://www.shein.com', platform: 'shein', icon: 'mdi-tshirt-crew' },
       { name: 'eBay', url: 'https://www.ebay.com', icon: 'mdi-store' },
       { name: 'Shopify', url: 'https://www.shopify.com', icon: 'mdi-shopping' },
       { name: 'TikTok Shop', url: 'https://www.tiktok.com/shop', icon: 'mdi-shopping-music' },
-      { name: 'TikTok Seller', url: 'https://seller.tiktokshopglobalselling.com/', icon: 'mdi-store-cog' },
-      { name: '速卖通', url: 'https://www.aliexpress.com', platform: 'aliexpress', icon: 'mdi-package-variant' },
+      { name: t('operation.tiktokSeller'), url: 'https://seller.tiktokshopglobalselling.com/', icon: 'mdi-store-cog' },
+      { name: t('operation.aliexpress'), url: 'https://www.aliexpress.com', platform: 'aliexpress', icon: 'mdi-package-variant' },
       { name: 'Wish', url: 'https://www.wish.com', icon: 'mdi-gift' },
       { name: 'Etsy', url: 'https://www.etsy.com', icon: 'mdi-hand-heart' },
       { name: 'Lazada', url: 'https://www.lazada.com', icon: 'mdi-shopping-outline' },
       { name: 'Shopee', url: 'https://www.shopee.com', icon: 'mdi-basket' },
       { name: 'Ozon', url: 'https://www.ozon.ru/', icon: 'mdi-shopping' },
-      { name: 'Ozon Seller', url: 'https://seller.ozon.ru/', icon: 'mdi-store-cog' }
+      { name: t('operation.ozonSeller'), url: 'https://seller.ozon.ru/', icon: 'mdi-store-cog' }
     ]
   },
   {
     key: 'social-networks',
-    label: '常用社交媒体',
+    label: t('operation.commonSocialMedia'),
     icon: 'vscode-icons:folder-type-client',
     links: [
       { name: 'Facebook', url: 'https://www.facebook.com', icon: 'mdi-facebook' },
@@ -101,31 +104,31 @@ const linkCategories = [
   },
   {
     key: 'ecommerce',
-    label: '运营电商平台',
+    label: t('operation.operationEcommercePlatforms'),
     icon: 'vscode-icons:folder-type-server',
     links: [
       { name: '1688', url: 'https://www.1688.com', icon: 'mdi-shopping' },
-      { name: '淘宝', url: 'https://www.taobao.com', icon: 'mdi-shopping' },
-      { name: '天猫', url: 'https://www.tmall.com', icon: 'mdi-store' },
-      { name: '京东', url: 'https://www.jd.com', icon: 'mdi-package' },
-      { name: '拼多多', url: 'https://www.pinduoduo.com', icon: 'mdi-cart-variant' },
-      { name: '抖店', url: 'https://fxg.jinritemai.com/ffa/mshop/homepage/index', icon: 'mdi-storefront' },
-      { name: '抖店 开放平台', url: 'https://op.jinritemai.com/docs/center', icon: 'mdi-api' },
-      { name: '快手小店', url: 'https://s.kwaixiaodian.com/zone/home', icon: 'mdi-storefront-outline' },
-      { name: '快手电商 开放平台', url: 'https://open.kwaixiaodian.com/', icon: 'mdi-api' },
-      { name: '咸鱼', url: 'https://www.goofish.com/publish', platform: 'xianyu', icon: 'mdi-shopping-outline' },
-      { name: '苏宁易购', url: 'https://www.suning.com', icon: 'mdi-store-outline' },
-      { name: '唯品会', url: 'https://www.vip.com', icon: 'mdi-tag' },
-      { name: '当当', url: 'https://www.dangdang.com', icon: 'mdi-book-open' },
-      { name: '国美', url: 'https://www.gome.com.cn', icon: 'mdi-home' }
+      { name: t('operation.taobao'), url: 'https://www.taobao.com', icon: 'mdi-shopping' },
+      { name: t('operation.tmall'), url: 'https://www.tmall.com', icon: 'mdi-store' },
+      { name: t('operation.jd'), url: 'https://www.jd.com', icon: 'mdi-package' },
+      { name: t('operation.pinduoduo'), url: 'https://www.pinduoduo.com', icon: 'mdi-cart-variant' },
+      { name: t('operation.douyinShop2'), url: 'https://fxg.jinritemai.com/ffa/mshop/homepage/index', icon: 'mdi-storefront' },
+      { name: t('operation.douyinOpenPlatform'), url: 'https://op.jinritemai.com/docs/center', icon: 'mdi-api' },
+      { name: t('operation.kuaishouShop'), url: 'https://s.kwaixiaodian.com/zone/home', icon: 'mdi-storefront-outline' },
+      { name: t('operation.kuaishouEcommerceOpenPlatform'), url: 'https://open.kwaixiaodian.com/', icon: 'mdi-api' },
+      { name: t('operation.goofish'), url: 'https://www.goofish.com/publish', platform: 'xianyu', icon: 'mdi-shopping-outline' },
+      { name: t('operation.suning'), url: 'https://www.suning.com', icon: 'mdi-store-outline' },
+      { name: t('operation.vipshop'), url: 'https://www.vip.com', icon: 'mdi-tag' },
+      { name: t('operation.dangdang'), url: 'https://www.dangdang.com', icon: 'mdi-book-open' },
+      { name: t('operation.gome'), url: 'https://www.gome.com.cn', icon: 'mdi-home' }
     ]
   },
   {
     key: 'tools',
-    label: '工具模块',
+    label: t('operation.toolsModule'),
     icon: 'vscode-icons:folder-type-tools',
     links: [
-      { name: '连连付款', url: 'https://cn.lianlianpay.com/account', icon: 'mdi-credit-card-outline' }
+      { name: t('operation.lianlianpay'), url: 'https://cn.lianlianpay.com/account', icon: 'mdi-credit-card-outline' }
     ]
   }
 ].map(category => ({
@@ -142,10 +145,10 @@ const imageErrors = ref<Set<string>>(new Set())
 const openLink = async (link: LinkItem) => {
   try {
     window.open(link.url, '_blank')
-    ElMessage.success(`正在打开 ${link.name}`)
+    ElMessage.success(`${t('operation.opening')} ${link.name}`)
   } catch (error) {
-    console.error('打开链接失败:', error)
-    ElMessage.error(`操作失败，请稍后重试`)
+    console.error(`${t('operation.openLinkFailed')}:`, error)
+    ElMessage.error(t('operation.operationFailedPleaseRetry'))
   }
 }
 
@@ -153,10 +156,10 @@ const copyUrl = async (link: LinkItem, event: Event) => {
   event.stopPropagation()
   try {
     await navigator.clipboard.writeText(link.url)
-    ElMessage.success(`已复制 ${link.name} 链接`)
+    ElMessage.success(`${t('operation.copied')} ${link.name} ${t('operation.link')}`)
   } catch (error) {
-    console.error('复制链接失败:', error)
-    ElMessage.error('复制失败')
+    console.error(`${t('operation.copyLinkFailed')}:`, error)
+    ElMessage.error(t('operation.copyFailed'))
   }
 }
 
@@ -204,14 +207,14 @@ const isImageError = (url: string) => {
           <Icon icon="ep:guide" class="header-icon" />
         </div>
         <div>
-          <h2 class="header-title">链接导航</h2>
-          <p class="header-subtitle">常用自媒体、跨境及运营平台快捷访问入口</p>
+          <h2 class="header-title">{{ t('operation.linkNavigation') }}</h2>
+          <p class="header-subtitle">{{ t('operation.linkNavigationSubtitle') }}</p>
         </div>
       </div>
       <div class="header-right">
         <el-input
           v-model="searchKeyword"
-          placeholder="搜索平台名称..."
+          :placeholder="t('operation.searchPlatformName')"
           clearable
           class="search-input"
         >
@@ -265,7 +268,7 @@ const isImageError = (url: string) => {
               <div 
                 class="action-btn"
                 @click="copyUrl(link, $event)"
-                title="复制链接"
+                :title="t('operation.copyLink')"
               >
                 <Icon icon="ep:copy-document" />
               </div>
@@ -277,7 +280,7 @@ const isImageError = (url: string) => {
 
     <div v-if="filteredCategories.length === 0" class="empty-state">
       <Icon icon="ep:search" class="empty-icon" />
-      <p>未找到匹配的平台</p>
+      <p>{{ t('operation.noMatchingPlatformFound') }}</p>
     </div>
   </div>
 </template>

@@ -28,22 +28,22 @@
         </div>
       </div>
       <div class="flex gap-4">
-        <el-select v-model="parentSpecForm[index].parentSpecId" style="width: 160px" placeholder="选择规格">
+        <el-select v-model="parentSpecForm[index].parentSpecId" style="width: 160px" :placeholder="t('shop.selectSpec')">
           <el-option v-for="item in parentSpec" :key="item.parentSpecId" :label="item.parentSpecName"
             :value="item.parentSpecId" />
         </el-select>
-        <el-input v-model="parentSpecForm[index].input" placeholder="请添加子规格" style="width: 320px"> </el-input>
+        <el-input v-model="parentSpecForm[index].input" :placeholder="t('shop.addSubSpec')" style="width: 320px"> </el-input>
         <el-button type="primary" :disabled="!parentSpecFormItem.parentSpecId" @click="() => {
           if (!parentSpecForm[index].input) {
             return
           }
           if (parentSpecFormItem.children.includes(parentSpecForm[index].input)) {
-            return ElMessage.warning('子规格已存在')
+            return ElMessage.warning(t('shop.subSpecExists'))
           }
           parentSpecFormItem.children.push(parentSpecForm[index].input)
           initTable()
           parentSpecFormItem.input = ''
-        }"> 添加 </el-button>
+        }"> {{ t('common.add') }} </el-button>
       </div>
     </div>
   </div>
@@ -56,64 +56,64 @@
           :prop="pf.parentSpecId">
         </el-table-column>
       </template>
-      <!-- <el-table-column label="SKU货号" prop="name" width="180">
+      <!-- <el-table-column :label="t('shop.skuCode')" prop="name" width="180">
         <template #default="scope">
-          <el-input placeholder="请输入" v-model="scope.row.sku"></el-input>
+          <el-input :placeholder="t('common.inputPlaceholder')" v-model="scope.row.sku"></el-input>
         </template>
       </el-table-column> -->
-      <el-table-column label="尺寸图名称" prop="thumbKey" width="180">
+      <el-table-column :label="t('shop.sizeImageName')" prop="thumbKey" width="180">
         <template #header>
-          <span class="required-star">*</span>尺寸图名称
+          <span class="required-star">*</span>{{ t('shop.sizeImageName') }}
         </template>
         <template #default="scope">
-          <el-input type="number" min="0" v-model="scope.row.thumbKey" placeholder="请输入"></el-input>
+          <el-input type="number" min="0" v-model="scope.row.thumbKey" :placeholder="t('common.inputPlaceholder')"></el-input>
         </template>
       </el-table-column>
-      <el-table-column label="申报价格(CNY)" prop="supplierPrice" width="180">
+      <el-table-column :label="t('shop.declaredPrice')" prop="supplierPrice" width="180">
         <template #header>
-          <span class="required-star">*</span>申报价格(CNY)
+          <span class="required-star">*</span>{{ t('shop.declaredPrice') }}
         </template>
         <template #default="scope">
-          <el-input type="number" min="0" v-model="scope.row.supplierPrice" placeholder="请输入"></el-input>
+          <el-input type="number" min="0" v-model="scope.row.supplierPrice" :placeholder="t('common.inputPlaceholder')"></el-input>
         </template>
       </el-table-column>
 
-      <el-table-column label="尺寸(cm)" width="280">
+      <el-table-column :label="t('shop.sizeCm')" width="280">
         <template #header>
-          <span class="required-star">*</span>尺寸(cm)
+          <span class="required-star">*</span>{{ t('shop.sizeCm') }}
         </template>
         <template #default="scope">
           <div class="flex gap-2 items-center ">
-            <el-input v-model="scope.row.len" type="number" min="0" placeholder="长"></el-input>
-            <el-input v-model="scope.row.width" type="number" min="0" placeholder="宽"></el-input>
-            <el-input v-model="scope.row.height" type="number" min="0" placeholder="高"></el-input>
+            <el-input v-model="scope.row.len" type="number" min="0" :placeholder="t('shop.length')"></el-input>
+            <el-input v-model="scope.row.width" type="number" min="0" :placeholder="t('shop.width')"></el-input>
+            <el-input v-model="scope.row.height" type="number" min="0" :placeholder="t('shop.height')"></el-input>
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="重量(g)" width="120">
+      <el-table-column :label="t('shop.weightG')" width="120">
         <template #header>
-          <span class="required-star">*</span>重量(g)
+          <span class="required-star">*</span>{{ t('shop.weightG') }}
         </template>
         <template #default="scope">
-          <el-input v-model="scope.row.productSkuWeightReq" type="number" min="0" placeholder="请输入"></el-input>
+          <el-input v-model="scope.row.productSkuWeightReq" type="number" min="0" :placeholder="t('common.inputPlaceholder')"></el-input>
         </template>
       </el-table-column>
-      <el-table-column label="建议售价" width="180">
+      <el-table-column :label="t('shop.suggestedPrice')" width="180">
         <template #header>
-          建议售价
+          {{ t('shop.suggestedPrice') }}
         </template>
         <template #default="scope">
-          <el-input v-model="scope.row.suggestedPrice" type="number"  placeholder="请输入">
+          <el-input v-model="scope.row.suggestedPrice" type="number"  :placeholder="t('common.inputPlaceholder')">
             <template #append>
               CNY
             </template>
           </el-input>
         </template>
       </el-table-column>
-      <el-table-column label="SKU分类" width="480">
+      <el-table-column :label="t('shop.skuClassification')" width="480">
         <template #default="scope">
           <div class="flex gap-2">
-            <el-select placeholder="品类" v-model="scope.row.skuClassification" @change="(val) => {
+            <el-select :placeholder="t('shop.category')" v-model="scope.row.skuClassification" @change="(val) => {
               // 单品只能有一件
               if (val == '1') {
                 scope.row.numberOfPieces = 1
@@ -121,13 +121,13 @@
             }">
               <el-option v-for="item in sku1" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
-            <el-select placeholder="包装" v-model="scope.row.individuallyPacked"
+            <el-select :placeholder="t('shop.package')" v-model="scope.row.individuallyPacked"
               v-if="scope.row.skuClassification == 2 || scope.row.skuClassification == 3">
               <el-option v-for="item in sku2" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
-            <el-input placeholder="数量" type="number" min="0" v-model="scope.row.numberOfPieces"
+            <el-input :placeholder="t('shop.quantity')" type="number" min="0" v-model="scope.row.numberOfPieces"
               :disabled="scope.row.skuClassification == 1"></el-input>
-            <el-select placeholder="单位" v-model="scope.row.pieceUnitCode">
+            <el-select :placeholder="t('shop.unit')" v-model="scope.row.pieceUnitCode">
               <el-option v-for="item in sku3" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
           </div>
@@ -144,6 +144,9 @@ import controlTypeComponent1 from '../productProperty/controlTypeComponents/cont
 import controlTypeComponent16 from '../productProperty/controlTypeComponents/controlTypeComponent16.vue'
 import { getTemuTemplateParentSpec } from '@/api/publish/template'
 import { useDebounceFn } from '@vueuse/core'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 /**
  * 示例
@@ -338,41 +341,41 @@ onMounted(() => {
 
 const sku1 = ref([
   {
-    label: '单品',
+    label: t('shop.singleProduct'),
     value: 1
   },
   {
-    label: '同款多件',
+    label: t('shop.sameStyleMultiPiece'),
     value: 2
   },
   {
-    label: '混合套装',
+    label: t('shop.mixedSet'),
     value: 3
   },
 ])
 
 const sku2 = ref([
   {
-    label: '非独立包装',
+    label: t('shop.nonIndividuallyPacked'),
     value: 0
   },
   {
-    label: '独立包装',
+    label: t('shop.individuallyPacked'),
     value: 1
   },
 ])
 
 const sku3 = ref([
   {
-    label: '件',
+    label: t('shop.piece'),
     value: 1
   },
   {
-    label: '双',
+    label: t('shop.pair'),
     value: 2
   },
   {
-    label: '独立包装',
+    label: t('shop.individualPackage'),
     value: 3
   },
 ])
@@ -381,22 +384,22 @@ defineExpose({
   async validate() {
     tableData.value.forEach((row) => {
       if (!row.supplierPrice) {
-        throw ElMessage.warning('申报价格不能为空')
+        throw ElMessage.warning(t('shop.declaredPriceRequired'))
       }
       if (!row.len) {
-        throw ElMessage.warning('尺寸长不能为空')
+        throw ElMessage.warning(t('shop.sizeLengthRequired'))
       }
       if (!row.width) {
-        throw ElMessage.warning('尺寸宽不能为空')
+        throw ElMessage.warning(t('shop.sizeWidthRequired'))
       }
       if (!row.height) {
-        throw ElMessage.warning('尺寸高不能为空')
+        throw ElMessage.warning(t('shop.sizeHeightRequired'))
       }
       if (!row.productSkuWeightReq) {
-        throw ElMessage.warning('重量不能为空')
+        throw ElMessage.warning(t('shop.weightRequired'))
       }
       if (!row.thumbKey) {
-        throw ElMessage.warning('尺寸图名称不能为空')
+        throw ElMessage.warning(t('shop.sizeImageNameRequired'))
       }
     })
   },

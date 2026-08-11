@@ -4,15 +4,10 @@ import { useGlobalNotificationStore } from '@/store/modules/globalNotification'
 
 defineOptions({ name: 'GlobalNotificationToastStack' })
 
+const { t } = useI18n();
+
 const notificationStore = useGlobalNotificationStore()
 const toasts = computed(() => notificationStore.activeToasts)
-
-const levelLabelMap = {
-  success: 'Success',
-  info: 'Info',
-  warning: 'Warning',
-  error: 'Error'
-} as const
 
 const getToastTitle = (item: { level?: string; title?: string; message?: string }) => {
   const title = String(item.title || '').trim()
@@ -24,8 +19,15 @@ const getToastTitle = (item: { level?: string; title?: string; message?: string 
     return message
   }
   const level = item.level as keyof typeof levelLabelMap
-  return levelLabelMap[level] || 'Info'
+  return levelLabelMap[level] || t('common.info')
 }
+
+const levelLabelMap = {
+  success: t('common.success'),
+  info: t('common.info'),
+  warning: t('common.warning'),
+  error: t('common.error')
+} as const
 
 const getToastMessage = (item: { title?: string; message?: string }) => {
   const title = String(item.title || '').trim()
@@ -53,7 +55,7 @@ const getProgressMeta = (item: { metadata?: Record<string, any> }) => {
   if (!total) {
     return ''
   }
-  return `成功 ${completed} / 失败 ${failed} / 总数 ${total}`
+  return t('layout.toast.progressMeta', { completed, failed, total })
 }
 </script>
 

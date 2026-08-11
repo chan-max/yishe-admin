@@ -6,11 +6,11 @@
           <el-form :model="filters" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col :xs="24" :sm="12" :md="8" :lg="5">
-                <el-form-item label="平台">
+                <el-form-item :label="t('operation.platform')">
                   <el-select
                     v-model="filters.platform"
                     clearable
-                    placeholder="平台"
+                    :placeholder="t('operation.platform')"
                     @change="handlePlatformFilterChange"
                   >
                     <el-option
@@ -23,12 +23,12 @@
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :md="8" :lg="6">
-                <el-form-item label="任务类型">
+                <el-form-item :label="t('operation.taskType')">
                   <el-select
                     v-model="filters.taskType"
                     clearable
                     filterable
-                    placeholder="任务类型"
+                    :placeholder="t('operation.taskType')"
                   >
                     <el-option
                       v-for="item in availableTaskTypeOptions"
@@ -40,30 +40,30 @@
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :md="8" :lg="5">
-                <el-form-item label="运行状态">
-                  <el-select v-model="filters.status" clearable placeholder="运行状态">
-                    <el-option label="排队中" value="queued" />
-                    <el-option label="已分配" value="assigned" />
-                    <el-option label="运行中" value="running" />
-                    <el-option label="成功" value="success" />
-                    <el-option label="失败" value="failed" />
-                    <el-option label="跳过" value="skipped" />
-                    <el-option label="终止" value="terminated" />
+                <el-form-item :label="t('operation.runStatus')">
+                  <el-select v-model="filters.status" clearable :placeholder="t('operation.runStatus')">
+                    <el-option :label="t('operation.queued')" value="queued" />
+                    <el-option :label="t('operation.assigned')" value="assigned" />
+                    <el-option :label="t('operation.running')" value="running" />
+                    <el-option :label="t('operation.success')" value="success" />
+                    <el-option :label="t('operation.failed')" value="failed" />
+                    <el-option :label="t('operation.skipped')" value="skipped" />
+                    <el-option :label="t('operation.terminated')" value="terminated" />
                   </el-select>
                 </el-form-item>
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" @click="handleSearch">查询</el-button>
-              <el-button size="small" @click="handleReset">重置</el-button>
-              <el-button size="small" @click="loadData">刷新</el-button>
+              <el-button size="small" type="primary" @click="handleSearch">{{ t('common.query') }}</el-button>
+              <el-button size="small" @click="handleReset">{{ t('common.reset') }}</el-button>
+              <el-button size="small" @click="loadData">{{ t('common.refresh') }}</el-button>
               <el-button
                 size="small"
                 type="danger"
                 :disabled="!selectedIds.length"
                 @click="handleBatchDelete"
               >
-                批量删除 ({{ selectedIds.length }})
+                {{ t('operation.batchDelete') }}({{ selectedIds.length }})
               </el-button>
             </div>
           </el-form>
@@ -83,7 +83,7 @@
               >
                 <template #taskNameSlot="{ row }">
                   <div class="primary-cell">
-                    <strong class="primary-cell__title">{{ row.taskName || "采集运行" }}</strong>
+                    <strong class="primary-cell__title">{{ row.taskName || t('operation.collectRun') }}</strong>
                     <span class="primary-cell__meta mono-text">{{ row.id }}</span>
                   </div>
                 </template>
@@ -142,13 +142,13 @@
                         size="small"
                         class="operation-trigger-button"
                       >
-                        操作
+                        {{ t('common.operation') }}
                       </el-button>
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
                           <el-dropdown-item command="detail">
                             <el-icon><View /></el-icon>
-                            <span>详情</span>
+                            <span>{{ t('common.detail') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item
                             command="delete"
@@ -156,7 +156,7 @@
                             class="operation-menu-item--danger"
                           >
                             <el-icon><Delete /></el-icon>
-                            <span>删除</span>
+                            <span>{{ t('common.delete') }}</span>
                           </el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
@@ -185,7 +185,7 @@
 
     <el-dialog
       v-model="detailVisible"
-      title="运行详情"
+      :title="t('operation.runDetails')"
       width="720px"
       align-center
       class="collect-run-detail-dialog"
@@ -200,7 +200,7 @@
               <span>{{ getTaskTypeLabel(catalog, currentDetail.platform, currentDetail.taskType) }}</span>
             </div>
             <div class="run-detail__title">
-              {{ currentDetail.taskName || "采集运行" }}
+              {{ currentDetail.taskName || t('operation.collectRun') }}
             </div>
             <div v-if="getRunSummaryMessage(currentDetail) !== '-'" class="run-detail__summary">
               {{ getRunSummaryMessage(currentDetail) }}
@@ -213,15 +213,15 @@
 
         <section class="run-detail__metrics">
           <div class="run-detail__metric run-detail__metric--accent">
-            <span class="run-detail__metric-label">采集记录</span>
+            <span class="run-detail__metric-label">{{ t('operation.collectRecords') }}</span>
             <strong class="run-detail__metric-value">{{ getRunRecordsCount(currentDetail) }}</strong>
           </div>
           <div class="run-detail__metric">
-            <span class="run-detail__metric-label">截图数量</span>
+            <span class="run-detail__metric-label">{{ t('operation.snapshotCount') }}</span>
             <strong class="run-detail__metric-value">{{ getRunSnapshotCount(currentDetail) }}</strong>
           </div>
           <div class="run-detail__metric">
-            <span class="run-detail__metric-label">执行机器</span>
+            <span class="run-detail__metric-label">{{ t('operation.executionMachine') }}</span>
             <strong class="run-detail__metric-value run-detail__metric-value--mono">
               {{ currentDetail.assignedMachineCode || "-" }}
             </strong>
@@ -231,19 +231,19 @@
         <section class="run-detail__section">
           <div class="run-detail__info-list">
             <div class="run-detail__info-row">
-              <span class="run-detail__info-label">运行 ID</span>
+              <span class="run-detail__info-label">{{ t('operation.runId') }}</span>
               <span class="run-detail__info-value run-detail__info-value--mono">
                 {{ currentDetail.id || "-" }}
               </span>
             </div>
             <div class="run-detail__info-row">
-              <span class="run-detail__info-label">开始时间</span>
+              <span class="run-detail__info-label">{{ t('operation.startTime') }}</span>
               <span class="run-detail__info-value">
                 {{ formatDateTime(currentDetail.startedAt) }}
               </span>
             </div>
             <div class="run-detail__info-row">
-              <span class="run-detail__info-label">结束时间</span>
+              <span class="run-detail__info-label">{{ t('operation.endTime') }}</span>
               <span class="run-detail__info-value">
                 {{ formatDateTime(currentDetail.finishedAt) }}
               </span>
@@ -252,17 +252,18 @@
         </section>
 
         <section v-if="currentDetail.errorMessage" class="run-detail__notice">
-          <span class="run-detail__notice-label">错误信息</span>
+          <span class="run-detail__notice-label">{{ t('operation.errorMessage') }}</span>
           <div class="run-detail__notice-text">{{ currentDetail.errorMessage }}</div>
         </section>
       </div>
-      <el-empty v-else description="暂无运行详情" />
+      <el-empty v-else :description="t('operation.noRunDetails')" />
     </el-dialog>
   </ContentWrap>
 </template>
 
 <script setup lang="ts">
 import { computed, onActivated, onMounted, reactive, ref } from "vue";
+import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Delete, View } from "@element-plus/icons-vue";
 import type { VxeGridProps } from "vxe-table";
@@ -286,6 +287,8 @@ import {
   getTaskTypeSchemas,
   loadEcomCollectCatalog,
 } from "./shared";
+
+const { t } = useI18n();
 
 defineOptions({ name: "EcomPlatformCollectRunPage" });
 
@@ -349,48 +352,48 @@ const gridOptions = ref<VxeGridProps<EcomPlatformCollectRun>>({
   columns: [
     { type: "checkbox", width: 48 },
     {
-      title: "任务名称",
+      title: t('operation.taskName'),
       field: "taskName",
       minWidth: 240,
       showOverflow: "tooltip",
       slots: { default: "taskNameSlot" },
     },
     {
-      title: "平台 / 任务类型",
+      title: t('operation.platformOrTaskType'),
       field: "platform",
       width: 300,
       slots: { default: "platformSceneSlot" },
     },
     {
-      title: "状态",
+      title: t('operation.status'),
       field: "status",
       width: 100,
       slots: { default: "statusSlot" },
     },
     {
-      title: "执行机器",
+      title: t('operation.executionMachine'),
       field: "assignedMachineCode",
       minWidth: 160,
       showOverflow: "tooltip",
       slots: { default: "machineSlot" },
     },
     {
-      title: "记录数",
+      title: t('operation.recordCount'),
       field: "summaryData",
       width: 90,
       align: "center",
       slots: { default: "recordsSlot" },
     },
     {
-      ...buildTimeColumn("开始时间", "startedAt", 180),
+      ...buildTimeColumn(t('operation.startTime'), "startedAt", 180),
       formatter: ({ cellValue }) => formatDateTime(cellValue as string),
     },
     {
-      ...buildTimeColumn("结束时间", "finishedAt", 180),
+      ...buildTimeColumn(t('operation.endTime'), "finishedAt", 180),
       formatter: ({ cellValue }) => formatDateTime(cellValue as string),
     },
     {
-      title: "摘要",
+      title: t('operation.summary'),
       field: "summaryText",
       minWidth: 260,
       showOverflow: "tooltip",
@@ -489,12 +492,12 @@ const openDetail = async (row: EcomPlatformCollectRun) => {
 const handleDelete = async (row: EcomPlatformCollectRun) => {
   try {
     await ElMessageBox.confirm(
-      "确认删除这条运行记录吗？将同步删除本次运行产生的原始数据和截图文件。",
-      "提示",
+      t('operation.confirmDeleteRunRecord'),
+      t('common.tip'),
       { type: "warning" },
     );
     await deleteEcomPlatformCollectRun(row.id);
-    ElMessage.success("运行记录已删除");
+    ElMessage.success(t('operation.runRecordDeleted'));
     await loadList();
   } catch {}
 };
@@ -503,12 +506,12 @@ const handleBatchDelete = async () => {
   if (!selectedIds.value.length) return;
   try {
     await ElMessageBox.confirm(
-      `确认批量删除 ${selectedIds.value.length} 条运行记录吗？将同步删除原始数据和截图文件。`,
-      "提示",
+      `${t('operation.confirmBatchDeleteRunRecords')} ${selectedIds.value.length} ${t('operation.batchDeleteRunRecordsWarning')}`,
+      t('common.tip'),
       { type: "warning" },
     );
     await batchDeleteEcomPlatformCollectRun(selectedIds.value);
-    ElMessage.success("批量删除成功");
+    ElMessage.success(t('operation.batchDeleteSuccess'));
     await loadList();
   } catch {}
 };

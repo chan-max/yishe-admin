@@ -92,7 +92,7 @@ export const useRenderLayout = ({
             >
               <ToolHeader
                 class={[
-                  "bg-[var(--top-header-bg-color)] border-b border-[color:color-mix(in_srgb,var(--top-tool-border-color)_38%,transparent_62%)] shadow-none",
+                  "bg-transparent border-none shadow-none",
                 ]}
               />
               {tagsView.value && !mobile.value ? <TagsView /> : undefined}

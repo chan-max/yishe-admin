@@ -4,3 +4,4 @@
 export { default as feishuIcon } from './feishu.svg'
 export { default as wecomIcon } from './wecom.svg'
 export { default as weiboIcon } from './weibo.svg'
+export { default as notificationIcon } from './notification.svg'

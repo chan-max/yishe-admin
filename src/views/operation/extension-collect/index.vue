@@ -13,11 +13,11 @@
                 :lg="6"
                 :xl="5"
               >
-                <el-form-item label="关键词">
+                <el-form-item :label="t('operation.keyword')">
                   <el-input
                     v-model="queryParams.search"
                     size="small"
-                    placeholder="搜索标题/备注"
+                    :placeholder="t('operation.searchTitleOrNotes')"
                     clearable
                     @change="
                       (val) => {
@@ -35,21 +35,21 @@
                 :lg="4"
                 :xl="3"
               >
-                <el-form-item label="采集类型">
+                <el-form-item :label="t('operation.collectType')">
                   <el-select
                     v-model="queryParams.collectType"
                     size="small"
-                    placeholder="全部类型"
+                    :placeholder="t('operation.allTypes')"
                     clearable
                     @change="getList"
                   >
-                    <el-option label="全部" value="" />
-                    <el-option label="商品" value="product" />
-                    <el-option label="文章" value="article" />
-                    <el-option label="网页" value="web_page" />
-                    <el-option label="趋势词" value="trend" />
-                    <el-option label="图片批量" value="image_batch" />
-                    <el-option label="文本片段" value="text_snippet" />
+                    <el-option :label="t('operation.all')" value="" />
+                    <el-option :label="t('operation.product')" value="product" />
+                    <el-option :label="t('operation.article')" value="article" />
+                    <el-option :label="t('operation.webPage')" value="web_page" />
+                    <el-option :label="t('operation.trendWord')" value="trend" />
+                    <el-option :label="t('operation.imageBatch')" value="image_batch" />
+                    <el-option :label="t('operation.textSnippet')" value="text_snippet" />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -61,7 +61,7 @@
                 :icon="Search"
                 :loading="loading"
                 @click="getList"
-                >搜索</el-button
+                >{{ t('common.search') }}</el-button
               >
               <el-button
                 size="small"
@@ -70,7 +70,7 @@
                 :loading="deleteLoading"
                 @click="handleDelete(null)"
                 :disabled="!ids.length"
-                >批量删除({{ ids.length }})</el-button
+                >{{ t('operation.batchDeleteWithCount') }}({{ ids.length }})</el-button
               >
             </div>
           </el-form>
@@ -116,7 +116,7 @@
 
                 <template #aiStatusSlot="{ row }">
                   <el-tag :type="row.aiAnalysis ? 'success' : 'info'" size="small">
-                    {{ row.aiAnalysis ? "已分析" : "未分析" }}
+                    {{ row.aiAnalysis ? t('operation.analyzed') : t('operation.notAnalyzed') }}
                   </el-tag>
                 </template>
 
@@ -132,19 +132,19 @@
                       class="operation-dropdown"
                     >
                       <el-button type="primary" link size="small" class="operation-trigger-button"
-                        >操作</el-button
+                        >{{ t('common.operation') }}</el-button
                       >
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
                           <el-dropdown-item command="detail">
-                            <el-icon><View /></el-icon><span>查看详情</span>
+                            <el-icon><View /></el-icon><span>{{ t('operation.viewDetails') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item
                             command="delete"
                             divided
                             class="operation-menu-item--danger"
                           >
-                            <el-icon><Delete /></el-icon><span>删除</span>
+                            <el-icon><Delete /></el-icon><span>{{ t('common.delete') }}</span>
                           </el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
@@ -174,7 +174,7 @@
     <!-- 全屏详情抽屉 -->
     <el-drawer
       v-model="detailVisible"
-      title="采集详情"
+      :title="t('operation.collectDetails')"
       direction="rtl"
       size="100%"
       :destroy-on-close="true"
@@ -185,7 +185,7 @@
           <el-tag :type="getTypeTagType(currentRecord.collectType)" size="large">
             {{ getTypeLabel(currentRecord.collectType) }}
           </el-tag>
-          <span class="detail-header__title">{{ currentRecord.sourceTitle || "无标题" }}</span>
+          <span class="detail-header__title">{{ currentRecord.sourceTitle || t('operation.noTitle') }}</span>
         </div>
         
         <!-- 基本信息 -->
@@ -195,7 +195,7 @@
             <span class="info-value">{{ currentRecord.id }}</span>
           </div>
           <div class="info-item">
-            <span class="info-label">采集类型</span>
+            <span class="info-label">{{ t('operation.collectType') }}</span>
             <span class="info-value">
               <el-tag :type="getTypeTagType(currentRecord.collectType)" size="small">
                 {{ getTypeLabel(currentRecord.collectType) }}
@@ -203,15 +203,15 @@
             </span>
           </div>
           <div class="info-item">
-            <span class="info-label">来源标题</span>
+            <span class="info-label">{{ t('operation.sourceTitle') }}</span>
             <span class="info-value">{{ currentRecord.sourceTitle || "-" }}</span>
           </div>
           <div class="info-item">
-            <span class="info-label">平台</span>
+            <span class="info-label">{{ t('operation.platform') }}</span>
             <span class="info-value">{{ currentRecord.data?.platform || "-" }}</span>
           </div>
           <div class="info-item" v-if="currentRecord.sourceUrl">
-            <span class="info-label">来源链接</span>
+            <span class="info-label">{{ t('operation.sourceLink') }}</span>
             <span class="info-value">
               <el-link :href="currentRecord.sourceUrl" target="_blank" type="primary">
                 {{ currentRecord.sourceUrl }}
@@ -219,17 +219,17 @@
             </span>
           </div>
           <div class="info-item">
-            <span class="info-label">上传者</span>
+            <span class="info-label">{{ t('operation.uploader') }}</span>
             <span class="info-value">
               {{ currentRecord.uploader?.account || currentRecord.uploader?.name || "-" }}
             </span>
           </div>
           <div class="info-item">
-            <span class="info-label">创建时间</span>
+            <span class="info-label">{{ t('operation.createTime') }}</span>
             <span class="info-value">{{ formatTimestamp(currentRecord.createdAt) }}</span>
           </div>
           <div class="info-item" v-if="currentRecord.userTags?.length">
-            <span class="info-label">用户标签</span>
+            <span class="info-label">{{ t('operation.userTags') }}</span>
             <span class="info-value">
               <el-tag
                 v-for="tag in currentRecord.userTags"
@@ -242,7 +242,7 @@
             </span>
           </div>
           <div class="info-item" v-if="currentRecord.userNotes">
-            <span class="info-label">用户备注</span>
+            <span class="info-label">{{ t('operation.userNotes') }}</span>
             <span class="info-value">{{ currentRecord.userNotes }}</span>
           </div>
         </div>
@@ -250,20 +250,20 @@
         <el-divider />
 
         <!-- AI 分析报告 -->
-        <div class="section-title">AI 分析报告</div>
+        <div class="section-title">{{ t('operation.aiAnalysisReport') }}</div>
         <div
           v-if="currentRecord.aiAnalysis"
           class="markdown-body"
           v-html="renderAiAnalysis(currentRecord.aiAnalysis)"
         ></div>
         <div v-else class="no-ai-data">
-          <el-empty description="暂无 AI 分析数据" />
+          <el-empty :description="t('operation.noAiAnalysisData')" />
         </div>
 
         <el-divider />
 
         <!-- 采集数据详情 -->
-        <div class="section-title">采集数据详情</div>
+        <div class="section-title">{{ t('operation.collectDataDetails') }}</div>
         <div v-if="currentRecord.data" class="data-detail">
           <div class="detail-info-list">
             <template v-for="(value, key) in currentRecord.data" :key="key">
@@ -285,14 +285,14 @@
           </div>
         </div>
         <div v-else class="no-ai-data">
-          <el-empty description="无采集数据" />
+          <el-empty :description="t('operation.noCollectData')" />
         </div>
 
         <!-- 原始 JSON（可折叠） -->
         <el-divider />
         <div class="raw-section">
           <el-button size="small" link @click="showRawJson = !showRawJson">
-            {{ showRawJson ? "收起原始 JSON" : "查看原始 JSON" }}
+            {{ showRawJson ? t('operation.collapseRawJson') : t('operation.viewRawJson') }}
           </el-button>
           <el-collapse-transition>
             <pre v-show="showRawJson" class="json-preview full-json">{{ JSON.stringify(currentRecord, null, 2) }}</pre>
@@ -305,6 +305,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, watchEffect } from "vue";
+import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Search, Delete, View } from "@element-plus/icons-vue";
 import { marked } from "marked";
@@ -314,6 +315,8 @@ import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import Pagination from "@/components/Pagination/index.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import { useWindowSize } from "@vueuse/core";
+
+const { t } = useI18n();
 
 const { height } = useWindowSize();
 
@@ -332,16 +335,16 @@ const gridOptions = ref({
   columns: [
     { type: "checkbox", width: 50, ellipsis: true, reserve: true },
     { title: "ID", field: "id", width: 70 },
-    { title: "标题", field: "sourceTitle", minWidth: 300, slots: { default: "titleSlot" } },
-    { title: "类型", field: "collectType", width: 90, slots: { default: "collectTypeSlot" } },
-    { title: "AI状态", field: "aiAnalysis", width: 80, slots: { default: "aiStatusSlot" } },
+    { title: t('operation.title'), field: "sourceTitle", minWidth: 300, slots: { default: "titleSlot" } },
+    { title: t('operation.type'), field: "collectType", width: 90, slots: { default: "collectTypeSlot" } },
+    { title: t('operation.aiStatus'), field: "aiAnalysis", width: 80, slots: { default: "aiStatusSlot" } },
     {
-      title: "上传者",
+      title: t('operation.uploader'),
       field: "uploader",
       width: 100,
       formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || "-",
     },
-    { title: "创建时间", field: "createdAt", width: 150, slots: { default: "createdAtSlot" } },
+    { title: t('operation.createTime'), field: "createdAt", width: 150, slots: { default: "createdAtSlot" } },
     buildOperationColumn("operationDefaultSlot"),
   ],
 } as any);
@@ -400,7 +403,7 @@ function renderAiAnalysis(aiAnalysis: any): string {
     
     // 如果有 error 字段，显示错误信息
     if (aiAnalysis.error) {
-      return marked(`**分析失败**: ${aiAnalysis.error}`, { breaks: true }) as string;
+      return marked(`**${t('operation.analysisFailed')}**: ${aiAnalysis.error}`, { breaks: true }) as string;
     }
     
     // 否则格式化展示整个对象
@@ -422,34 +425,34 @@ function renderAiAnalysis(aiAnalysis: any): string {
 function formatLabel(key: string): string {
   const labelMap: Record<string, string> = {
     id: 'ID',
-    title: '标题',
-    name: '名称',
-    description: '描述',
-    price: '价格',
-    rating: '评分',
-    reviews: '评论数',
-    imageUrl: '图片',
-    platform: '平台',
-    category: '分类',
-    brand: '品牌',
-    url: '链接',
-    keywords: '关键词',
-    analysis: '分析结果',
-    summary: '摘要',
-    score: '评分',
-    strengths: '优点',
-    weaknesses: '不足',
-    suggestions: '建议',
-    keyInfo: '关键信息',
-    features: '特点',
-    scenarios: '适用场景',
-    evaluation: '评价',
-    content: '内容',
+    title: t('operation.title'),
+    name: t('operation.name'),
+    description: t('operation.description'),
+    price: t('operation.price'),
+    rating: t('operation.rating'),
+    reviews: t('operation.reviewCount'),
+    imageUrl: t('operation.image'),
+    platform: t('operation.platform'),
+    category: t('operation.category'),
+    brand: t('operation.brand'),
+    url: t('operation.link'),
+    keywords: t('operation.keywords'),
+    analysis: t('operation.analysisResult'),
+    summary: t('operation.summary'),
+    score: t('operation.score'),
+    strengths: t('operation.strengths'),
+    weaknesses: t('operation.weaknesses'),
+    suggestions: t('operation.suggestions'),
+    keyInfo: t('operation.keyInfo'),
+    features: t('operation.features'),
+    scenarios: t('operation.applicableScenarios'),
+    evaluation: t('operation.evaluation'),
+    content: t('operation.content'),
     markdown: 'Markdown',
-    text: '文本',
-    body: '正文',
-    images: '图片列表',
-    raw: '原始内容',
+    text: t('operation.text'),
+    body: t('operation.body'),
+    images: t('operation.imageList'),
+    raw: t('operation.rawContent'),
   };
   return labelMap[key] || key;
 }
@@ -457,7 +460,7 @@ function formatLabel(key: string): string {
 // 格式化值
 function formatValue(value: any): string {
   if (value === null || value === undefined) return '-';
-  if (typeof value === 'boolean') return value ? '是' : '否';
+  if (typeof value === 'boolean') return value ? t('operation.yes') : t('operation.no');
   if (typeof value === 'number') return value.toLocaleString();
   return String(value);
 }
@@ -494,8 +497,8 @@ async function getList() {
     total.value = res.total || 0;
     ids.value = [];
   } catch (error) {
-    console.error("获取列表失败:", error);
-    ElMessage.error("获取列表失败");
+    console.error(`${t('operation.getListFailed')}:`, error);
+    ElMessage.error(t('operation.getListFailed'));
   } finally {
     loading.value = false;
   }
@@ -513,12 +516,12 @@ function checkboxAllChange(e: any) {
 
 function getTypeLabel(type: string) {
   const map: Record<string, string> = {
-    product: "商品",
-    article: "文章",
-    web_page: "网页",
-    trend: "趋势词",
-    image_batch: "图片批量",
-    text_snippet: "文本片段",
+    product: t('operation.product'),
+    article: t('operation.article'),
+    web_page: t('operation.webPage'),
+    trend: t('operation.trendWord'),
+    image_batch: t('operation.imageBatch'),
+    text_snippet: t('operation.textSnippet'),
   };
   return map[type] || type;
 }
@@ -560,13 +563,13 @@ async function handleDelete(row?: any | null) {
   } else if (ids.value.length) {
     delIds = [...ids.value];
   } else {
-    return ElMessage.warning("请选择要删除的数据");
+    return ElMessage.warning(t('operation.pleaseSelectDataToDelete'));
   }
 
   try {
-    await ElMessageBox.confirm(`确认删除选中的 ${delIds.length} 条数据吗？`, "删除提示", {
-      confirmButtonText: "确认",
-      cancelButtonText: "取消",
+    await ElMessageBox.confirm(`${t('operation.confirmDeleteSelected')} ${delIds.length} ${t('operation.items')}`, t('operation.deleteConfirm'), {
+      confirmButtonText: t('operation.confirm'),
+      cancelButtonText: t('operation.cancel'),
       type: "warning",
     });
   } catch {
@@ -578,10 +581,10 @@ async function handleDelete(row?: any | null) {
     for (const id of delIds) {
       await ExtensionCollectApi.delete(id);
     }
-    ElMessage.success("删除成功");
+    ElMessage.success(t('operation.deleteSuccess'));
     await getList();
   } catch (error) {
-    ElMessage.error("删除失败");
+    ElMessage.error(t('operation.deleteFailed'));
   } finally {
     deleteLoading.value = false;
   }

@@ -1,7 +1,7 @@
 <template>
   <GenericPlatformRawRenderer
     :record="record"
-    platform-label="TikTok Shop"
+    :platform-label="t('operation.platformTiktokShop')"
     :title-paths="['title', 'productName', 'name']"
     :subtitle-paths="['shopName', 'sellerName', 'authorName']"
     :price-paths="['priceText', 'price', 'salePrice', 'currentPrice']"
@@ -11,17 +11,20 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import type { EcomPlatformRawRecord } from "@/api/operation/ecomPlatformCollect";
 import GenericPlatformRawRenderer from "../GenericPlatformRawRenderer.vue";
+
+const { t } = useI18n();
 
 defineProps<{ record: EcomPlatformRawRecord }>();
 
 const detailFields = [
-  { label: "店铺", paths: ["shopName", "sellerName"] },
-  { label: "销量", paths: ["salesText", "soldText"] },
-  { label: "评分", paths: ["rating", "ratingText"] },
-  { label: "佣金/活动", paths: ["promotionText", "campaignText"] },
-  { label: "标签", paths: ["tags", "badges"] },
-  { label: "发货地", paths: ["shipFrom", "location"] },
+  { label: t('operation.shop'), paths: ["shopName", "sellerName"] },
+  { label: t('operation.sales'), paths: ["salesText", "soldText"] },
+  { label: t('operation.rating'), paths: ["rating", "ratingText"] },
+  { label: t('operation.commissionOrCampaign'), paths: ["promotionText", "campaignText"] },
+  { label: t('operation.tags'), paths: ["tags", "badges"] },
+  { label: t('operation.shipFrom'), paths: ["shipFrom", "location"] },
 ];
 </script>

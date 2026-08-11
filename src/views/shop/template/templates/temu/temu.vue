@@ -2,12 +2,12 @@
   <div class="p-8">
     <el-form :model="form" :rules="rules" label-width="140px" ref="formRef">
       <el-row>
-        <span class="inline-title"> 产品分类 </span>
+        <span class="inline-title"> {{ t('shop.productCategory') }} </span>
         <el-col :offset="0" :span="24">
           <el-card shadow="never">
-            <el-form-item label="产品分类 :" prop="leafCatId" style="width: 100%;">
+            <el-form-item :label="t('shop.productCategory') + ' :'" prop="leafCatId" style="width: 100%;">
               <!-- <categoriesCascader :shopId="currentRow.shopId" @change="cascaderChange"></categoriesCascader> -->
-              <el-select v-model="form.leafCatId" style="width: 640px" placeholder="请选择产品分类" @change="catIdChange">
+              <el-select v-model="form.leafCatId" style="width: 640px" :placeholder="t('shop.selectProductCategory')" @change="catIdChange">
                 <el-option v-for="item in categories" :key="item.catId" :label="item.nodePath" :value="item.catId" />
               </el-select>
             </el-form-item>
@@ -16,17 +16,17 @@
       </el-row>
 
       <!-- <el-row>
-        <span class="inline-title"> 产品分类 </span>
+        <span class="inline-title"> {{ t('shop.productCategory') }} </span>
         <el-col :offset="0" :span="24">
           <el-card shadow="never">
-            <el-form-item label="产品分类 :" prop="leafCatId" style="width: 100%;">
+            <el-form-item :label="t('shop.productCategory') + ' :'" prop="leafCatId" style="width: 100%;">
               <categoriesCascader :shopId="currentRow.shopId" @change="cascaderChange"></categoriesCascader>
             </el-form-item>
           </el-card>
         </el-col>
       </el-row> -->
 
-      <span class="inline-title"> 产品属性 </span>
+      <span class="inline-title"> {{ t('shop.productProperty') }} </span>
       <el-row>
         <el-col :offset="0" :span="24">
           <productProperty :config="productPropertyConfigData" :loading="productPropertyLoading"
@@ -34,14 +34,14 @@
         </el-col>
       </el-row>
 
-      <span class="inline-title"> 产品信息 </span>
+      <span class="inline-title"> {{ t('shop.productInfo') }} </span>
       <el-row>
         <el-col :offset="0" :span="24">
           <productInfo v-model="form.productInfo"></productInfo>
         </el-col>
       </el-row>
       <el-row>
-        <span class="inline-title"> 变种属性 </span>
+        <span class="inline-title"> {{ t('shop.variantProperty') }} </span>
         <el-col :offset="0" :span="24">
           <el-card shadow="never" class="mr-4 w-full">
             <div>
@@ -56,10 +56,10 @@
       </el-row>
 
       <el-row v-if="goodsSize">
-        <span class="inline-title"> 尺码表 </span>
+        <span class="inline-title"> {{ t('shop.sizeTemplate') }} </span>
         <el-col :offset="0" :span="24">
           <el-card shadow="never" class="mr-4 w-full">
-            <el-form-item label="尺码表 :" required>
+            <el-form-item :label="t('shop.sizeTemplate') + ' :'" required>
               <sizeTemplate :config="goodsSize" :size="form._size" @change="sizeTemplateChange" ref="sizeTemplateRef">
               </sizeTemplate>
             </el-form-item>
@@ -68,11 +68,11 @@
       </el-row>
 
       <el-row>
-        <span class="inline-title"> 包装信息 </span>
+        <span class="inline-title"> {{ t('shop.packageInfo') }} </span>
         <el-col :offset="0" :span="24">
           <el-card shadow="never">
             <packageInfo v-model="form.productOuterPackageReq"></packageInfo>
-            <el-form-item label="产品包装图:">
+            <el-form-item :label="t('shop.productPackageImage') + ' :'">
               <packageInfoImage v-model="form.productOuterPackageImageReqs" ref="packageInfoImageRef">
               </packageInfoImage>
             </el-form-item>
@@ -80,11 +80,11 @@
         </el-col>
       </el-row>
 
-      <span class="inline-title"> 产品描述 </span>
+      <span class="inline-title"> {{ t('shop.productDescription') }} </span>
       <el-row>
         <!-- <producDescription></producDescription> -->
         <el-card shadow="never">
-          <el-form-item label="产品描述 :">
+          <el-form-item :label="t('shop.productDescription') + ' :'">
             <productDescriptionTextarea v-model="form.goodsLayerDecorationReqs"></productDescriptionTextarea>
           </el-form-item>
         </el-card>
@@ -92,7 +92,7 @@
       <el-row>
         <div class="flex w-full p-4">
           <div style="flex:1;"></div>
-          <el-button type="primary" round @click="submit" :loading="saveLoading"> {{ saveLoading ? '正在保存' : '保存' }}
+          <el-button type="primary" round @click="submit" :loading="saveLoading"> {{ saveLoading ? t('shop.saving') : t('shop.save') }}
           </el-button>
         </div>
       </el-row>
@@ -111,6 +111,9 @@ import productInfo from './productInfo/index.vue'
 import productDescriptionTextarea from './productDescription/productDescriptionTextarea/index.vue'
 import packageInfoImage from './packageInfo/packageInfoImage.vue'
 import sizeTemplate from './sizeTemplate/index.vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps({
   currentRow: {
@@ -204,7 +207,7 @@ function catIdChange(id) {
 }
 
 const rules = {
-  leafCatId: [{ required: true, message: "请选择分类", trigger: "blur" }],
+  leafCatId: [{ required: true, message: t('shop.selectCategory'), trigger: "blur" }],
 }
 
 const formRef = ref()
@@ -323,7 +326,7 @@ async function submit() {
     saveLoading.value = false
   });
 
-  ElMessage.success("更新成功");
+  ElMessage.success(t('common.updateSuccess'));
 }
 
 // 外包装组件引用

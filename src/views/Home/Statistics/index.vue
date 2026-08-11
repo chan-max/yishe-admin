@@ -3,8 +3,8 @@
     <div class="module-statistics" v-loading="loading">
       <header class="module-statistics__top">
         <div class="module-statistics__top-left">
-          <h1 class="module-statistics__title">模块数据统计</h1>
-          <span class="module-statistics__hint">createTime / updateTime</span>
+          <h1 class="module-statistics__title">{{ t('home.stat.title') }}</h1>
+          <span class="module-statistics__hint">{{ t('home.stat.hint') }}</span>
           <template v-if="summaryItems.length">
             <span class="module-statistics__top-dot" />
             <div class="module-statistics__summary">
@@ -14,7 +14,7 @@
                 class="module-statistics__summary-item"
               >
                 <span v-if="index > 0" class="module-statistics__summary-sep">·</span>
-                <span class="module-statistics__summary-label">{{ item.label }}</span>
+                <span class="module-statistics__summary-label">{{ t(item.label) }}</span>
                 <strong class="module-statistics__summary-value" :class="item.tone">{{
                   formatNumber(item.value)
                 }}</strong>
@@ -25,11 +25,11 @@
         <div class="module-statistics__top-actions">
           <el-radio-group v-model="selectedDays" size="small" @change="handleDaysChange">
             <el-radio-button v-for="option in dayOptions" :key="option" :value="option">
-              {{ option }}天
+              {{ option }}{{ t('home.stat.days') }}
             </el-radio-button>
           </el-radio-group>
-          <el-button link type="primary" @click="sortDialogVisible = true">排序</el-button>
-          <el-button link type="primary" @click="loadStatistics">刷新</el-button>
+          <el-button link type="primary" @click="sortDialogVisible = true">{{ t('home.stat.sort') }}</el-button>
+          <el-button link type="primary" @click="loadStatistics">{{ t('home.stat.refresh') }}</el-button>
         </div>
       </header>
 
@@ -39,20 +39,20 @@
             <span class="module-statistics__module-name">{{ module.label }}</span>
             <span class="module-statistics__module-key">{{ module.key }}</span>
             <span class="module-statistics__module-meta">
-              总 <em>{{ formatNumber(module.total) }}</em>
+              {{ t('home.stat.total') }} <em>{{ formatNumber(module.total) }}</em>
               <span class="module-statistics__module-meta-sep">/</span>
-              改 <em>{{ formatNumber(module.updatedTotal) }}</em>
+              {{ t('home.stat.updated') }} <em>{{ formatNumber(module.updatedTotal) }}</em>
               <span class="module-statistics__module-meta-sep">/</span>
-              活跃 <em>{{ formatNumber(module.period.created + module.period.updated) }}</em>
+              {{ t('home.stat.active') }} <em>{{ formatNumber(module.period.created + module.period.updated) }}</em>
             </span>
           </div>
 
           <div class="module-statistics__module-body">
             <div class="module-statistics__chart">
               <div class="module-statistics__chart-head">
-                <span>{{ selectedDays }}天趋势</span>
+                <span>{{ selectedDays }}{{ t('home.stat.daysTrend') }}</span>
                 <span class="module-statistics__legend">
-                  <i class="is-created" />增<i class="is-updated" />改
+                  <i class="is-created" />{{ t('home.stat.created') }}<i class="is-updated" />{{ t('home.stat.updated') }}
                 </span>
               </div>
               <Echart :options="module.chartOptions" height="150px" />
@@ -62,22 +62,22 @@
               <thead>
                 <tr>
                   <th />
-                  <th>今日</th>
-                  <th v-if="selectedDays >= 7">7天</th>
-                  <th v-if="selectedDays >= 30">30天</th>
-                  <th>{{ selectedDays }}天</th>
+                  <th>{{ t('home.stat.today') }}</th>
+                  <th v-if="selectedDays >= 7">{{ t('home.stat.last7Days') }}</th>
+                  <th v-if="selectedDays >= 30">{{ t('home.stat.last30Days') }}</th>
+                  <th>{{ selectedDays }}{{ t('home.stat.days') }}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <th>增</th>
+                  <th>{{ t('home.stat.created') }}</th>
                   <td class="is-created">{{ formatNumber(module.today.created) }}</td>
                   <td v-if="selectedDays >= 7" class="is-created">{{ formatNumber(module.last7Days.created) }}</td>
                   <td v-if="selectedDays >= 30" class="is-created">{{ formatNumber(module.last30Days.created) }}</td>
                   <td class="is-created">{{ formatNumber(module.period.created) }}</td>
                 </tr>
                 <tr>
-                  <th>改</th>
+                  <th>{{ t('home.stat.updated') }}</th>
                   <td class="is-updated">{{ formatNumber(module.today.updated) }}</td>
                   <td v-if="selectedDays >= 7" class="is-updated">{{ formatNumber(module.last7Days.updated) }}</td>
                   <td v-if="selectedDays >= 30" class="is-updated">{{ formatNumber(module.last30Days.updated) }}</td>
@@ -89,7 +89,7 @@
         </article>
       </section>
 
-      <el-dialog v-model="sortDialogVisible" title="模块排序" width="420px">
+      <el-dialog v-model="sortDialogVisible" :title="t('home.stat.sortDialog.title')" width="420px">
         <div class="module-statistics__sort-list">
           <div v-for="(module, index) in orderedModules" :key="module.key" class="module-statistics__sort-item">
             <div class="module-statistics__sort-info">
@@ -98,10 +98,10 @@
             </div>
             <div class="module-statistics__sort-actions">
               <el-button link type="primary" :disabled="index === 0" @click="moveModuleToTop(module.key)">
-                置顶
+                {{ t('home.stat.sortDialog.top') }}
               </el-button>
               <el-button link type="primary" :disabled="index === 0" @click="moveModule(module.key, -1)">
-                上移
+                {{ t('home.stat.sortDialog.up') }}
               </el-button>
               <el-button
                 link
@@ -109,14 +109,14 @@
                 :disabled="index === orderedModules.length - 1"
                 @click="moveModule(module.key, 1)"
               >
-                下移
+                {{ t('home.stat.sortDialog.down') }}
               </el-button>
             </div>
           </div>
         </div>
         <template #footer>
-          <el-button @click="resetModuleOrder">恢复默认</el-button>
-          <el-button type="primary" @click="sortDialogVisible = false">完成</el-button>
+          <el-button @click="resetModuleOrder">{{ t('home.stat.sortDialog.reset') }}</el-button>
+          <el-button type="primary" @click="sortDialogVisible = false">{{ t('home.stat.sortDialog.done') }}</el-button>
         </template>
       </el-dialog>
     </div>
@@ -125,6 +125,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { EChartsOption } from 'echarts'
 import { ElMessage } from 'element-plus'
 import { ContentWrap } from '@/components/ContentWrap'
@@ -133,6 +134,8 @@ import { getModuleStatisticsApi, type ModuleStatisticsItem, type ModuleStatistic
 import { useAppStore } from '@/store/modules/app'
 
 defineOptions({ name: 'Statistics' })
+
+const { t } = useI18n()
 
 const dayOptions = [7, 30, 90]
 const selectedDays = ref(30)
@@ -148,10 +151,10 @@ const summaryItems = computed(() => {
   if (!summary) return []
 
   return [
-    { label: '模块', value: summary.moduleCount, tone: '' },
-    { label: '总记录', value: summary.totalRecords, tone: '' },
-    { label: '新增', value: summary.periodCreated, tone: 'is-created' },
-    { label: '修改', value: summary.periodUpdated, tone: 'is-updated' },
+    { label: 'home.stat.module', value: summary.moduleCount, tone: '' },
+    { label: 'home.stat.totalRecords', value: summary.totalRecords, tone: '' },
+    { label: 'home.stat.created', value: summary.periodCreated, tone: 'is-created' },
+    { label: 'home.stat.updated', value: summary.periodUpdated, tone: 'is-updated' },
   ]
 })
 
@@ -224,7 +227,7 @@ const buildTrendOptions = (series: ModuleStatisticsItem['series']): EChartsOptio
     },
     series: [
       {
-        name: '新增',
+        name: t('home.stat.created'),
         type: 'bar',
         barMaxWidth: 8,
         barGap: '30%',
@@ -234,7 +237,7 @@ const buildTrendOptions = (series: ModuleStatisticsItem['series']): EChartsOptio
         data: series.map((point) => point.created),
       },
       {
-        name: '修改',
+        name: t('home.stat.updated'),
         type: 'bar',
         barMaxWidth: 8,
         itemStyle: { color: updatedColor, opacity: 0.86 },
@@ -252,8 +255,8 @@ const loadStatistics = async () => {
     statistics.value = normalizeResponse(response)
     syncModuleOrder()
   } catch (error: any) {
-    console.error('加载统计数据失败:', error)
-    ElMessage.error(error?.message || '加载统计数据失败')
+    console.error(t('home.stat.loadStatsFail'), error)
+    ElMessage.error(error?.message || t('home.stat.loadStatsFail'))
   } finally {
     loading.value = false
   }

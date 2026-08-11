@@ -1,7 +1,7 @@
 <template>
   <GenericPlatformRawRenderer
     :record="record"
-    platform-label="京东"
+    :platform-label="t('operation.platformJd')"
     :title-paths="['title', 'productName', 'name']"
     :subtitle-paths="['shopName', 'sellerName', 'brand']"
     :price-paths="['priceText', 'price', 'jdPrice', 'salePrice']"
@@ -11,17 +11,20 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import type { EcomPlatformRawRecord } from "@/api/operation/ecomPlatformCollect";
 import GenericPlatformRawRenderer from "../GenericPlatformRawRenderer.vue";
+
+const { t } = useI18n();
 
 defineProps<{ record: EcomPlatformRawRecord }>();
 
 const detailFields = [
-  { label: "店铺", paths: ["shopName", "sellerName"] },
-  { label: "品牌", paths: ["brand", "brandName"] },
-  { label: "评论数", paths: ["commentCount", "reviewCount"] },
-  { label: "好评率", paths: ["goodRate", "positiveRate"] },
-  { label: "促销", paths: ["promotionText", "couponText"] },
-  { label: "配送", paths: ["deliveryText", "shippingText"] },
+  { label: t('operation.shop'), paths: ["shopName", "sellerName"] },
+  { label: t('operation.brand'), paths: ["brand", "brandName"] },
+  { label: t('operation.commentCount'), paths: ["commentCount", "reviewCount"] },
+  { label: t('operation.positiveRate'), paths: ["goodRate", "positiveRate"] },
+  { label: t('operation.promotion'), paths: ["promotionText", "couponText"] },
+  { label: t('operation.delivery'), paths: ["deliveryText", "shippingText"] },
 ];
 </script>

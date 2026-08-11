@@ -1,7 +1,7 @@
 <template>
   <GenericPlatformRawRenderer
     :record="record"
-    platform-label="抖音店铺"
+    :platform-label="t('operation.platformDouyinShop')"
     :title-paths="['title', 'productName', 'name']"
     :subtitle-paths="['shopName', 'authorName', 'sellerName']"
     :price-paths="['priceText', 'price', 'salePrice', 'currentPrice']"
@@ -11,17 +11,20 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import type { EcomPlatformRawRecord } from "@/api/operation/ecomPlatformCollect";
 import GenericPlatformRawRenderer from "../GenericPlatformRawRenderer.vue";
+
+const { t } = useI18n();
 
 defineProps<{ record: EcomPlatformRawRecord }>();
 
 const detailFields = [
-  { label: "店铺", paths: ["shopName", "sellerName"] },
-  { label: "达人/作者", paths: ["authorName", "anchorName"] },
-  { label: "销量", paths: ["salesText", "soldText"] },
-  { label: "评分", paths: ["rating", "ratingText"] },
-  { label: "活动", paths: ["promotionText", "couponText"] },
-  { label: "发货/地区", paths: ["deliveryText", "location"] },
+  { label: t('operation.shop'), paths: ["shopName", "sellerName"] },
+  { label: t('operation.author'), paths: ["authorName", "anchorName"] },
+  { label: t('operation.sales'), paths: ["salesText", "soldText"] },
+  { label: t('operation.rating'), paths: ["rating", "ratingText"] },
+  { label: t('operation.promotion'), paths: ["promotionText", "couponText"] },
+  { label: t('operation.deliveryOrRegion'), paths: ["deliveryText", "location"] },
 ];
 </script>

@@ -6,8 +6,8 @@
           <el-form :model="filters" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col :xs="24" :sm="12" :md="8" :lg="8">
-                <el-form-item label="任务">
-                  <el-select v-model="filters.taskId" clearable filterable placeholder="全部任务">
+                <el-form-item :label="t('operation.task')">
+                  <el-select v-model="filters.taskId" clearable filterable :placeholder="t('operation.allTasks')">
                     <el-option
                       v-for="item in taskOptions"
                       :key="item.value"
@@ -18,36 +18,36 @@
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :md="8" :lg="5">
-                <el-form-item label="运行状态">
-                  <el-select v-model="filters.status" clearable placeholder="全部状态">
-                    <el-option label="排队中" value="queued" />
-                    <el-option label="已分配" value="assigned" />
-                    <el-option label="运行中" value="running" />
-                    <el-option label="成功" value="success" />
-                    <el-option label="失败" value="failed" />
-                    <el-option label="跳过" value="skipped" />
-                    <el-option label="终止" value="terminated" />
+                <el-form-item :label="t('operation.runStatus')">
+                  <el-select v-model="filters.status" clearable :placeholder="t('operation.allStatuses')">
+                    <el-option :label="t('operation.queued')" value="queued" />
+                    <el-option :label="t('operation.assigned')" value="assigned" />
+                    <el-option :label="t('operation.running')" value="running" />
+                    <el-option :label="t('operation.success')" value="success" />
+                    <el-option :label="t('operation.failed')" value="failed" />
+                    <el-option :label="t('operation.skipped')" value="skipped" />
+                    <el-option :label="t('operation.terminated')" value="terminated" />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :md="8" :lg="5">
-                <el-form-item label="类型">
-                  <el-select v-model="filters.matchType" clearable placeholder="全部类型">
-                    <el-option label="找同款" value="supply_match" />
+                <el-form-item :label="t('operation.type')">
+                  <el-select v-model="filters.matchType" clearable :placeholder="t('operation.allTypes')">
+                    <el-option :label="t('operation.supplyMatch')" value="supply_match" />
                   </el-select>
                 </el-form-item>
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" @click="handleSearch">查询</el-button>
-              <el-button size="small" @click="handleReset">重置</el-button>
+              <el-button size="small" type="primary" @click="handleSearch">{{ t('common.query') }}</el-button>
+              <el-button size="small" @click="handleReset">{{ t('common.reset') }}</el-button>
               <el-button
                 size="small"
                 type="danger"
                 :disabled="!selectedIds.length"
                 @click="handleBatchDelete"
               >
-                批量删除 ({{ selectedIds.length }})
+                {{ t('operation.batchDelete') }}({{ selectedIds.length }})
               </el-button>
             </div>
           </el-form>
@@ -85,17 +85,17 @@
                       @command="(command) => handleOperationCommand(String(command), row)"
                     >
                       <el-button type="primary" link size="small" class="operation-trigger-button">
-                        操作
+                        {{ t('common.operation') }}
                       </el-button>
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
                           <el-dropdown-item command="detail">
                             <el-icon><View /></el-icon>
-                            <span>详情</span>
+                            <span>{{ t('common.detail') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item command="results">
                             <el-icon><List /></el-icon>
-                            <span>查看结果</span>
+                            <span>{{ t('operation.viewResults') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item
                             command="delete"
@@ -103,7 +103,7 @@
                             class="operation-menu-item--danger"
                           >
                             <el-icon><Delete /></el-icon>
-                            <span>删除</span>
+                            <span>{{ t('common.delete') }}</span>
                           </el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
@@ -135,7 +135,7 @@
       fullscreen
       destroy-on-close
       class="supply-run-detail-dialog"
-      title="找同款运行详情"
+      :title="t('operation.supplyMatchRunDetails')"
       @closed="handleDetailClosed"
     >
       <div v-loading="detailLoading" class="detail-shell">
@@ -143,11 +143,11 @@
           <CompactNotice
             v-if="currentDetail.status === 'failed'"
             type="danger"
-            title="本次找同款执行失败"
+            :title="t('operation.supplyMatchExecutionFailed')"
             :description="
               currentDetail.errorMessage ||
               currentDetail.summaryData?.message ||
-              '请检查客户端浏览器自动化环境后重试。'
+              t('operation.checkClientBrowserAutomation')
             "
             class="detail-notice"
           />
@@ -160,7 +160,7 @@
                     {{ currentDetail.task?.name || currentDetail.taskName || "-" }}
                   </div>
                   <div class="detail-card__subtitle">
-                    {{ currentDetail.summaryData?.message || "暂无运行摘要" }}
+                    {{ currentDetail.summaryData?.message || t('operation.noRunSummary') }}
                   </div>
                 </div>
                 <div class="detail-chip-row">
@@ -180,7 +180,7 @@
 
               <div class="metric-grid">
                 <div class="metric-card">
-                  <span>来源商品</span>
+                  <span>{{ t('operation.sourceProducts') }}</span>
                   <strong>{{
                     currentDetail.summaryData?.sourceSummary?.sourceCount ||
                     currentDetail.sourceItemsData?.length ||
@@ -188,17 +188,17 @@
                   }}</strong>
                 </div>
                 <div class="metric-card">
-                  <span>匹配结果</span>
+                  <span>{{ t('operation.matchResults') }}</span>
                   <strong>{{
                     currentDetail.summaryData?.matchedItemsCount || currentDetail.items?.length || 0
                   }}</strong>
                 </div>
                 <div class="metric-card">
-                  <span>命中来源</span>
+                  <span>{{ t('operation.matchedSources') }}</span>
                   <strong>{{ currentDetail.summaryData?.matchedSourceCount || 0 }}</strong>
                 </div>
                 <div class="metric-card">
-                  <span>执行机器</span>
+                  <span>{{ t('operation.executionMachine') }}</span>
                   <strong>{{
                     currentDetail.assignedMachineCode ||
                     currentDetail.summaryData?.machineCode ||
@@ -209,12 +209,12 @@
             </div>
 
             <div class="detail-card">
-              <div class="detail-card__title">来源摘要</div>
+              <div class="detail-card__title">{{ t('operation.sourceSummary') }}</div>
               <div
                 class="detail-mini-section"
                 v-if="currentDetail.summaryData?.sourceSummary?.platformBreakdown?.length"
               >
-                <div class="detail-mini-section__title">来源平台</div>
+                <div class="detail-mini-section__title">{{ t('operation.sourcePlatforms') }}</div>
                 <div class="chip-list">
                   <el-tag
                     v-for="item in currentDetail.summaryData?.sourceSummary?.platformBreakdown"
@@ -226,7 +226,7 @@
                 </div>
               </div>
               <div class="detail-mini-section" v-if="currentDetail.summaryData?.debugMeta">
-                <div class="detail-mini-section__title">调试信息</div>
+                <div class="detail-mini-section__title">{{ t('operation.debugInfo') }}</div>
                 <pre class="mini-json">{{ formatJson(currentDetail.summaryData?.debugMeta) }}</pre>
               </div>
             </div>
@@ -234,12 +234,12 @@
 
           <div class="detail-toolbar">
             <el-button type="primary" @click="openResultsPage(currentDetail)">
-              查看全部匹配结果
+              {{ t('operation.viewAllMatchResults') }}
             </el-button>
           </div>
 
           <el-tabs>
-            <el-tab-pane :label="`匹配结果 (${matchedItems.length})`">
+            <el-tab-pane :label="`${t('operation.matchResults')} (${matchedItems.length})`">
               <div v-if="matchedItems.length" class="result-list">
                 <div v-for="item in matchedItems" :key="item.id" class="result-card">
                   <div class="result-card__header">
@@ -255,14 +255,14 @@
                     </div>
                     <div class="detail-chip-row">
                       <el-tag size="small" type="success">
-                        分数 {{ item.matchScore ?? "-" }}
+                        {{ t('operation.score') }} {{ item.matchScore ?? "-" }}
                       </el-tag>
-                      <el-tag size="small" type="info"> 排名 {{ item.matchRank ?? "-" }} </el-tag>
+                      <el-tag size="small" type="info"> {{ t('operation.rank') }} {{ item.matchRank ?? "-" }} </el-tag>
                     </div>
                   </div>
                   <div class="result-card__compare">
-                    来源：{{ item.sourceTitle || "-" }}
-                    <span v-if="item.sourceQuery"> · 查询词：{{ item.sourceQuery }}</span>
+                    {{ t('operation.source') }}: {{ item.sourceTitle || "-" }}
+                    <span v-if="item.sourceQuery"> · {{ t('operation.queryWord') }}: {{ item.sourceQuery }}</span>
                   </div>
                   <div class="result-card__actions">
                     <el-link
@@ -271,7 +271,7 @@
                       target="_blank"
                       type="primary"
                     >
-                      来源链接
+                      {{ t('operation.sourceLink') }}
                     </el-link>
                     <el-link
                       v-if="item.supplierUrl"
@@ -279,15 +279,15 @@
                       target="_blank"
                       type="primary"
                     >
-                      供货链接
+                      {{ t('operation.supplierLink') }}
                     </el-link>
                   </div>
                 </div>
               </div>
-              <el-empty v-else description="暂无匹配结果" />
+              <el-empty v-else :description="t('operation.noMatchResults')" />
             </el-tab-pane>
 
-            <el-tab-pane :label="`来源商品 (${sourceItems.length})`">
+            <el-tab-pane :label="`${t('operation.sourceProducts')} (${sourceItems.length})`">
               <div v-if="sourceItems.length" class="source-list">
                 <div
                   v-for="item in sourceItems"
@@ -301,7 +301,7 @@
                     <span>{{ item.sourcePlatform || item.platform || "-" }}</span>
                     <span>{{ item.priceText || "-" }}</span>
                     <span v-if="item.recommendedRank != null"
-                      >推荐位次 {{ item.recommendedRank }}</span
+                      >{{ t('operation.recommendedRank') }} {{ item.recommendedRank }}</span
                     >
                   </div>
                   <div class="source-card__text">{{ item.summaryText || "-" }}</div>
@@ -311,20 +311,20 @@
                     target="_blank"
                     type="primary"
                   >
-                    查看来源链接
+                    {{ t('operation.viewSourceLink') }}
                   </el-link>
                 </div>
               </div>
-              <el-empty v-else description="暂无来源商品" />
+              <el-empty v-else :description="t('operation.noSourceProducts')" />
             </el-tab-pane>
 
-            <el-tab-pane label="JSON">
+            <el-tab-pane :label="t('operation.json')">
               <pre class="json-preview">{{ detailPreviewText }}</pre>
             </el-tab-pane>
           </el-tabs>
         </template>
 
-        <el-empty v-else description="暂无详情数据" />
+        <el-empty v-else :description="t('operation.noDetailData')" />
       </div>
     </el-dialog>
   </ContentWrap>
@@ -332,6 +332,7 @@
 
 <script setup lang="ts">
 import { computed, onActivated, onMounted, reactive, ref } from "vue";
+import { useI18n } from 'vue-i18n';
 import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Delete, List, View } from "@element-plus/icons-vue";
@@ -355,6 +356,8 @@ import {
   getRunStatusLabel,
   getRunStatusTagType,
 } from "@/views/operation/ecom-data/shared";
+
+const { t } = useI18n();
 
 defineOptions({ name: "EcomSelectionSupplyMatchRunPage" });
 
@@ -410,7 +413,7 @@ const getSummaryText = (row: EcomSelectionSupplyMatchRun) => {
   return (
     row.summaryData?.message ||
     row.errorMessage ||
-    (row.summaryData?.matchedItemsCount ? `匹配 ${row.summaryData.matchedItemsCount} 个结果` : "-")
+    (row.summaryData?.matchedItemsCount ? `${t('operation.matched')} ${row.summaryData.matchedItemsCount} ${t('operation.results')}` : "-")
   );
 };
 
@@ -425,48 +428,48 @@ const gridOptions = ref<VxeGridProps<EcomSelectionSupplyMatchRun>>({
   },
   columns: [
     { type: "checkbox", width: 48 },
-    { title: "任务名称", field: "taskName", minWidth: 220, showOverflow: "tooltip" },
+    { title: t('operation.taskName'), field: "taskName", minWidth: 220, showOverflow: "tooltip" },
     {
-      title: "状态",
+      title: t('operation.status'),
       field: "status",
       width: 100,
       slots: { default: "statusSlot" },
     },
     {
-      title: "来源数",
+      title: t('operation.sourceCount'),
       field: "sourceCount",
       width: 88,
       formatter: ({ row }) => Number(row.summaryData?.sourceSummary?.sourceCount || 0),
     },
     {
-      title: "匹配数",
+      title: t('operation.matchCount'),
       field: "matchedItemsCount",
       width: 88,
       formatter: ({ row }) => Number(row.summaryData?.matchedItemsCount || 0),
     },
     {
-      title: "命中来源",
+      title: t('operation.matchedSourceCount'),
       field: "matchedSourceCount",
       width: 100,
       formatter: ({ row }) => Number(row.summaryData?.matchedSourceCount || 0),
     },
     {
-      title: "执行机器",
+      title: t('operation.executionMachine'),
       field: "assignedMachineCode",
       minWidth: 160,
       showOverflow: "tooltip",
       formatter: ({ row }) => row.assignedMachineCode || row.summaryData?.machineCode || "-",
     },
     {
-      ...buildTimeColumn("开始时间", "startedAt", 180),
+      ...buildTimeColumn(t('operation.startTime'), "startedAt", 180),
       formatter: ({ cellValue }) => formatDateTime(cellValue as string),
     },
     {
-      ...buildTimeColumn("结束时间", "finishedAt", 180),
+      ...buildTimeColumn(t('operation.endTime'), "finishedAt", 180),
       formatter: ({ cellValue }) => formatDateTime(cellValue as string),
     },
     {
-      title: "摘要",
+      title: t('operation.summary'),
       field: "summaryData",
       minWidth: 260,
       showOverflow: "tooltip",
@@ -568,12 +571,12 @@ const openResultsPage = async (row: EcomSelectionSupplyMatchRun) => {
 const handleDelete = async (row: EcomSelectionSupplyMatchRun) => {
   try {
     await ElMessageBox.confirm(
-      "确认删除这条找同款运行记录吗？将同步清理本次产生的匹配结果。",
-      "提示",
+      t('operation.confirmDeleteSupplyMatchRun'),
+      t('common.tip'),
       { type: "warning" },
     );
     await deleteEcomSelectionSupplyMatchRun(row.id);
-    ElMessage.success("运行记录已删除");
+    ElMessage.success(t('operation.runRecordDeleted'));
     await loadList();
   } catch {}
 };
@@ -581,11 +584,11 @@ const handleDelete = async (row: EcomSelectionSupplyMatchRun) => {
 const handleBatchDelete = async () => {
   if (!selectedIds.value.length) return;
   try {
-    await ElMessageBox.confirm(`确认批量删除 ${selectedIds.value.length} 条运行记录吗？`, "提示", {
-      type: "warning",
-    });
+    await ElMessageBox.confirm(`${t('operation.confirmBatchDeleteRunRecords')} ${selectedIds.value.length} ${t('operation.items')}`, t('common.tip'), {
+      type: "warning" },
+    );
     await batchDeleteEcomSelectionSupplyMatchRun(selectedIds.value);
-    ElMessage.success("批量删除成功");
+    ElMessage.success(t('operation.batchDeleteSuccess'));
     await loadList();
   } catch {}
 };

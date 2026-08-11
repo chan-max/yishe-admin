@@ -5,8 +5,8 @@ import {
   SYSTEM_NODE_REGISTRY,
   NODE_CATEGORIES,
   NODE_REQUIREMENTS,
-  type SystemNodeCapability
-} from '@/views/workflow/editor/config/nodeRegistry'
+  type NodeManifest,
+} from '@/views/workflow/editor/config/node-manifest'
 
 const props = defineProps<{
   modelValue: boolean
@@ -14,7 +14,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:modelValue', val: boolean): void
-  (e: 'select', capability: SystemNodeCapability): void
+  (e: 'select', capability: NodeManifest): void
 }>()
 
 const searchQuery = ref('')
@@ -39,7 +39,7 @@ const getCategoryCount = (key: string) => {
   return SYSTEM_NODE_REGISTRY.filter(n => n.category === key).length
 }
 
-const handleSelect = (cap: SystemNodeCapability) => {
+const handleSelect = (cap: NodeManifest) => {
   emit('select', cap)
   emit('update:modelValue', false)
   searchQuery.value = ''
@@ -102,13 +102,16 @@ const handleClose = () => {
           </div>
           <div v-else class="np-grid">
             <div v-for="cap in filteredCapabilities" :key="cap.type" class="np-card" @click="handleSelect(cap)">
-              <div class="np-card__icon">
-                <img v-if="cap.iconImage" :src="cap.iconImage" class="np-card__icon-img" />
-                <Icon v-else :icon="cap.icon" :style="{ color: cap.color }" />
+              <div class="np-card__media">
+                <div class="np-card__icon-wrap">
+                  <img v-if="cap.iconImage" :src="cap.iconImage" class="np-card__icon-img" />
+                  <Icon v-else :icon="cap.icon" :style="{ color: cap.color }" />
+                </div>
               </div>
-              <div class="np-card__body">
-                <div class="np-card__name">
-                  {{ cap.name }}
+              <div class="np-card__content">
+                <div class="np-card__header">
+                  <span class="np-card__title">{{ cap.name }}</span>
+                  <span v-if="cap.badge" class="np-card__badge" :style="{ color: cap.color, borderColor: cap.color }">{{ cap.badge }}</span>
                 </div>
                 <div class="np-card__desc">{{ cap.description }}</div>
                 <div v-if="cap.requirements?.length" class="np-card__requirements">
@@ -234,7 +237,7 @@ const handleClose = () => {
 }
 
 .np-sidebar__count {
-  min-width: 22px;
+  min-width: 32px;
   padding: 2px 7px;
   font-size: 10px;
   font-weight: 600;
@@ -299,7 +302,9 @@ const handleClose = () => {
 
 /* 节点卡片 - neumorphic style */
 .np-card {
-  display: flex;
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  grid-template-rows: auto;
   padding: 14px 16px;
   cursor: pointer;
   background: var(--app-content-surface-color);
@@ -309,8 +314,8 @@ const handleClose = () => {
     6px 6px 18px color-mix(in srgb, var(--el-text-color-primary) 10%, transparent),
     -3px -3px 12px color-mix(in srgb, #ffffff, transparent);
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.15s ease;
-  align-items: flex-start;
-  gap: 14px;
+  gap: 12px;
+  align-items: start;
 
   &:hover {
     background: color-mix(in srgb, var(--el-color-primary) 4%, var(--app-content-surface-color));
@@ -319,40 +324,80 @@ const handleClose = () => {
       10px 10px 28px color-mix(in srgb, var(--el-text-color-primary) 14%, transparent),
       -5px -5px 18px color-mix(in srgb, #ffffff, transparent);
   }
+
+  html.dark & {
+    box-shadow:
+      4px 4px 16px rgba(0, 0, 0, 0.5),
+      0 1px 4px rgba(0, 0, 0, 0.3);
+
+    &:hover {
+      box-shadow:
+        6px 6px 24px rgba(0, 0, 0, 0.6),
+        0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+  }
 }
 
-.np-card__icon {
+.np-card__media {
   display: flex;
-  width: 36px;
-  height: 36px;
-  font-size: 18px;
-  border-radius: 8px;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+}
+
+.np-card__icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
 }
 
 .np-card__icon-img {
-  width: 22px;
-  height: 22px;
-  flex-shrink: 0;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
 }
 
-.np-card__body {
+.np-card__icon-wrap :deep(.el-icon),
+.np-card__icon-wrap :deep(svg) {
+  width: 28px;
+  height: 28px;
+  font-size: 28px;
+}
+
+.np-card__content {
   display: flex;
-  min-width: 0;
-  flex: 1;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 
-.np-card__name {
+.np-card__header {
   display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.np-card__title {
   font-size: 13px;
   font-weight: 600;
   color: var(--el-text-color-primary);
-  align-items: center;
-  gap: 6px;
+  line-height: 1.4;
+}
+
+.np-card__badge {
+  padding: 1px 6px;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  border: 1px solid currentColor;
+  border-radius: 20px;
 }
 
 

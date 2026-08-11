@@ -6,29 +6,29 @@
           <el-form :model="filters" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col :xs="24" :sm="12" :md="8" :lg="8">
-                <el-form-item label="任务名称 / 创建人">
+                <el-form-item :label="t('operation.taskNameOrCreator')">
                   <el-input
                     v-model="filters.keyword"
                     clearable
-                    placeholder="搜索任务名称 / 创建人"
+                    :placeholder="t('operation.searchTaskNameOrCreator')"
                     @keyup.enter="handleSearch"
                   />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :md="8" :lg="6">
-                <el-form-item label="任务类型">
-                  <el-select v-model="filters.matchType" clearable placeholder="全部类型">
-                    <el-option label="找同款" value="supply_match" />
+                <el-form-item :label="t('operation.taskType')">
+                  <el-select v-model="filters.matchType" clearable :placeholder="t('operation.allTypes')">
+                    <el-option :label="t('operation.supplyMatch')" value="supply_match" />
                   </el-select>
                 </el-form-item>
               </el-col>
             </el-row>
 
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" @click="handleSearch">查询</el-button>
-              <el-button size="small" @click="handleReset">重置</el-button>
+              <el-button size="small" type="primary" @click="handleSearch">{{ t('common.query') }}</el-button>
+              <el-button size="small" @click="handleReset">{{ t('common.reset') }}</el-button>
               <el-button size="small" type="primary" @click="openTaskDialog()">
-                新建任务
+                {{ t('operation.createTask') }}
               </el-button>
               <el-button
                 size="small"
@@ -36,7 +36,7 @@
                 :disabled="!selectedIds.length"
                 @click="handleBatchDelete"
               >
-                批量删除 ({{ selectedIds.length }})
+                {{ t('operation.batchDelete') }}({{ selectedIds.length }})
               </el-button>
             </div>
           </el-form>
@@ -70,7 +70,7 @@
                   <div class="table-stack">
                     <span>{{ getOptionsSummary(row) }}</span>
                     <span class="table-meta-text">
-                      截图：{{ row.optionsData?.captureSnapshots ? "开启" : "关闭" }}
+                      {{ t('operation.snapshot') }}: {{ row.optionsData?.captureSnapshots ? t('operation.enabled') : t('operation.disabled') }}
                     </span>
                   </div>
                 </template>
@@ -84,7 +84,7 @@
                     >
                       {{ getRunStatusLabel(row.lastRunStatus) }}
                     </el-tag>
-                    <span v-else class="table-meta-text">未执行</span>
+                    <span v-else class="table-meta-text">{{ t('operation.notExecuted') }}</span>
                     <span class="table-meta-text">
                       {{ formatDateTime(row.lastRunAt) }}
                     </span>
@@ -110,17 +110,17 @@
                         class="operation-trigger-button"
                         :loading="triggeringTaskId === row.id"
                       >
-                        操作
+                        {{ t('common.operation') }}
                       </el-button>
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
                           <el-dropdown-item command="trigger">
                             <el-icon><VideoPlay /></el-icon>
-                            <span>立即执行</span>
+                            <span>{{ t('operation.executeNow') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item command="edit">
                             <el-icon><Edit /></el-icon>
-                            <span>编辑</span>
+                            <span>{{ t('common.edit') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item
                             command="delete"
@@ -128,7 +128,7 @@
                             class="operation-menu-item--danger"
                           >
                             <el-icon><Delete /></el-icon>
-                            <span>删除</span>
+                            <span>{{ t('common.delete') }}</span>
                           </el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
@@ -176,6 +176,7 @@
 
 <script setup lang="ts">
 import { computed, onActivated, onMounted, reactive, ref, watch } from "vue";
+import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from "vue-router";
 import { ElMessage, ElMessageBox, ElNotification } from "element-plus";
 import { Delete, Edit, VideoPlay } from "@element-plus/icons-vue";
@@ -205,6 +206,8 @@ import {
   parseTextareaList,
 } from "@/views/operation/ecom-data/shared";
 
+const { t } = useI18n();
+
 defineOptions({ name: "EcomSelectionSupplyMatchTaskPage" });
 
 const route = useRoute();
@@ -233,7 +236,7 @@ const updateSelectedIds = (records: EcomSelectionSupplyMatchTask[] = []) => {
   selectedIds.value = Array.from(
     new Set(records.map((item) => String(item.id || "").trim()).filter(Boolean)),
   );
-};
+});
 
 const tableData = computed(() => {
   if (list.value.length <= filters.pageSize) {
@@ -246,34 +249,34 @@ const tableData = computed(() => {
 const getSourceSummary = (task: EcomSelectionSupplyMatchTask) => {
   const sourceConfig = task.sourceConfig || {};
   const parts = [
-    sourceConfig.analysisRunId ? "来源：分析运行" : "",
+    sourceConfig.analysisRunId ? t('operation.sourceAnalysisRun') : "",
     Array.isArray(sourceConfig.sourceItemIds) && sourceConfig.sourceItemIds.length
-      ? `来源商品 ${sourceConfig.sourceItemIds.length} 个`
+      ? `${t('operation.sourceProducts')} ${sourceConfig.sourceItemIds.length} ${t('operation.items')}`
       : "",
     Array.isArray(sourceConfig.rawRecordIds) && sourceConfig.rawRecordIds.length
-      ? `原始记录 ${sourceConfig.rawRecordIds.length} 个`
+      ? `${t('operation.rawRecords')} ${sourceConfig.rawRecordIds.length} ${t('operation.items')}`
       : "",
     Array.isArray(sourceConfig.keywordSeeds) && sourceConfig.keywordSeeds.length
-      ? `关键词种子 ${sourceConfig.keywordSeeds.length} 个`
+      ? `${t('operation.keywordSeeds')} ${sourceConfig.keywordSeeds.length} ${t('operation.items')}`
       : "",
   ].filter(Boolean);
 
-  return parts.join(" | ") || "未配置来源";
+  return parts.join(" | ") || t('operation.sourceNotConfigured');
 };
 
 const getOptionsSummary = (task: EcomSelectionSupplyMatchTask) => {
   const options = task.optionsData || {};
   const parts = [
     Array.isArray(options.supplierPlatforms) && options.supplierPlatforms.length
-      ? `供货平台 ${formatListPreview(options.supplierPlatforms, 2)}`
+      ? `${t('operation.supplierPlatforms')} ${formatListPreview(options.supplierPlatforms, 2)}`
       : "",
-    options.maxSourceItems ? `来源 ${options.maxSourceItems}` : "",
-    options.maxMatchesPerSource ? `每源匹配 ${options.maxMatchesPerSource}` : "",
-    options.maxDetailPerSource != null ? `详情 ${options.maxDetailPerSource}` : "",
-    options.queryCount ? `查询词 ${options.queryCount}` : "",
+    options.maxSourceItems ? `${t('operation.source')} ${options.maxSourceItems}` : "",
+    options.maxMatchesPerSource ? `${t('operation.matchesPerSource')} ${options.maxMatchesPerSource}` : "",
+    options.maxDetailPerSource != null ? `${t('operation.details')} ${options.maxDetailPerSource}` : "",
+    options.queryCount ? `${t('operation.queryWords')} ${options.queryCount}` : "",
   ].filter(Boolean);
 
-  return parts.join(" | ") || "使用默认找同款参数";
+  return parts.join(" | ") || t('operation.useDefaultSupplyMatchParams');
 };
 
 const getResultSummary = (task: EcomSelectionSupplyMatchTask) => {
@@ -281,7 +284,7 @@ const getResultSummary = (task: EcomSelectionSupplyMatchTask) => {
   return (
     summaryData?.message ||
     task.lastResultSummary?.errorMessage ||
-    (summaryData?.matchedItemsCount ? `已匹配 ${summaryData.matchedItemsCount} 个结果` : "-")
+    (summaryData?.matchedItemsCount ? `${t('operation.matched')} ${summaryData.matchedItemsCount} ${t('operation.results')}` : "-")
   );
 };
 
@@ -296,48 +299,48 @@ const gridOptions = ref<VxeGridProps<EcomSelectionSupplyMatchTask>>({
   },
   columns: [
     { type: "checkbox", width: 48 },
-    { title: "任务名称", field: "name", minWidth: 220, showOverflow: "tooltip" },
+    { title: t('operation.taskName'), field: "name", minWidth: 220, showOverflow: "tooltip" },
     {
-      title: "类型",
+      title: t('operation.type'),
       field: "matchType",
       width: 110,
       slots: { default: "typeSlot" },
     },
     {
-      title: "来源范围",
+      title: t('operation.sourceRange'),
       field: "sourceConfig",
       minWidth: 240,
       showOverflow: "tooltip",
       slots: { default: "sourceSlot" },
     },
     {
-      title: "执行参数",
+      title: t('operation.executionParams'),
       field: "optionsData",
       minWidth: 280,
       showOverflow: "tooltip",
       slots: { default: "optionsSlot" },
     },
     {
-      title: "最近运行",
+      title: t('operation.latestRun'),
       field: "lastRunStatus",
       width: 120,
       slots: { default: "lastRunSlot" },
     },
     {
-      title: "结果摘要",
+      title: t('operation.resultSummary'),
       field: "lastResultSummary",
       minWidth: 240,
       showOverflow: "tooltip",
       slots: { default: "summarySlot" },
     },
     {
-      title: "创建人",
+      title: t('operation.creator'),
       field: "creator",
       width: 120,
       formatter: ({ row }) => row.creator || "-",
     },
     {
-      ...buildTimeColumn("更新时间", "updateTime", 180),
+      ...buildTimeColumn(t('operation.updateTime'), "updateTime", 180),
       formatter: ({ cellValue }) => formatDateTime(cellValue as string),
     },
     buildOperationColumn("operationSlot", 120),
@@ -455,7 +458,7 @@ const handleTriggerConfirm = async (executionContext: Record<string, any>) => {
   triggeringTaskId.value = row.id;
   const loadingMessage = ElMessage({
     type: "info",
-    message: `正在提交找同款任务：${row.name}`,
+    message: `${t('operation.submittingSupplyMatchTask')}: ${row.name}`,
     duration: 0,
     showClose: true,
   });
@@ -468,17 +471,17 @@ const handleTriggerConfirm = async (executionContext: Record<string, any>) => {
     triggerDialogVisible.value = false;
     triggerTaskRecord.value = null;
     ElNotification({
-      title: result?.status === "failed" ? "任务启动失败" : "已提交执行",
+      title: result?.status === "failed" ? t('operation.taskStartFailed') : t('operation.submittedForExecution'),
       type: result?.status === "failed" ? "warning" : "success",
       duration: 5000,
       message: result?.id
-        ? `运行记录：${result.id}${result.summaryData?.message ? `，${result.summaryData.message}` : ""}`
-        : "任务已触发，请前往运行记录查看执行状态",
+        ? `${t('operation.runRecord')}: ${result.id}${result.summaryData?.message ? `，${result.summaryData.message}` : ""}`
+        : t('operation.taskTriggeredPleaseCheckRunRecords'),
     });
     await loadList();
   } catch (error: any) {
     loadingMessage.close();
-    ElMessage.error(error?.message || "触发失败");
+    ElMessage.error(error?.message || t('operation.triggerFailed'));
   } finally {
     triggeringTaskId.value = "";
   }
@@ -487,12 +490,12 @@ const handleTriggerConfirm = async (executionContext: Record<string, any>) => {
 const handleDelete = async (row: EcomSelectionSupplyMatchTask) => {
   try {
     await ElMessageBox.confirm(
-      `确认删除找同款任务「${row.name}」吗？将同步清理运行记录与匹配结果。`,
-      "提示",
+      `${t('operation.confirmDeleteSupplyMatchTask')}「${row.name}」${t('operation.deleteSupplyMatchTaskWarning')}`,
+      t('common.tip'),
       { type: "warning" },
     );
     await deleteEcomSelectionSupplyMatchTask(row.id);
-    ElMessage.success("找同款任务已删除");
+    ElMessage.success(t('operation.supplyMatchTaskDeleted'));
     await loadList();
   } catch {}
 };
@@ -501,12 +504,12 @@ const handleBatchDelete = async () => {
   if (!selectedIds.value.length) return;
   try {
     await ElMessageBox.confirm(
-      `确认批量删除 ${selectedIds.value.length} 个找同款任务吗？将同步清理关联运行与结果。`,
-      "提示",
+      `${t('operation.confirmBatchDeleteSupplyMatchTasks')} ${selectedIds.value.length} ${t('operation.batchDeleteSupplyMatchTasksWarning')}`,
+      t('common.tip'),
       { type: "warning" },
     );
     await batchDeleteEcomSelectionSupplyMatchTask(selectedIds.value);
-    ElMessage.success("批量删除成功");
+    ElMessage.success(t('operation.batchDeleteSuccess'));
     await loadList();
   } catch {}
 };

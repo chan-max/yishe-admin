@@ -6,21 +6,21 @@
           <el-form :model="filters" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col :xs="24" :sm="12" :md="8" :lg="8">
-                <el-form-item label="任务名称 / 平台 / 任务类型">
+                <el-form-item :label="t('operation.taskNameOrPlatformOrType')">
                   <el-input
                     v-model="filters.keyword"
                     clearable
-                    placeholder="搜索任务名称 / 平台 / 任务类型"
+                    :placeholder="t('operation.searchTaskNameOrPlatformOrType')"
                     @keyup.enter="handleSearch"
                   />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :md="8" :lg="6">
-                <el-form-item label="平台">
+                <el-form-item :label="t('operation.platform')">
                   <el-select
                     v-model="filters.platform"
                     clearable
-                    placeholder="平台"
+                    :placeholder="t('operation.platform')"
                     @change="handlePlatformFilterChange"
                   >
                     <el-option
@@ -33,12 +33,12 @@
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :md="8" :lg="6">
-                <el-form-item label="任务类型">
+                <el-form-item :label="t('operation.taskType')">
                   <el-select
                     v-model="filters.taskType"
                     clearable
                     filterable
-                    placeholder="任务类型"
+                    :placeholder="t('operation.taskType')"
                   >
                     <el-option
                       v-for="item in availableTaskTypeOptions"
@@ -52,14 +52,14 @@
             </el-row>
 
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" @click="handleSearch">查询</el-button>
-              <el-button size="small" @click="handleReset">重置</el-button>
-              <el-button size="small" @click="loadData">刷新</el-button>
+              <el-button size="small" type="primary" @click="handleSearch">{{ t('common.query') }}</el-button>
+              <el-button size="small" @click="handleReset">{{ t('common.reset') }}</el-button>
+              <el-button size="small" @click="loadData">{{ t('common.refresh') }}</el-button>
               <el-button size="small" type="primary" @click="openTaskDialog()">
-                新建任务
+                {{ t('operation.createTask') }}
               </el-button>
               <el-button size="small" type="warning" @click="handleResetActiveRuns">
-                重置运行状态
+                {{ t('operation.resetRunStatus') }}
               </el-button>
               <el-button
                 size="small"
@@ -67,7 +67,7 @@
                 :disabled="!selectedIds.length"
                 @click="handleBatchDelete"
               >
-                批量删除 ({{ selectedIds.length }})
+                {{ t('operation.batchDelete') }}({{ selectedIds.length }})
               </el-button>
             </div>
           </el-form>
@@ -114,7 +114,7 @@
                       <span class="config-chip__value">{{ item.value }}</span>
                     </span>
                     <span v-if="!getTaskConfigParts(row).length" class="table-meta-text">
-                      按表单配置执行
+                      {{ t('operation.executeByFormConfig') }}
                     </span>
                   </div>
                 </template>
@@ -134,17 +134,17 @@
                         class="operation-trigger-button"
                         :loading="triggeringTaskId === row.id"
                       >
-                        操作
+                        {{ t('common.operation') }}
                       </el-button>
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
                           <el-dropdown-item command="trigger">
                             <el-icon><VideoPlay /></el-icon>
-                            <span>立即执行</span>
+                            <span>{{ t('operation.executeNow') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item command="edit">
                             <el-icon><Edit /></el-icon>
-                            <span>编辑</span>
+                            <span>{{ t('common.edit') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item
                             command="delete"
@@ -152,7 +152,7 @@
                             class="operation-menu-item--danger"
                           >
                             <el-icon><Delete /></el-icon>
-                            <span>删除</span>
+                            <span>{{ t('common.delete') }}</span>
                           </el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
@@ -198,6 +198,7 @@
 
 <script setup lang="ts">
 import { computed, onActivated, onMounted, reactive, ref } from "vue";
+import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox, ElNotification } from "element-plus";
 import { Delete, Edit, VideoPlay } from "@element-plus/icons-vue";
 import type { VxeGridProps } from "vxe-table";
@@ -222,6 +223,8 @@ import {
   getTaskTypeSchemas,
   loadEcomCollectCatalog,
 } from "./shared";
+
+const { t } = useI18n();
 
 defineOptions({ name: "EcomPlatformCollectTaskPage" });
 
@@ -270,14 +273,14 @@ const getTaskConfigSummary = (task: EcomPlatformCollectTask) => {
     .toLowerCase()
     .includes("search");
   const summaryParts = [
-    config.keyword ? `关键词: ${config.keyword}` : "",
-    !config.keyword && keywords.length ? `关键词: ${keywords.slice(0, 3).join(" / ")}` : "",
-    config.targetUrl ? `链接: ${config.targetUrl}` : "",
-    !isSearchTask && config.maxPages ? `页数: ${config.maxPages}` : "",
-    !isSearchTask && config.maxItems ? `条数: ${config.maxItems}` : "",
+    config.keyword ? `${t('operation.keyword')}: ${config.keyword}` : "",
+    !config.keyword && keywords.length ? `${t('operation.keyword')}: ${keywords.slice(0, 3).join(" / ")}` : "",
+    config.targetUrl ? `${t('operation.link')}: ${config.targetUrl}` : "",
+    !isSearchTask && config.maxPages ? `${t('operation.pages')}: ${config.maxPages}` : "",
+    !isSearchTask && config.maxItems ? `${t('operation.items')}: ${config.maxItems}` : "",
   ].filter(Boolean);
 
-  return summaryParts.join(" | ") || "按表单配置执行";
+  return summaryParts.join(" | ") || t('operation.executeByFormConfig');
 };
 
 const getShortText = (value: unknown, maxLength = 54) => {
@@ -296,14 +299,14 @@ const getTaskConfigParts = (task: EcomPlatformCollectTask) => {
     .includes("search");
   return [
     config.keyword
-      ? { label: "关键词", value: getShortText(config.keyword, 32) }
+      ? { label: t('operation.keyword'), value: getShortText(config.keyword, 32) }
       : null,
     !config.keyword && keywords.length
-      ? { label: "关键词", value: getShortText(keywords.slice(0, 3).join(" / "), 42) }
+      ? { label: t('operation.keyword'), value: getShortText(keywords.slice(0, 3).join(" / "), 42) }
       : null,
-    config.targetUrl ? { label: "链接", value: getShortText(config.targetUrl, 54) } : null,
-    !isSearchTask && config.maxPages ? { label: "页数", value: String(config.maxPages) } : null,
-    !isSearchTask && config.maxItems ? { label: "条数", value: String(config.maxItems) } : null,
+    config.targetUrl ? { label: t('operation.link'), value: getShortText(config.targetUrl, 54) } : null,
+    !isSearchTask && config.maxPages ? { label: t('operation.pages'), value: String(config.maxPages) } : null,
+    !isSearchTask && config.maxItems ? { label: t('operation.items'), value: String(config.maxItems) } : null,
   ].filter(Boolean) as Array<{ label: string; value: string }>;
 };
 
@@ -319,33 +322,33 @@ const gridOptions = ref<VxeGridProps<EcomPlatformCollectTask>>({
   columns: [
     { type: "checkbox", width: 48 },
     {
-      title: "任务名称",
+      title: t('operation.taskName'),
       field: "name",
       minWidth: 240,
       showOverflow: "tooltip",
       slots: { default: "taskNameSlot" },
     },
     {
-      title: "平台 / 任务类型",
+      title: t('operation.platformOrTaskType'),
       field: "platform",
       width: 220,
       slots: { default: "platformSceneSlot" },
     },
     {
-      title: "采集配置",
+      title: t('operation.collectConfig'),
       field: "configData",
       minWidth: 320,
       showOverflow: "tooltip",
       slots: { default: "configSlot" },
     },
     {
-      title: "创建人",
+      title: t('operation.creator'),
       field: "creator",
       width: 120,
       formatter: ({ row }) => row.creator || "-",
     },
     {
-      ...buildTimeColumn("更新时间", "updateTime", 180),
+      ...buildTimeColumn(t('operation.updateTime'), "updateTime", 180),
       formatter: ({ cellValue }) => formatDateTime(cellValue as string),
     },
     buildOperationColumn("operationSlot", 120),
@@ -458,7 +461,7 @@ const handleTriggerConfirm = async (executionContext: Record<string, any>) => {
   triggeringTaskId.value = row.id;
   const loadingMessage = ElMessage({
     type: "info",
-    message: `正在提交执行：${row.name}`,
+    message: `${t('operation.submittingExecution')}: ${row.name}`,
     duration: 0,
     showClose: true,
   });
@@ -473,27 +476,27 @@ const handleTriggerConfirm = async (executionContext: Record<string, any>) => {
 
     if (result?.success === false) {
       ElNotification({
-        title: "执行未启动",
+        title: t('operation.executionNotStarted'),
         type: "warning",
         duration: 4500,
         message: result?.data?.runId
-          ? `${result.message || "触发失败"}，已生成运行记录：${result.data.runId}`
-          : result?.message || "触发失败",
+          ? `${result.message || t('operation.triggerFailed')}${t('operation.generatedRunRecord')}: ${result.data.runId}`
+          : result?.message || t('operation.triggerFailed'),
       });
       return;
     }
 
     ElNotification({
-      title: "已开始执行",
+      title: t('operation.executionStarted'),
       type: "success",
       duration: 4500,
       message: result?.data?.runId
-        ? `任务已下发到客户端，运行记录：${result.data.runId}`
-        : result?.message || "任务已触发",
+        ? `${t('operation.taskSentToClient')}${t('operation.runRecord')}: ${result.data.runId}`
+        : result?.message || t('operation.taskTriggered'),
     });
   } catch (error: any) {
     loadingMessage.close();
-    ElMessage.error(error?.message || "触发失败");
+    ElMessage.error(error?.message || t('operation.triggerFailed'));
   } finally {
     triggeringTaskId.value = "";
   }
@@ -502,12 +505,12 @@ const handleTriggerConfirm = async (executionContext: Record<string, any>) => {
 const handleDelete = async (row: EcomPlatformCollectTask) => {
   try {
     await ElMessageBox.confirm(
-      `确认删除任务「${row.name}」吗？将同步删除关联运行记录、原始数据和截图文件。`,
-      "提示",
+      `${t('operation.confirmDeleteTask')}「${row.name}」${t('operation.deleteTaskWarning')}`,
+      t('common.tip'),
       { type: "warning" },
     );
     await deleteEcomPlatformCollectTask(row.id);
-    ElMessage.success("任务已删除");
+    ElMessage.success(t('operation.taskDeleted'));
     await loadList();
   } catch {}
 };
@@ -516,12 +519,12 @@ const handleBatchDelete = async () => {
   if (!selectedIds.value.length) return;
   try {
     await ElMessageBox.confirm(
-      `确认批量删除 ${selectedIds.value.length} 个任务吗？将同步清理关联运行记录、原始数据和截图文件。`,
-      "提示",
+      `${t('operation.confirmBatchDelete')} ${selectedIds.value.length} ${t('operation.batchDeleteWarning')}`,
+      t('common.tip'),
       { type: "warning" },
     );
     await batchDeleteEcomPlatformCollectTask(selectedIds.value);
-    ElMessage.success("批量删除成功");
+    ElMessage.success(t('operation.batchDeleteSuccess'));
     await loadList();
   } catch {}
 };
@@ -529,12 +532,12 @@ const handleBatchDelete = async () => {
 const handleResetActiveRuns = async () => {
   try {
     await ElMessageBox.confirm(
-      "确认重置所有运行中的采集任务吗？这会把卡住的运行记录标记为失败并释放客户端，不会删除历史采集数据。",
-      "重置采集运行状态",
+      t('operation.confirmResetActiveRuns'),
+      t('operation.resetCollectRunStatus'),
       { type: "warning" },
     );
     const result = await resetActiveEcomPlatformCollectRuns();
-    ElMessage.success(result?.message || "采集运行状态已重置");
+    ElMessage.success(result?.message || t('operation.collectRunStatusReset'));
     await loadList();
   } catch {}
 };

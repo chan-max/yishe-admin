@@ -9,18 +9,18 @@
       <div class="platform-raw-renderer__hero-side">
         <div v-if="heroPrice" class="platform-raw-renderer__price">{{ heroPrice }}</div>
         <div class="platform-raw-renderer__meta">
-          <span>记录标识</span>
+          <span>{{ t('operation.recordIdentifier') }}</span>
           <span class="mono">{{ recordIdentity }}</span>
         </div>
         <div class="platform-raw-renderer__meta">
-          <span>采集时间</span>
+          <span>{{ t('operation.collectTime') }}</span>
           <span>{{ formatDateTime(record.capturedAt) }}</span>
         </div>
       </div>
     </div>
 
     <div v-if="imageList.length" class="platform-raw-renderer__section">
-      <div class="platform-raw-renderer__section-title">商品图片</div>
+      <div class="platform-raw-renderer__section-title">{{ t('operation.productImages') }}</div>
       <div class="platform-raw-renderer__image-grid">
         <el-image
           v-for="image in imageList"
@@ -35,7 +35,7 @@
     </div>
 
     <div v-if="detailRows.length" class="platform-raw-renderer__section">
-      <div class="platform-raw-renderer__section-title">结构化信息</div>
+      <div class="platform-raw-renderer__section-title">{{ t('operation.structuredInfo') }}</div>
       <el-descriptions :column="2" border size="small">
         <el-descriptions-item
           v-for="item in detailRows"
@@ -49,9 +49,9 @@
     </div>
 
     <div class="platform-raw-renderer__section">
-      <div class="platform-raw-renderer__section-title">来源信息</div>
+      <div class="platform-raw-renderer__section-title">{{ t('operation.sourceInfo') }}</div>
       <el-descriptions :column="1" border size="small">
-        <el-descriptions-item label="来源链接">
+        <el-descriptions-item :label="t('operation.sourceLink')">
           <el-link
             v-if="sourceUrl"
             :href="sourceUrl"
@@ -62,17 +62,17 @@
           </el-link>
           <span v-else>-</span>
         </el-descriptions-item>
-        <el-descriptions-item label="任务 ID">
+        <el-descriptions-item :label="t('operation.taskId')">
           <span class="mono">{{ record.taskId }}</span>
         </el-descriptions-item>
-        <el-descriptions-item label="运行 ID">
+        <el-descriptions-item :label="t('operation.runId')">
           <span class="mono">{{ record.runId }}</span>
         </el-descriptions-item>
       </el-descriptions>
     </div>
 
     <div v-if="snapshots.length" class="platform-raw-renderer__section">
-      <div class="platform-raw-renderer__section-title">执行截图</div>
+      <div class="platform-raw-renderer__section-title">{{ t('operation.executionScreenshots') }}</div>
       <div class="platform-raw-renderer__snapshot-grid">
         <div
           v-for="snapshot in snapshots"
@@ -88,11 +88,11 @@
             class="platform-raw-renderer__snapshot-image"
           />
           <div v-else class="platform-raw-renderer__snapshot-placeholder">
-            本地截图未上传
+            {{ t('operation.localScreenshotNotUploaded') }}
           </div>
           <div class="platform-raw-renderer__snapshot-meta">
             <div class="platform-raw-renderer__snapshot-label">
-              {{ snapshot.label || "截图" }}
+              {{ snapshot.label || t('operation.screenshot') }}
             </div>
             <div v-if="snapshot.key" class="mono platform-raw-renderer__snapshot-key">
               {{ snapshot.key }}
@@ -109,7 +109,7 @@
     </div>
 
     <div class="platform-raw-renderer__section">
-      <div class="platform-raw-renderer__section-title">原始 JSON</div>
+      <div class="platform-raw-renderer__section-title">{{ t('operation.rawJson') }}</div>
       <pre class="platform-raw-renderer__json">{{ formatJson(collectData) }}</pre>
     </div>
   </div>
@@ -117,6 +117,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import { useI18n } from 'vue-i18n';
 import type { EcomPlatformRawRecord } from "@/api/operation/ecomPlatformCollect";
 import {
   extractStringList,
@@ -127,6 +128,8 @@ import {
   type PlatformRawFieldDefinition,
 } from "./helpers";
 import { formatDateTime, formatJson, getRawLink } from "../../shared";
+
+const { t } = useI18n();
 
 const props = withDefaults(
   defineProps<{
@@ -160,21 +163,21 @@ const collectData = computed(() =>
 const heroTitle = computed(() => {
   const resolved = pickFirstValue(collectData.value, props.titlePaths);
   return resolved ? resolveFieldValue(collectData.value, {
-    label: "标题",
+    label: t('operation.title'),
     paths: props.titlePaths,
   }) : getDefaultHeroTitle(props.record);
 });
 
 const heroSubtitle = computed(() =>
   resolveFieldValue(collectData.value, {
-    label: "副标题",
+    label: t('operation.subtitle'),
     paths: props.subtitlePaths,
   }),
 );
 
 const heroPrice = computed(() =>
   resolveFieldValue(collectData.value, {
-    label: "价格",
+    label: t('operation.price'),
     paths: props.pricePaths,
   }),
 );
@@ -209,7 +212,7 @@ const snapshotUrls = computed(() =>
 const recordIdentity = computed(
   () =>
     resolveFieldValue(collectData.value, {
-      label: "记录标识",
+      label: t('operation.recordIdentifier'),
       paths: ["recordKey", "asin", "itemId", "sku", "id"],
     }) || "-",
 );

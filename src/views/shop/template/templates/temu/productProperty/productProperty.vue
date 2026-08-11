@@ -11,7 +11,7 @@
         </template>
       </template>
     </div>
-    <div v-else> 正在加载... </div>
+    <div v-else> {{ t('shop.loading') }} </div>
   </el-card>
 </template>
 
@@ -19,6 +19,9 @@
 import controlTypeComponent0 from './controlTypeComponents/controlTypeComponent0.vue'
 import controlTypeComponent1 from './controlTypeComponents/controlTypeComponent1.vue'
 import controlTypeComponent16 from './controlTypeComponents/controlTypeComponent16.vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 /**
  * 示例

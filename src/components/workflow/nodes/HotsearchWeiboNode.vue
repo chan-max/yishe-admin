@@ -40,8 +40,8 @@ const props = defineProps<{ data: { label?: string; config?: any } }>()
 }
 
 .wf-node__icon {
-  width: 16px;
-  height: 16px;
+  width: 28px;
+  height: 28px;
   flex-shrink: 0;
 }
 

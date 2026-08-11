@@ -28,6 +28,20 @@
                 全部标为已读
               </el-button>
               <el-button
+                size="small"
+                :disabled="loading || selectedIds.length === 0"
+                @click="handleBatchDelete"
+              >
+                删除选中
+              </el-button>
+              <el-button
+                size="small"
+                :disabled="loading"
+                @click="handleClearAll"
+              >
+                清空消息
+              </el-button>
+              <el-button
                 v-if="isAdmin"
                 size="small"
                 type="primary"
@@ -117,6 +131,8 @@ import {
   getSentNotifyMessagePage,
   updateAllNotifyMessageRead,
   updateNotifyMessageRead,
+  deleteNotifyMessage,
+  clearAllNotifyMessage,
   type NotifyMessageVO,
 } from "@/api/system/notify/message";
 import SendMessageDialog from "./components/SendMessageDialog.vue";
@@ -284,6 +300,44 @@ const handleSendMessage = () => {
 const handleSendSuccess = () => {
   if (activeTab.value === "sent") {
     void fetchList();
+  }
+};
+
+const handleBatchDelete = async () => {
+  if (selectedIds.value.length === 0) {
+    ElMessage.warning("请选择要删除的消息");
+    return;
+  }
+  try {
+    await ElMessageBox.confirm(
+      `确认删除选中的 ${selectedIds.value.length} 条消息？`,
+      "提示",
+      { type: "warning" }
+    );
+    await deleteNotifyMessage(selectedIds.value);
+    ElMessage.success("删除成功");
+    selectedIds.value = [];
+    await fetchList();
+  } catch (error: any) {
+    if (error !== "cancel" && error !== "close") {
+      ElMessage.error(error?.message ?? "删除失败");
+    }
+  }
+};
+
+const handleClearAll = async () => {
+  try {
+    await ElMessageBox.confirm("确认清空所有消息？此操作不可恢复。", "提示", {
+      type: "warning",
+    });
+    await clearAllNotifyMessage();
+    ElMessage.success("已清空");
+    selectedIds.value = [];
+    await fetchList();
+  } catch (error: any) {
+    if (error !== "cancel" && error !== "close") {
+      ElMessage.error(error?.message ?? "清空失败");
+    }
   }
 };
 

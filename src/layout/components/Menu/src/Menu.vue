@@ -53,6 +53,7 @@ export default defineComponent({
     const logo = computed(() => appStore.logo);
     const mobile = computed(() => appStore.getMobile);
     const menuKeyword = ref("");
+    const { t } = useI18n();
 
     const collapseMenu = () => {
       appStore.setCollapse(true);
@@ -212,7 +213,7 @@ export default defineComponent({
             options?.variant ? `${prefixCls}__auto-badge--${options.variant}` : undefined,
           ]}
         >
-          {options?.label || (options?.enabled === false ? "手动" : "自动")}
+          {options?.label || (options?.enabled === false ? t("layout.menu.manual") : t("layout.menu.auto"))}
         </span>,
         title,
       );
@@ -225,20 +226,20 @@ export default defineComponent({
     ) => {
       if (running) {
         return routePath === "/operation/toolkit" || routePath === "/external/toolkit"
-          ? "当前有工具任务正在执行"
-          : "当前有任务正在执行";
+          ? t("layout.menu.toolTaskRunning")
+          : t("layout.menu.taskRunning");
       }
 
       if (status === "available") {
         return routePath === "/operation/toolkit" || routePath === "/external/toolkit"
-          ? "工具集可用"
-          : "浏览器自动化可用";
+          ? t("layout.menu.toolkitAvailable")
+          : t("layout.menu.browserAutomationAvailable");
       }
 
       if (status === "offline") {
         return routePath === "/operation/toolkit" || routePath === "/external/toolkit"
-          ? "工具集不可用"
-          : "浏览器自动化不可用";
+          ? t("layout.menu.toolkitUnavailable")
+          : t("layout.menu.browserAutomationUnavailable");
       }
 
       const browserRuntimes = clientNodeStore.clients
@@ -264,15 +265,15 @@ export default defineComponent({
         .sort((left, right) => runtimePriority(right) - runtimePriority(left))[0];
 
       if (!targetRuntime) {
-        return "客户端已连接，但自动化服务未启动";
+        return t("layout.menu.clientConnectedButServiceNotStarted");
       }
 
       const hint = getBrowserAutomationRuntimeHint(targetRuntime);
       if (hint === "自动化服务未启动") {
-        return "客户端已连接，但自动化服务未启动";
+        return t("layout.menu.clientConnectedButServiceNotStarted");
       }
-      if (hint === "自动化服务异常") {
-        return "客户端已连接，但自动化服务异常";
+      if (hint === t("layout.menu.automationServiceError")) {
+        return t("layout.menu.clientConnectedButServiceError");
       }
 
       return hint;
@@ -290,36 +291,36 @@ export default defineComponent({
 
       const titleMap: Record<string, Record<"available" | "offline", string>> = {
         "/operation/toolkit": {
-          available: "工具集可用",
-          offline: "工具集不可用",
+          available: t("layout.menu.toolkitAvailable"),
+          offline: t("layout.menu.toolkitUnavailable"),
         },
         "/external/toolkit": {
-          available: "工具集可用",
-          offline: "工具集不可用",
+          available: t("layout.menu.toolkitAvailable"),
+          offline: t("layout.menu.toolkitUnavailable"),
         },
         "/external/browser-automation": {
-          available: "浏览器自动化可用",
-          offline: "浏览器自动化不可用",
+          available: t("layout.menu.browserAutomationAvailable"),
+          offline: t("layout.menu.browserAutomationUnavailable"),
         },
         "/external/ps-automation": {
-          available: "套图制作可调用",
-          offline: "PS 自动化不可用",
+          available: t("layout.menu.psAutomationAvailable"),
+          offline: t("layout.menu.psAutomationUnavailable"),
         },
         "/external/google-art": {
-          available: "Google Art 可用",
-          offline: "Google Art 不可用",
+          available: t("layout.menu.googleArtAvailable"),
+          offline: t("layout.menu.googleArtUnavailable"),
         },
         "/content/image-processing-record": {
-          available: "图片处理可用",
-          offline: "图片处理不可用",
+          available: t("layout.menu.imageProcessingAvailable"),
+          offline: t("layout.menu.imageProcessingUnavailable"),
         },
         "/content/remotion-video-record": {
-          available: "视频模板可用",
-          offline: "视频模板不可用",
+          available: t("layout.menu.videoTemplateAvailable"),
+          offline: t("layout.menu.videoTemplateUnavailable"),
         },
         "/product-publish/queue": {
-          available: "发布任务可执行",
-          offline: "发布任务暂不可执行",
+          available: t("layout.menu.publishTaskAvailable"),
+          offline: t("layout.menu.publishTaskUnavailable"),
         },
       };
 
@@ -331,14 +332,14 @@ export default defineComponent({
               routePath === "/external/toolkit"
             ? resolveBrowserAutomationStatusTitle(status, running, routePath)
             : routePath === "/content/image-processing-record" && running
-              ? "当前有图片任务正在执行"
+              ? t("layout.menu.imageTaskRunning")
               : running
-                ? "当前有任务正在执行"
+                ? t("layout.menu.taskRunning")
                 : titleMap[routePath]?.[status];
 
       if (running) {
         return renderRunningStatusDot(
-          title || "当前有任务正在执行",
+          title || t("layout.menu.taskRunning"),
           routePath === "/product-publish/queue"
             ? "queue"
             : isRemotionRoute(routePath)
@@ -349,7 +350,7 @@ export default defineComponent({
 
       return renderMenuStatusHint(
         <span class={[`${prefixCls}__status-dot`, `${prefixCls}__status-dot--${status}`]} />,
-        title || "当前不可用",
+        title || t("layout.menu.currentlyUnavailable"),
       );
     };
 
@@ -364,7 +365,7 @@ export default defineComponent({
       }
 
       if (!!routeRunningMap.value[routePath]) {
-        return renderRunningStatusDot("当前有视频任务正在执行");
+        return renderRunningStatusDot(t("layout.menu.videoTaskRunning"));
       }
 
       ensureServiceHealthInitialized(statusKey);
@@ -394,7 +395,7 @@ export default defineComponent({
       }
 
       return renderAutoModeBadge(
-        userAutoSchedulingEnabled.value ? "自动处理已开启" : "自动处理未开启",
+        userAutoSchedulingEnabled.value ? t("layout.menu.autoProcessingEnabled") : t("layout.menu.autoProcessingDisabled"),
         {
           enabled: userAutoSchedulingEnabled.value,
           variant: "psd",
@@ -417,8 +418,8 @@ export default defineComponent({
 
       return renderAutoModeBadge(
         publishTaskMenuStatusTone.value === "offline"
-          ? "自动执行已开启，但当前发布任务暂不可执行"
-          : "自动执行已开启",
+          ? t("layout.menu.autoExecuteEnabledButTaskUnavailable")
+          : t("layout.menu.autoExecuteEnabled"),
         {
           enabled: true,
           variant: "queue",
@@ -438,8 +439,8 @@ export default defineComponent({
 
       const label = `${aiConfigState.boundFeatureCount}/${aiConfigState.totalFeatureCount}`;
       const title = aiConfigState.missing
-        ? `AI 配置未完成：${aiConfigState.reason}。已设置 ${label}`
-        : `AI 功能 Key 已全部设置：${label}`;
+        ? t("layout.menu.aiConfigIncomplete", { reason: aiConfigState.reason, label })
+        : t("layout.menu.aiConfigComplete", { label });
 
       return renderAutoModeBadge(title, {
         enabled: !aiConfigState.missing,
@@ -457,15 +458,15 @@ export default defineComponent({
       const configuredCount = messagePushMenuState.configuredSceneCount;
 
       if (enabledCount === 0) {
-        return renderAutoModeBadge("通知已关闭", {
+        return renderAutoModeBadge(t("layout.menu.notificationDisabled"), {
           enabled: false,
           variant: "message",
-          label: "关",
+          label: t("layout.menu.off"),
         });
       }
 
       const label = `${configuredCount}/${enabledCount}`;
-      const tip = `已开启 ${enabledCount} 个场景通知，${configuredCount} 个已配置渠道`;
+      const tip = t("layout.menu.notificationEnabledTip", { enabledCount, configuredCount });
 
       return renderAutoModeBadge(tip, {
         enabled: true,
@@ -488,7 +489,7 @@ export default defineComponent({
         // 显示运行中的 Agent 数量 - 使用与状态点相同大小的圆点
         return renderMenuStatusHint(
           <span class={`${prefixCls}__status-count`} />,
-          `${runningCount} 个 Agent 正在运行`,
+          t("layout.menu.agentRunningCount", { runningCount }),
         );
       }
 
@@ -710,15 +711,15 @@ export default defineComponent({
               v-model={menuKeyword.value}
               size="small"
               clearable
-              placeholder="搜索菜单"
+              placeholder={t("layout.menu.searchMenu")}
               prefixIcon={Search}
             />
             {!mobile.value ? (
-              <ElTooltip content="收起菜单" placement="right" effect="light" showAfter={300}>
+              <ElTooltip content={t("layout.menu.collapseMenu")} placement="right" effect="light" showAfter={300}>
                 <button
                   type="button"
                   class={`${prefixCls}__collapse-button`}
-                  aria-label="收起菜单"
+                  aria-label={t("layout.menu.collapseMenu")}
                   onClick={collapseMenu}
                 >
                   <Icon icon="ep:fold" />
@@ -832,7 +833,7 @@ export default defineComponent({
               );
             })
           ) : (
-            <div class={`${prefixCls}__empty`}>没有匹配的菜单</div>
+            <div class={`${prefixCls}__empty`}>{t("layout.menu.noMatchingMenu")}</div>
           )}
         </div>
       </nav>

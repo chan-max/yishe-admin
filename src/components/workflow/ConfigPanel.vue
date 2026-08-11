@@ -1,31 +1,96 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
-import { Delete, Pointer, Connection } from '@element-plus/icons-vue'
+import { ref, computed, watch } from 'vue'
+import { Pointer } from '@element-plus/icons-vue'
 import type { Node } from '@vue-flow/core'
 import AdvancedCronDialog from './AdvancedCronDialog.vue'
+import VariableSelector from './VariableSelector.vue'
 import {
   SYSTEM_NODE_REGISTRY,
-  type SystemNodeCapability,
-  type NodeInputField
-} from '@/views/workflow/editor/config/nodeRegistry'
+  type NodeManifest,
+  type NodeIOSchemaField
+} from '@/views/workflow/editor/config/node-manifest'
 import { getMessagePushList, type MessagePushConfig } from '@/api/messagePush'
 
 const props = defineProps<{
   node: Node | null
   workflowId?: string
+  allNodes?: Node[]
+  allEdges?: any[]
+  selectedEdge?: any | null
 }>()
 
 const emit = defineEmits<{
   (e: 'update', node: Node): void
   (e: 'delete', nodeId: string): void
+  (e: 'updateEdge', edge: any): void
 }>()
 
 const form = ref({ label: '', config: {} as any })
 const advancedCronVisible = ref(false)
+const edgeCondition = ref('')
+
+// 监听选中 edge，同步 condition
+watch(
+  () => props.selectedEdge,
+  (edge) => {
+    edgeCondition.value = edge?.data?.condition || edge?.condition || ''
+  },
+  { immediate: true }
+)
+
+const handleUpdateEdgeCondition = () => {
+  if (!props.selectedEdge) return
+  const edge = { ...props.selectedEdge }
+  // 存储在 data.condition 兼容 VueFlow
+  if (!edge.data) edge.data = {}
+  edge.data.condition = edgeCondition.value
+  edge.condition = edgeCondition.value
+  emit('updateEdge', edge)
+}
 
 // 消息推送渠道列表（动态从 API 加载）
 const messagePushChannels = ref<MessagePushConfig[]>([])
 const channelsLoaded = ref(false)
+
+// 变量选择器
+const variableSelectorVisible = ref(false)
+const activeFieldForVariable = ref<string>('')
+
+const openVariableSelector = (fieldName: string) => {
+  activeFieldForVariable.value = fieldName
+  variableSelectorVisible.value = true
+}
+
+const handleVariableSelect = (variablePath: string, _label: string) => {
+  if (!props.node) return
+  const fieldName = activeFieldForVariable.value
+  if (!fieldName) return
+  const currentVal = form.value.config[fieldName] || ''
+  form.value.config[fieldName] = currentVal + `{{ ${variablePath} }}`
+  handleDataChange()
+  variableSelectorVisible.value = false
+}
+
+// 输出变量点击复制
+const copiedField = ref<string>('')
+const copyVariable = async (nodeId: string, fieldName: string) => {
+  const text = `{{ ${nodeId}.${fieldName} }}`
+  try {
+    await navigator.clipboard.writeText(text)
+    copiedField.value = fieldName
+    setTimeout(() => { copiedField.value = '' }, 1500)
+  } catch {
+    // fallback
+    const ta = document.createElement('textarea')
+    ta.value = text
+    document.body.appendChild(ta)
+    ta.select()
+    document.execCommand('copy')
+    document.body.removeChild(ta)
+    copiedField.value = fieldName
+    setTimeout(() => { copiedField.value = '' }, 1500)
+  }
+}
 
 const loadMessagePushChannels = async () => {
   if (channelsLoaded.value) return
@@ -39,7 +104,7 @@ const loadMessagePushChannels = async () => {
 }
 
 // 当前节点对应的能力库元数据
-const currentCapability = computed<SystemNodeCapability | undefined>(() => {
+const currentCapability = computed<NodeManifest | undefined>(() => {
   if (!props.node) return undefined
   const capType = props.node.data?.capabilityType || props.node.type
   return SYSTEM_NODE_REGISTRY.find((item) => item.type === capType)
@@ -49,7 +114,7 @@ const currentCapability = computed<SystemNodeCapability | undefined>(() => {
 const isNotifyNode = computed(() => currentCapability.value?.category === 'notify')
 
 // 动态注入渠道 options 进 inputSchema
-const resolvedInputSchema = computed<NodeInputField[]>(() => {
+const resolvedInputSchema = computed<NodeIOSchemaField[]>(() => {
   const schema = currentCapability.value?.inputSchema || []
   if (!isNotifyNode.value) return schema
 
@@ -126,6 +191,41 @@ const removeInputParam = (index: number) => {
 
 <template>
   <div class="config-panel">
+    <!-- Edge 条件编辑器 -->
+    <template v-if="selectedEdge && !node">
+      <div class="config-panel__header">
+        <div class="config-panel__title-badge">
+          <span class="config-panel__type-name">连线条件</span>
+        </div>
+      </div>
+      <div class="config-panel__body">
+        <el-form label-position="top" size="small">
+          <el-form-item label="条件表达式">
+            <el-input
+              v-model="edgeCondition"
+              type="textarea"
+              :rows="3"
+              placeholder="例如：branch === 'sufficient'"
+              @input="handleUpdateEdgeCondition"
+            />
+            <div class="config-panel__field-desc">
+              支持运算符：===, !==, &gt;, &lt;, &gt;=, &lt;=, contains
+            </div>
+          </el-form-item>
+          <div class="config-panel__meta-box">
+            <div class="config-panel__meta-row">
+              <span class="config-panel__meta-label">来源节点:</span>
+              <span class="config-panel__meta-val">{{ selectedEdge.source }}</span>
+            </div>
+            <div class="config-panel__meta-row">
+              <span class="config-panel__meta-label">目标节点:</span>
+              <span class="config-panel__meta-val">{{ selectedEdge.target }}</span>
+            </div>
+          </div>
+        </el-form>
+      </div>
+    </template>
+
     <template v-if="node">
       <div class="config-panel__header">
         <div class="config-panel__title-badge">
@@ -252,6 +352,9 @@ const removeInputParam = (index: number) => {
                     :placeholder="field.placeholder || '支持 {{ node_id.variable }}'"
                     @input="handleDataChange"
                   />
+                  <button class="config-panel__insert-var-btn" @click="openVariableSelector(field.field)" title="插入变量">
+                    +
+                  </button>
                 </template>
 
                 <template v-else-if="field.type === 'number'">
@@ -271,11 +374,16 @@ const removeInputParam = (index: number) => {
                 </template>
 
                 <template v-else>
-                  <el-input
-                    v-model="form.config[field.field]"
-                    :placeholder="field.placeholder || '输入内容或 {{ 变量 }}'"
-                    @input="handleDataChange"
-                  />
+                  <div class="config-panel__input-with-btn">
+                    <el-input
+                      v-model="form.config[field.field]"
+                      :placeholder="field.placeholder || '输入内容或 {{ 变量 }}'"
+                      @input="handleDataChange"
+                    />
+                    <button class="config-panel__insert-var-btn" @click="openVariableSelector(field.field)" title="插入变量">
+                      +
+                    </button>
+                  </div>
                 </template>
 
                 <!-- 字段说明提示 -->
@@ -295,10 +403,13 @@ const removeInputParam = (index: number) => {
                 v-for="out in currentCapability.outputSchema"
                 :key="out.field"
                 class="config-panel__output-tag"
+                @click="copyVariable(node.id, out.field)"
+                :title="`点击复制 {{ ${node.id}.${out.field} }}`"
               >
-                <el-icon><Connection /></el-icon>
-                <span class="config-panel__output-name">{{ node.id }}.{{ out.field }}</span>
-                <span class="config-panel__output-label">({{ out.label }})</span>
+                <span class="config-panel__output-name">{{ out.field }}</span>
+                <span class="config-panel__output-type">{{ out.type }}</span>
+                <span class="config-panel__output-label">{{ out.label }}</span>
+                <span v-if="copiedField === out.field" class="config-panel__output-copied">已复制</span>
               </div>
             </div>
           </template>
@@ -330,6 +441,14 @@ const removeInputParam = (index: number) => {
       </div>
     </template>
 
+    <VariableSelector
+      v-if="node"
+      v-model:visible="variableSelectorVisible"
+      :current-node-id="node.id"
+      :all-nodes="allNodes || []"
+      :all-edges="allEdges || []"
+      @select="handleVariableSelect"
+    />
     <AdvancedCronDialog v-model="advancedCronVisible" :workflow-id="workflowId || ''" />
   </div>
 </template>
@@ -543,4 +662,58 @@ const removeInputParam = (index: number) => {
     height: 13px;
   }
 }
+
+.config-panel__output-tag {
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: var(--el-color-primary);
+    background: color-mix(in srgb, var(--el-color-primary) 15%, transparent);
+  }
+}
+
+.config-panel__output-type {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--el-text-color-secondary) 12%, transparent);
+  color: var(--el-text-color-secondary);
+  flex-shrink: 0;
+}
+
+.config-panel__output-copied {
+  font-size: 9px;
+  color: var(--el-color-success);
+  flex-shrink: 0;
+}
+
+.config-panel__input-with-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.config-panel__insert-var-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--el-color-primary);
+  background: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--el-color-primary) 20%, transparent);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: color-mix(in srgb, var(--el-color-primary) 20%, transparent);
+  }
+}
+
 </style>

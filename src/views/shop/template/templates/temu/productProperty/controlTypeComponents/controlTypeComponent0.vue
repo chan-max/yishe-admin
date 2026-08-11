@@ -1,14 +1,18 @@
 <template>
   <el-form-item :label="config.name + ' :'" label-width="140" :required="config.required">
     <div class="flex gap-2">
-      <el-input v-model="form.input" style="width: 360px;" placeholder="请输入" @input="change"></el-input>
-      <el-select style="width: 100px" placeholder="单位" v-model="form.unit" @change="change">
+      <el-input v-model="form.input" style="width: 360px;" :placeholder="t('common.inputPlaceholder')" @input="change"></el-input>
+      <el-select style="width: 100px" :placeholder="t('shop.unit')" v-model="form.unit" @change="change">
         <el-option v-for="item in config.valueUnit" :key="item" :label="item" :value="item" />
       </el-select>
     </div>
   </el-form-item>
 </template>
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps({
   config: {
     default: {} as any
@@ -64,7 +68,7 @@ defineExpose({
         return
       }
       if (!form.value.input) {
-        throw ElMessage.warning(`商品属性缺少 ${props.config.name}`)
+        throw ElMessage.warning(`${t('shop.productPropertyMissing')} ${props.config.name}`)
       }
     }
   }

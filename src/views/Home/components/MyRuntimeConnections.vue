@@ -2,25 +2,25 @@
   <section class="home-section my-runtime-connections">
     <div class="home-section__head">
       <div>
-        <div class="home-section__title">我的连接</div>
+        <div class="home-section__title">{{ t('home.myConnections.title') }}</div>
         <div class="home-section__desc">
-          当前账号下正在使用的后台、插件和客户端都会显示在这里。
-          <template v-if="isAdmin"> 全量排查仍然在“远程连接”页面查看。 </template>
+          {{ t('home.myConnections.desc') }}
+          <template v-if="isAdmin"> {{ t('home.myConnections.adminTip') }} </template>
         </div>
       </div>
 
       <div class="my-runtime-connections__toolbar">
         <div class="my-runtime-connections__summary">
-          <el-tag size="small" effect="plain" type="success">插件 {{ extensionCount }}</el-tag>
-          <el-tag size="small" effect="plain" type="primary">后台 {{ adminCount }}</el-tag>
-          <el-tag size="small" effect="plain" type="warning">客户端 {{ clientCount }}</el-tag>
+          <el-tag size="small" effect="plain" type="success">{{ t('home.myConnections.extension') }} {{ extensionCount }}</el-tag>
+          <el-tag size="small" effect="plain" type="primary">{{ t('home.myConnections.admin') }} {{ adminCount }}</el-tag>
+          <el-tag size="small" effect="plain" type="warning">{{ t('home.myConnections.client') }} {{ clientCount }}</el-tag>
         </div>
 
         <div class="my-runtime-connections__actions">
           <el-button v-if="isAdmin" text @click="router.push('/system/websocket')"
-            >查看全部</el-button
+            >{{ t('home.myConnections.viewAll') }}</el-button
           >
-          <el-button size="small" @click="refreshConnections" :loading="loading">刷新</el-button>
+          <el-button size="small" @click="refreshConnections" :loading="loading">{{ t('home.myConnections.refresh') }}</el-button>
         </div>
       </div>
     </div>
@@ -38,7 +38,7 @@
               effect="plain"
               type="primary"
             >
-              当前后台
+              {{ t('home.myConnections.currentAdmin') }}
             </el-tag>
           </div>
           <span class="my-runtime-card__status">{{ resolveStatusText(item) }}</span>
@@ -64,7 +64,7 @@
 
     <div v-else class="home-panel my-runtime-empty">
       <el-empty
-        :description="loading ? '正在加载当前账号连接' : '当前账号还没有在线连接'"
+        :description="loading ? t('home.myConnections.loading') : t('home.myConnections.noConnection')"
         :image-size="84"
       />
     </div>
@@ -74,6 +74,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { formatDate, formatPast } from "@/utils/formatTime";
 import { type WebsocketConnectionVO } from "@/api/system/websocket";
 import { useMessage } from "@/hooks/web/useMessage";
@@ -86,6 +87,7 @@ import {
   resolveRuntimeConnectionSourceKey,
 } from "@/utils/websocketConnection";
 
+const { t } = useI18n()
 const router = useRouter();
 const message = useMessage();
 const userStore = useUserStore();
@@ -134,18 +136,18 @@ const resolveConnectionDesc = (item: WebsocketConnectionVO) => {
   }
 
   if (info.app?.version) {
-    parts.push(`应用 ${info.app.version}`);
+    parts.push(`${t('home.myConnections.app')} ${info.app.version}`);
   }
 
   if (info.extension?.version) {
-    parts.push(`插件 ${info.extension.version}`);
+    parts.push(`${t('home.myConnections.extension')} ${info.extension.version}`);
   }
 
   if (info.machine?.code && !parts.includes(info.machine.code)) {
-    parts.push(`机器 ${info.machine.code}`);
+    parts.push(`${t('home.myConnections.machine')} ${info.machine.code}`);
   }
 
-  return parts.join(" · ") || "当前账号的在线连接";
+  return parts.join(" · ") || t('home.myConnections.onlineConnection');
 };
 
 const buildMetaChips = (item: WebsocketConnectionVO) => {
@@ -183,9 +185,9 @@ const buildMetaChips = (item: WebsocketConnectionVO) => {
 const resolveStatusText = (item: WebsocketConnectionVO) => {
   const statusTime = item.connectedAt || item.lastOnlineAt;
   if (!statusTime) {
-    return item.isOnline === false ? "已离线" : "在线";
+    return item.isOnline === false ? t('home.myConnections.offline') : t('home.myConnections.online');
   }
-  return item.isOnline === false ? "已离线" : `已连接 ${formatPast(statusTime)}`;
+  return item.isOnline === false ? t('home.myConnections.offline') : `${t('home.myConnections.connected')} ${formatPast(statusTime)}`;
 };
 
 const formatConnectedAt = (value?: string | null) => {
@@ -203,7 +205,7 @@ const refreshConnections = async () => {
   try {
     await store.refresh();
   } catch (error: any) {
-    message.error(error?.message || "刷新当前账号连接失败");
+    message.error(error?.message || t('home.myConnections.refreshFail'));
   }
 };
 </script>

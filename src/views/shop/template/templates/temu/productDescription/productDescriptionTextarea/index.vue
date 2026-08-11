@@ -22,57 +22,57 @@
             <el-icon>
               <Picture />
             </el-icon>
-            <span>图片 ({{ item.contentList[0]?.width }}×{{ item.contentList[0]?.height }})</span>
+            <span>{{ t('shop.imageSize', { width: item.contentList[0]?.width, height: item.contentList[0]?.height }) }}</span>
           </div>
         </div>
         <div class="item-actions">
-          <el-button size="small" @click="editItem(index)">编辑</el-button>
-          <el-button size="small" type="danger" @click="removeItem(index)">删除</el-button>
+          <el-button size="small" @click="editItem(index)">{{ t('common.edit') }}</el-button>
+          <el-button size="small" type="danger" @click="removeItem(index)">{{ t('common.delete') }}</el-button>
         </div>
       </div>
-      <el-button type="primary" @click="addTextItem">添加文本</el-button>
-      <el-button type="primary" @click="addImageItem">添加图片</el-button>
+      <el-button type="primary" @click="addTextItem">{{ t('shop.addText') }}</el-button>
+      <el-button type="primary" @click="addImageItem">{{ t('shop.addImage') }}</el-button>
     </div>
 
     <!-- 编辑模式 -->
     <div v-else class="edit-mode">
       <el-form label-width="120px">
-        <el-form-item label="类型">
+        <el-form-item :label="t('shop.type')">
           <el-radio-group v-model="currentItem.type">
-            <el-radio label="text">文本</el-radio>
-            <el-radio label="image">图片</el-radio>
+            <el-radio label="text">{{ t('shop.text') }}</el-radio>
+            <el-radio label="image">{{ t('shop.image') }}</el-radio>
           </el-radio-group>
         </el-form-item>
 
-        <el-form-item label="优先级">
+        <el-form-item :label="t('shop.priority')">
           <el-input-number v-model="currentItem.priority" :min="1" />
         </el-form-item>
 
         <!-- 文本内容编辑 -->
         <template v-if="currentItem.type === 'text'">
-          <el-form-item label="文本内容">
+          <el-form-item :label="t('shop.textContent')">
             <div>
-              <el-button type="primary" size="small" @click="addTextContent">添加文本段落</el-button>
+              <el-button type="primary" size="small" @click="addTextContent">{{ t('shop.addTextParagraph') }}</el-button>
               <div v-for="(content, index) in currentItem.contentList" :key="index" class="text-content-editor">
-                <el-input v-model="content.text" type="textarea" :rows="3" placeholder="输入文本内容" />
+                <el-input v-model="content.text" type="textarea" :rows="3" :placeholder="t('shop.inputTextContent')" />
                 <div class="text-style-editor">
-                  <el-form-item label="字体大小">
+                  <el-form-item :label="t('shop.fontSize')">
                     <el-input-number v-model="content.textModuleDetails.fontSize" :min="8" :max="72" />
                   </el-form-item>
-                  <el-form-item label="字体颜色">
+                  <el-form-item :label="t('shop.fontColor')">
                     <el-color-picker v-model="content.textModuleDetails.fontColor" />
                   </el-form-item>
-                  <el-form-item label="对齐方式">
+                  <el-form-item :label="t('shop.align')">
                     <el-select v-model="content.textModuleDetails.align" style="width: 120px;">
-                      <el-option label="左对齐" value="left" />
-                      <el-option label="居中" value="center" />
-                      <el-option label="右对齐" value="right" />
+                      <el-option :label="t('shop.leftAlign')" value="left" />
+                      <el-option :label="t('shop.center')" value="center" />
+                      <el-option :label="t('shop.rightAlign')" value="right" />
                     </el-select>
                   </el-form-item>
-                  <el-form-item label="背景颜色">
+                  <el-form-item :label="t('shop.backgroundColor')">
                     <el-color-picker v-model="content.textModuleDetails.backgroundColor" />
                   </el-form-item>
-                  <el-button type="danger" size="small" @click="removeTextContent(index)">删除段落</el-button>
+                  <el-button type="danger" size="small" @click="removeTextContent(index)">{{ t('shop.deleteParagraph') }}</el-button>
                 </div>
               </div>
             </div>
@@ -81,17 +81,17 @@
 
         <!-- 图片内容编辑 -->
         <template v-else-if="currentItem.type === 'image'">
-          <el-form-item label="图片宽度">
+          <el-form-item :label="t('shop.imageWidth')">
             <el-input-number v-model="currentItem.contentList[0].width" :min="100" :max="2000" />
           </el-form-item>
-          <el-form-item label="图片高度">
+          <el-form-item :label="t('shop.imageHeight')">
             <el-input-number v-model="currentItem.contentList[0].height" :min="100" :max="2000" />
           </el-form-item>
         </template>
 
         <el-form-item>
-          <el-button type="primary" @click="saveItem">保存</el-button>
-          <el-button @click="cancelEdit">取消</el-button>
+          <el-button type="primary" @click="saveItem">{{ t('common.save') }}</el-button>
+          <el-button @click="cancelEdit">{{ t('common.cancel') }}</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -101,6 +101,9 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { Picture } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps({
   modelValue: {
@@ -233,7 +236,7 @@ function removeTextContent(index) {
   if (currentItem.value.contentList.length > 1) {
     currentItem.value.contentList.splice(index, 1)
   } else {
-    ElMessage.warning('至少需要保留一个文本段落')
+    ElMessage.warning(t('shop.keepAtLeastOneParagraph'))
   }
 }
 </script>

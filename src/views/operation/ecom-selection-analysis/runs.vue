@@ -5,15 +5,15 @@
         <div class="list-page-filter list-page-filter--flat">
           <div class="resource-toolbar">
             <div class="resource-toolbar__meta">
-              <div class="resource-toolbar__title">选品分析运行</div>
+              <div class="resource-toolbar__title">{{ t('operation.selectionAnalysisRuns') }}</div>
             </div>
           </div>
 
           <el-form :model="filters" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col :xs="24" :sm="12" :md="8" :lg="8">
-                <el-form-item label="分析任务">
-                  <el-select v-model="filters.taskId" clearable filterable placeholder="全部任务">
+                <el-form-item :label="t('operation.analysisTask')">
+                  <el-select v-model="filters.taskId" clearable filterable :placeholder="t('operation.allTasks')">
                     <el-option
                       v-for="item in taskOptions"
                       :key="item.value"
@@ -24,34 +24,34 @@
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :md="8" :lg="5">
-                <el-form-item label="运行状态">
-                  <el-select v-model="filters.status" clearable placeholder="全部状态">
-                    <el-option label="运行中" value="running" />
-                    <el-option label="成功" value="success" />
-                    <el-option label="失败" value="failed" />
+                <el-form-item :label="t('operation.runStatus')">
+                  <el-select v-model="filters.status" clearable :placeholder="t('operation.allStatuses')">
+                    <el-option :label="t('operation.running')" value="running" />
+                    <el-option :label="t('operation.success')" value="success" />
+                    <el-option :label="t('operation.failed')" value="failed" />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :md="8" :lg="5">
-                <el-form-item label="分析类型">
-                  <el-select v-model="filters.analysisType" clearable placeholder="全部类型">
-                    <el-option label="热门选品" value="hot_selling_selection" />
-                    <el-option label="POD 图案分析" value="pod_pattern_analysis" />
-                    <el-option label="自定义提示词分析" value="custom_prompt_extract" />
+                <el-form-item :label="t('operation.analysisType')">
+                  <el-select v-model="filters.analysisType" clearable :placeholder="t('operation.allTypes')">
+                    <el-option :label="t('operation.hotSellingSelection')" value="hot_selling_selection" />
+                    <el-option :label="t('operation.podPatternAnalysis')" value="pod_pattern_analysis" />
+                    <el-option :label="t('operation.customPromptAnalysis')" value="custom_prompt_extract" />
                   </el-select>
                 </el-form-item>
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" @click="handleSearch">查询</el-button>
-              <el-button size="small" @click="handleReset">重置</el-button>
+              <el-button size="small" type="primary" @click="handleSearch">{{ t('common.query') }}</el-button>
+              <el-button size="small" @click="handleReset">{{ t('common.reset') }}</el-button>
               <el-button
                 size="small"
                 type="danger"
                 :disabled="!selectedIds.length"
                 @click="handleBatchDelete"
               >
-                批量删除 ({{ selectedIds.length }})
+                {{ t('operation.batchDelete') }}({{ selectedIds.length }})
               </el-button>
             </div>
           </el-form>
@@ -95,17 +95,17 @@
                       @command="(command) => handleOperationCommand(String(command), row)"
                     >
                       <el-button type="primary" link size="small" class="operation-trigger-button">
-                        操作
+                        {{ t('common.operation') }}
                       </el-button>
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
                           <el-dropdown-item command="detail">
                             <el-icon><View /></el-icon>
-                            <span>详情</span>
+                            <span>{{ t('common.detail') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item command="results">
                             <el-icon><List /></el-icon>
-                            <span>查看结果</span>
+                            <span>{{ t('operation.viewResults') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item
                             command="delete"
@@ -113,7 +113,7 @@
                             class="operation-menu-item--danger"
                           >
                             <el-icon><Delete /></el-icon>
-                            <span>删除</span>
+                            <span>{{ t('common.delete') }}</span>
                           </el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
@@ -145,7 +145,7 @@
       fullscreen
       destroy-on-close
       class="analysis-run-detail-dialog"
-      title="分析运行详情"
+      :title="t('operation.analysisRunDetails')"
       @closed="handleDetailClosed"
     >
       <div v-loading="detailLoading" class="detail-shell">
@@ -153,8 +153,8 @@
           <CompactNotice
             v-if="currentDetail.status === 'failed'"
             type="danger"
-            title="本次分析运行失败"
-            :description="currentDetail.errorMessage || '请检查采集样本或 AI 配置后重试。'"
+            :title="t('operation.analysisRunFailed')"
+            :description="currentDetail.errorMessage || t('operation.checkCollectSampleOrAiConfig')"
             class="detail-notice"
           />
 
@@ -184,47 +184,47 @@
 
               <div class="metric-grid">
                 <div class="metric-card">
-                  <span>样本数</span>
+                  <span>{{ t('operation.sampleCount') }}</span>
                   <strong>{{ sourceSummary.itemCount || 0 }}</strong>
                 </div>
                 <div class="metric-card">
-                  <span>结果量</span>
+                  <span>{{ t('operation.resultCount') }}</span>
                   <strong>{{ resultCount }}</strong>
                 </div>
                 <div class="metric-card">
-                  <span>任务数</span>
+                  <span>{{ t('operation.taskCount') }}</span>
                   <strong>{{ sourceSummary.taskCount || 0 }}</strong>
                 </div>
                 <div class="metric-card">
-                  <span>平台数</span>
+                  <span>{{ t('operation.platformCount') }}</span>
                   <strong>{{ sourceSummary.platformBreakdown?.length || 0 }}</strong>
                 </div>
               </div>
             </div>
 
             <div class="detail-card">
-              <div class="detail-card__title">运行信息</div>
+              <div class="detail-card__title">{{ t('operation.runInfo') }}</div>
               <div class="stats-list">
                 <div class="stats-item">
-                  <span>运行 ID</span>
+                  <span>{{ t('operation.runId') }}</span>
                   <strong>{{ currentDetail.id || "-" }}</strong>
                 </div>
                 <div class="stats-item">
-                  <span>结果 ID</span>
+                  <span>{{ t('operation.resultId') }}</span>
                   <strong>{{ currentDetail.resultId || "-" }}</strong>
                 </div>
                 <div class="stats-item">
-                  <span>开始时间</span>
+                  <span>{{ t('operation.startTime') }}</span>
                   <strong>{{ formatDateTime(currentDetail.startedAt) }}</strong>
                 </div>
                 <div class="stats-item">
-                  <span>结束时间</span>
+                  <span>{{ t('operation.endTime') }}</span>
                   <strong>{{ formatDateTime(currentDetail.finishedAt) }}</strong>
                 </div>
               </div>
 
               <div class="detail-mini-section" v-if="sourceSummary.platformBreakdown?.length">
-                <div class="detail-mini-section__title">平台分布</div>
+                <div class="detail-mini-section__title">{{ t('operation.platformDistribution') }}</div>
                 <div class="chip-list">
                   <el-tag
                     v-for="item in sourceSummary.platformBreakdown"
@@ -240,30 +240,30 @@
 
           <div class="detail-toolbar">
             <el-button type="primary" @click="openResultsPage(currentDetail)">
-              查看本次分析结果
+              {{ t('operation.viewAnalysisResults') }}
             </el-button>
           </div>
 
           <el-tabs>
-            <el-tab-pane label="运行摘要">
+            <el-tab-pane :label="t('operation.runSummary')">
               <pre class="json-preview">{{ formatJson(currentDetail.summary) }}</pre>
             </el-tab-pane>
 
-            <el-tab-pane label="数据源快照">
+            <el-tab-pane :label="t('operation.dataSourceSnapshot')">
               <pre class="json-preview">{{ formatJson(currentDetail.sourceSnapshot) }}</pre>
             </el-tab-pane>
 
-            <el-tab-pane label="分析参数快照">
+            <el-tab-pane :label="t('operation.analysisParamsSnapshot')">
               <pre class="json-preview">{{ formatJson(currentDetail.analysisConfigSnapshot) }}</pre>
             </el-tab-pane>
 
-            <el-tab-pane v-if="currentDetail.errorMessage" label="错误信息">
+            <el-tab-pane v-if="currentDetail.errorMessage" :label="t('operation.errorMessage')">
               <pre class="json-preview">{{ currentDetail.errorMessage }}</pre>
             </el-tab-pane>
           </el-tabs>
         </template>
 
-        <el-empty v-else description="暂无详情数据" />
+        <el-empty v-else :description="t('operation.noDetailData')" />
       </div>
     </el-dialog>
   </ContentWrap>
@@ -271,6 +271,7 @@
 
 <script setup lang="ts">
 import { computed, onActivated, onMounted, reactive, ref } from "vue";
+import { useI18n } from 'vue-i18n';
 import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Delete, List, View } from "@element-plus/icons-vue";
@@ -295,6 +296,8 @@ import {
   getRunStatusLabel,
   getRunStatusTagType,
 } from "@/views/operation/ecom-data/shared";
+
+const { t } = useI18n();
 
 defineOptions({ name: "EcomSelectionAnalysisRunPage" });
 
@@ -352,15 +355,15 @@ const getSummaryText = (row: EcomSelectionAnalysisRun) => {
   const resultCount = Number(outputPreview?.resultCount || 0);
   if (resultCount > 0) {
     return row.analysisType === "pod_pattern_analysis"
-      ? `已输出 ${resultCount} 条图案结果`
+      ? `${t('operation.output')} ${resultCount} ${t('operation.patternResults')}`
       : row.analysisType === "custom_prompt_extract"
-        ? `已输出 ${resultCount} 条自定义结果`
-        : `已推荐 ${resultCount} 个候选方向`;
+        ? `${t('operation.output')} ${resultCount} ${t('operation.customResults')}`
+        : `${t('operation.recommended')} ${resultCount} ${t('operation.candidateDirections')}`;
   }
 
   const itemCount = Number(row.summary?.sourceSummary?.itemCount || 0);
   if (itemCount > 0) {
-    return `样本 ${itemCount} 个`;
+    return `${t('operation.sample')} ${itemCount} ${t('operation.items')}`;
   }
 
   if (row.errorMessage) {
@@ -368,10 +371,10 @@ const getSummaryText = (row: EcomSelectionAnalysisRun) => {
   }
 
   if (row.status === "running") {
-    return "分析执行中";
+    return t('operation.analysisExecuting');
   }
 
-  return "暂无摘要";
+  return t('operation.noSummary');
 };
 
 const getListResultCount = (row: EcomSelectionAnalysisRun) => {
@@ -389,47 +392,47 @@ const gridOptions = ref<VxeGridProps<EcomSelectionAnalysisRun>>({
   },
   columns: [
     { type: "checkbox", width: 48 },
-    { title: "任务名称", field: "taskName", minWidth: 220, showOverflow: "tooltip" },
+    { title: t('operation.taskName'), field: "taskName", minWidth: 220, showOverflow: "tooltip" },
     {
-      title: "类型",
+      title: t('operation.type'),
       field: "analysisType",
       width: 120,
       slots: { default: "typeSlot" },
     },
     {
-      title: "状态",
+      title: t('operation.status'),
       field: "status",
       width: 100,
       slots: { default: "statusSlot" },
     },
     {
-      title: "AI 模型",
+      title: t('operation.aiModel'),
       field: "aiModel",
       minWidth: 140,
       formatter: ({ row }) => row.aiModel || "-",
     },
     {
-      title: "样本数",
+      title: t('operation.sampleCount'),
       field: "summary",
       width: 88,
       formatter: ({ row }) => Number(row.summary?.sourceSummary?.itemCount || 0),
     },
     {
-      title: "结果量",
+      title: t('operation.resultCount'),
       field: "summary",
       width: 88,
       formatter: ({ row }) => getListResultCount(row),
     },
     {
-      ...buildTimeColumn("开始时间", "startedAt", 180),
+      ...buildTimeColumn(t('operation.startTime'), "startedAt", 180),
       formatter: ({ cellValue }) => formatDateTime(cellValue as string),
     },
     {
-      ...buildTimeColumn("结束时间", "finishedAt", 180),
+      ...buildTimeColumn(t('operation.endTime'), "finishedAt", 180),
       formatter: ({ cellValue }) => formatDateTime(cellValue as string),
     },
     {
-      title: "摘要",
+      title: t('operation.summary'),
       field: "summaryText",
       minWidth: 240,
       showOverflow: "tooltip",
@@ -531,12 +534,12 @@ const openResultsPage = async (row: EcomSelectionAnalysisRun) => {
 const handleDelete = async (row: EcomSelectionAnalysisRun) => {
   try {
     await ElMessageBox.confirm(
-      "确认删除这条分析运行记录吗？将同步清理本次运行对应的分析结果。",
-      "提示",
+      t('operation.confirmDeleteAnalysisRun'),
+      t('common.tip'),
       { type: "warning" },
     );
     await deleteEcomSelectionAnalysisRun(row.id);
-    ElMessage.success("分析运行已删除");
+    ElMessage.success(t('operation.analysisRunDeleted'));
     await loadList();
   } catch {}
 };
@@ -545,12 +548,12 @@ const handleBatchDelete = async () => {
   if (!selectedIds.value.length) return;
   try {
     await ElMessageBox.confirm(
-      `确认批量删除 ${selectedIds.value.length} 条分析运行记录吗？`,
-      "提示",
+      `${t('operation.confirmBatchDeleteAnalysisRuns')} ${selectedIds.value.length} ${t('operation.items')}`,
+      t('common.tip'),
       { type: "warning" },
     );
     await batchDeleteEcomSelectionAnalysisRun(selectedIds.value);
-    ElMessage.success("批量删除成功");
+    ElMessage.success(t('operation.batchDeleteSuccess'));
     await loadList();
   } catch {}
 };

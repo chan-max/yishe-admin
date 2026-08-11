@@ -1,32 +1,59 @@
 <template>
-  <div v-if="visible" class="admin-data-scope">
-    <span class="admin-data-scope__label">数据</span>
-    <el-select
-      v-model="selectedValue"
-      class="admin-data-scope__select"
-      filterable
-      :loading="loading || switching"
-      :disabled="switching"
-      placeholder="选择范围"
-      @visible-change="handleVisibleChange"
-      @change="handleChange"
-    >
-      <el-option label="我的数据" value="self" />
-      <el-option label="全部数据" value="all" />
-      <el-option-group v-if="userOptions.length" label="指定用户">
-        <el-option
-          v-for="item in userOptions"
-          :key="item.value"
-          :label="item.label"
-          :value="item.value"
-        />
-      </el-option-group>
-    </el-select>
-  </div>
+  <el-popover
+    v-if="visible"
+    placement="bottom-end"
+    :width="260"
+    :show-arrow="false"
+    :offset="8"
+    trigger="click"
+    :transition="''"
+    popper-class="header-data-scope-popper"
+  >
+    <template #reference>
+      <button type="button" class="ads-trigger" :aria-label="t('layout.dataScope.dataScope')">
+        <Icon icon="ep:data-board" class="th-action-icon" :size="18" />
+        <span class="th-action-label">{{ t('layout.dataScope.data') }}</span>
+      </button>
+    </template>
+
+    <div class="ads-panel">
+      <div class="ads-panel__title">{{ t("layout.dataScope.dataScope") }}</div>
+      <el-radio-group
+        v-model="radioValue"
+        :disabled="switching"
+        class="ads-radios"
+        @change="handleRadioChange"
+      >
+        <el-radio-button label="self">{{ t("layout.dataScope.myData") }}</el-radio-button>
+        <el-radio-button label="all">{{ t("layout.dataScope.allData") }}</el-radio-button>
+      </el-radio-group>
+      <el-select
+        v-if="userOptions.length"
+        v-model="selectedValue"
+        filterable
+        :loading="loading || switching"
+        :disabled="switching"
+        :placeholder="t('layout.dataScope.selectUserPlaceholder')"
+        class="ads-select"
+        size="small"
+        @change="handleSelectChange"
+      >
+        <el-option-group :label="t('layout.dataScope.specifiedUser')">
+          <el-option
+            v-for="item in userOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
+        </el-option-group>
+      </el-select>
+    </div>
+  </el-popover>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
+import { Icon } from "@/components/Icon";
 import { ElMessage } from "element-plus";
 import { getUserList } from "@/api/user";
 import { useTagsView } from "@/hooks/web/useTagsView";
@@ -38,6 +65,10 @@ type UserOption = {
   label: string;
   userId: string;
 };
+
+defineOptions({ name: "AdminDataScopeSwitch" });
+
+const { t } = useI18n();
 
 const userStore = useUserStore();
 const dataScopeStore = useDataScopeStore();
@@ -51,21 +82,25 @@ const visible = computed(() => !!userStore.user?.isAdmin);
 
 const selectedValue = computed({
   get: () => {
-    if (dataScopeStore.mode === "all") {
-      return "all";
-    }
-    if (dataScopeStore.mode === "user" && dataScopeStore.userId) {
+    if (dataScopeStore.mode === "all") return "all";
+    if (dataScopeStore.mode === "user" && dataScopeStore.userId)
       return `user:${dataScopeStore.userId}`;
-    }
     return "self";
   },
-  set: (_value: string) => undefined,
+  set: () => undefined,
+});
+
+const radioValue = computed({
+  get: () => {
+    const v = selectedValue.value;
+    if (v === "self" || v === "all") return v;
+    return "";
+  },
+  set: () => undefined,
 });
 
 async function loadUsers() {
-  if (loading.value || loaded.value || !visible.value) {
-    return;
-  }
+  if (loading.value || loaded.value || !visible.value) return;
   loading.value = true;
   try {
     const res = await getUserList({ currentPage: 1, pageSize: 1000 });
@@ -78,16 +113,10 @@ async function loadUsers() {
       }))
       .filter((item: UserOption) => item.userId !== currentUserId);
     loaded.value = true;
-  } catch (error) {
-    ElMessage.error("加载用户列表失败");
+  } catch {
+    ElMessage.error(t("layout.dataScope.loadUserListFailed"));
   } finally {
     loading.value = false;
-  }
-}
-
-function handleVisibleChange(show: boolean) {
-  if (show) {
-    loadUsers();
   }
 }
 
@@ -100,32 +129,31 @@ async function refreshCurrentView() {
   }
 }
 
-async function handleChange(value: string) {
+async function handleRadioChange(value: string) {
   if (value === "all") {
     dataScopeStore.setAll();
-    ElMessage.success("已切换到全部数据，正在刷新当前页面");
+    ElMessage.success(t("layout.dataScope.switchedToAllData"));
     await refreshCurrentView();
-    return;
-  }
-
-  if (value === "self" || !value) {
+  } else if (value === "self") {
     dataScopeStore.setSelf();
-    ElMessage.success("已切换到我的数据，正在刷新当前页面");
+    ElMessage.success(t("layout.dataScope.switchedToMyData"));
     await refreshCurrentView();
-    return;
   }
+}
 
+async function handleSelectChange(value: string) {
+  if (!value || value === "self" || value === "all") return;
   if (value.startsWith("user:")) {
     const userId = value.slice(5);
     const option = userOptions.value.find((item) => item.userId === userId);
     if (!option) {
       dataScopeStore.setSelf();
-      ElMessage.success("已切换到我的数据，正在刷新当前页面");
+      ElMessage.success(t("layout.dataScope.switchedToMyData"));
       await refreshCurrentView();
       return;
     }
     dataScopeStore.setUser(option.userId, option.label);
-    ElMessage.success(`已切换到 ${option.label}，正在刷新当前页面`);
+    ElMessage.success(t("layout.dataScope.switchedToUser", { label: option.label }));
     await refreshCurrentView();
   }
 }
@@ -137,63 +165,60 @@ onMounted(() => {
 });
 </script>
 
-<style scoped>
-.admin-data-scope {
+<style lang="scss" scoped>
+.ads-trigger {
   display: inline-flex;
-  max-width: 100%;
-  min-width: 0;
-  padding: 0 2px;
+  flex-direction: column;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  color: inherit;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+
+  &:active {
+    transform: scale(0.94);
+  }
 }
 
-.admin-data-scope__label {
-  font-size: 11px;
-  font-weight: 600;
-  color: color-mix(in srgb, var(--top-header-text-color) 66%, transparent 34%);
-  white-space: nowrap;
+.ads-panel {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.admin-data-scope__select {
-  width: 144px;
-  min-width: 0;
-}
-
-.admin-data-scope :deep(.el-select__wrapper) {
-  min-height: 30px;
-  padding: 0 10px;
-  background: var(--top-header-hover-color);
-  border-radius: 999px;
-  box-shadow: none;
-}
-
-.admin-data-scope :deep(.el-select__selected-item),
-.admin-data-scope :deep(.el-select__selection) {
+.ads-panel__title {
   font-size: 12px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  padding: 4px 4px 0;
 }
 
-@media (width <= 768px) {
-  .admin-data-scope__label {
-    display: none;
-  }
+.ads-radios {
+  width: 100%;
+  display: flex;
 
-  .admin-data-scope__select {
-    width: 118px;
-  }
-
-  .admin-data-scope :deep(.el-select__wrapper) {
-    min-height: 28px;
-    padding: 0 8px;
+  :deep(.el-radio-button__inner) {
+    flex: 1;
   }
 }
 
-@media (width <= 640px) {
-  .admin-data-scope {
-    padding: 0;
-  }
+.ads-select {
+  width: 100%;
+}
+</style>
 
-  .admin-data-scope__select {
-    width: 104px;
-  }
+<style lang="scss">
+.header-data-scope-popper {
+  padding: 0 !important;
+  border: 1px solid var(--el-border-color-light) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 12%) !important;
+  overflow: hidden;
 }
 </style>

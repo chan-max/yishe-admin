@@ -27,13 +27,13 @@ const expireTime = computed(() => userStore.user.expireTime);
 const isForever = computed(() => !expireTime.value);
 
 const remainingTime = computed(() => {
-  if (!expireTime.value) return "永久有效";
+  if (!expireTime.value) return t("layout.userInfo.validForever");
 
   const now = new Date().getTime();
   const expire = new Date(expireTime.value).getTime();
   const diff = expire - now;
 
-  if (diff <= 0) return "已过期";
+  if (diff <= 0) return t("layout.userInfo.expired");
 
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -42,7 +42,7 @@ const remainingTime = computed(() => {
   if (days > 0) return `还有 ${days} 天到期`;
   if (hours > 0) return `还有 ${hours} 小时到期`;
   if (minutes > 0) return `还有 ${minutes} 分钟到期`;
-  return "即将到期";
+  return t("layout.userInfo.expiringSoon");
 });
 
 function hasRouteByName(routes: AppRouteRecordRaw[] = [], routeName: string): boolean {
@@ -103,23 +103,23 @@ function copyToClipboard(text: string): boolean {
 function handleViewToken() {
   const token = getAccessToken();
   if (!token) {
-    ElMessage.warning("当前没有可用的 Token");
+    ElMessage.warning(t("layout.userInfo.noTokenAvailable"));
     return;
   }
   ElMessageBox.alert(
     `<div style="word-break:break-all;font-family:monospace;font-size:12px;line-height:1.6;max-height:200px;overflow-y:auto;padding:8px;background:var(--el-fill-color-light);border-radius:4px;user-select:all">${token}</div>`,
-    "当前登录 Token",
+    t("layout.userInfo.currentLoginToken"),
     {
       dangerouslyUseHTMLString: true,
-      confirmButtonText: "复制并关闭",
+      confirmButtonText: t("layout.userInfo.copyAndClose"),
       showClose: true,
       customClass: "token-viewer-dialog",
       callback: (action: string) => {
         if (action === "confirm") {
           if (copyToClipboard(token)) {
-            ElMessage.success("Token 已复制到剪贴板");
+            ElMessage.success(t("layout.userInfo.tokenCopied"));
           } else {
-            ElMessage.error("复制失败，请手动选中复制");
+            ElMessage.error(t("layout.userInfo.copyFailed"));
           }
         }
       },
@@ -159,7 +159,7 @@ function handleViewToken() {
           </ElDropdownItem>
           <ElDropdownItem @click="handleViewToken" class="ud-item">
             <Icon icon="ep:view" class="ud-icon" />
-            查看 Token
+            {{ t("layout.userInfo.viewToken") }}
           </ElDropdownItem>
           <div class="ud-sep" />
           <ElDropdownItem @click="loginOut" class="ud-item ud-item--out">

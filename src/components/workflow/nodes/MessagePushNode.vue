@@ -49,8 +49,8 @@ const platformIcon = computed(() => {
 }
 
 .wf-node__platform-icon {
-  width: 16px;
-  height: 16px;
+  width: 28px;
+  height: 28px;
   flex-shrink: 0;
 }
 

@@ -6,7 +6,7 @@
           <el-form :model="queryParams" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="5" :xl="4">
-                <el-form-item label="排序方式">
+                <el-form-item :label="t('shop.sortType')">
                   <el-select v-model="queryParams.sortingFields" @change="getList">
                     <el-option v-for="item in sortTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
                   </el-select>
@@ -14,8 +14,8 @@
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button type="primary" :disabled="single" @click="handleAdd" :icon="Plus">新增</el-button>
-              <el-button type="danger" :icon="Delete" :loading="deleteLoading" @click="handleDelete(null)">批量删除</el-button>
+              <el-button type="primary" :disabled="single" @click="handleAdd" :icon="Plus">{{ t('common.add') }}</el-button>
+              <el-button type="danger" :icon="Delete" :loading="deleteLoading" @click="handleDelete(null)">{{ t('common.batchDelete') }}</el-button>
             </div>
           </el-form>
         </div>
@@ -35,13 +35,13 @@
                 <template #operationDefaultSlot="{ row }">
                   <div class="flex justify-start">
                     <el-dropdown class="operation-dropdown" placement="bottom-end">
-                      <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
+                      <el-button type="primary" link size="small" class="operation-trigger-button">{{ t('common.operation') }}</el-button>
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
-                          <el-dropdown-item @click="handleDetail(row)">详情</el-dropdown-item>
-                          <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
-                          <el-dropdown-item @click="handleCopy(row)">复制</el-dropdown-item>
-                          <el-dropdown-item divided @click="handleDelete(row)" class="operation-menu-item--danger">删除</el-dropdown-item>
+                          <el-dropdown-item @click="handleDetail(row)">{{ t('common.detail') }}</el-dropdown-item>
+                          <el-dropdown-item @click="handleEdit(row)">{{ t('common.edit') }}</el-dropdown-item>
+                          <el-dropdown-item @click="handleCopy(row)">{{ t('common.copy') }}</el-dropdown-item>
+                          <el-dropdown-item divided @click="handleDelete(row)" class="operation-menu-item--danger">{{ t('common.delete') }}</el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
                     </el-dropdown>
@@ -66,15 +66,15 @@
     </ListPageLayout>
   </ContentWrap>
 
-    <el-dialog class="platform-detail-dialog" title="商品模板详情" v-model="detailDialogVisible" width="100%"
+    <el-dialog class="platform-detail-dialog" :title="t('shop.templateDetail')" v-model="detailDialogVisible" width="100%"
       style="height: 100%;" align-center @cancel="dialogClose" :destroy-on-close="true">
       <div style="height: calc(100%);overflow:auto;">
         <component :is="activeComponent" :currentRow="currentRow" :detailData="detailData"></component>
       </div>
 
       <!-- <template #footer>
-        <el-button @click="detailDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitForm" :loading="submitLoading">确定</el-button>
+        <el-button @click="detailDialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="submitForm" :loading="submitLoading">{{ t('common.confirm') }}</el-button>
       </template> -->
     </el-dialog>
 
@@ -83,7 +83,7 @@
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
         <el-row>
           <el-col :span="24">
-            <el-form-item label="平台" prop="platformId">
+            <el-form-item :label="t('shop.platform')" prop="platformId">
               <el-select v-model="form.platformId" @change="initShopList">
                 <el-option v-for="item in platformList" :key="item.id" :label="item.platformName" :value="item.id" />
               </el-select>
@@ -91,8 +91,8 @@
           </el-col>
 
           <el-col :span="24">
-            <el-form-item label="店铺" prop="shopId">
-              <el-select v-model="form.shopId" placeholder="选择店铺" style="width:100%">
+            <el-form-item :label="t('shop.shop')" prop="shopId">
+              <el-select v-model="form.shopId" :placeholder="t('shop.selectShop')" style="width:100%">
                 <el-option v-for="item in shopList" :key="item.id" :value="item.id" :label="item.shopName">
                   <div class="flex items-center gap-2">
                     {{ item.shopName }} <el-tag size="small" type="warning" round> {{ item.platformName }} </el-tag>
@@ -103,14 +103,14 @@
           </el-col>
 
           <el-col :span="24">
-            <el-form-item label="模板名称" prop="templateName">
-              <el-input v-model="form.templateName" placeholder="请输入模板名称"></el-input>
+            <el-form-item :label="t('shop.templateName')" prop="templateName">
+              <el-input v-model="form.templateName" :placeholder="t('shop.templateNamePlaceholder')"></el-input>
             </el-form-item>
           </el-col>
 
           <el-col :span="24">
-            <el-form-item label="类目" prop="categoryId">
-              <el-select v-model="form.categoryId" placeholder="选择类目">
+            <el-form-item :label="t('shop.category')" prop="categoryId">
+              <el-select v-model="form.categoryId" :placeholder="t('shop.selectCategory')">
                 <el-option v-for="item in shopCategoryList" :key="item.id" :label="item.categoryName"
                   :value="item.id" />
               </el-select>
@@ -121,8 +121,8 @@
       </el-form>
 
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitForm" :loading="submitLoading">确定</el-button>
+        <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="submitForm" :loading="submitLoading">{{ t('common.confirm') }}</el-button>
       </template>
     </el-dialog>
 </template>
@@ -145,6 +145,9 @@ import temu from './templates/temu/temu.vue'
 import { ShopPlatformApi } from "@/api/shop/platform";
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const activePlatform = ref('temu')
 const platformOptions = ref([
@@ -263,24 +266,24 @@ async function handleDelete(row?) {
   if (row) {
     delIds = [row.id];
   } else if (!ids.value.length) {
-    return ElMessage.warning('请选择要删除的数据');
+    return ElMessage.warning(t('shop.selectDataToDelete'));
   } else {
     delIds = [...ids.value];
   }
 
   try {
     await ElMessageBox.confirm(
-      "确认删除该数据吗",
-      '删除提示',
+      t('shop.confirmDelete'),
+      t('shop.deleteTip'),
       {
-        confirmButtonText: '确认',
-        cancelButtonText: '取消',
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
         type: 'error',
       }
     )
     deleteLoading.value = true
     await deleteProductTemplate({ ids: delIds });
-    ElMessage.success("删除成功");
+    ElMessage.success(t('common.deleteSuccess'));
     await getList();
   } catch (error) {
   } finally {
@@ -292,14 +295,14 @@ async function handleDelete(row?) {
 function handleAdd() {
   isEdit.value = false;
   dialogVisible.value = true;
-  dialogTitle.value = "新建商品模板";
+  dialogTitle.value = t('shop.createTemplate');
   form.value = {};
 }
 
 function handleEdit(row) {
   isEdit.value = true;
   dialogVisible.value = true;
-  dialogTitle.value = "编辑";
+  dialogTitle.value = t('shop.edit');
 
   if (form.value.platformId) {
     initShopList(form.value.platformId)
@@ -325,10 +328,10 @@ const form = ref({
 });
 
 const rules = {
-  platformId: [{ required: true, message: "请选择平台", trigger: "blur" }],
-  templateName: [{ required: true, message: "请输入模板名称", trigger: "blur" }],
-  shopId: [{ required: true, message: "请选择店铺", trigger: "blur" }],
-  categoryId: [{ required: true, message: "请选择类目", trigger: "blur" }],
+  platformId: [{ required: true, message: t('shop.platformRequired'), trigger: "blur" }],
+  templateName: [{ required: true, message: t('shop.templateNameRequired'), trigger: "blur" }],
+  shopId: [{ required: true, message: t('shop.shopRequired'), trigger: "blur" }],
+  categoryId: [{ required: true, message: t('shop.categoryRequired'), trigger: "blur" }],
 };
 
 const dialogClose = () => {
@@ -351,13 +354,13 @@ const submitForm = async () => {
       await updateProductTemplate({
         ...form.value,
       });
-      ElMessage.success("更新成功");
+      ElMessage.success(t('common.updateSuccess'));
     } else {
       await addProductTemplate({
         ...form.value,
         templateTemu: {}
       });
-      ElMessage.success("添加成功");
+      ElMessage.success(t('common.addSuccess'));
     }
 
     dialogVisible.value = false;

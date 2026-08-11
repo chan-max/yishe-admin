@@ -15,11 +15,11 @@
       <div class="run-package-renderer__hero-side">
         <div class="run-package-renderer__stat-grid">
           <div class="run-package-renderer__stat-card">
-            <span>记录数</span>
+            <span>{{ t('operation.recordCount') }}</span>
             <strong>{{ recordsCount }}</strong>
           </div>
           <div class="run-package-renderer__stat-card">
-            <span>截图数</span>
+            <span>{{ t('operation.snapshotCount') }}</span>
             <strong>{{ snapshotCount }}</strong>
           </div>
         </div>
@@ -27,31 +27,31 @@
     </div>
 
     <div class="run-package-renderer__section">
-      <div class="run-package-renderer__section-title">执行信息</div>
+      <div class="run-package-renderer__section-title">{{ t('operation.executionInfo') }}</div>
       <el-descriptions :column="2" border size="small">
-        <el-descriptions-item label="任务 ID">
+        <el-descriptions-item :label="t('operation.taskId')">
           <span class="mono">{{ record.taskId || "-" }}</span>
         </el-descriptions-item>
-        <el-descriptions-item label="运行 ID">
+        <el-descriptions-item :label="t('operation.runId')">
           <span class="mono">{{ record.runId || "-" }}</span>
         </el-descriptions-item>
-        <el-descriptions-item label="采集时间">
+        <el-descriptions-item :label="t('operation.collectTime')">
           <span>{{ formatDateTime(record.capturedAt) }}</span>
         </el-descriptions-item>
-        <el-descriptions-item label="完成时间">
+        <el-descriptions-item :label="t('operation.finishTime')">
           <span>{{ formatDateTime(finishedAt) }}</span>
         </el-descriptions-item>
-        <el-descriptions-item label="执行客户端">
+        <el-descriptions-item :label="t('operation.executionClient')">
           <span class="mono">{{ machineLabel }}</span>
         </el-descriptions-item>
-        <el-descriptions-item label="结果包类型">
+        <el-descriptions-item :label="t('operation.resultPackageType')">
           <span class="mono">{{ packageType }}</span>
         </el-descriptions-item>
       </el-descriptions>
     </div>
 
     <div v-if="summaryEntries.length" class="run-package-renderer__section">
-      <div class="run-package-renderer__section-title">执行摘要</div>
+      <div class="run-package-renderer__section-title">{{ t('operation.executionSummary') }}</div>
       <el-descriptions :column="2" border size="small">
         <el-descriptions-item
           v-for="item in summaryEntries"
@@ -72,7 +72,7 @@
       "
       class="run-package-renderer__section"
     >
-      <div class="run-package-renderer__section-title">能力说明</div>
+      <div class="run-package-renderer__section-title">{{ t('operation.capabilityDescription') }}</div>
       <div class="run-package-renderer__field-catalog-hint">
         {{ capabilityProfile.summary }}
       </div>
@@ -104,7 +104,7 @@
       </div>
 
       <div v-if="capabilityProfile.outputTags.length" class="run-package-renderer__insight-block">
-        <div class="run-package-renderer__insight-title">当前可用字段能力</div>
+        <div class="run-package-renderer__insight-title">{{ t('operation.availableFieldCapabilities') }}</div>
         <div class="run-package-renderer__tag-list">
           <el-tag
             v-for="item in capabilityProfile.outputTags"
@@ -118,7 +118,7 @@
       </div>
 
       <div v-if="capabilityProfile.analysisHints.length" class="run-package-renderer__insight-block">
-        <div class="run-package-renderer__insight-title">推荐分析方向</div>
+        <div class="run-package-renderer__insight-title">{{ t('operation.recommendedAnalysisDirection') }}</div>
         <ul class="run-package-renderer__ai-list">
           <li v-for="item in capabilityProfile.analysisHints" :key="item">
             {{ item }}
@@ -127,7 +127,7 @@
       </div>
 
       <div v-if="capabilityProfile.notes.length" class="run-package-renderer__insight-block">
-        <div class="run-package-renderer__insight-title">限制与说明</div>
+        <div class="run-package-renderer__insight-title">{{ t('operation.limitationsAndNotes') }}</div>
         <ul class="run-package-renderer__ai-list">
           <li v-for="item in capabilityProfile.notes" :key="item">
             {{ item }}
@@ -145,13 +145,13 @@
       "
       class="run-package-renderer__section"
     >
-      <div class="run-package-renderer__section-title">字段对照</div>
+      <div class="run-package-renderer__section-title">{{ t('operation.fieldComparison') }}</div>
       <div class="run-package-renderer__field-catalog-hint">
-        预期字段来自当前 taskType 的 capability schema，实际字段来自本次运行结果。
+        {{ t('operation.fieldComparisonHint') }}
       </div>
 
       <div v-if="schemaReview.packageFields.length" class="run-package-renderer__insight-block">
-        <div class="run-package-renderer__insight-title">collectData 结果包字段</div>
+        <div class="run-package-renderer__insight-title">{{ t('operation.collectDataResultPackageFields') }}</div>
         <div class="run-package-renderer__field-review-grid">
           <div
             v-for="item in schemaReview.packageFields"
@@ -161,7 +161,7 @@
             <div class="run-package-renderer__field-head">
               <code>{{ item.key }}</code>
               <el-tag size="small" effect="plain" :type="item.present ? 'success' : 'warning'">
-                {{ item.present ? "已返回" : "未返回" }}
+                {{ item.present ? t('operation.returned') : t('operation.notReturned') }}
               </el-tag>
             </div>
             <div class="run-package-renderer__field-review-label">{{ item.label }}</div>
@@ -173,7 +173,7 @@
       </div>
 
       <div v-if="schemaReview.recordFields.length" class="run-package-renderer__insight-block">
-        <div class="run-package-renderer__insight-title">records[] 预期字段</div>
+        <div class="run-package-renderer__insight-title">{{ t('operation.recordsExpectedFields') }}</div>
         <div class="run-package-renderer__field-review-grid">
           <div
             v-for="item in schemaReview.recordFields"
@@ -189,10 +189,10 @@
               >
                 {{
                   item.found
-                    ? `覆盖 ${Math.round(item.coverageRatio * 100)}%`
+                    ? `${t('operation.coverage')} ${Math.round(item.coverageRatio * 100)}%`
                     : item.stability === "core"
-                      ? "缺失"
-                      : "未返回"
+                      ? t('operation.missing')
+                      : t('operation.notReturned')
                 }}
               </el-tag>
             </div>
@@ -204,7 +204,7 @@
               v-if="item.found && item.valueTypes.length"
               class="run-package-renderer__field-review-meta"
             >
-              类型 {{ item.valueTypes.join(" / ") }}
+              {{ t('operation.type') }} {{ item.valueTypes.join(" / ") }}
             </div>
           </div>
         </div>
@@ -214,7 +214,7 @@
         v-if="schemaReview.missingCoreRecordFields.length"
         class="run-package-renderer__insight-block"
       >
-        <div class="run-package-renderer__insight-title">需要回查的核心字段</div>
+        <div class="run-package-renderer__insight-title">{{ t('operation.coreFieldsNeedRecheck') }}</div>
         <div class="run-package-renderer__field-catalog-hint">
           {{
             schemaReview.missingCoreRecordFields
@@ -231,7 +231,7 @@
         "
         class="run-package-renderer__insight-block"
       >
-        <div class="run-package-renderer__insight-title">未建档字段</div>
+        <div class="run-package-renderer__insight-title">{{ t('operation.undocumentedFields') }}</div>
         <div class="run-package-renderer__field-review-grid">
           <div
             v-for="item in schemaReview.undocumentedRecordFields"
@@ -245,7 +245,7 @@
               </el-tag>
             </div>
             <div class="run-package-renderer__field-review-meta">
-              覆盖率 {{ Math.round(item.coverageRatio * 100) }}%
+              {{ t('operation.coverageRate') }} {{ Math.round(item.coverageRatio * 100) }}%
             </div>
           </div>
           <div
@@ -273,7 +273,7 @@
       "
       class="run-package-renderer__section"
     >
-      <div class="run-package-renderer__section-title">结果包洞察</div>
+      <div class="run-package-renderer__section-title">{{ t('operation.resultPackageInsights') }}</div>
 
       <div
         v-if="insights.metrics.length"
@@ -291,7 +291,7 @@
       </div>
 
       <div v-if="insights.dimensionTags.length" class="run-package-renderer__insight-block">
-        <div class="run-package-renderer__insight-title">可分析维度</div>
+        <div class="run-package-renderer__insight-title">{{ t('operation.analyzableDimensions') }}</div>
         <div class="run-package-renderer__tag-list">
           <el-tag
             v-for="tag in insights.dimensionTags"
@@ -305,7 +305,7 @@
       </div>
 
       <div v-if="insights.fieldCoverage.length" class="run-package-renderer__insight-block">
-        <div class="run-package-renderer__insight-title">字段覆盖</div>
+        <div class="run-package-renderer__insight-title">{{ t('operation.fieldCoverage') }}</div>
         <div class="run-package-renderer__coverage-grid">
           <div
             v-for="item in insights.fieldCoverage"
@@ -335,28 +335,28 @@
         "
         class="run-package-renderer__insight-block"
       >
-        <div class="run-package-renderer__insight-title">样本侧写</div>
+        <div class="run-package-renderer__insight-title">{{ t('operation.sampleProfile') }}</div>
         <el-descriptions :column="2" border size="small">
           <el-descriptions-item
             v-if="insights.sampleKeywords.length"
-            label="关键词样本"
+            :label="t('operation.keywordSamples')"
           >
             {{ insights.sampleKeywords.join("、") }}
           </el-descriptions-item>
-          <el-descriptions-item v-if="insights.topShops.length" label="店铺样本">
+          <el-descriptions-item v-if="insights.topShops.length" :label="t('operation.shopSamples')">
             {{ insights.topShops.join("、") }}
           </el-descriptions-item>
-          <el-descriptions-item v-if="insights.topBrands.length" label="品牌样本">
+          <el-descriptions-item v-if="insights.topBrands.length" :label="t('operation.brandSamples')">
             {{ insights.topBrands.join("、") }}
           </el-descriptions-item>
-          <el-descriptions-item v-if="insights.topDomains.length" label="来源域名">
+          <el-descriptions-item v-if="insights.topDomains.length" :label="t('operation.sourceDomains')">
             {{ insights.topDomains.join("、") }}
           </el-descriptions-item>
         </el-descriptions>
       </div>
 
       <div v-if="insights.aiBrief" class="run-package-renderer__insight-block">
-        <div class="run-package-renderer__insight-title">AI 分析建议</div>
+        <div class="run-package-renderer__insight-title">{{ t('operation.aiAnalysisSuggestions') }}</div>
         <div class="run-package-renderer__ai-brief">{{ insights.aiBrief }}</div>
         <ul v-if="insights.aiSuggestions.length" class="run-package-renderer__ai-list">
           <li v-for="item in insights.aiSuggestions" :key="item">
@@ -367,9 +367,9 @@
     </div>
 
     <div v-if="fieldCatalog.length" class="run-package-renderer__section">
-      <div class="run-package-renderer__section-title">实际字段目录</div>
+      <div class="run-package-renderer__section-title">{{ t('operation.actualFieldCatalog') }}</div>
       <div class="run-package-renderer__field-catalog-hint">
-        该目录基于本次运行返回的 records 动态扫描生成，会随着平台字段变化自动更新。
+        {{ t('operation.actualFieldCatalogHint') }}
       </div>
       <div class="run-package-renderer__field-catalog">
         <div
@@ -384,11 +384,11 @@
             </el-tag>
           </div>
           <div class="run-package-renderer__field-meta">
-            <span>覆盖率 {{ Math.round(item.coverageRatio * 100) }}%</span>
-            <span>类型 {{ item.valueTypes.join(" / ") }}</span>
+            <span>{{ t('operation.coverageRate') }} {{ Math.round(item.coverageRatio * 100) }}%</span>
+            <span>{{ t('operation.type') }} {{ item.valueTypes.join(" / ") }}</span>
           </div>
           <div v-if="item.sampleValues.length" class="run-package-renderer__field-samples">
-            <span>样例：</span>
+            <span>{{ t('operation.sample') }}</span>
             <span>{{ item.sampleValues.join("；") }}</span>
           </div>
         </div>
@@ -396,7 +396,7 @@
     </div>
 
     <div v-if="snapshots.length" class="run-package-renderer__section">
-      <div class="run-package-renderer__section-title">执行截图</div>
+      <div class="run-package-renderer__section-title">{{ t('operation.executionScreenshots') }}</div>
       <div class="run-package-renderer__snapshot-grid">
         <div
           v-for="snapshot in snapshots"
@@ -412,11 +412,11 @@
             class="run-package-renderer__snapshot-image"
           />
           <div v-else class="run-package-renderer__snapshot-placeholder">
-            本地截图未上传
+            {{ t('operation.localScreenshotNotUploaded') }}
           </div>
           <div class="run-package-renderer__snapshot-meta">
             <div class="run-package-renderer__snapshot-label">
-              {{ snapshot.label || "截图" }}
+              {{ snapshot.label || t('operation.screenshot') }}
             </div>
             <div
               v-if="snapshot.key || snapshot.path"
@@ -430,11 +430,11 @@
     </div>
 
     <div class="run-package-renderer__section">
-      <div class="run-package-renderer__section-title">商品简览</div>
+      <div class="run-package-renderer__section-title">{{ t('operation.productPreview') }}</div>
       <div class="run-package-renderer__field-catalog-hint">
-        这里优先展示稳定字段，尽量不依赖平台易变 DOM 文案；复杂或临时字段仍保留在下方原始 JSON 中。
+        {{ t('operation.productPreviewHint') }}
       </div>
-      <el-empty v-if="!recordPreviewCards.length" description="本次执行没有返回记录" />
+      <el-empty v-if="!recordPreviewCards.length" :description="t('operation.noRecordsReturned')" />
       <div v-else class="run-package-renderer__preview-grid">
         <div
           v-for="item in recordPreviewCards"
@@ -449,7 +449,7 @@
               preview-teleported
               class="run-package-renderer__preview-image"
             />
-            <div v-else class="run-package-renderer__preview-placeholder">无图片</div>
+            <div v-else class="run-package-renderer__preview-placeholder">{{ t('operation.noImage') }}</div>
           </div>
 
           <div class="run-package-renderer__preview-content">
@@ -490,7 +490,7 @@
                 target="_blank"
                 type="primary"
               >
-                查看来源
+                {{ t('operation.viewSource') }}
               </el-link>
             </div>
           </div>
@@ -499,8 +499,8 @@
     </div>
 
     <div class="run-package-renderer__section">
-      <div class="run-package-renderer__section-title">记录 JSON</div>
-      <el-empty v-if="!recordRows.length" description="本次执行没有返回记录" />
+      <div class="run-package-renderer__section-title">{{ t('operation.recordJson') }}</div>
+      <el-empty v-if="!recordRows.length" :description="t('operation.noRecordsReturned')" />
       <el-collapse v-else>
         <el-collapse-item
           v-for="item in recordRows"
@@ -518,10 +518,10 @@
           </template>
 
           <el-descriptions :column="1" border size="small">
-            <el-descriptions-item label="记录标识">
+            <el-descriptions-item :label="t('operation.recordIdentifier')">
               <span class="mono">{{ item.recordKey || "-" }}</span>
             </el-descriptions-item>
-            <el-descriptions-item label="来源链接">
+            <el-descriptions-item :label="t('operation.sourceLink')">
               <el-link
                 v-if="item.sourceUrl"
                 :href="item.sourceUrl"
@@ -532,7 +532,7 @@
               </el-link>
               <span v-else>-</span>
             </el-descriptions-item>
-            <el-descriptions-item label="记录采集时间">
+            <el-descriptions-item :label="t('operation.recordCollectTime')">
               <span>{{ formatDateTime(item.capturedAt) }}</span>
             </el-descriptions-item>
           </el-descriptions>
@@ -543,7 +543,7 @@
     </div>
 
     <div class="run-package-renderer__section">
-      <div class="run-package-renderer__section-title">结果包 JSON</div>
+      <div class="run-package-renderer__section-title">{{ t('operation.resultPackageJson') }}</div>
       <pre class="run-package-renderer__json">{{ packageJson }}</pre>
     </div>
   </div>
@@ -551,6 +551,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import { useI18n } from 'vue-i18n';
 import type {
   EcomPlatformCollectCatalog,
   EcomPlatformRawRecord,
@@ -577,6 +578,8 @@ import {
   getSnapshotCount,
   getTaskTypeLabel,
 } from "../../shared";
+
+const { t } = useI18n();
 
 const props = defineProps<{
   record: EcomPlatformRawRecord;
@@ -678,7 +681,7 @@ const packageTitle = computed(() =>
     props.catalog,
     getRawPlatform(props.record),
     getRawTaskType(props.record),
-  ) || "运行结果包",
+  ) || t('operation.runResultPackage'),
 );
 const platformLabel = computed(() =>
   getPlatformLabel(props.catalog, getRawPlatform(props.record)),
@@ -720,10 +723,10 @@ const snapshotUrls = computed(() =>
 );
 const summaryEntries = computed(() => {
   const fieldMap: Array<[string, any]> = [
-    ["消息", rawSummary.value.message],
-    ["记录数", rawSummary.value.recordsCount || recordsCount.value],
-    ["截图数", rawSummary.value.snapshotCount || snapshotCount.value],
-    ["更新时间", rawSummary.value.updatedAt],
+    [t('operation.message'), rawSummary.value.message],
+    [t('operation.recordCount'), rawSummary.value.recordsCount || recordsCount.value],
+    [t('operation.snapshotCount'), rawSummary.value.snapshotCount || snapshotCount.value],
+    [t('operation.updateTime'), rawSummary.value.updatedAt],
   ];
 
   return fieldMap
@@ -755,7 +758,7 @@ const recordPreviewCards = computed(() =>
   getRawPackageRecords(props.record).map((item: any, index: number) => ({
     id: `${props.record.id}-preview-${index + 1}`,
     index: index + 1,
-    title: pickRecordValue(item, RECORD_TITLE_PATHS) || `记录 ${index + 1}`,
+    title: pickRecordValue(item, RECORD_TITLE_PATHS) || `${t('operation.record')} ${index + 1}`,
     recordKey: pickRecordValue(item, RECORD_KEY_PATHS),
     sourceUrl: pickRecordValue(item, RECORD_LINK_PATHS),
     capturedAt: pickRecordValue(item, RECORD_CAPTURED_AT_PATHS),
@@ -770,7 +773,7 @@ const recordPreviewCards = computed(() =>
 );
 const recordRows = computed(() =>
   getRawPackageRecords(props.record).map((item: any, index: number) => {
-    const title = pickRecordValue(item, RECORD_TITLE_PATHS) || `记录 ${index + 1}`;
+    const title = pickRecordValue(item, RECORD_TITLE_PATHS) || `${t('operation.record')} ${index + 1}`;
     return {
       id: `${props.record.id}-${index + 1}`,
       index: index + 1,
@@ -1107,7 +1110,8 @@ const packageJson = computed(() => formatJson(rawPackage.value));
   margin-top: 6px;
   font-size: 12px;
   line-height: 1.6;
-  color: var(--el-text-color-secondary);
+  color: var(--el-text</longcat_think>
+-color-secondary);
 }
 
 .run-package-renderer__snapshot-grid {

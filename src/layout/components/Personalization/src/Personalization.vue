@@ -6,6 +6,8 @@ import { LOADING_TEMPLATES, DEFAULT_LOADING_STYLE } from "@/config/loadingTempla
 
 defineOptions({ name: "Personalization" });
 
+const { t } = useI18n();
+
 const appStore = useAppStore();
 
 const drawerVisible = ref(false);
@@ -52,41 +54,42 @@ const handlePickerChange = (color: string | null) => {
 const handleReset = () => {
   const def = appStore.getIsDark ? "#5b8cff" : "#2d6bff";
   applyThemeColor(def);
-  ElMessage.success("主题色已恢复默认");
+  ElMessage.success(t("layout.personalization.themeColorResetSuccess"));
 };
 
 const loadingStyle = computed(() => appStore.getLoadingStyle);
 
 const selectLoadingStyle = (key: string) => {
   appStore.setLoadingStyle(key);
-  ElMessage.success("加载动画已切换");
+  ElMessage.success(t("layout.personalization.loadingStyleSwitched"));
 };
 
 const resetLoadingStyle = () => {
   appStore.setLoadingStyle(DEFAULT_LOADING_STYLE);
-  ElMessage.success("加载动画已恢复默认");
+  ElMessage.success(t("layout.personalization.loadingStyleResetSuccess"));
 };
 </script>
 
 <template>
-  <button type="button" class="personalization-trigger" aria-label="个性化设置" @click="drawerVisible = true">
-    <Icon icon="ep:brush" :size="12" />
-    <span class="personalization-trigger__label">个性化</span>
-    <span class="personalization-trigger__dot" :style="{ backgroundColor: themeColor }"></span>
+  <button type="button" class="personalization-trigger" :aria-label="t('layout.personalization.personalization')" @click="drawerVisible = true">
+    <span class="th-action-icon">
+      <Icon icon="ep:brush" :size="18" />
+    </span>
+    <span class="th-action-label">{{ t("layout.personalization.personalization") }}</span>
   </button>
 
-  <el-drawer v-model="drawerVisible" title="个性化设置" size="320px" append-to-body :with-header="true"
+  <el-drawer v-model="drawerVisible" :title="t('layout.personalization.personalizationTitle')" size="320px" append-to-body :with-header="true"
     class="personalization-drawer">
     <div class="personalization-body">
       <section class="personalization-section">
         <div class="personalization-section__head">
-          <span class="personalization-section__title">主题色</span>
+          <span class="personalization-section__title">{{ t("layout.personalization.themeColor") }}</span>
           <button type="button" class="personalization-reset" @click="handleReset">
-            恢复默认
+            {{ t("layout.personalization.reset") }}
           </button>
         </div>
         <p class="personalization-section__desc">
-          选择后即时生效。
+          {{ t("layout.personalization.themeColorDesc") }}
         </p>
         <div class="personalization-swatches">
           <button v-for="color in PRESET_COLORS" :key="color" type="button" class="personalization-swatch"
@@ -103,25 +106,25 @@ const resetLoadingStyle = () => {
 
       <section class="personalization-section">
         <div class="personalization-section__head">
-          <span class="personalization-section__title">深色模式</span>
-          <el-switch v-model="isDark" inline-prompt active-text="深" inactive-text="浅" />
+          <span class="personalization-section__title">{{ t("layout.personalization.darkMode") }}</span>
+          <el-switch v-model="isDark" inline-prompt :active-text="t('layout.personalization.dark')" :inactive-text="t('layout.personalization.light')" />
         </div>
-        <p class="personalization-section__desc">切换后整个系统界面会使用暗色配色。</p>
+        <p class="personalization-section__desc">{{ t("layout.personalization.darkModeDesc") }}</p>
       </section>
 
       <section class="personalization-section">
         <div class="personalization-section__head">
-          <span class="personalization-section__title">加载动画</span>
+          <span class="personalization-section__title">{{ t("layout.personalization.loadingStyle") }}</span>
           <button
             v-if="loadingStyle !== DEFAULT_LOADING_STYLE"
             type="button"
             class="personalization-reset"
             @click="resetLoadingStyle"
           >
-            恢复默认
+            {{ t("layout.personalization.reset") }}
           </button>
         </div>
-        <p class="personalization-section__desc">所有加载动画（页面 / 表格 / 按钮）统一生效。</p>
+        <p class="personalization-section__desc">{{ t("layout.personalization.loadingStyleDesc") }}</p>
         <div class="personalization-loaders">
           <button
             v-for="tpl in LOADING_TEMPLATES"
@@ -146,40 +149,21 @@ const resetLoadingStyle = () => {
 <style scoped lang="scss">
 .personalization-trigger {
   display: inline-flex;
-  height: 22px;
-  padding: 0 7px;
-  color: var(--top-header-text-color);
-  cursor: pointer;
-  background: var(--top-header-hover-color);
-  border: 1px solid var(--top-tool-border-color);
-  border-radius: 7px;
-  transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    color 0.18s ease;
+  flex-direction: column;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  color: inherit;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
 
-  &:hover,
-  &:focus-visible {
-    color: var(--el-text-color-primary);
-    border-color: color-mix(in srgb, var(--top-header-text-color) 14%, transparent 86%);
-    outline: none;
+  &:active {
+    transform: scale(0.94);
   }
-}
-
-.personalization-trigger__label {
-  font-size: 10px;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-.personalization-trigger__dot {
-  width: 7px;
-  height: 7px;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 12%);
 }
 
 .personalization-body {

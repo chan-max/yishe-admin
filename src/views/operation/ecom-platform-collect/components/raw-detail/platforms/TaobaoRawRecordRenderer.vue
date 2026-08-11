@@ -1,7 +1,7 @@
 <template>
   <GenericPlatformRawRenderer
     :record="record"
-    platform-label="淘宝"
+    :platform-label="t('operation.platformTaobao')"
     :title-paths="['title', 'productName', 'name']"
     :subtitle-paths="['shopName', 'sellerName', 'brand']"
     :price-paths="['priceText', 'price', 'discountPrice', 'salePrice']"
@@ -11,17 +11,20 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import type { EcomPlatformRawRecord } from "@/api/operation/ecomPlatformCollect";
 import GenericPlatformRawRenderer from "../GenericPlatformRawRenderer.vue";
+
+const { t } = useI18n();
 
 defineProps<{ record: EcomPlatformRawRecord }>();
 
 const detailFields = [
-  { label: "店铺", paths: ["shopName", "sellerName"] },
-  { label: "品牌", paths: ["brand", "brandName"] },
-  { label: "销量", paths: ["salesText", "soldText"] },
-  { label: "优惠", paths: ["promotionText", "couponText"] },
-  { label: "服务", paths: ["serviceText", "shippingText"] },
-  { label: "标签", paths: ["tags", "badges"] },
+  { label: t('operation.shop'), paths: ["shopName", "sellerName"] },
+  { label: t('operation.brand'), paths: ["brand", "brandName"] },
+  { label: t('operation.sales'), paths: ["salesText", "soldText"] },
+  { label: t('operation.discount'), paths: ["promotionText", "couponText"] },
+  { label: t('operation.service'), paths: ["serviceText", "shippingText"] },
+  { label: t('operation.tags'), paths: ["tags", "badges"] },
 ];
 </script>

@@ -28,10 +28,9 @@ const handleOpen = (key: string) => {
 
 <template>
   <ElDropdown trigger="click" placement="bottom-end" popper-class="tool-launcher-dropdown-popper">
-    <button type="button" class="tool-launcher-trigger">
-      <Icon icon="ep:monitor" class="tool-launcher-trigger__icon" />
-      <span class="tool-launcher-trigger__label <lg:hidden">工具</span>
-      <Icon icon="ep:arrow-down" class="tool-launcher-trigger__caret" />
+    <button type="button" class="tool-launcher-trigger" aria-label="工具">
+      <Icon icon="ep:monitor" class="th-action-icon" :size="18" />
+      <span class="th-action-label">工具</span>
     </button>
 
     <template #dropdown>
@@ -60,48 +59,21 @@ const handleOpen = (key: string) => {
 <style scoped lang="scss">
 .tool-launcher-trigger {
   display: inline-flex;
-  min-height: calc(var(--top-header-action-size) - 6px);
-  padding: 0 10px;
-  color: var(--top-header-text-color);
-  cursor: pointer;
-  background: color-mix(in srgb, var(--top-header-bg-color) 74%, var(--top-header-hover-color) 26%);
-  border: 1px solid color-mix(in srgb, var(--left-menu-border-color) 88%, transparent 12%);
-  border-radius: 3px;
-  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 36%, transparent 64%);
-  transition:
-    border-color 0.18s ease,
-    background-color 0.18s ease,
-    color 0.18s ease,
-    box-shadow 0.18s ease;
+  flex-direction: column;
   align-items: center;
-  gap: 5px;
+  justify-content: center;
+  color: inherit;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
 
-  &:hover {
-    color: var(--el-color-primary);
-    background: color-mix(
-      in srgb,
-      var(--top-header-hover-color) 80%,
-      var(--top-header-bg-color) 20%
-    );
-    border-color: color-mix(in srgb, var(--el-color-primary) 28%, var(--left-menu-border-color));
-    box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 50%, transparent 50%);
+  &:active {
+    transform: scale(0.94);
   }
-}
-
-.tool-launcher-trigger__icon {
-  font-size: 11px;
-  color: var(--el-color-primary);
-}
-
-.tool-launcher-trigger__label {
-  font-size: 10px;
-  font-weight: 500;
-  line-height: 1;
-}
-
-.tool-launcher-trigger__caret {
-  font-size: 8px;
-  opacity: 0.52;
 }
 
 .tool-launcher-menu__content {

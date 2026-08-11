@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     :model-value="modelValue"
-    :title="currentTask?.id ? '编辑采集任务' : '新建采集任务'"
+    :title="currentTask?.id ? t('operation.editCollectTask') : t('operation.createCollectTask')"
     fullscreen
     append-to-body
     class="ecom-collect-task-dialog"
@@ -15,33 +15,33 @@
           <CompactNotice
             v-if="!catalog.platforms.length"
             type="warning"
-            title="当前还没有平台定义"
-            description="请先让服务端完成平台目录同步，浏览器自动化环境会在执行任务时再单独选择。"
+            :title="t('operation.noPlatformDefined')"
+            :description="t('operation.noPlatformDefinedDesc')"
             class="task-dialog-alert"
           />
 
           <CompactNotice
             v-else-if="taskTypeUnavailableReason"
             type="warning"
-            title="当前任务类型暂不可执行"
+            :title="t('operation.taskTypeNotRunnable')"
             :description="taskTypeUnavailableReason"
             class="task-dialog-alert"
           />
 
           <el-form label-position="top" class="task-dialog-form">
-            <el-form-item label="任务名称" required>
+            <el-form-item :label="t('operation.taskName')" required>
               <el-input
                 v-model="taskForm.name"
-                placeholder="例如：Amazon 无线耳机搜索采集"
+                :placeholder="t('operation.taskNamePlaceholder')"
               />
             </el-form-item>
 
             <el-row :gutter="20">
               <el-col :xs="24" :lg="12">
-                <el-form-item label="平台" required>
+                <el-form-item :label="t('operation.platform')" required>
                   <el-select
                     v-model="taskForm.platform"
-                    placeholder="请选择平台"
+                    :placeholder="t('operation.selectPlatform')"
                     filterable
                     @change="handlePlatformChange"
                   >
@@ -59,10 +59,10 @@
               </el-col>
 
               <el-col :xs="24" :lg="12">
-                <el-form-item label="任务类型" required>
+                <el-form-item :label="t('operation.taskType')" required>
                   <el-select
                     v-model="taskForm.taskType"
-                    placeholder="请选择任务类型"
+                    :placeholder="t('operation.selectTaskType')"
                     filterable
                     @change="handleTaskTypeChange"
                   >
@@ -102,7 +102,7 @@
                     :model-value="getFieldValue(field)"
                     filterable
                     clearable
-                    :placeholder="field.placeholder || `请选择${field.label}`"
+                    :placeholder="field.placeholder || `${t('operation.select')}${field.label}`"
                     @update:model-value="setFieldValue(field, $event)"
                   >
                     <el-option
@@ -152,7 +152,7 @@
                       v-if="field.examples && field.examples.length"
                       class="form-hint__examples"
                     >
-                      例如：{{ field.examples.map(formatExample).join(" / ") }}
+                      {{ t('operation.example') }}: {{ field.examples.map(formatExample).join(" / ") }}
                     </div>
                   </div>
                 </el-form-item>
@@ -176,7 +176,7 @@
                           v-if="field.examples && field.examples.length"
                           class="form-hint__examples"
                         >
-                          例如：{{ field.examples.map(formatExample).join(" / ") }}
+                          {{ t('operation.example') }}: {{ field.examples.map(formatExample).join(" / ") }}
                         </div>
                       </div>
                     </div>
@@ -193,15 +193,15 @@
               </el-col>
             </el-row>
 
-            <el-form-item label="附加配置 / 未建模参数">
+            <el-form-item :label="t('operation.additionalConfig')">
               <el-input
                 v-model="advancedJsonText"
                 type="textarea"
                 :rows="8"
-                placeholder='{"sort":"sales"}'
+                :placeholder="t('operation.additionalConfigPlaceholder')"
               />
               <div class="form-hint">
-                用于保留当前任务类型 schema 尚未覆盖的配置；留空则只保存已建模字段。
+                {{ t('operation.additionalConfigHint') }}
               </div>
             </el-form-item>
 
@@ -211,21 +211,21 @@
         <div class="task-dialog-side">
           <div class="capability-card">
             <div class="capability-card__header">
-              <div class="capability-card__title">请求预览</div>
+              <div class="capability-card__title">{{ t('operation.requestPreview') }}</div>
             </div>
 
             <div class="capability-card__body">
               <div class="capability-block">
-                <div class="capability-block__label">请求体</div>
+                <div class="capability-block__label">{{ t('operation.requestBody') }}</div>
                 <pre class="capability-example__code">{{
                   liveRequestPreviewText
                 }}</pre>
               </div>
 
               <div v-if="currentTask?.id" class="capability-block">
-                <div class="capability-block__label">路径参数</div>
+                <div class="capability-block__label">{{ t('operation.pathParameters') }}</div>
                 <div class="capability-kv">
-                  <span>编辑保存时会使用当前任务 ID：</span>
+                  <span>{{ t('operation.editSaveWillUseCurrentTaskId') }}</span>
                   <code>{{ currentTask.id }}</code>
                 </div>
               </div>
@@ -241,14 +241,14 @@
 
     <template #footer>
       <div class="task-dialog-footer-bar">
-        <el-button @click="emit('update:modelValue', false)">取消</el-button>
+        <el-button @click="emit('update:modelValue', false)">{{ t('common.cancel') }}</el-button>
         <el-button
           type="primary"
           :loading="submitting"
           :disabled="!canSubmit"
           @click="handleSubmit"
         >
-          保存
+          {{ t('common.save') }}
         </el-button>
       </div>
     </template>
@@ -257,6 +257,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from "vue";
+import { useI18n } from 'vue-i18n';
 import { ElMessage } from "element-plus";
 import CompactNotice from "@/components/CompactNotice/index.vue";
 import {
@@ -276,6 +277,8 @@ import {
   getTaskTypeSchemas,
   resolveTaskTypeValue,
 } from "../shared";
+
+const { t } = useI18n();
 
 const props = defineProps<{
   modelValue: boolean;
@@ -333,13 +336,13 @@ const taskTypeUnavailableReason = computed(() => {
   if (selectedTaskType.value && selectedTaskType.value.runnable === false) {
     return (
       selectedTaskType.value.reason ||
-      `${selectedTaskType.value.label} 当前暂不可执行`
+      `${selectedTaskType.value.label} ${t('operation.currentlyNotRunnable')}`
     );
   }
   if (selectedScene.value && selectedScene.value.runnable === false) {
     return (
       selectedScene.value.reason ||
-      `${selectedScene.value.label} 当前暂不可执行`
+      `${selectedScene.value.label} ${t('operation.currentlyNotRunnable')}`
     );
   }
   if (
@@ -349,7 +352,7 @@ const taskTypeUnavailableReason = computed(() => {
   ) {
     return (
       selectedPlatform.value.reason ||
-      `${selectedPlatform.value.label} 当前暂不可执行`
+      `${selectedPlatform.value.label} ${t('operation.currentlyNotRunnable')}`
     );
   }
   return "";
@@ -382,7 +385,7 @@ const liveRequestPreview = computed(() => {
   } catch (error: any) {
     return {
       body: buildLiveRequestBody(true),
-      error: error?.message || "当前仍有未完成或格式不正确的参数",
+      error: error?.message || t('operation.incompleteOrInvalidParams'),
     };
   }
 });
@@ -395,7 +398,7 @@ const liveRequestPreviewError = computed(() => {
   if (!liveRequestPreview.value.error) {
     return "";
   }
-  return `当前参数还不能直接保存：${liveRequestPreview.value.error}`;
+  return `${t('operation.paramsCannotSaveDirectly')}: ${liveRequestPreview.value.error}`;
 });
 
 const resetTaskForm = () => {
@@ -405,7 +408,7 @@ const resetTaskForm = () => {
   taskForm.taskType = "";
   advancedJsonText.value = "";
   replaceFieldValues({});
-};
+});
 
 const replaceFieldValues = (nextValues: Record<string, any>) => {
   Object.keys(fieldValues).forEach((key) => {
@@ -514,7 +517,7 @@ const fromFieldUiValue = (
       if (options?.allowInvalid) {
         return undefined;
       }
-      throw new Error(`${field.label} JSON 格式不正确`);
+      throw new Error(`${field.label} ${t('operation.jsonFormatIncorrect')}`);
     }
   }
 
@@ -558,14 +561,14 @@ const parseAdvancedJson = (allowInvalid = false) => {
   try {
     const parsed = JSON.parse(text);
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      throw new Error("附加配置必须是 JSON 对象");
+      throw new Error(t('operation.additionalConfigMustBeJsonObject'));
     }
     return parsed;
   } catch {
     if (allowInvalid) {
       return {};
     }
-    throw new Error("附加配置 JSON 格式不正确");
+    throw new Error(t('operation.additionalConfigJsonFormatIncorrect'));
   }
 };
 
@@ -584,7 +587,7 @@ const buildDraftConfigData = (allowInvalid = false) => {
       }
     } catch {
       if (!allowInvalid) {
-        throw new Error(`${field.label} 格式不正确`);
+        throw new Error(`${field.label} ${t('operation.formatIncorrect')}`);
       }
     }
   });
@@ -637,27 +640,27 @@ const syncTaskTypeSelection = (preferredTaskType?: string | null) => {
 
 const validateTaskForm = () => {
   if (!taskForm.name.trim()) {
-    throw new Error("请填写任务名称");
+    throw new Error(t('operation.pleaseFillTaskName'));
   }
   if (!taskForm.platform) {
-    throw new Error("请选择平台");
+    throw new Error(t('operation.pleaseSelectPlatform'));
   }
   if (!taskForm.taskType) {
-    throw new Error("请选择任务类型");
+    throw new Error(t('operation.pleaseSelectTaskType'));
   }
   if (!selectedTaskType.value) {
-    throw new Error("当前平台缺少可用任务类型定义");
+    throw new Error(t('operation.platformMissingTaskTypeDefinition'));
   }
   if (selectedTaskType.value.runnable === false) {
     throw new Error(
       selectedTaskType.value.reason ||
-        `${selectedTaskType.value.label} 当前暂不可执行`,
+        `${selectedTaskType.value.label} ${t('operation.currentlyNotRunnable')}`,
     );
   }
   if (selectedScene.value?.runnable === false) {
     throw new Error(
       selectedScene.value.reason ||
-        `${selectedScene.value.label} 当前暂不可执行`,
+        `${selectedScene.value.label} ${t('operation.currentlyNotRunnable')}`,
     );
   }
 
@@ -668,7 +671,7 @@ const validateTaskForm = () => {
   );
 
   if (missingField) {
-    throw new Error(`请填写 ${missingField.label}`);
+    throw new Error(`${t('operation.pleaseFill')} ${missingField.label}`);
   }
 
   return configData;
@@ -718,16 +721,16 @@ const handleSubmit = async () => {
 
     if (taskForm.id) {
       await updateEcomPlatformCollectTask(taskForm.id, payload);
-      ElMessage.success("任务已更新");
+      ElMessage.success(t('operation.taskUpdated'));
     } else {
       await createEcomPlatformCollectTask(payload);
-      ElMessage.success("任务已创建");
+      ElMessage.success(t('operation.taskCreated'));
     }
 
     emit("update:modelValue", false);
     emit("success");
   } catch (error: any) {
-    ElMessage.error(error?.message || "保存任务失败");
+    ElMessage.error(error?.message || t('operation.saveTaskFailed'));
   } finally {
     submitting.value = false;
   }
