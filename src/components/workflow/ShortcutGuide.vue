@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 
 const props = defineProps<{
   visible: boolean
@@ -61,37 +61,38 @@ onUnmounted(() => {
 <template>
   <el-dialog
     :model-value="visible"
-    title="键盘快捷键"
-    width="520px"
-    align-center
+    :show-close="true"
     :close-on-click-modal="true"
+    align-center
     @update:model-value="handleClose"
     class="shortcut-guide"
   >
     <div class="sg">
-      <div class="sg__platform">
-        <el-tag size="small" :type="isMac ? 'primary' : 'info'">
+      <div class="sg__header">
+        <div class="sg__title">键盘快捷键</div>
+        <el-tag size="small" type="info">
           {{ isMac ? 'macOS' : 'Windows / Linux' }}
         </el-tag>
-        <span class="sg__platform-hint">自动检测当前系统</span>
       </div>
 
-      <div v-for="group in shortcuts" :key="group.category" class="sg__group">
-        <div class="sg__group-title">{{ group.category }}</div>
-        <div class="sg__list">
-          <div v-for="(item, idx) in group.items" :key="idx" class="sg__item">
-            <span class="sg__desc">{{ item.desc }}</span>
-            <span class="sg__keys">
-              <template v-if="item.mod">
-                <kbd class="sg__kbd">{{ mod }}</kbd>
-                <span class="sg__plus">+</span>
-              </template>
-              <kbd
-                v-for="(key, ki) in item.keys"
-                :key="ki"
-                class="sg__kbd"
-              >{{ key }}</kbd>
-            </span>
+      <div class="sg__grid">
+        <div v-for="group in shortcuts" :key="group.category" class="sg__group">
+          <div class="sg__group-title">{{ group.category }}</div>
+          <div class="sg__list">
+            <div v-for="(item, idx) in group.items" :key="idx" class="sg__item">
+              <span class="sg__desc">{{ item.desc }}</span>
+              <span class="sg__keys">
+                <template v-if="item.mod">
+                  <kbd class="sg__kbd">{{ mod }}</kbd>
+                  <span class="sg__plus">+</span>
+                </template>
+                <kbd
+                  v-for="(key, ki) in item.keys"
+                  :key="ki"
+                  class="sg__kbd"
+                >{{ key }}</kbd>
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -100,57 +101,74 @@ onUnmounted(() => {
 </template>
 
 <style scoped lang="scss">
+:deep(.el-dialog) {
+  width: 100% !important;
+  max-width: 100%;
+  margin: 0;
+  border-radius: 0;
+}
+
+:deep(.el-dialog__body) {
+  padding: 32px;
+}
+
+:deep(.el-dialog__header) {
+  padding: 24px 32px 0;
+}
+
 .sg {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
 }
 
-.sg__platform {
+.sg__header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
 }
 
-.sg__platform-hint {
-  font-size: 11px;
-  color: var(--el-text-color-placeholder);
+.sg__title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.sg__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
 }
 
 .sg__group {
-  border: 1px solid var(--app-content-border-color, rgb(255 255 255 / 8%));
-  border-radius: 6px;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .sg__group-title {
-  padding: 8px 12px;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--el-text-color-primary);
-  background: color-mix(in srgb, var(--el-text-color-secondary) 5%, transparent);
-  border-bottom: 1px solid var(--app-content-border-color, rgb(255 255 255 / 4%));
+  color: var(--el-text-color-regular);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--app-content-border-color, rgb(255 255 255 / 8%));
 }
 
 .sg__list {
   display: flex;
   flex-direction: column;
+  gap: 4px;
 }
 
 .sg__item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--app-content-border-color, rgb(255 255 255 / 4%));
-
-  &:last-child {
-    border-bottom: none;
-  }
+  padding: 8px 0;
 }
 
 .sg__desc {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--el-text-color-regular);
 }
 
@@ -164,21 +182,19 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 24px;
-  height: 22px;
-  padding: 0 6px;
+  min-width: 26px;
+  height: 24px;
+  padding: 0 8px;
   font-family: ui-monospace, monospace;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--el-text-color-primary);
-  background: color-mix(in srgb, var(--el-text-color-secondary) 10%, transparent);
-  border: 1px solid var(--app-content-border-color, rgb(255 255 255 / 12%));
+  background: color-mix(in srgb, var(--el-text-color-secondary) 8%, transparent);
   border-radius: 4px;
-  box-shadow: 0 1px 0 color-mix(in srgb, var(--el-text-color-secondary) 15%, transparent);
 }
 
 .sg__plus {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--el-text-color-placeholder);
 }
 </style>
