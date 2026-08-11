@@ -36,6 +36,7 @@ import NodePanel from '@/components/workflow/NodePanel.vue'
 import ConfigPanel from '@/components/workflow/ConfigPanel.vue'
 import NodePickerDialog from '@/components/workflow/NodePickerDialog.vue'
 import TriggerConfigDialog from '@/components/workflow/TriggerConfigDialog.vue'
+import ShortcutGuide from '@/components/workflow/ShortcutGuide.vue'
 import type { NodeManifest } from './config/node-manifest'
 
 const appStore = useAppStore()
@@ -76,6 +77,7 @@ const selectedEdge = ref<Edge | null>(null)
 const canvasRef = ref<HTMLDivElement | null>(null)
 
 const triggerDialogVisible = ref(false)
+const shortcutGuideVisible = ref(false)
 const nodePickerVisible = ref(false)
 
 const handleOpenNodePicker = () => {
@@ -272,6 +274,13 @@ const handleKeydown = (e: KeyboardEvent) => {
       selectedNode.value = newNode
       ElMessage.success(t('workflow.nodePasted'))
     }
+    return
+  }
+
+  // 快捷键帮助
+  if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+    e.preventDefault()
+    shortcutGuideVisible.value = true
     return
   }
 
@@ -632,6 +641,7 @@ const statusText = computed(() => {
     </div>
 
     <!-- 触发器与设置对话框 -->
+    <ShortcutGuide v-model:visible="shortcutGuideVisible" />
     <TriggerConfigDialog v-model="triggerDialogVisible" :workflow-id="workflowId" />
 
 

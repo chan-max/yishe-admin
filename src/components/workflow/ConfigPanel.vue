@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { Pointer } from '@element-plus/icons-vue'
+import { Pointer, Plus } from '@element-plus/icons-vue'
 import type { Node } from '@vue-flow/core'
 import AdvancedCronDialog from './AdvancedCronDialog.vue'
 import VariableSelector from './VariableSelector.vue'
@@ -29,32 +29,9 @@ const form = ref({ label: '', config: {} as any })
 const advancedCronVisible = ref(false)
 const edgeCondition = ref('')
 
-// 监听选中 edge，同步 condition
-watch(
-  () => props.selectedEdge,
-  (edge) => {
-    edgeCondition.value = edge?.data?.condition || edge?.condition || ''
-  },
-  { immediate: true }
-)
-
-const handleUpdateEdgeCondition = () => {
-  if (!props.selectedEdge) return
-  const edge = { ...props.selectedEdge }
-  // 存储在 data.condition 兼容 VueFlow
-  if (!edge.data) edge.data = {}
-  edge.data.condition = edgeCondition.value
-  edge.condition = edgeCondition.value
-  emit('updateEdge', edge)
-}
-
-// 消息推送渠道列表（动态从 API 加载）
-const messagePushChannels = ref<MessagePushConfig[]>([])
-const channelsLoaded = ref(false)
-
 // 变量选择器
 const variableSelectorVisible = ref(false)
-const activeFieldForVariable = ref<string>('')
+const activeFieldForVariable = ref('')
 
 const openVariableSelector = (fieldName: string) => {
   activeFieldForVariable.value = fieldName
@@ -72,7 +49,7 @@ const handleVariableSelect = (variablePath: string, _label: string) => {
 }
 
 // 输出变量点击复制
-const copiedField = ref<string>('')
+const copiedField = ref('')
 const copyVariable = async (nodeId: string, fieldName: string) => {
   const text = `{{ ${nodeId}.${fieldName} }}`
   try {
@@ -80,7 +57,6 @@ const copyVariable = async (nodeId: string, fieldName: string) => {
     copiedField.value = fieldName
     setTimeout(() => { copiedField.value = '' }, 1500)
   } catch {
-    // fallback
     const ta = document.createElement('textarea')
     ta.value = text
     document.body.appendChild(ta)
@@ -91,6 +67,28 @@ const copyVariable = async (nodeId: string, fieldName: string) => {
     setTimeout(() => { copiedField.value = '' }, 1500)
   }
 }
+
+// 监听选中 edge，同步 condition
+watch(
+  () => props.selectedEdge,
+  (edge) => {
+    edgeCondition.value = edge?.data?.condition || edge?.condition || ''
+  },
+  { immediate: true }
+)
+
+const handleUpdateEdgeCondition = () => {
+  if (!props.selectedEdge) return
+  const edge = { ...props.selectedEdge }
+  if (!edge.data) edge.data = {}
+  edge.data.condition = edgeCondition.value
+  edge.condition = edgeCondition.value
+  emit('updateEdge', edge)
+}
+
+// 消息推送渠道列表（动态从 API 加载）
+const messagePushChannels = ref<MessagePushConfig[]>([])
+const channelsLoaded = ref(false)
 
 const loadMessagePushChannels = async () => {
   if (channelsLoaded.value) return
@@ -139,7 +137,6 @@ watch(
       form.value.label = n.data?.label || ''
       form.value.config = { ...(n.data?.config || {}) }
     }
-    // 当选中的是消息推送节点时自动加载渠道列表
     if (isNotifyNode.value) {
       loadMessagePushChannels()
     }
@@ -150,10 +147,8 @@ watch(
 const handleDataChange = (fieldName?: string, selectedLabel?: string) => {
   if (!props.node) return
 
-  // 如果变更的是 select 字段，同时保存对应的 label（用于节点显示）
   const config = { ...form.value.config }
   if (fieldName && selectedLabel) {
-    // channelId -> channelName, 其他字段通用处理
     const nameKey = fieldName === 'channelId' ? 'channelName' : `${fieldName}Name`
     config[nameKey] = selectedLabel
   }
@@ -187,6 +182,11 @@ const removeInputParam = (index: number) => {
   }
 }
 
+// 快捷键提示
+const getShortcutLabel = (win: string, mac: string) => {
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
+  return isMac ? mac : win
+}
 </script>
 
 <template>
@@ -316,7 +316,6 @@ const removeInputParam = (index: number) => {
           </template>
 
           <!-- 2. 基于 Schema 动态渲染输入表单 -->
-          <!-- 2. 基于 Schema 动态渲染输入表单 -->
           <template v-if="resolvedInputSchema.length">
             <div class="config-panel__section-title">节点入参配置</div>
             <div
@@ -351,10 +350,13 @@ const removeInputParam = (index: number) => {
                     :rows="3"
                     :placeholder="field.placeholder || '支持 {{ node_id.variable }}'"
                     @input="handleDataChange"
-                  />
-                  <button class="config-panel__insert-var-btn" @click="openVariableSelector(field.field)" title="插入变量">
-                    +
-                  </button>
+                  >
+                    <template #suffix>
+                      <button class="config-panel__insert-var-icon" @click="openVariableSelector(field.field)" title="插入变量">
+                        <el-icon :size="14"><Plus /></el-icon>
+                      </button>
+                    </template>
+                  </el-input>
                 </template>
 
                 <template v-else-if="field.type === 'number'">
@@ -374,16 +376,17 @@ const removeInputParam = (index: number) => {
                 </template>
 
                 <template v-else>
-                  <div class="config-panel__input-with-btn">
-                    <el-input
-                      v-model="form.config[field.field]"
-                      :placeholder="field.placeholder || '输入内容或 {{ 变量 }}'"
-                      @input="handleDataChange"
-                    />
-                    <button class="config-panel__insert-var-btn" @click="openVariableSelector(field.field)" title="插入变量">
-                      +
-                    </button>
-                  </div>
+                  <el-input
+                    v-model="form.config[field.field]"
+                    :placeholder="field.placeholder || '输入内容或 {{ 变量 }}'"
+                    @input="handleDataChange"
+                  >
+                    <template #suffix>
+                      <button class="config-panel__insert-var-icon" @click="openVariableSelector(field.field)" title="插入变量">
+                        <el-icon :size="14"><Plus /></el-icon>
+                      </button>
+                    </template>
+                  </el-input>
                 </template>
 
                 <!-- 字段说明提示 -->
@@ -393,7 +396,6 @@ const removeInputParam = (index: number) => {
               </el-form-item>
             </div>
           </template>
-
 
           <!-- 3. 输出变量 Schema 预览 -->
           <template v-if="currentCapability?.outputSchema?.length">
@@ -429,7 +431,7 @@ const removeInputParam = (index: number) => {
       </div>
     </template>
 
-    <template v-else>
+    <template v-else-if="!selectedEdge">
       <div class="config-panel__empty">
         <div class="config-panel__empty-illustration">
           <el-icon class="config-panel__empty-icon"><Pointer /></el-icon>
@@ -546,6 +548,13 @@ const removeInputParam = (index: number) => {
   border-radius: 4px;
   align-items: center;
   gap: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: var(--el-color-primary);
+    background: color-mix(in srgb, var(--el-color-primary) 15%, transparent);
+  }
 }
 
 .config-panel__output-name {
@@ -558,10 +567,25 @@ const removeInputParam = (index: number) => {
   flex-shrink: 1;
 }
 
+.config-panel__output-type {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--el-text-color-secondary) 12%, transparent);
+  color: var(--el-text-color-secondary);
+  flex-shrink: 0;
+}
+
 .config-panel__output-label {
   font-size: 9px;
   white-space: nowrap;
   opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.config-panel__output-copied {
+  font-size: 9px;
+  color: var(--el-color-success);
   flex-shrink: 0;
 }
 
@@ -663,29 +687,25 @@ const removeInputParam = (index: number) => {
   }
 }
 
-.config-panel__output-tag {
+/* 变量插入按钮 - Input 后缀图标样式 */
+.config-panel__insert-var-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  color: var(--el-text-color-placeholder);
+  background: transparent;
+  border: none;
+  border-radius: 3px;
   cursor: pointer;
   transition: all 0.15s ease;
 
   &:hover {
-    border-color: var(--el-color-primary);
-    background: color-mix(in srgb, var(--el-color-primary) 15%, transparent);
+    color: var(--el-color-primary);
+    background: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
   }
-}
-
-.config-panel__output-type {
-  font-size: 9px;
-  padding: 1px 5px;
-  border-radius: 3px;
-  background: color-mix(in srgb, var(--el-text-color-secondary) 12%, transparent);
-  color: var(--el-text-color-secondary);
-  flex-shrink: 0;
-}
-
-.config-panel__output-copied {
-  font-size: 9px;
-  color: var(--el-color-success);
-  flex-shrink: 0;
 }
 
 .config-panel__input-with-btn {
@@ -694,26 +714,4 @@ const removeInputParam = (index: number) => {
   gap: 4px;
   width: 100%;
 }
-
-.config-panel__insert-var-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--el-color-primary);
-  background: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
-  border: 1px solid color-mix(in srgb, var(--el-color-primary) 20%, transparent);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-
-  &:hover {
-    background: color-mix(in srgb, var(--el-color-primary) 20%, transparent);
-  }
-}
-
 </style>
