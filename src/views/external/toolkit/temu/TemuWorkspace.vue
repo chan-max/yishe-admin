@@ -1239,7 +1239,7 @@
                     <small v-if="row.stockSubmitStatus !== '-'">
                       {{ row.stockSubmitMessage }}
                       <template v-if="row.stockFinalNum !== null">
-                        / 目标 {{ row.stockFinalNum }}</template
+                        / {{ t("temu.stockTarget") }} {{ row.stockFinalNum }}</template
                       >
                     </small>
                   </div>
@@ -1427,7 +1427,7 @@
               class="temu-workspace__section-title temu-workspace__price-review-list-head"
             >
               <div class="temu-workspace__section-title-main">
-                <span>合规信息列表</span>
+                <span>{{ t("temu.complianceInfoList") }}</span>
                 <el-tag size="small" effect="plain">{{
                   visibleTaskRunComplianceRows.length
                 }}</el-tag>
@@ -2687,7 +2687,7 @@ const jitStockFinalNum = useLocalStorage(
   500,
 );
 const jitBatchSubmitting = ref(false);
-const jitBatchModeLabel = ref("批量处理 JIT");
+const jitBatchModeLabel = ref(t("temu.batchProcessJit"));
 const jitBatchCurrentStage = ref("");
 const jitBatchCurrentRowText = ref("");
 const jitBatchFinishedCount = ref(0);
@@ -6381,7 +6381,7 @@ const validateForm = () => {
         parsed[field.key] = normalizedValue;
       }
     } catch (error: any) {
-      state.formErrors[field.key] = error?.message || `请检查${field.label}`;
+      state.formErrors[field.key] = error?.message || t("temu.checkField", { label: field.label });
       valid = false;
     }
   });
@@ -6430,9 +6430,9 @@ const copyText = async (label: string, text: string) => {
       throw new Error("clipboard_unsupported");
     }
     await navigator.clipboard.writeText(normalized);
-    ElMessage.success(`${label} 已复制`);
+    ElMessage.success(t("temu.copiedLabel", { label }));
   } catch {
-    ElMessage.warning(`当前环境不支持自动复制，请手动复制${label}`);
+    ElMessage.warning(t("temu.copyNotSupported", { label }));
   }
 };
 
@@ -6502,7 +6502,7 @@ const loadTaskRunDetail = async (
   } catch (error: any) {
     if (!options.silent) {
       ElMessage.error(
-        extractRequestErrorMessage(error, "获取执行记录详情失败"),
+        extractRequestErrorMessage(error, t("temu.loadTaskRunDetailFailed")),
       );
     }
     return null;
@@ -6600,7 +6600,7 @@ const loadTaskRuns = async (
   } catch (error: any) {
     if (!options.silent) {
       ElMessage.error(
-        extractRequestErrorMessage(error, "获取 Temu 执行记录失败"),
+        extractRequestErrorMessage(error, t("temu.loadTaskRunsFailed")),
       );
     }
   } finally {
@@ -6691,15 +6691,15 @@ const buildJitOpenPayload = (rows: JitPreviewRow[]) => ({
 
 const requireTemuClientContext = () => {
   if (!props.clientId) {
-    ElMessage.warning("请先选择在线客户端");
+    ElMessage.warning(t("temu.selectClientFirst"));
     return false;
   }
   if (!props.profileId) {
-    ElMessage.warning("请先选择执行环境");
+    ElMessage.warning(t("temu.selectEnvironmentFirst"));
     return false;
   }
   if (!hasUsableSession.value) {
-    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+    ElMessage.warning(t("temu.prepareSessionFirst"));
     return false;
   }
   return true;
@@ -6815,7 +6815,7 @@ const buildJitStockSuccessMark = (
   action: "stock",
   message:
     String(response?.message || "").trim() ||
-    (response?.success ? "库存维护成功" : "库存维护失败"),
+    (response?.success ? t("temu.stockMaintainSuccess") : t("temu.stockMaintainFailed")),
   time: formatDateTime(new Date()),
   stockMaintained: !!response?.success,
   finalNum,
@@ -6827,7 +6827,7 @@ const buildJitStockErrorMark = (
 ): JitSubmitMark => ({
   status: "failed",
   action: "stock",
-  message: extractRequestErrorMessage(error, "库存维护失败"),
+  message: extractRequestErrorMessage(error, t("temu.stockMaintainFailed")),
   time: formatDateTime(new Date()),
   stockMaintained: false,
   finalNum,
@@ -6881,11 +6881,11 @@ const submitJitStockRow = async (row: JitPreviewRow) => {
     return;
   }
   if (!row?.rawSkcId || !row.jitOpened) {
-    ElMessage.warning("只有已开通 JIT 的记录才能维护库存");
+    ElMessage.warning(t("temu.jitStockRequiresOpened"));
     return;
   }
   if (row.stockMaintained) {
-    ElMessage.warning("该记录已维护库存，无需重复操作");
+    ElMessage.warning(t("temu.jitStockAlreadyMaintained"));
     return;
   }
 
@@ -6903,7 +6903,7 @@ const submitJitStockRow = async (row: JitPreviewRow) => {
       await persistJitStockMark(row, nextMark, ownerRunId);
     } catch (error: any) {
       ElMessage.warning(
-        extractRequestErrorMessage(error, "库存维护状态持久化失败"),
+        extractRequestErrorMessage(error, t("temu.jitStockMarkPersistFailed")),
       );
     }
     response?.success
@@ -6997,7 +6997,7 @@ const submitJitStockRows = async (
             await persistJitStockMark(row, nextMark, ownerRunId);
           } catch (error: any) {
             ElMessage.warning(
-              extractRequestErrorMessage(error, "库存维护状态持久化失败"),
+              extractRequestErrorMessage(error, t("temu.jitStockMarkPersistFailed")),
             );
           }
         }
@@ -7044,7 +7044,7 @@ const submitJitStockRows = async (
         await persistJitMarksBatch(ownerRunId, batchMarks);
       } catch (error: any) {
         ElMessage.warning(
-          extractRequestErrorMessage(error, "库存维护状态批量持久化失败"),
+          extractRequestErrorMessage(error, t("temu.jitStockMarkBatchPersistFailed")),
         );
       }
     }
@@ -7056,7 +7056,10 @@ const submitJitStockRows = async (
       });
       jitPreviewGridRef.value?.clearCheckboxRow?.();
       ElMessage.success(
-        `库存维护完成：成功 ${successCount} 个，失败 ${failedCount} 个`,
+        t("temu.jitStockBatchDone", {
+          success: successCount,
+          failed: failedCount,
+        }),
       );
     }
     return { successCount, failedCount };
@@ -7081,7 +7084,7 @@ const submitJitRows = async (inputRows: JitPreviewRow[], batchMode = false) => {
     isOpenableJitRow(row),
   );
   if (!rows.length) {
-    ElMessage.warning("请先选择未开通 JIT 的记录");
+    ElMessage.warning(t("temu.selectNotOpenedJitRows"));
     return;
   }
 
@@ -7167,7 +7170,7 @@ const submitJitRows = async (inputRows: JitPreviewRow[], batchMode = false) => {
         );
       } catch (error: any) {
         ElMessage.warning(
-          extractRequestErrorMessage(error, "JIT 开通状态批量持久化失败"),
+          extractRequestErrorMessage(error, t("temu.jitOpenMarkBatchPersistFailed")),
         );
       }
     } else if (persistPayloads.length) {
@@ -7181,7 +7184,7 @@ const submitJitRows = async (inputRows: JitPreviewRow[], batchMode = false) => {
         }
       }
       if (persistFailed) {
-        ElMessage.warning("JIT 开通状态部分持久化失败，请刷新后核对执行记录");
+        ElMessage.warning(t("temu.jitOpenMarkPartialPersistFailed"));
       }
     }
 
@@ -7196,16 +7199,19 @@ const submitJitRows = async (inputRows: JitPreviewRow[], batchMode = false) => {
       });
       jitPreviewGridRef.value?.clearCheckboxRow?.();
       ElMessage.success(
-        `JIT 开通完成：成功 ${successCount} 个，失败 ${failedCount} 个`,
+        t("temu.jitOpenBatchDone", {
+          success: successCount,
+          failed: failedCount,
+        }),
       );
     } else {
       failedCount
         ? ElMessage.error(
             rows[0]
-              ? jitSubmitMarks[rows[0].rowKey]?.message || "JIT 开通失败"
-              : "JIT 开通失败",
+              ? jitSubmitMarks[rows[0].rowKey]?.message || t("temu.jitOpenFailed")
+              : t("temu.jitOpenFailed"),
           )
-        : ElMessage.success("JIT 开通完成");
+        : ElMessage.success(t("temu.jitOpenCompleted"));
     }
   } catch (error: any) {
     const failedBatchMarks: Array<{
@@ -7279,7 +7285,7 @@ const submitSelectedJitOpenAndStockRows = async () => {
   }
   const rows = selectedJitRows.value.filter((row) => !row.stockMaintained);
   if (!rows.length) {
-    ElMessage.warning("请先选择需要开通或维护库存的记录");
+    ElMessage.warning(t("temu.selectRowsToOpenOrMaintainStock"));
     return;
   }
 
@@ -7452,7 +7458,12 @@ const submitSelectedJitOpenAndStockRows = async () => {
     });
     jitPreviewGridRef.value?.clearCheckboxRow?.();
     ElMessage.success(
-      `批量处理完成：开通成功 ${openSuccessCount} 个，开通失败 ${openFailedCount} 个；库存成功 ${stockSuccessCount} 个，库存失败 ${stockFailedCount} 个`,
+      t("temu.batchMixedDone", {
+        openSuccess: openSuccessCount,
+        openFailed: openFailedCount,
+        stockSuccess: stockSuccessCount,
+        stockFailed: stockFailedCount,
+      }),
     );
   } catch (error: any) {
     ElMessage.error(

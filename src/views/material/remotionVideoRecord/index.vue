@@ -13,12 +13,12 @@
                 :lg="6"
                 :xl="6"
               >
-                <el-form-item label="关键词">
+                <el-form-item :label="t('remotionVideoRecord.keyword')">
                   <el-input
                     v-model="queryParams.keyword"
                     size="small"
                     clearable
-                    placeholder="标题"
+                    :placeholder="t('remotionVideoRecord.titlePlaceholder')"
                     @keyup.enter="getList"
                     @change="handleKeywordChange"
                   />
@@ -32,21 +32,21 @@
                 :lg="5"
                 :xl="4"
               >
-                <el-form-item label="状态">
+                <el-form-item :label="t('common.status')">
                   <el-select
                     v-model="queryParams.status"
                     size="small"
                     clearable
-                    placeholder="全部状态"
+                    :placeholder="t('remotionVideoRecord.allStatus')"
                     @change="getList"
                   >
-                    <el-option label="待处理" value="pending" />
-                    <el-option label="等待客户端" value="pending_client" />
-                    <el-option label="已派发" value="assigned" />
-                    <el-option label="排队中" value="queued" />
-                    <el-option label="处理中" value="processing" />
-                    <el-option label="成功" value="success" />
-                    <el-option label="失败" value="failed" />
+                    <el-option :label="t('remotionVideoRecord.statusPending')" value="pending" />
+                    <el-option :label="t('remotionVideoRecord.statusPendingClient')" value="pending_client" />
+                    <el-option :label="t('remotionVideoRecord.statusAssigned')" value="assigned" />
+                    <el-option :label="t('remotionVideoRecord.statusQueued')" value="queued" />
+                    <el-option :label="t('remotionVideoRecord.statusProcessing')" value="processing" />
+                    <el-option :label="t('common.success')" value="success" />
+                    <el-option :label="t('remotionVideoRecord.statusFailed')" value="failed" />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -58,12 +58,12 @@
                 :icon="Search"
                 :loading="loading"
                 @click="getList"
-                >搜索</el-button
+                >{{ t('common.search') }}</el-button
               >
-              <el-button size="small" type="primary" @click="openCreateDialog()">新增</el-button>
+              <el-button size="small" type="primary" @click="openCreateDialog()">{{ t('common.add') }}</el-button>
               <el-button size="small" type="success" @click="openAiGenerateDialog()">
                 <el-icon><MagicStick /></el-icon>
-                AI 生成
+                {{ t('remotionVideoRecord.aiGenerate') }}
               </el-button>
               <el-button
                 size="small"
@@ -72,7 +72,7 @@
                 :disabled="loading"
                 @click="handleBatchDelete"
               >
-                批量删除({{ selectedRows.length }})
+                {{ t('remotionVideoRecord.batchDelete', { count: selectedRows.length }) }}
               </el-button>
             </div>
           </el-form>
@@ -109,7 +109,7 @@
                         size="small"
                         effect="plain"
                         class="mr-1"
-                      >自由创作</el-tag>
+                      >{{ t('remotionVideoRecord.freeCreation') }}</el-tag>
                       <span v-else class="record-template-main">{{
                         row.templateName || row.templateId
                       }}</span>
@@ -167,17 +167,17 @@
                       class="operation-dropdown"
                     >
                       <el-button type="primary" link size="small" class="operation-trigger-button"
-                        >操作</el-button
+                        >{{ t('common.operation') }}</el-button
                       >
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
-                          <el-dropdown-item command="detail">查看详情</el-dropdown-item>
+                          <el-dropdown-item command="detail">{{ t('remotionVideoRecord.viewDetail') }}</el-dropdown-item>
                           <!-- 再次生成已移除 -->
                           <el-dropdown-item
                             command="delete"
                             divided
                             class="operation-menu-item--danger"
-                            >删除</el-dropdown-item
+                            >{{ t('common.delete') }}</el-dropdown-item
                           >
                         </el-dropdown-menu>
                       </template>
@@ -207,7 +207,7 @@
 
   <el-dialog
     v-model="createVisible"
-    title="新增视频制作"
+    :title="t('remotionVideoRecord.createVideoProduction')"
     fullscreen
     destroy-on-close
     class="remotion-create-dialog"
@@ -235,15 +235,15 @@
       </div>
 
       <div class="remotion-dialog-actions">
-        <el-button @click="createVisible = false">取消</el-button>
-        <el-button v-if="currentStep > 0" @click="currentStep--">上一步</el-button>
+        <el-button @click="createVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button v-if="currentStep > 0" @click="currentStep--">{{ t('common.prevLabel') }}</el-button>
         <el-button
           v-if="currentStep < 2"
           type="primary"
           :disabled="!canGoNext"
           @click="currentStep++"
         >
-          下一步
+          {{ t('common.nextLabel') }}
         </el-button>
         <el-button
           v-if="currentStep === 2"
@@ -252,7 +252,7 @@
           :disabled="!canSubmitGenerate"
           @click="submitGenerate"
         >
-          开始制作
+          {{ t('remotionVideoRecord.startProduction') }}
         </el-button>
       </div>
     </div>
@@ -266,7 +266,7 @@
             <el-input
               v-model="templateSearchKeyword"
               clearable
-              placeholder="搜索名称、描述、标签"
+              :placeholder="t('remotionVideoRecord.searchTemplatePlaceholder')"
               class="filter-search"
               @input="handleTemplateFilterChange"
             >
@@ -277,7 +277,7 @@
             <el-select
               v-model="templateFilters.category"
               clearable
-              placeholder="内容分类"
+              :placeholder="t('remotionVideoRecord.contentCategory')"
               class="filter-select"
               @change="handleTemplateFilterChange"
             >
@@ -291,18 +291,18 @@
             <el-select
               v-model="templateFilters.orientation"
               clearable
-              placeholder="画幅"
+              :placeholder="t('remotionVideoRecord.orientation')"
               class="filter-select filter-select--compact"
               @change="handleTemplateFilterChange"
             >
-              <el-option label="竖屏" value="portrait" />
-              <el-option label="横屏" value="landscape" />
-              <el-option label="方屏" value="square" />
+              <el-option :label="t('remotionVideoRecord.portrait')" value="portrait" />
+              <el-option :label="t('remotionVideoRecord.landscape')" value="landscape" />
+              <el-option :label="t('remotionVideoRecord.square')" value="square" />
             </el-select>
             <el-select
               v-model="templateFilters.durationLabel"
               clearable
-              placeholder="时长类型"
+              :placeholder="t('remotionVideoRecord.durationType')"
               class="filter-select"
               @change="handleTemplateFilterChange"
             >
@@ -317,7 +317,7 @@
               v-model="templateFilters.tag"
               clearable
               filterable
-              placeholder="标签"
+              :placeholder="t('remotionVideoRecord.tag')"
               class="filter-select"
               @change="handleTemplateFilterChange"
             >
@@ -332,7 +332,7 @@
               v-model="templateFilters.style"
               clearable
               filterable
-              placeholder="风格"
+              :placeholder="t('remotionVideoRecord.style')"
               class="filter-select filter-select--wide"
               @change="handleTemplateFilterChange"
             >
@@ -344,17 +344,17 @@
               />
             </el-select>
             <el-button class="template-filter-reset" @click="resetTemplateFiltersAndReload">
-              重置
+              {{ t('common.reset') }}
             </el-button>
           </div>
           <div class="template-filter-summary">
-            <span>当前 {{ templateMeta.total || filteredTemplateOptions.length }} 个</span>
-            <span v-if="templateMeta.allTotal">全部 {{ templateMeta.allTotal }} 个</span>
+            <span>{{ t('remotionVideoRecord.currentCount', { count: templateMeta.total || filteredTemplateOptions.length }) }}</span>
+            <span v-if="templateMeta.allTotal">{{ t('remotionVideoRecord.allCount', { count: templateMeta.allTotal }) }}</span>
           </div>
         </div>
 
         <div v-if="categorizedTemplates.length === 0" class="template-grid-empty">
-          <el-empty description="没有匹配的模板" />
+          <el-empty :description="t('remotionVideoRecord.noMatchingTemplates')" />
         </div>
         <div v-else class="template-categories">
           <div
@@ -364,7 +364,7 @@
           >
             <div class="template-category-header">
               <span class="template-category-name">{{ group.category }}</span>
-              <span class="template-category-count">{{ group.templates.length }} 个模板</span>
+              <span class="template-category-count">{{ t('remotionVideoRecord.templateCount', { count: group.templates.length }) }}</span>
             </div>
             <div class="template-grid">
               <div
@@ -392,7 +392,7 @@
         <div v-if="selectedTemplate" class="params-panel">
           <div class="params-header">
             <div class="params-template-name">{{ selectedTemplate.name }}</div>
-            <el-button type="primary" link @click="currentStep = 0">重新选择</el-button>
+            <el-button type="primary" link @click="currentStep = 0">{{ t('remotionVideoRecord.reselect') }}</el-button>
           </div>
 
           <div class="params-editor-layout">
@@ -424,7 +424,7 @@
                   <el-input-number
                     v-else-if="isNumberInput(field)"
                     :model-value="getParamFieldNumber(field.key)"
-                    :placeholder="field.example !== undefined ? String(field.example) : '请输入数字'"
+                    :placeholder="field.example !== undefined ? String(field.example) : t('remotionVideoRecord.inputNumber')"
                     class="w-full"
                     @update:model-value="(value) => updateParamField(field, value)"
                   />
@@ -446,14 +446,14 @@
                   </div>
                 </el-form-item>
               </el-form>
-              <el-empty v-else description="该模板暂无参数字段" :image-size="80" />
+              <el-empty v-else :description="t('remotionVideoRecord.noParamFields')" :image-size="80" />
             </div>
 
             <div class="params-json">
               <div class="params-json-header">
-                <span>JSON 参数</span>
+                <span>{{ t('remotionVideoRecord.jsonParams') }}</span>
                 <span class="json-hint" :class="{ 'json-hint--error': !!jsonEditError }">
-                  {{ jsonEditError || "实时同步，可直接修改" }}
+                  {{ jsonEditError || t('remotionVideoRecord.jsonSyncTip') }}
                 </span>
               </div>
               <el-input
@@ -462,54 +462,54 @@
                 :rows="18"
                 resize="none"
                 class="json-editor"
-                placeholder='输入 JSON，例如: {"text":"hello","count":3}'
+                :placeholder="t('remotionVideoRecord.inputJsonPlaceholder')"
                 @input="handleJsonInput"
               />
             </div>
           </div>
         </div>
-        <el-empty v-else description="请先选择模板" />
+        <el-empty v-else :description="t('remotionVideoRecord.selectTemplateFirst')" />
       </div>
 
       <!-- 步骤3: 确认提交 -->
       <div v-show="currentStep === 2" class="remotion-step-panel">
         <div v-if="selectedTemplate" class="confirm-panel">
           <div class="confirm-section">
-            <div class="confirm-title">模板信息</div>
+            <div class="confirm-title">{{ t('remotionVideoRecord.templateInfo') }}</div>
             <div class="confirm-grid">
               <div class="confirm-item">
-                <span class="confirm-label">模板名称</span>
+                <span class="confirm-label">{{ t('remotionVideoRecord.templateName') }}</span>
                 <span class="confirm-value">{{ selectedTemplate.name }}</span>
               </div>
               <div class="confirm-item">
-                <span class="confirm-label">分辨率</span>
+                <span class="confirm-label">{{ t('remotionVideoRecord.resolution') }}</span>
                 <span class="confirm-value">{{ selectedTemplate.width }} x {{ selectedTemplate.height }}</span>
               </div>
               <div class="confirm-item">
-                <span class="confirm-label">时长</span>
+                <span class="confirm-label">{{ t('remotionVideoRecord.duration') }}</span>
                 <span class="confirm-value">{{ selectedTemplate.durationLabel || '-' }}</span>
               </div>
               <div class="confirm-item">
-                <span class="confirm-label">帧率</span>
+                <span class="confirm-label">{{ t('remotionVideoRecord.fps') }}</span>
                 <span class="confirm-value">{{ selectedTemplate.fps }}fps</span>
               </div>
             </div>
           </div>
 
           <div class="confirm-section">
-            <div class="confirm-title">输入参数</div>
+            <div class="confirm-title">{{ t('remotionVideoRecord.inputParams') }}</div>
             <div class="confirm-params">
               <pre>{{ displayParamsJson }}</pre>
             </div>
           </div>
 
           <div class="confirm-section">
-            <div class="confirm-title">任务设置</div>
+            <div class="confirm-title">{{ t('remotionVideoRecord.taskSettings') }}</div>
             <el-form label-position="top">
-              <el-form-item label="记录标题（可选）">
-                <el-input v-model="form.title" placeholder="用于后台记录展示，默认为模板名称" />
+              <el-form-item :label="t('remotionVideoRecord.recordTitleOptional')">
+                <el-input v-model="form.title" :placeholder="t('remotionVideoRecord.titlePlaceholderDetail')" />
               </el-form-item>
-              <el-form-item label="超时时间（毫秒）">
+              <el-form-item :label="t('remotionVideoRecord.timeoutMs')">
                 <el-input-number
                   v-model="form.timeoutMs"
                   :min="1000"
@@ -526,8 +526,8 @@
             type="error"
             :closable="false"
             show-icon
-            title="未检测到可用的视频制作客户端"
-            :description="remotionStatus.message || '请先启动客户端，并使用当前后台账号登录后再提交制作任务。'"
+            :title="t('remotionVideoRecord.clientNotDetected')"
+            :description="remotionStatus.message || t('remotionVideoRecord.clientLoginTip')"
           />
         </div>
       </div>
@@ -537,14 +537,14 @@
 
   <el-dialog
     v-model="detailVisible"
-    title="视频生成详情"
+    :title="t('remotionVideoRecord.videoDetail')"
     fullscreen
     destroy-on-close
     class="remotion-detail-dialog"
   >
     <div v-if="currentRow" class="remotion-detail-layout">
       <el-card shadow="never">
-        <template #header>结果预览</template>
+        <template #header>{{ t('remotionVideoRecord.resultPreview') }}</template>
         <div class="remotion-video-preview">
           <video
             v-if="currentRow.url"
@@ -552,44 +552,44 @@
             controls
             class="remotion-video-player"
           ></video>
-          <el-empty v-else description="当前记录暂无视频结果" :image-size="96" />
+          <el-empty v-else :description="t('remotionVideoRecord.noVideoResult')" :image-size="96" />
         </div>
       </el-card>
       <div class="remotion-detail-side">
         <el-card shadow="never">
-          <template #header>基础信息</template>
+          <template #header>{{ t('remotionVideoRecord.basicInfo') }}</template>
           <div class="detail-section">
-            <div><strong>标题：</strong>{{ currentRow.title || "-" }}</div>
+            <div><strong>{{ t('remotionVideoRecord.title') }}：</strong>{{ currentRow.title || "-" }}</div>
             <div>
-              <strong>模板：</strong>
+              <strong>{{ t('remotionVideoRecord.template') }}：</strong>
               <el-tag
                 v-if="currentRow.templateName === '自由创作' || currentRow.templateId === 'ai-universal'"
                 type="warning"
                 size="small"
                 effect="plain"
-              >自由创作</el-tag>
+              >{{ t('remotionVideoRecord.freeCreation') }}</el-tag>
               <span v-else>{{ currentRow.templateName || currentRow.templateId }}</span>
             </div>
-            <div><strong>状态：</strong>{{ getStatusLabel(currentRow.status) }}</div>
-            <div><strong>进度：</strong>{{ getProgressDisplayText(currentRow) }}</div>
+            <div><strong>{{ t('common.status') }}：</strong>{{ getStatusLabel(currentRow.status) }}</div>
+            <div><strong>{{ t('remotionVideoRecord.progress') }}：</strong>{{ getProgressDisplayText(currentRow) }}</div>
             <div v-if="resolveRecordMachineCode(currentRow)">
-              <strong>执行客户端：</strong>{{ resolveRecordMachineCode(currentRow) }}
+              <strong>{{ t('remotionVideoRecord.machineCode') }}：</strong>{{ resolveRecordMachineCode(currentRow) }}
             </div>
             <div v-if="resolveQueueDetailText(currentRow)">
-              <strong>队列状态：</strong>{{ resolveQueueDetailText(currentRow) }}
+              <strong>{{ t('remotionVideoRecord.queueStatus') }}：</strong>{{ resolveQueueDetailText(currentRow) }}
             </div>
-            <div><strong>创建时间：</strong>{{ formatTimestamp(currentRow.createTime) }}</div>
-            <div v-if="currentRow.url"><strong>COS地址：</strong>{{ currentRow.url }}</div>
+            <div><strong>{{ t('common.createTime') }}：</strong>{{ formatTimestamp(currentRow.createTime) }}</div>
+            <div v-if="currentRow.url"><strong>{{ t('remotionVideoRecord.cosAddress') }}：</strong>{{ currentRow.url }}</div>
             <div v-if="currentRow.remotionVideoUrl">
-              <strong>源地址：</strong>{{ currentRow.remotionVideoUrl }}
+              <strong>{{ t('remotionVideoRecord.sourceAddress') }}：</strong>{{ currentRow.remotionVideoUrl }}
             </div>
             <div v-if="currentRow.errorMessage">
-              <strong>失败信息：</strong>{{ currentRow.errorMessage }}
+              <strong>{{ t('remotionVideoRecord.errorMessage') }}：</strong>{{ currentRow.errorMessage }}
             </div>
           </div>
         </el-card>
         <el-card shadow="never">
-          <template #header>输入参数</template>
+          <template #header>{{ t('remotionVideoRecord.inputParams') }}</template>
           <div class="detail-json-panel">
             <pre>{{ formatJson(currentRow.inputProps) }}</pre>
           </div>
@@ -600,7 +600,7 @@
 
   <el-dialog
     v-model="previewVisible"
-    title="视频预览"
+    :title="t('remotionVideoRecord.videoPreview')"
     width="680px"
     destroy-on-close
     class="remotion-preview-dialog"
@@ -619,7 +619,7 @@
   <!-- AI 视频生成对话框 -->
   <el-dialog
     v-model="aiGenerateVisible"
-    title="AI 生成视频"
+    :title="t('remotionVideoRecord.aiGenerateVideo')"
     :width="isMobile ? 'calc(100vw - 16px)' : '520px'"
     destroy-on-close
     :close-on-click-modal="false"
@@ -637,7 +637,7 @@
         @click="aiForm.mode = 'ai-generate'"
       >
         <el-icon style=" margin-right: 4px;vertical-align: -2px;"><MagicStick /></el-icon>
-        智能匹配
+        {{ t('remotionVideoRecord.smartMatch') }}
       </button>
       <button
         type="button"
@@ -650,17 +650,17 @@
         @click="aiForm.mode = 'ai-free-generate'"
       >
         <el-icon style=" margin-right: 4px;vertical-align: -2px;"><VideoPlay /></el-icon>
-        自由描述
+        {{ t('remotionVideoRecord.freeDescription') }}
       </button>
     </div>
 
     <!-- 模式说明 -->
     <div style=" padding: 8px 12px;margin-bottom: 12px; font-size: 12px; line-height: 1.6; color: var(--el-text-color-secondary); background: var(--el-fill-color-lighter); border-radius: 6px;">
       <template v-if="aiForm.mode === 'ai-generate'">
-        根据描述自动选择合适的通用模板（图片渐变、文字展示、金句等），填入参数后渲染。
+        {{ t('remotionVideoRecord.aiGenerateModeTip') }}
       </template>
       <template v-else>
-        自由描述你想要的视频内容，AI 会自动提取文字、图片并匹配合适的通用模板。
+        {{ t('remotionVideoRecord.aiFreeGenerateModeTip') }}
       </template>
     </div>
 
@@ -669,7 +669,7 @@
       v-model="aiForm.prompt"
       type="textarea"
       :rows="5"
-      :placeholder="aiForm.mode === 'ai-generate' ? '描述视频内容，如：多图轮播展示，以下是图片 https://example.com/1.jpg https://example.com/2.jpg' : '自由描述，如：产品卖点展示，标题：核心优势，简洁高效；一键生成；永久免费'"
+      :placeholder="aiForm.mode === 'ai-generate' ? t('remotionVideoRecord.aiGeneratePlaceholder') : t('remotionVideoRecord.aiFreeGeneratePlaceholder')"
       resize="none"
     />
     <div style=" display: flex;margin-top: 8px; gap: 6px; flex-wrap: wrap;">
@@ -688,9 +688,9 @@
       <template v-if="aiSubmitResult.success">
         <div style="display: flex; align-items: center; gap: 6px; color: var(--el-color-success);">
           <el-icon><CircleCheck /></el-icon>
-          已提交 · {{ aiSubmitResult.templateUsed }}
+          {{ t('remotionVideoRecord.submitted') }} · {{ aiSubmitResult.templateUsed }}
           <template v-if="aiSubmitResult.sceneCount">
-            · {{ aiSubmitResult.sceneCount }} 个场景 · {{ aiSubmitResult.totalDuration }}s
+            · {{ t('remotionVideoRecord.sceneCount', { count: aiSubmitResult.sceneCount }) }} · {{ aiSubmitResult.totalDuration }}s
           </template>
         </div>
       </template>
@@ -698,13 +698,13 @@
     </div>
 
     <template #footer>
-      <el-button @click="aiGenerateVisible = false">取消</el-button>
+      <el-button @click="aiGenerateVisible = false">{{ t('common.cancel') }}</el-button>
       <el-button
         type="primary"
         :loading="aiSubmitting"
         :disabled="!aiForm.prompt"
         @click="submitAiGenerate"
-      >{{ aiSubmitting ? '生成中...' : '生成' }}</el-button>
+      >{{ aiSubmitting ? t('remotionVideoRecord.generating') : t('remotionVideoRecord.generate') }}</el-button>
     </template>
   </el-dialog>
 </template>
@@ -712,6 +712,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
+import { useI18n } from "@/hooks/web/useI18n";
 import { Delete, Search, QuestionFilled, MagicStick, Files, VideoPlay, CircleCheck } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
 import { formatTimestamp } from "@/common/date";
@@ -730,6 +731,8 @@ import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import Pagination from "@/components/Pagination/index.vue";
 import { refreshServiceHealth, useServiceHealthState } from "@/services/serviceHealthState";
 import { websocketClient, type RemotionVideoRecordStatusEvent } from "@/services/websocketClient";
+
+const { t } = useI18n();
 
 const { height } = useWindowSize();
 const isMobile = computed(() => window.innerWidth < 768);
@@ -776,24 +779,24 @@ const aiForm = ref({
 const aiSubmitResult = ref<any>(null);
 
 // 快捷标签（按模式分组）
-const quickTagsByMode = {
+const quickTagsByMode = computed(() => ({
   'ai-generate': [
-    { label: '多图渐变', value: '图片轮播展示，标题：产品图集，以下是图片 https://example.com/1.jpg https://example.com/2.jpg https://example.com/3.jpg' },
-    { label: '文字展示', value: '产品卖点展示，标题：核心优势，简洁高效；一键生成；永久免费' },
-    { label: '金句展示', value: '品牌金句展示，品牌：YISHE，好的设计不是做加法，而是做减法' },
-    { label: '功能卡片', value: '功能介绍，标题：核心功能，智能分析；多平台整合；实时同步' },
-    { label: '数据报告', value: '数据分析报告，标题：用户增长趋势，日活5.2万；转化率3.8%；留存62%' },
+    { label: t('remotionVideoRecord.quickTagMultiImageGradient'), value: '图片轮播展示，标题：产品图集，以下是图片 https://example.com/1.jpg https://example.com/2.jpg https://example.com/3.jpg' },
+    { label: t('remotionVideoRecord.quickTagTextDisplay'), value: '产品卖点展示，标题：核心优势，简洁高效；一键生成；永久免费' },
+    { label: t('remotionVideoRecord.quickTagQuoteDisplay'), value: '品牌金句展示，品牌：YISHE，好的设计不是做加法，而是做减法' },
+    { label: t('remotionVideoRecord.quickTagFeatureCards'), value: '功能介绍，标题：核心功能，智能分析；多平台整合；实时同步' },
+    { label: t('remotionVideoRecord.quickTagDataReport'), value: '数据分析报告，标题：用户增长趋势，日活5.2万；转化率3.8%；留存62%' },
   ],
   'ai-free-generate': [
-    { label: '多图渐变', value: '图片轮播展示，标题：产品图集，以下是图片 https://example.com/1.jpg https://example.com/2.jpg https://example.com/3.jpg' },
-    { label: '文字展示', value: '产品卖点展示，标题：核心优势，简洁高效；一键生成；永久免费' },
-    { label: '金句展示', value: '品牌金句展示，品牌：YISHE，好的设计不是做加法，而是做减法' },
-    { label: '功能卡片', value: '功能介绍，标题：核心功能，智能分析；多平台整合；实时同步' },
-    { label: '数据报告', value: '数据分析报告，标题：用户增长趋势，日活5.2万；转化率3.8%；留存62%' },
+    { label: t('remotionVideoRecord.quickTagMultiImageGradient'), value: '图片轮播展示，标题：产品图集，以下是图片 https://example.com/1.jpg https://example.com/2.jpg https://example.com/3.jpg' },
+    { label: t('remotionVideoRecord.quickTagTextDisplay'), value: '产品卖点展示，标题：核心优势，简洁高效；一键生成；永久免费' },
+    { label: t('remotionVideoRecord.quickTagQuoteDisplay'), value: '品牌金句展示，品牌：YISHE，好的设计不是做加法，而是做减法' },
+    { label: t('remotionVideoRecord.quickTagFeatureCards'), value: '功能介绍，标题：核心功能，智能分析；多平台整合；实时同步' },
+    { label: t('remotionVideoRecord.quickTagDataReport'), value: '数据分析报告，标题：用户增长趋势，日活5.2万；转化率3.8%；留存62%' },
   ],
-};
+}));
 
-const currentQuickTags = computed(() => quickTagsByMode[aiForm.value.mode] || quickTagsByMode['ai-free-generate']);
+const currentQuickTags = computed(() => quickTagsByMode.value[aiForm.value.mode] || quickTagsByMode.value['ai-free-generate']);
 
 function insertQuickTag(value: string) {
   aiForm.value.prompt = value;
@@ -815,11 +818,11 @@ const formParams = reactive<Record<string, any>>({});
 const jsonEditError = ref("");
 let syncingJsonFromForm = false;
 
-const steps = [
-  { label: "选择模板" },
-  { label: "填写参数" },
-  { label: "确认提交" },
-];
+const steps = computed(() => [
+  { label: t("remotionVideoRecord.stepSelectTemplate") },
+  { label: t("remotionVideoRecord.stepFillParams") },
+  { label: t("remotionVideoRecord.stepConfirmSubmit") },
+]);
 
 const queryParams = reactive({
   currentPage: 1,
@@ -882,50 +885,50 @@ const templateTagOptions = computed(() =>
 const filteredTemplateOptions = computed(() => templateOptions.value);
 
 /** 模板中文名映射（ID → 名称/描述） */
-const templateNameMap: Record<string, { name: string; desc: string }> = {
+const templateNameMap = computed<Record<string, { name: string; desc: string }>>(() => ({
   // 过渡效果
-  'fade': { name: '淡入淡出', desc: '图片平滑渐显或渐隐切换' },
-  'fade-in': { name: '淡入', desc: '图片从透明渐显出现' },
-  'fade-out': { name: '淡出', desc: '图片逐渐透明消失' },
-  'crossfade': { name: '交叉淡化', desc: '前后两张图片交叉渐变过渡' },
-  'dissolve': { name: '溶解', desc: '图片颗粒状溶解过渡' },
-  'wipe': { name: '擦除', desc: '新画面擦除旧画面切换' },
+  'fade': { name: t('remotionVideoRecord.tplFade'), desc: t('remotionVideoRecord.tplFadeDesc') },
+  'fade-in': { name: t('remotionVideoRecord.tplFadeIn'), desc: t('remotionVideoRecord.tplFadeInDesc') },
+  'fade-out': { name: t('remotionVideoRecord.tplFadeOut'), desc: t('remotionVideoRecord.tplFadeOutDesc') },
+  'crossfade': { name: t('remotionVideoRecord.tplCrossfade'), desc: t('remotionVideoRecord.tplCrossfadeDesc') },
+  'dissolve': { name: t('remotionVideoRecord.tplDissolve'), desc: t('remotionVideoRecord.tplDissolveDesc') },
+  'wipe': { name: t('remotionVideoRecord.tplWipe'), desc: t('remotionVideoRecord.tplWipeDesc') },
   // 滑动
-  'slide': { name: '滑动', desc: '图片滑动切换' },
-  'slide-left': { name: '向左滑动', desc: '图片向左滑入切换' },
-  'slide-right': { name: '向右滑动', desc: '图片向右滑入切换' },
-  'slide-up': { name: '向上滑动', desc: '图片向上滑入切换' },
-  'slide-down': { name: '向下滑动', desc: '图片向下滑入切换' },
+  'slide': { name: t('remotionVideoRecord.tplSlide'), desc: t('remotionVideoRecord.tplSlideDesc') },
+  'slide-left': { name: t('remotionVideoRecord.tplSlideLeft'), desc: t('remotionVideoRecord.tplSlideLeftDesc') },
+  'slide-right': { name: t('remotionVideoRecord.tplSlideRight'), desc: t('remotionVideoRecord.tplSlideRightDesc') },
+  'slide-up': { name: t('remotionVideoRecord.tplSlideUp'), desc: t('remotionVideoRecord.tplSlideUpDesc') },
+  'slide-down': { name: t('remotionVideoRecord.tplSlideDown'), desc: t('remotionVideoRecord.tplSlideDownDesc') },
   // 缩放
-  'zoom': { name: '缩放', desc: '图片缩放过渡' },
-  'zoom-in': { name: '放大进入', desc: '图片从远处放大至全屏' },
-  'zoom-out': { name: '缩小退出', desc: '图片从全屏缩小至远处' },
-  'scale': { name: '缩放切换', desc: '图片大小变化过渡' },
+  'zoom': { name: t('remotionVideoRecord.tplZoom'), desc: t('remotionVideoRecord.tplZoomDesc') },
+  'zoom-in': { name: t('remotionVideoRecord.tplZoomIn'), desc: t('remotionVideoRecord.tplZoomInDesc') },
+  'zoom-out': { name: t('remotionVideoRecord.tplZoomOut'), desc: t('remotionVideoRecord.tplZoomOutDesc') },
+  'scale': { name: t('remotionVideoRecord.tplScale'), desc: t('remotionVideoRecord.tplScaleDesc') },
   // 旋转
-  'rotate': { name: '旋转', desc: '图片旋转切换' },
-  'spin': { name: '旋转切换', desc: '图片360度旋转过渡' },
+  'rotate': { name: t('remotionVideoRecord.tplRotate'), desc: t('remotionVideoRecord.tplRotateDesc') },
+  'spin': { name: t('remotionVideoRecord.tplSpin'), desc: t('remotionVideoRecord.tplSpinDesc') },
   // 翻转
-  'flip': { name: '翻转', desc: '图片翻转切换' },
-  'flip-horizontal': { name: '水平翻转', desc: '图片左右翻转过渡' },
-  'flip-vertical': { name: '垂直翻转', desc: '图片上下翻转过渡' },
+  'flip': { name: t('remotionVideoRecord.tplFlip'), desc: t('remotionVideoRecord.tplFlipDesc') },
+  'flip-horizontal': { name: t('remotionVideoRecord.tplFlipHorizontal'), desc: t('remotionVideoRecord.tplFlipHorizontalDesc') },
+  'flip-vertical': { name: t('remotionVideoRecord.tplFlipVertical'), desc: t('remotionVideoRecord.tplFlipVerticalDesc') },
   // 其他基础效果
-  'blur': { name: '模糊过渡', desc: '图片模糊后切换至清晰' },
-  'ken-burns': { name: '缓动缩放', desc: '图片缓慢缩放+位移，Ken Burns效果' },
-  'parallax': { name: '视差', desc: '图片多层视差滚动效果' },
-  'push': { name: '推拉', desc: '新画面推入/旧画面拉出' },
-  'none': { name: '无过渡', desc: '直接切换，无过渡效果' },
+  'blur': { name: t('remotionVideoRecord.tplBlur'), desc: t('remotionVideoRecord.tplBlurDesc') },
+  'ken-burns': { name: t('remotionVideoRecord.tplKenBurns'), desc: t('remotionVideoRecord.tplKenBurnsDesc') },
+  'parallax': { name: t('remotionVideoRecord.tplParallax'), desc: t('remotionVideoRecord.tplParallaxDesc') },
+  'push': { name: t('remotionVideoRecord.tplPush'), desc: t('remotionVideoRecord.tplPushDesc') },
+  'none': { name: t('remotionVideoRecord.tplNone'), desc: t('remotionVideoRecord.tplNoneDesc') },
   // 合成
-  'slideshow': { name: '幻灯片', desc: '多图顺序播放' },
-  'collage': { name: '拼贴', desc: '多张图片拼贴组合展示' },
-  'grid': { name: '网格', desc: '图片以网格形式排列展示' },
-};
+  'slideshow': { name: t('remotionVideoRecord.tplSlideshow'), desc: t('remotionVideoRecord.tplSlideshowDesc') },
+  'collage': { name: t('remotionVideoRecord.tplCollage'), desc: t('remotionVideoRecord.tplCollageDesc') },
+  'grid': { name: t('remotionVideoRecord.tplGrid'), desc: t('remotionVideoRecord.tplGridDesc') },
+}));
 
 function getTemplateLocalName(template: any): string {
-  return templateNameMap[template.id]?.name || template.name || template.id;
+  return templateNameMap.value[template.id]?.name || template.name || template.id;
 }
 
 function getTemplateLocalDesc(template: any): string {
-  return templateNameMap[template.id]?.desc || template.description || '暂无说明';
+  return templateNameMap.value[template.id]?.desc || template.description || t('remotionVideoRecord.noDescription');
 }
 
 const categorizedTemplates = computed(() => {
@@ -989,24 +992,24 @@ const gridOptions = computed(() => ({
   rowConfig: { keyField: "id" },
   columns: [
     { type: "checkbox", width: 50 },
-    { title: "视频", field: "url", minWidth: 200, slots: { default: "videoSlot" } },
-    { title: "标题", field: "title", minWidth: 260, slots: { default: "titleSlot" } },
-    { title: "模板", field: "templateName", minWidth: 220, slots: { default: "templateSlot" } },
-    { title: "状态", field: "status", width: 120, slots: { default: "statusSlot" } },
+    { title: t("remotionVideoRecord.video"), field: "url", minWidth: 200, slots: { default: "videoSlot" } },
+    { title: t("remotionVideoRecord.title"), field: "title", minWidth: 260, slots: { default: "titleSlot" } },
+    { title: t("remotionVideoRecord.template"), field: "templateName", minWidth: 220, slots: { default: "templateSlot" } },
+    { title: t("common.status"), field: "status", width: 120, slots: { default: "statusSlot" } },
     {
-      title: "进度",
+      title: t("remotionVideoRecord.progress"),
       field: "responseData.progress",
       minWidth: 260,
       slots: { default: "progressSlot" },
     },
     {
-      title: "上传者",
+      title: t("remotionVideoRecord.uploader"),
       field: "uploader",
       width: 140,
       formatter: ({ row }: any) =>
         row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
     },
-    { ...buildTimeColumn("创建时间", "createTime", 180), slots: { default: "createTimeSlot" } },
+    { ...buildTimeColumn(t("common.createTime"), "createTime", 180), slots: { default: "createTimeSlot" } },
     buildOperationColumn("operationDefaultSlot"),
   ],
 }));

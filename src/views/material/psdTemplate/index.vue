@@ -9,29 +9,29 @@
           <el-form :model="queryParams" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
-                <el-form-item label="ID搜索">
+                <el-form-item :label="t('psdTemplate.idSearch')">
                   <el-input
                     v-model="queryParams.id"
                     size="small"
                     clearable
-                    placeholder="请输入模板ID"
+                    :placeholder="t('psdTemplate.idPlaceholder')"
                     @keyup.enter="getList"
                   />
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="8" :lg="5">
-                <el-form-item label="搜索">
+                <el-form-item :label="t('common.search')">
                   <el-input
                     v-model="queryParams.searchKeyword"
                     size="small"
                     clearable
-                    placeholder="请输入名称、关键词或描述"
+                    :placeholder="t('psdTemplate.searchKeywordPlaceholder')"
                     @keyup.enter="getList"
                   />
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
-                <el-form-item label="排序方式">
+                <el-form-item :label="t('psdTemplate.sortType')">
                   <el-select v-model="queryParams.sortingFields" size="small" @change="getList">
                     <el-option
                       v-for="item in sortTypeOptions"
@@ -43,21 +43,21 @@
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3">
-                <el-form-item label="是否可用">
+                <el-form-item :label="t('psdTemplate.enabled')">
                   <el-select
                     v-model="queryParams.enabled"
                     size="small"
                     clearable
-                    placeholder="全部"
+                    :placeholder="t('operation.all')"
                     @change="getList"
                   >
-                    <el-option label="可用" :value="true" />
-                    <el-option label="不可用" :value="false" />
+                    <el-option :label="t('psdTemplate.available')" :value="true" />
+                    <el-option :label="t('psdTemplate.unavailable')" :value="false" />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="12" :lg="5">
-                <el-form-item label="适合尺寸">
+                <el-form-item :label="t('psdTemplate.suitableSizes')">
                   <el-select
                     v-model="queryParams.suitableSizesArray"
                     size="small"
@@ -65,7 +65,7 @@
                     multiple
                     collapse-tags
                     collapse-tags-tooltip
-                    placeholder="请选择适合尺寸"
+                    :placeholder="t('psdTemplate.suitableSizesPlaceholder')"
                     popper-class="psd-size-select-dropdown"
                     @change="handleQuerySuitableSizesChange"
                   >
@@ -79,7 +79,7 @@
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="12" :lg="5">
-                <el-form-item label="抠图支持">
+                <el-form-item :label="t('psdTemplate.cutoutSupport')">
                   <el-select
                     v-model="queryParams.cutoutModesArray"
                     size="small"
@@ -87,7 +87,7 @@
                     multiple
                     collapse-tags
                     collapse-tags-tooltip
-                    placeholder="请选择抠图支持"
+                    :placeholder="t('psdTemplate.cutoutSupportPlaceholder')"
                     popper-class="psd-size-select-dropdown"
                     @change="handleQueryCutoutModesChange"
                   >
@@ -108,7 +108,7 @@
                 @click="getList"
                 :icon="Search"
                 :loading="loading"
-                >搜索</el-button
+                >{{ t('common.search') }}</el-button
               >
               <el-button
                 size="small"
@@ -117,7 +117,7 @@
                 @click="handleAdd"
                 :icon="Plus"
               >
-                新增
+                {{ t('common.add') }}
               </el-button>
               <el-button
                 size="small"
@@ -125,7 +125,7 @@
                 :icon="Delete"
                 @click="handleDelete(null)"
               >
-                批量删除 ({{ ids.length }})
+                {{ t('common.batchDelete') }} ({{ ids.length }})
               </el-button>
               <el-dropdown
                 trigger="click"
@@ -133,22 +133,22 @@
                 @command="(cmd: PsdTemplateUserTransferAction) => openPsdTemplateUserTransferDialog(cmd)"
               >
                 <el-button size="small" type="success" :disabled="!ids.length">
-                  分享 ({{ ids.length }})
+                  {{ t('psdTemplate.share') }} ({{ ids.length }})
                   <el-icon class="el-icon--right"><ArrowDown /></el-icon>
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item command="share">
                       <el-icon><Share /></el-icon>
-                      <span>共享</span>
+                      <span>{{ t('psdTemplate.shared') }}</span>
                     </el-dropdown-item>
                     <el-dropdown-item command="copy">
                       <el-icon><DocumentCopy /></el-icon>
-                      <span>转存副本</span>
+                      <span>{{ t('psdTemplate.saveCopy') }}</span>
                     </el-dropdown-item>
                     <el-dropdown-item command="move">
                       <el-icon><TopRight /></el-icon>
-                      <span>移交所有人</span>
+                      <span>{{ t('psdTemplate.transferOwner') }}</span>
                     </el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
@@ -231,7 +231,7 @@
                         :lazy="true"
                         class="thumbnail-image"
                       />
-                      <span v-else class="thumbnail-placeholder">暂无缩略图</span>
+                      <span v-else class="thumbnail-placeholder">{{ t('psdTemplate.noThumbnail') }}</span>
                     </div>
                   </template>
 
@@ -243,7 +243,7 @@
                     </div>
                     <div v-else class="flex items-center gap-2">
                       <el-button type="danger" @click="handleEdit(row)" link size="small">
-                        未选择标题,点击选择
+                        {{ t('psdTemplate.selectTitlePrompt') }}
                       </el-button>
                     </div>
                   </template>
@@ -251,17 +251,31 @@
                   <template #shareTypeSlot="{ row }">
                     <el-tooltip
                       v-if="row.shareType === 'shared'"
-                      content="这是共享快捷引用，请将资源转存副本备份，防止源文件删除导致丢失"
+                      :content="t('psdTemplate.sharedRefTip')"
                       placement="top"
                     >
                       <el-tag type="warning" size="small" effect="light" style="cursor: help">
-                        由【{{ row.sourceUser?.name || row.sourceUser?.account || ('用户' + row.sourceUserId) }}】共享
+                        {{
+                          t('psdTemplate.sharedByWithUser', {
+                            user:
+                              row.sourceUser?.name ||
+                              row.sourceUser?.account ||
+                              t('psdTemplate.userNo', { id: row.sourceUserId }),
+                          })
+                        }}
                       </el-tag>
                     </el-tooltip>
                     <el-tag v-else-if="row.shareType === 'copy' || (row.sourceUserId && row.sourceUserId !== row.userId)" type="success" size="small" effect="light">
-                      由【{{ row.sourceUser?.name || row.sourceUser?.account || ('用户' + row.sourceUserId) }}】转存
+                      {{
+                        t('psdTemplate.savedByWithUser', {
+                          user:
+                            row.sourceUser?.name ||
+                            row.sourceUser?.account ||
+                            t('psdTemplate.userNo', { id: row.sourceUserId }),
+                        })
+                      }}
                     </el-tag>
-                    <el-tag v-else type="info" size="small" effect="plain">我上传的</el-tag>
+                    <el-tag v-else type="info" size="small" effect="plain">{{ t('psdTemplate.uploadedByMe') }}</el-tag>
                   </template>
 
                   <template #urlSlot="{ row }">
@@ -275,7 +289,7 @@
                       >
                         {{ row.url }}
                       </a>
-                      <span v-else class="text-gray-400">无</span>
+                      <span v-else class="text-gray-400">{{ t('psdTemplate.none') }}</span>
                     </div>
                   </template>
 
@@ -291,9 +305,9 @@
                         <el-icon class="info-icon">
                           <InfoFilled />
                         </el-icon>
-                        <span class="info-text">配置</span>
+                        <span class="info-text">{{ t('psdTemplate.config') }}</span>
                       </el-button>
-                      <span v-else class="text-gray-400 text-xs">无</span>
+                      <span v-else class="text-gray-400 text-xs">{{ t('psdTemplate.none') }}</span>
                     </div>
                   </template>
 
@@ -309,9 +323,9 @@
                         <el-icon class="info-icon">
                           <InfoFilled />
                         </el-icon>
-                        <span class="info-text">文件信息</span>
+                        <span class="info-text">{{ t('material.fileInfo') }}</span>
                       </el-button>
-                      <span v-else class="text-gray-400 text-xs">无</span>
+                      <span v-else class="text-gray-400 text-xs">{{ t('psdTemplate.none') }}</span>
                     </div>
                   </template>
 
@@ -328,7 +342,7 @@
                                   .join(" / ")
                               }}
                               <span v-if="row.suitableSizes.length > 2">
-                                等{{ row.suitableSizes.length }}个</span
+                                {{ t('psdTemplate.moreSizes', { count: row.suitableSizes.length }) }}</span
                               >
                             </span>
                           </template>
@@ -349,7 +363,7 @@
                           </div>
                         </el-popover>
                       </template>
-                      <span v-else class="text-gray-400 text-xs">未设置</span>
+                      <span v-else class="text-gray-400 text-xs">{{ t('psdTemplate.notSet') }}</span>
                     </div>
                   </template>
 
@@ -366,73 +380,73 @@
                           {{ getCutoutModeLabel(mode) }}
                         </el-tag>
                       </template>
-                      <span v-else class="text-gray-400 text-xs">未设置</span>
+                      <span v-else class="text-gray-400 text-xs">{{ t('psdTemplate.notSet') }}</span>
                     </div>
                   </template>
 
                   <template #pathStatusSlot="{ row }">
                     <el-tag v-if="row.url && row.windowsLocalPath" type="success" size="small"
-                      >远程 + 本地</el-tag
+                      >{{ t('psdTemplate.remoteAndLocal') }}</el-tag
                     >
-                    <el-tag v-else-if="row.url" type="primary" size="small">远程路径</el-tag>
+                    <el-tag v-else-if="row.url" type="primary" size="small">{{ t('psdTemplate.remotePath') }}</el-tag>
                     <el-tag v-else-if="row.windowsLocalPath" type="warning" size="small"
-                      >本地路径</el-tag
+                      >{{ t('psdTemplate.localPath') }}</el-tag
                     >
-                    <el-tag v-else type="info" size="small">未提供路径</el-tag>
+                    <el-tag v-else type="info" size="small">{{ t('psdTemplate.noPath') }}</el-tag>
                   </template>
 
                   <template #enabledSlot="{ row }">
                     <el-tag v-if="row.enabled" type="success" size="small" effect="dark">
-                      可用
+                      {{ t('psdTemplate.available') }}
                     </el-tag>
-                    <el-tag v-else type="info" size="small" effect="plain"> 不可用 </el-tag>
+                    <el-tag v-else type="info" size="small" effect="plain"> {{ t('psdTemplate.unavailable') }} </el-tag>
                   </template>
 
                   <template #operationDefaultSlot="{ row }">
                     <el-dropdown trigger="click" class="operation-dropdown">
                       <el-button type="primary" link size="small" class="operation-trigger-button"
-                        >操作</el-button
+                        >{{ t('common.operation') }}</el-button
                       >
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
-                          <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
+                          <el-dropdown-item @click="handleEdit(row)">{{ t('common.edit') }}</el-dropdown-item>
                           <el-dropdown-item @click="handleToggleEnabled(row)">
-                            {{ row.enabled ? "设为不可用" : "设为可用" }}
+                            {{ row.enabled ? t('psdTemplate.disable') : t('psdTemplate.enable') }}
                           </el-dropdown-item>
                           <el-dropdown-item
                             @click="handleAiGenerate(row)"
                             :disabled="!row.thumbnail || aiTableLoading[row.id]"
                           >
-                            <span v-if="aiTableLoading[row.id]">AI生成中...</span>
-                            <span v-else>AI生成内容</span>
+                            <span v-if="aiTableLoading[row.id]">{{ t('psdTemplate.aiGenerating') }}</span>
+                            <span v-else>{{ t('psdTemplate.aiGenerateContent') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item
                             :disabled="!row.url"
                             @click="() => downloadFileByElement(row.url, row.name)"
                           >
-                            下载源文件
+                            {{ t('psdTemplate.downloadSourceFile') }}
                           </el-dropdown-item>
                           <el-dropdown-item
                             @click="() => openPsdTemplateUserTransferDialog('share', row)"
                           >
-                            共享
+                            {{ t('psdTemplate.shared') }}
                           </el-dropdown-item>
                           <el-dropdown-item
                             @click="() => openPsdTemplateUserTransferDialog('copy', row)"
                           >
-                            转存副本
+                            {{ t('psdTemplate.saveCopy') }}
                           </el-dropdown-item>
                           <el-dropdown-item
                             v-if="isAdmin"
                             @click="() => openPsdTemplateUserTransferDialog('move', row)"
                           >
-                            移交所有人
+                            {{ t('psdTemplate.transferOwner') }}
                           </el-dropdown-item>
                           <el-dropdown-item
                             @click="() => openShareRecordsDialog(row)"
                           >
                             <el-icon><Connection /></el-icon>
-                            <span>查看分享</span>
+                            <span>{{ t('psdTemplate.viewShareRecords') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item
                             divided
@@ -440,7 +454,7 @@
                             @click="handleDelete(row)"
                           >
                             <el-icon><Delete /></el-icon>
-                            <span>删除</span>
+                            <span>{{ t('common.delete') }}</span>
                           </el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
@@ -479,7 +493,7 @@
         <div class="psd-template-dialog-main">
           <!-- 基础信息区域 - 紧凑排列在上方 -->
           <div class="dialog-section dialog-section-basic">
-            <div class="dialog-section-title">基础信息</div>
+            <div class="dialog-section-title">{{ t('psdTemplate.basicInfo') }}</div>
             <el-form
               :model="form"
               :rules="rules"
@@ -490,12 +504,12 @@
               <!-- 第一行：模板名称 + 是否可用 -->
               <el-row :gutter="16">
                 <el-col :span="16">
-                  <el-form-item label="模板名称" prop="name">
-                    <el-input v-model="form.name" placeholder="请输入模板名称" />
+                  <el-form-item :label="t('psdTemplate.templateName')" prop="name">
+                    <el-input v-model="form.name" :placeholder="t('psdTemplate.templateNamePlaceholder')" />
                   </el-form-item>
                 </el-col>
                 <el-col :span="8">
-                  <el-form-item label="是否可用">
+                  <el-form-item :label="t('psdTemplate.enabled')">
                     <el-switch
                       v-model="form.enabled"
                       :active-value="true"
@@ -508,18 +522,18 @@
               <!-- 第二行：关键词 + 本地路径 -->
               <el-row :gutter="16">
                 <el-col :span="12">
-                  <el-form-item label="关键词" prop="keywords">
+                  <el-form-item :label="t('operation.keywords')" prop="keywords">
                     <el-input
                       v-model="form.keywords"
-                      placeholder="多个关键词用逗号分隔"
+                      :placeholder="t('psdTemplate.keywordsPlaceholder')"
                     />
                   </el-form-item>
                 </el-col>
                 <el-col :span="12">
-                  <el-form-item label="本地路径" prop="windowsLocalPath">
+                  <el-form-item :label="t('psdTemplate.localPath')" prop="windowsLocalPath">
                     <el-input
                       v-model="form.windowsLocalPath"
-                      placeholder="Windows 本地路径"
+                      :placeholder="t('psdTemplate.localPathPlaceholder')"
                     />
                   </el-form-item>
                 </el-col>
@@ -528,12 +542,12 @@
               <!-- 第三行：描述 - 全宽 -->
               <el-row :gutter="16">
                 <el-col :span="24">
-                  <el-form-item label="描述" prop="description">
+                  <el-form-item :label="t('common.description')" prop="description">
                     <el-input
                       v-model="form.description"
                       type="textarea"
                       :rows="3"
-                      placeholder="请输入模板描述"
+                      :placeholder="t('psdTemplate.descriptionPlaceholder')"
                     />
                   </el-form-item>
                 </el-col>
@@ -542,10 +556,10 @@
           </div>
 
           <div class="dialog-section dialog-section-assets">
-            <div class="dialog-section-title">文件</div>
+            <div class="dialog-section-title">{{ t('psdTemplate.fileSection') }}</div>
             <div class="asset-layout">
               <el-form :model="form" label-width="92px" class="psd-template-form asset-form">
-                <el-form-item label="PSD 文件" prop="file" class="asset-form-item">
+                <el-form-item :label="t('psdTemplate.psdFile')" prop="file" class="asset-form-item">
                   <div class="asset-block">
                     <el-upload
                       class="psd-file-upload"
@@ -558,41 +572,41 @@
                       :on-remove="handleFileRemove"
                       accept=".psd"
                     >
-                      <el-button type="primary">选择文件</el-button>
+                      <el-button type="primary">{{ t('psdTemplate.selectFile') }}</el-button>
                       <template #tip>
                         <div class="el-upload__tip">
-                          {{ isEdit ? "可选，替换则重新上传" : "可选" }}
+                          {{ isEdit ? t('psdTemplate.optionalReplace') : t('psdTemplate.optional') }}
                         </div>
                       </template>
                     </el-upload>
                     <div v-if="psdFileInfo" class="asset-file-meta">
                       <div class="asset-file-meta__grid">
                         <div class="asset-file-meta__item asset-file-meta__item--full">
-                          <span class="asset-file-meta__label">文件名</span>
+                          <span class="asset-file-meta__label">{{ t('psdTemplate.fileName') }}</span>
                           <span class="asset-file-meta__value">{{ psdFileInfo.name }}</span>
                         </div>
                         <div class="asset-file-meta__item">
-                          <span class="asset-file-meta__label">大小</span>
+                          <span class="asset-file-meta__label">{{ t('psdTemplate.size') }}</span>
                           <span class="asset-file-meta__value">{{ psdFileInfo.sizeLabel }}</span>
                         </div>
                         <div class="asset-file-meta__item">
-                          <span class="asset-file-meta__label">像素尺寸</span>
+                          <span class="asset-file-meta__label">{{ t('psdTemplate.pixelDimensions') }}</span>
                           <span class="asset-file-meta__value">{{ psdFileInfo.dimensionsLabel }}</span>
                         </div>
                         <div class="asset-file-meta__item">
-                          <span class="asset-file-meta__label">格式</span>
+                          <span class="asset-file-meta__label">{{ t('psdTemplate.format') }}</span>
                           <span class="asset-file-meta__value">{{ psdFileInfo.formatLabel }}</span>
                         </div>
                         <div class="asset-file-meta__item">
-                          <span class="asset-file-meta__label">颜色模式</span>
+                          <span class="asset-file-meta__label">{{ t('psdTemplate.colorMode') }}</span>
                           <span class="asset-file-meta__value">{{ psdFileInfo.colorModeLabel }}</span>
                         </div>
                         <div class="asset-file-meta__item">
-                          <span class="asset-file-meta__label">色深 / 通道</span>
+                          <span class="asset-file-meta__label">{{ t('psdTemplate.depthAndChannel') }}</span>
                           <span class="asset-file-meta__value">{{ psdFileInfo.depthLabel }} / {{ psdFileInfo.channelLabel }}</span>
                         </div>
                         <div class="asset-file-meta__item">
-                          <span class="asset-file-meta__label">修改时间</span>
+                          <span class="asset-file-meta__label">{{ t('psdTemplate.modifiedAt') }}</span>
                           <span class="asset-file-meta__value">{{ psdFileInfo.modifiedAtLabel }}</span>
                         </div>
                       </div>
@@ -600,7 +614,7 @@
                   </div>
                 </el-form-item>
 
-                <el-form-item label="缩略图" class="asset-form-item">
+                <el-form-item :label="t('psdTemplate.thumbnail')" class="asset-form-item">
                   <div class="asset-block">
                     <div class="thumbnail-upload-container">
                       <input
@@ -618,7 +632,7 @@
                         <el-icon class="upload-icon">
                           <Plus />
                         </el-icon>
-                        <div class="upload-text">上传</div>
+                        <div class="upload-text">{{ t('psdTemplate.upload') }}</div>
                       </div>
                       <div v-else class="thumbnail-preview-wrapper">
                         <el-image
@@ -657,23 +671,23 @@
                       >
                         <div class="asset-file-meta__grid">
                           <div class="asset-file-meta__item asset-file-meta__item--full">
-                            <span class="asset-file-meta__label">文件名</span>
+                            <span class="asset-file-meta__label">{{ t('psdTemplate.fileName') }}</span>
                             <span class="asset-file-meta__value">{{ thumbnailFileInfo.name }}</span>
                           </div>
                           <div class="asset-file-meta__item">
-                            <span class="asset-file-meta__label">类型</span>
+                            <span class="asset-file-meta__label">{{ t('operation.type') }}</span>
                             <span class="asset-file-meta__value">{{ thumbnailFileInfo.typeLabel }}</span>
                           </div>
                           <div class="asset-file-meta__item">
-                            <span class="asset-file-meta__label">大小</span>
+                            <span class="asset-file-meta__label">{{ t('psdTemplate.size') }}</span>
                             <span class="asset-file-meta__value">{{ thumbnailFileInfo.sizeLabel }}</span>
                           </div>
                           <div class="asset-file-meta__item">
-                            <span class="asset-file-meta__label">像素尺寸</span>
+                            <span class="asset-file-meta__label">{{ t('psdTemplate.pixelDimensions') }}</span>
                             <span class="asset-file-meta__value">{{ thumbnailFileInfo.dimensionsLabel }}</span>
                           </div>
                           <div class="asset-file-meta__item">
-                            <span class="asset-file-meta__label">修改时间</span>
+                            <span class="asset-file-meta__label">{{ t('psdTemplate.modifiedAt') }}</span>
                             <span class="asset-file-meta__value">{{ thumbnailFileInfo.modifiedAtLabel }}</span>
                           </div>
                         </div>
@@ -686,14 +700,14 @@
           </div>
 
           <div class="dialog-section dialog-section-sizes">
-            <div class="dialog-section-title">适用范围</div>
+            <div class="dialog-section-title">{{ t('psdTemplate.scope') }}</div>
             <el-form :model="form" label-width="100px" class="psd-template-form">
-              <el-form-item label="选择尺寸" prop="suitableSizes">
+              <el-form-item :label="t('psdTemplate.selectSizes')" prop="suitableSizes">
                 <el-select
                   v-model="form.suitableSizesArray"
                   multiple
                   clearable
-                  placeholder="请选择适用的图片尺寸"
+                  :placeholder="t('psdTemplate.selectSizesPlaceholder')"
                   class="size-select"
                   popper-class="psd-size-select-dropdown"
                   teleported
@@ -709,12 +723,12 @@
                 </el-select>
               </el-form-item>
 
-              <el-form-item label="抠图支持" prop="cutoutModes">
+              <el-form-item :label="t('psdTemplate.cutoutSupport')" prop="cutoutModes">
                 <el-select
                   v-model="form.cutoutModesArray"
                   multiple
                   clearable
-                  placeholder="请选择模板支持的抠图类型"
+                  :placeholder="t('psdTemplate.cutoutModesPlaceholder')"
                   class="size-select"
                   popper-class="psd-size-select-dropdown"
                   @change="handleCutoutModesChange"
@@ -731,18 +745,18 @@
           </div>
 
           <div class="dialog-section dialog-section-config">
-            <div class="dialog-section-title">模板配置</div>
+            <div class="dialog-section-title">{{ t('psdTemplate.templateConfig') }}</div>
             <el-form :model="form" label-width="90px" class="psd-template-form">
               <el-row :gutter="16">
                 <!-- PSD信息 - 较小 -->
                 <el-col :span="12">
-                  <el-form-item label="PSD信息" prop="psdFileInfo">
+                  <el-form-item :label="t('psdTemplate.psdInfo')" prop="psdFileInfo">
                     <el-input
                       v-model="form.psdFileInfoText"
                       type="textarea"
                       :rows="8"
                       :autosize="{ minRows: 8, maxRows: 12 }"
-                      placeholder='建议 JSON 格式，如：{"canvas":"2000x2000px","smartObjects":[{"name":"主图","size":"1200x1200px"}],"notes":""}'
+                      :placeholder="t('psdTemplate.psdInfoPlaceholder')"
                     />
                   </el-form-item>
                 </el-col>
@@ -752,13 +766,13 @@
                   <el-form-item prop="psdTemplateConfig">
                     <template #label>
                       <span class="psd-config-label">
-                        <span>配置内容</span>
-                        <el-tooltip content="查看多图与智能对象匹配教程" placement="top">
+                        <span>{{ t('psdTemplate.configContent') }}</span>
+                        <el-tooltip :content="t('psdTemplate.configTutorialTip')" placement="top">
                           <el-button
                             link
                             type="primary"
                             class="psd-config-help-button"
-                            aria-label="查看配置教程"
+                            :aria-label="t('psdTemplate.configTutorialLabel')"
                             @click="psdTemplateConfigGuideVisible = true"
                           >
                             <el-icon><InfoFilled /></el-icon>
@@ -771,7 +785,7 @@
                       type="textarea"
                       :rows="16"
                       :autosize="{ minRows: 16, maxRows: 24 }"
-                      placeholder='填写 smart_objects 配置；点击“配置内容”旁的信息图标查看教程'
+                      :placeholder="t('psdTemplate.configContentPlaceholder')"
                     />
                   </el-form-item>
                 </el-col>
@@ -784,12 +798,64 @@
       <template #footer>
         <div class="psd-template-dialog-footer">
           <div class="footer-right">
-            <el-button @click="dialogVisible = false">取消</el-button>
+            <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
             <el-button type="primary" @click="submitForm" :loading="submitLoading">
-              {{ isEdit ? "保存并后台上传" : "创建并后台上传" }}
+              {{ isEdit ? t('psdTemplate.saveAndUpload') : t('psdTemplate.createAndUpload') }}
             </el-button>
           </div>
         </div>
+      </template>
+    </el-dialog>
+
+    <el-dialog
+      v-model="psdTemplateConfigGuideVisible"
+      :title="t('psdTemplate.configTutorial')"
+      width="760px"
+      append-to-body
+      destroy-on-close
+      class="psd-config-guide-dialog"
+    >
+      <div class="psd-config-guide">
+        <section class="psd-config-guide__section">
+          <h3>{{ t('psdTemplate.matchMethod') }}</h3>
+          <p>
+            {{ t('psdTemplate.matchMethodDesc1') }} <code>smart_objects</code>{{ t('psdTemplate.matchMethodDesc2') }}
+            <code>smart_object_name</code>{{ t('psdTemplate.matchMethodDesc3') }}
+          </p>
+          <div class="psd-config-guide__flow">
+            <span>{{ t('psdTemplate.flowGroupImage') }}</span>
+            <el-icon><DArrowRight /></el-icon>
+            <span>{{ t('psdTemplate.flowConfigItem') }}</span>
+            <el-icon><DArrowRight /></el-icon>
+            <span>{{ t('psdTemplate.flowSmartObject') }}</span>
+          </div>
+        </section>
+
+        <section class="psd-config-guide__section">
+          <h3>{{ t('psdTemplate.orderExample') }}</h3>
+          <p>{{ t('psdTemplate.orderExampleDesc1') }} <code>a</code>、<code>b</code>、<code>c</code>{{ t('psdTemplate.orderExampleDesc2') }}</p>
+          <div class="psd-config-guide__mapping">
+            <div><strong>{{ t('psdTemplate.imageOrder', { n: 1 }) }}</strong><span>{{ t('psdTemplate.smartObjectName', { name: 'b' }) }}</span></div>
+            <div><strong>{{ t('psdTemplate.imageOrder', { n: 2 }) }}</strong><span>{{ t('psdTemplate.smartObjectName', { name: 'c' }) }}</span></div>
+            <div><strong>{{ t('psdTemplate.imageOrder', { n: 3 }) }}</strong><span>{{ t('psdTemplate.smartObjectName', { name: 'a' }) }}</span></div>
+          </div>
+        </section>
+
+        <section class="psd-config-guide__section">
+          <h3>{{ t('psdTemplate.configExample') }}</h3>
+          <pre class="psd-config-guide__code"><code>{{ psdTemplateConfigGuideExample }}</code></pre>
+          <p class="psd-config-guide__note">
+            {{ t('psdTemplate.guideNote1') }} <code>image_path</code>{{ t('psdTemplate.guideNote2') }}
+          </p>
+        </section>
+      </div>
+
+      <template #footer>
+        <el-button :icon="DocumentCopy" @click="copyPsdTemplateConfigGuideExample">
+          {{ t('psdTemplate.copyExample') }}
+        </el-button>
+        <el-button type="primary" @click="applyPsdTemplateConfigGuideExample">{{ t('psdTemplate.applyConfig') }}</el-button>
+        <el-button @click="psdTemplateConfigGuideVisible = false">{{ t('psdTemplate.close') }}</el-button>
       </template>
     </el-dialog>
 
@@ -848,15 +914,15 @@
 
     <el-dialog
       v-model="psdFileInfoDialogVisible"
-      title="PSD文件信息"
+      :title="t('psdTemplate.psdFileInfo')"
       fullscreen
       :destroy-on-close="true"
     >
       <div class="psd-info-fullscreen-content">
         <div class="psd-info-header">
           <div class="psd-info-title">
-            <span>模板名称：</span>
-            <strong>{{ currentPsdFileInfoRow?.name || "未知" }}</strong>
+            <span>{{ t('psdTemplate.templateNameColon') }}</span>
+            <strong>{{ currentPsdFileInfoRow?.name || t('psdTemplate.unknown') }}</strong>
           </div>
         </div>
         <div class="psd-info-body">
@@ -866,33 +932,33 @@
         </div>
       </div>
       <template #footer>
-        <el-button type="primary" @click="psdFileInfoDialogVisible = false">关闭</el-button>
+        <el-button type="primary" @click="psdFileInfoDialogVisible = false">{{ t('psdTemplate.close') }}</el-button>
       </template>
     </el-dialog>
 
     <!-- AI生成内容弹窗 -->
     <el-dialog
       v-model="aiGenDialogVisible"
-      title="AI自动生成内容"
+      :title="t('psdTemplate.aiAutoGenerateContent')"
       width="500px"
       align-center
       :destroy-on-close="true"
     >
       <div style="margin-bottom: 16px; font-size: 15px; color: #888">
-        <span style="font-size: 13px; color: #f56c6c"> 注意：需要模板有缩略图才能进行AI分析 </span>
+        <span style="font-size: 13px; color: #f56c6c"> {{ t('psdTemplate.aiThumbnailRequired') }} </span>
       </div>
       <el-input
         v-model="aiGenPrompt"
         type="textarea"
         :rows="6"
-        placeholder="例如：【T恤、男装、短袖】或【儿童地毯、地垫、游戏垫、房间装饰】。重点描述商品名称和相关的类别/兼容性关键词，方便搜索。"
+        :placeholder="t('psdTemplate.aiPromptPlaceholder')"
         :autosize="{ minRows: 6, maxRows: 10 }"
         style="width: 100%; min-height: 120px; font-size: 16px; resize: vertical"
       />
       <template #footer>
-        <el-button @click="aiGenDialogVisible = false">取消</el-button>
+        <el-button @click="aiGenDialogVisible = false">{{ t('common.cancel') }}</el-button>
         <el-button type="primary" :loading="aiGenDialogLoading" @click="submitAiGenDialog"
-          >确定</el-button
+          >{{ t('common.confirm') }}</el-button
         >
       </template>
     </el-dialog>
@@ -900,15 +966,15 @@
     <!-- psd模板配置全屏弹窗 -->
     <el-dialog
       v-model="psdInfoDialogVisible"
-      title="psd模板配置"
+      :title="t('psdTemplate.psdTemplateConfig')"
       fullscreen
       :destroy-on-close="true"
     >
       <div class="psd-info-fullscreen-content">
         <div class="psd-info-header">
           <div class="psd-info-title">
-            <span>模板名称：</span>
-            <strong>{{ currentPsdInfoRow?.name || "未知" }}</strong>
+            <span>{{ t('psdTemplate.templateNameColon') }}</span>
+            <strong>{{ currentPsdInfoRow?.name || t('psdTemplate.unknown') }}</strong>
           </div>
         </div>
         <div class="psd-info-body">
@@ -918,32 +984,32 @@
         </div>
       </div>
       <template #footer>
-        <el-button type="primary" @click="psdInfoDialogVisible = false">关闭</el-button>
+        <el-button type="primary" @click="psdInfoDialogVisible = false">{{ t('psdTemplate.close') }}</el-button>
       </template>
     </el-dialog>
     <!-- 查看分享记录弹窗 -->
     <el-dialog
       v-model="shareRecordsDialogVisible"
-      :title="`分享记录 - ${shareRecordsResourceName}`"
+      :title="t('psdTemplate.shareRecordsWithName', { name: shareRecordsResourceName })"
       width="600px"
       destroy-on-close
     >
       <div v-loading="shareRecordsLoading">
-        <el-empty v-if="!shareRecordsLoading && shareRecordsList.length === 0" description="暂无分享记录" />
+        <el-empty v-if="!shareRecordsLoading && shareRecordsList.length === 0" :description="t('psdTemplate.noShareRecords')" />
         <el-table v-else :data="shareRecordsList" style="width: 100%">
-          <el-table-column prop="userName" label="分享给" min-width="120">
+          <el-table-column prop="userName" :label="t('psdTemplate.sharedTo')" min-width="120">
             <template #default="{ row }">
               <span>{{ row.userName || row.userId }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="shareType" label="分享类型" width="120">
+          <el-table-column prop="shareType" :label="t('psdTemplate.shareType')" width="120">
             <template #default="{ row }">
-              <el-tag v-if="row.shareType === 'shared'" type="warning" size="small" effect="light">快捷共享</el-tag>
-              <el-tag v-else-if="row.shareType === 'copy'" type="success" size="small" effect="light">物理副本</el-tag>
+              <el-tag v-if="row.shareType === 'shared'" type="warning" size="small" effect="light">{{ t('psdTemplate.quickShare') }}</el-tag>
+              <el-tag v-else-if="row.shareType === 'copy'" type="success" size="small" effect="light">{{ t('psdTemplate.physicalCopy') }}</el-tag>
               <el-tag v-else type="info" size="small" effect="plain">{{ row.shareType || '-' }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="createTime" label="分享时间" width="180">
+          <el-table-column prop="createTime" :label="t('psdTemplate.shareTime')" width="180">
             <template #default="{ row }">
               {{ formatTimestamp(row.createTime) }}
             </template>
@@ -966,14 +1032,14 @@
 
 
       <el-form label-width="96px" class="sticker-user-transfer-form">
-        <el-form-item label="目标用户" required>
+        <el-form-item :label="t('psdTemplate.targetUser')" required>
           <el-select
             v-model="psdTemplateUserTransferTargetUserId"
             class="sticker-user-transfer-form__select"
             filterable
             clearable
             :loading="psdTemplateUserTransferUsersLoading"
-            placeholder="请选择目标用户"
+            :placeholder="t('psdTemplate.selectTargetUser')"
           >
             <el-option
               v-for="item in psdTemplateUserTransferUserOptions"
@@ -983,22 +1049,22 @@
             >
               <div class="sticker-user-transfer-option">
                 <div class="sticker-user-transfer-option__main">
-                  <span>{{ item.name || item.account || `用户 #${item.id}` }}</span>
-                  <el-tag v-if="item.isAdmin" size="small" type="warning">管理员</el-tag>
+                  <span>{{ item.name || item.account || t('psdTemplate.userWithId', { id: item.id }) }}</span>
+                  <el-tag v-if="item.isAdmin" size="small" type="warning">{{ t('psdTemplate.admin') }}</el-tag>
                 </div>
                 <span class="sticker-user-transfer-option__meta">
-                  {{ item.account || `ID ${item.id}` }}
+                  {{ item.account || t('psdTemplate.idWithValue', { id: item.id }) }}
                 </span>
               </div>
             </el-option>
           </el-select>
         </el-form-item>
 
-        <el-form-item label="模板数量">
+        <el-form-item :label="t('psdTemplate.templateCount')">
           <el-tag type="info">{{ psdTemplateUserTransferIds.length }}</el-tag>
         </el-form-item>
 
-        <el-form-item label="选中模板">
+        <el-form-item :label="t('psdTemplate.selectedTemplates')">
           <div class="sticker-user-transfer-preview">
             <el-tag
               v-for="item in psdTemplateUserTransferPreviewItems"
@@ -1012,7 +1078,7 @@
               v-if="psdTemplateUserTransferIds.length > psdTemplateUserTransferPreviewItems.length"
               class="sticker-user-transfer-preview__more"
             >
-              等 {{ psdTemplateUserTransferIds.length }} 条
+              {{ t('psdTemplate.moreItems', { count: psdTemplateUserTransferIds.length }) }}
             </span>
           </div>
         </el-form-item>
@@ -1020,7 +1086,7 @@
     </div>
 
     <template #footer>
-      <el-button @click="psdTemplateUserTransferDialogVisible = false">取消</el-button>
+      <el-button @click="psdTemplateUserTransferDialogVisible = false">{{ t('common.cancel') }}</el-button>
       <el-button
         type="primary"
         :loading="psdTemplateUserTransferSubmitting"
@@ -1079,14 +1145,17 @@ import {
   updateGlobalUploadTask,
   type GlobalUploadTask,
 } from "@/services/globalUploadTasks";
+import { useI18n } from "@/hooks/web/useI18n";
+
+const { t } = useI18n();
 
 const userStore = useUserStore();
 const isAdmin = computed(() => userStore.user?.isAdmin ?? false);
 
 const FOLDER_CATEGORY = "psdtemplate";
 const cutoutModeOptions = [
-  { label: "抠图", value: "CUTOUT" },
-  { label: "非抠图", value: "NON_CUTOUT" },
+  { label: t('psdTemplate.cutout'), value: "CUTOUT" },
+  { label: t('psdTemplate.nonCutout'), value: "NON_CUTOUT" },
 ];
 const psdTemplateConfigGuideExample = JSON.stringify(
   {
@@ -1107,8 +1176,8 @@ const psdTemplateConfigGuideExample = JSON.stringify(
 
 const getCutoutModeLabel = (mode: string) => {
   const map = {
-    CUTOUT: "抠图",
-    NON_CUTOUT: "非抠图",
+    CUTOUT: t('psdTemplate.cutout'),
+    NON_CUTOUT: t('psdTemplate.nonCutout'),
   };
   return map[mode] || mode;
 };
@@ -1143,7 +1212,7 @@ const gridOptions = ref<VxeGridProps<any>>({
     },
     { type: "checkbox", width: 42, showOverflow: true },
     {
-      title: "缩略图",
+      title: t('psdTemplate.thumbnail'),
       field: "thumbnail",
       width: 180,
       showOverflow: false,
@@ -1151,27 +1220,27 @@ const gridOptions = ref<VxeGridProps<any>>({
         default: "thumbnailSlot",
       },
     },
-    { title: "psd模板名称", field: "name", width: 240, showOverflow: true },
+    { title: t('psdTemplate.psdTemplateName'), field: "name", width: 240, showOverflow: true },
     {
-      title: "资源类型",
+      title: t('material.resourceType'),
       field: "shareType",
       width: 200,
       slots: { default: "shareTypeSlot" },
     },
     {
-      title: "描述",
+      title: t('common.description'),
       field: "description",
       minWidth: 200,
       showOverflow: true,
     },
     {
-      title: "关键词",
+      title: t('operation.keywords'),
       field: "keywords",
       minWidth: 150,
       showOverflow: true,
     },
     {
-      title: "支持尺寸",
+      title: t('psdTemplate.supportedSizes'),
       field: "suitableSizes",
       minWidth: 160,
       showOverflow: true,
@@ -1180,7 +1249,7 @@ const gridOptions = ref<VxeGridProps<any>>({
       },
     },
     {
-      title: "抠图支持",
+      title: t('psdTemplate.cutoutSupport'),
       field: "cutoutModes",
       minWidth: 180,
       showOverflow: true,
@@ -1189,7 +1258,7 @@ const gridOptions = ref<VxeGridProps<any>>({
       },
     },
     {
-      title: "psd模板配置",
+      title: t('psdTemplate.psdTemplateConfig'),
       field: "psdTemplateConfig",
       minWidth: 200,
       showOverflow: true,
@@ -1198,7 +1267,7 @@ const gridOptions = ref<VxeGridProps<any>>({
       },
     },
     {
-      title: "PSD文件信息",
+      title: t('psdTemplate.psdFileInfo'),
       field: "psdFileInfo",
       minWidth: 200,
       showOverflow: true,
@@ -1206,9 +1275,9 @@ const gridOptions = ref<VxeGridProps<any>>({
         default: "psdFileInfoSlot",
       },
     },
-    { title: "ID", field: "id", width: 140, showOverflow: true },
+    { title: t('common.id'), field: "id", width: 140, showOverflow: true },
     {
-      title: "本地路径",
+      title: t('psdTemplate.localPath'),
       field: "windowsLocalPath",
       minWidth: 200,
       showOverflow: true,
@@ -1223,14 +1292,14 @@ const gridOptions = ref<VxeGridProps<any>>({
       },
     },
     {
-      title: "上传者",
+      title: t('operation.uploader'),
       field: "uploader",
       width: 140,
       showOverflow: true,
       formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
     },
     {
-      title: "文件大小",
+      title: t('psdTemplate.fileSize'),
       field: "size",
       width: 100,
       showOverflow: true,
@@ -1243,7 +1312,7 @@ const gridOptions = ref<VxeGridProps<any>>({
       },
     },
     {
-      title: "路径状态",
+      title: t('psdTemplate.pathStatus'),
       field: "pathStatus",
       width: 140,
       showOverflow: true,
@@ -1252,7 +1321,7 @@ const gridOptions = ref<VxeGridProps<any>>({
       },
     },
     {
-      title: "是否可用",
+      title: t('psdTemplate.enabled'),
       field: "enabled",
       width: 100,
       showOverflow: true,
@@ -1261,7 +1330,7 @@ const gridOptions = ref<VxeGridProps<any>>({
       },
     },
     {
-      title: "创建时间",
+      title: t('common.createTime'),
       field: "createTime",
       width: 150,
       showOverflow: true,
@@ -1270,7 +1339,7 @@ const gridOptions = ref<VxeGridProps<any>>({
       },
     },
     {
-      title: "修改时间",
+      title: t('psdTemplate.modifiedAt'),
       field: "updateTime",
       width: 150,
       showOverflow: true,
@@ -1317,21 +1386,21 @@ const psdTemplateUserTransferIds = ref<string[]>([]);
 const psdTemplateUserTransferTargetUserId = ref("");
 const psdTemplateUserTransferUserOptions = ref<PsdTemplateUserTransferUserOption[]>([]);
 const psdTemplateUserTransferDialogTitle = computed(() => {
-  if (psdTemplateUserTransferAction.value === "share") return "快捷共享 PSD 模板给用户";
-  if (psdTemplateUserTransferAction.value === "copy") return "复制副本 PSD 模板给用户";
-  return "转移 PSD 模板给用户";
+  if (psdTemplateUserTransferAction.value === "share") return t('psdTemplate.quickShareTemplateTitle');
+  if (psdTemplateUserTransferAction.value === "copy") return t('psdTemplate.copyTemplateTitle');
+  return t('psdTemplate.transferTemplateTitle');
 });
 const psdTemplateUserTransferSubmitText = computed(() => {
-  if (psdTemplateUserTransferAction.value === "share") return "确认快捷共享";
-  if (psdTemplateUserTransferAction.value === "copy") return "确认复制副本";
-  return "确认转移";
+  if (psdTemplateUserTransferAction.value === "share") return t('material.confirmQuickShare');
+  if (psdTemplateUserTransferAction.value === "copy") return t('material.confirmCopy');
+  return t('material.confirmTransfer');
 });
 const psdTemplateUserTransferPreviewItems = computed(() =>
   psdTemplateUserTransferIds.value.slice(0, 5).map((id) => {
     const row = dataSource.value.find((item: any) => String(item.id) === String(id));
     return {
       id: String(id),
-      label: row?.name || `ID: ${id}`,
+      label: row?.name || t('psdTemplate.idWithValue', { id }),
     };
   }),
 );
@@ -1411,7 +1480,7 @@ async function getList() {
 
 function ensurePsdTemplateAdminOperation() {
   if (!isAdmin.value) {
-    ElMessage.warning("仅管理员可执行该操作");
+    ElMessage.warning(t('psdTemplate.adminOnlyOperation'));
     return false;
   }
   return true;
@@ -1433,12 +1502,12 @@ async function loadPsdTemplateTransferUserOptions() {
       id: String(item.id),
       name: item.name || "",
       account: item.account || "",
-      label: item.name || item.account || `用户 #${item.id}`,
+      label: item.name || item.account || t('psdTemplate.userWithId', { id: item.id }),
       isAdmin: !!item.isAdmin,
     }));
     psdTemplateUserTransferUsersLoaded.value = true;
   } catch (error: any) {
-    ElMessage.error(error?.message || "加载用户列表失败");
+    ElMessage.error(error?.message || t('material.userListLoadFailed'));
   } finally {
     psdTemplateUserTransferUsersLoading.value = false;
   }
@@ -1464,7 +1533,7 @@ async function openPsdTemplateUserTransferDialog(
     : (Array.isArray(ids.value) ? ids.value : []).map((id) => String(id)).filter(Boolean);
 
   if (!targetIds.length) {
-    ElMessage.warning("请选择要操作的模板");
+    ElMessage.warning(t('psdTemplate.selectTemplatesToOperate'));
     return;
   }
 
@@ -1481,22 +1550,22 @@ async function submitPsdTemplateUserTransfer() {
   }
 
   if (!psdTemplateUserTransferIds.value.length) {
-    ElMessage.warning("请选择要操作的模板");
+    ElMessage.warning(t('psdTemplate.selectTemplatesToOperate'));
     return;
   }
 
   if (!psdTemplateUserTransferTargetUserId.value) {
-    ElMessage.warning("请选择目标用户");
+    ElMessage.warning(t('psdTemplate.selectTargetUser'));
     return;
   }
 
   psdTemplateUserTransferSubmitting.value = true;
   const actionLabel =
     psdTemplateUserTransferAction.value === "share"
-      ? "快捷共享"
+      ? t('psdTemplate.quickShare')
       : psdTemplateUserTransferAction.value === "copy"
-      ? "复制副本"
-      : "转移";
+      ? t('psdTemplate.copyCopy')
+      : t('material.transfer');
 
   try {
     const payload = {
@@ -1518,21 +1587,23 @@ async function submitPsdTemplateUserTransfer() {
     const warningCount = Array.isArray(result?.warnings) ? result.warnings.length : 0;
 
     if (successCount > 0) {
+      const failedText = failedCount ? t('material.failedCountText', { count: failedCount }) : '';
+      const warningText = warningCount ? t('material.warningCountText', { count: warningCount }) : '';
       ElNotification.success(
-        `${actionLabel}成功 ${successCount} 条${failedCount ? `，失败 ${failedCount} 条` : ""}${warningCount ? `，警告 ${warningCount} 条` : ""}`,
+        t('material.transferSuccessSummary', { actionLabel, successCount, failedText, warningText }),
       );
       psdTemplateUserTransferDialogVisible.value = false;
       ids.value = [];
       await getList();
     } else if (failedCount > 0) {
-      ElMessage.error(`${actionLabel}失败 ${failedCount} 条`);
+      ElMessage.error(t('material.transferFailedCount', { actionLabel, count: failedCount }));
     } else {
-      ElMessage.warning("未处理任何模板，请稍后重试");
+      ElMessage.warning(t('psdTemplate.nothingProcessed'));
     }
 
     if (failedCount > 0) {
       ElNotification.warning({
-        title: `${actionLabel}失败详情`,
+        title: t('material.failedDetailTitle', { actionLabel }),
         message: result.failed
           .slice(0, 3)
           .map((item: any) => `${item.id}: ${item.message}`)
@@ -1543,7 +1614,7 @@ async function submitPsdTemplateUserTransfer() {
 
     if (warningCount > 0) {
       ElNotification.warning({
-        title: `${actionLabel}完成，但有警告`,
+        title: t('material.completedWithWarning', { actionLabel }),
         message: result.warnings
           .slice(0, 3)
           .map((item: any) => `${item.id}: ${item.message}`)
@@ -1552,7 +1623,7 @@ async function submitPsdTemplateUserTransfer() {
       });
     }
   } catch (error: any) {
-    ElMessage.error(error?.message || `${actionLabel}失败`);
+    ElMessage.error(error?.message || t('material.actionFailed', { actionLabel }));
   } finally {
     psdTemplateUserTransferSubmitting.value = false;
   }
@@ -1581,7 +1652,7 @@ async function handleFolderDrop(payload: { data: any }) {
     targetFolderId = FOLDER_FILTER.NOT_GROUP; // 拖到未分组
   } else if (payload.data.id === FOLDER_FILTER.ALL) {
     // 不允许拖到"全部"
-    ElMessage.warning('不能移动到"全部"');
+    ElMessage.warning(t('psdTemplate.cannotMoveToAll'));
     resetAfterDrop();
     return;
   } else {
@@ -1596,13 +1667,18 @@ async function handleFolderDrop(payload: { data: any }) {
       ids: movingIds,
       folderId: convertFolderIdToApiParam(targetFolderId),
     });
-    ElMessage.success(`已移动 ${movingIds.length} 个模板到 ${targetPath || "未分组"}`);
+    ElMessage.success(
+      t('psdTemplate.movedToFolder', {
+        count: movingIds.length,
+        path: targetPath || t('psdTemplate.ungrouped'),
+      }),
+    );
 
     // Stay in the current folder, just refresh the list
     await getList();
     ids.value = [];
   } catch (error) {
-    ElMessage.error((error as Error).message || "移动失败");
+    ElMessage.error((error as Error).message || t('material.moveFailed'));
   } finally {
     resetAfterDrop();
   }
@@ -1623,20 +1699,20 @@ function handleDelete(row?) {
   if (row) {
     delIds = [row.id];
   } else if (!ids.value.length) {
-    return ElMessage.warning("请选择要删除的数据");
+    return ElMessage.warning(t('material.selectDataToDelete'));
   } else {
     delIds = [...ids.value];
   }
 
-  ElMessageBox.confirm("确认删除该数据吗", "删除提示", {
-    confirmButtonText: "确认",
-    cancelButtonText: "取消",
+  ElMessageBox.confirm(t('material.confirmDeleteData'), t('material.deleteTip'), {
+    confirmButtonText: t('operation.confirm'),
+    cancelButtonText: t('common.cancel'),
     type: "error",
   })
     .then(async () => {
       console.log("执行删除");
       await psdTemplateApi.deleteShopTemplate({ ids: delIds });
-      ElMessage.success("删除成功");
+      ElMessage.success(t('common.deleteSuccess'));
       getList();
     })
     .catch(() => {});
@@ -1645,7 +1721,7 @@ function handleDelete(row?) {
 function handleAdd() {
   isEdit.value = false;
   dialogVisible.value = true;
-  dialogTitle.value = "新建模板";
+  dialogTitle.value = t('psdTemplate.createTemplate');
   originalPsdSize.value = 0;
   form.value = {
     id: "",
@@ -1672,7 +1748,7 @@ function handleAdd() {
 function handleEdit(row) {
   isEdit.value = true;
   dialogVisible.value = true;
-  dialogTitle.value = "编辑";
+  dialogTitle.value = t('common.edit');
   originalPsdSize.value = Number(row.size || 0);
 
   form.value = {
@@ -1744,7 +1820,7 @@ const currentPsdFileInfoRow = ref<any>(null);
 const psdTemplateConfigGuideVisible = ref(false);
 
 const rules = {
-  name: [{ required: true, message: "请输入模板名称", trigger: "blur" }],
+  name: [{ required: true, message: t('psdTemplate.templateNamePlaceholder'), trigger: "blur" }],
   // 描述和关键词改为非必填
   // titleTemplateId: [{ required: true, message: "请选择标题模板", trigger: "blur" }],
   // file: [{ required: true, message: "请选择 PSD 文件", trigger: "blur" }], // PSD 文件改为非必填
@@ -1813,7 +1889,7 @@ const runPsdTemplateSaveTask = async (
     let thumbnail = snapshot.thumbnail;
 
     if (snapshot.file) {
-      updateGlobalUploadTask(task.id, { stage: "正在上传 PSD 文件", progress: 30 });
+      updateGlobalUploadTask(task.id, { stage: t('psdTemplate.uploadingPsdFile'), progress: 30 });
       const cos = await uploadToCOS({
         file: snapshot.file,
         category: "psd-template",
@@ -1826,7 +1902,7 @@ const runPsdTemplateSaveTask = async (
     }
 
     if (snapshot.thumbnailFile) {
-      updateGlobalUploadTask(task.id, { stage: "正在上传缩略图", progress: 65 });
+      updateGlobalUploadTask(task.id, { stage: t('psdTemplate.uploadingThumbnail'), progress: 65 });
       const thumbnailCos = await uploadToCOS({
         file: snapshot.thumbnailFile,
         category: "psd-template",
@@ -1839,7 +1915,7 @@ const runPsdTemplateSaveTask = async (
     }
 
     updateGlobalUploadTask(task.id, {
-      stage: snapshot.isEdit ? "正在保存模板" : "正在创建模板",
+      stage: snapshot.isEdit ? t('psdTemplate.savingTemplate') : t('psdTemplate.creatingTemplate'),
       progress: 85,
     });
 
@@ -1878,19 +1954,19 @@ const runPsdTemplateSaveTask = async (
       });
     }
 
-    updateGlobalUploadTask(task.id, { status: "success", stage: "已完成", progress: 100 });
+    updateGlobalUploadTask(task.id, { status: "success", stage: t('psdTemplate.completed'), progress: 100 });
     ElNotification.success({
-      title: snapshot.isEdit ? "PSD模板已更新" : "PSD模板已创建",
-      message: snapshot.name || "未命名模板",
+      title: snapshot.isEdit ? t('psdTemplate.psdTemplateUpdated') : t('psdTemplate.psdTemplateCreated'),
+      message: snapshot.name || t('psdTemplate.unnamedTemplate'),
       duration: 3500,
     });
     await getList();
   } catch (error: any) {
-    const message = error?.message || "操作失败，请重试";
+    const message = error?.message || t('psdTemplate.operationFailedRetry');
     console.error("PSD模板后台保存失败:", error);
     updateGlobalUploadTask(task.id, { status: "error", stage: message, error: message, progress: 100 });
     ElNotification.error({
-      title: "PSD模板上传失败",
+      title: t('psdTemplate.psdTemplateUploadFailed'),
       message,
       duration: 6000,
     });
@@ -1903,21 +1979,21 @@ const submitForm = async () => {
     await formRef.value.validate();
     const snapshot = buildPsdTemplateSubmitSnapshot();
     const task = createGlobalUploadTask(snapshot.name, {
-      source: "PSD模板",
-      stage: "等待上传 PSD 模板",
+      source: t('material.psdTemplate'),
+      stage: t('psdTemplate.waitingUploadPsdTemplate'),
       progress: 5,
     });
 
     dialogVisible.value = false;
     ElNotification.info({
-      title: "已开始后台上传",
-      message: "上传进度会显示在右下角任务面板，可继续操作页面。",
+      title: t('psdTemplate.backgroundUploadStarted'),
+      message: t('psdTemplate.backgroundUploadNotice'),
       duration: 4500,
     });
     void runPsdTemplateSaveTask(task, snapshot);
   } catch (error: any) {
     if (error?.message) {
-      ElMessage.error(error.message || "表单校验失败");
+      ElMessage.error(error.message || t('psdTemplate.formValidationFailed'));
     }
   } finally {
     submitLoading.value = false;
@@ -1963,13 +2039,13 @@ type ImageFileInfo = {
 };
 
 const PSD_COLOR_MODE_MAP: Record<number, string> = {
-  0: "位图",
-  1: "灰度",
-  2: "索引颜色",
+  0: t('psdTemplate.colorModeBitmap'),
+  1: t('psdTemplate.colorModeGrayscale'),
+  2: t('psdTemplate.colorModeIndexed'),
   3: "RGB",
   4: "CMYK",
-  7: "多通道",
-  8: "双色调",
+  7: t('psdTemplate.colorModeMultichannel'),
+  8: t('psdTemplate.colorModeDuotone'),
   9: "Lab",
 };
 
@@ -2061,11 +2137,11 @@ const buildPsdFileInfo = async (file: File): Promise<PsdFileInfo> => {
     format: getPsdFormatLabel(file),
     modifiedAt: file.lastModified,
     sizeLabel: formatBytes(file.size),
-    dimensionsLabel: "解析失败",
+    dimensionsLabel: t('psdTemplate.parseFailed'),
     formatLabel: getPsdFormatLabel(file),
-    colorModeLabel: "解析失败",
-    depthLabel: "解析失败",
-    channelLabel: "解析失败",
+    colorModeLabel: t('psdTemplate.parseFailed'),
+    depthLabel: t('psdTemplate.parseFailed'),
+    channelLabel: t('psdTemplate.parseFailed'),
     modifiedAtLabel: formatDateTime(file.lastModified),
   };
 
@@ -2076,14 +2152,14 @@ const buildPsdFileInfo = async (file: File): Promise<PsdFileInfo> => {
       width: header.width,
       height: header.height,
       format: getPsdFormatLabel(file, header.version),
-      colorMode: PSD_COLOR_MODE_MAP[header.colorMode] || `模式 ${header.colorMode}`,
+      colorMode: PSD_COLOR_MODE_MAP[header.colorMode] || t('psdTemplate.colorModePrefix', { mode: header.colorMode }),
       depth: header.depth,
       channels: header.channels,
       dimensionsLabel: formatDimensions(header.width, header.height),
       formatLabel: getPsdFormatLabel(file, header.version),
-      colorModeLabel: PSD_COLOR_MODE_MAP[header.colorMode] || `模式 ${header.colorMode}`,
+      colorModeLabel: PSD_COLOR_MODE_MAP[header.colorMode] || t('psdTemplate.colorModePrefix', { mode: header.colorMode }),
       depthLabel: `${header.depth} bit`,
-      channelLabel: `${header.channels} 通道`,
+      channelLabel: t('psdTemplate.channelsCount', { count: header.channels }),
     };
   } catch (error) {
     return baseInfo;
@@ -2126,9 +2202,9 @@ const readImageDimensions = (src: string) =>
 const buildImageFileInfo = async (file: File, previewUrl: string): Promise<ImageFileInfo> => {
   const baseInfo: ImageFileInfo = {
     name: file.name,
-    typeLabel: file.type || "未知",
+    typeLabel: file.type || t('psdTemplate.unknown'),
     sizeLabel: formatBytes(file.size),
-    dimensionsLabel: "解析失败",
+    dimensionsLabel: t('psdTemplate.parseFailed'),
     modifiedAtLabel: formatDateTime(file.lastModified),
   };
 
@@ -2185,7 +2261,7 @@ const handleThumbnailFileSelect = async (event) => {
 
   // 校验文件类型
   if (!file.type.startsWith("image/")) {
-    ElMessage.error("只能上传图片文件!");
+    ElMessage.error(t('psdTemplate.onlyImageAllowed'));
     event.target.value = ""; // 清空选择
     return;
   }
@@ -2193,7 +2269,7 @@ const handleThumbnailFileSelect = async (event) => {
   // 限制缩略图大小为 10MB
   const maxSizeBytes = 10 * 1024 * 1024;
   if (file.size > maxSizeBytes) {
-    ElMessage.error("缩略图大小不能超过 10MB!");
+    ElMessage.error(t('psdTemplate.thumbnailSizeLimit'));
     event.target.value = "";
     return;
   }
@@ -2223,7 +2299,7 @@ const clearThumbnail = () => {
 function handleAiGenerate(row) {
   if (aiTableLoading.value[row.id]) return;
   if (!row.thumbnail) {
-    ElMessage.warning("该模板没有缩略图，无法进行AI分析");
+    ElMessage.warning(t('psdTemplate.noThumbnailForAi'));
     return;
   }
   aiGenRow.value = row;
@@ -2273,11 +2349,11 @@ async function handleAiAutoGenerate(row, cb, prompt) {
       row.keywords = resultData.keywords || row.keywords;
     }
 
-    ElMessage.success("AI自动生成内容成功");
+    ElMessage.success(t('material.aiGenerateContentSuccess', { infringementText: '', suitableText: '' }));
     if (typeof cb === "function") cb();
     getList();
   } catch (e) {
-    ElMessage.error("AI自动生成内容失败");
+    ElMessage.error(t('material.aiGenerateContentFailed'));
     if (typeof cb === "function") cb();
   }
 }
@@ -2333,9 +2409,9 @@ function stringifyPsdTemplateConfig(config: any) {
 async function copyPsdTemplateConfigGuideExample() {
   try {
     await navigator.clipboard.writeText(psdTemplateConfigGuideExample);
-    ElMessage.success("配置示例已复制");
+    ElMessage.success(t('psdTemplate.configExampleCopied'));
   } catch {
-    ElMessage.error("复制失败");
+    ElMessage.error(t('material.copyFailed'));
   }
 }
 
@@ -2348,9 +2424,9 @@ async function applyPsdTemplateConfigGuideExample() {
     currentText !== psdTemplateConfigGuideExample.trim()
   ) {
     try {
-      await ElMessageBox.confirm("填入示例会覆盖当前配置内容，是否继续？", "覆盖配置", {
-        confirmButtonText: "继续",
-        cancelButtonText: "取消",
+      await ElMessageBox.confirm(t('psdTemplate.overwriteConfigConfirm'), t('psdTemplate.overwriteConfigTitle'), {
+        confirmButtonText: t('psdTemplate.continue'),
+        cancelButtonText: t('common.cancel'),
         type: "warning",
       });
     } catch {
@@ -2360,7 +2436,7 @@ async function applyPsdTemplateConfigGuideExample() {
 
   form.value.psdTemplateConfigText = psdTemplateConfigGuideExample;
   psdTemplateConfigGuideVisible.value = false;
-  ElMessage.success("示例已填入配置内容");
+  ElMessage.success(t('psdTemplate.configExampleApplied'));
 }
 
 // 查看psd模板配置
@@ -2375,7 +2451,7 @@ function handleViewPsdFileInfo(row: any) {
 }
 
 async function openShareRecordsDialog(row: any) {
-  shareRecordsResourceName.value = row.name || `ID: ${row.id}`;
+  shareRecordsResourceName.value = row.name || t('psdTemplate.idWithValue', { id: row.id });
   shareRecordsDialogVisible.value = true;
   shareRecordsLoading.value = true;
   shareRecordsList.value = [];
@@ -2384,7 +2460,7 @@ async function openShareRecordsDialog(row: any) {
     shareRecordsList.value = res?.list || [];
     shareRecordsTotal.value = res?.total || 0;
   } catch (e: any) {
-    ElMessage.error(e?.message || '获取分享记录失败');
+    ElMessage.error(e?.message || t('material.shareRecordsLoadFailed'));
   } finally {
     shareRecordsLoading.value = false;
   }
@@ -2392,7 +2468,7 @@ async function openShareRecordsDialog(row: any) {
 
 // 格式化psd模板配置显示（支持后端返回的新数据结构）
 function formatPsdInfo(psdInfo: any): string {
-  if (!psdInfo) return "无";
+  if (!psdInfo) return t('psdTemplate.none');
 
   try {
     // 如果是字符串，尝试解析
@@ -2439,9 +2515,9 @@ async function handleToggleEnabled(row: any) {
       enabled: newEnabled,
     });
     row.enabled = newEnabled;
-    ElMessage.success(newEnabled ? "已设为可用" : "已设为不可用");
+    ElMessage.success(newEnabled ? t('psdTemplate.enabledSuccess') : t('psdTemplate.disabledSuccess'));
   } catch (e) {
-    ElMessage.error("更新状态失败，请重试");
+    ElMessage.error(t('psdTemplate.updateStatusFailed'));
   }
 }
 

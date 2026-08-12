@@ -188,7 +188,7 @@
                       <img
                         v-if="row.thumbnail"
                         :src="row.thumbnail"
-                        :alt="row.name || '字体缩略图'"
+                        :alt="row.name || t('fontTemplate.thumbnailAlt')"
                         loading="lazy"
                         style="
                           width: 160px;
@@ -206,7 +206,7 @@
                         v-else
                         class="w-40 h-40 bg-gray-100 rounded flex items-center justify-center text-gray-400 text-sm"
                       >
-                        无缩略图
+                        {{ t('fontTemplate.noThumbnail') }}
                       </div>
                     </div>
                   </template>
@@ -414,12 +414,12 @@
           </el-col>
 
           <el-col :span="24">
-            <el-form-item label="适用语言" prop="languages">
+            <el-form-item :label="t('fontTemplate.applicableLanguages')" prop="languages">
               <el-select
                 v-model="form.languages"
                 multiple
                 filterable
-                placeholder="请选择适用语言（可多选）"
+                :placeholder="t('fontTemplate.selectLanguagesPlaceholder')"
                 style="width: 100%"
                 clearable
               >
@@ -438,13 +438,13 @@
                 </el-option>
               </el-select>
               <div style="margin-top: 8px; font-size: 12px; color: #909399">
-                提示：一个字体可以标记多种语言，选择后会在表格中显示语言标签和示例
+                {{ t('fontTemplate.languageHint') }}
               </div>
             </el-form-item>
           </el-col>
 
           <el-col :span="24" v-if="!isEdit">
-            <el-form-item label="模板文件" prop="file">
+            <el-form-item :label="t('fontTemplate.templateFile')" prop="file">
               <el-upload
                 style="width: 100%"
                 action="#"
@@ -456,9 +456,9 @@
                 :on-remove="handleFileRemove"
                 accept=".ttf,.otf,.woff,.woff2"
               >
-                <el-button type="primary">选择字体文件</el-button>
+                <el-button type="primary">{{ t('fontTemplate.selectFontFile') }}</el-button>
                 <template #tip>
-                  <div class="el-upload__tip">只能上传字体文件（.ttf, .otf, .woff, .woff2）</div>
+                  <div class="el-upload__tip">{{ t('fontTemplate.uploadFontTip') }}</div>
                 </template>
               </el-upload>
             </el-form-item>
@@ -467,33 +467,33 @@
       </el-form>
 
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitForm" :loading="submitLoading">确定</el-button>
+        <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="submitForm" :loading="submitLoading">{{ t('common.confirm') }}</el-button>
       </template>
     </el-dialog>
 
     <!-- AI生成内容弹窗 -->
     <el-dialog
       v-model="aiGenDialogVisible"
-      title="AI自动生成内容"
+      :title="t('fontTemplate.aiGenerateTitle')"
       width="500px"
       align-center
       :destroy-on-close="true"
     >
       <div style="margin-bottom: 16px; font-size: 15px; color: #888">
-        请输入你希望AI分析的内容维度（默认已包含字体风格、字重、适用场景、设计特点等详细分析维度，可自行修改）
+        {{ t('fontTemplate.aiAnalyzeHint') }}
       </div>
       <el-input
         v-model="aiGenPrompt"
         type="textarea"
         :rows="6"
-        placeholder="请从字体风格、字重、情感调性、适用场景、设计特点等维度进行分析..."
+        :placeholder="t('fontTemplate.aiAnalyzePlaceholder')"
         style=" width: 100%; min-height: 120px;font-size: 16px; resize: vertical"
       />
       <template #footer>
-        <el-button @click="aiGenDialogVisible = false">取消</el-button>
+        <el-button @click="aiGenDialogVisible = false">{{ t('common.cancel') }}</el-button>
         <el-button type="primary" :loading="aiGenDialogLoading" @click="submitAiGenDialog"
-          >确定</el-button
+          >{{ t('common.confirm') }}</el-button
         >
       </template>
     </el-dialog>
@@ -501,19 +501,19 @@
     <!-- 批量AI补全弹窗 -->
     <el-dialog
       v-model="batchAiDialogVisible"
-      title="批量AI补全内容"
+      :title="t('fontTemplate.batchAiTitle')"
       width="600px"
       align-center
       :destroy-on-close="true"
     >
       <div style="margin-bottom: 16px; font-size: 15px; color: #888">
-        将为选中的 <strong>{{ ids.length }}</strong> 个字体模板进行AI内容补全
+        {{ t('fontTemplate.batchAiHint', { count: ids.length }) }}
       </div>
       <el-input
         v-model="batchAiPrompt"
         type="textarea"
         :rows="6"
-        placeholder="请输入统一的AI分析提示词，已预设详细分析维度，可自行修改..."
+        :placeholder="t('fontTemplate.batchAiPlaceholder')"
         style=" width: 100%; min-height: 120px;font-size: 16px; resize: vertical"
       />
 
@@ -527,7 +527,7 @@
             align-items: center;
           "
         >
-          <span>处理进度</span>
+          <span>{{ t('fontTemplate.processingProgress') }}</span>
           <span>{{ batchProgress.processed }}/{{ batchProgress.total }}</span>
         </div>
         <el-progress
@@ -535,7 +535,7 @@
           :status="batchProgress.processed === batchProgress.total ? 'success' : ''"
         />
         <div style="margin-top: 8px; font-size: 12px; color: #909399">
-          成功: {{ batchProgress.success }} | 失败: {{ batchProgress.failed }}
+          {{ t('fontTemplate.batchResult', { success: batchProgress.success, failed: batchProgress.failed }) }}
         </div>
       </div>
 
@@ -549,20 +549,20 @@
           border-radius: 4px;
         "
       >
-        <div style="margin-bottom: 8px"><strong>操作说明：</strong></div>
-        <div>• 系统将分批处理，每批5个，避免API限流</div>
-        <div>• 处理过程中会显示进度和结果</div>
-        <div>• 失败的项会单独记录，不影响其他项</div>
-        <div style="margin-top: 8px; color: #e6a23c"><strong>注意事项：</strong></div>
-        <div>• 确保选中的字体模板都有缩略图</div>
-        <div>• 如果AI分析失败，可能是图片内容不清晰或格式不支持</div>
-        <div>• 系统会自动重试失败的项，提高成功率</div>
-        <div>• 默认已预设详细分析维度（风格、字重、适用场景、设计特点等），可直接使用或自定义修改</div>
+        <div style="margin-bottom: 8px"><strong>{{ t('fontTemplate.operationInstruction') }}</strong></div>
+        <div>{{ t('fontTemplate.batchTip1') }}</div>
+        <div>{{ t('fontTemplate.batchTip2') }}</div>
+        <div>{{ t('fontTemplate.batchTip3') }}</div>
+        <div style="margin-top: 8px; color: #e6a23c"><strong>{{ t('fontTemplate.noticeTitle') }}</strong></div>
+        <div>{{ t('fontTemplate.notice1') }}</div>
+        <div>{{ t('fontTemplate.notice2') }}</div>
+        <div>{{ t('fontTemplate.notice3') }}</div>
+        <div>{{ t('fontTemplate.notice4') }}</div>
       </div>
       <template #footer>
-        <el-button @click="batchAiDialogVisible = false">取消</el-button>
+        <el-button @click="batchAiDialogVisible = false">{{ t('common.cancel') }}</el-button>
         <el-button type="primary" :loading="batchAiDialogLoading" @click="submitBatchAiDialog"
-          >开始批量补全</el-button
+          >{{ t('fontTemplate.startBatchAi') }}</el-button
         >
       </template>
     </el-dialog>
@@ -570,7 +570,7 @@
     <!-- 生成缩略图弹窗 -->
     <el-dialog
       v-model="generateThumbnailDialogVisible"
-      title="生成字体模板缩略图"
+      :title="t('fontTemplate.generateThumbnailTitle')"
       fullscreen
       align-center
       :destroy-on-close="true"
@@ -585,22 +585,22 @@
         <!-- 基本信息行 -->
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="模板名称">
+            <el-form-item :label="t('fontTemplate.templateName')">
               <el-input v-model="currentRow.name" disabled />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="字体文件">
+            <el-form-item :label="t('fontTemplate.fontFile')">
               <el-input v-model="currentRow.url" disabled />
             </el-form-item>
           </el-col>
         </el-row>
 
-        <el-form-item label="模板文字" prop="templateText">
+        <el-form-item :label="t('fontTemplate.templateText')" prop="templateText">
           <div style="margin-bottom: 12px">
             <el-select
               v-model="selectedTemplateIndex"
-              placeholder="请选择默认模板"
+              :placeholder="t('fontTemplate.selectDefaultTemplate')"
               style="min-width: 300px"
               @change="applyDefaultTemplate"
               clearable
@@ -617,19 +617,19 @@
             v-model="thumbnailForm.templateText"
             type="textarea"
             :rows="10"
-            placeholder="请输入用于生成缩略图的模板文字，或从上方选择默认模板"
+            :placeholder="t('fontTemplate.templateTextPlaceholder')"
             style="font-family: monospace; font-size: 13px"
           />
           <div style="margin-top: 8px; font-size: 12px; color: #909399">
-            支持换行，每行将显示为不同的文字行。可从上方选择默认模板快速应用，或手动输入自定义文字。
+            {{ t('fontTemplate.templateTextHint') }}
           </div>
         </el-form-item>
 
-        <el-form-item label="图片样式设置">
+        <el-form-item :label="t('fontTemplate.imageStyleSettings')">
           <el-row :gutter="16">
             <el-col :span="12">
               <div class="form-item-wrapper">
-                <label class="form-label">字体大小</label>
+                <label class="form-label">{{ t('fontTemplate.fontSize') }}</label>
                 <el-input-number
                   v-model="thumbnailForm.options.fontSize"
                   :min="20"
@@ -641,7 +641,7 @@
             </el-col>
             <el-col :span="12">
               <div class="form-item-wrapper">
-                <label class="form-label">文字颜色</label>
+                <label class="form-label">{{ t('fontTemplate.textColor') }}</label>
                 <el-color-picker v-model="thumbnailForm.options.textColor" />
               </div>
             </el-col>
@@ -656,22 +656,22 @@
               border-radius: 4px;
             "
           >
-            <div style="font-size: 12px; font-weight: 500; color: var(--el-color-primary-dark-2)">智能尺寸</div>
+            <div style="font-size: 12px; font-weight: 500; color: var(--el-color-primary-dark-2)">{{ t('fontTemplate.smartSize') }}</div>
             <div style=" margin-top: 2px;font-size: 11px; color: var(--el-color-primary)">
-              画布尺寸将根据文字内容和字体大小自动计算
+              {{ t('fontTemplate.canvasAutoSize') }}
             </div>
           </div>
         </el-form-item>
 
-        <el-form-item label="预览效果">
+        <el-form-item :label="t('fontTemplate.previewEffect')">
           <div class="preview-container compact">
             <div class="preview-header compact">
-              <span>实时预览</span>
+              <span>{{ t('fontTemplate.livePreview') }}</span>
               <div v-if="fontLoading" class="font-loading-indicator">
                 <el-icon class="is-loading" style="margin-right: 4px; color: var(--el-color-primary)">
                   <Loading />
                 </el-icon>
-                <span style=" font-size: 12px;color: var(--el-color-primary)">字体加载中...</span>
+                <span style=" font-size: 12px;color: var(--el-color-primary)">{{ t('fontTemplate.fontLoading') }}</span>
               </div>
             </div>
             <div class="preview-content compact">
@@ -703,10 +703,10 @@
                     <el-icon class="is-loading" style="margin-right: 4px">
                       <Loading />
                     </el-icon>
-                    正在加载字体预览...
+                    {{ t('fontTemplate.fontPreviewLoading') }}
                   </span>
-                  <span v-else-if="!loadedFontFamily">等待加载字体预览...</span>
-                  <span v-else>当前使用字体: {{ currentRow.name }}</span>
+                  <span v-else-if="!loadedFontFamily">{{ t('fontTemplate.fontPreviewWaiting') }}</span>
+                  <span v-else>{{ t('fontTemplate.currentFont', { name: currentRow.name }) }}</span>
                 </div>
 
                 <!-- 文字内容区域 -->
@@ -750,8 +750,8 @@
                 <!-- 状态信息区域 -->
                 <div style="margin-bottom: 8px; font-size: 10px; color: #909399; flex-shrink: 0">
                   <i class="el-icon-info"></i>
-                  <span v-if="!currentRow.url">请先选择字体模板</span>
-                  <span v-else>当前预览使用系统默认字体</span>
+                  <span v-if="!currentRow.url">{{ t('fontTemplate.selectFontFirst') }}</span>
+                  <span v-else>{{ t('fontTemplate.systemDefaultPreview') }}</span>
                 </div>
 
                 <!-- 文字内容区域 -->
@@ -773,12 +773,12 @@
               </div>
             </div>
             <div style="margin-top: 6px; font-size: 10px; color: #909399; text-align: center">
-              字体预览会自动加载，实时显示字体大小、颜色和字体样式（自适应高度，固定宽度800px，宽高比2:1）
+              {{ t('fontTemplate.previewAutoLoadHint') }}
             </div>
           </div>
         </el-form-item>
 
-        <el-form-item label="字体状态检查">
+        <el-form-item :label="t('fontTemplate.fontStatusCheck')">
           <div
             style="
               padding: 12px;
@@ -788,31 +788,31 @@
             "
           >
             <div style="margin-bottom: 8px; font-size: 13px; font-weight: 500; color: #92400e">
-              字体加载状态：
+              {{ t('fontTemplate.fontLoadStatus') }}
             </div>
             <div style="font-size: 12px; line-height: 1.5; color: #92400e">
               <div v-if="fontLoading">
-                <strong>🔄 字体加载中...</strong>
+                <strong>{{ t('fontTemplate.fontLoadingEmoji') }}</strong>
                 <div style="margin-top: 4px; font-size: 11px; color: #d97706">
-                  正在加载字体文件，请稍候...
+                  {{ t('fontTemplate.fontFileLoading') }}
                 </div>
               </div>
               <div v-else-if="loadedFontFamily">
-                <strong>✅ 字体已加载：</strong>{{ loadedFontFamily }}
+                <strong>{{ t('fontTemplate.fontLoadedEmoji') }}</strong>{{ loadedFontFamily }}
                 <div style="margin-top: 4px; font-size: 11px; color: #d97706">
-                  当前预览区域使用自定义字体，前端生成缩略图将包含此字体效果
+                  {{ t('fontTemplate.customFontEffect') }}
                 </div>
                 <div style="margin-top: 4px; font-size: 11px; color: #059669">
-                  💡 提示：字体已正确加载，可以安全使用前端生成功能
+                  {{ t('fontTemplate.fontLoadedHint') }}
                 </div>
               </div>
               <div v-else>
-                <strong>⚠️ 字体未加载：</strong>当前使用系统默认字体
+                <strong>{{ t('fontTemplate.fontNotLoadedEmoji') }}</strong>{{ t('fontTemplate.systemDefaultFont') }}
                 <div style="margin-top: 4px; font-size: 11px; color: #d97706">
-                  字体预览会自动加载，如果长时间未加载成功，请检查字体文件URL是否可访问
+                  {{ t('fontTemplate.fontLoadFailCheckUrl') }}
                 </div>
                 <div style="margin-top: 4px; font-size: 11px; color: #dc2626">
-                  ⚠️ 警告：使用系统字体生成缩略图可能无法体现字体模板的真实效果
+                  {{ t('fontTemplate.systemFontWarning') }}
                 </div>
               </div>
             </div>
@@ -825,12 +825,12 @@
               "
             >
               <div style="font-size: 11px; color: #92400e">
-                <strong>调试信息：</strong>
-                <div>字体URL: {{ currentRow.url || "未设置" }}</div>
+                <strong>{{ t('fontTemplate.debugInfo') }}</strong>
+                <div>{{ t('fontTemplate.fontUrlLabel') }}: {{ currentRow.url || t('fontTemplate.notSet') }}</div>
                 <div>
-                  加载状态: {{ fontLoading ? "加载中" : loadedFontFamily ? "已加载" : "未加载" }}
+                  {{ t('fontTemplate.loadStatusLabel') }}: {{ fontLoading ? t('fontTemplate.loading') : loadedFontFamily ? t('fontTemplate.loaded') : t('fontTemplate.notLoaded') }}
                 </div>
-                <div>字体名称: {{ loadedFontFamily || "系统默认" }}</div>
+                <div>{{ t('fontTemplate.fontNameLabel') }}: {{ loadedFontFamily || t('fontTemplate.systemDefault') }}</div>
               </div>
             </div>
           </div>
@@ -838,12 +838,12 @@
       </el-form>
 
       <template #footer>
-        <el-button @click="generateThumbnailDialogVisible = false">取消</el-button>
+        <el-button @click="generateThumbnailDialogVisible = false">{{ t('common.cancel') }}</el-button>
         <el-button
           type="primary"
           :loading="frontendGenerateLoading"
           @click="submitFrontendGenerateThumbnail"
-          >生成缩略图</el-button
+          >{{ t('fontTemplate.generateThumbnail') }}</el-button
         >
       </template>
     </el-dialog>
@@ -868,14 +868,14 @@
 
 
         <el-form label-width="96px" class="sticker-user-transfer-form">
-          <el-form-item label="目标用户" required>
+          <el-form-item :label="t('fontTemplate.targetUser')" required>
             <el-select
               v-model="fontTemplateUserTransferTargetUserId"
               class="sticker-user-transfer-form__select"
               filterable
               clearable
               :loading="fontTemplateUserTransferUsersLoading"
-              placeholder="请选择目标用户"
+              :placeholder="t('fontTemplate.selectTargetUserPlaceholder')"
             >
               <el-option
                 v-for="item in fontTemplateUserTransferUserOptions"
@@ -885,8 +885,8 @@
               >
                 <div class="sticker-user-transfer-option">
                   <div class="sticker-user-transfer-option__main">
-                    <span>{{ item.name || item.account || `用户 #${item.id}` }}</span>
-                    <el-tag v-if="item.isAdmin" size="small" type="warning">管理员</el-tag>
+                    <span>{{ item.name || item.account || t('fontTemplate.userNameFallback', { id: item.id }) }}</span>
+                    <el-tag v-if="item.isAdmin" size="small" type="warning">{{ t('fontTemplate.admin') }}</el-tag>
                   </div>
                   <span class="sticker-user-transfer-option__meta">
                     {{ item.account || `ID ${item.id}` }}
@@ -896,11 +896,11 @@
             </el-select>
           </el-form-item>
 
-          <el-form-item label="模板数量">
+          <el-form-item :label="t('fontTemplate.templateCount')">
             <el-tag type="info">{{ fontTemplateUserTransferIds.length }}</el-tag>
           </el-form-item>
 
-          <el-form-item label="选中模板">
+          <el-form-item :label="t('fontTemplate.selectedTemplates')">
             <div class="sticker-user-transfer-preview">
               <el-tag
                 v-for="item in fontTemplateUserTransferPreviewItems"
@@ -916,7 +916,7 @@
                 "
                 class="sticker-user-transfer-preview__more"
               >
-                等 {{ fontTemplateUserTransferIds.length }} 条
+                {{ t('fontTemplate.moreItems', { count: fontTemplateUserTransferIds.length }) }}
               </span>
             </div>
           </el-form-item>
@@ -924,7 +924,7 @@
       </div>
 
       <template #footer>
-        <el-button @click="fontTemplateUserTransferDialogVisible = false">取消</el-button>
+        <el-button @click="fontTemplateUserTransferDialogVisible = false">{{ t('common.cancel') }}</el-button>
         <el-button
           type="primary"
           :loading="fontTemplateUserTransferSubmitting"
@@ -938,26 +938,26 @@
     <!-- 查看分享记录弹窗 -->
     <el-dialog
       v-model="shareRecordsDialogVisible"
-      :title="`分享记录 - ${shareRecordsResourceName}`"
+      :title="t('fontTemplate.shareRecordsTitle', { name: shareRecordsResourceName })"
       width="600px"
       destroy-on-close
     >
       <div v-loading="shareRecordsLoading">
-        <el-empty v-if="!shareRecordsLoading && shareRecordsList.length === 0" description="暂无分享记录" />
+        <el-empty v-if="!shareRecordsLoading && shareRecordsList.length === 0" :description="t('fontTemplate.noShareRecords')" />
         <el-table v-else :data="shareRecordsList" style="width: 100%">
-          <el-table-column prop="userName" label="分享给" min-width="120">
+          <el-table-column prop="userName" :label="t('fontTemplate.sharedTo')" min-width="120">
             <template #default="{ row }">
               <span>{{ row.userName || row.userId }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="shareType" label="分享类型" width="120">
+          <el-table-column prop="shareType" :label="t('fontTemplate.shareType')" width="120">
             <template #default="{ row }">
-              <el-tag v-if="row.shareType === 'shared'" type="warning" size="small" effect="light">快捷共享</el-tag>
-              <el-tag v-else-if="row.shareType === 'copy'" type="success" size="small" effect="light">物理副本</el-tag>
+              <el-tag v-if="row.shareType === 'shared'" type="warning" size="small" effect="light">{{ t('fontTemplate.quickShare') }}</el-tag>
+              <el-tag v-else-if="row.shareType === 'copy'" type="success" size="small" effect="light">{{ t('fontTemplate.physicalCopy') }}</el-tag>
               <el-tag v-else type="info" size="small" effect="plain">{{ row.shareType || '-' }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="createTime" label="分享时间" width="180">
+          <el-table-column prop="createTime" :label="t('fontTemplate.shareTime')" width="180">
             <template #default="{ row }">
               {{ formatTimestamp(row.createTime) }}
             </template>
@@ -1116,32 +1116,32 @@ const gridOptions = ref({
     { type: "checkbox", width: 42, showOverflow: true },
 
     {
-      title: "缩略图",
+      title: t('fontTemplate.thumbnail'),
       field: "thumbnail",
       width: 200,
       slots: {
         default: "thumbnailDefaultSlot",
       },
     },
-    { title: "字体名称", field: "name", width: 260, showOverflow: true, slots: { default: "nameDefaultSlot" } },
+    { title: t('fontTemplate.fontName'), field: "name", width: 260, showOverflow: true, slots: { default: "nameDefaultSlot" } },
     {
-      title: "资源类型",
+      title: t('fontTemplate.resourceType'),
       field: "shareType",
       width: 200,
       slots: { default: "shareTypeSlot" },
     },
-    { title: "描述", field: "description", minWidth: 200, showOverflow: true },
-    { title: "关键字", field: "keywords", minWidth: 160, showOverflow: true },
-    { title: "分类", field: "category", width: 120, showOverflow: true },
+    { title: t('common.description'), field: "description", minWidth: 200, showOverflow: true },
+    { title: t('fontTemplate.keywords'), field: "keywords", minWidth: 160, showOverflow: true },
+    { title: t('fontTemplate.category'), field: "category", width: 120, showOverflow: true },
     {
-      title: "适用语言",
+      title: t('fontTemplate.applicableLanguages'),
       field: "languages",
       minWidth: 200,
       slots: { default: "languagesSlot" },
     },
-        { title: "字体 ID", field: "id", width: 220, showOverflow: true },
+        { title: t('fontTemplate.fontId'), field: "id", width: 220, showOverflow: true },
     {
-      title: "上传者",
+      title: t('fontTemplate.uploader'),
       field: "uploader",
       minWidth: 120,
       showOverflow: true,
@@ -1149,7 +1149,7 @@ const gridOptions = ref({
         row?.uploader?.account || row?.uploader?.name || row?.creatorName || row?.userId || "-",
     },
     {
-      title: "创建时间",
+      title: t('common.createTime'),
       field: "createTime",
       width: 150,
       showOverflow: true,
@@ -1158,7 +1158,7 @@ const gridOptions = ref({
       },
     },
     {
-      title: "修改时间",
+      title: t('fontTemplate.updateTime'),
       field: "updateTime",
       width: 150,
       showOverflow: true,
@@ -1216,14 +1216,14 @@ const fontTemplateUserTransferIds = ref<string[]>([]);
 const fontTemplateUserTransferTargetUserId = ref("");
 const fontTemplateUserTransferUserOptions = ref<FontTemplateUserTransferUserOption[]>([]);
 const fontTemplateUserTransferDialogTitle = computed(() => {
-  if (fontTemplateUserTransferAction.value === "share") return "快捷共享字体模板给用户";
-  if (fontTemplateUserTransferAction.value === "copy") return "复制副本字体模板给用户";
-  return "转移字体模板给用户";
+  if (fontTemplateUserTransferAction.value === "share") return t('fontTemplate.transferShareTitle');
+  if (fontTemplateUserTransferAction.value === "copy") return t('fontTemplate.transferCopyTitle');
+  return t('fontTemplate.transferMoveTitle');
 });
 const fontTemplateUserTransferSubmitText = computed(() => {
-  if (fontTemplateUserTransferAction.value === "share") return "确认快捷共享";
-  if (fontTemplateUserTransferAction.value === "copy") return "确认复制副本";
-  return "确认转移";
+  if (fontTemplateUserTransferAction.value === "share") return t('fontTemplate.transferShareSubmit');
+  if (fontTemplateUserTransferAction.value === "copy") return t('fontTemplate.transferCopySubmit');
+  return t('fontTemplate.transferMoveSubmit');
 });
 const fontTemplateUserTransferPreviewItems = computed(() =>
   fontTemplateUserTransferIds.value.slice(0, 5).map((id) => {
@@ -1371,7 +1371,7 @@ const thumbnailForm = ref({
   },
 });
 const thumbnailRules = {
-  templateText: [{ required: true, message: "请输入模板文字", trigger: "blur" }],
+  templateText: [{ required: true, message: t('fontTemplate.templateTextRequired'), trigger: "blur" }],
 };
 
 // 图片预览相关状态
@@ -1422,7 +1422,7 @@ async function getList() {
 
 function ensureFontTemplateAdminOperation() {
   if (!isAdmin.value) {
-    ElMessage.warning("仅管理员可执行该操作");
+    ElMessage.warning(t('fontTemplate.adminOnly'));
     return false;
   }
   return true;
@@ -1444,12 +1444,12 @@ async function loadFontTemplateTransferUserOptions() {
       id: String(item.id),
       name: item.name || "",
       account: item.account || "",
-      label: item.name || item.account || `用户 #${item.id}`,
+      label: item.name || item.account || t('fontTemplate.userNameFallback', { id: item.id }),
       isAdmin: !!item.isAdmin,
     }));
     fontTemplateUserTransferUsersLoaded.value = true;
   } catch (error: any) {
-    ElMessage.error(error?.message || "加载用户列表失败");
+    ElMessage.error(error?.message || t('fontTemplate.loadUserListFailed'));
   } finally {
     fontTemplateUserTransferUsersLoading.value = false;
   }
@@ -1475,7 +1475,7 @@ async function openFontTemplateUserTransferDialog(
     : (Array.isArray(ids.value) ? ids.value : []).map((id) => String(id)).filter(Boolean);
 
   if (!targetIds.length) {
-    ElMessage.warning("请选择要操作的字体模板");
+    ElMessage.warning(t('fontTemplate.selectFontTemplate'));
     return;
   }
 
@@ -1492,22 +1492,22 @@ async function submitFontTemplateUserTransfer() {
   }
 
   if (!fontTemplateUserTransferIds.value.length) {
-    ElMessage.warning("请选择要操作的字体模板");
+    ElMessage.warning(t('fontTemplate.selectFontTemplate'));
     return;
   }
 
   if (!fontTemplateUserTransferTargetUserId.value) {
-    ElMessage.warning("请选择目标用户");
+    ElMessage.warning(t('fontTemplate.selectTargetUser'));
     return;
   }
 
   fontTemplateUserTransferSubmitting.value = true;
   const actionLabel =
     fontTemplateUserTransferAction.value === "share"
-      ? "快捷共享"
+      ? t('fontTemplate.transferQuickShare')
       : fontTemplateUserTransferAction.value === "copy"
-      ? "复制副本"
-      : "转移";
+      ? t('fontTemplate.transferCopy')
+      : t('fontTemplate.transferMove');
 
   try {
     const payload = {
@@ -1530,20 +1530,25 @@ async function submitFontTemplateUserTransfer() {
 
     if (successCount > 0) {
       ElNotification.success(
-        `${actionLabel}成功 ${successCount} 条${failedCount ? `，失败 ${failedCount} 条` : ""}${warningCount ? `，警告 ${warningCount} 条` : ""}`,
+        t('fontTemplate.transferSuccess', {
+          action: actionLabel,
+          count: successCount,
+          failedText: failedCount ? t('fontTemplate.transferFailedText', { count: failedCount }) : '',
+          warningText: warningCount ? t('fontTemplate.transferWarningText', { count: warningCount }) : '',
+        }),
       );
       fontTemplateUserTransferDialogVisible.value = false;
       ids.value = [];
       await getList();
     } else if (failedCount > 0) {
-      ElMessage.error(`${actionLabel}失败 ${failedCount} 条`);
+      ElMessage.error(t('fontTemplate.transferFailedCount', { action: actionLabel, count: failedCount }));
     } else {
-      ElMessage.warning("未处理任何字体模板，请稍后重试");
+      ElMessage.warning(t('fontTemplate.transferNoProcessed'));
     }
 
     if (failedCount > 0) {
       ElNotification.warning({
-        title: `${actionLabel}失败详情`,
+        title: t('fontTemplate.transferFailedDetail', { action: actionLabel }),
         message: result.failed
           .slice(0, 3)
           .map((item: any) => `${item.id}: ${item.message}`)
@@ -1554,7 +1559,7 @@ async function submitFontTemplateUserTransfer() {
 
     if (warningCount > 0) {
       ElNotification.warning({
-        title: `${actionLabel}完成，但有警告`,
+        title: t('fontTemplate.transferWarningDetail', { action: actionLabel }),
         message: result.warnings
           .slice(0, 3)
           .map((item: any) => `${item.id}: ${item.message}`)
@@ -1563,7 +1568,7 @@ async function submitFontTemplateUserTransfer() {
       });
     }
   } catch (error: any) {
-    ElMessage.error(error?.message || `${actionLabel}失败`);
+    ElMessage.error(error?.message || t('fontTemplate.transferFailed', { action: actionLabel }));
   } finally {
     fontTemplateUserTransferSubmitting.value = false;
   }
@@ -1604,20 +1609,20 @@ function handleDelete(row?) {
   if (row) {
     delIds = [row.id];
   } else if (!ids.value.length) {
-    return ElMessage.warning("请选择要删除的数据");
+    return ElMessage.warning(t('fontTemplate.selectDeleteData'));
   } else {
     delIds = [...ids.value];
   }
 
-  ElMessageBox.confirm("确认删除该数据吗", "删除提示", {
-    confirmButtonText: "确认",
-    cancelButtonText: "取消",
+  ElMessageBox.confirm(t('fontTemplate.deleteConfirm'), t('fontTemplate.deleteTitle'), {
+    confirmButtonText: t('fontTemplate.confirmDelete'),
+    cancelButtonText: t('common.cancel'),
     type: "error",
   })
     .then(async () => {
       console.log("执行删除");
       await fontTemplateApi.deleteFontTemplate({ ids: delIds });
-      ElMessage.success("删除成功");
+      ElMessage.success(t('common.deleteSuccess'));
       getList();
     })
     .catch(() => {});
@@ -1626,17 +1631,17 @@ function handleDelete(row?) {
 // 批量删除功能
 async function handleBatchDelete() {
   if (!ids.value.length) {
-    ElMessage.warning("请先选择要删除的数据");
+    ElMessage.warning(t('fontTemplate.selectDeleteDataFirst'));
     return;
   }
 
   try {
     await ElMessageBox.confirm(
-      `确认删除选中的 ${ids.value.length} 个字体模板吗？\n\n删除后将同时删除：\n• 字体文件\n• 缩略图\n\n此操作不可恢复！`,
-      "批量删除确认",
+      t('fontTemplate.batchDeleteConfirmMsg', { count: ids.value.length }),
+      t('fontTemplate.batchDeleteConfirmTitle'),
       {
-        confirmButtonText: "确认删除",
-        cancelButtonText: "取消",
+        confirmButtonText: t('fontTemplate.confirmBatchDelete'),
+        cancelButtonText: t('common.cancel'),
         type: "warning",
         dangerouslyUseHTMLString: true,
       },
@@ -1647,7 +1652,7 @@ async function handleBatchDelete() {
     // 调用删除API
     await fontTemplateApi.deleteFontTemplate({ ids: ids.value });
 
-    ElMessage.success(`成功删除 ${ids.value.length} 个字体模板`);
+    ElMessage.success(t('fontTemplate.batchDeleteSuccess', { count: ids.value.length }));
 
     // 清空选择并刷新列表
     ids.value = [];
@@ -1655,7 +1660,7 @@ async function handleBatchDelete() {
   } catch (error) {
     if (error !== "cancel") {
       console.error("批量删除失败:", error);
-      ElMessage.error("批量删除失败，请稍后重试");
+      ElMessage.error(t('fontTemplate.batchDeleteFailed'));
     }
   } finally {
     batchDeleteLoading.value = false;
@@ -1678,13 +1683,15 @@ async function handleFolderDrop(payload: { data: any }) {
       ids: movingIds,
       folderId: convertFolderIdToApiParam(targetFolderId) as string,
     });
-    ElMessage.success(`已移动 ${movingIds.length} 个字体模板到 ${targetPath || "未分组"}`);
+    ElMessage.success(
+      t('fontTemplate.moveSuccess', { count: movingIds.length, folder: targetPath || t('fontTemplate.ungrouped') }),
+    );
 
     // Stay in current folder, just refresh list
     await getList();
     ids.value = [];
   } catch (error) {
-    ElMessage.error((error as Error).message || "移动失败");
+    ElMessage.error((error as Error).message || t('fontTemplate.moveFailed'));
   } finally {
     resetAfterDrop();
   }
@@ -1693,7 +1700,7 @@ async function handleFolderDrop(payload: { data: any }) {
 function handleAdd() {
   isEdit.value = false;
   dialogVisible.value = true;
-  dialogTitle.value = "新建字体模板";
+  dialogTitle.value = t('fontTemplate.createTitle');
   form.value = {
     file: null,
     name: "",
@@ -1707,7 +1714,7 @@ function handleEdit(row) {
   currentRow.value = row;
   isEdit.value = true;
   dialogVisible.value = true;
-  dialogTitle.value = "编辑";
+  dialogTitle.value = t('common.edit');
 
   form.value = {
     ...row,
@@ -1731,10 +1738,10 @@ const form = ref<{
 });
 
 const rules = {
-  name: [{ required: true, message: "请输入模板名称", trigger: "blur" }],
-  description: [{ required: false, message: "请输入描述", trigger: "blur" }],
-  keywords: [{ required: false, message: "请输入关键字", trigger: "blur" }],
-  file: [{ required: true, message: "请选择字体文件", trigger: "blur" }],
+  name: [{ required: true, message: t('fontTemplate.nameRequired'), trigger: "blur" }],
+  description: [{ required: false, message: t('fontTemplate.descriptionRequired'), trigger: "blur" }],
+  keywords: [{ required: false, message: t('fontTemplate.keywordsRequired'), trigger: "blur" }],
+  file: [{ required: true, message: t('fontTemplate.fileRequired'), trigger: "blur" }],
 };
 
 const dialogClose = () => {
@@ -1781,7 +1788,7 @@ const submitForm = async () => {
         keywords: form.value.keywords,
         languages: form.value.languages || [],
       });
-      ElMessage.success("更新成功");
+      ElMessage.success(t('common.updateSuccess'));
       getList();
     } else {
       submitLoading.value = true;
@@ -1813,7 +1820,7 @@ const submitForm = async () => {
         file: null,
         userId: userStore.user?.id,
       });
-      ElMessage.success("添加成功");
+      ElMessage.success(t('common.addSuccess'));
       getList();
     }
 
@@ -1848,7 +1855,7 @@ const handleFileRemove = () => {
 const beforeUpload = (file) => {
   const isFont = /\.(ttf|otf|woff|woff2)$/.test(file.name.toLowerCase());
   if (!isFont) {
-    ElMessage.error("只能上传字体文件！");
+    ElMessage.error(t('fontTemplate.uploadFontError'));
     return false;
   }
   return true;
@@ -1862,18 +1869,7 @@ const copyUrl = (url: string) => {
 function handleAiGenerate(row) {
   if (aiTableLoading.value[row.id]) return;
   aiGenRow = row;
-  aiGenPrompt.value = `请从以下维度对字体进行详细分析，并输出对应的分类信息：
-
-1. 字体风格分类：如衬线体、无衬线体、手写体、装饰体、等宽体等
-2. 字重/粗细：极细、细、常规、中等、粗、极粗、黑体等
-3. 情感调性：优雅、稳重、活泼、现代、古典、科技、可爱、力量感等
-4. 适用场景：标题、正文、品牌标识、海报、UI界面、包装、广告等
-5. 适用行业：科技、时尚、餐饮、教育、金融、娱乐、运动等
-6. 设计特点：圆角、直角、几何、有机、装饰性笔画、连笔等
-7. 推荐搭配字体：建议可与此字体搭配使用的其他类型字体
-8. 关键词建议：10-15个便于检索的风格和用途关键词
-
-请结合字体的笔画特征、结构比例、整体视觉感受进行综合分析。`;
+  aiGenPrompt.value = t('fontTemplate.aiPromptDefault');
   aiGenDialogVisible.value = true;
 }
 
@@ -1919,11 +1915,11 @@ async function handleAiAutoGenerate(row, cb, prompt) {
       row.keywords = resultData.keywords || row.keywords;
     }
 
-    ElMessage.success("AI自动生成内容成功");
+    ElMessage.success(t('fontTemplate.aiGenerateSuccess'));
     if (typeof cb === "function") cb();
     getList();
   } catch (e) {
-    ElMessage.error("AI自动生成内容失败");
+    ElMessage.error(t('fontTemplate.aiGenerateFailed'));
     if (typeof cb === "function") cb();
   }
 }
@@ -1931,22 +1927,11 @@ async function handleAiAutoGenerate(row, cb, prompt) {
 // 批量AI补全内容
 async function handleBatchAiGenerate() {
   if (!ids.value.length) {
-    ElMessage.warning("请先选择要批量操作的数据");
+    ElMessage.warning(t('fontTemplate.selectBatchData'));
     return;
   }
 
-  batchAiPrompt.value = `请从以下维度对字体进行详细分析，并输出对应的分类信息：
-
-1. 字体风格分类：如衬线体、无衬线体、手写体、装饰体、等宽体等
-2. 字重/粗细：极细、细、常规、中等、粗、极粗、黑体等
-3. 情感调性：优雅、稳重、活泼、现代、古典、科技、可爱、力量感等
-4. 适用场景：标题、正文、品牌标识、海报、UI界面、包装、广告等
-5. 适用行业：科技、时尚、餐饮、教育、金融、娱乐、运动等
-6. 设计特点：圆角、直角、几何、有机、装饰性笔画、连笔等
-7. 推荐搭配字体：建议可与此字体搭配使用的其他类型字体
-8. 关键词建议：10-15个便于检索的风格和用途关键词
-
-请结合字体的笔画特征、结构比例、整体视觉感受进行综合分析。`;
+  batchAiPrompt.value = t('fontTemplate.aiPromptDefault');
   batchAiDialogVisible.value = true;
 }
 
@@ -1966,8 +1951,8 @@ async function submitBatchAiDialog() {
 
     if (isQueuedAiTaskResult(resultData)) {
       notifyQueuedAiTask(resultData, {
-        title: "批量AI补全任务已提交",
-        fallbackMessage: `已提交 ${ids.value.length} 个字体模板的AI补全任务，完成后会通过消息中心通知结果`,
+        title: t('fontTemplate.batchAiTaskSubmitted'),
+        fallbackMessage: t('fontTemplate.batchAiTaskQueued', { count: ids.value.length }),
       });
       batchAiDialogVisible.value = false;
       batchAiPrompt.value = "";
@@ -1990,13 +1975,13 @@ async function submitBatchAiDialog() {
 
     if (resultData.success > 0) {
       // 显示详细结果
-      let message = `批量AI补全完成：成功 ${resultData.success} 个，失败 ${resultData.failed} 个`;
+      let message = t('fontTemplate.batchAiComplete', { success: resultData.success, failed: resultData.failed });
 
       if (resultData.failed > 0 && resultData.errors && resultData.errors.length > 0) {
-        message += `\n失败项目：${resultData.errors
+        message += t('fontTemplate.batchAiFailedItems', { ids: resultData.errors
           .slice(0, 3)
           .map((e) => e.id)
-          .join(", ")}${resultData.errors.length > 3 ? "..." : ""}`;
+          .join(", ") });
       }
 
       ElMessage.success(message);
@@ -2012,19 +1997,19 @@ async function submitBatchAiDialog() {
         batchProgress.value = { total: 0, processed: 0, success: 0, failed: 0 };
       }, 3000);
     } else {
-      ElMessage.error("批量AI补全失败，请检查网络连接和AI服务状态");
+      ElMessage.error(t('fontTemplate.batchAiFailedCheck'));
     }
   } catch (error) {
     console.error("批量AI补全失败:", error);
 
     // 根据错误类型显示不同的提示
-    let errorMessage = "批量AI补全失败";
+    let errorMessage = t('fontTemplate.batchAiFailed');
     if (error.response?.status === 500) {
-      errorMessage = "服务器内部错误，请稍后重试";
+      errorMessage = t('fontTemplate.serverError');
     } else if (error.response?.status === 429) {
-      errorMessage = "请求过于频繁，请稍后重试";
+      errorMessage = t('fontTemplate.tooManyRequests');
     } else if (error.message?.includes("timeout")) {
-      errorMessage = "请求超时，请检查网络连接";
+      errorMessage = t('fontTemplate.requestTimeout');
     }
 
     ElMessage.error(errorMessage);
@@ -2039,7 +2024,7 @@ async function submitBatchAiDialog() {
 function applyDefaultTemplate(index: number | null) {
   if (index !== null && index >= 0 && index < defaultTemplates.length) {
     thumbnailForm.value.templateText = defaultTemplates[index].content;
-    ElMessage.success(`已应用模板：${defaultTemplates[index].name}`);
+    ElMessage.success(t('fontTemplate.templateApplied', { name: defaultTemplates[index].name }));
   }
 }
 
@@ -2048,7 +2033,7 @@ function handleGenerateThumbnail(row) {
   currentRow.value = row;
   // 如果已有缩略图，提示用户
   if (row.thumbnail) {
-    ElMessage.info("该字体模板已有缩略图，生成新的将覆盖现有缩略图");
+    ElMessage.info(t('fontTemplate.thumbnailExists'));
   }
   // 重置字体预览状态
   resetFontPreview();
@@ -2076,7 +2061,7 @@ async function submitFrontendGenerateThumbnail() {
     // 直接使用页面中的实时预览元素
     const previewElement = document.querySelector(".single-preview") as HTMLElement;
     if (!previewElement) {
-      ElMessage.error("找不到预览元素，请确保预览区域已正确显示");
+      ElMessage.error(t('fontTemplate.previewElementNotFound'));
       return;
     }
 
@@ -2163,12 +2148,12 @@ async function submitFrontendGenerateThumbnail() {
       thumbnail: url,
     });
 
-    ElMessage.success("前端缩略图生成成功");
+    ElMessage.success(t('fontTemplate.frontendThumbnailSuccess'));
     generateThumbnailDialogVisible.value = false;
     getList(); // 刷新列表
   } catch (error) {
     console.error("前端缩略图生成失败:", error);
-    ElMessage.error("前端缩略图生成失败，请稍后重试");
+    ElMessage.error(t('fontTemplate.frontendThumbnailFailed'));
   } finally {
     frontendGenerateLoading.value = false;
   }
@@ -2222,15 +2207,15 @@ async function handleBatchGenerateThumbnail(options: BatchGenerateThumbnailOptio
   }
 
   if (fontsToProcess.length === 0) {
-    ElMessage.warning("没有需要生成缩略图的字体模板");
+    ElMessage.warning(t('fontTemplate.noThumbnailToGenerate'));
     return;
   }
 
   // 确认操作
   try {
     await ElMessageBox.confirm(
-      `即将为 ${fontsToProcess.length} 个字体模板批量生成缩略图${completeWithAi ? "，并在生成后调用 AI 补全内容" : ""}，是否继续？`,
-      completeWithAi ? "批量生成缩略图并补全" : "批量生成缩略图",
+      t('fontTemplate.batchGenerateConfirm', { count: fontsToProcess.length, aiSuffix: completeWithAi ? t('fontTemplate.batchGenerateConfirmAiSuffix') : '' }),
+      completeWithAi ? t('fontTemplate.batchGenerateWithAiTitle') : t('fontTemplate.batchGenerateTitle'),
       { type: "warning" },
     );
   } catch {
@@ -2252,7 +2237,7 @@ async function handleBatchGenerateThumbnail(options: BatchGenerateThumbnailOptio
   for (let i = 0; i < fontsToProcess.length; i++) {
     // 检查是否被取消
     if (batchGenerateThumbnailAbortController.value?.signal.aborted) {
-      ElMessage.warning("批量生成已取消");
+      ElMessage.warning(t('fontTemplate.batchGenerateCancelled'));
       break;
     }
 
@@ -2342,7 +2327,12 @@ async function handleBatchGenerateThumbnail(options: BatchGenerateThumbnailOptio
 
   const { success, failed, total } = batchGenerateThumbnailProgress.value;
   ElMessage.success(
-    `${completeWithAi ? "批量生成并补全" : "批量生成缩略图"}完成：成功 ${success} 个，失败 ${failed} 个，共 ${total} 个`,
+    t('fontTemplate.batchGenerateComplete', {
+      action: completeWithAi ? t('fontTemplate.batchGenerateWithAi') : t('fontTemplate.batchGenerate'),
+      success,
+      failed,
+      total,
+    }),
   );
 
   // 刷新列表
@@ -2445,7 +2435,7 @@ async function openShareRecordsDialog(row: any) {
     shareRecordsList.value = res?.list || [];
     shareRecordsTotal.value = res?.total || 0;
   } catch (e: any) {
-    ElMessage.error(e?.message || '获取分享记录失败');
+    ElMessage.error(e?.message || t('fontTemplate.fetchShareRecordsFailed'));
   } finally {
     shareRecordsLoading.value = false;
   }
@@ -2506,7 +2496,7 @@ function handleThumbnailError(event: Event) {
     const errorDiv = document.createElement("div");
     errorDiv.className =
       "w-20 h-20 bg-red-100 rounded flex items-center justify-center text-red-400 text-xs";
-    errorDiv.textContent = "加载失败";
+    errorDiv.textContent = t('fontTemplate.loadFailed');
     parent.appendChild(errorDiv);
   }
 }

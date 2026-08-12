@@ -19,7 +19,6 @@ const NODE_GROUPS: Array<{ title: string; items: Array<{ type: string; label: st
   {
     title: '集成',
     items: [
-      { type: 'llm', label: 'AI 大模型', color: '#8b5cf6' },
       { type: 'http', label: 'HTTP', color: '#06b6d4' },
       { type: 'code', label: '代码', color: '#f97316' },
     ],

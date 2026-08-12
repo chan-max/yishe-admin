@@ -448,7 +448,11 @@ const toolSourceFilter = ref("all");
 const toolCatalogUpdatedAt = ref("");
 const hoveredConversation = ref<any>(null);
 const popupStyle = ref<Record<string, string>>({});
-const sidebarOpen = ref(true);
+const sidebarOpen = ref(false);
+
+function handleResizeOpen() {
+  if (window.innerWidth > 768) sidebarOpen.value = true
+}
 
 const canSend = computed(() => inputMessage.value.trim().length > 0 && store.canSend);
 
@@ -821,10 +825,13 @@ watch(() => store.loading, scrollToBottom);
 onMounted(() => {
   store.initialize();
   websocketClient.events.on("mcp-async-result", handleMcpAsyncResult);
+  handleResizeOpen();
+  window.addEventListener("resize", handleResizeOpen);
 });
 
 onUnmounted(() => {
   websocketClient.events.off("mcp-async-result", handleMcpAsyncResult);
+  window.removeEventListener("resize", handleResizeOpen);
 });
 </script>
 
@@ -1290,7 +1297,7 @@ onUnmounted(() => {
 
 .chat__scroll {
   min-height: 0;
-  padding: 12px 0 80px;
+  padding: 16px 0 24px;
   overflow-y: auto;
   flex: 1;
 }
@@ -1306,7 +1313,7 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 80px 0;
+  padding: 40px 0;
 }
 
 .chat__empty-text {

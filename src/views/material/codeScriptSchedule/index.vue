@@ -6,11 +6,11 @@
           <el-form :model="queryParams" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="6" :xl="5">
-                <el-form-item label="调度名称">
+                <el-form-item :label="t('codeScriptSchedule.scheduleName')">
                   <el-input
                     v-model="queryParams.search"
                     size="small"
-                    placeholder="请输入调度名称"
+                    :placeholder="t('codeScriptSchedule.enterScheduleName')"
                     clearable
                     @keyup.enter="getList"
                     @change="(val) => { if (!val) getList(); }"
@@ -26,13 +26,13 @@
                 </el-form-item>
               </el-col> -->
               <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="6" :xl="5">
-                <el-form-item label="代码脚本">
+                <el-form-item :label="t('codeScriptSchedule.codeScript')">
                   <el-select
                     v-model="queryParams.scriptId"
                     size="small"
                     filterable
                     clearable
-                    placeholder="请选择代码脚本"
+                    :placeholder="t('codeScriptSchedule.selectCodeScript')"
                     @change="handleScriptFilterChange"
                   >
                     <el-option
@@ -45,19 +45,19 @@
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4" :xl="3">
-                <el-form-item label="启用状态">
+                <el-form-item :label="t('codeScriptSchedule.enabledStatus')">
                   <el-select v-model="queryParams.isEnabled" size="small" clearable @change="getList">
-                    <el-option label="启用" :value="true" />
-                    <el-option label="停用" :value="false" />
+                    <el-option :label="t('codeScriptSchedule.enabled')" :value="true" />
+                    <el-option :label="t('codeScriptSchedule.disabled')" :value="false" />
                   </el-select>
                 </el-form-item>
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
               <el-button size="small" class="!ml-0" type="primary" :icon="Search" :loading="loading" @click="getList">
-                搜索
+                {{ t('common.search') }}
               </el-button>
-              <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">新增调度</el-button>
+              <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">{{ t('codeScriptSchedule.addSchedule') }}</el-button>
               <el-button
                 size="small"
                 class="!ml-0"
@@ -65,7 +65,7 @@
                 plain
                 @click="handleDelete()"
               >
-                批量删除 ({{ ids.length }})
+                {{ t('common.batchDelete') }} ({{ ids.length }})
               </el-button>
             </div>
           </el-form>
@@ -85,7 +85,7 @@
               >
                 <template #scriptSlot="{ row }">
                   <div class="flex flex-col">
-                    <span>{{ row.scriptName || `脚本#${row.scriptId}` }}</span>
+                    <span>{{ row.scriptName || t('codeScriptSchedule.scriptIdLabel', { id: row.scriptId }) }}</span>
                     <span class="text-xs text-[var(--el-text-color-secondary)]"
                       >ID {{ row.scriptId }}</span
                     >
@@ -102,7 +102,11 @@
                 </template>
                 <template #triggerSlot="{ row }">
                   <div class="flex flex-col">
-                    <span>{{ row.triggerType === "cron" ? "固定时间" : "间隔执行" }}</span>
+                    <span>{{
+                      row.triggerType === "cron"
+                        ? t('codeScriptSchedule.fixedTime')
+                        : t('codeScriptSchedule.intervalExecution')
+                    }}</span>
                     <span class="text-xs text-[var(--el-text-color-secondary)]">{{
                       formatTrigger(row)
                     }}</span>
@@ -110,7 +114,11 @@
                 </template>
                 <template #enabledSlot="{ row }">
                   <el-tag :type="row.isEnabled ? 'success' : 'info'" size="small">
-                    {{ row.isEnabled ? "启用" : "停用" }}
+                    {{
+                      row.isEnabled
+                        ? t('codeScriptSchedule.enabled')
+                        : t('codeScriptSchedule.disabled')
+                    }}
                   </el-tag>
                 </template>
                 <template #lastStatusSlot="{ row }">
@@ -133,16 +141,16 @@
                     @command="(command) => handleOperationCommand(String(command), row)"
                     class="operation-dropdown"
                   >
-                    <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
+                    <el-button type="primary" link size="small" class="operation-trigger-button">{{ t('common.operation') }}</el-button>
                     <template #dropdown>
                       <el-dropdown-menu class="operation-menu-compact">
-                        <el-dropdown-item command="run">立即执行</el-dropdown-item>
+                        <el-dropdown-item command="run">{{ t('codeScriptSchedule.runNow') }}</el-dropdown-item>
                         <el-dropdown-item command="toggle">{{
-                          row.isEnabled ? "停用" : "启用"
+                          row.isEnabled ? t('codeScriptSchedule.disabled') : t('codeScriptSchedule.enabled')
                         }}</el-dropdown-item>
-                        <el-dropdown-item command="records">执行记录</el-dropdown-item>
-                        <el-dropdown-item command="edit">编辑</el-dropdown-item>
-                        <el-dropdown-item command="delete" divided class="operation-menu-item--danger">删除</el-dropdown-item>
+                        <el-dropdown-item command="records">{{ t('codeScriptSchedule.executionRecords') }}</el-dropdown-item>
+                        <el-dropdown-item command="edit">{{ t('common.edit') }}</el-dropdown-item>
+                        <el-dropdown-item command="delete" divided class="operation-menu-item--danger">{{ t('common.delete') }}</el-dropdown-item>
                       </el-dropdown-menu>
                     </template>
                   </el-dropdown>
@@ -179,21 +187,21 @@
       >
         <div class="grid gap-4 lg:grid-cols-2">
           <div class="rounded border border-solid border-[var(--el-border-color-light)] p-4">
-            <div class="mb-3 text-sm font-600">基础信息</div>
-            <el-form-item label="调度名称" prop="name" class="mb-4">
+            <div class="mb-3 text-sm font-600">{{ t('codeScriptSchedule.baseInfo') }}</div>
+            <el-form-item :label="t('codeScriptSchedule.scheduleName')" prop="name" class="mb-4">
               <el-input
                 v-model="form.name"
                 maxlength="200"
                 show-word-limit
-                placeholder="请输入调度名称"
+                :placeholder="t('codeScriptSchedule.enterScheduleName')"
               />
             </el-form-item>
-            <el-form-item label="代码脚本" prop="scriptId" class="mb-4">
+            <el-form-item :label="t('codeScriptSchedule.codeScript')" prop="scriptId" class="mb-4">
               <el-select
                 v-model="form.scriptId"
                 filterable
                 class="w-full"
-                placeholder="请选择代码脚本"
+                :placeholder="t('codeScriptSchedule.selectCodeScript')"
               >
                 <el-option
                   v-for="script in scriptOptions"
@@ -209,28 +217,28 @@
                 <el-radio label="production">生产环境</el-radio>
               </el-radio-group>
             </el-form-item> -->
-            <el-form-item label="是否启用" prop="isEnabled" class="mb-0">
+            <el-form-item :label="t('codeScriptSchedule.whetherEnabled')" prop="isEnabled" class="mb-0">
               <el-switch v-model="form.isEnabled" />
             </el-form-item>
           </div>
 
           <div class="rounded border border-solid border-[var(--el-border-color-light)] p-4">
-            <div class="mb-3 text-sm font-600">执行配置</div>
-            <el-form-item label="触发方式" prop="triggerType" class="mb-4">
+            <div class="mb-3 text-sm font-600">{{ t('codeScriptSchedule.executionConfig') }}</div>
+            <el-form-item :label="t('codeScriptSchedule.triggerType')" prop="triggerType" class="mb-4">
               <el-radio-group v-model="form.triggerType">
-                <el-radio label="cron">固定时间</el-radio>
-                <el-radio label="interval">间隔执行</el-radio>
+                <el-radio label="cron">{{ t('codeScriptSchedule.fixedTime') }}</el-radio>
+                <el-radio label="interval">{{ t('codeScriptSchedule.intervalExecution') }}</el-radio>
               </el-radio-group>
             </el-form-item>
             <el-form-item
               v-if="form.triggerType === 'cron'"
-              label="Cron 表达式"
+              :label="t('codeScriptSchedule.cronExpression')"
               prop="cronExpr"
               class="mb-4"
             >
-              <el-input v-model="form.cronExpr" placeholder="例如：0 9 * * *" />
+              <el-input v-model="form.cronExpr" :placeholder="t('codeScriptSchedule.cronExprPlaceholder')" />
             </el-form-item>
-            <el-form-item v-else label="间隔分钟" prop="intervalMinutes" class="mb-4">
+            <el-form-item v-else :label="t('codeScriptSchedule.intervalMinutes')" prop="intervalMinutes" class="mb-4">
               <el-input-number
                 v-model="form.intervalMinutes"
                 :min="1"
@@ -238,7 +246,7 @@
                 class="w-full!"
               />
             </el-form-item>
-            <el-form-item label="超时覆盖(ms)" prop="timeoutMsOverride" class="mb-0">
+            <el-form-item :label="t('codeScriptSchedule.timeoutOverrideMs')" prop="timeoutMsOverride" class="mb-0">
               <el-input-number
                 v-model="form.timeoutMsOverride"
                 :min="100"
@@ -250,13 +258,13 @@
         </div>
 
         <div class="rounded border border-solid border-[var(--el-border-color-light)] p-4">
-          <div class="mb-3 text-sm font-600">参数覆盖</div>
+          <div class="mb-3 text-sm font-600">{{ t('codeScriptSchedule.paramsOverride') }}</div>
           <el-form-item label-width="0" prop="paramsOverride" class="mb-0">
             <el-input
               v-model="form.paramsOverride"
               type="textarea"
               :rows="12"
-              placeholder='请输入 JSON，例如 { "shopId": 1 }'
+              :placeholder="t('codeScriptSchedule.paramsOverridePlaceholder')"
             />
           </el-form-item>
         </div>
@@ -266,7 +274,7 @@
         <div
           class="rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-4"
         >
-          <div class="mb-3 text-sm font-600">Cron 快捷模板</div>
+          <div class="mb-3 text-sm font-600">{{ t('codeScriptSchedule.cronQuickTemplates') }}</div>
           <div class="flex flex-wrap gap-2">
             <el-button
               v-for="item in cronTemplates"
@@ -282,7 +290,7 @@
         <div
           class="rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-4"
         >
-          <div class="mb-3 text-sm font-600">Cron 参考</div>
+          <div class="mb-3 text-sm font-600">{{ t('codeScriptSchedule.cronReference') }}</div>
           <div class="space-y-2 text-xs leading-6 text-[var(--el-text-color-secondary)]">
             <div v-for="item in cronTemplates" :key="`${item.expr}-desc`">
               {{ item.label }}:
@@ -294,12 +302,12 @@
       </div>
     </div>
     <template #footer>
-      <el-button @click="dialogVisible = false">取消</el-button>
-      <el-button type="primary" :loading="submitLoading" @click="submitForm">保存</el-button>
+      <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
+      <el-button type="primary" :loading="submitLoading" @click="submitForm">{{ t('common.save') }}</el-button>
     </template>
   </el-dialog>
 
-  <el-dialog title="执行记录" v-model="executionDialogVisible" fullscreen align-center>
+  <el-dialog :title="t('codeScriptSchedule.executionRecords')" v-model="executionDialogVisible" fullscreen align-center>
     <div class="flex h-[calc(100vh-120px)] flex-col">
       <div class="mb-3 flex items-center justify-between gap-3">
         <div class="flex items-center gap-2">
@@ -315,9 +323,9 @@
             :disabled="!executionIds.length"
             @click="handleDeleteExecution()"
           >
-            批量删除 ({{ executionIds.length }})
+            {{ t('common.batchDelete') }} ({{ executionIds.length }})
           </el-button>
-          <el-button size="small" type="primary" @click="getExecutionList">刷新记录</el-button>
+          <el-button size="small" type="primary" @click="getExecutionList">{{ t('codeScriptSchedule.refreshRecords') }}</el-button>
         </div>
       </div>
 
@@ -346,12 +354,12 @@
               @command="(command) => handleExecutionOperationCommand(String(command), row)"
               class="operation-dropdown"
             >
-              <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
+              <el-button type="primary" link size="small" class="operation-trigger-button">{{ t('common.operation') }}</el-button>
               <template #dropdown>
                 <el-dropdown-menu class="operation-menu-compact">
-                  <el-dropdown-item v-if="isExecutionCancellable(row)" command="cancel">取消</el-dropdown-item>
-                  <el-dropdown-item command="detail">详情</el-dropdown-item>
-                  <el-dropdown-item command="delete" divided class="operation-menu-item--danger">删除</el-dropdown-item>
+                  <el-dropdown-item v-if="isExecutionCancellable(row)" command="cancel">{{ t('common.cancel') }}</el-dropdown-item>
+                  <el-dropdown-item command="detail">{{ t('common.detail') }}</el-dropdown-item>
+                  <el-dropdown-item command="delete" divided class="operation-menu-item--danger">{{ t('common.delete') }}</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -370,7 +378,7 @@
     </div>
   </el-dialog>
 
-  <el-dialog title="执行详情" v-model="executionDetailVisible" fullscreen align-center>
+  <el-dialog :title="t('codeScriptSchedule.executionDetail')" v-model="executionDetailVisible" fullscreen align-center>
     <div class="execution-detail-dialog" v-loading="executionDetailLoading">
       <div class="execution-detail-dialog__summary">
         <div class="execution-detail-dialog__summary-main">
@@ -379,30 +387,30 @@
               executionDetail.status || "-"
             }}</el-tag>
             <span class="execution-detail-dialog__status-text">
-              当前调度执行状态与关联脚本上下文
+              {{ t('codeScriptSchedule.statusContext') }}
             </span>
           </div>
           <div class="execution-detail-dialog__meta-grid">
             <div class="execution-detail-dialog__meta-item">
-              <div class="execution-detail-dialog__meta-label">调度名称</div>
+              <div class="execution-detail-dialog__meta-label">{{ t('codeScriptSchedule.scheduleName') }}</div>
               <div class="execution-detail-dialog__meta-value">
                 {{ executionDetail.scheduleName || "-" }}
               </div>
             </div>
             <div class="execution-detail-dialog__meta-item">
-              <div class="execution-detail-dialog__meta-label">脚本名称</div>
+              <div class="execution-detail-dialog__meta-label">{{ t('codeScriptSchedule.scriptName') }}</div>
               <div class="execution-detail-dialog__meta-value">
                 {{ executionDetail.scriptName || "-" }}
               </div>
             </div>
             <div class="execution-detail-dialog__meta-item">
-              <div class="execution-detail-dialog__meta-label">脚本执行 ID</div>
+              <div class="execution-detail-dialog__meta-label">{{ t('codeScriptSchedule.scriptExecutionId') }}</div>
               <div class="execution-detail-dialog__meta-value is-mono">
                 {{ executionDetail.codeScriptRunId || "-" }}
               </div>
             </div>
             <div class="execution-detail-dialog__meta-item">
-              <div class="execution-detail-dialog__meta-label">沙盒运行 ID</div>
+              <div class="execution-detail-dialog__meta-label">{{ t('codeScriptSchedule.sandboxRunId') }}</div>
               <div class="execution-detail-dialog__meta-value is-mono">
                 {{ executionDetail.sandboxRunId || "-" }}
               </div>
@@ -417,26 +425,26 @@
             plain
             @click="handleCancelExecution(executionDetail)"
           >
-            取消任务
+            {{ t('codeScriptSchedule.cancelTask') }}
           </el-button>
         </div>
       </div>
       <div class="execution-detail-dialog__content">
         <div class="execution-detail-panel">
-          <div class="execution-detail-panel__title">执行结果</div>
+          <div class="execution-detail-panel__title">{{ t('codeScriptSchedule.executionResult') }}</div>
           <pre class="execution-detail-panel__pre">{{
             formatJson(executionDetail.runResult)
           }}</pre>
         </div>
         <div class="execution-detail-side">
           <div class="execution-detail-panel">
-            <div class="execution-detail-panel__title">参数快照</div>
+            <div class="execution-detail-panel__title">{{ t('codeScriptSchedule.paramsSnapshot') }}</div>
             <pre class="execution-detail-panel__pre">{{
               formatJson(executionDetail.paramsSnapshotJson)
             }}</pre>
           </div>
           <div class="execution-detail-panel">
-            <div class="execution-detail-panel__title">日志</div>
+            <div class="execution-detail-panel__title">{{ t('codeScriptSchedule.logs') }}</div>
             <div class="execution-detail-panel__log">
               <div
                 v-for="(line, index) in formattedExecutionLogLines"
@@ -460,6 +468,7 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { Plus, Search } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
 import { buildOperationColumn, commonGridOptions } from "@/common/table";
+import { useI18n } from "@/hooks/web/useI18n";
 import Pagination from "@/components/Pagination/index.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import { formatDate } from "@/utils/formatTime";
@@ -478,6 +487,7 @@ import {
   updateCodeScriptSchedule,
 } from "@/api/codeScriptSchedule";
 
+const { t } = useI18n();
 const { height } = useWindowSize();
 const route = useRoute();
 const router = useRouter();
@@ -556,20 +566,20 @@ const LOG_TYPE_CLASS_MAP: Record<string, string> = {
 };
 
 const cronTemplates = [
-  { label: "每 5 分钟", expr: "*/5 * * * *", desc: "适合高频轻量任务" },
-  { label: "每 10 分钟", expr: "*/10 * * * *", desc: "常用轮询任务" },
-  { label: "每 30 分钟", expr: "*/30 * * * *", desc: "中频同步任务" },
-  { label: "每小时整点", expr: "0 * * * *", desc: "每小时执行一次" },
-  { label: "每天 09:00", expr: "0 9 * * *", desc: "每天上午 9 点" },
-  { label: "每天 12:00", expr: "0 12 * * *", desc: "每天中午 12 点" },
-  { label: "每天 18:00", expr: "0 18 * * *", desc: "每天下午 6 点" },
-  { label: "每天 00:30", expr: "30 0 * * *", desc: "适合夜间批处理" },
-  { label: "工作日 09:00", expr: "0 9 * * 1-5", desc: "周一到周五上午 9 点" },
-  { label: "工作日 18:00", expr: "0 18 * * 1-5", desc: "周一到周五下午 6 点" },
-  { label: "每周一 09:00", expr: "0 9 * * 1", desc: "每周一上午 9 点" },
-  { label: "每周日 23:00", expr: "0 23 * * 0", desc: "每周日晚上 11 点" },
-  { label: "每月 1 日 09:00", expr: "0 9 1 * *", desc: "每月 1 日上午 9 点" },
-  { label: "每月最后一天 23:00", expr: "0 23 28-31 * *", desc: "需脚本内自行兜底最后一天判断" },
+  { label: t('codeScriptSchedule.cronEvery5Min'), expr: "*/5 * * * *", desc: t('codeScriptSchedule.cronHighFreqLight') },
+  { label: t('codeScriptSchedule.cronEvery10Min'), expr: "*/10 * * * *", desc: t('codeScriptSchedule.cronCommonPolling') },
+  { label: t('codeScriptSchedule.cronEvery30Min'), expr: "*/30 * * * *", desc: t('codeScriptSchedule.cronMidFreqSync') },
+  { label: t('codeScriptSchedule.cronHourly'), expr: "0 * * * *", desc: t('codeScriptSchedule.cronHourlyOnce') },
+  { label: t('codeScriptSchedule.cronDaily9'), expr: "0 9 * * *", desc: t('codeScriptSchedule.cronDaily9Desc') },
+  { label: t('codeScriptSchedule.cronDaily12'), expr: "0 12 * * *", desc: t('codeScriptSchedule.cronDaily12Desc') },
+  { label: t('codeScriptSchedule.cronDaily18'), expr: "0 18 * * *", desc: t('codeScriptSchedule.cronDaily18Desc') },
+  { label: t('codeScriptSchedule.cronDaily0030'), expr: "30 0 * * *", desc: t('codeScriptSchedule.cronNightBatch') },
+  { label: t('codeScriptSchedule.cronWorkday9'), expr: "0 9 * * 1-5", desc: t('codeScriptSchedule.cronWorkday9Desc') },
+  { label: t('codeScriptSchedule.cronWorkday18'), expr: "0 18 * * 1-5", desc: t('codeScriptSchedule.cronWorkday18Desc') },
+  { label: t('codeScriptSchedule.cronMonday9'), expr: "0 9 * * 1", desc: t('codeScriptSchedule.cronMonday9Desc') },
+  { label: t('codeScriptSchedule.cronSunday23'), expr: "0 23 * * 0", desc: t('codeScriptSchedule.cronSunday23Desc') },
+  { label: t('codeScriptSchedule.cronMonthly1'), expr: "0 9 1 * *", desc: t('codeScriptSchedule.cronMonthly1Desc') },
+  { label: t('codeScriptSchedule.cronMonthlyLastDay'), expr: "0 23 28-31 * *", desc: t('codeScriptSchedule.cronMonthlyLastDayDesc') },
 ];
 
 const gridOptions = ref({
@@ -579,22 +589,22 @@ const gridOptions = ref({
   checkboxConfig: { reserve: true },
   columns: [
     { type: "checkbox", width: 48, reserve: true },
-    { title: "ID", field: "id", width: 80 },
-    { title: "调度名称", field: "name", minWidth: 180, showOverflow: true },
+    { title: t('common.id'), field: "id", width: 80 },
+    { title: t('codeScriptSchedule.scheduleName'), field: "name", minWidth: 180, showOverflow: true },
     {
-      title: "创建人",
+      title: t('codeScriptSchedule.creator'),
       field: "uploader",
       width: 140,
       showOverflow: true,
       formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
     },
-    { title: "关联脚本", field: "scriptName", minWidth: 180, slots: { default: "scriptSlot" } },
+    { title: t('codeScriptSchedule.relatedScript'), field: "scriptName", minWidth: 180, slots: { default: "scriptSlot" } },
     // { title: "运行环境", field: "runtimeEnv", width: 110, slots: { default: "envSlot" } },
-    { title: "触发方式", field: "triggerType", minWidth: 180, slots: { default: "triggerSlot" } },
-    { title: "启用状态", field: "isEnabled", width: 100, slots: { default: "enabledSlot" } },
-    { title: "执行状态", field: "lastStatus", width: 110, slots: { default: "lastStatusSlot" } },
+    { title: t('codeScriptSchedule.triggerType'), field: "triggerType", minWidth: 180, slots: { default: "triggerSlot" } },
+    { title: t('codeScriptSchedule.enabledStatus'), field: "isEnabled", width: 100, slots: { default: "enabledSlot" } },
+    { title: t('codeScriptSchedule.executionStatus'), field: "lastStatus", width: 110, slots: { default: "lastStatusSlot" } },
     {
-      title: "下次执行",
+      title: t('codeScriptSchedule.nextRun'),
       field: "nextRunAt",
       width: 170,
       showOverflow: true,
@@ -611,32 +621,32 @@ const executionGridOptions = ref({
   checkboxConfig: { reserve: true },
   columns: [
     { type: "checkbox", width: 48, reserve: true },
-    { title: "记录ID", field: "id", width: 90 },
+    { title: t('codeScriptSchedule.recordId'), field: "id", width: 90 },
     {
-      title: "创建人",
+      title: t('codeScriptSchedule.creator'),
       field: "uploader",
       width: 140,
       showOverflow: true,
       formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
     },
-    { title: "状态", field: "status", width: 100, slots: { default: "executionStatusSlot" } },
-    { title: "触发来源", field: "triggerSource", width: 100 },
+    { title: t('codeScriptSchedule.status'), field: "status", width: 100, slots: { default: "executionStatusSlot" } },
+    { title: t('codeScriptSchedule.triggerSource'), field: "triggerSource", width: 100 },
     {
-      title: "计划执行时间",
+      title: t('codeScriptSchedule.plannedExecuteTime'),
       field: "scheduledAt",
       width: 170,
       showOverflow: true,
       slots: { default: "scheduledAtSlot" },
     },
     {
-      title: "开始时间",
+      title: t('common.startTimeText'),
       field: "startedAt",
       width: 170,
       showOverflow: true,
       slots: { default: "startedAtSlot" },
     },
-    { title: "耗时(ms)", field: "durationMs", width: 100 },
-    { title: "沙盒ID", field: "sandboxRunId", minWidth: 180, showOverflow: true },
+    { title: t('codeScriptSchedule.durationMs'), field: "durationMs", width: 100 },
+    { title: t('codeScriptSchedule.sandboxId'), field: "sandboxRunId", minWidth: 180, showOverflow: true },
     buildOperationColumn("executionOperationSlot"),
   ],
 } as any);
@@ -672,21 +682,23 @@ watch(
 );
 
 const rules = {
-  name: [{ required: true, message: "请输入调度名称", trigger: "blur" }],
-  scriptId: [{ required: true, message: "请选择代码脚本", trigger: "change" }],
-  runtimeEnv: [{ required: true, message: "请选择运行环境", trigger: "change" }],
-  triggerType: [{ required: true, message: "请选择触发方式", trigger: "change" }],
-  cronExpr: [{ required: true, message: "请输入 cron 表达式", trigger: "blur" }],
-  intervalMinutes: [{ required: true, message: "请输入间隔分钟", trigger: "change" }],
-  paramsOverride: [{ required: true, message: "请输入参数覆盖 JSON", trigger: "blur" }],
+  name: [{ required: true, message: t('codeScriptSchedule.enterScheduleName'), trigger: "blur" }],
+  scriptId: [{ required: true, message: t('codeScriptSchedule.selectCodeScript'), trigger: "change" }],
+  runtimeEnv: [{ required: true, message: t('codeScriptSchedule.selectRuntimeEnv'), trigger: "change" }],
+  triggerType: [{ required: true, message: t('codeScriptSchedule.selectTriggerType'), trigger: "change" }],
+  cronExpr: [{ required: true, message: t('codeScriptSchedule.enterCronExpr'), trigger: "blur" }],
+  intervalMinutes: [{ required: true, message: t('codeScriptSchedule.enterIntervalMinutes'), trigger: "change" }],
+  paramsOverride: [{ required: true, message: t('codeScriptSchedule.enterParamsOverride'), trigger: "blur" }],
 };
 
 function formatRuntimeEnv(value: string) {
-  return value === "production" ? "生产环境" : "开发环境";
+  return value === "production" ? t('codeScriptSchedule.productionEnv') : t('codeScriptSchedule.developmentEnv');
 }
 
 function formatTrigger(row: any) {
-  return row.triggerType === "cron" ? row.cronExpr || "-" : `每 ${row.intervalMinutes || 0} 分钟`;
+  return row.triggerType === "cron"
+    ? row.cronExpr || "-"
+    : t('codeScriptSchedule.everyMinutes', { minutes: row.intervalMinutes || 0 });
 }
 
 function getExecutionStatusType(status: string) {
@@ -770,7 +782,7 @@ function normalizeLogLines(logs: any, errorText?: string) {
   }
 
   if (!result.length) {
-    appendLine("暂无日志", "info");
+    appendLine(t('codeScriptSchedule.noLogs'), "info");
   }
 
   return result;
@@ -824,7 +836,7 @@ async function getList() {
     total.value = res.total || 0;
     ids.value = [];
   } catch (error: any) {
-    ElMessage.error(error?.message || "获取脚本调度列表失败");
+    ElMessage.error(error?.message || t('codeScriptSchedule.getListFailed'));
   } finally {
     loading.value = false;
   }
@@ -839,7 +851,7 @@ async function getExecutionList() {
     executionTotal.value = res.total || 0;
     executionIds.value = [];
   } catch (error: any) {
-    ElMessage.error(error?.message || "获取执行记录失败");
+    ElMessage.error(error?.message || t('codeScriptSchedule.getExecutionListFailed'));
   } finally {
     executionLoading.value = false;
   }
@@ -898,7 +910,7 @@ function resetForm() {
 
 function handleAdd() {
   isEdit.value = false;
-  dialogTitle.value = "新增脚本调度";
+  dialogTitle.value = t('codeScriptSchedule.addScheduleTitle');
   resetForm();
   if (queryParams.scriptId) {
     form.scriptId = queryParams.scriptId;
@@ -909,7 +921,7 @@ function handleAdd() {
 async function handleEdit(row: any) {
   const detail = await getCodeScriptSchedule(row.id);
   isEdit.value = true;
-  dialogTitle.value = "编辑脚本调度";
+  dialogTitle.value = t('codeScriptSchedule.editScheduleTitle');
   form.id = detail.id;
   form.name = detail.name;
   form.scriptId = detail.scriptId;
@@ -941,15 +953,15 @@ async function submitForm() {
     };
     if (isEdit.value) {
       await updateCodeScriptSchedule(payload);
-      ElMessage.success("脚本调度更新成功");
+      ElMessage.success(t('codeScriptSchedule.updateScheduleSuccess'));
     } else {
       await createCodeScriptSchedule(payload);
-      ElMessage.success("脚本调度创建成功");
+      ElMessage.success(t('codeScriptSchedule.createScheduleSuccess'));
     }
     dialogVisible.value = false;
     getList();
   } catch (error: any) {
-    ElMessage.error(error?.message || "保存脚本调度失败");
+    ElMessage.error(error?.message || t('codeScriptSchedule.saveScheduleFailed'));
   } finally {
     submitLoading.value = false;
   }
@@ -958,38 +970,50 @@ async function submitForm() {
 async function handleDelete(row?: any) {
   const deleteIds = row ? [row.id] : [...ids.value];
   if (!deleteIds.length) {
-    ElMessage.warning("请选择要删除的调度任务");
+    ElMessage.warning(t('codeScriptSchedule.selectScheduleToDelete'));
     return;
   }
-  await ElMessageBox.confirm(`确认删除选中的 ${deleteIds.length} 条脚本调度吗？`, "删除提示", {
-    type: "warning",
-  });
+  await ElMessageBox.confirm(
+    t('codeScriptSchedule.confirmDeleteSchedules', { count: deleteIds.length }),
+    t('codeScriptSchedule.deleteTip'),
+    {
+      type: "warning",
+    },
+  );
   try {
     await deleteCodeScriptSchedule({ ids: deleteIds });
-    ElMessage.success("删除成功");
+    ElMessage.success(t('common.deleteSuccess'));
     getList();
   } catch (error: any) {
-    ElMessage.error(error?.message || "删除失败");
+    ElMessage.error(error?.message || t('common.deleteFailed'));
   }
 }
 
 async function handleToggle(row: any) {
   try {
     await toggleCodeScriptSchedule({ id: row.id, enabled: !row.isEnabled });
-    ElMessage.success(`已${row.isEnabled ? "停用" : "启用"}调度`);
+    ElMessage.success(
+      t('codeScriptSchedule.toggleScheduleDone', {
+        status: row.isEnabled ? t('codeScriptSchedule.disabled') : t('codeScriptSchedule.enabled'),
+      }),
+    );
     getList();
   } catch (error: any) {
-    ElMessage.error(error?.message || "状态切换失败");
+    ElMessage.error(error?.message || t('codeScriptSchedule.toggleFailed'));
   }
 }
 
 async function handleRunNow(row: any) {
-  await ElMessageBox.confirm(`确认立即执行调度「${row.name}」吗？`, "立即执行", {
-    type: "warning",
-  });
+  await ElMessageBox.confirm(
+    t('codeScriptSchedule.confirmRunNow', { name: row.name }),
+    t('codeScriptSchedule.runNow'),
+    {
+      type: "warning",
+    },
+  );
   try {
     const detail = await runNowCodeScriptSchedule({ id: row.id });
-    ElMessage.success("已触发立即执行");
+    ElMessage.success(t('codeScriptSchedule.runNowTriggered'));
     await getList();
     currentSchedule.value = row;
     executionQuery.scheduleId = row.id;
@@ -1000,7 +1024,7 @@ async function handleRunNow(row: any) {
       await openExecutionDetail(detail);
     }
   } catch (error: any) {
-    ElMessage.error(error?.message || "立即执行失败");
+    ElMessage.error(error?.message || t('codeScriptSchedule.runNowFailed'));
   }
 }
 
@@ -1019,7 +1043,7 @@ async function openExecutionDetail(row: any) {
     const detail = await getCodeScriptScheduleExecution(row.id);
     Object.assign(executionDetail, detail || {});
   } catch (error: any) {
-    ElMessage.error(error?.message || "获取执行详情失败");
+    ElMessage.error(error?.message || t('codeScriptSchedule.getExecutionDetailFailed'));
   } finally {
     executionDetailLoading.value = false;
   }
@@ -1028,23 +1052,27 @@ async function openExecutionDetail(row: any) {
 async function handleDeleteExecution(row?: any) {
   const deleteIds = row?.id ? [row.id] : [...executionIds.value];
   if (!deleteIds.length) {
-    ElMessage.warning("请选择要删除的执行记录");
+    ElMessage.warning(t('codeScriptSchedule.selectExecutionToDelete'));
     return;
   }
 
-  await ElMessageBox.confirm(`确认删除选中的 ${deleteIds.length} 条执行记录吗？`, "删除提示", {
-    type: "warning",
-  });
+  await ElMessageBox.confirm(
+    t('codeScriptSchedule.confirmDeleteExecutions', { count: deleteIds.length }),
+    t('codeScriptSchedule.deleteTip'),
+    {
+      type: "warning",
+    },
+  );
 
   try {
     await deleteCodeScriptScheduleExecution({ ids: deleteIds });
-    ElMessage.success("删除成功");
+    ElMessage.success(t('common.deleteSuccess'));
     if (row?.id && executionDetailVisible.value && executionDetail.id === row.id) {
       executionDetailVisible.value = false;
     }
     await getExecutionList();
   } catch (error: any) {
-    ElMessage.error(error?.message || "删除执行记录失败");
+    ElMessage.error(error?.message || t('codeScriptSchedule.deleteExecutionFailed'));
   }
 }
 
@@ -1058,22 +1086,26 @@ function refreshExecutionDetailIfNeeded(id?: number) {
 async function handleCancelExecution(row: any) {
   if (!row?.id) return;
   if (!isExecutionCancellable(row)) {
-    ElMessage.warning("当前任务状态不可取消");
+    ElMessage.warning(t('codeScriptSchedule.notCancellable'));
     return;
   }
 
-  await ElMessageBox.confirm(`确认取消执行记录 #${row.id} 吗？`, "取消任务", {
-    confirmButtonText: "确认取消",
-    cancelButtonText: "继续执行",
-    type: "warning",
-  });
+  await ElMessageBox.confirm(
+    t('codeScriptSchedule.confirmCancelExecution', { id: row.id }),
+    t('codeScriptSchedule.cancelTask'),
+    {
+      confirmButtonText: t('codeScriptSchedule.confirmCancel'),
+      cancelButtonText: t('codeScriptSchedule.continueExecution'),
+      type: "warning",
+    },
+  );
 
   try {
     await cancelCodeScriptScheduleExecution({ id: row.id });
-    ElMessage.success("取消成功");
+    ElMessage.success(t('codeScriptSchedule.cancelSuccess'));
     await Promise.all([getList(), getExecutionList(), refreshExecutionDetailIfNeeded(row.id)]);
   } catch (error: any) {
-    ElMessage.error(error?.message || "取消执行失败");
+    ElMessage.error(error?.message || t('codeScriptSchedule.cancelFailed'));
   }
 }
 

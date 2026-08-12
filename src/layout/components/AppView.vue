@@ -3,6 +3,7 @@ import { useAppStore } from "@/store/modules/app";
 import { useTagsViewStore } from "@/store/modules/tagsView";
 import { Icon } from "@/components/Icon";
 import { useFullscreen } from "@vueuse/core";
+import SplitLayout from "./SplitLayout/index.vue";
 
 defineOptions({ name: "AppView" });
 
@@ -111,14 +112,12 @@ provide("reload", reload);
       <Icon :icon="isFullscreen ? 'zmdi:fullscreen-exit' : 'zmdi:fullscreen'" :size="14" />
     </button>
 
-    <router-view v-if="routerAlive">
-      <template #default="{ Component, route }">
-        <keep-alive :max="keepAliveMax">
-          <component :is="Component" v-if="shouldCacheRoute(route)" :key="getComponentKey(route)" />
-        </keep-alive>
-        <component :is="Component" v-if="!shouldCacheRoute(route)" :key="getComponentKey(route)" />
-      </template>
-    </router-view>
+    <SplitLayout
+      v-if="routerAlive"
+      :keep-alive-max="keepAliveMax"
+      :should-cache-route="shouldCacheRoute"
+      :get-component-key="getComponentKey"
+    />
   </section>
 </template>
 

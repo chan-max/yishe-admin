@@ -34,7 +34,9 @@ import {
 import { psdTemplateApi } from "@/api/psdTemplate";
 import { getPromptList } from "@/api/prompt";
 import TemuProductTemplateInspector from "./components/platform-inspectors/TemuProductTemplateInspector.vue";
+import { useI18n } from "@/hooks/web/useI18n";
 
+const { t } = useI18n();
 const userStore = useUserStore();
 const loading = ref(false);
 const deleteLoading = ref(false);
@@ -63,10 +65,10 @@ const gridOptions = computed(() => ({
   maxHeight: gridMaxHeight.value,
   columns: [
     { type: "checkbox", width: 50, fixed: "left" as const },
-    { field: "name", title: "配置名称", minWidth: 150 },
+    { field: "name", title: t("publishConfig.configName"), minWidth: 150 },
     {
       field: "taskType",
-      title: "任务类型",
+      title: t("publishConfig.taskType"),
       minWidth: 180,
       formatter: ({ row }) =>
         getTaskTypeLabel(
@@ -74,23 +76,24 @@ const gridOptions = computed(() => ({
           row?.platform,
         ),
     },
-    { field: "description", title: "描述", minWidth: 200, showOverflow: true },
+    { field: "description", title: t("common.description"), minWidth: 200, showOverflow: true },
     {
       field: "isActive",
-      title: "状态",
+      title: t("common.status"),
       width: 90,
-      formatter: ({ cellValue }) => (cellValue === false ? "停用" : "启用"),
+      formatter: ({ cellValue }) =>
+        cellValue === false ? t("publishConfig.disabled") : t("publishConfig.enabled"),
     },
     {
       field: "uploader",
-      title: "创建者",
+      title: t("publishConfig.creator"),
       minWidth: 120,
       formatter: ({ row }) =>
         row?.uploader?.account || row?.uploader?.name || row?.creator || row?.userId || "-",
     },
     {
       field: "createTime",
-      title: "创建时间",
+      title: t("common.createTime"),
       width: 160,
       formatter: ({ cellValue }) => formatTime(cellValue, "yyyy-MM-dd HH:mm"),
     },
@@ -212,28 +215,32 @@ const handleSelectionChange = (e: any) => {
 
 const handleBatchDelete = () => {
   if (!userStore.user?.isAdmin) {
-    return ElMessage.warning("无权限：仅管理员可执行删除操作");
+    return ElMessage.warning(t("publishConfig.noPermissionDelete"));
   }
   if (!selectedIds.value.length) {
-    ElMessage.warning("请先选择要删除的任务配置");
+    ElMessage.warning(t("publishConfig.selectDeleteTarget"));
     return;
   }
 
-  ElMessageBox.confirm(`确认删除选中的 ${selectedIds.value.length} 个任务配置吗？`, "批量删除", {
-    confirmButtonText: "确定",
-    cancelButtonText: "取消",
-    type: "warning",
-  }).then(async () => {
+  ElMessageBox.confirm(
+    t("publishConfig.batchDeleteConfirm", { count: selectedIds.value.length }),
+    t("common.batchDelete"),
+    {
+      confirmButtonText: t("common.confirm"),
+      cancelButtonText: t("common.cancel"),
+      type: "warning",
+    },
+  ).then(async () => {
     try {
       deleteLoading.value = true;
       // 并发删除所有选中的配置
       await Promise.all(selectedIds.value.map((id) => deletePublishConfigApi(String(id))));
-      ElMessage.success(`成功删除 ${selectedIds.value.length} 个任务配置`);
+      ElMessage.success(t("publishConfig.batchDeleteSuccess", { count: selectedIds.value.length }));
       selectedIds.value = [];
       await getList();
     } catch (err) {
       console.error(err);
-      ElMessage.error("批量删除失败");
+      ElMessage.error(t("publishConfig.batchDeleteFailed"));
     } finally {
       deleteLoading.value = false;
     }
@@ -316,14 +323,14 @@ const isFixedTitleMode = computed(
 );
 
 const titleConfigPanelTitle = computed(() =>
-  supportsFixedTitle.value ? "标题配置" : "AI 标题生成配置",
+  supportsFixedTitle.value ? t("publishConfig.titleConfig") : t("publishConfig.aiTitleConfig"),
 );
 
 const titleConfigPanelDesc = computed(() => {
   if (!supportsFixedTitle.value) {
-    return "标题模板与规则。";
+    return t("publishConfig.titleConfigDesc");
   }
-  return isFixedTitleMode.value ? "固定标题优先，不走 AI 生成。" : "支持切换为 AI 生成标题。";
+  return isFixedTitleMode.value ? t("publishConfig.fixedTitlePriority") : t("publishConfig.switchToAiTitle");
 });
 
 const appendImageUrlValidation = computed(() => {
@@ -359,11 +366,11 @@ const platformImageLimitTip = computed(() => {
   const platform = resolveTaskTypePlatform(form.taskType);
 
   if (platform === "doudian") {
-    return "抖店商品图最多 5 个";
+    return t("publishConfig.doudianImageLimit");
   }
 
   if (platform === "kuaishou_shop") {
-    return "快手小店商品图最多 9 个";
+    return t("publishConfig.kuaishouImageLimit");
   }
 
   return "";
@@ -589,7 +596,7 @@ async function loadTitlePromptOptions() {
     titlePromptOptions.value = Array.isArray((res as any)?.list) ? (res as any).list : [];
   } catch (error) {
     console.error("加载标题提示词失败:", error);
-    ElMessage.error("加载标题提示词失败");
+    ElMessage.error(t("publishConfig.loadTitlePromptFailed"));
   } finally {
     titlePromptPickerLoading.value = false;
   }
@@ -609,7 +616,7 @@ function handleTitlePromptSelect(promptId: string | number | null) {
 
   if (!content) {
     if (promptId) {
-      ElMessage.warning("该提示词内容为空，无法填入标题模板");
+      ElMessage.warning(t("publishConfig.promptEmpty"));
     }
     titlePromptPickerValue.value = null;
     return;
@@ -617,7 +624,7 @@ function handleTitlePromptSelect(promptId: string | number | null) {
 
   titleConfigForm.templateContent = content;
   titlePromptPickerValue.value = null;
-  ElMessage.success("已将提示词内容填入标题模板");
+  ElMessage.success(t("publishConfig.promptFilled"));
 }
 
 function addUrlListItem(fieldKey: string) {
@@ -639,7 +646,7 @@ function getUrlListItemError(fieldKey: string, index: number) {
   const invalidItem = appendImageUrlValidation.value.invalidUrls.find(
     (item) => item.index === index,
   );
-  return invalidItem ? "仅支持 http/https URL" : "";
+  return invalidItem ? t("publishConfig.onlyHttpUrl") : "";
 }
 
 function isTemuProductTemplateField(field: { key?: string; type?: string }) {
@@ -714,7 +721,9 @@ const taskTypeOptions = computed(() => {
 
   return [
     {
-      label: `${getTaskTypeLabel(currentTaskType, currentPlatform)}（历史配置）`,
+      label: t("publishConfig.historicalConfig", {
+        label: getTaskTypeLabel(currentTaskType, currentPlatform),
+      }),
       value: currentTaskType,
       platform: currentPlatform,
       taskKind: currentTaskConfig.taskKind,
@@ -724,8 +733,8 @@ const taskTypeOptions = computed(() => {
 });
 
 const rules = {
-  name: [{ required: true, message: "请输入配置名称", trigger: "blur" }],
-  taskType: [{ required: true, message: "请选择任务类型", trigger: "change" }],
+  name: [{ required: true, message: t("publishConfig.enterConfigName"), trigger: "blur" }],
+  taskType: [{ required: true, message: t("publishConfig.selectTaskType"), trigger: "change" }],
 };
 
 function resetTemplateBindingState() {
@@ -763,11 +772,9 @@ function parseTemplateBindingConfigText(text: string): any {
       if (typeof result === "object" && result !== null) {
         return result;
       }
-      throw new Error("解析结果不是对象");
+      throw new Error(t("publishConfig.psdParseNotObject"));
     } catch {
-      throw new Error(
-        'PSD 配置格式错误：请输入有效的 JSON 格式（如：{"images": []}）或 JS 对象格式（如：{images: []}）',
-      );
+      throw new Error(t("publishConfig.psdFormatError"));
     }
   }
 }
@@ -802,7 +809,7 @@ async function hydrateTemplateBinding(psdTemplateId?: string | null) {
     const detail = await psdTemplateApi.getPsdTemplateDetail(normalizedId);
     selectedTemplateBinding.value = normalizeTemplateBindingTemplate(detail) || {
       id: normalizedId,
-      name: "模板信息加载失败",
+      name: t("publishConfig.templateLoadFailed"),
       thumbnail: "",
       description: "",
       psdTemplateConfig: null,
@@ -819,7 +826,7 @@ async function hydrateTemplateBinding(psdTemplateId?: string | null) {
     console.error("加载绑定模板详情失败:", error);
     selectedTemplateBinding.value = {
       id: normalizedId,
-      name: "模板不存在或无权访问",
+      name: t("publishConfig.templateNotFound"),
       thumbnail: "",
       description: "",
       psdTemplateConfig: null,
@@ -848,7 +855,7 @@ async function loadTemplateBindingDialogTemplates() {
     templateBindingDialogTotal.value = Number(res?.total ?? list.length);
   } catch (error) {
     console.error("加载套图模板失败:", error);
-    ElMessage.error("加载套图模板失败");
+    ElMessage.error(t("publishConfig.loadTemplateFailed"));
   } finally {
     templateBindingDialogLoading.value = false;
   }
@@ -885,7 +892,7 @@ function handleTemplateBindingDialogSizeChange(size: number) {
 function selectTemplateBinding(template: any) {
   const normalized = normalizeTemplateBindingTemplate(template);
   if (!normalized?.id) {
-    ElMessage.warning("模板数据异常，无法选择");
+    ElMessage.warning(t("publishConfig.templateDataInvalid"));
     return;
   }
 
@@ -904,7 +911,7 @@ function applyTemplateBindingDefaultConfig() {
 }
 
 const handleAdd = () => {
-  dialogTitle.value = "新增任务配置";
+  dialogTitle.value = t("publishConfig.addConfig");
   form.id = undefined;
   form.name = "";
   form.taskType = "";
@@ -927,7 +934,7 @@ const handleAdd = () => {
 };
 
 const handleEdit = async (row: any) => {
-  dialogTitle.value = "编辑任务配置";
+  dialogTitle.value = t("publishConfig.editConfig");
   form.id = row.id;
   form.name = row.name;
   form.taskType = row.taskType || derivePublishTaskTypeByPlatform(row.platform);
@@ -995,7 +1002,7 @@ const submitForm = async () => {
     }
 
     if (appendImageUrlValidation.value.hasError) {
-      ElMessage.error("附加图片地址校验未通过，请检查 http/https URL");
+      ElMessage.error(t("publishConfig.appendImageInvalid"));
       return;
     }
 
@@ -1007,25 +1014,25 @@ const submitForm = async () => {
     const resolvedPlatform = resolveTaskTypePlatform(form.taskType);
 
     if (!resolvedPlatform) {
-      ElMessage.error("当前任务类型尚未绑定可执行平台");
+      ElMessage.error(t("publishConfig.taskTypeNoPlatform"));
       return;
     }
 
     if (supportsFixedTitle.value && titleConfigForm.mode === "fixed") {
       const fixedTitle = titleConfigForm.fixedTitle?.trim() || "";
       if (!fixedTitle) {
-        ElMessage.error("固定标题模式下必须填写固定标题");
+        ElMessage.error(t("publishConfig.fixedTitleRequired"));
         return;
       }
       const titleLimit = Number(currentPlatformConfig.value?.titleMaxLength || 0);
       if (titleLimit > 0 && Array.from(fixedTitle).length > titleLimit) {
-        ElMessage.error(`固定标题不能超过 ${titleLimit} 个字符`);
+        ElMessage.error(t("publishConfig.fixedTitleMaxLength", { count: titleLimit }));
         return;
       }
     }
 
     if (selectedTemplateBinding.value?.missing) {
-      ElMessage.error("当前绑定的套图模板不可用，请重新选择或清空");
+      ElMessage.error(t("publishConfig.templateUnavailable"));
       return;
     }
 
@@ -1078,10 +1085,10 @@ const submitForm = async () => {
 
     if (form.id) {
       await updatePublishConfigApi(form.id, data);
-      ElMessage.success("更新成功");
+      ElMessage.success(t("common.updateSuccess"));
     } else {
       await createPublishConfigApi(data);
-      ElMessage.success("创建成功");
+      ElMessage.success(t("common.createSuccess"));
     }
     dialogVisible.value = false;
     temuTemplateInspectorVisible.value = false;
@@ -1090,7 +1097,7 @@ const submitForm = async () => {
     console.error(err);
     const message = String(err?.message || "");
     if (message && !message.toLowerCase().includes("validation")) {
-      ElMessage.error(err.message || "操作失败");
+      ElMessage.error(err.message || t("common.operationFailed"));
     }
   } finally {
     submitLoading.value = false;
@@ -1098,9 +1105,9 @@ const submitForm = async () => {
 };
 
 const handleCopy = async (row: any) => {
-  dialogTitle.value = "复制任务配置";
+  dialogTitle.value = t("publishConfig.copyConfig");
   form.id = undefined;
-  form.name = `${row.name} - 副本`;
+  form.name = t("publishConfig.copyName", { name: row.name });
   form.taskType = row.taskType || derivePublishTaskTypeByPlatform(row.platform);
   form.description = row.description;
   form.isActive = row.isActive;
@@ -1152,17 +1159,17 @@ const handleCopy = async (row: any) => {
 
 const handleDelete = (row: any) => {
   if (!userStore.user?.isAdmin) {
-    return ElMessage.warning("无权限：仅管理员可执行删除操作");
+    return ElMessage.warning(t("publishConfig.noPermissionDelete"));
   }
-  ElMessageBox.confirm("确认删除该任务配置吗?", "提示", {
-    confirmButtonText: "确定",
-    cancelButtonText: "取消",
+  ElMessageBox.confirm(t("publishConfig.deleteConfirm"), t("common.tip"), {
+    confirmButtonText: t("common.confirm"),
+    cancelButtonText: t("common.cancel"),
     type: "warning",
   }).then(async () => {
     try {
       deleteLoading.value = true;
       await deletePublishConfigApi(row.id);
-      ElMessage.success("删除成功");
+      ElMessage.success(t("common.deleteSuccess"));
       await getList();
     } catch (err) {
       console.error(err);
@@ -1187,25 +1194,25 @@ onMounted(() => {
           <el-form :model="queryParams" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="8" :lg="6">
-                <el-form-item label="关键词">
+                <el-form-item :label="t('publishConfig.keyword')">
                   <el-input
                     v-model="queryParams.keyword"
                     size="small"
                     clearable
-                    placeholder="搜索配置名称/描述/创建者"
+                    :placeholder="t('publishConfig.searchConfigPlaceholder')"
                     @keyup.enter="handleSearch"
                     @clear="handleSearch"
                   />
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="5">
-                <el-form-item label="任务类型">
+                <el-form-item :label="t('publishConfig.taskType')">
                   <el-select
                     v-model="queryParams.taskType"
                     size="small"
                     clearable
                     filterable
-                    placeholder="全部类型"
+                    :placeholder="t('publishConfig.allTypes')"
                     @change="handleSearch"
                   >
                     <el-option
@@ -1218,32 +1225,32 @@ onMounted(() => {
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
-                <el-form-item label="状态">
+                <el-form-item :label="t('common.status')">
                   <el-select
                     v-model="queryParams.isActive"
                     size="small"
                     clearable
-                    placeholder="全部状态"
+                    :placeholder="t('publishConfig.allStatus')"
                     @change="handleSearch"
                   >
-                    <el-option label="启用" :value="true" />
-                    <el-option label="停用" :value="false" />
+                    <el-option :label="t('publishConfig.enabled')" :value="true" />
+                    <el-option :label="t('publishConfig.disabled')" :value="false" />
                   </el-select>
                 </el-form-item>
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
               <el-button size="small" type="primary" :loading="loading" @click="handleSearch"
-                >搜索</el-button
+                >{{ t('common.search') }}</el-button
               >
-              <el-button size="small" :disabled="loading" @click="resetQuery">重置</el-button>
-              <el-button size="small" :loading="loading" @click="handleRefresh">刷新</el-button>
+              <el-button size="small" :disabled="loading" @click="resetQuery">{{ t('common.reset') }}</el-button>
+              <el-button size="small" :loading="loading" @click="handleRefresh">{{ t('common.refresh') }}</el-button>
               <el-button
                 size="small"
                 type="primary"
                 :disabled="loading || deleteLoading"
                 @click="handleAdd"
-                >新增任务配置</el-button
+                >{{ t('publishConfig.addConfig') }}</el-button
               >
               <el-button
                 v-if="userStore.user?.isAdmin"
@@ -1253,7 +1260,7 @@ onMounted(() => {
                 :disabled="selectedIds.length === 0"
                 @click="handleBatchDelete"
               >
-                批量删除 <span v-if="selectedIds.length > 0">({{ selectedIds.length }})</span>
+                {{ t('common.batchDelete') }} <span v-if="selectedIds.length > 0">({{ selectedIds.length }})</span>
               </el-button>
             </div>
           </el-form>
@@ -1276,18 +1283,18 @@ onMounted(() => {
                 <template #action="{ row }">
                   <el-dropdown class="operation-dropdown" placement="bottom-end">
                     <el-button type="primary" link size="small" class="operation-trigger-button"
-                      >操作</el-button
+                      >{{ t('common.operation') }}</el-button
                     >
                     <template #dropdown>
                       <el-dropdown-menu class="operation-menu-compact">
-                        <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
-                        <el-dropdown-item @click="handleCopy(row)">复制</el-dropdown-item>
+                        <el-dropdown-item @click="handleEdit(row)">{{ t('common.edit') }}</el-dropdown-item>
+                        <el-dropdown-item @click="handleCopy(row)">{{ t('common.copy') }}</el-dropdown-item>
                         <template v-if="userStore.user?.isAdmin">
                           <el-dropdown-item
                             divided
                             @click="handleDelete(row)"
                             class="operation-menu-item--danger"
-                            >删除</el-dropdown-item
+                            >{{ t('common.delete') }}</el-dropdown-item
                           >
                         </template>
                       </el-dropdown-menu>
@@ -1332,19 +1339,25 @@ onMounted(() => {
             <section class="publish-config-panel publish-config-panel--basic">
               <div class="publish-config-panel__header">
                 <div>
-                  <div class="publish-config-panel__title">基础信息</div>
-                  <div class="publish-config-panel__desc">配置名称、任务类型、启用状态与描述。</div>
+                  <div class="publish-config-panel__title">{{ t('publishConfig.basicInfo') }}</div>
+                  <div class="publish-config-panel__desc">{{ t('publishConfig.basicInfoDesc') }}</div>
                 </div>
               </div>
               <el-row :gutter="10" class="publish-config-basic-row">
                 <el-col :span="10" class="publish-config-basic-col">
-                  <el-form-item label="配置名称" prop="name">
-                    <el-input v-model="form.name" placeholder="例如：抖店商品发布 / Temu商品发布" />
+                  <el-form-item :label="t('publishConfig.configName')" prop="name">
+                    <el-input
+                      v-model="form.name"
+                      :placeholder="t('publishConfig.configNamePlaceholder')"
+                    />
                   </el-form-item>
                 </el-col>
                 <el-col :span="8" class="publish-config-basic-col">
-                  <el-form-item label="任务类型" prop="taskType">
-                    <el-select v-model="form.taskType" placeholder="请选择任务类型">
+                  <el-form-item :label="t('publishConfig.taskType')" prop="taskType">
+                    <el-select
+                      v-model="form.taskType"
+                      :placeholder="t('publishConfig.selectTaskType')"
+                    >
                       <el-option
                         v-for="item in taskTypeOptions"
                         :key="item.value"
@@ -1355,18 +1368,18 @@ onMounted(() => {
                   </el-form-item>
                 </el-col>
                 <el-col :span="6" class="publish-config-basic-col publish-config-basic-col--switch">
-                  <el-form-item label="启用状态" prop="isActive">
+                  <el-form-item :label="t('publishConfig.enabledStatus')" prop="isActive">
                     <div class="publish-config-switch">
                       <el-switch v-model="form.isActive" />
                       <span class="publish-config-switch__text">{{
-                        form.isActive ? "启用中" : "已停用"
+                        form.isActive ? t('publishConfig.enabling') : t('publishConfig.disabledStatus')
                       }}</span>
                     </div>
                   </el-form-item>
                 </el-col>
                 <el-col :span="24" class="publish-config-basic-col publish-config-basic-col--full">
                   <el-form-item
-                    label="描述"
+                    :label="t('common.description')"
                     prop="description"
                     class="publish-config-form-item--stacked"
                   >
@@ -1374,7 +1387,7 @@ onMounted(() => {
                       v-model="form.description"
                       type="textarea"
                       :autosize="{ minRows: 2, maxRows: 4 }"
-                      placeholder="简要说明这条任务配置的适用场景"
+                      :placeholder="t('publishConfig.descriptionPlaceholder')"
                     />
                   </el-form-item>
                 </el-col>
@@ -1384,10 +1397,13 @@ onMounted(() => {
             <section class="publish-config-panel publish-config-panel--template">
               <div class="publish-config-panel__header">
                 <div>
-                  <div class="publish-config-panel__title">套图模板</div>
+                  <div class="publish-config-panel__title">{{ t('publishConfig.psdTemplate') }}</div>
                 </div>
               </div>
-              <el-form-item label="套图模板" class="publish-config-form-item--stacked">
+              <el-form-item
+                :label="t('publishConfig.psdTemplate')"
+                class="publish-config-form-item--stacked"
+              >
                 <div class="publish-config-template-binding">
                   <div
                     v-if="currentTemplateBindingId"
@@ -1406,13 +1422,13 @@ onMounted(() => {
                           class="publish-config-template-option__image"
                         />
                         <div v-else class="publish-config-template-option__preview-placeholder">
-                          暂无图
+                          {{ t('publishConfig.noImage') }}
                         </div>
                       </div>
                       <div class="publish-config-template-option__main">
                         <div class="publish-config-template-option__name-row">
                           <span class="publish-config-template-option__name">
-                            {{ selectedTemplateBinding?.name || "未命名模板" }}
+                            {{ selectedTemplateBinding?.name || t('publishConfig.unnamedTemplate') }}
                           </span>
                           <el-tag
                             v-if="selectedTemplateBinding?.missing"
@@ -1420,20 +1436,22 @@ onMounted(() => {
                             type="danger"
                             effect="plain"
                           >
-                            不可用
+                            {{ t('publishConfig.unavailable') }}
                           </el-tag>
-                          <el-tag v-else size="small" type="success" effect="plain">已选择</el-tag>
+                          <el-tag v-else size="small" type="success" effect="plain"
+                            >{{ t('publishConfig.selected') }}</el-tag
+                          >
                         </div>
                         <div class="publish-config-template-option__id">
-                          ID：{{ selectedTemplateBinding?.id }}
+                          {{ t('publishConfig.idLabel', { id: selectedTemplateBinding?.id }) }}
                         </div>
                         <div
                           v-if="selectedTemplateBinding?.createTime"
                           class="publish-config-template-option__meta"
                         >
-                          上传时间：{{
-                            formatTime(selectedTemplateBinding.createTime, "yyyy-MM-dd HH:mm")
-                          }}
+                          {{ t('publishConfig.uploadTime', {
+                            time: formatTime(selectedTemplateBinding.createTime, "yyyy-MM-dd HH:mm")
+                          }) }}
                         </div>
                         <div
                           v-if="selectedTemplateBinding?.description"
@@ -1450,41 +1468,41 @@ onMounted(() => {
                         :loading="templateBindingHydrating"
                         @click="openTemplateBindingDialog"
                       >
-                        更换模板
+                        {{ t('publishConfig.replaceTemplate') }}
                       </el-button>
                       <el-button
                         size="small"
                         :disabled="templateBindingHydrating"
                         @click="clearTemplateBinding"
                       >
-                        清空
+                        {{ t('common.clear') }}
                       </el-button>
                     </div>
                   </div>
                   <div v-else class="publish-config-template-binding__empty">
                     <div class="publish-config-template-binding__empty-text">
-                      未绑定套图模板，发布任务会按当前任务配置直接执行。
+                      {{ t('publishConfig.noTemplateBound') }}
                     </div>
                     <el-button
                       type="primary"
                       :loading="templateBindingHydrating"
                       @click="openTemplateBindingDialog"
                     >
-                      选择套图模板
+                      {{ t('publishConfig.selectTemplate') }}
                     </el-button>
                   </div>
                 </div>
               </el-form-item>
               <el-form-item
                 v-if="currentTemplateBindingId"
-                label="PSD 配置"
+                :label="t('publishConfig.psdConfig')"
                 class="publish-config-form-item--stacked"
               >
                 <el-input
                   v-model="templateBindingConfigText"
                   type="textarea"
                   :autosize="{ minRows: 8, maxRows: 18 }"
-                  placeholder='请输入完整 PSD 配置快照，支持 JSON 或 JS 对象格式，例如：{"images":[]}'
+                  :placeholder="t('publishConfig.psdConfigPlaceholder')"
                 />
                 <div class="publish-config-template-config-toolbar">
                   <el-button
@@ -1493,7 +1511,7 @@ onMounted(() => {
                     type="primary"
                     @click="applyTemplateBindingDefaultConfig"
                   >
-                    恢复模板默认配置
+                    {{ t('publishConfig.restoreDefaultConfig') }}
                   </el-button>
                 </div>
               </el-form-item>
@@ -1503,8 +1521,8 @@ onMounted(() => {
               <section class="publish-config-panel publish-config-panel--platform">
                 <div class="publish-config-panel__header">
                   <div>
-                    <div class="publish-config-panel__title">任务类型配置</div>
-                    <div class="publish-config-panel__desc">当前任务类型专属字段。</div>
+                    <div class="publish-config-panel__title">{{ t('publishConfig.taskTypeConfig') }}</div>
+                    <div class="publish-config-panel__desc">{{ t('publishConfig.taskTypeConfigDesc') }}</div>
                   </div>
                   <el-tag v-if="currentPlatformConfig" type="info" effect="plain" round>
                     {{ currentPlatformConfig.label }}
@@ -1570,7 +1588,7 @@ onMounted(() => {
                               plain
                               @click="openTemuTemplateInspector"
                             >
-                              辅助模板解析
+                              {{ t('publishConfig.auxiliaryTemplateParse') }}
                             </el-button>
                           </div>
                         </template>
@@ -1601,12 +1619,12 @@ onMounted(() => {
                                 type="danger"
                                 @click="removeUrlListItem(String(field.key), Number(index))"
                               >
-                                删除
+                                {{ t('common.delete') }}
                               </el-button>
                             </div>
                           </div>
                           <el-button text type="primary" @click="addUrlListItem(String(field.key))"
-                            >新增地址</el-button
+                            >{{ t('publishConfig.addAddress') }}</el-button
                           >
                           <div v-if="field.tooltip" class="publish-config-field-tip">
                             {{ field.tooltip }}
@@ -1615,19 +1633,19 @@ onMounted(() => {
                             v-if="field.key === 'appendImageUrls'"
                             class="publish-config-field-note"
                           >
-                            一个输入框对应一个地址，生成发布任务时会追加到套图图片后面。
+                            {{ t('publishConfig.appendImageTip') }}
                           </div>
                         </div>
 
                         <div v-else-if="field.type === 'vendor-products'" class="temu-vendor-products">
                           <div v-if="resolveTaskTypePlatform(form.taskType) === 'temu' && temuFirstSkcSkuCount > 0" class="publish-config-field-note">
-                            当前模板首个 SKC 含 {{ temuFirstSkcSkuCount }} 个 SKU；下方顺序对应 SKU 顺序，多余商品会在发布时忽略。
+                            {{ t('publishConfig.temuSkcSkuTip', { count: temuFirstSkcSkuCount }) }}
                           </div>
                           <div v-if="!platformConfigData.vendorId" class="publish-config-field-tip">
-                            请先选择绑定厂家。
+                            {{ t('publishConfig.selectVendorFirst') }}
                           </div>
                           <div v-else-if="!vendorProductOptions.length" class="publish-config-field-tip">
-                            当前厂家暂无供应商商品。
+                            {{ t('publishConfig.vendorNoProducts') }}
                           </div>
                           <div
                             v-for="(mapping, index) in Array.isArray(platformConfigData.vendorProductMappings)
@@ -1641,7 +1659,7 @@ onMounted(() => {
                               v-model="mapping.vendorProductId"
                               filterable
                               :loading="vendorProductsLoading"
-                              placeholder="请选择供应商商品"
+                              :placeholder="t('publishConfig.selectVendorProduct')"
                               @change="(value) => handleVendorProductChange(index, Number(value))"
                             >
                               <el-option
@@ -1653,17 +1671,17 @@ onMounted(() => {
                             </el-select>
                             <code class="temu-vendor-products__code">{{ mapping.code || "-" }}</code>
                             <el-button text :disabled="index === 0" @click="moveVendorProductMapping(index, -1)">
-                              上移
+                              {{ t('publishConfig.moveUp') }}
                             </el-button>
                             <el-button
                               text
                               :disabled="index >= platformConfigData.vendorProductMappings.length - 1"
                               @click="moveVendorProductMapping(index, 1)"
                             >
-                              下移
+                              {{ t('publishConfig.moveDown') }}
                             </el-button>
                             <el-button text type="danger" @click="removeVendorProductMapping(index)">
-                              删除
+                              {{ t('common.delete') }}
                             </el-button>
                           </div>
                           <el-button
@@ -1672,7 +1690,7 @@ onMounted(() => {
                             :disabled="!platformConfigData.vendorId || !vendorProductOptions.length"
                             @click="addVendorProductMapping"
                           >
-                            添加供应商商品
+                            {{ t('publishConfig.addVendorProduct') }}
                           </el-button>
                           <div v-if="field.tooltip" class="publish-config-field-tip">
                             {{ field.tooltip }}
@@ -1688,7 +1706,7 @@ onMounted(() => {
                         <template v-else-if="field.type === 'select'">
                           <el-select
                             v-model="platformConfigData[field.key]"
-                            :placeholder="field.placeholder || '请选择'"
+                            :placeholder="field.placeholder || t('common.selectText')"
                             :clearable="field.key === 'vendorId'"
                             :filterable="field.key === 'vendorId'"
                           >
@@ -1734,12 +1752,16 @@ onMounted(() => {
 
                   <el-empty
                     v-else
-                    description="该任务类型暂未定义专属字段，后续确认执行流程后再补充"
+                    :description="t('publishConfig.noFieldsDefined')"
                     :image-size="88"
                   />
                 </template>
 
-                <el-empty v-else description="请选择任务类型后再配置专属字段" :image-size="92" />
+                <el-empty
+                  v-else
+                  :description="t('publishConfig.selectTaskTypeFirst')"
+                  :image-size="92"
+                />
               </section>
 
               <section class="publish-config-panel publish-config-panel--ai">
@@ -1752,29 +1774,32 @@ onMounted(() => {
 
                 <div class="publish-config-ai-grid">
                   <div class="publish-config-ai-grid__main">
-                    <el-form-item v-if="supportsFixedTitle" label="标题模式">
+                    <el-form-item v-if="supportsFixedTitle" :label="t('publishConfig.titleMode')">
                       <el-radio-group v-model="titleConfigForm.mode">
-                        <el-radio label="fixed">固定标题</el-radio>
-                        <el-radio label="ai">AI 生成</el-radio>
+                        <el-radio label="fixed">{{ t('publishConfig.fixedTitle') }}</el-radio>
+                        <el-radio label="ai">{{ t('publishConfig.aiGeneration') }}</el-radio>
                       </el-radio-group>
                     </el-form-item>
 
                     <el-form-item
                       v-if="isFixedTitleMode"
-                      label="固定标题"
+                      :label="t('publishConfig.fixedTitle')"
                       class="publish-config-ai-grid__editor publish-config-form-item--stacked"
                     >
                       <el-input
                         v-model="titleConfigForm.fixedTitle"
                         type="textarea"
                         :autosize="{ minRows: 4, maxRows: 6 }"
-                        placeholder="请输入固定标题，发布时将直接使用，不走 AI 生成"
+                        :placeholder="t('publishConfig.fixedTitlePlaceholder')"
                       />
                       <div class="publish-config-field-tip">
-                        当前模式会直接使用这里的标题。
+                        {{ t('publishConfig.fixedTitleDirectUse') }}
                         {{
                           currentPlatformConfig
-                            ? `当前任务类型标题限制：${currentPlatformConfig.titleMaxLength || "无"} 字符。`
+                            ? t('publishConfig.titleLimit', {
+                                limit:
+                                  currentPlatformConfig.titleMaxLength || t('publishConfig.none'),
+                              })
                             : ""
                         }}
                       </div>
@@ -1782,7 +1807,7 @@ onMounted(() => {
 
                     <el-form-item
                       v-else
-                      label="标题模板"
+                      :label="t('publishConfig.titleTemplate')"
                       class="publish-config-ai-grid__editor publish-config-form-item--stacked"
                     >
                       <div class="publish-config-title-prompt-picker">
@@ -1791,19 +1816,21 @@ onMounted(() => {
                           filterable
                           clearable
                           :loading="titlePromptPickerLoading"
-                          placeholder="选择 AI 提示词填入下方"
+                          :placeholder="t('publishConfig.selectPromptPlaceholder')"
                           @visible-change="handleTitlePromptDropdownVisible"
                           @change="handleTitlePromptSelect"
                         >
                           <el-option
                             v-for="prompt in titlePromptOptions"
                             :key="prompt.id"
-                            :label="prompt.title || `提示词 ${prompt.id}`"
+                            :label="
+                              prompt.title || t('publishConfig.promptWithId', { id: prompt.id })
+                            "
                             :value="prompt.id"
                           >
                             <div class="publish-config-title-prompt-option">
                               <span class="publish-config-title-prompt-option__title">
-                                {{ prompt.title || `提示词 ${prompt.id}` }}
+                                {{ prompt.title || t('publishConfig.promptWithId', { id: prompt.id }) }}
                               </span>
                               <span
                                 v-if="prompt.description"
@@ -1819,14 +1846,16 @@ onMounted(() => {
                         v-model="titleConfigForm.templateContent"
                         type="textarea"
                         :autosize="{ minRows: 10, maxRows: 16 }"
-                        placeholder="直接填写发布任务标题生成模板。发布任务生成标题时只使用这里的内容。"
+                        :placeholder="t('publishConfig.titleTemplatePlaceholder')"
                       />
                       <div class="publish-config-field-tip">
-                        当前配置不再保存或依赖 `promptId`。发布任务生成标题时只读取这里的
-                        `titleTemplate` 内容。
+                        {{ t('publishConfig.promptIdNote') }}
                         {{
                           currentPlatformConfig
-                            ? `当前任务类型标题限制：${currentPlatformConfig.titleMaxLength || "无"} 字符。`
+                            ? t('publishConfig.titleLimit', {
+                                limit:
+                                  currentPlatformConfig.titleMaxLength || t('publishConfig.none'),
+                              })
                             : ""
                         }}
                       </div>
@@ -1834,51 +1863,51 @@ onMounted(() => {
                   </div>
 
                   <div v-if="!isFixedTitleMode" class="publish-config-ai-grid__side">
-                    <el-form-item label="最大字数">
+                    <el-form-item :label="t('publishConfig.maxWords')">
                       <el-input-number
                         v-model="titleConfigForm.maxLength"
                         :min="1"
                         :max="200"
-                        placeholder="例如：30"
+                        :placeholder="t('publishConfig.maxWordsPlaceholder')"
                       />
                     </el-form-item>
-                    <el-form-item label="风格">
+                    <el-form-item :label="t('publishConfig.style')">
                       <el-input
                         v-model="titleConfigForm.style"
-                        placeholder="如 marketing / formal / cute"
+                        :placeholder="t('publishConfig.stylePlaceholder')"
                       />
                     </el-form-item>
-                    <el-form-item label="语气">
+                    <el-form-item :label="t('publishConfig.tone')">
                       <el-input
                         v-model="titleConfigForm.tone"
-                        placeholder="如 enthusiastic / neutral"
+                        :placeholder="t('publishConfig.tonePlaceholder')"
                       />
                     </el-form-item>
-                    <el-form-item label="包含 Emoji">
+                    <el-form-item :label="t('publishConfig.includeEmoji')">
                       <el-radio-group v-model="titleConfigForm.includeEmoji">
-                        <el-radio :label="true">允许</el-radio>
-                        <el-radio :label="false">禁止</el-radio>
-                        <el-radio :label="null">不限</el-radio>
+                        <el-radio :label="true">{{ t('publishConfig.allow') }}</el-radio>
+                        <el-radio :label="false">{{ t('publishConfig.forbid') }}</el-radio>
+                        <el-radio :label="null">{{ t('publishConfig.unlimited') }}</el-radio>
                       </el-radio-group>
                     </el-form-item>
-                    <el-form-item label="必含关键词">
+                    <el-form-item :label="t('publishConfig.requiredKeywords')">
                       <el-select
                         v-model="titleConfigForm.requiredKeywords"
                         multiple
                         filterable
                         allow-create
                         default-first-option
-                        placeholder="输入后回车添加"
+                        :placeholder="t('publishConfig.enterToAdd')"
                       />
                     </el-form-item>
-                    <el-form-item label="禁用词">
+                    <el-form-item :label="t('publishConfig.avoidWords')">
                       <el-select
                         v-model="titleConfigForm.avoidWords"
                         multiple
                         filterable
                         allow-create
                         default-first-option
-                        placeholder="输入后回车添加"
+                        :placeholder="t('publishConfig.enterToAdd')"
                       />
                     </el-form-item>
                   </div>
@@ -1891,9 +1920,11 @@ onMounted(() => {
       <template #footer>
         <div class="publish-config-dialog__footer">
           <div class="publish-config-dialog__footer-actions">
-            <el-button :disabled="submitLoading" @click="dialogVisible = false">取消</el-button>
+            <el-button :disabled="submitLoading" @click="dialogVisible = false"
+              >{{ t('common.cancel') }}</el-button
+            >
             <el-button type="primary" :loading="submitLoading" @click="submitForm"
-              >保存任务配置</el-button
+              >{{ t('publishConfig.saveConfig') }}</el-button
             >
           </div>
         </div>
@@ -1902,7 +1933,7 @@ onMounted(() => {
 
     <el-dialog
       v-model="templateBindingDialogVisible"
-      title="选择套图模板"
+      :title="t('publishConfig.selectTemplate')"
       :fullscreen="true"
       append-to-body
       class="publish-config-template-picker-dialog"
@@ -1912,7 +1943,7 @@ onMounted(() => {
           <el-input
             v-model="templateBindingDialogSearchText"
             clearable
-            placeholder="搜索模板名称、描述或 ID"
+            :placeholder="t('publishConfig.searchTemplatePlaceholder')"
             class="publish-config-template-picker__search"
             @keyup.enter="handleTemplateBindingDialogSearch"
             @clear="resetTemplateBindingDialogSearch"
@@ -1923,13 +1954,13 @@ onMounted(() => {
               :loading="templateBindingDialogLoading"
               @click="handleTemplateBindingDialogSearch"
             >
-              搜索
+              {{ t('common.search') }}
             </el-button>
             <el-button
               :disabled="templateBindingDialogLoading"
               @click="resetTemplateBindingDialogSearch"
             >
-              重置
+              {{ t('common.reset') }}
             </el-button>
           </div>
         </div>
@@ -1941,13 +1972,13 @@ onMounted(() => {
             :height="templateBindingDialogTableHeight"
             :loading="templateBindingDialogLoading"
             :data="templateBindingDialogRows"
-            empty-text="没有找到可用套图模板"
+            :empty-text="t('publishConfig.noTemplateFound')"
             row-id="id"
             header-cell-class-name="common-table__header-cell"
             cell-class-name="common-table__body-cell"
             class="publish-config-template-picker__table"
           >
-            <vxe-column title="预览" field="thumbnail" width="132">
+            <vxe-column :title="t('publishConfig.preview')" field="thumbnail" width="132">
               <template #default="{ row }">
                 <div class="publish-config-template-table-preview">
                   <el-image
@@ -1961,18 +1992,18 @@ onMounted(() => {
                     class="publish-config-template-table-preview__image"
                   />
                   <div v-else class="publish-config-template-table-preview__placeholder">
-                    暂无图
+                    {{ t('publishConfig.noImage') }}
                   </div>
                 </div>
               </template>
             </vxe-column>
 
-            <vxe-column title="模板信息" field="name" min-width="320">
+            <vxe-column :title="t('publishConfig.templateInfo')" field="name" min-width="320">
               <template #default="{ row }">
                 <div class="publish-config-template-table-info">
                   <div class="publish-config-template-table-info__name-row">
                     <span class="publish-config-template-table-info__name">
-                      {{ row.name || "未命名模板" }}
+                      {{ row.name || t('publishConfig.unnamedTemplate') }}
                     </span>
                     <el-tag
                       v-if="currentTemplateBindingId === row.id"
@@ -1980,10 +2011,12 @@ onMounted(() => {
                       type="success"
                       effect="plain"
                     >
-                      当前
+                      {{ t('publishConfig.current') }}
                     </el-tag>
                   </div>
-                  <div class="publish-config-template-table-info__id">ID：{{ row.id }}</div>
+                  <div class="publish-config-template-table-info__id">
+                    {{ t('publishConfig.idLabel', { id: row.id }) }}
+                  </div>
                   <div v-if="row.description" class="publish-config-template-table-info__desc">
                     {{ row.description }}
                   </div>
@@ -1991,7 +2024,7 @@ onMounted(() => {
               </template>
             </vxe-column>
 
-            <vxe-column title="上传时间" field="createTime" width="180">
+            <vxe-column :title="t('publishConfig.uploadTimeTitle')" field="createTime" width="180">
               <template #default="{ row }">
                 <span v-if="row.createTime">
                   {{ formatTime(row.createTime, "yyyy-MM-dd HH:mm") }}
@@ -2000,7 +2033,7 @@ onMounted(() => {
               </template>
             </vxe-column>
 
-            <vxe-column title="操作" width="110" fixed="right" align="center">
+            <vxe-column :title="t('common.operation')" width="110" fixed="right" align="center">
               <template #default="{ row }">
                 <el-button
                   size="small"
@@ -2008,7 +2041,11 @@ onMounted(() => {
                   :plain="currentTemplateBindingId !== row.id"
                   @click="selectTemplateBinding(row)"
                 >
-                  {{ currentTemplateBindingId === row.id ? "已选择" : "选择" }}
+                  {{
+                    currentTemplateBindingId === row.id
+                      ? t('publishConfig.selected')
+                      : t('publishConfig.select')
+                  }}
                 </el-button>
               </template>
             </vxe-column>
@@ -2018,7 +2055,7 @@ onMounted(() => {
       <template #footer>
         <div class="publish-config-template-picker__footer">
           <div class="publish-config-template-picker__total">
-            共 {{ templateBindingDialogTotal }} 个模板
+            {{ t('publishConfig.totalTemplates', { count: templateBindingDialogTotal }) }}
           </div>
           <el-pagination
             v-model:current-page="templateBindingDialogPage"
@@ -2030,14 +2067,14 @@ onMounted(() => {
             @current-change="handleTemplateBindingDialogPageChange"
             @size-change="handleTemplateBindingDialogSizeChange"
           />
-          <el-button @click="templateBindingDialogVisible = false">关闭</el-button>
+          <el-button @click="templateBindingDialogVisible = false">{{ t('common.close') }}</el-button>
         </div>
       </template>
     </el-dialog>
 
     <el-dialog
       v-model="temuTemplateInspectorVisible"
-      title="辅助模板解析"
+      :title="t('publishConfig.auxiliaryTemplateParse')"
       :fullscreen="true"
       append-to-body
       class="publish-config-temu-inspector-dialog"

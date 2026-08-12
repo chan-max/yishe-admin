@@ -9,11 +9,11 @@
           <el-form :model="queryParams" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="8" :lg="6">
-                <el-form-item label="按名称搜索">
+                <el-form-item :label="t('fileResource.searchByName')">
                   <el-input
                     v-model="queryParams.keyword"
                     size="small"
-                    placeholder="请输入名称、描述或关键词"
+                    :placeholder="t('fileResource.searchPlaceholder')"
                     clearable
                     @change="
                       (val) => {
@@ -24,28 +24,28 @@
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
-                <el-form-item label="排序">
+                <el-form-item :label="t('fileResource.sort')">
                   <el-select
                     v-model="queryParams.sortingFields"
                     size="small"
-                    placeholder="请选择排序方式"
+                    :placeholder="t('fileResource.selectSortPlaceholder')"
                     @change="getList"
                   >
-                    <el-option label="创建时间倒序" value="createTime DESC" />
-                    <el-option label="创建时间正序" value="createTime ASC" />
+                    <el-option :label="t('fileResource.createTimeDesc')" value="createTime DESC" />
+                    <el-option :label="t('fileResource.createTimeAsc')" value="createTime ASC" />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
-                <el-form-item label="后缀">
+                <el-form-item :label="t('fileResource.suffix')">
                   <el-select
                     v-model="queryParams.suffix"
                     size="small"
-                    placeholder="请选择后缀"
+                    :placeholder="t('fileResource.selectSuffixPlaceholder')"
                     clearable
                     @change="getList"
                   >
-                    <el-option label="全部" value="" />
+                    <el-option :label="t('fileResource.all')" value="" />
                     <el-option
                       v-for="option in suffixOptions"
                       :key="option.value"
@@ -56,30 +56,30 @@
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
-                <el-form-item label="分类">
+                <el-form-item :label="t('fileResource.category')">
                   <el-select
                     v-model="queryParams.category"
                     size="small"
-                    placeholder="请选择分类"
+                    :placeholder="t('fileResource.selectCategoryPlaceholder')"
                     clearable
                     @change="getList"
                   >
-                    <el-option label="全部" value="" />
-                    <el-option label="风景" value="风景" />
-                    <el-option label="人物" value="人物" />
-                    <el-option label="动物" value="动物" />
-                    <el-option label="建筑" value="建筑" />
-                    <el-option label="动画" value="动画" />
-                    <el-option label="其他" value="其他" />
+                    <el-option :label="t('fileResource.all')" value="" />
+                    <el-option :label="t('fileResource.categoryScenery')" value="风景" />
+                    <el-option :label="t('fileResource.categoryPeople')" value="人物" />
+                    <el-option :label="t('fileResource.categoryAnimal')" value="动物" />
+                    <el-option :label="t('fileResource.categoryBuilding')" value="建筑" />
+                    <el-option :label="t('fileResource.categoryAnimation')" value="动画" />
+                    <el-option :label="t('fileResource.categoryOther')" value="其他" />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3">
-                <el-form-item label="ID精确查询">
+                <el-form-item :label="t('fileResource.idExactQuery')">
                   <el-input
                     v-model="queryParams.id"
                     size="small"
-                    placeholder="请输入ID"
+                    :placeholder="t('fileResource.idPlaceholder')"
                     clearable
                     @change="
                       (val) => {
@@ -90,7 +90,7 @@
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="8" :lg="5">
-                <el-form-item label="时间范围">
+                <el-form-item :label="t('fileResource.timeRange')">
                   <DateRangePicker
                     @change="
                       (val) => {
@@ -110,7 +110,7 @@
                 :icon="Search"
                 :loading="loading"
                 @click="getList"
-                >搜索</el-button
+                >{{ t('common.search') }}</el-button
               >
               <el-button
                 size="small"
@@ -121,10 +121,10 @@
                   }
                 "
               >
-                上传
+                {{ t('fileResource.upload') }}
               </el-button>
               <el-button size="small" @click="handleMultiDownload"
-                >下载 ({{ ids.length }})</el-button
+                >{{ t('fileResource.downloadCount', { count: ids.length }) }}</el-button
               >
               <el-button
                 size="small"
@@ -132,7 +132,7 @@
                 :icon="Delete"
                 @click="handleDelete(null)"
               >
-                批量删除 ({{ ids.length }})
+                {{ t('fileResource.batchDeleteCount', { count: ids.length }) }}
               </el-button>
               <el-dropdown
                 trigger="click"
@@ -140,62 +140,62 @@
                 @command="(cmd: FileResourceUserTransferAction) => openFileResourceUserTransferDialog(cmd)"
               >
                 <el-button size="small" type="success" :disabled="!ids.length">
-                  分享 ({{ ids.length }})
+                  {{ t('fileResource.shareCount', { count: ids.length }) }}
                   <el-icon class="el-icon--right"><ArrowDown /></el-icon>
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item command="share">
                       <el-icon><Share /></el-icon>
-                      <span>共享</span>
+                      <span>{{ t('fileResource.share') }}</span>
                     </el-dropdown-item>
                     <el-dropdown-item command="copy">
                       <el-icon><DocumentCopy /></el-icon>
-                      <span>转存副本</span>
+                      <span>{{ t('fileResource.copy') }}</span>
                     </el-dropdown-item>
                     <el-dropdown-item command="move">
                       <el-icon><TopRight /></el-icon>
-                      <span>移交所有人</span>
+                      <span>{{ t('fileResource.transfer') }}</span>
                     </el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
               <el-button v-if="isMobile" size="small" @click="filterDialogVisible = true"
-                >筛选</el-button
+                >{{ t('fileResource.filter') }}</el-button
               >
             </div>
           </el-form>
         </div>
 
-        <el-dialog v-model="filterDialogVisible" title="筛选" width="90%" align-center>
+        <el-dialog v-model="filterDialogVisible" :title="t('fileResource.filter')" width="90%" align-center>
           <el-form :model="queryParams" label-width="80px">
-            <el-form-item label="按名称搜索">
+            <el-form-item :label="t('fileResource.searchByName')">
               <el-input
                 v-model="queryParams.keyword"
-                placeholder="请输入名称、描述或关键词"
+                :placeholder="t('fileResource.searchPlaceholder')"
                 clearable
               />
             </el-form-item>
-            <el-form-item label="排序">
-              <el-select v-model="queryParams.sortingFields" placeholder="请选择排序方式">
-                <el-option label="创建时间倒序" value="createTime DESC" />
-                <el-option label="创建时间正序" value="createTime ASC" />
+            <el-form-item :label="t('fileResource.sort')">
+              <el-select v-model="queryParams.sortingFields" :placeholder="t('fileResource.selectSortPlaceholder')">
+                <el-option :label="t('fileResource.createTimeDesc')" value="createTime DESC" />
+                <el-option :label="t('fileResource.createTimeAsc')" value="createTime ASC" />
               </el-select>
             </el-form-item>
-            <el-form-item label="分类">
-              <el-select v-model="queryParams.category" placeholder="请选择分类">
-                <el-option label="全部" value="" />
-                <el-option label="风景" value="风景" />
-                <el-option label="人物" value="人物" />
-                <el-option label="动物" value="动物" />
-                <el-option label="建筑" value="建筑" />
-                <el-option label="动画" value="动画" />
-                <el-option label="其他" value="其他" />
+            <el-form-item :label="t('fileResource.category')">
+              <el-select v-model="queryParams.category" :placeholder="t('fileResource.selectCategoryPlaceholder')">
+                <el-option :label="t('fileResource.all')" value="" />
+                <el-option :label="t('fileResource.categoryScenery')" value="风景" />
+                <el-option :label="t('fileResource.categoryPeople')" value="人物" />
+                <el-option :label="t('fileResource.categoryAnimal')" value="动物" />
+                <el-option :label="t('fileResource.categoryBuilding')" value="建筑" />
+                <el-option :label="t('fileResource.categoryAnimation')" value="动画" />
+                <el-option :label="t('fileResource.categoryOther')" value="其他" />
               </el-select>
             </el-form-item>
-            <el-form-item label="后缀">
-              <el-select v-model="queryParams.suffix" placeholder="请选择后缀" clearable>
-                <el-option label="全部" value="" />
+            <el-form-item :label="t('fileResource.suffix')">
+              <el-select v-model="queryParams.suffix" :placeholder="t('fileResource.selectSuffixPlaceholder')" clearable>
+                <el-option :label="t('fileResource.all')" value="" />
                 <el-option
                   v-for="option in suffixOptions"
                   :key="option.value"
@@ -204,10 +204,10 @@
                 />
               </el-select>
             </el-form-item>
-            <el-form-item label="ID精确查询">
-              <el-input v-model="queryParams.id" placeholder="请输入ID" clearable />
+            <el-form-item :label="t('fileResource.idExactQuery')">
+              <el-input v-model="queryParams.id" :placeholder="t('fileResource.idPlaceholder')" clearable />
             </el-form-item>
-            <el-form-item label="按时间查询">
+            <el-form-item :label="t('fileResource.queryByTime')">
               <DateRangePicker
                 @change="
                   (val) => {
@@ -219,8 +219,8 @@
             </el-form-item>
           </el-form>
           <template #footer>
-            <el-button @click="filterDialogVisible = false">取消</el-button>
-            <el-button type="primary" @click="onMobileFilterSubmit">确定</el-button>
+            <el-button @click="filterDialogVisible = false">{{ t('common.cancel') }}</el-button>
+            <el-button type="primary" @click="onMobileFilterSubmit">{{ t('common.confirm') }}</el-button>
           </template>
         </el-dialog>
       </template>
@@ -284,7 +284,7 @@
                     <video
                       v-if="row.url && isVideoFile(row.suffix)"
                       :src="row.url"
-                      :alt="row.name || '文件资源'"
+                      :alt="row.name || t('fileResource.fileResource')"
                       class="table-file-cell__video"
                       @click="openFilePreview(row)"
                       @error="handleVideoError"
@@ -294,7 +294,7 @@
                     <img
                       v-else-if="row.url && isImageFile(row.suffix)"
                       :src="row.url"
-                      :alt="row.name || '图片文件'"
+                      :alt="row.name || t('fileResource.imageFile')"
                       class="table-file-cell__image"
                       @click="openFilePreview(row)"
                       @error="handleImageError"
@@ -307,7 +307,7 @@
                       <div class="table-file-audio-card__meta">
                         <el-icon size="18"><Headset /></el-icon>
                         <span class="table-file-audio-card__title">{{
-                          row.name || "音频文件"
+                          row.name || t('fileResource.audioFile')
                         }}</span>
                         <span class="table-file-audio-card__suffix">{{
                           String(row.suffix || "").toUpperCase()
@@ -329,8 +329,8 @@
                       @click="openFilePreview(row)"
                     >
                       <el-icon size="24"><Document /></el-icon>
-                      <div class="table-file-doc-card__title">{{ row.name || "PDF 文件" }}</div>
-                      <div class="table-file-doc-card__tip">点击预览 PDF</div>
+                      <div class="table-file-doc-card__title">{{ row.name || t('fileResource.pdfFile') }}</div>
+                      <div class="table-file-doc-card__tip">{{ t('fileResource.clickPreviewPdf') }}</div>
                     </div>
                     <div
                       v-else-if="row.url && isTextFile(row.suffix)"
@@ -338,9 +338,9 @@
                       @click="openFilePreview(row)"
                     >
                       <el-icon size="24"><Document /></el-icon>
-                      <div class="table-file-doc-card__title">{{ row.name || "文本文件" }}</div>
+                      <div class="table-file-doc-card__title">{{ row.name || t('fileResource.textFile') }}</div>
                       <div class="table-file-doc-card__tip">
-                        {{ String(row.suffix || "FILE").toUpperCase() }} · 点击预览
+                        {{ String(row.suffix || "FILE").toUpperCase() }} · {{ t('fileResource.clickPreview') }}
                       </div>
                     </div>
                     <div
@@ -349,16 +349,16 @@
                       @click="openFilePreview(row)"
                     >
                       <el-icon size="24"><Document /></el-icon>
-                      <div class="table-file-doc-card__title">{{ row.name || "Excel 文件" }}</div>
+                      <div class="table-file-doc-card__title">{{ row.name || t('fileResource.excelFile') }}</div>
                       <div class="table-file-doc-card__tip">
-                        {{ String(row.suffix || "XLSX").toUpperCase() }} · 点击预览
+                        {{ String(row.suffix || "XLSX").toUpperCase() }} · {{ t('fileResource.clickPreview') }}
                       </div>
                     </div>
                     <div v-else class="table-file-doc-card">
                       <el-icon size="24">
                         <component :is="getFileIcon(row.suffix)" />
                       </el-icon>
-                      <div class="table-file-doc-card__title">{{ row.name || "文件资源" }}</div>
+                      <div class="table-file-doc-card__title">{{ row.name || t('fileResource.fileResource') }}</div>
                       <div class="table-file-doc-card__tip">
                         {{ String(row.suffix || "FILE").toUpperCase() }}
                       </div>
@@ -368,24 +368,24 @@
 
                 <template #nameSlot="{ row }">
                   <div class="flex items-center gap-2 flex-wrap">
-                    <span>{{ row.name || `资源 ${row.id}` }}</span>
+                    <span>{{ row.name || t('fileResource.resourceId', { id: row.id }) }}</span>
                   </div>
                 </template>
 
                 <template #shareTypeSlot="{ row }">
                   <el-tooltip
                     v-if="row.shareType === 'shared'"
-                    content="这是共享快捷引用，请将资源转存副本备份，防止源文件删除导致丢失"
+                    :content="t('fileResource.sharedRefTip')"
                     placement="top"
                   >
                     <el-tag type="warning" size="small" effect="light" style="cursor: help">
-                      由【{{ row.sourceUser?.name || row.sourceUser?.account || ('用户' + row.sourceUserId) }}】共享
+                      {{ t('fileResource.sharedByUser', { user: row.sourceUser?.name || row.sourceUser?.account || t('fileResource.userWithId', { id: row.sourceUserId }) }) }}
                     </el-tag>
                   </el-tooltip>
                   <el-tag v-else-if="row.shareType === 'copy' || (row.sourceUserId && row.sourceUserId !== row.userId)" type="success" size="small" effect="light">
-                    由【{{ row.sourceUser?.name || row.sourceUser?.account || ('用户' + row.sourceUserId) }}】转存
+                    {{ t('fileResource.copiedByUser', { user: row.sourceUser?.name || row.sourceUser?.account || t('fileResource.userWithId', { id: row.sourceUserId }) }) }}
                   </el-tag>
-                  <el-tag v-else type="info" size="small" effect="plain">我上传的</el-tag>
+                  <el-tag v-else type="info" size="small" effect="plain">{{ t('fileResource.myUpload') }}</el-tag>
                 </template>
 
                 <template #categorySlot="{ row }">
@@ -414,17 +414,17 @@
                       @command="(command) => handleOperationCommand(String(command), row)"
                     >
                       <el-button type="primary" link size="small" class="operation-trigger-button"
-                        >操作</el-button
+                        >{{ t('common.operation') }}</el-button
                       >
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
                           <el-dropdown-item command="edit">
                             <el-icon><Edit /></el-icon>
-                            <span>编辑</span>
+                            <span>{{ t('common.edit') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item command="download">
                             <el-icon><Download /></el-icon>
-                            <span>下载</span>
+                            <span>{{ t('fileResource.download') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item command="preview" v-if="isPreviewableFile(row.suffix)">
                             <el-icon
@@ -432,23 +432,23 @@
                                 v-else-if="isAudioFile(row.suffix)" /><Document
                                 v-else-if="isPdfFile(row.suffix) || isTextFile(row.suffix)" /><Picture v-else
                             /></el-icon>
-                            <span>预览</span>
+                            <span>{{ t('fileResource.preview') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item v-if="isAdmin" command="share-to-user">
                             <el-icon><Share /></el-icon>
-                            <span>共享</span>
+                            <span>{{ t('fileResource.share') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item v-if="isAdmin" command="copy-to-user">
                             <el-icon><DocumentCopy /></el-icon>
-                            <span>转存副本</span>
+                            <span>{{ t('fileResource.copy') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item v-if="isAdmin" command="move-to-user">
                             <el-icon><TopRight /></el-icon>
-                            <span>移交所有人</span>
+                            <span>{{ t('fileResource.transfer') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item command="view-shared">
                             <el-icon><Connection /></el-icon>
-                            <span>查看分享</span>
+                            <span>{{ t('fileResource.viewShare') }}</span>
                           </el-dropdown-item>
                           <!-- toggle public/private removed -->
                           <el-dropdown-item
@@ -457,7 +457,7 @@
                             class="operation-menu-item--danger"
                           >
                             <el-icon><Delete /></el-icon>
-                            <span>删除</span>
+                            <span>{{ t('common.delete') }}</span>
                           </el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
@@ -486,7 +486,7 @@
 
     <el-dialog
       v-model="uploadModalVisible"
-      title="文件资源上传"
+      :title="t('fileResource.uploadTitle')"
       width="calc(100vw - 32px)"
       top="16px"
       :footer="false"
@@ -501,49 +501,49 @@
 
     <el-dialog
       v-model="editDialogVisible"
-      title="编辑文件资源信息"
+      :title="t('fileResource.editTitle')"
       width="800px"
       :destroy-on-close="true"
       align-center
     >
       <el-form :model="editForm" label-width="100px" class="px-2">
-        <el-form-item label="名称">
-          <el-input v-model="editForm.name" placeholder="请输入名称" class="w-full" />
+        <el-form-item :label="t('fileResource.name')">
+          <el-input v-model="editForm.name" :placeholder="t('fileResource.namePlaceholder')" class="w-full" />
         </el-form-item>
-        <el-form-item label="描述">
+        <el-form-item :label="t('common.description')">
           <el-input
             v-model="editForm.description"
             type="textarea"
             :rows="5"
-            placeholder="请输入描述"
+            :placeholder="t('fileResource.descriptionPlaceholder')"
             class="w-full"
           />
         </el-form-item>
-        <el-form-item label="关键词">
+        <el-form-item :label="t('fileResource.keywords')">
           <el-input
             v-model="editForm.keywords"
-            placeholder="请输入关键词（逗号分隔）"
+            :placeholder="t('fileResource.keywordsPlaceholder')"
             class="w-full"
           />
         </el-form-item>
-        <el-form-item label="分类">
-          <el-select v-model="editForm.category" placeholder="请选择分类" class="w-full">
-            <el-option label="风景" value="风景" />
-            <el-option label="人物" value="人物" />
-            <el-option label="动物" value="动物" />
-            <el-option label="建筑" value="建筑" />
-            <el-option label="动画" value="动画" />
-            <el-option label="其他" value="其他" />
+        <el-form-item :label="t('fileResource.category')">
+          <el-select v-model="editForm.category" :placeholder="t('fileResource.selectCategoryPlaceholder')" class="w-full">
+            <el-option :label="t('fileResource.categoryScenery')" value="风景" />
+            <el-option :label="t('fileResource.categoryPeople')" value="人物" />
+            <el-option :label="t('fileResource.categoryAnimal')" value="动物" />
+            <el-option :label="t('fileResource.categoryBuilding')" value="建筑" />
+            <el-option :label="t('fileResource.categoryAnimation')" value="动画" />
+            <el-option :label="t('fileResource.categoryOther')" value="其他" />
           </el-select>
         </el-form-item>
-        <el-form-item label="标签">
-          <el-input v-model="editForm.tags" placeholder="请输入标签（逗号分隔）" class="w-full" />
+        <el-form-item :label="t('fileResource.tags')">
+          <el-input v-model="editForm.tags" :placeholder="t('fileResource.tagsPlaceholder')" class="w-full" />
         </el-form-item>
         <!-- 是否公开 编辑项已移除 -->
       </el-form>
       <template #footer>
-        <el-button @click="editDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="editLoading" @click="submitEdit">保存</el-button>
+        <el-button @click="editDialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="editLoading" @click="submitEdit">{{ t('common.save') }}</el-button>
       </template>
     </el-dialog>
 
@@ -568,14 +568,14 @@
 
 
         <el-form label-width="96px" class="sticker-user-transfer-form">
-          <el-form-item label="目标用户" required>
+          <el-form-item :label="t('fileResource.targetUser')" required>
             <el-select
               v-model="fileResourceUserTransferTargetUserId"
               class="sticker-user-transfer-form__select"
               filterable
               clearable
               :loading="fileResourceUserTransferUsersLoading"
-              placeholder="请选择目标用户"
+              :placeholder="t('fileResource.selectTargetUserPlaceholder')"
             >
               <el-option
                 v-for="item in fileResourceUserTransferUserOptions"
@@ -585,22 +585,22 @@
               >
                 <div class="sticker-user-transfer-option">
                   <div class="sticker-user-transfer-option__main">
-                    <span>{{ item.name || item.account || `用户 #${item.id}` }}</span>
-                    <el-tag v-if="item.isAdmin" size="small" type="warning">管理员</el-tag>
+                    <span>{{ item.name || item.account || t('fileResource.userHashId', { id: item.id }) }}</span>
+                    <el-tag v-if="item.isAdmin" size="small" type="warning">{{ t('fileResource.admin') }}</el-tag>
                   </div>
                   <span class="sticker-user-transfer-option__meta">
-                    {{ item.account || `ID ${item.id}` }}
+                    {{ item.account || t('fileResource.idWithId', { id: item.id }) }}
                   </span>
                 </div>
               </el-option>
             </el-select>
           </el-form-item>
 
-          <el-form-item label="资源数量">
+          <el-form-item :label="t('fileResource.resourceCount')">
             <el-tag type="info">{{ fileResourceUserTransferIds.length }}</el-tag>
           </el-form-item>
 
-          <el-form-item label="选中资源">
+          <el-form-item :label="t('fileResource.selectedResources')">
             <div class="sticker-user-transfer-preview">
               <el-tag
                 v-for="item in fileResourceUserTransferPreviewItems"
@@ -614,7 +614,7 @@
                 v-if="fileResourceUserTransferIds.length > fileResourceUserTransferPreviewItems.length"
                 class="sticker-user-transfer-preview__more"
               >
-                等 {{ fileResourceUserTransferIds.length }} 条
+                {{ t('fileResource.etcItems', { count: fileResourceUserTransferIds.length }) }}
               </span>
             </div>
           </el-form-item>
@@ -622,7 +622,7 @@
       </div>
 
       <template #footer>
-        <el-button @click="fileResourceUserTransferDialogVisible = false">取消</el-button>
+        <el-button @click="fileResourceUserTransferDialogVisible = false">{{ t('common.cancel') }}</el-button>
         <el-button
           type="primary"
           :loading="fileResourceUserTransferSubmitting"
@@ -636,26 +636,26 @@
     <!-- 查看分享记录弹窗 -->
     <el-dialog
       v-model="shareRecordsDialogVisible"
-      :title="`分享记录 - ${shareRecordsResourceName}`"
+      :title="t('fileResource.shareRecordsTitle', { name: shareRecordsResourceName })"
       width="600px"
       destroy-on-close
     >
       <div v-loading="shareRecordsLoading">
-        <el-empty v-if="!shareRecordsLoading && shareRecordsList.length === 0" description="暂无分享记录" />
+        <el-empty v-if="!shareRecordsLoading && shareRecordsList.length === 0" :description="t('fileResource.noShareRecords')" />
         <el-table v-else :data="shareRecordsList" style="width: 100%">
-          <el-table-column prop="userName" label="分享给" min-width="120">
+          <el-table-column prop="userName" :label="t('fileResource.sharedTo')" min-width="120">
             <template #default="{ row }">
               <span>{{ row.userName || row.userId }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="shareType" label="分享类型" width="120">
+          <el-table-column prop="shareType" :label="t('fileResource.shareType')" width="120">
             <template #default="{ row }">
-              <el-tag v-if="row.shareType === 'shared'" type="warning" size="small" effect="light">快捷共享</el-tag>
-              <el-tag v-else-if="row.shareType === 'copy'" type="success" size="small" effect="light">物理副本</el-tag>
+              <el-tag v-if="row.shareType === 'shared'" type="warning" size="small" effect="light">{{ t('fileResource.quickShare') }}</el-tag>
+              <el-tag v-else-if="row.shareType === 'copy'" type="success" size="small" effect="light">{{ t('fileResource.physicalCopy') }}</el-tag>
               <el-tag v-else type="info" size="small" effect="plain">{{ row.shareType || '-' }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="createTime" label="分享时间" width="180">
+          <el-table-column prop="createTime" :label="t('fileResource.shareTime')" width="180">
             <template #default="{ row }">
               {{ formatTimestamp(row.createTime) }}
             </template>
@@ -694,6 +694,7 @@ import DateRangePicker from "@/components/DateRangePicker.vue";
 import Pagination from "@/components/Pagination/index.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import { ElButton, ElNotification, ElMessage, ElMessageBox } from "element-plus";
+import { useI18n } from "@/hooks/web/useI18n";
 import {
   Delete,
   Search,
@@ -716,6 +717,7 @@ import { useFolderRowDrag } from "@/hooks/useFolderRowDrag";
 import { FOLDER_FILTER, convertFolderIdToApiParam } from "@/constants/folder";
 
 const userStore = useUserStore();
+const { t } = useI18n();
 const FOLDER_CATEGORY = "fileresource";
 const suffixOptions = [
   { label: "mp4", value: "mp4" },
@@ -785,32 +787,32 @@ const gridOptions = ref({
     },
     { type: "checkbox", width: 42, ellipsis: true, reserve: true },
     {
-      title: "文件预览",
+      title: t("fileResource.filePreview"),
       field: "url",
       width: 400,
       slots: { default: "previewDefaultSlot" },
     },
-    { title: "资源名称", field: "name", minWidth: 180, className: "font-bold", slots: { default: "nameSlot" } },
+    { title: t("fileResource.resourceName"), field: "name", minWidth: 180, className: "font-bold", slots: { default: "nameSlot" } },
     {
-      title: "资源类型",
+      title: t("fileResource.resourceType"),
       field: "shareType",
       width: 200,
       slots: { default: "shareTypeSlot" },
     },
-    { title: "描述", field: "description", minWidth: 200 },
-    { title: "关键词", field: "keywords", minWidth: 160 },
-    { title: "后缀", field: "suffix", width: 80 },
-    { title: "分类", field: "category", width: 100, slots: { default: "categorySlot" } },
-    { title: "标签", field: "tags", minWidth: 150, slots: { default: "tagsSlot" } },
+    { title: t("common.description"), field: "description", minWidth: 200 },
+    { title: t("fileResource.keywords"), field: "keywords", minWidth: 160 },
+    { title: t("fileResource.suffix"), field: "suffix", width: 80 },
+    { title: t("fileResource.category"), field: "category", width: 100, slots: { default: "categorySlot" } },
+    { title: t("fileResource.tags"), field: "tags", minWidth: 150, slots: { default: "tagsSlot" } },
     {
-      title: "上传者",
+      title: t("fileResource.uploader"),
       field: "uploader",
       width: 140,
       formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
     },
-    { title: "ID", field: "id", width: 80 },
+    { title: t("common.id"), field: "id", width: 80 },
     {
-      title: "创建时间",
+      title: t("common.createTime"),
       field: "createTime",
       width: 150,
       ellipsis: true,
@@ -819,7 +821,7 @@ const gridOptions = ref({
       },
     },
     {
-      title: "修改时间",
+      title: t("common.updateTime"),
       field: "updateTime",
       width: 150,
       ellipsis: true,
@@ -858,21 +860,21 @@ const fileResourceUserTransferIds = ref<string[]>([]);
 const fileResourceUserTransferTargetUserId = ref("");
 const fileResourceUserTransferUserOptions = ref<FileResourceUserTransferUserOption[]>([]);
 const fileResourceUserTransferDialogTitle = computed(() => {
-  if (fileResourceUserTransferAction.value === "share") return "快捷共享文件资源给用户";
-  if (fileResourceUserTransferAction.value === "copy") return "复制副本文件资源给用户";
-  return "转移文件资源给用户";
+  if (fileResourceUserTransferAction.value === "share") return t("fileResource.quickShareDialogTitle");
+  if (fileResourceUserTransferAction.value === "copy") return t("fileResource.copyDialogTitle");
+  return t("fileResource.transferDialogTitle");
 });
 const fileResourceUserTransferSubmitText = computed(() => {
-  if (fileResourceUserTransferAction.value === "share") return "确认快捷共享";
-  if (fileResourceUserTransferAction.value === "copy") return "确认复制副本";
-  return "确认转移";
+  if (fileResourceUserTransferAction.value === "share") return t("fileResource.confirmQuickShare");
+  if (fileResourceUserTransferAction.value === "copy") return t("fileResource.confirmCopy");
+  return t("fileResource.confirmTransfer");
 });
 const fileResourceUserTransferPreviewItems = computed(() =>
   fileResourceUserTransferIds.value.slice(0, 5).map((id) => {
     const row = dataSource.value.find((item: any) => String(item.id) === String(id));
     return {
       id: String(id),
-      label: row?.name || `ID: ${id}`,
+      label: row?.name || t("fileResource.idWithValue", { id }),
     };
   }),
 );
@@ -885,7 +887,7 @@ const shareRecordsTotal = ref(0);
 const shareRecordsResourceName = ref('');
 
 async function openShareRecordsDialog(row: any) {
-  shareRecordsResourceName.value = row.name || `ID: ${row.id}`;
+  shareRecordsResourceName.value = row.name || t("fileResource.idWithValue", { id: row.id });
   shareRecordsDialogVisible.value = true;
   shareRecordsLoading.value = true;
   shareRecordsList.value = [];
@@ -894,7 +896,7 @@ async function openShareRecordsDialog(row: any) {
     shareRecordsList.value = res?.list || [];
     shareRecordsTotal.value = res?.total || 0;
   } catch (e: any) {
-    ElMessage.error(e?.message || '获取分享记录失败');
+    ElMessage.error(e?.message || t('fileResource.getShareRecordsFailed'));
   } finally {
     shareRecordsLoading.value = false;
   }
@@ -936,7 +938,7 @@ async function getList() {
 
 function ensureFileResourceAdminOperation() {
   if (!isAdmin.value) {
-    ElMessage.warning("仅管理员可执行该操作");
+    ElMessage.warning(t("fileResource.adminOnlyOperation"));
     return false;
   }
   return true;
@@ -958,12 +960,12 @@ async function loadFileResourceTransferUserOptions() {
       id: String(item.id),
       name: item.name || "",
       account: item.account || "",
-      label: item.name || item.account || `用户 #${item.id}`,
+      label: item.name || item.account || t("fileResource.userHashId", { id: item.id }),
       isAdmin: !!item.isAdmin,
     }));
     fileResourceUserTransferUsersLoaded.value = true;
   } catch (error: any) {
-    ElMessage.error(error?.message || "加载用户列表失败");
+    ElMessage.error(error?.message || t("fileResource.loadUsersFailed"));
   } finally {
     fileResourceUserTransferUsersLoading.value = false;
   }
@@ -989,7 +991,7 @@ async function openFileResourceUserTransferDialog(
     : (Array.isArray(ids.value) ? ids.value : []).map((id) => String(id)).filter(Boolean);
 
   if (!targetIds.length) {
-    ElMessage.warning("请选择要操作的文件资源");
+    ElMessage.warning(t("fileResource.selectResourcesFirst"));
     return;
   }
 
@@ -1006,22 +1008,22 @@ async function submitFileResourceUserTransfer() {
   }
 
   if (!fileResourceUserTransferIds.value.length) {
-    ElMessage.warning("请选择要操作的文件资源");
+    ElMessage.warning(t("fileResource.selectResourcesFirst"));
     return;
   }
 
   if (!fileResourceUserTransferTargetUserId.value) {
-    ElMessage.warning("请选择目标用户");
+    ElMessage.warning(t("fileResource.selectTargetUser"));
     return;
   }
 
   fileResourceUserTransferSubmitting.value = true;
   const actionLabel =
     fileResourceUserTransferAction.value === "share"
-      ? "快捷共享"
+      ? t("fileResource.quickShare")
       : fileResourceUserTransferAction.value === "copy"
-      ? "复制副本"
-      : "转移";
+      ? t("fileResource.copy")
+      : t("fileResource.transfer");
 
   try {
     const payload = {
@@ -1044,20 +1046,26 @@ async function submitFileResourceUserTransfer() {
 
     if (successCount > 0) {
       ElNotification.success(
-        `${actionLabel}成功 ${successCount} 条${failedCount ? `，失败 ${failedCount} 条` : ""}${warningCount ? `，警告 ${warningCount} 条` : ""}`,
+        t("fileResource.transferResult", {
+          action: actionLabel,
+          success: successCount,
+          failed: failedCount,
+          failedPart: failedCount ? t("fileResource.transferFailedPart", { count: failedCount }) : "",
+          warningPart: warningCount ? t("fileResource.transferWarningPart", { count: warningCount }) : "",
+        }),
       );
       fileResourceUserTransferDialogVisible.value = false;
       resetCheckStatus();
       await getList();
     } else if (failedCount > 0) {
-      ElMessage.error(`${actionLabel}失败 ${failedCount} 条`);
+      ElMessage.error(t("fileResource.transferFailedCount", { action: actionLabel, count: failedCount }));
     } else {
-      ElMessage.warning("未处理任何文件资源，请稍后重试");
+      ElMessage.warning(t("fileResource.transferNoProcessed"));
     }
 
     if (failedCount > 0) {
       ElNotification.warning({
-        title: `${actionLabel}失败详情`,
+        title: t("fileResource.transferFailedDetailTitle", { action: actionLabel }),
         message: result.failed
           .slice(0, 3)
           .map((item: any) => `${item.id}: ${item.message}`)
@@ -1068,7 +1076,7 @@ async function submitFileResourceUserTransfer() {
 
     if (warningCount > 0) {
       ElNotification.warning({
-        title: `${actionLabel}完成，但有警告`,
+        title: t("fileResource.transferWarningTitle", { action: actionLabel }),
         message: result.warnings
           .slice(0, 3)
           .map((item: any) => `${item.id}: ${item.message}`)
@@ -1077,7 +1085,7 @@ async function submitFileResourceUserTransfer() {
       });
     }
   } catch (error: any) {
-    ElMessage.error(error?.message || `${actionLabel}失败`);
+    ElMessage.error(error?.message || t("fileResource.transferFailed", { action: actionLabel }));
   } finally {
     fileResourceUserTransferSubmitting.value = false;
   }
@@ -1088,7 +1096,7 @@ getList();
 // 下载
 function handleMultiDownload() {
   if (!ids.value.length) {
-    return ElMessage.warning("请选择要下载的数据");
+    return ElMessage.warning(t("fileResource.selectDataToDownload"));
   }
 
   // 处理文件下载
@@ -1107,22 +1115,22 @@ function handleMultiDownload() {
           const fileName = row.name || `file_${id}.${row.suffix || "unknown"}`;
 
           if (!downloadUrl) {
-            ElMessage.error(`文件 ${fileName} 下载失败：缺少下载链接`);
+            ElMessage.error(t("fileResource.downloadFailedMissingUrl", { name: fileName }));
             return;
           }
 
           // 使用新的下载函数
           await downloadFileByElement(downloadUrl, fileName);
-          ElNotification.success(`文件 ${fileName} 下载成功`);
+          ElNotification.success(t("fileResource.downloadSuccess", { name: fileName }));
         } catch (error) {
           console.error("下载失败:", error);
-          ElMessage.error(`文件下载失败：${error.message}`);
+          ElMessage.error(t("fileResource.downloadFailed", { message: error.message }));
         }
       }, 500 * index);
     });
   } catch (e) {
     console.error("批量下载失败:", e);
-    ElMessage.error("批量下载失败");
+    ElMessage.error(t("fileResource.batchDownloadFailed"));
   }
 }
 
@@ -1132,7 +1140,7 @@ function handleDelete(row?) {
   if (row) {
     delIds = [row.id];
   } else if (!ids.value.length) {
-    return ElMessage.warning("请选择要删除的数据");
+    return ElMessage.warning(t("fileResource.selectDataToDelete"));
   } else {
     delIds = [...ids.value];
   }
@@ -1140,9 +1148,9 @@ function handleDelete(row?) {
   console.log("准备删除的ID:", delIds);
   console.log("ids.value:", ids.value);
 
-  ElMessageBox.confirm("确认删除该文件资源吗", "删除提示", {
-    confirmButtonText: "确认",
-    cancelButtonText: "取消",
+  ElMessageBox.confirm(t("fileResource.confirmDelete"), t("fileResource.deleteTip"), {
+    confirmButtonText: t("common.confirm"),
+    cancelButtonText: t("common.cancel"),
     type: "error",
   })
     .then(async () => {
@@ -1150,12 +1158,12 @@ function handleDelete(row?) {
         console.log("发送删除请求，ID:", delIds);
         const result = await deleteFileResource({ ids: delIds });
         console.log("删除结果:", result);
-        ElNotification.success("删除成功");
+        ElNotification.success(t("common.deleteSuccess"));
         resetCheckStatus();
         getList();
       } catch (error) {
         console.error("删除失败:", error);
-        ElMessage.error(`删除失败: ${error.message || "未知错误"}`);
+        ElMessage.error(t("fileResource.deleteFailed", { message: error.message || t("fileResource.unknownError") }));
       }
     })
     .catch(() => {});
@@ -1188,16 +1196,16 @@ async function handleDownload(row) {
     const fileName = row.name || `file_${row.id}.${row.suffix || "unknown"}`;
 
     if (!downloadUrl) {
-      ElMessage.error(`文件 ${fileName} 下载失败：缺少下载链接`);
+      ElMessage.error(t("fileResource.downloadFailedMissingUrl", { name: fileName }));
       return;
     }
 
     // 使用新的下载函数
     await downloadFileByElement(downloadUrl, fileName);
-    ElNotification.success(`文件 ${fileName} 下载成功`);
+    ElNotification.success(t("fileResource.downloadSuccess", { name: fileName }));
   } catch (error) {
     console.error("下载失败:", error);
-    ElMessage.error(`文件下载失败：${error.message}`);
+    ElMessage.error(t("fileResource.downloadFailed", { message: error.message }));
   }
 }
 

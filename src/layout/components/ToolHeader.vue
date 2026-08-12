@@ -13,6 +13,7 @@ import GlobalNotificationCenter from "@/layout/components/GlobalNotificationCent
 import GlobalNotificationToastStack from "@/layout/components/GlobalNotificationToastStack.vue";
 import ToolLauncherDropdown from "@/components/ToolWindowHost/ToolLauncherDropdown.vue";
 import { useAppStore } from "@/store/modules/app";
+import { useSplitStore } from "@/store/modules/split";
 import { useDesign } from "@/hooks/web/useDesign";
 import { ElTooltip } from "element-plus";
 
@@ -30,6 +31,7 @@ const openMobileMenu = inject<() => void>("openMobileMenu", () => {});
 const expandDesktopMenu = () => appStore.setCollapse(false);
 
 const { t } = useI18n();
+const splitStore = useSplitStore();
 </script>
 
 <template>
@@ -95,6 +97,24 @@ const { t } = useI18n();
           v-if="screenfull && !mobile"
           color="var(--top-header-text-color)"
         />
+
+        <!-- 分屏 — 图标 + 文字 -->
+        <button
+          type="button"
+          class="split-btn"
+          :class="{ 'is-active': splitStore.isEnabled }"
+          :aria-label="splitStore.isEnabled ? '关闭分屏' : '开启分屏'"
+          :title="splitStore.isEnabled ? '关闭分屏' : '开启分屏'"
+          @click="splitStore.toggleSplit()"
+        >
+          <span class="th-action-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <line x1="12" y1="3" x2="12" y2="21" />
+            </svg>
+          </span>
+          <span class="th-action-label">{{ splitStore.isEnabled ? '退出分屏' : '分屏' }}</span>
+        </button>
 
         <!-- 语言切换 — 图标 + 文字 -->
         <LocaleDropdown v-if="!mobile" />
@@ -264,4 +284,36 @@ $prefix-cls: #{$namespace}-tool-header;
     gap: 6px;
   }
 }
+
+/* ===== 分屏按钮 ===== */
+.split-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: 48px;
+  min-height: calc(var(--top-tool-height) - 14px);
+  padding: 4px 6px 3px;
+  margin: 0;
+  color: var(--top-header-text-color);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  box-shadow: none;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.split-btn:hover {
+  color: var(--el-color-primary);
+  background-color: color-mix(in srgb, var(--top-header-hover-color) 65%, transparent 35%);
+  transform: scale(1.06);
+}
+
+.split-btn.is-active {
+  color: var(--el-color-primary);
+  background-color: color-mix(in srgb, var(--el-color-primary) 12%, transparent);
+}
+
 </style>

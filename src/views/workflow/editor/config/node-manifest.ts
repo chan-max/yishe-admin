@@ -1,4 +1,4 @@
-import { weiboIcon, notificationIcon, feishuIcon, wecomIcon, douyinIcon, bilibiliIcon, zhihuIcon, toutiaoIcon, doubanIcon, kuaishouIcon, javaScriptIcon } from '@/assets/icons/apps'
+import { weiboIcon, notificationIcon, feishuIcon, wecomIcon, douyinIcon, bilibiliIcon, zhihuIcon, toutiaoIcon, doubanIcon, kuaishouIcon, javaScriptIcon, openaiIcon } from '@/assets/icons/apps'
 
 export type NodeType =
   | 'start'

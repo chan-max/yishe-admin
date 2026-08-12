@@ -24,6 +24,9 @@ defineOptions({
   height: var(--ai-assistant-page-height);
   min-height: 0;
   overflow: hidden;
+  /* 仅抵消父级 AppView 的左右 padding */
+  margin-inline: calc(-1 * var(--app-content-padding));
+  width: calc(100% + 2 * var(--app-content-padding));
 }
 
 .ai-assistant-page > * {

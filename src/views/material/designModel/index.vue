@@ -4,25 +4,25 @@
       <div style="flex:1;"></div>
       <div class="flex gap-4 items-center">
 
-        <form-item label="发布状态">
-          <el-select v-model="queryParams.publishStatus" placeholder="选择状态" style="width: 160px"
+        <form-item :label="t('designModel.publishStatus')">
+          <el-select v-model="queryParams.publishStatus" :placeholder="t('designModel.selectStatus')" style="width: 160px"
             @change="handleStatusFilter">
             <el-option v-for="option in STATUS_OPTIONS" :key="option.value" :label="option.label"
               :value="option.value" />
           </el-select>
         </form-item>
-        <form-item label="按名称搜索">
-          <el-input v-model="queryParams.name" clearable placeholder="请输入名称" style="width: 160px" />
+        <form-item :label="t('designModel.searchByName')">
+          <el-input v-model="queryParams.name" clearable :placeholder="t('common.namePlaceholder')" style="width: 160px" />
         </form-item>
-        <form-item label="只看母版">
+        <form-item :label="t('designModel.onlyTemplate')">
           <el-switch v-model="queryParams.isTemplate" :active-value="true" :inactive-value="false" @change="getList" />
         </form-item>
-        <el-button type="primary" @click="getList" :icon="Search" :loading="loading"> 搜索 </el-button>
+        <el-button type="primary" @click="getList" :icon="Search" :loading="loading">{{ t('common.search') }}</el-button>
       </div>
       <div class="shrink-0">
         <!-- 删除按钮 -->
         <el-button type="danger" :icon="Delete" :loading="batchDeleteLoading" @click="handleDelete(null)">
-          批量删除({{ ids.length }})
+          {{ t('designModel.batchDelete', { count: ids.length }) }}
         </el-button>
       </div>
     </div>
@@ -35,98 +35,98 @@
             <!-- 操作下拉菜单 -->
             <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)"
               class="operation-dropdown">
-              <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
+              <el-button type="primary" link size="small" class="operation-trigger-button">{{ t('common.operation') }}</el-button>
               <template #dropdown>
                 <el-dropdown-menu class="operation-menu-compact">
                   <el-dropdown-item command="view-drafts">
                     <el-icon>
                       <Picture />
                     </el-icon>
-                    <span>查看草稿截图</span>
+                    <span>{{ t('designModel.viewDraftScreenshots') }}</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="edit">
                     <el-icon>
                       <Edit />
                     </el-icon>
-                    <span>编辑</span>
+                    <span>{{ t('common.edit') }}</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="ai-generate" :disabled="aiGenerateLoading[row.id]">
                     <el-icon>
                       <MagicStick />
                     </el-icon>
-                    <span>{{ aiGenerateLoading[row.id] ? 'AI生成中...' : 'AI生成内容' }}</span>
+                    <span>{{ aiGenerateLoading[row.id] ? t('designModel.aiGenerating') : t('designModel.aiGenerateContent') }}</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="download-thumbnail" :disabled="!row.thumbnail">
                     <el-icon>
                       <Download />
                     </el-icon>
-                    <span>下载缩略图</span>
+                    <span>{{ t('designModel.downloadThumbnail') }}</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="download-drafts">
                     <el-icon>
                       <Download />
                     </el-icon>
-                    <span>下载草稿</span>
+                    <span>{{ t('designModel.downloadDrafts') }}</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="copy-info" divided>
                     <el-icon>
                       <CopyDocument />
                     </el-icon>
-                    <span>复制信息</span>
+                    <span>{{ t('designModel.copyInfo') }}</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="view-meta">
                     <el-icon>
                       <Document />
                     </el-icon>
-                    <span>查看元数据</span>
+                    <span>{{ t('designModel.viewMeta') }}</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="view-stickers">
                     <el-icon>
                       <Picture />
                     </el-icon>
-                    <span>查看关联贴纸</span>
+                    <span>{{ t('designModel.viewRelatedStickers') }}</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="toggle-template" :disabled="templateLoading[row.id]">
                     <el-icon>
                       <Star />
                     </el-icon>
-                    <span>{{ templateLoading[row.id] ? '处理中...' : (row.isTemplate ? '取消母版' : '设为母版') }}</span>
+                    <span>{{ templateLoading[row.id] ? t('designModel.processing') : (row.isTemplate ? t('designModel.cancelTemplate') : t('designModel.setAsTemplate')) }}</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="toggle-public" :disabled="publicLoading[row.id]">
                     <el-icon>
                       <Share />
                     </el-icon>
-                    <span>{{ publicLoading[row.id] ? '处理中...' : (row.isPublic ? '取消发布' : '发布') }}</span>
+                    <span>{{ publicLoading[row.id] ? t('designModel.processing') : (row.isPublic ? t('designModel.cancelPublish') : t('designModel.publish')) }}</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="mark-pending" divided>
                     <el-icon>
                       <Clock />
                     </el-icon>
-                    <span>标记为待发布</span>
+                    <span>{{ t('designModel.markPending') }}</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="mark-published">
                     <el-icon>
                       <Check />
                     </el-icon>
-                    <span>标记为已发布</span>
+                    <span>{{ t('designModel.markPublished') }}</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="mark-draft">
                     <el-icon>
                       <Edit />
                     </el-icon>
-                    <span>标记为草稿</span>
+                    <span>{{ t('designModel.markDraft') }}</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="mark-archived">
                     <el-icon>
                       <Folder />
                     </el-icon>
-                    <span>标记为已归档</span>
+                    <span>{{ t('designModel.markArchived') }}</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="delete" divided :disabled="deleteLoading[row.id]" class="operation-menu-item--danger">
                     <el-icon>
                       <Delete />
                     </el-icon>
-                    <span>{{ deleteLoading[row.id] ? '删除中...' : '删除' }}</span>
+                    <span>{{ deleteLoading[row.id] ? t('designModel.deleting') : t('common.delete') }}</span>
                   </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -147,20 +147,20 @@
             <el-tooltip v-if="row.phash" :content="row.phash" placement="top" :show-after="500">
               <span class="phash-text">{{ formatPhash(row.phash) }}</span>
             </el-tooltip>
-            <span v-else class="no-phash">未生成</span>
+            <span v-else class="no-phash">{{ t('designModel.notGenerated') }}</span>
           </div>
         </template>
         <template #isTemplateSlot="{ row }">
-          <span v-if="row.isTemplate" class="is-template-tag">是</span>
-          <span v-else class="not-template-tag">否</span>
+          <span v-if="row.isTemplate" class="is-template-tag">{{ t('designModel.yes') }}</span>
+          <span v-else class="not-template-tag">{{ t('designModel.no') }}</span>
         </template>
         <template #isPublicSlot="{ row }">
-          <span v-if="row.isPublic" class="is-public-tag">是</span>
-          <span v-else class="not-public-tag">否</span>
+          <span v-if="row.isPublic" class="is-public-tag">{{ t('designModel.yes') }}</span>
+          <span v-else class="not-public-tag">{{ t('designModel.no') }}</span>
         </template>
         <template #publishStatusSlot="{ row }">
           <el-tag :type="getStatusTagType(row.publishStatus)" size="small">
-            {{ STATUS_TEXT[row.publishStatus] || '未知' }}
+            {{ STATUS_TEXT[row.publishStatus] || t('designModel.unknown') }}
           </el-tag>
         </template>
       </vxe-grid>
@@ -174,37 +174,37 @@
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
         <el-row>
           <el-col :span="24">
-            <el-form-item label="模型名称" prop="name">
-              <el-input v-model="form.name" placeholder="请输入模型名称" />
+            <el-form-item :label="t('designModel.modelName')" prop="name">
+              <el-input v-model="form.name" :placeholder="t('designModel.inputModelName')" />
             </el-form-item>
           </el-col>
           <el-col :span="24">
-            <el-form-item label="描述" prop="description">
-              <el-input v-model="form.description" placeholder="请输入描述" />
+            <el-form-item :label="t('common.description')" prop="description">
+              <el-input v-model="form.description" :placeholder="t('designModel.inputDescription')" />
             </el-form-item>
           </el-col>
           <el-col :span="24">
-            <el-form-item label="关键词" prop="keywords">
-              <el-input v-model="form.keywords" placeholder="请输入关键词（逗号分隔）" />
+            <el-form-item :label="t('designModel.keywords')" prop="keywords">
+              <el-input v-model="form.keywords" :placeholder="t('designModel.inputKeywords')" />
             </el-form-item>
           </el-col>
         </el-row>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitForm" :loading="submitLoading">确定</el-button>
+        <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="submitForm" :loading="submitLoading">{{ t('common.confirm') }}</el-button>
       </template>
     </el-dialog>
-    <el-dialog v-model="metaDialogVisible" fullscreen title="元数据详情" :close-on-click-modal="false">
+    <el-dialog v-model="metaDialogVisible" fullscreen :title="t('designModel.metaDetail')" :close-on-click-modal="false">
       <vue-json-pretty :data="JSON.parse(metaDialogContent)" />
     </el-dialog>
 
     <!-- 关联草稿弹窗 -->
-    <el-dialog v-model="draftDialogVisible" title="关联草稿" width="80%" :close-on-click-modal="false">
+    <el-dialog v-model="draftDialogVisible" :title="t('designModel.relatedDrafts')" width="80%" :close-on-click-modal="false">
       <div class="draft-dialog-content">
         <div class="draft-info mb-4">
           <h3 class="text-lg font-medium mb-2">
-            模型：{{ currentModel?.name || currentModel?.id }}
+            {{ t('designModel.model') }}：{{ currentModel?.name || currentModel?.id }}
           </h3>
           <p v-if="currentModel?.description" class="text-color-regular">
             {{ currentModel.description }}
@@ -212,7 +212,7 @@
         </div>
 
         <div v-if="relatedDrafts.length === 0" class="empty-state text-center py-8">
-          <el-empty description="暂无关联草稿" />
+          <el-empty :description="t('designModel.noRelatedDrafts')" />
         </div>
 
         <div v-else class="draft-grid">
@@ -236,7 +236,7 @@
             <div class="draft-info p-3">
               <div class="draft-header flex justify-between items-start mb-2">
                 <div class="draft-name text-sm font-medium truncate flex-1">
-                  {{ draft.name || '未命名' }}
+                  {{ draft.name || t('designModel.unnamed') }}
                 </div>
                 <el-button type="danger" link size="small" @click="deleteDraftItem(draft)" class="ml-2 flex-shrink-0">
                   <el-icon>
@@ -256,27 +256,27 @@
       </div>
 
       <template #footer>
-        <el-button @click="draftDialogVisible = false">关闭</el-button>
+        <el-button @click="draftDialogVisible = false">{{ t('common.close') }}</el-button>
       </template>
     </el-dialog>
 
-    <el-dialog v-model="aiGenDialogVisible" title="AI自动生成内容" width="500px" align-center :destroy-on-close="true">
-      <div style="margin-bottom: 16px; font-size: 15px; color: #888;">请输入你希望AI分析的内容风格或角度（如：偏艺术描述、简洁风格、突出色彩等）</div>
-      <el-input v-model="aiGenPrompt" type="textarea" :rows="6" placeholder="如：请用艺术化语言描述模型内容..."
+    <el-dialog v-model="aiGenDialogVisible" :title="t('designModel.aiAutoGenerate')" width="500px" align-center :destroy-on-close="true">
+      <div style="margin-bottom: 16px; font-size: 15px; color: #888;">{{ t('designModel.aiGenerateTip') }}</div>
+      <el-input v-model="aiGenPrompt" type="textarea" :rows="6" :placeholder="t('designModel.aiGeneratePlaceholder')"
         style="width:100%;min-height:120px;font-size:16px;resize:vertical;" />
       <template #footer>
-        <el-button @click="aiGenDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="aiGenDialogLoading" @click="submitAiGenDialog">确定</el-button>
+        <el-button @click="aiGenDialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="aiGenDialogLoading" @click="submitAiGenDialog">{{ t('common.confirm') }}</el-button>
       </template>
     </el-dialog>
 
     <!-- 草稿下载弹窗 -->
-    <el-dialog v-model="draftDownloadDialogVisible" title="下载草稿" :width="isMobile ? '95%' : '80%'"
+    <el-dialog v-model="draftDownloadDialogVisible" :title="t('designModel.downloadDrafts')" :width="isMobile ? '95%' : '80%'"
       :close-on-click-modal="false" :fullscreen="isMobile">
       <div class="draft-download-content">
         <div class="draft-info mb-4">
           <h3 class="text-lg font-medium mb-2">
-            模型：{{ currentModel?.name || currentModel?.id }}
+            {{ t('designModel.model') }}：{{ currentModel?.name || currentModel?.id }}
           </h3>
           <p v-if="currentModel?.description" class="text-color-regular">
             {{ currentModel.description }}
@@ -284,7 +284,7 @@
         </div>
 
         <div v-if="relatedDrafts.length === 0" class="empty-state text-center py-8">
-          <el-empty description="暂无关联草稿" />
+          <el-empty :description="t('designModel.noRelatedDrafts')" />
         </div>
 
         <div v-else class="draft-grid" :class="{ 'mobile-grid': isMobile }">
@@ -308,7 +308,7 @@
             <div class="draft-info p-3">
               <div class="draft-header flex justify-between items-start mb-2">
                 <div class="draft-name text-sm font-medium truncate flex-1">
-                  {{ draft.name || '未命名' }}
+                  {{ draft.name || t('designModel.unnamed') }}
                 </div>
                 <el-button type="primary" link size="small" @click="downloadSingleDraft(draft)"
                   class="ml-2 flex-shrink-0">
@@ -332,7 +332,7 @@
         <div class="dialog-footer" :class="{ 'mobile-footer': isMobile }">
           <div class="flex justify-between items-center" :class="{ 'mobile-footer-content': isMobile }">
             <div class="text-sm text-gray-600">
-              共 {{ relatedDrafts.length }} 个草稿
+              {{ t('designModel.totalDrafts', { count: relatedDrafts.length }) }}
             </div>
             <div class="flex gap-2" :class="{ 'mobile-buttons': isMobile }">
               <el-button type="success" @click="downloadAllDrafts" :disabled="relatedDrafts.length === 0"
@@ -340,10 +340,10 @@
                 <el-icon>
                   <Download />
                 </el-icon>
-                下载所有草稿
+                {{ t('designModel.downloadAllDrafts') }}
               </el-button>
               <el-button @click="draftDownloadDialogVisible = false" :size="isMobile ? 'large' : 'default'">
-                关闭
+                {{ t('common.close') }}
               </el-button>
             </div>
           </div>
@@ -352,11 +352,11 @@
     </el-dialog>
 
     <!-- 关联贴纸弹窗 -->
-    <el-dialog v-model="stickersDialogVisible" title="关联贴纸" width="80%" :close-on-click-modal="false">
+    <el-dialog v-model="stickersDialogVisible" :title="t('designModel.relatedStickers')" width="80%" :close-on-click-modal="false">
       <div class="stickers-dialog-content">
         <div class="stickers-info mb-4">
           <h3 class="text-lg font-medium mb-2">
-            模型：{{ currentModel?.name || currentModel?.id }}
+            {{ t('designModel.model') }}：{{ currentModel?.name || currentModel?.id }}
           </h3>
           <p v-if="currentModel?.description" class="text-color-regular">
             {{ currentModel.description }}
@@ -364,7 +364,7 @@
         </div>
 
         <div v-if="relatedStickers.length === 0" class="empty-state text-center py-8">
-          <el-empty description="暂无关联贴纸" />
+          <el-empty :description="t('designModel.noRelatedStickers')" />
         </div>
 
         <div v-else class="stickers-grid">
@@ -376,7 +376,7 @@
             <div class="sticker-info p-3">
               <div class="sticker-header flex justify-between items-start mb-2">
                 <div class="sticker-name text-sm font-medium truncate flex-1">
-                  {{ sticker.name || '未命名' }}
+                  {{ sticker.name || t('designModel.unnamed') }}
                 </div>
                 <el-button type="primary" link size="small" @click="downloadSticker(sticker)"
                   class="ml-2 flex-shrink-0">
@@ -402,62 +402,62 @@
       <template #footer>
         <div class="flex justify-between items-center">
           <div class="text-sm text-gray-600">
-            共 {{ relatedStickers.length }} 个贴纸
+            {{ t('designModel.totalStickers', { count: relatedStickers.length }) }}
           </div>
           <div class="flex gap-2">
             <el-button type="success" @click="downloadAllStickers" :disabled="relatedStickers.length === 0">
               <el-icon>
                 <Download />
               </el-icon>
-              下载所有贴纸
+              {{ t('designModel.downloadAllStickers') }}
             </el-button>
-            <el-button @click="stickersDialogVisible = false">关闭</el-button>
+            <el-button @click="stickersDialogVisible = false">{{ t('common.close') }}</el-button>
           </div>
         </div>
       </template>
     </el-dialog>
 
     <!-- 复制信息弹窗 -->
-    <el-dialog v-model="copyInfoDialogVisible" title="复制信息" width="400px" align-center :destroy-on-close="true">
+    <el-dialog v-model="copyInfoDialogVisible" :title="t('designModel.copyInfo')" width="400px" align-center :destroy-on-close="true">
       <div class="copy-info-content">
         <div class="copy-item" v-if="currentCopyModel?.name">
-          <div class="copy-label">标题：</div>
+          <div class="copy-label">{{ t('designModel.title') }}：</div>
           <div class="copy-content">
             <el-input v-model="currentCopyModel.name" readonly class="copy-input" />
-            <el-button type="primary" size="small" @click="copyToClipboard(currentCopyModel.name, '标题')"
+            <el-button type="primary" size="small" @click="copyToClipboard(currentCopyModel.name, t('designModel.title'))"
               class="copy-btn">
               <el-icon>
                 <CopyDocument />
               </el-icon>
-              复制
+              {{ t('common.copy') }}
             </el-button>
           </div>
         </div>
 
         <div class="copy-item" v-if="currentCopyModel?.description">
-          <div class="copy-label">描述：</div>
+          <div class="copy-label">{{ t('common.description') }}：</div>
           <div class="copy-content">
             <el-input v-model="currentCopyModel.description" type="textarea" :rows="3" readonly class="copy-input" />
-            <el-button type="primary" size="small" @click="copyToClipboard(currentCopyModel.description, '描述')"
+            <el-button type="primary" size="small" @click="copyToClipboard(currentCopyModel.description, t('common.description'))"
               class="copy-btn">
               <el-icon>
                 <CopyDocument />
               </el-icon>
-              复制
+              {{ t('common.copy') }}
             </el-button>
           </div>
         </div>
 
         <div class="copy-item" v-if="currentCopyModel?.keywords">
-          <div class="copy-label">关键词：</div>
+          <div class="copy-label">{{ t('designModel.keywords') }}：</div>
           <div class="copy-content">
             <el-input v-model="currentCopyModel.keywords" readonly class="copy-input" />
-            <el-button type="primary" size="small" @click="copyToClipboard(currentCopyModel.keywords, '关键词')"
+            <el-button type="primary" size="small" @click="copyToClipboard(currentCopyModel.keywords, t('designModel.keywords'))"
               class="copy-btn">
               <el-icon>
                 <CopyDocument />
               </el-icon>
-              复制
+              {{ t('common.copy') }}
             </el-button>
           </div>
         </div>
@@ -467,13 +467,13 @@
             <el-icon>
               <CopyDocument />
             </el-icon>
-            复制全部信息
+            {{ t('designModel.copyAllInfo') }}
           </el-button>
         </div>
       </div>
 
       <template #footer>
-        <el-button @click="copyInfoDialogVisible = false">关闭</el-button>
+        <el-button @click="copyInfoDialogVisible = false">{{ t('common.close') }}</el-button>
       </template>
     </el-dialog>
   </ContentWrap>
@@ -482,6 +482,7 @@
 import { ref, reactive, onMounted, watchEffect, computed } from 'vue'
 import { ContentWrap } from '@/components/ContentWrap'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useI18n } from '@/hooks/web/useI18n'
 import Pagination from '@/components/Pagination/index.vue'
 import { Search, Delete, Edit, Picture, MagicStick, Star, Document, VideoPlay, Share, Download, CopyDocument, Clock, Check, Folder } from '@element-plus/icons-vue'
 import { getDesignModelList, updateDesignModel, deleteDesignModel, aiAutoGenerateDesignModelInfo } from '@/api/designModel'
@@ -494,6 +495,8 @@ import VueJsonPretty from 'vue-json-pretty';
 import 'vue-json-pretty/lib/styles.css';
 import { useWindowSize } from '@vueuse/core'
 import { isQueuedAiTaskResult, notifyQueuedAiTask, unwrapAiTaskResult } from '@/utils/aiTask'
+
+const { t } = useI18n()
 
 // 获取窗口尺寸
 const { width } = useWindowSize()
@@ -518,21 +521,21 @@ const PUBLISH_STATUS = {
 } as const
 
 // 状态显示文本
-const STATUS_TEXT = {
-  [PUBLISH_STATUS.DRAFT]: '草稿',
-  [PUBLISH_STATUS.PENDING_SOCIAL_MEDIA]: '待发布社交媒体',
-  [PUBLISH_STATUS.PUBLISHED_SOCIAL_MEDIA]: '已发布社交媒体',
-  [PUBLISH_STATUS.ARCHIVED]: '已归档'
-} as const
+const STATUS_TEXT = computed(() => ({
+  [PUBLISH_STATUS.DRAFT]: t('designModel.statusDraft'),
+  [PUBLISH_STATUS.PENDING_SOCIAL_MEDIA]: t('designModel.statusPendingSocialMedia'),
+  [PUBLISH_STATUS.PUBLISHED_SOCIAL_MEDIA]: t('designModel.statusPublishedSocialMedia'),
+  [PUBLISH_STATUS.ARCHIVED]: t('designModel.statusArchived')
+}))
 
 // 状态选项
-const STATUS_OPTIONS = [
-  { label: '全部', value: '' },
-  { label: '草稿', value: PUBLISH_STATUS.DRAFT },
-  { label: '待发布社交媒体', value: PUBLISH_STATUS.PENDING_SOCIAL_MEDIA },
-  { label: '已发布社交媒体', value: PUBLISH_STATUS.PUBLISHED_SOCIAL_MEDIA },
-  { label: '已归档', value: PUBLISH_STATUS.ARCHIVED }
-]
+const STATUS_OPTIONS = computed(() => [
+  { label: t('designModel.statusAll'), value: '' },
+  { label: t('designModel.statusDraft'), value: PUBLISH_STATUS.DRAFT },
+  { label: t('designModel.statusPendingSocialMedia'), value: PUBLISH_STATUS.PENDING_SOCIAL_MEDIA },
+  { label: t('designModel.statusPublishedSocialMedia'), value: PUBLISH_STATUS.PUBLISHED_SOCIAL_MEDIA },
+  { label: t('designModel.statusArchived'), value: PUBLISH_STATUS.ARCHIVED }
+])
 
 
 const queryParams = reactive({
@@ -553,17 +556,17 @@ const gridOptions = ref({
   columns: [
     { type: 'checkbox', width: 50, ellipsis: true, reserve: true },
     // { title: 'ID', field: 'id', width: 240 },
-    { title: '缩略图', field: 'thumbnail', width: 120, slots: { default: 'thumbnailSlot' } },
-    { title: '模型名称', field: 'name', width: 200 },
-    { title: '描述', field: 'description', minWidth: 300 },
-    { title: '关键词', field: 'keywords', width: 180 },
-    { title: '感知哈希', field: 'phash', width: 200, slots: { default: 'phashSlot' } },
-    { title: '是否母版', field: 'isTemplate', width: 100, slots: { default: 'isTemplateSlot' } },
-    { title: '是否公开', field: 'isPublic', width: 100, slots: { default: 'isPublicSlot' } },
-    { title: '发布状态', field: 'publishStatus', width: 140, slots: { default: 'publishStatusSlot' } },
-    { title: '作者', field: 'uploader', width: 120, slots: { default: 'uploaderSlot' } },
-    { title: '创建时间', field: 'createTime', width: 150 },
-    { title: '修改时间', field: 'updateTime', width: 150 },
+    { title: t('designModel.thumbnail'), field: 'thumbnail', width: 120, slots: { default: 'thumbnailSlot' } },
+    { title: t('designModel.modelName'), field: 'name', width: 200 },
+    { title: t('common.description'), field: 'description', minWidth: 300 },
+    { title: t('designModel.keywords'), field: 'keywords', width: 180 },
+    { title: t('designModel.phash'), field: 'phash', width: 200, slots: { default: 'phashSlot' } },
+    { title: t('designModel.isTemplate'), field: 'isTemplate', width: 100, slots: { default: 'isTemplateSlot' } },
+    { title: t('designModel.isPublic'), field: 'isPublic', width: 100, slots: { default: 'isPublicSlot' } },
+    { title: t('designModel.publishStatus'), field: 'publishStatus', width: 140, slots: { default: 'publishStatusSlot' } },
+    { title: t('designModel.uploader'), field: 'uploader', width: 120, slots: { default: 'uploaderSlot' } },
+    { title: t('common.createTime'), field: 'createTime', width: 150 },
+    { title: t('common.updateTime'), field: 'updateTime', width: 150 },
     buildOperationColumn('operationDefaultSlot')
   ]
 })
@@ -623,7 +626,7 @@ async function viewRelatedDrafts(model: any) {
     })
     relatedDrafts.value = res.list || []
   } catch (error) {
-    ElMessage.error('获取关联草稿失败')
+    ElMessage.error(t('designModel.fetchDraftsFailed'))
     relatedDrafts.value = []
   }
 }
@@ -632,17 +635,17 @@ async function viewRelatedDrafts(model: any) {
 async function deleteDraftItem(draft: any) {
   try {
     await ElMessageBox.confirm(
-      `确认删除草稿"${draft.name || '未命名'}"吗？`,
-      '删除提示',
+      t('designModel.confirmDeleteDraft', { name: draft.name || t('designModel.unnamed') }),
+      t('designModel.deleteTip'),
       {
-        confirmButtonText: '确认',
-        cancelButtonText: '取消',
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
         type: 'warning'
       }
     )
 
     await deleteDraft([draft.id])
-    ElMessage.success('删除成功')
+    ElMessage.success(t('common.deleteSuccess'))
 
     // 从当前列表中移除已删除的草稿
     const index = relatedDrafts.value.findIndex(item => item.id === draft.id)
@@ -651,7 +654,7 @@ async function deleteDraftItem(draft: any) {
     }
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('删除失败')
+      ElMessage.error(t('common.deleteFailed'))
     }
   }
 }
@@ -699,11 +702,11 @@ async function handleAiAutoGenerate(row, cb, prompt) {
       row.description = resultData.description
       row.keywords = resultData.keywords
     }
-    ElMessage.success('AI自动生成内容成功')
+    ElMessage.success(t('designModel.aiGenerateSuccess'))
     if (typeof cb === 'function') cb()
     getList()
   } catch (e) {
-    ElMessage.error('AI自动生成内容失败')
+    ElMessage.error(t('designModel.aiGenerateFailed'))
     if (typeof cb === 'function') cb()
   } finally {
     aiGenerateLoading.value[row.id] = false
@@ -751,10 +754,10 @@ function getStatusTagType(status: string) {
 async function updateStatus(id: string, status: string) {
   try {
     await updateDesignModel({ id, publishStatus: status } as any)
-    ElMessage.success('状态更新成功')
+    ElMessage.success(t('designModel.statusUpdateSuccess'))
     getList()
   } catch (e) {
-    ElMessage.error('状态更新失败')
+    ElMessage.error(t('designModel.statusUpdateFailed'))
   }
 }
 
@@ -775,7 +778,7 @@ function checkboxAllChange(e) {
 function handleEdit(row) {
   isEdit.value = true
   dialogVisible.value = true
-  dialogTitle.value = '编辑模型'
+  dialogTitle.value = t('designModel.editModel')
   form.value = { ...row }
 }
 function handleDelete(row?) {
@@ -784,7 +787,7 @@ function handleDelete(row?) {
     delIds = [row.id]
     deleteLoading.value[row.id] = true
   } else if (!ids.value.length) {
-    return ElMessage.warning('请选择要删除的数据')
+    return ElMessage.warning(t('designModel.selectDataToDelete'))
   } else {
     delIds = [...ids.value]
     delIds.forEach((id) => {
@@ -792,19 +795,19 @@ function handleDelete(row?) {
     })
   }
 
-  ElMessageBox.confirm(`确认删除选中的${delIds.length}条数据吗`, '删除提示', {
-    confirmButtonText: '确认',
-    cancelButtonText: '取消',
+  ElMessageBox.confirm(t('designModel.confirmDeleteSelected', { count: delIds.length }), t('designModel.deleteTip'), {
+    confirmButtonText: t('common.confirm'),
+    cancelButtonText: t('common.cancel'),
     type: 'error'
   })
     .then(async () => {
       try {
         await deleteDesignModel(delIds)
-        ElMessage.success('删除成功')
+        ElMessage.success(t('common.deleteSuccess'))
         ids.value = []
         getList()
       } catch (error) {
-        ElMessage.error('删除失败')
+        ElMessage.error(t('common.deleteFailed'))
       } finally {
         delIds.forEach((id) => {
           deleteLoading.value[id] = false
@@ -824,10 +827,10 @@ async function toggleTemplate(row) {
   const newVal = !row.isTemplate
   try {
     await updateDesignModel({ ...row, isTemplate: newVal })
-    ElMessage.success(newVal ? '已设为母版' : '已取消母版')
+    ElMessage.success(newVal ? t('designModel.setAsTemplateSuccess') : t('designModel.cancelTemplateSuccess'))
     getList()
   } catch (e) {
-    ElMessage.error('操作失败')
+    ElMessage.error(t('common.operationFailed'))
   } finally {
     templateLoading.value[row.id] = false
   }
@@ -838,10 +841,10 @@ async function togglePublic(row) {
   const newVal = !row.isPublic
   try {
     await updateDesignModel({ ...row, isPublic: newVal })
-    ElMessage.success(newVal ? '已发布' : '已取消发布')
+    ElMessage.success(newVal ? t('designModel.published') : t('designModel.unpublished'))
     getList()
   } catch (e) {
-    ElMessage.error('操作失败')
+    ElMessage.error(t('common.operationFailed'))
   } finally {
     publicLoading.value[row.id] = false
   }
@@ -901,7 +904,7 @@ function handleOperationCommand(command: string, row: any) {
 }
 
 const rules = {
-  name: [{ required: true, message: '请输入模型名称', trigger: 'blur' }],
+  name: [{ required: true, message: t('designModel.inputModelName'), trigger: 'blur' }],
   // 可选：keywords校验
 }
 const dialogClose = () => {
@@ -915,7 +918,7 @@ const submitForm = async () => {
   })
   try {
     await updateDesignModel(form.value as any)
-    ElMessage.success('更新成功')
+    ElMessage.success(t('common.updateSuccess'))
     getList()
     dialogVisible.value = false
   } catch (e) {
@@ -937,10 +940,10 @@ function handleDraftVideoPlay(draft: any) {
         preload="metadata"
       ></video>
     </div>`,
-    `播放视频 - ${draft.name || '草稿视频'}`,
+    t('designModel.playVideo', { name: draft.name || t('designModel.draftVideo') }),
     {
       dangerouslyUseHTMLString: true,
-      confirmButtonText: '关闭',
+      confirmButtonText: t('common.close'),
       customClass: 'video-dialog',
       center: true,
       showClose: true,
@@ -955,7 +958,7 @@ function handleDraftVideoPlay(draft: any) {
 // 下载缩略图
 async function downloadThumbnail(model: any) {
   if (!model.thumbnail) {
-    ElMessage.warning('该模型没有缩略图')
+    ElMessage.warning(t('designModel.noThumbnail'))
     return
   }
 
@@ -970,9 +973,9 @@ async function downloadThumbnail(model: any) {
     link.click()
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
-    ElMessage.success('缩略图下载成功')
+    ElMessage.success(t('designModel.thumbnailDownloadSuccess'))
   } catch (error) {
-    ElMessage.error('缩略图下载失败')
+    ElMessage.error(t('designModel.thumbnailDownloadFailed'))
   }
 }
 
@@ -989,7 +992,7 @@ async function showDraftDownloadDialog(model: any) {
     })
     relatedDrafts.value = res.list || []
   } catch (error) {
-    ElMessage.error('获取关联草稿失败')
+    ElMessage.error(t('designModel.fetchDraftsFailed'))
     relatedDrafts.value = []
   }
 }
@@ -997,7 +1000,7 @@ async function showDraftDownloadDialog(model: any) {
 // 下载单个草稿
 async function downloadSingleDraft(draft: any) {
   if (!draft.url) {
-    ElMessage.warning('该草稿没有下载链接')
+    ElMessage.warning(t('designModel.draftNoDownloadLink'))
     return
   }
 
@@ -1017,20 +1020,20 @@ async function downloadSingleDraft(draft: any) {
     link.click()
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
-    ElMessage.success('草稿下载成功')
+    ElMessage.success(t('designModel.draftDownloadSuccess'))
   } catch (error) {
-    ElMessage.error('草稿下载失败')
+    ElMessage.error(t('designModel.draftDownloadFailed'))
   }
 }
 
 // 下载所有关联草稿
 async function downloadAllDrafts() {
   if (relatedDrafts.value.length === 0) {
-    ElMessage.warning('没有可下载的草稿')
+    ElMessage.warning(t('designModel.noDownloadableDrafts'))
     return
   }
 
-  ElMessage.info(`开始下载 ${relatedDrafts.value.length} 个草稿文件...`)
+  ElMessage.info(t('designModel.startDownloadingDrafts', { count: relatedDrafts.value.length }))
 
   for (let i = 0; i < relatedDrafts.value.length; i++) {
     const draft = relatedDrafts.value[i]
@@ -1062,7 +1065,7 @@ async function downloadAllDrafts() {
     }
   }
 
-  ElMessage.success(`草稿下载完成，共 ${relatedDrafts.value.length} 个文件`)
+  ElMessage.success(t('designModel.draftsDownloadComplete', { count: relatedDrafts.value.length }))
 }
 
 // 获取文件扩展名
@@ -1090,9 +1093,9 @@ async function copyToClipboard(text: string, type: string) {
       document.execCommand('copy')
       document.body.removeChild(textArea)
     }
-    ElMessage.success(`${type}已复制到剪贴板`)
+    ElMessage.success(t('designModel.copiedToClipboard', { type }))
   } catch (error) {
-    ElMessage.error(`${type}复制失败`)
+    ElMessage.error(t('designModel.copyFailed', { type }))
   }
 }
 
@@ -1104,17 +1107,17 @@ async function copyAllInfo() {
   try {
     const allInfo = []
     if (currentCopyModel.value.name) {
-      allInfo.push(`标题：${currentCopyModel.value.name}`)
+      allInfo.push(`${t('designModel.title')}：${currentCopyModel.value.name}`)
     }
     if (currentCopyModel.value.description) {
-      allInfo.push(`描述：${currentCopyModel.value.description}`)
+      allInfo.push(`${t('common.description')}：${currentCopyModel.value.description}`)
     }
     if (currentCopyModel.value.keywords) {
-      allInfo.push(`关键词：${currentCopyModel.value.keywords}`)
+      allInfo.push(`${t('designModel.keywords')}：${currentCopyModel.value.keywords}`)
     }
 
     const fullText = allInfo.join('\n\n')
-    await copyToClipboard(fullText, '全部信息')
+    await copyToClipboard(fullText, t('designModel.allInfo'))
   } finally {
     copyAllLoading.value = false
   }
@@ -1157,7 +1160,7 @@ async function viewRelatedStickers(model: any) {
 
     relatedStickers.value = stickers
   } catch (error) {
-    ElMessage.error('获取关联贴纸失败')
+    ElMessage.error(t('designModel.fetchStickersFailed'))
     relatedStickers.value = []
   }
 }
@@ -1165,7 +1168,7 @@ async function viewRelatedStickers(model: any) {
 // 下载单个贴纸
 async function downloadSticker(sticker: any) {
   if (!sticker.url) {
-    ElMessage.warning('该贴纸没有下载链接')
+    ElMessage.warning(t('designModel.stickerNoDownloadLink'))
     return
   }
 
@@ -1180,20 +1183,20 @@ async function downloadSticker(sticker: any) {
     link.click()
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
-    ElMessage.success('贴纸下载成功')
+    ElMessage.success(t('designModel.stickerDownloadSuccess'))
   } catch (error) {
-    ElMessage.error('贴纸下载失败')
+    ElMessage.error(t('designModel.stickerDownloadFailed'))
   }
 }
 
 // 下载所有贴纸
 async function downloadAllStickers() {
   if (relatedStickers.value.length === 0) {
-    ElMessage.warning('没有可下载的贴纸')
+    ElMessage.warning(t('designModel.noDownloadableStickers'))
     return
   }
 
-  ElMessage.info(`开始下载 ${relatedStickers.value.length} 个贴纸...`)
+  ElMessage.info(t('designModel.startDownloadingStickers', { count: relatedStickers.value.length }))
 
   for (let i = 0; i < relatedStickers.value.length; i++) {
     const sticker = relatedStickers.value[i]
@@ -1224,7 +1227,7 @@ async function downloadAllStickers() {
     }
   }
 
-  ElMessage.success(`贴纸下载完成，共 ${relatedStickers.value.length} 个文件`)
+  ElMessage.success(t('designModel.stickersDownloadComplete', { count: relatedStickers.value.length }))
 }
 </script>
 <style lang="less">
