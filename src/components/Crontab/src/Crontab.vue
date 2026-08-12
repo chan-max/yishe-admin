@@ -1,8 +1,11 @@
 <script lang="ts" setup>
 import { ElMessage } from 'element-plus'
 import { PropType } from 'vue'
+import { useI18n } from '@/hooks/web/useI18n'
 
 defineOptions({ name: 'Crontab' })
+
+const { t } = useI18n()
 
 interface shortcutsType {
   text: string
@@ -179,31 +182,31 @@ const data = reactive({
   week: [
     {
       value: '1',
-      label: '周日'
+      label: t('crontab.sunday')
     },
     {
       value: '2',
-      label: '周一'
+      label: t('crontab.monday')
     },
     {
       value: '3',
-      label: '周二'
+      label: t('crontab.tuesday')
     },
     {
       value: '4',
-      label: '周三'
+      label: t('crontab.wednesday')
     },
     {
       value: '5',
-      label: '周四'
+      label: t('crontab.thursday')
     },
     {
       value: '6',
-      label: '周五'
+      label: t('crontab.friday')
     },
     {
       value: '7',
-      label: '周六'
+      label: t('crontab.saturday')
     }
   ],
   year: getYear()
@@ -364,7 +367,7 @@ const set = () => {
   let arr = (props.modelValue || '* * * * * ?').split(' ')
   //简单检查
   if (arr.length < 6) {
-    ElMessage.warning('cron表达式错误，已转换为默认表达式')
+    ElMessage.warning(t('crontab.cronExpressionError'))
     arr = '* * * * * ?'.split(' ')
   }
 
@@ -511,20 +514,20 @@ const inputChange = () => {
 <template>
   <el-input v-model="defaultValue" class="input-with-select" v-bind="$attrs" @input="inputChange">
     <template #append>
-      <el-select v-model="select" placeholder="生成器" style="width: 115px">
-        <el-option label="每分钟" value="0 * * * * ?" />
-        <el-option label="每小时" value="0 0 * * * ?" />
-        <el-option label="每天零点" value="0 0 0 * * ?" />
-        <el-option label="每月一号零点" value="0 0 0 1 * ?" />
-        <el-option label="每月最后一天零点" value="0 0 0 L * ?" />
-        <el-option label="每周星期日零点" value="0 0 0 ? * 1" />
+      <el-select v-model="select" :placeholder="t('crontab.generator')" style="width: 115px">
+        <el-option :label="t('crontab.everyMinute')" value="0 * * * * ?" />
+        <el-option :label="t('crontab.everyHour')" value="0 0 * * * ?" />
+        <el-option :label="t('crontab.everyDayZero')" value="0 0 0 * * ?" />
+        <el-option :label="t('crontab.everyMonthFirstDayZero')" value="0 0 0 1 * ?" />
+        <el-option :label="t('crontab.everyMonthLastDayZero')" value="0 0 0 L * ?" />
+        <el-option :label="t('crontab.everyWeekSundayZero')" value="0 0 0 ? * 1" />
         <el-option
           v-for="(item, index) in shortcuts"
           :key="index"
           :label="item.text"
           :value="item.value"
         />
-        <el-option label="自定义" value="custom" />
+        <el-option :label="t('crontab.custom')" value="custom" />
       </el-select>
     </template>
   </el-input>
@@ -534,27 +537,27 @@ const inputChange = () => {
     :width="580"
     append-to-body
     destroy-on-close
-    title="cron规则生成器"
+    :title="t('crontab.title')"
   >
     <div class="sc-cron">
       <el-tabs>
         <el-tab-pane>
           <template #label>
             <div class="sc-cron-num">
-              <h2>秒</h2>
+              <h2>{{ t('crontab.second') }}</h2>
               <h4>{{ value_second }}</h4>
             </div>
           </template>
           <el-form>
-            <el-form-item label="类型">
+            <el-form-item :label="t('crontab.type')">
               <el-radio-group v-model="cronValue.second.type">
-                <el-radio-button value="0">任意值</el-radio-button>
-                <el-radio-button value="1">范围</el-radio-button>
-                <el-radio-button value="2">间隔</el-radio-button>
-                <el-radio-button value="3">指定</el-radio-button>
+                <el-radio-button value="0">{{ t('crontab.anyValue') }}</el-radio-button>
+                <el-radio-button value="1">{{ t('crontab.range') }}</el-radio-button>
+                <el-radio-button value="2">{{ t('crontab.interval') }}</el-radio-button>
+                <el-radio-button value="3">{{ t('crontab.specified') }}</el-radio-button>
               </el-radio-group>
             </el-form-item>
-            <el-form-item v-if="cronValue.second.type == '1'" label="范围">
+            <el-form-item v-if="cronValue.second.type == '1'" :label="t('crontab.range')">
               <el-input-number
                 v-model="cronValue.second.range.start"
                 :max="59"
@@ -569,23 +572,23 @@ const inputChange = () => {
                 controls-position="right"
               />
             </el-form-item>
-            <el-form-item v-if="cronValue.second.type == '2'" label="间隔">
+            <el-form-item v-if="cronValue.second.type == '2'" :label="t('crontab.interval')">
               <el-input-number
                 v-model="cronValue.second.loop.start"
                 :max="59"
                 :min="0"
                 controls-position="right"
               />
-              秒开始，每
+              {{ t('crontab.loopSecondStart') }}
               <el-input-number
                 v-model="cronValue.second.loop.end"
                 :max="59"
                 :min="0"
                 controls-position="right"
               />
-              秒执行一次
+              {{ t('crontab.loopSecondEnd') }}
             </el-form-item>
-            <el-form-item v-if="cronValue.second.type == '3'" label="指定">
+            <el-form-item v-if="cronValue.second.type == '3'" :label="t('crontab.specified')">
               <el-select v-model="cronValue.second.appoint" multiple style="width: 100%">
                 <el-option
                   v-for="(item, index) in data.second"
@@ -600,20 +603,20 @@ const inputChange = () => {
         <el-tab-pane>
           <template #label>
             <div class="sc-cron-num">
-              <h2>分钟</h2>
+              <h2>{{ t('crontab.minute') }}</h2>
               <h4>{{ value_minute }}</h4>
             </div>
           </template>
           <el-form>
-            <el-form-item label="类型">
+            <el-form-item :label="t('crontab.type')">
               <el-radio-group v-model="cronValue.minute.type">
-                <el-radio-button value="0">任意值</el-radio-button>
-                <el-radio-button value="1">范围</el-radio-button>
-                <el-radio-button value="2">间隔</el-radio-button>
-                <el-radio-button value="3">指定</el-radio-button>
+                <el-radio-button value="0">{{ t('crontab.anyValue') }}</el-radio-button>
+                <el-radio-button value="1">{{ t('crontab.range') }}</el-radio-button>
+                <el-radio-button value="2">{{ t('crontab.interval') }}</el-radio-button>
+                <el-radio-button value="3">{{ t('crontab.specified') }}</el-radio-button>
               </el-radio-group>
             </el-form-item>
-            <el-form-item v-if="cronValue.minute.type == '1'" label="范围">
+            <el-form-item v-if="cronValue.minute.type == '1'" :label="t('crontab.range')">
               <el-input-number
                 v-model="cronValue.minute.range.start"
                 :max="59"
@@ -628,23 +631,23 @@ const inputChange = () => {
                 controls-position="right"
               />
             </el-form-item>
-            <el-form-item v-if="cronValue.minute.type == '2'" label="间隔">
+            <el-form-item v-if="cronValue.minute.type == '2'" :label="t('crontab.interval')">
               <el-input-number
                 v-model="cronValue.minute.loop.start"
                 :max="59"
                 :min="0"
                 controls-position="right"
               />
-              分钟开始，每
+              {{ t('crontab.loopMinuteStart') }}
               <el-input-number
                 v-model="cronValue.minute.loop.end"
                 :max="59"
                 :min="0"
                 controls-position="right"
               />
-              分钟执行一次
+              {{ t('crontab.loopMinuteEnd') }}
             </el-form-item>
-            <el-form-item v-if="cronValue.minute.type == '3'" label="指定">
+            <el-form-item v-if="cronValue.minute.type == '3'" :label="t('crontab.specified')">
               <el-select v-model="cronValue.minute.appoint" multiple style="width: 100%">
                 <el-option
                   v-for="(item, index) in data.minute"
@@ -659,20 +662,20 @@ const inputChange = () => {
         <el-tab-pane>
           <template #label>
             <div class="sc-cron-num">
-              <h2>小时</h2>
+              <h2>{{ t('crontab.hour') }}</h2>
               <h4>{{ value_hour }}</h4>
             </div>
           </template>
           <el-form>
-            <el-form-item label="类型">
+            <el-form-item :label="t('crontab.type')">
               <el-radio-group v-model="cronValue.hour.type">
-                <el-radio-button value="0">任意值</el-radio-button>
-                <el-radio-button value="1">范围</el-radio-button>
-                <el-radio-button value="2">间隔</el-radio-button>
-                <el-radio-button value="3">指定</el-radio-button>
+                <el-radio-button value="0">{{ t('crontab.anyValue') }}</el-radio-button>
+                <el-radio-button value="1">{{ t('crontab.range') }}</el-radio-button>
+                <el-radio-button value="2">{{ t('crontab.interval') }}</el-radio-button>
+                <el-radio-button value="3">{{ t('crontab.specified') }}</el-radio-button>
               </el-radio-group>
             </el-form-item>
-            <el-form-item v-if="cronValue.hour.type == '1'" label="范围">
+            <el-form-item v-if="cronValue.hour.type == '1'" :label="t('crontab.range')">
               <el-input-number
                 v-model="cronValue.hour.range.start"
                 :max="23"
@@ -687,23 +690,23 @@ const inputChange = () => {
                 controls-position="right"
               />
             </el-form-item>
-            <el-form-item v-if="cronValue.hour.type == '2'" label="间隔">
+            <el-form-item v-if="cronValue.hour.type == '2'" :label="t('crontab.interval')">
               <el-input-number
                 v-model="cronValue.hour.loop.start"
                 :max="23"
                 :min="0"
                 controls-position="right"
               />
-              小时开始，每
+              {{ t('crontab.loopHourStart') }}
               <el-input-number
                 v-model="cronValue.hour.loop.end"
                 :max="23"
                 :min="0"
                 controls-position="right"
               />
-              小时执行一次
+              {{ t('crontab.loopHourEnd') }}
             </el-form-item>
-            <el-form-item v-if="cronValue.hour.type == '3'" label="指定">
+            <el-form-item v-if="cronValue.hour.type == '3'" :label="t('crontab.specified')">
               <el-select v-model="cronValue.hour.appoint" multiple style="width: 100%">
                 <el-option
                   v-for="(item, index) in data.hour"
@@ -718,22 +721,22 @@ const inputChange = () => {
         <el-tab-pane>
           <template #label>
             <div class="sc-cron-num">
-              <h2>日</h2>
+              <h2>{{ t('crontab.day') }}</h2>
               <h4>{{ value_day }}</h4>
             </div>
           </template>
           <el-form>
-            <el-form-item label="类型">
+            <el-form-item :label="t('crontab.type')">
               <el-radio-group v-model="cronValue.day.type">
-                <el-radio-button value="0">任意值</el-radio-button>
-                <el-radio-button value="1">范围</el-radio-button>
-                <el-radio-button value="2">间隔</el-radio-button>
-                <el-radio-button value="3">指定</el-radio-button>
-                <el-radio-button value="4">本月最后一天</el-radio-button>
-                <el-radio-button value="5">不指定</el-radio-button>
+                <el-radio-button value="0">{{ t('crontab.anyValue') }}</el-radio-button>
+                <el-radio-button value="1">{{ t('crontab.range') }}</el-radio-button>
+                <el-radio-button value="2">{{ t('crontab.interval') }}</el-radio-button>
+                <el-radio-button value="3">{{ t('crontab.specified') }}</el-radio-button>
+                <el-radio-button value="4">{{ t('crontab.lastDayOfMonth') }}</el-radio-button>
+                <el-radio-button value="5">{{ t('crontab.notSpecified') }}</el-radio-button>
               </el-radio-group>
             </el-form-item>
-            <el-form-item v-if="cronValue.day.type == '1'" label="范围">
+            <el-form-item v-if="cronValue.day.type == '1'" :label="t('crontab.range')">
               <el-input-number
                 v-model="cronValue.day.range.start"
                 :max="31"
@@ -748,23 +751,23 @@ const inputChange = () => {
                 controls-position="right"
               />
             </el-form-item>
-            <el-form-item v-if="cronValue.day.type == '2'" label="间隔">
+            <el-form-item v-if="cronValue.day.type == '2'" :label="t('crontab.interval')">
               <el-input-number
                 v-model="cronValue.day.loop.start"
                 :max="31"
                 :min="1"
                 controls-position="right"
               />
-              号开始，每
+              {{ t('crontab.loopDayStart') }}
               <el-input-number
                 v-model="cronValue.day.loop.end"
                 :max="31"
                 :min="1"
                 controls-position="right"
               />
-              天执行一次
+              {{ t('crontab.loopDayEnd') }}
             </el-form-item>
-            <el-form-item v-if="cronValue.day.type == '3'" label="指定">
+            <el-form-item v-if="cronValue.day.type == '3'" :label="t('crontab.specified')">
               <el-select v-model="cronValue.day.appoint" multiple style="width: 100%">
                 <el-option
                   v-for="(item, index) in data.day"
@@ -779,20 +782,20 @@ const inputChange = () => {
         <el-tab-pane>
           <template #label>
             <div class="sc-cron-num">
-              <h2>月</h2>
+              <h2>{{ t('crontab.month') }}</h2>
               <h4>{{ value_month }}</h4>
             </div>
           </template>
           <el-form>
-            <el-form-item label="类型">
+            <el-form-item :label="t('crontab.type')">
               <el-radio-group v-model="cronValue.month.type">
-                <el-radio-button value="0">任意值</el-radio-button>
-                <el-radio-button value="1">范围</el-radio-button>
-                <el-radio-button value="2">间隔</el-radio-button>
-                <el-radio-button value="3">指定</el-radio-button>
+                <el-radio-button value="0">{{ t('crontab.anyValue') }}</el-radio-button>
+                <el-radio-button value="1">{{ t('crontab.range') }}</el-radio-button>
+                <el-radio-button value="2">{{ t('crontab.interval') }}</el-radio-button>
+                <el-radio-button value="3">{{ t('crontab.specified') }}</el-radio-button>
               </el-radio-group>
             </el-form-item>
-            <el-form-item v-if="cronValue.month.type == '1'" label="范围">
+            <el-form-item v-if="cronValue.month.type == '1'" :label="t('crontab.range')">
               <el-input-number
                 v-model="cronValue.month.range.start"
                 :max="12"
@@ -807,23 +810,23 @@ const inputChange = () => {
                 controls-position="right"
               />
             </el-form-item>
-            <el-form-item v-if="cronValue.month.type == '2'" label="间隔">
+            <el-form-item v-if="cronValue.month.type == '2'" :label="t('crontab.interval')">
               <el-input-number
                 v-model="cronValue.month.loop.start"
                 :max="12"
                 :min="1"
                 controls-position="right"
               />
-              月开始，每
+              {{ t('crontab.loopMonthStart') }}
               <el-input-number
                 v-model="cronValue.month.loop.end"
                 :max="12"
                 :min="1"
                 controls-position="right"
               />
-              月执行一次
+              {{ t('crontab.loopMonthEnd') }}
             </el-form-item>
-            <el-form-item v-if="cronValue.month.type == '3'" label="指定">
+            <el-form-item v-if="cronValue.month.type == '3'" :label="t('crontab.specified')">
               <el-select v-model="cronValue.month.appoint" multiple style="width: 100%">
                 <el-option
                   v-for="(item, index) in data.month"
@@ -838,23 +841,23 @@ const inputChange = () => {
         <el-tab-pane>
           <template #label>
             <div class="sc-cron-num">
-              <h2>周</h2>
+              <h2>{{ t('crontab.week') }}</h2>
               <h4>{{ value_week }}</h4>
             </div>
           </template>
           <el-form>
             <el-form>
-              <el-form-item label="类型">
+              <el-form-item :label="t('crontab.type')">
                 <el-radio-group v-model="cronValue.week.type">
-                  <el-radio-button value="0">任意值</el-radio-button>
-                  <el-radio-button value="1">范围</el-radio-button>
-                  <el-radio-button value="2">间隔</el-radio-button>
-                  <el-radio-button value="3">指定</el-radio-button>
-                  <el-radio-button value="4">本月最后一周</el-radio-button>
-                  <el-radio-button value="5">不指定</el-radio-button>
+                  <el-radio-button value="0">{{ t('crontab.anyValue') }}</el-radio-button>
+                  <el-radio-button value="1">{{ t('crontab.range') }}</el-radio-button>
+                  <el-radio-button value="2">{{ t('crontab.interval') }}</el-radio-button>
+                  <el-radio-button value="3">{{ t('crontab.specified') }}</el-radio-button>
+                  <el-radio-button value="4">{{ t('crontab.lastWeekOfMonth') }}</el-radio-button>
+                  <el-radio-button value="5">{{ t('crontab.notSpecified') }}</el-radio-button>
                 </el-radio-group>
               </el-form-item>
-              <el-form-item v-if="cronValue.week.type == '1'" label="范围">
+              <el-form-item v-if="cronValue.week.type == '1'" :label="t('crontab.range')">
                 <el-select v-model="cronValue.week.range.start">
                   <el-option
                     v-for="(item, index) in data.week"
@@ -873,15 +876,15 @@ const inputChange = () => {
                   />
                 </el-select>
               </el-form-item>
-              <el-form-item v-if="cronValue.week.type == '2'" label="间隔">
-                第
+              <el-form-item v-if="cronValue.week.type == '2'" :label="t('crontab.interval')">
+                {{ t('crontab.loopWeekStart') }}
                 <el-input-number
                   v-model="cronValue.week.loop.start"
                   :max="4"
                   :min="1"
                   controls-position="right"
                 />
-                周的星期
+                {{ t('crontab.loopWeekMiddle') }}
                 <el-select v-model="cronValue.week.loop.end">
                   <el-option
                     v-for="(item, index) in data.week"
@@ -890,9 +893,9 @@ const inputChange = () => {
                     :value="item.value"
                   />
                 </el-select>
-                执行一次
+                {{ t('crontab.loopWeekEnd') }}
               </el-form-item>
-              <el-form-item v-if="cronValue.week.type == '3'" label="指定">
+              <el-form-item v-if="cronValue.week.type == '3'" :label="t('crontab.specified')">
                 <el-select v-model="cronValue.week.appoint" multiple style="width: 100%">
                   <el-option
                     v-for="(item, index) in data.week"
@@ -902,7 +905,7 @@ const inputChange = () => {
                   />
                 </el-select>
               </el-form-item>
-              <el-form-item v-if="cronValue.week.type == '4'" label="最后一周">
+              <el-form-item v-if="cronValue.week.type == '4'" :label="t('crontab.lastWeek')">
                 <el-select v-model="cronValue.week.last">
                   <el-option
                     v-for="(item, index) in data.week"
@@ -918,36 +921,36 @@ const inputChange = () => {
         <el-tab-pane>
           <template #label>
             <div class="sc-cron-num">
-              <h2>年</h2>
+              <h2>{{ t('crontab.year') }}</h2>
               <h4>{{ value_year }}</h4>
             </div>
           </template>
           <el-form>
-            <el-form-item label="类型">
+            <el-form-item :label="t('crontab.type')">
               <el-radio-group v-model="cronValue.year.type">
-                <el-radio-button value="-1">忽略</el-radio-button>
-                <el-radio-button value="0">任意值</el-radio-button>
-                <el-radio-button value="1">范围</el-radio-button>
-                <el-radio-button value="2">间隔</el-radio-button>
-                <el-radio-button value="3">指定</el-radio-button>
+                <el-radio-button value="-1">{{ t('crontab.ignore') }}</el-radio-button>
+                <el-radio-button value="0">{{ t('crontab.anyValue') }}</el-radio-button>
+                <el-radio-button value="1">{{ t('crontab.range') }}</el-radio-button>
+                <el-radio-button value="2">{{ t('crontab.interval') }}</el-radio-button>
+                <el-radio-button value="3">{{ t('crontab.specified') }}</el-radio-button>
               </el-radio-group>
             </el-form-item>
-            <el-form-item v-if="cronValue.year.type == '1'" label="范围">
+            <el-form-item v-if="cronValue.year.type == '1'" :label="t('crontab.range')">
               <el-input-number v-model="cronValue.year.range.start" controls-position="right" />
               <span style="padding: 0 15px">-</span>
               <el-input-number v-model="cronValue.year.range.end" controls-position="right" />
             </el-form-item>
-            <el-form-item v-if="cronValue.year.type == '2'" label="间隔">
+            <el-form-item v-if="cronValue.year.type == '2'" :label="t('crontab.interval')">
               <el-input-number v-model="cronValue.year.loop.start" controls-position="right" />
-              年开始，每
+              {{ t('crontab.loopYearStart') }}
               <el-input-number
                 v-model="cronValue.year.loop.end"
                 :min="1"
                 controls-position="right"
               />
-              年执行一次
+              {{ t('crontab.loopYearEnd') }}
             </el-form-item>
-            <el-form-item v-if="cronValue.year.type == '3'" label="指定">
+            <el-form-item v-if="cronValue.year.type == '3'" :label="t('crontab.specified')">
               <el-select v-model="cronValue.year.appoint" multiple style="width: 100%">
                 <el-option
                   v-for="(item, index) in data.year"
@@ -963,8 +966,8 @@ const inputChange = () => {
     </div>
 
     <template #footer>
-      <el-button @click="dialogVisible = false">取 消</el-button>
-      <el-button type="primary" @click="submit()">确 认</el-button>
+      <el-button @click="dialogVisible = false">{{ t('crontab.cancel') }}</el-button>
+      <el-button type="primary" @click="submit()">{{ t('crontab.confirm') }}</el-button>
     </template>
   </el-dialog>
 </template>

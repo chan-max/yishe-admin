@@ -12,6 +12,7 @@ const NODE_GROUPS: Array<{ title: string; items: Array<{ type: string; label: st
       { type: 'start', label: '开始', color: '#22c55e' },
       { type: 'end', label: '结束', color: '#ef4444' },
       { type: 'default', label: '普通节点', color: '#3b82f6' },
+      { type: 'ai_call', label: 'AI 调用', color: '#6366f1' },
       { type: 'condition', label: '条件分支', color: '#f59e0b' },
     ],
   },

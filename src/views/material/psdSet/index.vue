@@ -1595,7 +1595,7 @@ const dateRange = ref<[string, string] | null>(null);
 // 日期快捷选项
 const dateShortcuts = [
   {
-    text: "一个小时内",
+    text: t("psdSet.shortcutLastHour"),
     value: () => {
       const end = new Date();
       const start = new Date(end.getTime() - 60 * 60 * 1000);
@@ -1603,7 +1603,7 @@ const dateShortcuts = [
     },
   },
   {
-    text: "今天",
+    text: t("psdSet.shortcutToday"),
     value: () => {
       const end = new Date();
       const start = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 0, 0, 0, 0);
@@ -1611,7 +1611,7 @@ const dateShortcuts = [
     },
   },
   {
-    text: "昨天",
+    text: t("psdSet.shortcutYesterday"),
     value: () => {
       const end = new Date();
       end.setDate(end.getDate() - 1);
@@ -1621,7 +1621,7 @@ const dateShortcuts = [
     },
   },
   {
-    text: "最近三天",
+    text: t("psdSet.shortcutLast3Days"),
     value: () => {
       const end = new Date();
       const start = new Date(end.getTime() - 3 * 24 * 60 * 60 * 1000);
@@ -1630,7 +1630,7 @@ const dateShortcuts = [
     },
   },
   {
-    text: "最近一周",
+    text: t("psdSet.shortcutLastWeek"),
     value: () => {
       const end = new Date();
       const start = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -1639,7 +1639,7 @@ const dateShortcuts = [
     },
   },
   {
-    text: "最近一个月",
+    text: t("psdSet.shortcutLastMonth"),
     value: () => {
       const end = new Date();
       const start = new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -1648,7 +1648,7 @@ const dateShortcuts = [
     },
   },
   {
-    text: "最近三个月",
+    text: t("psdSet.shortcutLast3Months"),
     value: () => {
       const end = new Date();
       const start = new Date(end.getTime() - 90 * 24 * 60 * 60 * 1000);
@@ -2879,7 +2879,7 @@ async function loadPsdSetDetailById(psdSetId: unknown, silent = false) {
   } catch (error: any) {
     if (!silent) {
       console.error("获取套图详情失败:", error);
-      ElMessage.error(error?.message || "获取详情失败");
+      ElMessage.error(error?.message || t("psdSet.getDetailFailed"));
       detailDialogVisible.value = false;
     }
   } finally {
@@ -3570,7 +3570,7 @@ async function handleViewPublishTasks(row: any) {
         : [];
   } catch (error: any) {
     console.error("获取发布任务失败:", error);
-    ElMessage.error(error?.message || "获取发布任务失败");
+    ElMessage.error(error?.message || t("psdSet.getPublishTasksFailed"));
     publishTasksVisible.value = false;
   } finally {
     publishTasksLoading.value = false;
@@ -3682,27 +3682,27 @@ async function reloadCurrentPublishTasks() {
 async function handleRegeneratePublishTask(row: any) {
   const taskId = String(row?.id || "").trim();
   if (!taskId) {
-    return ElMessage.warning("缺少任务ID，无法重新生成");
+    return ElMessage.warning(t("psdSet.missingTaskIdCannotRegenerate"));
   }
 
   await ElMessageBox.confirm(
-    "将基于当前套图信息和任务配置，重新生成这条任务的发布数据。是否继续？",
-    "重新生成发布数据",
+    t("psdSet.confirmRegeneratePublishTask"),
+    t("psdSet.regeneratePublishData"),
     {
       type: "warning",
-      confirmButtonText: "确定",
-      cancelButtonText: "取消",
+      confirmButtonText: t("common.confirm"),
+      cancelButtonText: t("common.cancel"),
     },
   );
 
   publishTasksLoading.value = true;
   try {
     await regeneratePublishTaskApi(taskId);
-    ElMessage.success("已触发重新生成");
+    ElMessage.success(t("psdSet.regenerateTriggered"));
     await reloadCurrentPublishTasks();
   } catch (error: any) {
     console.error("重新生成发布数据失败:", error);
-    ElMessage.error(error?.message || "重新生成发布数据失败");
+    ElMessage.error(error?.message || t("psdSet.regenerateFailed"));
     publishTasksLoading.value = false;
   }
 }
@@ -3721,7 +3721,7 @@ async function openGenerateProductDialog(ids: string[]) {
     new Set((ids || []).map((item) => String(item).trim()).filter(Boolean)),
   );
   if (!normalizedIds.length) {
-    return ElMessage.warning("请选择需要生成产品的套图");
+    return ElMessage.warning(t("psdSet.selectProductGenerationPsdSets"));
   }
 
   const selectedRowMap = new Map<string, any>();
@@ -3749,7 +3749,7 @@ async function openGenerateProductDialog(ids: string[]) {
     await ensureGenerateProductDialogOptions();
   } catch (error: any) {
     console.error("加载生成产品配置失败:", error);
-    ElMessage.error(error?.message || "加载配置失败");
+    ElMessage.error(error?.message || t("psdSet.loadConfigFailed"));
   } finally {
     generateProductDialogLoading.value = false;
   }
@@ -3772,7 +3772,7 @@ function handleCloseGenerateProductDialog() {
 function handleGenerateProductTemplateCheckboxChange(event: any) {
   if (event?.checked && event?.row && !isGenerateProductTemplateSelectable(event.row)) {
     ElMessage.warning(
-      getGenerateProductTemplateMatchInfo(event.row).reason || "商品生成模板与套图模板不匹配",
+      getGenerateProductTemplateMatchInfo(event.row).reason || t("psdSet.templateMismatchReason"),
     );
   }
   generateProductSelectedTemplateIds.value = (event?.records || [])
@@ -3826,8 +3826,8 @@ function syncGenerateProductBatchProgressToast(progress: any, options: { force?:
   globalNotificationStore.removeBySource("sticker-psd-set-generate-product", notificationId);
   globalNotificationStore.upsertNotification({
     id: notificationId,
-    title: "套图批量生成产品",
-    message: progress.message || "处理中",
+    title: t("psdSet.batchGenerateProductNotificationTitle"),
+    message: progress.message || t("psdSet.processing"),
     level: isDone ? (hasFailure ? "warning" : "success") : "info",
     category: "task",
     source: "sticker-psd-set-generate-product",
@@ -3885,10 +3885,10 @@ async function pollGenerateProductBatchProgress(taskId: string) {
       clearPersistedGenerateProductBatchTask();
       syncGenerateProductBatchProgressToast(progress, { force: true });
       if (progress?.completed > 0) {
-        ElMessage.success(progress.message || `成功生成 ${progress.completed} 个产品`);
+        ElMessage.success(progress.message || t("psdSet.batchGenerateProductSuccess", { count: progress.completed }));
         getList();
       } else {
-        ElMessage.warning(progress?.message || "批量生成产品失败");
+        ElMessage.warning(progress?.message || t("psdSet.batchGenerateProductFailed"));
       }
       return;
     }
@@ -3896,7 +3896,7 @@ async function pollGenerateProductBatchProgress(taskId: string) {
     generateProductSubmitting.value = false;
     batchGeneratingProducts.value = false;
     clearPersistedGenerateProductBatchTask();
-    ElMessage.error(error?.message || "查询生成进度失败");
+    ElMessage.error(error?.message || t("psdSet.queryGenerateProgressFailed"));
     return;
   }
 
@@ -3907,10 +3907,10 @@ async function pollGenerateProductBatchProgress(taskId: string) {
 
 async function handleSubmitGenerateProduct() {
   if (!generateProductTargetIds.value.length) {
-    return ElMessage.warning("未选择套图");
+    return ElMessage.warning(t("psdSet.noPsdSetSelected"));
   }
   if (!generateProductSelectedTemplateIds.value.length) {
-    return ElMessage.warning("请选择商品生成模板");
+    return ElMessage.warning(t("psdSet.selectProductGenerationTemplate"));
   }
 
   const invalidSelectedTemplates = generateProductSelectedTemplateIds.value
@@ -3927,17 +3927,21 @@ async function handleSubmitGenerateProduct() {
     );
     return ElMessage.warning(
       getGenerateProductTemplateMatchInfo(invalidSelectedTemplates[0]).reason ||
-        "商品生成模板与套图模板不匹配",
+        t("psdSet.templateMismatchReason"),
     );
   }
 
   const expectedCount = generateProductExpectedCount.value;
   await ElMessageBox.confirm(
-    `将为 ${generateProductTargetIds.value.length} 个套图 × ${generateProductSelectedTemplateIds.value.length} 个模板生成 ${expectedCount} 个商品，是否继续？`,
-    "确认生成商品",
+    t("psdSet.confirmGenerateProductBatch", {
+      psdSetCount: generateProductTargetIds.value.length,
+      templateCount: generateProductSelectedTemplateIds.value.length,
+      count: expectedCount,
+    }),
+    t("psdSet.confirmGenerateProductTitle"),
     {
-      confirmButtonText: "确定生成",
-      cancelButtonText: "取消",
+      confirmButtonText: t("psdSet.generateProductConfirmButton"),
+      cancelButtonText: t("common.cancel"),
       type: "warning",
     },
   );
@@ -3953,7 +3957,7 @@ async function handleSubmitGenerateProduct() {
     });
     generateProductBatchTaskId.value = response?.taskId || response?.id || "";
     if (!generateProductBatchTaskId.value) {
-      throw new Error("后端未返回批量任务ID");
+      throw new Error(t("psdSet.backendMissingBatchTaskId"));
     }
     persistGenerateProductBatchTask(generateProductBatchTaskId.value);
     generateProductBatchProgress.value = {
@@ -3963,7 +3967,7 @@ async function handleSubmitGenerateProduct() {
       completed: 0,
       failed: 0,
       progress: 0,
-      message: response?.message || "批量生成产品任务已提交，后台处理中",
+      message: response?.message || t("psdSet.batchGenerateProductSubmitted"),
     };
     syncGenerateProductBatchProgressToast(generateProductBatchProgress.value, { force: true });
     await pollGenerateProductBatchProgress(generateProductBatchTaskId.value);
@@ -3972,23 +3976,23 @@ async function handleSubmitGenerateProduct() {
     batchGeneratingProducts.value = false;
     ElMessage.error(
       isSeoDescriptionTooLongError(error)
-        ? "SEO 描述过长，请缩短商品生成模板的 SEO 提示词"
-        : error?.message || "提交批量生成产品失败",
+        ? t("psdSet.seoDescriptionTooLong")
+        : error?.message || t("psdSet.submitBatchGenerateProductFailed"),
     );
   }
 }
 
 async function handleStartProduction(row: any) {
   if (!row?.id) {
-    return ElMessage.warning("缺少ID，无法开始制作");
+    return ElMessage.warning(t("psdSet.missingIdCannotStartProduction"));
   }
 
   if (!isClientConnected.value) {
-    return ElMessage.warning("客户端未连接，请先启动客户端");
+    return ElMessage.warning(t("psdSet.clientNotConnectedStart"));
   }
 
   if (websocketClient.state.status !== "connected") {
-    return ElMessage.warning("WebSocket未连接，请稍后重试");
+    return ElMessage.warning(t("psdSet.websocketNotConnected"));
   }
 
   await openProductionDispatchDialog(row);
@@ -4034,17 +4038,17 @@ function getPsdSetRequestErrorDetail(error: any) {
     data,
     url,
     method,
-    message: responseMessage || "未知错误",
+    message: responseMessage || t("psdSet.unknownError"),
   };
 }
 
 function showPsdSetProductionError(error: any, context: Record<string, any>) {
   const detail = getPsdSetRequestErrorDetail(error);
-  const statusText = detail.status ? `HTTP ${detail.status}` : "请求失败";
+  const statusText = detail.status ? `HTTP ${detail.status}` : t("psdSet.requestFailed");
   const message =
     detail.status === 422
-      ? `开始制作参数校验失败：${detail.message}`
-      : `开始制作失败：${detail.message}`;
+      ? t("psdSet.startProductionValidationFailed", { detail: detail.message })
+      : t("psdSet.startProductionFailedWithDetail", { detail: detail.message });
 
   console.error("[PSD 套图] 开始制作失败详情", {
     ...context,
@@ -4061,18 +4065,21 @@ function showPsdSetProductionError(error: any, context: Record<string, any>) {
     [
       message,
       "",
-      `套图 ID：${context.psdSetId || "-"}`,
-      `客户端 ID：${context.clientId || "-"}`,
-      `接口：${detail.method || "POST"} ${detail.url || "/sticker-psd-set/:id/dispatch"}`,
-      `状态：${statusText}`,
+      t("psdSet.productionErrorPsdSetId", { value: context.psdSetId || "-" }),
+      t("psdSet.productionErrorClientId", { value: context.clientId || "-" }),
+      t("psdSet.productionErrorEndpoint", {
+        method: detail.method || "POST",
+        url: detail.url || "/sticker-psd-set/:id/dispatch",
+      }),
+      t("psdSet.productionErrorStatus", { status: statusText }),
       "",
-      "原始响应：",
+      t("psdSet.rawResponse"),
       normalizePsdSetErrorPart(detail.data) || detail.message,
     ].join("\n"),
-    "开始制作失败",
+    t("psdSet.startProductionFailed"),
     {
       type: "error",
-      confirmButtonText: "知道了",
+      confirmButtonText: t("psdSet.gotIt"),
       customClass: "psd-set-production-error-dialog",
     },
   );
@@ -4082,15 +4089,15 @@ async function handleConfirmStartProduction() {
   const row = productionDispatchRow.value;
   const isAutoMode = productionDispatchMode.value === "auto";
   if (!isAutoMode && !row?.id) {
-    return ElMessage.warning("缺少ID，无法开始制作");
+    return ElMessage.warning(t("psdSet.missingIdCannotStartProduction"));
   }
 
   if (!selectedDispatchClientId.value) {
-    return ElMessage.warning("请选择一个客户端节点");
+    return ElMessage.warning(t("psdSet.selectClientNode"));
   }
 
   if (!selectedDispatchClient.value) {
-    return ElMessage.warning("所选客户端不存在，请刷新后重试");
+    return ElMessage.warning(t("psdSet.selectedClientNotExists"));
   }
 
   const unavailableReason = getDispatchClientUnavailableReason(selectedDispatchClient.value);
@@ -4101,12 +4108,17 @@ async function handleConfirmStartProduction() {
   try {
     await ElMessageBox.confirm(
       isAutoMode
-        ? `确认开启自动制作，并固定使用客户端 ${getClientDisplayName(selectedDispatchClient.value)} 吗？\n${autoDispatchFilterSummary.value}`
-        : `确认由客户端 ${getClientDisplayName(selectedDispatchClient.value)} 开始制作该套图吗？`,
-      isAutoMode ? "开启自动制作确认" : "开始制作确认",
+        ? t("psdSet.confirmEnableAutoProduction", {
+            client: getClientDisplayName(selectedDispatchClient.value),
+            filters: autoDispatchFilterSummary.value,
+          })
+        : t("psdSet.confirmStartProductionByClient", {
+            client: getClientDisplayName(selectedDispatchClient.value),
+          }),
+      isAutoMode ? t("psdSet.enableAutoProductionConfirmTitle") : t("psdSet.startProductionConfirmTitle"),
       {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
+        confirmButtonText: t("common.confirm"),
+        cancelButtonText: t("common.cancel"),
         type: "info",
       },
     );
@@ -4173,13 +4185,13 @@ async function handleConfirmStartProduction() {
       applyPsdSetStatusLocally(
         row.id,
         "processing",
-        response.message || "任务已分配，等待客户端执行",
+        response.message || t("psdSet.taskAssignedWaitingClient"),
       );
       schedulePsdSetMenuRuntimeSync();
-      ElMessage.success(response.message || "制作任务已调度");
+      ElMessage.success(response.message || t("psdSet.productionTaskScheduled"));
       await Promise.all([getList(), refreshClientNodes()]);
     } else {
-      ElMessage.warning(response?.message || "开始制作失败");
+      ElMessage.warning(response?.message || t("psdSet.startProductionFailed"));
     }
   } catch (error: any) {
     showPsdSetProductionError(error, {
@@ -4195,11 +4207,11 @@ async function handleConfirmStartProduction() {
 async function handleResetAllPsAutomationRuntime() {
   try {
     await ElMessageBox.confirm(
-      "确认重置当前账号所有客户端的 PS 自动化运行态吗？该操作只清理残留的忙碌状态、当前任务标记和进度，不会删除套图或制作结果。",
-      "重置状态确认",
+      t("psdSet.confirmResetPsAutomationRuntime"),
+      t("psdSet.resetStatusConfirmTitle"),
       {
-        confirmButtonText: "重置",
-        cancelButtonText: "取消",
+        confirmButtonText: t("psdSet.resetButton"),
+        cancelButtonText: t("common.cancel"),
         type: "warning",
       },
     );
@@ -4210,7 +4222,7 @@ async function handleResetAllPsAutomationRuntime() {
   resettingPsRuntime.value = true;
   try {
     const response = await resetAllPsAutomationRuntime();
-    ElMessage.success(response?.message || "状态已重置");
+    ElMessage.success(response?.message || t("psdSet.statusResetSuccess"));
     schedulePsdSetMenuRuntimeSync();
     resettingPsRuntime.value = false;
     void Promise.allSettled([
@@ -4221,7 +4233,7 @@ async function handleResetAllPsAutomationRuntime() {
       console.warn("重置状态后的运行态刷新失败:", refreshError);
     });
   } catch (error: any) {
-    ElMessage.error(error?.message || "重置状态失败");
+    ElMessage.error(error?.message || t("psdSet.resetStatusFailed"));
   } finally {
     resettingPsRuntime.value = false;
   }
@@ -4245,7 +4257,7 @@ const productionStatusHandler = (data: {
     applyPsdSetStatusLocally(
       normalizedPsdSetId,
       incomingStatus,
-      incomingStatus === "processing" ? "制作中" : data.message,
+      incomingStatus === "processing" ? t("psdSet.making") : data.message,
     );
 
     if (incomingStatus === "processing" && !findPsdSetRowById(normalizedPsdSetId)) {
@@ -4253,7 +4265,7 @@ const productionStatusHandler = (data: {
         id: normalizedPsdSetId,
         name: String(data?.name || normalizedPsdSetId).trim(),
         status: "processing",
-        statusMessage: "制作中",
+        statusMessage: t("psdSet.making"),
         updateTime: new Date().toISOString(),
       });
     }

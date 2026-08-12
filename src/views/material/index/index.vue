@@ -2228,7 +2228,7 @@
               </el-col>
               <el-col :xs="24" :md="12">
                 <el-form-item :label="t('material.fileSuffix')">
-                  <el-input v-model="editForm.suffix" placeholder="如：png, jpg, svg" clearable maxlength="20" />
+                  <el-input v-model="editForm.suffix" :placeholder="t('material.suffixPlaceholder')" clearable maxlength="20" />
                 </el-form-item>
               </el-col>
             </el-row>
@@ -3053,8 +3053,8 @@ const FOLDER_CATEGORY = "sticker";
 const isAdmin = computed(() => userStore.user?.isAdmin ?? false);
 const visualSimilarSearchDisabled = false;
 const phashSearchDisabled = true;
-const VISUAL_SIMILAR_SEARCH_DISABLED_MESSAGE = "模糊搜索功能暂时禁用";
-const PHASH_SEARCH_DISABLED_MESSAGE = "pHash 相似匹配功能暂时禁用";
+const VISUAL_SIMILAR_SEARCH_DISABLED_MESSAGE = t("material.visualSimilarSearchDisabled");
+const PHASH_SEARCH_DISABLED_MESSAGE = t("material.phashSearchDisabled");
 
 // 模型服务健康状态检查
 const modelServiceHealth = useServiceHealthState("modelService");
@@ -3083,9 +3083,9 @@ const selectedStoryScript = computed(() => {
 });
 const storyScriptForm = reactive({
   sceneType: "social_post",
-  stylePrompt: "真实自然，有画面感，适合社交平台传播",
-  tonePrompt: "口语化、有温度、不要营销腔",
-  lengthPrompt: "120字以内",
+  stylePrompt: t("material.stylePromptDefault"),
+  tonePrompt: t("material.tonePromptDefault"),
+  lengthPrompt: t("material.lengthPromptDefault"),
   extraPrompt: "",
 });
 
@@ -3093,9 +3093,9 @@ async function openStoryScriptDialog(row: any) {
   storyScriptCurrentSticker.value = row;
   storyScriptDialogVisible.value = true;
   storyScriptForm.sceneType = "social_post";
-  storyScriptForm.stylePrompt = "真实自然，有画面感，适合社交平台传播";
-  storyScriptForm.tonePrompt = "口语化、有温度、不要营销腔";
-  storyScriptForm.lengthPrompt = "120字以内";
+  storyScriptForm.stylePrompt = t("material.stylePromptDefault");
+  storyScriptForm.tonePrompt = t("material.tonePromptDefault");
+  storyScriptForm.lengthPrompt = t("material.lengthPromptDefault");
   storyScriptForm.extraPrompt = "";
   await loadStoryScriptList(row.id);
 }
@@ -3114,7 +3114,7 @@ async function loadStoryScriptList(stickerId?: string) {
   } catch (error: any) {
     storyScriptList.value = [];
     selectedStoryScriptId.value = "";
-    ElMessage.error(error?.message || "获取故事脚本列表失败");
+    ElMessage.error(error?.message || t("material.storyScriptListLoadFailed"));
   } finally {
     storyScriptListLoading.value = false;
   }
@@ -3126,7 +3126,7 @@ async function refreshStoryScriptList() {
 
 async function handleGenerateStoryScript() {
   if (!storyScriptCurrentSticker.value?.id) {
-    ElMessage.warning("请先选择素材图");
+    ElMessage.warning(t("material.selectMaterialImageFirst"));
     return;
   }
   storyScriptSubmitting.value = true;
@@ -3139,10 +3139,10 @@ async function handleGenerateStoryScript() {
       lengthPrompt: storyScriptForm.lengthPrompt,
       extraPrompt: storyScriptForm.extraPrompt,
     });
-    ElMessage.success("故事脚本生成成功");
+    ElMessage.success(t("material.storyScriptGenerated"));
     await loadStoryScriptList();
   } catch (error: any) {
-    ElMessage.error(error?.message || "故事脚本生成失败");
+    ElMessage.error(error?.message || t("material.storyScriptGenerateFailed"));
   } finally {
     storyScriptSubmitting.value = false;
   }
@@ -3150,27 +3150,27 @@ async function handleGenerateStoryScript() {
 
 async function handleDeleteStoryScript(item: any) {
   try {
-    await ElMessageBox.confirm("确认删除该故事脚本版本吗？", "删除确认", { type: "warning" });
+    await ElMessageBox.confirm(t("material.confirmDeleteStoryScript"), t("material.deleteConfirm"), { type: "warning" });
     await deleteStickerStoryScript(item.id);
-    ElMessage.success("删除成功");
+    ElMessage.success(t("material.deleteSuccess"));
     await loadStoryScriptList();
   } catch (error: any) {
     if (error !== "cancel") {
-      ElMessage.error(error?.message || "删除故事脚本失败");
+      ElMessage.error(error?.message || t("material.storyScriptDeleteFailed"));
     }
   }
 }
 
 async function handleCopyStoryScript(text: string, label: string) {
   if (!text) {
-    ElMessage.warning(label + "为空");
+    ElMessage.warning(t("material.emptySuffix", { label }));
     return;
   }
   try {
     await navigator.clipboard.writeText(text);
-    ElMessage.success(label + "已复制");
+    ElMessage.success(t("material.copiedSuffix", { label }));
   } catch (error) {
-    ElMessage.error(label + "复制失败");
+    ElMessage.error(t("material.copyFailedSuffix", { label }));
   }
 }
 
@@ -3180,8 +3180,8 @@ const sizeShapeGroups = SIZE_SHAPE_GROUPS;
 // 抠图模式标签映射
 const getCutoutModeLabel = (mode: string) => {
   const map = {
-    CUTOUT: "抠图",
-    NON_CUTOUT: "非抠图",
+    CUTOUT: t("material.cutout"),
+    NON_CUTOUT: t("material.nonCutout"),
   };
   return map[mode] || mode;
 };
@@ -3252,16 +3252,16 @@ const similarImageSearchStatusVisible = computed(
 const similarImageActiveSourceText = computed(() => {
   if (similarImageActiveSourceType.value === "file") {
     return similarImageActiveSourceLabel.value
-      ? `本地图片：${similarImageActiveSourceLabel.value}`
-      : "本地图片";
+      ? t("material.localImageWithName", { name: similarImageActiveSourceLabel.value })
+      : t("material.localImage");
   }
   if (similarImageActiveSourceType.value === "url") {
-    return similarImageActiveSourceLabel.value || "图片 URL";
+    return similarImageActiveSourceLabel.value || t("material.imageUrl");
   }
   if (similarImageActiveSourceType.value === "text") {
-    return `文字搜索：${similarImageActiveSourceLabel.value}`;
+    return t("material.textSearchWithLabel", { text: similarImageActiveSourceLabel.value });
   }
-  return "查询图片";
+  return t("material.queryImage");
 });
 
 const publishUsageConfigOptions = ref<any[]>([]);
@@ -3277,19 +3277,19 @@ const shareRecordsTotal = ref(0);
 const shareRecordsResourceName = ref('');
 
 const publishPlatformNameMap: Record<string, string> = {
-  douyin: "抖音",
-  kuaishou: "快手",
-  xiaohongshu: "小红书",
-  weibo: "微博",
-  doudian: "抖店",
-  kuaishou_shop: "快手小店",
-  xianyu: "闲鱼",
+  douyin: t("material.platformDouyin"),
+  kuaishou: t("material.platformKuaishou"),
+  xiaohongshu: t("material.platformXiaohongshu"),
+  weibo: t("material.platformWeibo"),
+  doudian: t("material.platformDoudian"),
+  kuaishou_shop: t("material.platformKuaishouShop"),
+  xianyu: t("material.platformXianyu"),
   bilibili: "Bilibili",
   tiktok: "TikTok",
   youtube: "YouTube",
   temu: "Temu",
-  taobao: "淘宝",
-  pdd: "拼多多",
+  taobao: t("material.platformTaobao"),
+  pdd: t("material.platformPdd"),
 };
 
 function formatPlatformName(platform?: string) {
@@ -3304,11 +3304,11 @@ function formatPublishUsageConfigLabel(config: any) {
 
 function getPublishUsageStatusLabel(status?: string) {
   const map: Record<string, string> = {
-    pending: "发布中",
-    success: "已使用",
-    failed: "失败",
-    expired: "已过期",
-    deleted: "已释放",
+    pending: t("material.publishStatusPending"),
+    success: t("material.publishStatusSuccess"),
+    failed: t("material.publishStatusFailed"),
+    expired: t("material.publishStatusExpired"),
+    deleted: t("material.publishStatusDeleted"),
   };
   return map[String(status || "")] || String(status || "-");
 }
@@ -3330,19 +3330,19 @@ const publishUsageGridOptions = computed(() => ({
   rowConfig: { isHover: true, keyField: "id" },
   columnConfig: { resizable: true },
   columns: [
-    { field: "imageUrl", title: "图片", width: 96, slots: { default: "usageImageSlot" } },
-    { field: "publishConfigId", title: "发布配置", minWidth: 220, slots: { default: "usageConfigSlot" } },
-    { field: "status", title: "状态", width: 110, slots: { default: "usageStatusSlot" } },
-    { field: "taskId", title: "任务ID", minWidth: 220, showOverflow: true },
+    { field: "imageUrl", title: t("material.image"), width: 96, slots: { default: "usageImageSlot" } },
+    { field: "publishConfigId", title: t("material.publishConfig"), minWidth: 220, slots: { default: "usageConfigSlot" } },
+    { field: "status", title: t("material.status"), width: 110, slots: { default: "usageStatusSlot" } },
+    { field: "taskId", title: t("material.taskId"), minWidth: 220, showOverflow: true },
     {
       field: "createTime",
-      title: "创建时间",
+      title: t("material.createTime"),
       width: 170,
       formatter: ({ cellValue }: any) => formatTimestamp(cellValue),
     },
     {
       field: "updateTime",
-      title: "更新时间",
+      title: t("material.updateTime"),
       width: 170,
       formatter: ({ cellValue }: any) => formatTimestamp(cellValue),
     },
@@ -3389,7 +3389,7 @@ async function handleViewPublishUsageRecords(row: any) {
   const stickerId = String(row?.id || "").trim();
   const imageUrl = String(row?.url || row?.originUrl || "").trim();
   if (!stickerId && !imageUrl) {
-    return ElMessage.warning("缺少图片ID，无法查看发布绑定");
+    return ElMessage.warning(t("material.missingImageIdForUsage"));
   }
   publishUsageDialogVisible.value = true;
   publishUsageLoading.value = true;
@@ -3406,7 +3406,7 @@ async function handleViewPublishUsageRecords(row: any) {
         : [];
   } catch (error: any) {
     console.error("获取发布绑定失败:", error);
-    ElMessage.error(error?.message || "获取发布绑定失败");
+    ElMessage.error(error?.message || t("material.publishBindingLoadFailed"));
     publishUsageDialogVisible.value = false;
   } finally {
     publishUsageLoading.value = false;
@@ -3476,57 +3476,57 @@ const gridOptions = computed(() => {
       className: "" as any,
     },
     {
-      title: "预览图",
+      title: t("material.previewImage"),
       field: "url",
       width: 128,
       slots: { default: "previewDefaultSlot" },
     },
     {
-      title: "素材",
+      title: t("material.material"),
       field: "name",
       minWidth: 220,
       className: "font-bold",
       slots: { default: "compactNameSlot" },
     },
     {
-      title: "资源类型",
+      title: t("material.resourceType"),
       field: "shareType",
       width: 200,
       slots: { default: "shareTypeSlot" },
     },
     {
-      title: "编码",
+      title: t("material.code"),
       field: "code",
       width: 100,
       slots: { default: "codeSlot" },
     },
     {
-      title: "文件信息",
+      title: t("material.fileInfo"),
       field: "fileInfo",
       minWidth: 200,
       slots: { default: "fileInfoSlot" },
     },
     {
-      title: "抠图",
+      title: t("material.cutout"),
       field: "isCutout",
       width: 72,
       slots: { default: "cutoutSlot" },
     },
     {
-      title: "文件夹",
+      title: t("material.folder"),
       field: "folder",
       minWidth: 140,
-      formatter: ({ cellValue }: any) => cellValue || "根目录",
+      formatter: ({ cellValue }: any) => cellValue || t("material.rootDirectory"),
     },
     {
-      title: "创建时间",
+      title: t("material.createTime"),
       field: "createTime",
       width: 150,
       className: "table-time-cell",
       formatter: ({ cellValue }: any) => (cellValue ? formatTimestamp(cellValue) : "-"),
     },
     {
-      title: "修改时间",
+      title: t("material.updateTime"),
       field: "updateTime",
       width: 150,
       className: "table-time-cell",
@@ -3535,7 +3535,7 @@ const gridOptions = computed(() => {
     ...(showSimilarityColumn
       ? [
         {
-          title: "相似度",
+          title: t("material.similarity"),
           field: "similarity",
           width: 80,
           slots: { default: "similaritySlot" },
@@ -3594,14 +3594,14 @@ const selectedGroupStickerIds = ref<string[]>([]);
 const preferredTargetGroup = ref<ImageGroupItem | null>(null);
 const addToGroupButtonText = computed(() => {
   const name = preferredTargetGroup.value?.name?.trim();
-  if (!name) return "添加到组图";
+  if (!name) return t("material.addToGroup");
   const displayName = name.length > 10 ? `${name.slice(0, 10)}...` : name;
-  return `添加到「${displayName}」`;
+  return t("material.addToGroupNamed", { name: displayName });
 });
 const addToGroupButtonTitle = computed(() =>
   preferredTargetGroup.value?.name
-    ? `已选择组图：${preferredTargetGroup.value.name}`
-    : "添加到组图",
+    ? t("material.targetGroupSelected", { name: preferredTargetGroup.value.name })
+    : t("material.addToGroup"),
 );
 const selectedTargetGroup = computed(
   () => availableGroupList.value.find((group) => group.id === targetGroupValue.value) || null,
@@ -3617,7 +3617,7 @@ const canSubmitAddToGroup = computed(
 function handleGroupAddStickers(group: ImageGroupItem) {
   preferredTargetGroup.value = group;
   materialViewMode.value = "single";
-  ElMessage.info(`目标组图已设为“${group.name}”`);
+  ElMessage.info(t("material.targetGroupSet", { name: group.name }));
 }
 
 function getGroupPreviewUrls(group: ImageGroupItem) {
@@ -3626,11 +3626,11 @@ function getGroupPreviewUrls(group: ImageGroupItem) {
 
 async function openBatchAddToGroupDialog() {
   if (!ids.value.length) {
-    ElMessage.warning("请先勾选需要添加到组图的素材");
+    ElMessage.warning(t("material.selectMaterialsToAddGroup"));
     return;
   }
   if (ids.value.length > 200) {
-    ElMessage.warning("单次最多添加 200 张素材");
+    ElMessage.warning(t("material.addGroupMaxLimit"));
     return;
   }
 
@@ -3652,7 +3652,7 @@ async function openBatchAddToGroupDialog() {
     }
   } catch (error: any) {
     availableGroupList.value = preferredTargetGroup.value ? [preferredTargetGroup.value] : [];
-    ElMessage.error(error?.message || "加载组图列表失败");
+    ElMessage.error(error?.message || t("material.groupListLoadFailed"));
   } finally {
     availableGroupsLoading.value = false;
   }
@@ -3660,7 +3660,7 @@ async function openBatchAddToGroupDialog() {
 
 async function submitBatchAddToGroup() {
   if (!selectedGroupStickerIds.value.length) {
-    ElMessage.warning("没有待添加的素材");
+    ElMessage.warning(t("material.noMaterialsToAdd"));
     return;
   }
 
@@ -3668,11 +3668,11 @@ async function submitBatchAddToGroup() {
   const targetValue = targetGroupValue.value.trim();
   const normalizedNewGroupName = newGroupName.value.trim();
   if (isCreatingGroup && !normalizedNewGroupName) {
-    ElMessage.warning("请输入新组图名称");
+    ElMessage.warning(t("material.enterNewGroupName"));
     return;
   }
   if (!isCreatingGroup && !targetValue) {
-    ElMessage.warning("请选择目标组图");
+    ElMessage.warning(t("material.selectTargetGroup"));
     return;
   }
 
@@ -3689,12 +3689,12 @@ async function submitBatchAddToGroup() {
         name: normalizedNewGroupName,
         stickers,
       });
-      ElMessage.success(`已创建组图“${normalizedNewGroupName}”，包含 ${stickers.length} 张素材`);
+      ElMessage.success(t("material.groupCreatedWithCount", { name: normalizedNewGroupName, count: stickers.length }));
     } else if (existingGroup) {
       await imageGroupApi.addStickers(existingGroup.id, { stickers });
-      ElMessage.success(`已添加 ${stickers.length} 张素材`);
+      ElMessage.success(t("material.addedToGroup", { count: stickers.length }));
     } else {
-      ElMessage.warning("目标组图不存在，请重新选择");
+      ElMessage.warning(t("material.targetGroupNotFound"));
       return;
     }
     addToGroupDialogVisible.value = false;
@@ -3704,7 +3704,7 @@ async function submitBatchAddToGroup() {
     resetCheckStatus(ids);
     await getList();
   } catch (error: any) {
-    ElMessage.error(error?.message || "添加到组图失败");
+    ElMessage.error(error?.message || t("material.addToGroupFailed"));
   } finally {
     addingToGroup.value = false;
   }
@@ -3829,7 +3829,7 @@ function formatDetailValue(value: any, fallback = "-") {
 
 function formatBooleanDetail(value: any) {
   if (value === undefined || value === null || value === "") return "-";
-  return normalizeBooleanValue(value) ? "是" : "否";
+  return normalizeBooleanValue(value) ? t("material.yes") : t("material.no");
 }
 
 function normalizeBooleanValue(value: any) {
@@ -3898,14 +3898,14 @@ const stickerUserTransferTargetUserId = ref("");
 const stickerUserTransferUserOptions = ref<StickerUserTransferUserOption[]>([]);
 
 const stickerUserTransferDialogTitle = computed(() => {
-  if (stickerUserTransferAction.value === "share") return "快捷共享素材给用户";
-  if (stickerUserTransferAction.value === "copy") return "复制副本素材给用户";
-  return "转移素材给用户";
+  if (stickerUserTransferAction.value === "share") return t("material.quickShareToUser");
+  if (stickerUserTransferAction.value === "copy") return t("material.copyToUser");
+  return t("material.transferToUser");
 });
 const stickerUserTransferSubmitText = computed(() => {
-  if (stickerUserTransferAction.value === "share") return "确认快捷共享";
-  if (stickerUserTransferAction.value === "copy") return "确认复制副本";
-  return "确认转移";
+  if (stickerUserTransferAction.value === "share") return t("material.confirmQuickShare");
+  if (stickerUserTransferAction.value === "copy") return t("material.confirmCopy");
+  return t("material.confirmTransfer");
 });
 const stickerUserTransferPreviewItems = computed(() => {
   return stickerUserTransferIds.value.slice(0, 5).map((id) => {
@@ -3930,16 +3930,16 @@ const svgToPngForm = ref({
 
 // 尺寸预设
 const sizePresets = ref([
-  { name: "小图标", width: 64 },
-  { name: "中图标", width: 128 },
-  { name: "大图标", width: 256 },
-  { name: "标准", width: 512 },
-  { name: "高清", width: 1024 },
-  { name: "超高清", width: 2048 },
-  { name: "常用", width: 800 },
-  { name: "中等", width: 1200 },
-  { name: "大图", width: 1600 },
-  { name: "超大", width: 2400 },
+  { name: t("material.sizePresetSmall"), width: 64 },
+  { name: t("material.sizePresetMedium"), width: 128 },
+  { name: t("material.sizePresetLarge"), width: 256 },
+  { name: t("material.sizePresetStandard"), width: 512 },
+  { name: t("material.sizePresetHd"), width: 1024 },
+  { name: t("material.sizePresetUhd"), width: 2048 },
+  { name: t("material.sizePresetCommon"), width: 800 },
+  { name: t("material.sizePresetMiddle"), width: 1200 },
+  { name: t("material.sizePresetBig"), width: 1600 },
+  { name: t("material.sizePresetExtraLarge"), width: 2400 },
 ]);
 
 const filterDialogVisible = ref(false);
@@ -4009,8 +4009,8 @@ const psdSetAutomationProductTemplateSearchText = ref("");
 const psdSetAutomationActions = ref([
   {
     key: "generate_product",
-    label: "自动生成商品",
-    description: "套图制作完成后自动创建商品，并进入商品生成流程。",
+    label: t("material.autoGenerateProduct"),
+    description: t("material.autoGenerateProductDesc"),
     enabled: false,
     params: {
       productGenerationTemplateIds: [] as string[],
@@ -4018,16 +4018,16 @@ const psdSetAutomationActions = ref([
     fields: [
       {
         key: "productGenerationTemplateIds",
-        label: "商品生成模板",
+        label: t("material.productGenerationTemplate"),
         component: "product-template-list",
-        placeholder: "选择一个或多个商品生成模板",
+        placeholder: t("material.selectProductGenerationTemplates"),
       },
     ],
   },
   {
     key: "create_publish_task_from_config",
-    label: "自动生成发布任务",
-    description: "套图制作完成后，直接按选中的任务配置创建发布任务。",
+    label: t("material.autoGeneratePublishTask"),
+    description: t("material.autoGeneratePublishTaskDesc"),
     enabled: false,
     params: {
       publishConfigIds: [] as string[],
@@ -4035,9 +4035,9 @@ const psdSetAutomationActions = ref([
     fields: [
       {
         key: "publishConfigIds",
-        label: "任务配置",
+        label: t("material.taskConfig"),
         component: "publish-config-list",
-        placeholder: "选择一个或多个任务配置",
+        placeholder: t("material.selectTaskConfigs"),
       },
     ],
   },
@@ -4087,7 +4087,7 @@ const selectedMaterialsForPublishConfig = computed(() =>
       (id) =>
         getMaterialById(id) || {
           id,
-          name: `素材${id}`,
+          name: t("material.materialWithId", { id }),
           url: "",
           suffix: "",
         },
@@ -4156,7 +4156,7 @@ const materialPublishConfigGridOptions = computed(() => ({
     { type: "checkbox" as any, width: 60, align: "center" as any },
     {
       field: "taskType",
-      title: "任务类型",
+      title: t("material.taskType"),
       width: 180,
       formatter: ({ row }: any) =>
         getTaskTypeLabel(
@@ -4164,15 +4164,15 @@ const materialPublishConfigGridOptions = computed(() => ({
           row?.platform,
         ),
     },
-    { field: "name", title: "配置名称", minWidth: 180, showOverflow: true },
+    { field: "name", title: t("material.configName"), minWidth: 180, showOverflow: true },
     {
       field: "templateBindingStatus",
-      title: "状态",
+      title: t("material.status"),
       width: 150,
       formatter: ({ row }: any) =>
-        isMaterialPublishConfigUsable(row) ? "可用" : "未配置PSD模板，无法使用",
+        isMaterialPublishConfigUsable(row) ? t("material.usable") : t("material.notConfiguredPsdTemplate"),
     },
-    { field: "description", title: "备注说明", minWidth: 220, showOverflow: true },
+    { field: "description", title: t("material.remark"), minWidth: 220, showOverflow: true },
   ],
 }));
 const filteredMaterialProductConfigs = computed(() => {
@@ -4217,31 +4217,31 @@ const materialProductConfigGridOptions = computed(() => ({
   },
   columns: [
     { type: "checkbox" as any, width: 60, align: "center" as any },
-    { field: "name", title: "商品配置", minWidth: 180, showOverflow: true },
+    { field: "name", title: t("material.productConfig"), minWidth: 180, showOverflow: true },
     {
       field: "productType",
-      title: "商品类型",
+      title: t("material.productType"),
       width: 140,
-      formatter: ({ cellValue }: any) => String(cellValue || "").trim() || "AI 自动识别",
+      formatter: ({ cellValue }: any) => String(cellValue || "").trim() || t("material.aiAutoRecognize"),
     },
     {
       field: "pricingMode",
-      title: "价格策略",
+      title: t("material.pricingStrategy"),
       width: 110,
-      formatter: ({ cellValue }: any) => (cellValue === "ai" ? "AI 生成" : "固定价格"),
+      formatter: ({ cellValue }: any) => (cellValue === "ai" ? t("material.aiGenerated") : t("material.fixedPrice")),
     },
     {
       field: "psdTemplateId",
-      title: "PSD模板",
+      title: t("material.psdTemplate"),
       width: 170,
       formatter: ({ row }: any) =>
-        isMaterialProductConfigUsable(row) ? "已绑定" : "未绑定，无法使用",
+        isMaterialProductConfigUsable(row) ? t("material.bound") : t("material.notBound"),
     },
     {
       field: "autoPublish",
-      title: "生成后发布",
+      title: t("material.publishAfterGenerate"),
       width: 110,
-      formatter: ({ cellValue }: any) => (cellValue === false ? "否" : "是"),
+      formatter: ({ cellValue }: any) => (cellValue === false ? t("material.no") : t("material.yes")),
     },
   ],
 }));
@@ -4273,25 +4273,25 @@ const filteredPsdSetAutomationProductTemplates = computed(() => {
 });
 const psdSetAutomationProductTemplateColumns: any[] = [
   { type: "checkbox", width: 48 },
-  { field: "name", title: "模板名称", minWidth: 180, showOverflow: true },
-  { field: "productType", title: "商品类型", width: 120, showOverflow: true },
+  { field: "name", title: t("material.templateName"), minWidth: 180, showOverflow: true },
+  { field: "productType", title: t("material.productType"), width: 120, showOverflow: true },
   {
     field: "salePrice",
-    title: "售价",
+    title: t("material.salePrice"),
     width: 90,
     formatter: ({ cellValue }: any) => {
       const amount = Number(cellValue || 0);
       return amount > 0 ? amount.toFixed(2) : "-";
     },
   },
-  { field: "stock", title: "库存", width: 80 },
-  { field: "tags", title: "标签", minWidth: 180, showOverflow: true },
+  { field: "stock", title: t("material.stock"), width: 80 },
+  { field: "tags", title: t("material.tags"), minWidth: 180, showOverflow: true },
 ];
 const psdSetAutomationPublishConfigColumns: any[] = [
   { type: "checkbox", width: 48 },
   {
     field: "taskType",
-    title: "任务类型",
+    title: t("material.taskType"),
     width: 170,
     formatter: ({ row }: any) =>
       getTaskTypeLabel(
@@ -4299,9 +4299,9 @@ const psdSetAutomationPublishConfigColumns: any[] = [
         row?.platform,
       ),
   },
-  { field: "name", title: "配置名称", minWidth: 180, showOverflow: true },
-  { field: "platform", title: "平台", width: 110, showOverflow: true },
-  { field: "description", title: "备注说明", minWidth: 220, showOverflow: true },
+  { field: "name", title: t("material.configName"), minWidth: 180, showOverflow: true },
+  { field: "platform", title: t("material.platform"), width: 110, showOverflow: true },
+  { field: "description", title: t("material.remark"), minWidth: 220, showOverflow: true },
 ];
 const enabledPsdSetAutomationCount = computed(
   () => psdSetAutomationActions.value.filter((action) => action.enabled).length,
@@ -4350,7 +4350,7 @@ const invalidFormatMaterialsList = computed(() => {
     if (!materialSuffix || !allowedFormatsSet.has(materialSuffix)) {
       invalidList.push({
         name: material.name || `ID: ${material.id}`,
-        suffix: materialSuffix || "未知格式",
+        suffix: materialSuffix || t("material.unknownFormat"),
       });
     }
   });
@@ -4359,10 +4359,10 @@ const invalidFormatMaterialsList = computed(() => {
 });
 const psdSetDialogTitle = computed(() =>
   isImageGroupPsdSet.value
-    ? "组图套图工作台"
+    ? t("material.groupPsdWorkbench")
     : psdSetMergeSticker.value
-      ? "多图套图工作台"
-      : "PS 套图工作台",
+      ? t("material.multiPsdWorkbench")
+      : t("material.psWorkbench"),
 );
 
 // 处理上传
@@ -4466,10 +4466,10 @@ function normalizeMaterialListRows(items: any[]) {
     const shapeConfig = aspectRatio ? getSizeShapeByRatio(aspectRatio) : undefined;
     const shapeLabel = shapeConfig
       ? shapeConfig.group === "portrait"
-        ? "长图"
+        ? t("material.longImage")
         : shapeConfig.group === "landscape"
-          ? "宽图"
-          : "正方图"
+          ? t("material.wide")
+          : t("material.squareImage")
       : "";
     const rawScore = Number(item._score ?? item.score ?? 0);
     const similarity =
@@ -4493,7 +4493,7 @@ function normalizeMaterialListRows(items: any[]) {
 
 async function loadVectorSimilarResults(imageUrl: string, resetPage = true): Promise<boolean> {
   if (!imageUrl) {
-    ElMessage.warning("该图片暂无可搜索的图片地址");
+    ElMessage.warning(t("material.noSearchableImageUrl"));
     return false;
   }
 
@@ -4533,9 +4533,9 @@ async function loadVectorSimilarResults(imageUrl: string, resetPage = true): Pro
       lowerMsg.includes("model service") ||
       lowerMsg.includes("模型服务")
     ) {
-      ElMessage.error("模型服务未启动");
+      ElMessage.error(t("material.modelServiceNotStarted"));
     } else {
-      ElMessage.error(errorMsg || "搜索失败");
+      ElMessage.error(errorMsg || t("material.searchFailed"));
     }
     return false;
   } finally {
@@ -4545,7 +4545,7 @@ async function loadVectorSimilarResults(imageUrl: string, resetPage = true): Pro
 
 async function loadVectorSimilarTextResults(text: string, resetPage = true): Promise<boolean> {
   if (!text?.trim()) {
-    ElMessage.warning("请输入搜索文本");
+    ElMessage.warning(t("material.enterSearchText"));
     return false;
   }
 
@@ -4584,9 +4584,9 @@ async function loadVectorSimilarTextResults(text: string, resetPage = true): Pro
       lowerMsg.includes("model service") ||
       lowerMsg.includes("模型服务")
     ) {
-      ElMessage.error("模型服务未启动");
+      ElMessage.error(t("material.modelServiceNotStarted"));
     } else {
-      ElMessage.error(errorMsg || "文字搜索失败");
+      ElMessage.error(errorMsg || t("material.textSearchFailed"));
     }
     return false;
   } finally {
@@ -4659,13 +4659,13 @@ function handleSimilarImageUploadChange(uploadFile: any) {
   if (!file) return;
 
   if (!file.type.startsWith("image/")) {
-    ElMessage.warning("请选择图片文件");
+    ElMessage.warning(t("material.selectImageFile"));
     return;
   }
 
   releaseSimilarImagePreviewUrl();
   similarImageFile.value = file;
-  similarImageFileName.value = file.name || "本地图片";
+  similarImageFileName.value = file.name || t("material.localImage");
   similarImageFilePreviewUrl.value = URL.createObjectURL(file);
   similarImageSearchTab.value = "file";
 }
@@ -4687,7 +4687,7 @@ async function submitSimilarImageSearch() {
 
   // 检查模型服务是否可用
   if (modelServiceHealth.checked && !modelServiceHealth.available) {
-    ElMessage.warning("模型服务未启动");
+    ElMessage.warning(t("material.modelServiceNotStarted"));
     return;
   }
 
@@ -4697,7 +4697,7 @@ async function submitSimilarImageSearch() {
     if (similarImageSearchTab.value === "text") {
       const searchText = similarImageSearchText.value.trim();
       if (!searchText) {
-        ElMessage.warning("请输入搜索文本");
+        ElMessage.warning(t("material.enterSearchText"));
         return;
       }
       const success = await loadVectorSimilarTextResults(searchText);
@@ -4719,26 +4719,26 @@ async function submitSimilarImageSearch() {
     if (similarImageSearchTab.value === "url") {
       imageUrl = similarImageUrl.value.trim();
       if (!imageUrl) {
-        ElMessage.warning("请输入图片 URL");
+        ElMessage.warning(t("material.enterImageUrl"));
         return;
       }
       if (!isValidRemoteImageUrl(imageUrl)) {
-        ElMessage.warning("请输入 http 或 https 开头的图片 URL");
+        ElMessage.warning(t("material.enterValidHttpUrl"));
         return;
       }
       activePreviewUrl = imageUrl;
       activeSourceType = "url";
-      activeSourceLabel = "图片 URL";
+      activeSourceLabel = t("material.imageUrl");
     } else {
       const file = similarImageFile.value;
       if (!file) {
-        ElMessage.warning("请选择本地图片");
+        ElMessage.warning(t("material.selectLocalImage"));
         return;
       }
       imageUrl = await readImageFileAsSearchDataUrl(file);
       activePreviewUrl = imageUrl;
       activeSourceType = "file";
-      activeSourceLabel = file.name || similarImageFileName.value || "本地图片";
+      activeSourceLabel = file.name || similarImageFileName.value || t("material.localImage");
     }
 
     const success = await loadVectorSimilarResults(imageUrl);
@@ -4751,7 +4751,7 @@ async function submitSimilarImageSearch() {
       similarImageDialogVisible.value = false;
     }
   } catch (error: any) {
-    ElMessage.error(error?.message || "读取图片失败");
+    ElMessage.error(error?.message || t("material.readImageFailed"));
   } finally {
     similarImageSubmitting.value = false;
   }
@@ -4761,7 +4761,7 @@ function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(reader.error || new Error("读取图片失败"));
+    reader.onerror = () => reject(reader.error || new Error(t("material.readImageFailed")));
     reader.readAsDataURL(file);
   });
 }
@@ -4778,7 +4778,7 @@ async function readImageFileAsSearchDataUrl(file: File): Promise<string> {
     const image = await new Promise<HTMLImageElement>((resolve, reject) => {
       const img = new Image();
       img.onload = () => resolve(img);
-      img.onerror = () => reject(new Error("图片解码失败"));
+      img.onerror = () => reject(new Error(t("material.imageDecodeFailed")));
       img.src = objectUrl;
     });
 
@@ -4797,7 +4797,7 @@ async function readImageFileAsSearchDataUrl(file: File): Promise<string> {
       canvas.toBlob(
         (blob) => {
           if (!blob) {
-            reject(new Error("图片压缩失败"));
+            reject(new Error(t("material.imageCompressFailed")));
             return;
           }
           readFileAsDataUrl(new File([blob], file.name || "search-image.jpg", { type: blob.type }))
@@ -4827,7 +4827,7 @@ function normalizeStickerDetailResponse(res: any) {
 async function fetchStickerDetail(rowOrId: any) {
   const id = String(typeof rowOrId === "object" ? rowOrId?.id : rowOrId || "").trim();
   if (!id) {
-    throw new Error("缺少素材ID");
+    throw new Error(t("material.missingMaterialId"));
   }
 
   const cached = stickerDetailCache.get(id);
@@ -4837,7 +4837,7 @@ async function fetchStickerDetail(rowOrId: any) {
 
   const detail = normalizeStickerDetailResponse(await getStickerById(id));
   if (!detail) {
-    throw new Error("素材详情不存在");
+    throw new Error(t("material.materialDetailNotFound"));
   }
 
   const row = dataSource.value.find((item: any) => String(item.id) === id);
@@ -4866,7 +4866,7 @@ async function handlePhashSearch() {
   queryParams.phash = queryParams.phash.trim();
 
   if (!queryParams.phash) {
-    ElMessage.warning("请输入phash值或图片地址");
+    ElMessage.warning(t("material.enterPhashOrUrl"));
     return;
   }
 
@@ -4920,7 +4920,7 @@ function getStickerFolderFilterForQuery(folderId: string | null | undefined) {
 // 文件夹选择选项（用于下拉框）
 const stickerFolderSelectOptions = computed(() => {
   const options: Array<{ label: string; value: string | null; path: string }> = [
-    { label: "根目录", value: null, path: "" },
+    { label: t("material.rootDirectory"), value: null, path: "" },
   ];
 
   // 递归构建文件夹选项
@@ -4957,7 +4957,7 @@ async function loadStickerFolderTree() {
 
     const allNode = {
       id: FOLDER_FILTER.ALL,
-      name: "全部",
+      name: t("material.all"),
       path: "",
       parentId: null,
       children: [] as any[],
@@ -4966,7 +4966,7 @@ async function loadStickerFolderTree() {
 
     const rootNode = {
       id: FOLDER_FILTER.NOT_GROUP,
-      name: "未分类",
+      name: t("material.uncategorized"),
       path: "",
       parentId: null,
       children: [] as any[],
@@ -4979,7 +4979,7 @@ async function loadStickerFolderTree() {
     }
   } catch (error) {
     console.error("加载文件夹失败:", error);
-    ElMessage.error("加载文件夹失败");
+    ElMessage.error(t("material.folderLoadFailed"));
   }
 }
 
@@ -5010,13 +5010,13 @@ async function handleFolderDrop(payload: { data: any }) {
 
   try {
     await batchMoveStickers({ ids: movingIds, folderId: targetFolderId });
-    ElMessage.success(`已移动 ${movingIds.length} 个素材到 ${targetPath || "根目录"}`);
+    ElMessage.success(t("material.movedToFolder", { count: movingIds.length, path: targetPath || t("material.rootDirectory") }));
 
     await loadStickerFolderTree();
     await getList();
     resetCheckStatus(ids);
   } catch (error) {
-    ElMessage.error((error as Error).message || "移动失败");
+    ElMessage.error((error as Error).message || t("material.moveFailed"));
   } finally {
     resetAfterDrop();
   }
@@ -5041,7 +5041,7 @@ getList();
 // 批量移动素材到文件夹
 async function handleBatchMoveToFolder() {
   if (!ids.value.length) {
-    return ElMessage.warning("请选择要移动的素材");
+    return ElMessage.warning(t("material.selectMaterialsToMove"));
   }
 
   try {
@@ -5050,13 +5050,18 @@ async function handleBatchMoveToFolder() {
 
     await batchMoveStickers({ ids: ids.value, folderId: targetFolderId });
     ElMessage.success(
-      `成功移动 ${ids.value.length} 个素材${targetFolderPath ? `到 ${targetFolderPath}` : "到根目录"}`,
+      t("material.moveSuccess", {
+        count: ids.value.length,
+        target: targetFolderPath
+          ? t("material.toPath", { path: targetFolderPath })
+          : t("material.toRoot"),
+      }),
     );
     getList();
     ids.value = [];
     resetCheckStatus(ids);
   } catch (error) {
-    ElMessage.error((error as Error).message || "移动失败");
+    ElMessage.error((error as Error).message || t("material.moveFailed"));
   }
 }
 
@@ -5080,7 +5085,7 @@ function onMobileFilterSubmit() {
 // 下载
 function handleMultiDownload() {
   if (!ids.value.length) {
-    return ElMessage.warning("请选择要下载的数据");
+    return ElMessage.warning(t("material.selectDataToDownload"));
   }
 
   // 处理图片下载
@@ -5099,22 +5104,22 @@ function handleMultiDownload() {
           const fileName = row.name || row.imageName || `image_${id}.jpg`;
 
           if (!downloadUrl) {
-            ElMessage.error(`图片 ${fileName} 下载失败：缺少下载链接`);
+            ElMessage.error(t("material.downloadFailedMissingLink", { fileName }));
             return;
           }
 
           // 使用新的下载函数，确保文件被下载而不是打开新页面
           await downloadImage(downloadUrl, fileName);
-          ElNotification.success(`图片 ${fileName} 下载成功`);
+          ElNotification.success(t("material.downloadSuccess", { fileName }));
         } catch (error) {
           console.error("下载失败:", error);
-          ElMessage.error(`图片下载失败：${error.message}`);
+          ElMessage.error(t("material.downloadFailed", { message: error.message }));
         }
       }, 500 * index);
     });
   } catch (e) {
     console.error("批量下载失败:", e);
-    ElMessage.error("批量下载失败");
+    ElMessage.error(t("material.batchDownloadFailed"));
   }
 }
 
@@ -5125,20 +5130,20 @@ async function handleDelete(row?) {
   } else {
     delIds = Array.isArray(ids.value) ? [...ids.value] : [];
     if (!delIds.length) {
-      return ElMessage.warning("请选择要删除的数据");
+      return ElMessage.warning(t("material.selectDataToDelete"));
     }
   }
 
   try {
-    await ElMessageBox.confirm("确认删除该数据吗", "删除提示", {
-      confirmButtonText: "确认",
-      cancelButtonText: "取消",
+    await ElMessageBox.confirm(t("material.confirmDeleteData"), t("material.deleteTip"), {
+      confirmButtonText: t("material.confirm"),
+      cancelButtonText: t("material.cancel"),
       type: "error",
     });
     delIds = delIds.map((id) => String(id));
     deleteLoading.value = true;
     await deleteAssetLibrary({ ids: delIds });
-    ElNotification.success("删除成功");
+    ElNotification.success(t("material.deleteSuccess"));
     resetCheckStatus(ids);
     await getList();
   } catch (error: any) {
@@ -5146,7 +5151,7 @@ async function handleDelete(row?) {
       return;
     }
     console.error("删除失败:", error);
-    ElMessage.error(error?.message || "删除失败");
+    ElMessage.error(error?.message || t("material.deleteFailed"));
   } finally {
     deleteLoading.value = false;
   }
@@ -5189,16 +5194,16 @@ async function handleDownload(row) {
     const fileName = row.name || row.imageName || `image_${row.id}.jpg`;
 
     if (!downloadUrl) {
-      ElMessage.error(`图片 ${fileName} 下载失败：缺少下载链接`);
+      ElMessage.error(t("material.downloadFailedMissingLink", { fileName }));
       return;
     }
 
     // 使用新的下载函数，确保文件被下载而不是打开新页面
     await downloadImage(downloadUrl, fileName);
-    ElNotification.success(`图片 ${fileName} 下载成功`);
+    ElNotification.success(t("material.downloadSuccess", { fileName }));
   } catch (error) {
     console.error("下载失败:", error);
-    ElMessage.error(`图片下载失败：${error.message}`);
+    ElMessage.error(t("material.downloadFailed", { message: error.message }));
   }
 }
 
@@ -5208,13 +5213,13 @@ async function handleDownloadRotated90(row) {
     const fileName = row.name || row.imageName || `image_${row.id}.jpg`;
 
     if (!originalUrl) {
-      ElMessage.error(`图片 ${fileName} 下载失败：缺少下载链接`);
+      ElMessage.error(t("material.downloadFailedMissingLink", { fileName }));
       return;
     }
 
     const rotatedUrl = getRotatedImageUrl(originalUrl, 90);
     if (!rotatedUrl) {
-      ElMessage.error(`图片 ${fileName} 不支持旋转处理`);
+      ElMessage.error(t("material.rotateNotSupported", { fileName }));
       return;
     }
 
@@ -5225,10 +5230,10 @@ async function handleDownloadRotated90(row) {
       : `${fileName}_rotated90`;
 
     await downloadImage(rotatedUrl, rotatedFileName);
-    ElNotification.success(`旋转90°图片 ${rotatedFileName} 下载成功`);
+    ElNotification.success(t("material.rotatedDownloadSuccess", { fileName: rotatedFileName }));
   } catch (error) {
     console.error("旋转下载失败:", error);
-    ElMessage.error(`旋转图片下载失败：${error.message}`);
+    ElMessage.error(t("material.rotatedDownloadFailed", { message: error.message }));
   }
 }
 
@@ -5237,16 +5242,16 @@ async function handleCopy(row) {
   try {
     const res = await copyStickers({ ids: String(row.id) });
     const count = Array.isArray(res?.list) ? res.list.length : 1;
-    ElMessage.success(`复制成功 ${count} 条`);
+    ElMessage.success(t("material.copySuccessCount", { count }));
     getList();
   } catch (e) {
-    ElMessage.error("复制失败");
+    ElMessage.error(t("material.copyFailed"));
   }
 }
 
 function ensureStickerAdminOperation() {
   if (!isAdmin.value) {
-    ElMessage.warning("无权限：仅管理员可执行该操作");
+    ElMessage.warning(t("material.adminOnlyOperation"));
     return false;
   }
   return true;
@@ -5264,12 +5269,12 @@ async function loadStickerTransferUserOptions() {
       id: String(item.id),
       name: String(item.name || "").trim(),
       account: String(item.account || "").trim(),
-      label: `${item.name || item.account || `用户#${item.id}`} (${item.account || item.id})`,
+      label: t("material.userOptionLabel", { name: item.name || item.account || t("material.userWithId", { id: item.id }), account: item.account || item.id }),
       isAdmin: !!item.isAdmin,
     }));
     stickerUserTransferUsersLoaded.value = true;
   } catch (error: any) {
-    ElMessage.error(error?.message || "加载用户列表失败");
+    ElMessage.error(error?.message || t("material.userListLoadFailed"));
   } finally {
     stickerUserTransferUsersLoading.value = false;
   }
@@ -5292,7 +5297,7 @@ async function openStickerUserTransferDialog(action: StickerUserTransferAction, 
     : (Array.isArray(ids.value) ? ids.value : []).map((id) => String(id)).filter(Boolean);
 
   if (!targetIds.length) {
-    ElMessage.warning("请选择要操作的素材");
+    ElMessage.warning(t("material.selectMaterialsToOperate"));
     return;
   }
 
@@ -5313,7 +5318,7 @@ async function openShareRecordsDialog(row: any) {
     shareRecordsList.value = res?.list || [];
     shareRecordsTotal.value = res?.total || 0;
   } catch (e: any) {
-    ElMessage.error(e?.message || '获取分享记录失败');
+    ElMessage.error(e?.message || t('material.shareRecordsLoadFailed'));
   } finally {
     shareRecordsLoading.value = false;
   }
@@ -5325,22 +5330,22 @@ async function submitStickerUserTransfer() {
   }
 
   if (!stickerUserTransferIds.value.length) {
-    ElMessage.warning("请选择要操作的素材");
+    ElMessage.warning(t("material.selectMaterialsToOperate"));
     return;
   }
 
   if (!stickerUserTransferTargetUserId.value) {
-    ElMessage.warning("请选择目标用户");
+    ElMessage.warning(t("material.selectTargetUser"));
     return;
   }
 
   stickerUserTransferSubmitting.value = true;
   const actionLabel =
     stickerUserTransferAction.value === "share"
-      ? "快捷共享"
+      ? t("material.quickShare")
       : stickerUserTransferAction.value === "copy"
-        ? "复制副本"
-        : "转移";
+        ? t("material.copyCopy")
+        : t("material.transfer");
 
   try {
     const payload = {
@@ -5363,20 +5368,25 @@ async function submitStickerUserTransfer() {
 
     if (successCount > 0) {
       ElNotification.success(
-        `${actionLabel}成功 ${successCount} 条${failedCount ? `，失败 ${failedCount} 条` : ""}${warningCount ? `，警告 ${warningCount} 条` : ""}`,
+        t("material.transferSuccessSummary", {
+          actionLabel,
+          successCount,
+          failedText: failedCount ? t("material.failedCountText", { count: failedCount }) : "",
+          warningText: warningCount ? t("material.warningCountText", { count: warningCount }) : "",
+        }),
       );
       stickerUserTransferDialogVisible.value = false;
       resetCheckStatus(ids);
       await getList();
     } else if (failedCount > 0) {
-      ElMessage.error(`${actionLabel}失败 ${failedCount} 条`);
+      ElMessage.error(t("material.transferFailedCount", { actionLabel, count: failedCount }));
     } else {
-      ElMessage.warning(`未处理任何素材，请稍后重试`);
+      ElMessage.warning(t("material.nothingProcessed"));
     }
 
     if (failedCount > 0) {
       ElNotification.warning({
-        title: `${actionLabel}失败详情`,
+        title: t("material.failedDetailTitle", { actionLabel }),
         message: result.failed
           .slice(0, 3)
           .map((item: any) => `${item.id}: ${item.message}`)
@@ -5387,7 +5397,7 @@ async function submitStickerUserTransfer() {
 
     if (warningCount > 0) {
       ElNotification.warning({
-        title: `${actionLabel}完成，但有警告`,
+        title: t("material.completedWithWarning", { actionLabel }),
         message: result.warnings
           .slice(0, 3)
           .map((item: any) => `${item.id}: ${item.message}`)
@@ -5396,7 +5406,7 @@ async function submitStickerUserTransfer() {
       });
     }
   } catch (error: any) {
-    ElMessage.error(error?.message || `${actionLabel}失败`);
+    ElMessage.error(error?.message || t("material.actionFailed", { actionLabel }));
   } finally {
     stickerUserTransferSubmitting.value = false;
   }
@@ -5405,26 +5415,26 @@ async function submitStickerUserTransfer() {
 // 生成无空白PNG（仅对 png 后缀显示）
 async function handleTrimPng(row) {
   if ((row.suffix || "").toLowerCase() !== "png") {
-    ElMessage.warning("仅支持 PNG 图片");
+    ElMessage.warning(t("material.pngOnly"));
     return;
   }
   try {
     const res = await trimPng({ id: String(row.id) });
     if (res && res.id) {
-      ElMessage.success("生成成功");
+      ElMessage.success(t("material.generateSuccess"));
     } else {
-      ElMessage.success("生成成功");
+      ElMessage.success(t("material.generateSuccess"));
     }
     getList();
   } catch (e) {
-    ElMessage.error("生成失败");
+    ElMessage.error(t("material.generateFailed"));
   }
 }
 
 // SVG转PNG（仅对 svg 后缀显示）
 async function handleSvgToPng(row) {
   if ((row.suffix || "").toLowerCase() !== "svg") {
-    ElMessage.warning("仅支持 SVG 图片");
+    ElMessage.warning(t("material.svgOnly"));
     return;
   }
 
@@ -5537,21 +5547,21 @@ async function confirmSvgToPng() {
   if (!currentSvgRow.value?.id) return;
 
   try {
-    ElMessage.info("正在转换SVG为PNG，请稍候...");
+    ElMessage.info(t("material.svgConverting"));
     const res = await svgToPng({
       id: String(currentSvgRow.value.id),
       width: svgToPngForm.value.width,
       height: svgToPngForm.value.height,
     });
     if (res && res.id) {
-      ElMessage.success("SVG转PNG成功");
+      ElMessage.success(t("material.svgToPngSuccess"));
     } else {
-      ElMessage.success("SVG转PNG成功");
+      ElMessage.success(t("material.svgToPngSuccess"));
     }
     svgToPngDialogVisible.value = false;
     getList();
   } catch (e) {
-    ElMessage.error("SVG转PNG失败");
+    ElMessage.error(t("material.svgToPngFailed"));
   }
 }
 
@@ -5565,7 +5575,7 @@ async function openPsdSetDialog(mergeMode?: boolean | any) {
   } else {
     // 如果是布尔值,则是从按钮点击的,使用传入的模式
     if (!ids.value.length) {
-      ElMessage.warning("请选择要制作的素材");
+      ElMessage.warning(t("material.selectMaterialsToMake"));
       return;
     }
     psdSetMergeSticker.value = mergeMode === true;
@@ -5583,7 +5593,7 @@ async function openImageGroupPsdSetDialog(groups: ImageGroupItem[]) {
     ? groups.filter((group) => group?.id && group.stickers?.length)
     : [];
   if (!selectedGroups.length) {
-    ElMessage.warning("请选择包含图片成员的组图");
+    ElMessage.warning(t("material.selectGroupWithImages"));
     return;
   }
 
@@ -5606,7 +5616,7 @@ async function openImageGroupPsdSetDialog(groups: ImageGroupItem[]) {
 
 async function openMaterialPublishConfigDialog() {
   if (!ids.value.length) {
-    ElMessage.warning("请选择要处理的素材");
+    ElMessage.warning(t("material.selectMaterialsToProcess"));
     return;
   }
 
@@ -5620,7 +5630,7 @@ async function openMaterialPublishConfigDialog() {
 
 async function openMaterialProductConfigDialog() {
   if (!ids.value.length) {
-    ElMessage.warning("请选择要处理的素材");
+    ElMessage.warning(t("material.selectMaterialsToProcess"));
     return;
   }
 
@@ -5655,7 +5665,7 @@ async function loadProductConfigsForMaterialDialog() {
     materialProductConfigOptions.value = Array.isArray(res?.list) ? res.list : [];
   } catch (error) {
     console.error("加载独立站商品配置失败:", error);
-    ElMessage.error("加载独立站商品配置失败");
+    ElMessage.error(t("material.productConfigLoadFailed"));
   } finally {
     materialProductConfigLoading.value = false;
   }
@@ -5770,15 +5780,15 @@ function handlePsdSetAutomationListCheckboxChange(action: any, fieldKey: string,
 
 async function handleCreatePsdSetsByPublishConfig() {
   if (!ids.value.length) {
-    return ElMessage.warning("请先勾选素材");
+    return ElMessage.warning(t("material.selectMaterialsFirst"));
   }
   if (!materialPublishConfigSelectedIds.value.length) {
-    return ElMessage.warning("请选择发布配置");
+    return ElMessage.warning(t("material.selectPublishConfig"));
   }
 
   const formatCheckResult = checkMaterialFormats();
   if (!formatCheckResult || !formatCheckResult.valid) {
-    ElMessage.warning(formatCheckResult?.message || "素材格式检查异常，请重试");
+    ElMessage.warning(formatCheckResult?.message || t("material.formatCheckError"));
     return;
   }
 
@@ -5791,12 +5801,12 @@ async function handleCreatePsdSetsByPublishConfig() {
     const createdCount = Array.isArray(res?.list)
       ? res.list.length
       : Number(res?.total || materialPublishConfigTaskCount.value);
-    ElMessage.success(`成功创建 ${createdCount} 条套图任务`);
+    ElMessage.success(t("material.psdTasksCreated", { count: createdCount }));
     handleCloseMaterialPublishConfigDialog();
     resetCheckStatus(ids);
   } catch (error: any) {
     console.error("按发布配置创建套图失败:", error);
-    ElMessage.error(error?.message || "按发布配置创建套图失败");
+    ElMessage.error(error?.message || t("material.psdCreateByConfigFailed"));
   } finally {
     materialPublishConfigSubmitting.value = false;
   }
@@ -5804,15 +5814,15 @@ async function handleCreatePsdSetsByPublishConfig() {
 
 async function handleCreatePsdSetsByProductConfig() {
   if (!ids.value.length) {
-    return ElMessage.warning("请先勾选素材");
+    return ElMessage.warning(t("material.selectMaterialsFirst"));
   }
   if (!materialProductConfigSelectedIds.value.length) {
-    return ElMessage.warning("请选择独立站商品配置");
+    return ElMessage.warning(t("material.selectProductConfig"));
   }
 
   const formatCheckResult = checkMaterialFormats();
   if (!formatCheckResult || !formatCheckResult.valid) {
-    ElMessage.warning(formatCheckResult?.message || "素材格式检查异常，请重试");
+    ElMessage.warning(formatCheckResult?.message || t("material.formatCheckError"));
     return;
   }
 
@@ -5824,12 +5834,12 @@ async function handleCreatePsdSetsByProductConfig() {
     });
     const productTotal = Number(res?.productTotal || materialProductConfigTaskCount.value);
     const psdSetTotal = Array.isArray(res?.list) ? res.list.length : Number(res?.total || 0);
-    ElMessage.success(`已创建 ${psdSetTotal} 条套图任务，完成后生成 ${productTotal} 个独立站商品`);
+    ElMessage.success(t("material.productTasksCreated", { psdSetTotal, productTotal }));
     handleCloseMaterialProductConfigDialog();
     resetCheckStatus(ids);
   } catch (error: any) {
     console.error("按独立站商品配置创建套图失败:", error);
-    ElMessage.error(error?.message || "创建独立站商品任务失败");
+    ElMessage.error(error?.message || t("material.productTaskCreateFailed"));
   } finally {
     materialProductConfigSubmitting.value = false;
   }
@@ -5876,9 +5886,9 @@ function getMatchedMaterialId(configIndex: number): string | number | null {
 // 重置模板配置为默认
 function handleResetConfigForTemplate(templateIndex: number) {
   const template = templateConfigList.value[templateIndex];
-  ElMessageBox.confirm("确定要重置为默认配置吗？当前修改将丢失。", "重置确认", {
-    confirmButtonText: "确定",
-    cancelButtonText: "取消",
+  ElMessageBox.confirm(t("material.resetConfirmMessage"), t("material.resetConfirmTitle"), {
+    confirmButtonText: t("material.ok"),
+    cancelButtonText: t("material.cancel"),
     type: "warning",
   })
     .then(() => {
@@ -5889,7 +5899,7 @@ function handleResetConfigForTemplate(templateIndex: number) {
         template.configText = "";
         template.psdInfo = null;
       }
-      ElMessage.success("已重置为默认配置");
+      ElMessage.success(t("material.resetToDefaultSuccess"));
     })
     .catch(() => { });
 }
@@ -5905,7 +5915,7 @@ function validateConfigTexts(): boolean {
     try {
       JSON.parse(template.configText.trim());
     } catch (e) {
-      ElMessage.warning(`模板"${template.name}"的配置JSON格式错误`);
+      ElMessage.warning(t("material.jsonFormatError", { name: template.name }));
       return false;
     }
   }
@@ -5925,7 +5935,7 @@ function handleSaveConfigToMemory() {
     try {
       JSON.parse(template.configText.trim());
     } catch (e) {
-      ElMessage.warning(`模板"${template.name}"的配置JSON格式错误，请修正后再保存`);
+      ElMessage.warning(t("material.jsonFormatErrorSave", { name: template.name }));
       hasError = true;
       break;
     }
@@ -5936,7 +5946,7 @@ function handleSaveConfigToMemory() {
   }
 
   // 配置已暂存到内存中（templateConfigList），无需额外操作
-  ElMessage.success('配置已保存（暂存），点击"开始制作"时将使用此配置');
+  ElMessage.success(t("material.configSavedTemp"));
   // 可以选择关闭弹窗，或者保持打开让用户继续编辑
   // batchDetailConfigDialogVisible.value = false
 }
@@ -5995,7 +6005,7 @@ async function loadProductTemplatesForPsdAutomation() {
       : [];
   } catch (error) {
     console.error("加载商品生成模板失败:", error);
-    ElMessage.error("加载商品生成模板失败");
+    ElMessage.error(t("material.productTemplateLoadFailed"));
   } finally {
     psdSetAutomationProductTemplatesLoading.value = false;
   }
@@ -6020,7 +6030,7 @@ async function loadPublishConfigsForPsdAutomation() {
     psdSetAutomationPublishConfigs.value = list.filter((item: any) => item?.isActive !== false);
   } catch (error) {
     console.error("加载任务配置失败:", error);
-    ElMessage.error("加载任务配置失败");
+    ElMessage.error(t("material.taskConfigLoadFailed"));
   } finally {
     psdSetAutomationPublishConfigsLoading.value = false;
   }
@@ -6032,7 +6042,7 @@ async function loadPublishConfigsForMaterialPublishDialog() {
     materialPublishConfigOptions.value = await fetchPublishConfigOptions();
   } catch (error) {
     console.error("加载发布配置失败:", error);
-    ElMessage.error("加载发布配置失败");
+    ElMessage.error(t("material.publishConfigLoadFailed"));
   } finally {
     materialPublishConfigLoading.value = false;
   }
@@ -6050,7 +6060,7 @@ async function loadPsdFolderTree() {
     // 创建"全部"节点
     const allNode = {
       id: "__all__",
-      name: "全部",
+      name: t("material.all"),
       path: "",
       parentId: null,
       children: [],
@@ -6059,7 +6069,7 @@ async function loadPsdFolderTree() {
 
     const uncatNode = {
       id: "__root__",
-      name: "未分类",
+      name: t("material.uncategorized"),
       path: "",
       parentId: null,
       children: [],
@@ -6132,7 +6142,7 @@ async function loadPsdTemplatesForPsdSet() {
     psdSetTemplatePageParams.total = res.total || 0;
   } catch (error) {
     console.error("加载PSD模板失败:", error);
-    ElMessage.error("加载PSD模板失败");
+    ElMessage.error(t("material.psdTemplateLoadFailed"));
   } finally {
     psdSetTemplatesLoading.value = false;
   }
@@ -6193,7 +6203,7 @@ function handlePsdTemplateSelectAll() {
 // 详细配置弹窗处理
 function handlePsdTemplateDetailConfig() {
   if (!selectedPsdTemplateIds.value.length) {
-    ElMessage.warning("请先选择PSD模板");
+    ElMessage.warning(t("material.selectPsdTemplateFirst"));
     return;
   }
 
@@ -6202,7 +6212,7 @@ function handlePsdTemplateDetailConfig() {
   );
 
   if (selectedTemplates.length === 0) {
-    ElMessage.warning("未找到选中的模板数据");
+    ElMessage.warning(t("material.selectedTemplateNotFound"));
     return;
   }
 
@@ -6227,7 +6237,7 @@ function handlePsdTemplateDetailConfig() {
 
       return {
         id: String(template.id),
-        name: template.name || "未命名模板",
+        name: template.name || t("material.unnamedTemplate"),
         thumbnail: template.thumbnail || template.preview || template.image,
         psdInfo: psdInfoObj,
         originalPsdInfo,
@@ -6253,11 +6263,11 @@ function handlePsdTemplateDetailConfig() {
         }
         const originalPsdInfo = psdInfoObj ? JSON.parse(JSON.stringify(psdInfoObj)) : null;
         const material = dataSource.value.find((item) => String(item.id) === String(materialId));
-        const materialName = material?.name || `素材${materialId}`;
+        const materialName = material?.name || t("material.materialWithId", { id: materialId });
 
         templateConfigList.value.push({
           id: `${template.id}_${materialId}`,
-          name: `${materialName} × ${template.name || "未命名模板"}`,
+          name: t("material.materialTimesTemplate", { materialName, templateName: template.name || t("material.unnamedTemplate") }),
           thumbnail: template.thumbnail || template.preview || template.image,
           psdInfo: psdInfoObj,
           originalPsdInfo,
@@ -6380,16 +6390,16 @@ function showPsdSetParams() {
 
 async function handleCreatePsdSets() {
   if (!psdSetSelectedMaterialIds.value.length) {
-    return ElMessage.warning(isImageGroupPsdSet.value ? "请先勾选组图" : "请先勾选素材");
+    return ElMessage.warning(isImageGroupPsdSet.value ? t("material.selectGroupsFirst") : t("material.selectMaterialsFirst"));
   }
   if (!selectedPsdTemplateIds.value.length) {
-    return ElMessage.warning("请选择PSD模板");
+    return ElMessage.warning(t("material.selectPsdTemplate"));
   }
 
   // 检查图片格式是否符合要求
   const formatCheckResult = checkMaterialFormats();
   if (!formatCheckResult || !formatCheckResult.valid) {
-    ElMessage.warning(formatCheckResult?.message || "素材格式检查异常，请重试");
+    ElMessage.warning(formatCheckResult?.message || t("material.formatCheckError"));
     return;
   }
 
@@ -6414,9 +6424,9 @@ async function handleCreatePsdSets() {
 
     // 如果后端返回“所有组合都已存在”，列表通常为空，此时提示为“无需重复创建”
     if (Array.isArray(createdList) && createdList.length === 0) {
-      ElMessage.info((res as any)?.message || "所有组合都已存在，无需重复创建");
+      ElMessage.info((res as any)?.message || t("material.allCombinationsExist"));
     } else {
-      ElMessage.success(`成功创建 ${createdCount} 条套图任务`);
+      ElMessage.success(t("material.psdTasksCreated", { count: createdCount }));
     }
     psdSetDialogVisible.value = false;
     resetPsdSetState();
@@ -6425,7 +6435,7 @@ async function handleCreatePsdSets() {
     }
   } catch (error: any) {
     console.error("创建套图失败:", error);
-    ElMessage.error(error?.message || "创建套图失败");
+    ElMessage.error(error?.message || t("material.psdCreateFailed"));
   } finally {
     psdSetSubmitting.value = false;
   }
@@ -6502,7 +6512,7 @@ function applyMaterialFilters(materialId: string | number) {
   const cutoutMode = getMaterialCutoutMode(materialId);
 
   if (!sizeKey && !cutoutMode) {
-    ElMessage.warning("当前素材缺少可用于筛选的比例和抠图信息");
+    ElMessage.warning(t("material.materialMissingFilterInfo"));
     return;
   }
 
@@ -6531,7 +6541,7 @@ function checkMaterialFormats() {
       invalidMaterials.push({
         id: material.id,
         name: material.name || `ID: ${material.id}`,
-        suffix: "未知格式",
+        suffix: t("material.unknownFormat"),
       });
       return;
     }
@@ -6553,11 +6563,15 @@ function checkMaterialFormats() {
       .slice(0, 5)
       .map((m) => `${m.name}(${m.suffix})`)
       .join("、");
-    const moreCount = invalidMaterials.length > 5 ? `等${invalidMaterials.length}个` : "";
+    const moreCount = invalidMaterials.length > 5 ? t("material.andMoreCount", { count: invalidMaterials.length }) : "";
 
     return {
       valid: false,
-      message: `所选素材中包含不符合格式要求的图片。\n允许的格式：${allowedFormatsList}\n不符合的素材：${invalidNames}${moreCount}\n请移除不符合格式的素材后重试。`,
+      message: t("material.formatCheckMessage", {
+        allowedFormats: allowedFormatsList,
+        invalidNames,
+        moreCount,
+      }),
     };
   }
 
@@ -6641,8 +6655,8 @@ async function handleAiAutoGenerate(row, cb, prompt, aiGenerateRawInfo) {
 
     if (isQueuedAiTaskResult(resultData)) {
       notifyQueuedAiTask(resultData, {
-        title: "AI自动生成任务已提交",
-        fallbackMessage: "正在后台生成素材信息，完成后会通过消息中心通知；需要查看最新结果时请手动刷新。",
+        title: t("material.aiTaskSubmitted"),
+        fallbackMessage: t("material.aiTaskSubmittedFallback"),
       });
       if (typeof cb === "function") cb();
       return;
@@ -6668,14 +6682,14 @@ async function handleAiAutoGenerate(row, cb, prompt, aiGenerateRawInfo) {
     const infringementText =
       typeof resultData?.isInfringement === "boolean"
         ? resultData.isInfringement
-          ? "（已标记为侵权）"
-          : "（已标记为非侵权）"
+          ? t("material.markedAsInfringement")
+          : t("material.markedAsNotInfringement")
         : "";
-    const suitableText = resultData?.suitableFor ? `，适用商品：${resultData.suitableFor}` : "";
-    ElNotification.success(`AI自动生成内容成功${infringementText}${suitableText}`);
+    const suitableText = resultData?.suitableFor ? t("material.suitableForText", { suitableFor: resultData.suitableFor }) : "";
+    ElNotification.success(t("material.aiGenerateContentSuccess", { infringementText, suitableText }));
     if (typeof cb === "function") cb();
   } catch (e) {
-    ElNotification.error("AI自动生成内容失败");
+    ElNotification.error(t("material.aiGenerateContentFailed"));
     if (typeof cb === "function") cb();
   }
 }
@@ -6688,7 +6702,7 @@ async function handleFindSimilar(row) {
   }
   const imageUrl = String(row?.url || row?.originUrl || "").trim();
   if (!imageUrl) {
-    ElMessage.warning("该图片暂无可搜索的图片地址");
+    ElMessage.warning(t("material.noSearchableImageUrl"));
     return;
   }
   const success = await loadVectorSimilarResults(imageUrl);
@@ -6696,7 +6710,7 @@ async function handleFindSimilar(row) {
     setSimilarImageActiveStatus({
       previewUrl: imageUrl,
       sourceType: "url",
-      sourceLabel: row?.name || row?.code || "当前素材",
+      sourceLabel: row?.name || row?.code || t("material.currentMaterial"),
     });
   }
 }
@@ -6724,7 +6738,7 @@ async function handleViewDetail(row: any) {
     stickerDetailCurrent.value = await fetchStickerDetail(row);
   } catch (error: any) {
     detailDialogVisible.value = false;
-    ElMessage.error(error?.message || "获取素材详情失败");
+    ElMessage.error(error?.message || t("material.materialDetailLoadFailed"));
   } finally {
     detailDialogLoading.value = false;
   }
@@ -6735,7 +6749,7 @@ async function handleEdit(row) {
   try {
     detail = await fetchStickerDetail(row);
   } catch (error: any) {
-    ElMessage.error(error?.message || "获取素材详情失败");
+    ElMessage.error(error?.message || t("material.materialDetailLoadFailed"));
     return;
   }
 
@@ -6780,13 +6794,13 @@ async function handleGenerateMaterialCode() {
     const generatedCode = (res?.code || res?.data?.code || "").trim().toLowerCase();
 
     if (!generatedCode) {
-      throw new Error("未返回有效编码");
+      throw new Error(t("material.codeNotReturned"));
     }
 
     editForm.value.code = generatedCode;
-    ElMessage.success("编码生成成功");
+    ElMessage.success(t("material.codeGenerated"));
   } catch (e: any) {
-    ElMessage.error(e?.message || "编码生成失败");
+    ElMessage.error(e?.message || t("material.codeGenerateFailed"));
   } finally {
     generatingCode.value = false;
   }
@@ -6797,7 +6811,7 @@ async function submitEdit() {
   try {
     const inputCode = (editForm.value.code || "").trim().toLowerCase();
     if (inputCode && !/^[a-z]{3,6}\d{2,7}$/.test(inputCode)) {
-      ElMessage.warning("编码格式必须为 3-6 位字母 + 2-7 位数字，例如 abc123");
+      ElMessage.warning(t("material.codeFormatRule"));
       return;
     }
 
@@ -6823,11 +6837,11 @@ async function submitEdit() {
       source: editForm.value.source,
     };
     await updateAssetLibrary(submitData);
-    ElNotification.success("保存成功");
+    ElNotification.success(t("material.saveSuccess"));
     editDialogVisible.value = false;
     getList();
   } catch (e) {
-    ElNotification.error("保存失败");
+    ElNotification.error(t("material.saveFailed"));
   } finally {
     editLoading.value = false;
   }
@@ -6845,13 +6859,13 @@ async function handleShowMetaDetail(row: any) {
     const detail = await fetchStickerDetail(row);
     showMetaDetail(detail.meta);
   } catch (error: any) {
-    ElMessage.error(error?.message || "获取素材详情失败");
+    ElMessage.error(error?.message || t("material.materialDetailLoadFailed"));
   }
 }
 
 function showMetaDetail(meta: any) {
   if (!meta) {
-    ElMessage.warning("该素材没有元数据信息");
+    ElMessage.warning(t("material.noMetaInfo"));
     return;
   }
 
@@ -6866,7 +6880,7 @@ function showMetaDetail(meta: any) {
     metaDialogVisible.value = true;
   } catch (error) {
     console.error("处理元数据失败:", error);
-    ElMessage.error("处理元数据失败，请检查数据格式");
+    ElMessage.error(t("material.metaProcessFailed"));
     // 即使出错也显示原始数据
     metaDialogContent.value = String(meta);
     metaDialogVisible.value = true;
@@ -6876,7 +6890,7 @@ function showMetaDetail(meta: any) {
 // 生成图片信息
 async function handleGenerateImageInfo(row) {
   if (!row.url) {
-    ElMessage.error("图片无有效链接，无法生成图片信息");
+    ElMessage.error(t("material.noValidImageLink"));
     return;
   }
 
@@ -6924,28 +6938,32 @@ async function handleGenerateImageInfo(row) {
 
       const infoParts = [];
       if (res.width && res.height) {
-        infoParts.push(`尺寸: ${res.width} × ${res.height}`);
+        infoParts.push(t("material.dimensionInfo", { width: res.width, height: res.height }));
       }
       if (res.fileSize) {
-        infoParts.push(`大小: ${formatFileSize(res.fileSize)}`);
+        infoParts.push(t("material.sizeInfo", { size: formatFileSize(res.fileSize) }));
       }
       if (res.colorPalette) {
         const colors = res.colorPalette.split(",").slice(0, 3).join(", ");
-        infoParts.push(`色系: ${colors}${res.colorPalette.split(",").length > 3 ? "..." : ""}`);
+        infoParts.push(t("material.colorPaletteInfo", { colors, more: res.colorPalette.split(",").length > 3 ? "..." : "" }));
       }
       if (res.isCutout !== undefined) {
-        infoParts.push(`抠图: ${res.isCutout ? "是" : "否"}`);
+        infoParts.push(t("material.cutoutInfo", { value: res.isCutout ? t("material.yes") : t("material.no") }));
       }
 
       ElNotification.success(
-        `生成图片信息成功${infoParts.length ? `：${infoParts.join("，")}` : ""}`,
+        t("material.generateImageInfoSuccess", {
+          details: infoParts.length
+            ? t("material.infoDetails", { list: infoParts.join(t("material.infoSeparator")) })
+            : "",
+        }),
       );
       // 刷新列表以更新所有数据
       await getList();
     }
   } catch (e) {
     console.error("生成图片信息失败:", e);
-    ElMessage.error(`生成图片信息失败: ${e?.message || "未知错误"}`);
+    ElMessage.error(t("material.generateImageInfoFailed", { message: e?.message || t("material.unknownError") }));
   } finally {
     aiTableLoading.value = { ...aiTableLoading.value, [row.id]: false };
   }
@@ -6984,13 +7002,13 @@ function buildImageProcessingPrefillOptions(row: any, taskType: "process" | "var
 
 function openImageProcessingWorkbench(row: any, taskType: "process" | "variations" = "process") {
   if (!isAdmin.value) {
-    ElMessage.warning("当前功能仅管理员可用");
+    ElMessage.warning(t("material.adminOnlyFeature"));
     return;
   }
 
   const imageUrl = String(row?.url || "").trim();
   if (!imageUrl) {
-    ElMessage.warning("当前素材缺少可处理的图片地址");
+    ElMessage.warning(t("material.materialNoProcessableUrl"));
     return;
   }
 
@@ -7012,7 +7030,7 @@ function openBatchImageProcessing(taskType: "process" | "variations" = "process"
   const selectedItems = dataSource.value.filter((item) => ids.value.includes(item.id));
   const firstWithUrl = selectedItems.find((item) => String(item?.url || "").trim());
   if (!firstWithUrl) {
-    ElMessage.warning("请先勾选至少一张包含有效图片地址的素材");
+    ElMessage.warning(t("material.selectValidImageMaterials"));
     return;
   }
   openImageProcessingWorkbench(firstWithUrl, taskType);
@@ -7064,7 +7082,7 @@ async function handleOperationCommand(command: string, row: any) {
         await handleCopy(row);
         break;
       case "copy-origin-url":
-        await handleCopyText(row?.url || "", "图片链接");
+        await handleCopyText(row?.url || "", t("material.imageLink"));
         break;
       case "copy-to-user":
         openStickerUserTransferDialog("copy", row);
@@ -7091,7 +7109,7 @@ async function handleOperationCommand(command: string, row: any) {
         openImageProcessingWorkbench(row, "variations");
         break;
       case "video-production":
-        ElMessage.info("视频制作功能开发中...");
+        ElMessage.info(t("material.videoProductionWip"));
         break;
       case "story-script":
         await openStoryScriptDialog(row);
@@ -7104,7 +7122,7 @@ async function handleOperationCommand(command: string, row: any) {
     }
   } catch (error: any) {
     console.error("[material] 操作执行失败:", command, error);
-    ElMessage.error(error?.message || "操作失败，请稍后重试");
+    ElMessage.error(error?.message || t("material.operationFailed"));
   } finally {
     if (operationCommandLoadingId.value === rowId) {
       operationCommandLoadingId.value = "";
@@ -7162,14 +7180,14 @@ const urlUploadForm = reactive({
 
 const urlUploadFormRules = {
   url: [
-    { required: true, message: "请输入图片URL", trigger: "blur" },
+    { required: true, message: t("material.enterImageUrlRequired"), trigger: "blur" },
     {
       pattern: /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff)(\?.*)?$/i,
-      message: "请输入有效的图片URL",
+      message: t("material.enterValidImageUrl"),
       trigger: "blur",
     },
   ],
-  name: [{ required: true, message: "请输入文件名", trigger: "blur" }],
+  name: [{ required: true, message: t("material.enterFileName"), trigger: "blur" }],
 };
 
 // 重置URL上传表单
@@ -7216,13 +7234,13 @@ function handlePreviewLoad(event) {
   imageInfo.value = {
     width: img.naturalWidth,
     height: img.naturalHeight,
-    size: "未知",
+    size: t("material.unknown"),
   };
 }
 
 // 处理预览图片加载失败
 function handlePreviewError() {
-  ElMessage.warning("图片预览加载失败，请检查URL是否正确");
+  ElMessage.warning(t("material.previewLoadFailed"));
   urlPreviewVisible.value = false;
 }
 
@@ -7243,14 +7261,14 @@ async function fetchImageFromUrl(url) {
 
     const contentType = response.headers.get("content-type");
     if (!contentType || !contentType.startsWith("image/")) {
-      throw new Error("URL指向的不是图片文件");
+      throw new Error(t("material.notAnImageFile"));
     }
 
     const blob = await response.blob();
 
     // 检查文件大小（限制10MB）
     if (blob.size > 10 * 1024 * 1024) {
-      throw new Error("图片文件过大，请选择小于10MB的图片");
+      throw new Error(t("material.imageFileTooLarge"));
     }
 
     // 从URL或content-type获取文件扩展名
@@ -7273,7 +7291,7 @@ async function fetchImageFromUrl(url) {
     return { file, extension };
   } catch (error) {
     console.error("获取图片失败:", error);
-    throw new Error(`获取图片失败: ${error.message}`);
+    throw new Error(t("material.fetchImageFailed", { message: error.message }));
   }
 }
 
@@ -7461,13 +7479,13 @@ function handleSubmenuHide(event: MouseEvent) {
 // 复制文本到剪贴板
 async function handleCopyText(text: string, label: string) {
   if (!text) {
-    ElMessage.warning(`${label}为空，无法复制`);
+    ElMessage.warning(t("material.emptyCannotCopy", { label }));
     return;
   }
 
   try {
     await navigator.clipboard.writeText(text);
-    ElMessage.success(`${label}已复制到剪贴板`);
+    ElMessage.success(t("material.copiedToClipboard", { label }));
   } catch (error) {
     // 降级方案：使用传统方法
     const textarea = document.createElement("textarea");
@@ -7478,9 +7496,9 @@ async function handleCopyText(text: string, label: string) {
     textarea.select();
     try {
       document.execCommand("copy");
-      ElMessage.success(`${label}已复制到剪贴板`);
+      ElMessage.success(t("material.copiedToClipboard", { label }));
     } catch (e) {
-      ElMessage.error("复制失败");
+      ElMessage.error(t("material.copyFailed"));
     }
     document.body.removeChild(textarea);
   }
@@ -7539,7 +7557,7 @@ async function handleUrlUpload() {
       folderId: urlUploadForm.folderId ?? null,
     });
 
-    ElNotification.success("图片上传成功");
+    ElNotification.success(t("material.imageUploadSuccess"));
     urlUploadModalVisible.value = false;
     resetUrlUploadForm();
 
@@ -7547,7 +7565,7 @@ async function handleUrlUpload() {
     getList();
   } catch (error) {
     console.error("URL上传失败:", error);
-    ElMessage.error(`上传失败: ${error.message}`);
+    ElMessage.error(t("material.uploadFailed", { message: error.message }));
   } finally {
     urlUploadLoading.value = false;
   }

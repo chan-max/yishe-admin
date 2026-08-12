@@ -8,6 +8,7 @@ export type NodeType =
   | 'condition'
   | 'switch'
   | 'js_code'
+  | 'ai_call'
   | 'loop'
   | 'while_loop'
   | 'llm'
@@ -148,6 +149,29 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
       { field: 'result', label: '执行结果', type: 'any' },
       { field: 'logs', label: '执行日志', type: 'array' },
       { field: 'durationMs', label: '耗时(ms)', type: 'number' },
+    ],
+    requirements: [],
+  },
+  // ─── AI 大模型调用 ──────────────────────────────────────
+  {
+    type: 'ai_call',
+    name: 'AI 调用',
+    category: 'logic',
+    icon: 'ep:magic-stick',
+    color: '#6366f1',
+    description: '调用 AI 大模型进行文本生成、内容分析、数据处理。支持变量插值引用上游节点输出，输出格式可选文本或 JSON。',
+    defaultData: { name: 'AI 调用', config: { userPrompt: '', systemPrompt: '', temperature: 0.7, maxTokens: 2000, outputFormat: 'text' } },
+    inputSchema: [
+      { field: 'systemPrompt', label: '系统提示词', type: 'textarea', placeholder: '可选，定义 AI 的角色和行为' },
+      { field: 'userPrompt', label: '用户提示词', type: 'textarea', required: true, placeholder: '支持 {{nodeId.field}} 变量引用' },
+      { field: 'temperature', label: '温度', type: 'number', defaultValue: 0.7, description: '0-2，越高越有创意' },
+      { field: 'maxTokens', label: '最大Token', type: 'number', defaultValue: 2000 },
+      { field: 'outputFormat', label: '输出格式', type: 'select', defaultValue: 'text', options: [{ label: '文本', value: 'text' }, { label: 'JSON', value: 'json' }] },
+    ],
+    outputSchema: [
+      { field: 'content', label: '生成内容', type: 'string' },
+      { field: 'tokens', label: 'Token用量', type: 'number' },
+      { field: 'model', label: '使用模型', type: 'string' },
     ],
     requirements: [],
   },

@@ -13,11 +13,11 @@
                 :lg="5"
                 :xl="4"
               >
-                <el-form-item label="用户账号">
+                <el-form-item :label="t('systemUser.account')">
                   <el-input
                     v-model="queryParams.account"
                     size="small"
-                    placeholder="请输入用户账号"
+                    :placeholder="t('systemUser.accountPlaceholder')"
                     clearable
                     @change="
                       (val) => {
@@ -35,11 +35,11 @@
                 :lg="5"
                 :xl="4"
               >
-                <el-form-item label="用户姓名">
+                <el-form-item :label="t('systemUser.name')">
                   <el-input
                     v-model="queryParams.name"
                     size="small"
-                    placeholder="请输入用户姓名"
+                    :placeholder="t('systemUser.namePlaceholder')"
                     clearable
                     @change="
                       (val) => {
@@ -57,13 +57,13 @@
                 :icon="Search"
                 :loading="loading"
                 @click="handleSearch"
-                >搜索</el-button
+                >{{ t('common.search') }}</el-button
               >
               <el-button size="small" :icon="Refresh" :disabled="loading" @click="resetQuery"
-                >重置</el-button
+                >{{ t('common.reset') }}</el-button
               >
               <el-button size="small" type="primary" :icon="Plus" @click="handleAdd"
-                >新增</el-button
+                >{{ t('common.add') }}</el-button
               >
               <el-button
                 size="small"
@@ -73,7 +73,7 @@
                 @click="handleDelete(null)"
                 :disabled="!ids.length"
               >
-                批量删除
+                {{ t('common.batchDelete') }}
               </el-button>
             </div>
           </el-form>
@@ -106,7 +106,7 @@
 
                 <template #isAdminDefaultSlot="{ row }">
                   <el-tag :type="row.isAdmin ? 'warning' : 'info'">
-                    {{ row.isAdmin ? "管理员" : "普通用户" }}
+                    {{ row.isAdmin ? t('systemUser.admin') : t('systemUser.normalUser') }}
                   </el-tag>
                 </template>
 
@@ -118,21 +118,21 @@
                       @command="(command) => handleOperationCommand(command, row)"
                     >
                       <el-button type="primary" link size="small" class="operation-trigger-button"
-                        >操作</el-button
+                        >{{ t('common.operation') }}</el-button
                       >
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
                           <el-dropdown-item command="edit">
-                            <span>编辑</span>
+                            <span>{{ t('common.edit') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item command="access">
-                            <span>{{ row.isAdmin ? "权限设置" : "分配权限" }}</span>
+                            <span>{{ row.isAdmin ? t('systemUser.permissionSetting') : t('systemUser.assignPermission') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item
                             command="resetPassword"
                             class="operation-menu-item--danger"
                           >
-                            <span>重置密码</span>
+                            <span>{{ t('systemUser.resetPassword') }}</span>
                           </el-dropdown-item>
                           <template v-if="userStore.user?.isAdmin">
                             <el-dropdown-item
@@ -140,7 +140,7 @@
                               divided
                               class="operation-menu-item--danger"
                             >
-                              <span>删除</span>
+                              <span>{{ t('common.delete') }}</span>
                             </el-dropdown-item>
                           </template>
                         </el-dropdown-menu>
@@ -186,58 +186,58 @@
     >
       <!-- 基础信息 -->
       <div class="list-page-dialog-section">
-        <div class="list-page-dialog-section__title">基础信息</div>
+        <div class="list-page-dialog-section__title">{{ t('systemUser.basicInfo') }}</div>
         <el-row :gutter="12">
           <el-col :span="12">
-            <el-form-item label="用户账号" prop="account">
-              <el-input v-model="formData.account" placeholder="请输入用户账号" />
+            <el-form-item :label="t('systemUser.account')" prop="account">
+              <el-input v-model="formData.account" :placeholder="t('systemUser.accountPlaceholder')" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="用户姓名" prop="name">
-              <el-input v-model="formData.name" placeholder="请输入用户姓名" />
+            <el-form-item :label="t('systemUser.name')" prop="name">
+              <el-input v-model="formData.name" :placeholder="t('systemUser.namePlaceholder')" />
             </el-form-item>
           </el-col>
         </el-row>
 
         <el-row :gutter="12">
           <el-col :span="12">
-            <el-form-item label="性别" prop="sex">
-              <el-select v-model="formData.sex" placeholder="请选择性别" class="!w-full">
-                <el-option label="男" :value="1" />
-                <el-option label="女" :value="0" />
+            <el-form-item :label="t('systemUser.sex')" prop="sex">
+              <el-select v-model="formData.sex" :placeholder="t('systemUser.sexPlaceholder')" class="!w-full">
+                <el-option :label="t('systemUser.male')" :value="1" />
+                <el-option :label="t('systemUser.female')" :value="0" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="出生日期" prop="birthday">
+            <el-form-item :label="t('systemUser.birthday')" prop="birthday">
               <el-date-picker
                 v-model="formData.birthday"
                 type="date"
-                placeholder="请选择出生日期"
+                :placeholder="t('systemUser.birthdayPlaceholder')"
                 class="user-dialog-form__date-picker !w-full"
               />
             </el-form-item>
           </el-col>
         </el-row>
 
-        <el-form-item label="头像地址" prop="avatar">
-          <el-input v-model="formData.avatar" placeholder="请输入头像地址" />
+        <el-form-item :label="t('systemUser.avatar')" prop="avatar">
+          <el-input v-model="formData.avatar" :placeholder="t('systemUser.avatarPlaceholder')" />
         </el-form-item>
       </div>
 
       <!-- 联系方式 -->
       <div class="list-page-dialog-section">
-        <div class="list-page-dialog-section__title">联系方式</div>
+        <div class="list-page-dialog-section__title">{{ t('systemUser.contactInfo') }}</div>
         <el-row :gutter="12">
           <el-col :span="12">
-            <el-form-item label="手机号码" prop="phone">
-              <el-input v-model="formData.phone" placeholder="请输入手机号码" />
+            <el-form-item :label="t('systemUser.phone')" prop="phone">
+              <el-input v-model="formData.phone" :placeholder="t('systemUser.phonePlaceholder')" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="邮箱地址" prop="email">
-              <el-input v-model="formData.email" placeholder="请输入邮箱地址" />
+            <el-form-item :label="t('systemUser.email')" prop="email">
+              <el-input v-model="formData.email" :placeholder="t('systemUser.emailPlaceholder')" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -245,21 +245,21 @@
 
       <!-- 权限配置 -->
       <div class="list-page-dialog-section">
-        <div class="list-page-dialog-section__title">权限配置</div>
+        <div class="list-page-dialog-section__title">{{ t('systemUser.permissionConfig') }}</div>
         <el-row :gutter="12">
           <el-col :span="12">
-            <el-form-item label="用户类型" prop="isAdmin">
-              <el-select v-model="formData.isAdmin" placeholder="请选择用户类型" class="!w-full">
-                <el-option label="普通用户" :value="false" />
-                <el-option label="管理员" :value="true" />
+            <el-form-item :label="t('systemUser.userType')" prop="isAdmin">
+              <el-select v-model="formData.isAdmin" :placeholder="t('systemUser.userTypePlaceholder')" class="!w-full">
+                <el-option :label="t('systemUser.normalUser')" :value="false" />
+                <el-option :label="t('systemUser.admin')" :value="true" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="用户状态" prop="status">
-              <el-select v-model="formData.status" placeholder="请选择状态" class="!w-full">
-                <el-option label="正常" value="active" />
-                <el-option label="禁用（封号）" value="inactive" />
+            <el-form-item :label="t('systemUser.status')" prop="status">
+              <el-select v-model="formData.status" :placeholder="t('systemUser.statusPlaceholder')" class="!w-full">
+                <el-option :label="t('systemUser.normal')" value="active" />
+                <el-option :label="t('systemUser.inactive')" value="inactive" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -268,13 +268,13 @@
 
       <!-- 组织信息 -->
       <div class="list-page-dialog-section">
-        <div class="list-page-dialog-section__title">组织信息</div>
+        <div class="list-page-dialog-section__title">{{ t('systemUser.organizationInfo') }}</div>
         <el-row :gutter="12">
           <el-col :span="12">
-            <el-form-item label="所属公司" prop="companyId">
+            <el-form-item :label="t('systemUser.company')" prop="companyId">
               <el-select
                 v-model="formData.companyId"
-                placeholder="请选择所属公司"
+                :placeholder="t('systemUser.companyPlaceholder')"
                 class="!w-full"
                 @change="handleCompanyChange"
               >
@@ -288,11 +288,11 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="过期时间" prop="expireTime">
+            <el-form-item :label="t('systemUser.expireTime')" prop="expireTime">
               <el-date-picker
                 v-model="formData.expireTime"
                 type="datetime"
-                placeholder="请选择过期时间"
+                :placeholder="t('systemUser.expireTimePlaceholder')"
                 class="user-dialog-form__date-picker !w-full"
                 :disabled-date="(date) => date.getTime() < Date.now() - 86400000"
               />
@@ -303,12 +303,12 @@
 
       <!-- 登录密码 (仅新增时显示) -->
       <div v-if="!formData.id" class="list-page-dialog-section">
-        <div class="list-page-dialog-section__title">安全设置</div>
-        <el-form-item label="登录密码" prop="password">
+        <div class="list-page-dialog-section__title">{{ t('systemUser.securitySettings') }}</div>
+        <el-form-item :label="t('systemUser.loginPassword')" prop="password">
           <el-input
             v-model="formData.password"
             type="password"
-            placeholder="请输入登录密码"
+            :placeholder="t('systemUser.loginPasswordPlaceholder')"
             show-password
           />
         </el-form-item>
@@ -316,8 +316,8 @@
     </el-form>
     <template #footer>
       <div class="flex justify-end gap-3">
-        <el-button :disabled="submitLoading" @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">确定</el-button>
+        <el-button :disabled="submitLoading" @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">{{ t('common.confirm') }}</el-button>
       </div>
     </template>
   </el-dialog>
@@ -325,7 +325,7 @@
   <!-- 重置密码对话框 -->
   <el-dialog
     v-model="passwordDialogVisible"
-    title="重置密码"
+    :title="t('systemUser.resetPassword')"
     width="400px"
     :center="false"
     align-center
@@ -338,19 +338,19 @@
       class="user-dialog-form"
     >
       <div class="list-page-dialog-section">
-        <el-form-item label="新密码" prop="newPassword">
+        <el-form-item :label="t('systemUser.newPassword')" prop="newPassword">
           <el-input
             v-model="passwordFormData.newPassword"
             type="password"
-            placeholder="请输入新密码"
+            :placeholder="t('systemUser.newPasswordPlaceholder')"
             show-password
           />
         </el-form-item>
-        <el-form-item label="确认密码" prop="confirmPassword">
+        <el-form-item :label="t('systemUser.confirmPassword')" prop="confirmPassword">
           <el-input
             v-model="passwordFormData.confirmPassword"
             type="password"
-            placeholder="请再次输入新密码"
+            :placeholder="t('systemUser.confirmPasswordPlaceholder')"
             show-password
           />
         </el-form-item>
@@ -359,13 +359,13 @@
     <template #footer>
       <div class="flex justify-end gap-3">
         <el-button :disabled="passwordSubmitLoading" @click="passwordDialogVisible = false"
-          >取消</el-button
+          >{{ t('common.cancel') }}</el-button
         >
         <el-button
           type="primary"
           :loading="passwordSubmitLoading"
           @click="handleResetPasswordSubmit"
-          >确定</el-button
+          >{{ t('common.confirm') }}</el-button
         >
       </div>
     </template>
@@ -388,12 +388,15 @@ import { useWindowSize } from "@vueuse/core";
 import { defaultSortingValue } from "@/common/sort";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Search, Delete, Refresh, Plus, User } from "@element-plus/icons-vue";
+import { useI18n } from '@/hooks/web/useI18n';
 import { getUserList, createUser, updateUser, deleteUser, updateUserPassword } from "@/api/user";
 import { useUserStore } from "@/store/modules/user";
 import { getCompanyList } from "@/api/company";
 import Pagination from "@/components/Pagination/index.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import UserAccessDialog from "./UserAccessDialog.vue";
+
+const { t } = useI18n();
 
 function getErrorMessage(error: any, fallback: string) {
   return error?.response?.data?.message || error?.response?.data?.msg || error?.message || fallback;
@@ -404,12 +407,12 @@ function resolveUserState(row: any) {
   const expireTime = row?.expireTime ? new Date(row.expireTime).getTime() : 0;
   const expired = Number.isFinite(expireTime) && expireTime > 0 && expireTime <= Date.now();
   if (normalizedStatus !== "active") {
-    return { label: "禁用", type: "danger" as const };
+    return { label: t('systemUser.inactive'), type: "danger" as const };
   }
   if (expired) {
-    return { label: "已过期", type: "warning" as const };
+    return { label: t('systemUser.expired'), type: "warning" as const };
   }
-  return { label: "正常", type: "success" as const };
+  return { label: t('systemUser.normal'), type: "success" as const };
 }
 
 // 查询条件
@@ -453,27 +456,27 @@ const gridOptions = ref({
   columns: [
     { type: "checkbox", width: 50, ellipsis: true, reserve: true },
     {
-      title: "头像",
+      title: t('systemUser.avatar'),
       field: "avatar",
       width: 80,
       slots: {
         default: "avatarDefaultSlot",
       },
     },
-    { title: "用户账号", field: "account", minWidth: 120, className: "font-bold" },
-    { title: "用户姓名", field: "name", minWidth: 120 },
-    { title: "手机号码", field: "phone", width: 120 },
-    { title: "邮箱地址", field: "email", minWidth: 150, showOverflow: true },
+    { title: t('systemUser.account'), field: "account", minWidth: 120, className: "font-bold" },
+    { title: t('systemUser.name'), field: "name", minWidth: 120 },
+    { title: t('systemUser.phone'), field: "phone", width: 120 },
+    { title: t('systemUser.email'), field: "email", minWidth: 150, showOverflow: true },
     {
-      title: "性别",
+      title: t('systemUser.sex'),
       field: "sex",
       width: 80,
       formatter: (e) => {
-        return e.cellValue === 1 ? "男" : e.cellValue === 0 ? "女" : "-";
+        return e.cellValue === 1 ? t('systemUser.male') : e.cellValue === 0 ? t('systemUser.female') : "-";
       },
     },
     {
-      title: "所属公司",
+      title: t('systemUser.company'),
       field: "company.name",
       width: 150,
       showOverflow: true,
@@ -482,7 +485,7 @@ const gridOptions = ref({
       },
     },
     {
-      title: "过期时间",
+      title: t('systemUser.expireTime'),
       field: "expireTime",
       width: 180,
       showOverflow: true,
@@ -491,7 +494,7 @@ const gridOptions = ref({
       },
     },
     {
-      title: "用户状态",
+      title: t('systemUser.status'),
       field: "status",
       width: 100,
       slots: {
@@ -499,15 +502,15 @@ const gridOptions = ref({
       },
     },
     {
-      title: "用户类型",
+      title: t('systemUser.userType'),
       field: "isAdmin",
       width: 100,
       slots: {
         default: "isAdminDefaultSlot",
       },
     },
-    buildTimeColumn("创建时间", "createTime", 150),
-    buildTimeColumn("修改时间", "updateTime", 150),
+    buildTimeColumn(t('common.createTime'), "createTime", 150),
+    buildTimeColumn(t('common.updateTime'), "updateTime", 150),
     buildOperationColumn("operationDefaultSlot"),
   ],
 });
@@ -527,7 +530,7 @@ const deleteLoading = ref(false);
 
 // 对话框相关
 const dialogVisible = ref(false);
-const dialogTitle = ref("新增用户");
+const dialogTitle = ref(t('systemUser.addUser'));
 const formRef = ref();
 const formData = reactive<Record<string, any>>({
   id: "",
@@ -546,9 +549,9 @@ const formData = reactive<Record<string, any>>({
 });
 
 const formRules = {
-  account: [{ required: true, message: "请输入用户账号", trigger: "blur" }],
-  name: [{ required: true, message: "请输入用户姓名", trigger: "blur" }],
-  password: [{ required: true, message: "请输入登录密码", trigger: "blur" }],
+  account: [{ required: true, message: t('systemUser.accountPlaceholder'), trigger: "blur" }],
+  name: [{ required: true, message: t('systemUser.namePlaceholder'), trigger: "blur" }],
+  password: [{ required: true, message: t('systemUser.loginPasswordPlaceholder'), trigger: "blur" }],
 };
 
 // 重置密码对话框
@@ -569,15 +572,15 @@ const passwordFormData = reactive({
 
 const passwordFormRules = {
   newPassword: [
-    { required: true, message: "请输入新密码", trigger: "blur" },
-    { min: 6, message: "密码长度不能少于6位", trigger: "blur" },
+    { required: true, message: t('systemUser.newPasswordPlaceholder'), trigger: "blur" },
+    { min: 6, message: t('systemUser.passwordMinLength'), trigger: "blur" },
   ],
   confirmPassword: [
-    { required: true, message: "请再次输入新密码", trigger: "blur" },
+    { required: true, message: t('systemUser.confirmPasswordPlaceholder'), trigger: "blur" },
     {
       validator: (_rule, value, callback) => {
         if (value !== passwordFormData.newPassword) {
-          callback(new Error("两次输入的密码不一致"));
+          callback(new Error(t('systemUser.passwordMismatch')));
         } else {
           callback();
         }
@@ -598,7 +601,7 @@ async function getList() {
     total.value = res.total || 0;
     ids.value = [];
   } catch (error) {
-    ElMessage.error("获取列表失败");
+    ElMessage.error(t('systemUser.getListFailed'));
     dataSource.value = [];
     total.value = 0;
   } finally {
@@ -634,14 +637,14 @@ const resetQuery = () => {
 
 // 新增
 function handleAdd() {
-  dialogTitle.value = "新增用户";
+  dialogTitle.value = t('systemUser.addUser');
   dialogVisible.value = true;
   resetForm();
 }
 
 // 编辑
 function handleEdit(row) {
-  dialogTitle.value = "编辑用户";
+  dialogTitle.value = t('systemUser.editUser');
   dialogVisible.value = true;
   Object.assign(formData, row);
 }
@@ -673,7 +676,7 @@ function handleOperationCommand(command, row) {
 
 function handleAssignAccess(row) {
   if (!userStore.user?.isAdmin) {
-    ElMessage.warning("仅管理员可分配权限");
+    ElMessage.warning(t('systemUser.adminOnlyAssign'));
     return;
   }
   accessTarget.id = String(row.id || "");
@@ -691,20 +694,20 @@ function handleDelete(row?) {
   if (deleteLoading.value) return;
   const userStore = useUserStore();
   if (!userStore.user?.isAdmin) {
-    return ElMessage.warning("无权限：仅管理员可执行删除操作");
+    return ElMessage.warning(t('systemUser.noPermissionDelete'));
   }
   let delIds: string[] = [];
   if (row) {
     delIds = [row.id];
   } else if (!ids.value.length) {
-    return ElMessage.warning("请选择要删除的数据");
+    return ElMessage.warning(t('systemUser.selectDeleteData'));
   } else {
     delIds = [...ids.value];
   }
 
-  ElMessageBox.confirm(`确认删除选中的${delIds.length}条数据吗`, "删除提示", {
-    confirmButtonText: "确认",
-    cancelButtonText: "取消",
+  ElMessageBox.confirm(t('systemUser.deleteConfirm', { count: delIds.length }), t('systemUser.deleteTitle'), {
+    confirmButtonText: t('common.confirm'),
+    cancelButtonText: t('common.cancel'),
     type: "error",
   })
     .then(async () => {
@@ -713,10 +716,10 @@ function handleDelete(row?) {
         for (const id of delIds) {
           await deleteUser(id);
         }
-        ElMessage.success("删除成功");
+        ElMessage.success(t('common.deleteSuccess'));
         await getList();
       } catch (error) {
-        ElMessage.error("删除失败");
+        ElMessage.error(t('common.deleteFailed'));
       } finally {
         deleteLoading.value = false;
       }
@@ -739,20 +742,20 @@ async function handleSubmit() {
       delete updateData.createTime;
       delete updateData.updateTime;
       await updateUser(updateData);
-      ElMessage.success("更新成功");
+      ElMessage.success(t('common.updateSuccess'));
     } else {
       // 新增 - 严格清理 ID 相关字段，避免主键冲突
       delete submitData.id;
       delete submitData.createTime;
       delete submitData.updateTime;
       await createUser(submitData);
-      ElMessage.success("创建成功");
+      ElMessage.success(t('common.createSuccess'));
     }
 
     dialogVisible.value = false;
     await getList();
   } catch (error) {
-    ElMessage.error(getErrorMessage(error, "操作失败"));
+    ElMessage.error(getErrorMessage(error, t('common.operationFailed')));
   } finally {
     submitLoading.value = false;
   }
@@ -770,10 +773,10 @@ async function handleResetPasswordSubmit() {
       newPassword: passwordFormData.newPassword,
     });
 
-    ElMessage.success("密码重置成功");
+    ElMessage.success(t('systemUser.resetPasswordSuccess'));
     passwordDialogVisible.value = false;
   } catch (error) {
-    ElMessage.error("密码重置失败");
+    ElMessage.error(t('systemUser.resetPasswordFailed'));
   } finally {
     passwordSubmitLoading.value = false;
   }

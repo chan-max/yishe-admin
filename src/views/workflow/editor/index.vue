@@ -30,6 +30,7 @@ import SwitchNode from '@/components/workflow/nodes/SwitchNode.vue'
 import LoopNode from '@/components/workflow/nodes/LoopNode.vue'
 import WhileNode from '@/components/workflow/nodes/WhileNode.vue'
 import JsCodeNode from '@/components/workflow/nodes/JsCodeNode.vue'
+import AiCallNode from '@/components/workflow/nodes/AiCallNode.vue'
 import LLMNode from '@/components/workflow/nodes/LLMNode.vue'
 import HttpNode from '@/components/workflow/nodes/HttpNode.vue'
 import CodeNode from '@/components/workflow/nodes/CodeNode.vue'
@@ -153,6 +154,7 @@ const nodeTypes = {
   loop: markRaw(LoopNode),
   while_loop: markRaw(WhileNode),
   js_code: markRaw(JsCodeNode),
+  ai_call: markRaw(AiCallNode),
   llm: markRaw(LLMNode),
   http: markRaw(HttpNode),
   code: markRaw(CodeNode),

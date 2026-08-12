@@ -2,15 +2,15 @@
   <ContentWrap :plain="true">
     <div class="page">
       <div class="topbar">
-        <div class="title">浏览器自动化控制台</div>
+        <div class="title">{{ t('browserAutomation.title') }}</div>
         <div class="actions">
-          <el-button @click="handleRefreshClients">刷新节点</el-button>
+          <el-button @click="handleRefreshClients">{{ t('browserAutomation.refreshNodes') }}</el-button>
           <el-button
             type="primary"
             :disabled="!selectedClientId"
             :loading="loadingMap.checkStatus"
             @click="sendSimple('checkStatus')"
-            >刷新状态</el-button
+            >{{ t('browserAutomation.refreshStatus') }}</el-button
           >
         </div>
       </div>
@@ -20,27 +20,27 @@
           :items="clientNodeItems"
           :loading="loading"
           :selected-client-id="selectedClientId"
-          section-title="客户端节点"
-          empty-text="暂无可用客户端"
+          :section-title="t('browserAutomation.clientNodes')"
+          :empty-text="t('browserAutomation.noAvailableClients')"
           @select="selectedClientId = $event"
         />
 
         <section v-if="selectedClient" class="main">
           <div class="summary">
             <div class="card item">
-              <div class="label">自动化服务</div>
+              <div class="label">{{ t('browserAutomation.automationService') }}</div>
               <div class="value">{{ getBrowserAutomationServiceText(selectedService) }}</div>
             </div>
             <div class="card item">
-              <div class="label">浏览器实例</div>
+              <div class="label">{{ t('browserAutomation.browserInstance') }}</div>
               <div class="value">{{ getBrowserAutomationBrowserText(selectedService) }}</div>
             </div>
             <div class="card item">
-              <div class="label">页面数</div>
+              <div class="label">{{ t('browserAutomation.pageCount') }}</div>
               <div class="value">{{ selectedDetails.pageCount ?? 0 }}</div>
             </div>
             <div class="card item">
-              <div class="label">最近检测</div>
+              <div class="label">{{ t('browserAutomation.lastChecked') }}</div>
               <div class="value">{{ dateText(selectedService?.lastCheckedAt) }}</div>
             </div>
           </div>
@@ -48,28 +48,26 @@
           <div class="card panel">
             <div class="supported-task-panel__head">
               <div>
-                <div class="section-title">执行环境</div>
-                <div class="muted">
-                  一个客户端可维护多个浏览器缓存环境，设为默认后可复用对应账号登录态。
-                </div>
+                <div class="section-title">{{ t('browserAutomation.executionEnvironment') }}</div>
+                <div class="muted">{{ t('browserAutomation.environmentHint') }}</div>
               </div>
               <el-button
                 type="primary"
                 :disabled="!selectedClientId"
                 @click="openCreateProfileDialog"
               >
-                新增环境
+                {{ t('browserAutomation.createEnvironment') }}
               </el-button>
             </div>
             <div class="row wrap browser-profile-banner-row" style="margin-bottom: 12px">
               <div v-if="activeProfile" class="active-profile-banner">
-                <span class="active-profile-banner__flag">当前环境</span>
+                <span class="active-profile-banner__flag">{{ t('browserAutomation.currentEnvironment') }}</span>
                 <span class="active-profile-banner__name">
                   {{ activeProfile.name || activeProfile.id }}
                 </span>
                 <span class="active-profile-banner__id">{{ activeProfile.id }}</span>
               </div>
-              <span v-else class="muted">当前还没有已管理的环境，未创建时仍会兼容旧默认目录。</span>
+              <span v-else class="muted">{{ t('browserAutomation.noManagedEnvironmentHint') }}</span>
             </div>
             <div class="common-table common-table--full">
               <vxe-grid v-bind="profileGridOptions" :data="profileTableRows" class="profile-grid">
@@ -106,7 +104,9 @@
                     :class="{ 'is-active': row.isActive, 'is-standby': !row.isActive }"
                   >
                     <span class="profile-active-badge__dot"></span>
-                    <span>{{ row.isActive ? "当前环境" : "待命" }}</span>
+                    <span>{{
+                      row.isActive ? t('browserAutomation.currentEnvironment') : t('browserAutomation.standby')
+                    }}</span>
                   </span>
                 </template>
 
@@ -118,43 +118,51 @@
                       @command="(command) => handleProfileOperationCommand(String(command), row)"
                     >
                       <el-button type="primary" link size="small" class="operation-trigger-button">
-                        操作
+                        {{ t('common.operation') }}
                       </el-button>
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
                           <el-dropdown-item command="connectNormal">
-                            <span>{{ row.instance?.connected ? "重新普通打开" : "普通打开" }}</span>
+                            <span>{{
+                              row.instance?.connected
+                                ? t('browserAutomation.reopenNormal')
+                                : t('browserAutomation.openNormal')
+                            }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item command="connectHeadless">
-                            <span>{{ row.instance?.connected ? "重新无头打开" : "无头打开" }}</span>
+                            <span>{{
+                              row.instance?.connected
+                                ? t('browserAutomation.reopenHeadless')
+                                : t('browserAutomation.openHeadless')
+                            }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item
                             command="close"
                             :disabled="!row.instance?.hasInstance && !row.instance?.connected"
                           >
-                            <span>关闭窗口</span>
+                            <span>{{ t('browserAutomation.closeWindow') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item
                             command="focus"
                             :disabled="!row.instance?.hasInstance && !row.instance?.connected"
                           >
-                            <span>聚焦窗口</span>
+                            <span>{{ t('browserAutomation.focusWindow') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item command="panel">
-                            <span>进入面板</span>
+                            <span>{{ t('browserAutomation.enterPanel') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item command="switch" :disabled="row.isActive">
-                            <span>设为默认</span>
+                            <span>{{ t('browserAutomation.setDefault') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item command="edit" divided>
-                            <span>编辑</span>
+                            <span>{{ t('common.edit') }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item
                             command="delete"
                             divided
                             class="operation-menu-item--danger"
                           >
-                            <span>删除</span>
+                            <span>{{ t('common.delete') }}</span>
                           </el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
@@ -167,7 +175,7 @@
         </section>
 
         <section v-else class="main-empty card">
-          <el-empty description="请选择客户端节点" />
+          <el-empty :description="t('browserAutomation.selectClientNode')" />
         </section>
       </div>
 
@@ -181,15 +189,15 @@
       >
         <div class="operation-shell">
           <el-tabs v-model="activeTab" class="operation-tabs">
-            <el-tab-pane label="连接控制" name="browser">
+            <el-tab-pane :label="t('browserAutomation.connectionControl')" name="browser">
               <div class="grid">
                 <div class="card panel">
-                  <div class="section-title">浏览器控制</div>
+                  <div class="section-title">{{ t('browserAutomation.browserControl') }}</div>
                   <div class="row">
                     <el-tag v-if="currentProfileId" type="success" effect="plain">
-                      当前实例：{{ currentProfileName }} ({{ currentProfileId }})
+                      {{ t('browserAutomation.currentInstance', { name: currentProfileName, id: currentProfileId }) }}
                     </el-tag>
-                    <el-tag v-else type="info" effect="plain">当前实例：未选择环境</el-tag>
+                    <el-tag v-else type="info" effect="plain">{{ t('browserAutomation.currentInstanceNoEnv') }}</el-tag>
                     <el-input-number
                       v-model="browserForm.port"
                       :min="1"
@@ -199,11 +207,11 @@
                     />
                     <el-switch
                       v-model="browserForm.headless"
-                      active-text="无头"
-                      inactive-text="普通"
+                      :active-text="t('browserAutomation.headless')"
+                      :inactive-text="t('browserAutomation.normal')"
                       :disabled="!serviceEnabled"
                     />
-                    <span class="browser-window-size-label">宽</span>
+                    <span class="browser-window-size-label">{{ t('browserAutomation.width') }}</span>
                     <el-input-number
                       v-model="browserForm.windowWidth"
                       :min="640"
@@ -212,7 +220,7 @@
                       controls-position="right"
                       :disabled="!serviceEnabled || browserForm.headless"
                     />
-                    <span class="browser-window-size-label">高</span>
+                    <span class="browser-window-size-label">{{ t('browserAutomation.height') }}</span>
                     <el-input-number
                       v-model="browserForm.windowHeight"
                       :min="640"
@@ -228,43 +236,48 @@
                       :disabled="!serviceEnabled"
                       :loading="loadingMap.connect"
                       @click="() => sendConnect()"
-                      >连接</el-button
+                      >{{ t('browserAutomation.connect') }}</el-button
                     >
                     <el-button
                       :disabled="!serviceEnabled"
                       :loading="loadingMap.close"
                       @click="sendSimple('close')"
-                      >关闭</el-button
+                      >{{ t('common.close') }}</el-button
                     >
                     <el-button
                       type="danger"
                       :disabled="!serviceEnabled"
                       :loading="loadingMap.forceClose"
                       @click="sendForceClose"
-                      >强制关闭</el-button
+                      >{{ t('browserAutomation.forceClose') }}</el-button
                     >
                     <el-button
                       :disabled="!canLoadCurrentProfilePages"
                       :loading="loadingMap.pages"
                       @click="sendSimple('pages')"
-                      >获取页面</el-button
+                      >{{ t('browserAutomation.getPages') }}</el-button
                     >
                   </div>
                   <div v-if="currentProfileId" class="muted">
-                    当前操作环境：{{ currentProfileName }}，{{ currentProfileStatusText }}
+                    {{
+                      t('browserAutomation.currentOperationEnv', {
+                        name: currentProfileName,
+                        status: currentProfileStatusText,
+                      })
+                    }}
                   </div>
                   <div v-if="currentProfileUserDataDir" class="muted browser-env-path">
-                    用户信息目录：{{ currentProfileUserDataDir }}
+                    {{ t('browserAutomation.userDataDirValue', { dir: currentProfileUserDataDir }) }}
                   </div>
                   <div v-if="currentProfileId && !currentProfileConnected" class="muted">
-                    当前环境的浏览器窗口尚未打开，请先点击“连接”打开对应环境后再获取页面或执行调试。
+                    {{ t('browserAutomation.windowNotOpenHint') }}
                   </div>
                   <div v-if="!serviceEnabled" class="muted">
-                    自动化服务未启动，当前节点不可执行相关操作。
+                    {{ t('browserAutomation.serviceNotStartedHint') }}
                   </div>
                 </div>
                 <div class="card panel">
-                  <div class="section-title">链接调试入口</div>
+                  <div class="section-title">{{ t('browserAutomation.linkDebugEntry') }}</div>
                   <div class="row">
                     <el-input
                       v-model="openForm.url"
@@ -275,13 +288,13 @@
                       :disabled="!serviceEnabled"
                       :loading="loadingMap.openLink"
                       @click="sendOpenLink"
-                      >打开链接</el-button
+                      >{{ t('browserAutomation.openLink') }}</el-button
                     >
                   </div>
                 </div>
               </div>
               <div class="card panel">
-                <div class="section-title">页面列表</div>
+                <div class="section-title">{{ t('browserAutomation.pageList') }}</div>
                 <el-table
                   :data="pageOptions"
                   border
@@ -292,15 +305,24 @@
                   <el-table-column prop="index" label="#" width="60" />
                   <el-table-column
                     prop="title"
-                    label="标题"
+                    :label="t('common.title')"
                     min-width="220"
                     show-overflow-tooltip
                   />
-                  <el-table-column prop="url" label="链接" min-width="320" show-overflow-tooltip />
-                  <el-table-column label="操作" width="140">
+                  <el-table-column
+                    prop="url"
+                    :label="t('browserAutomation.link')"
+                    min-width="320"
+                    show-overflow-tooltip
+                  />
+                  <el-table-column :label="t('common.operation')" width="140">
                     <template #default="{ row }">
                       <el-button link type="primary" @click.stop="selectDebugPage(row)">
-                        {{ debugForm.pageIndex === row.index ? "当前调试页" : "调试此页" }}
+                        {{
+                          debugForm.pageIndex === row.index
+                            ? t('browserAutomation.currentDebugPage')
+                            : t('browserAutomation.debugThisPage')
+                        }}
                       </el-button>
                     </template>
                   </el-table-column>
@@ -308,14 +330,14 @@
               </div>
             </el-tab-pane>
 
-            <el-tab-pane label="链接调试" name="debug">
+            <el-tab-pane :label="t('browserAutomation.linkDebug')" name="debug">
               <div class="grid">
                 <div class="card panel">
-                  <div class="section-title">快速操作</div>
+                  <div class="section-title">{{ t('browserAutomation.quickActions') }}</div>
                   <div class="stack">
                     <el-select
                       v-model="debugForm.pageIndex"
-                      placeholder="选择调试页面"
+                      :placeholder="t('browserAutomation.selectDebugPage')"
                       :disabled="!canDebugCurrentProfile || !pageOptions.length"
                     >
                       <el-option
@@ -327,11 +349,11 @@
                     </el-select>
                     <div class="debug-page-meta">
                       <div class="debug-page-meta__title">
-                        当前调试页：
-                        <span>{{ selectedDebugPage?.title || "未选择页面" }}</span>
+                        {{ t('browserAutomation.currentDebugPageLabel') }}：
+                        <span>{{ selectedDebugPage?.title || t('browserAutomation.noPageSelected') }}</span>
                       </div>
                       <div class="debug-page-meta__url">
-                        {{ selectedDebugPage?.url || "请先在页面列表或这里选择一个 tab" }}
+                        {{ selectedDebugPage?.url || t('browserAutomation.selectTabHint') }}
                       </div>
                     </div>
                     <el-input-number
@@ -385,12 +407,12 @@
                   </div>
                 </div>
                 <div class="card panel">
-                  <div class="section-title">脚本</div>
+                  <div class="section-title">{{ t('browserAutomation.script') }}</div>
                   <el-input
                     v-model="debugForm.expression"
                     type="textarea"
                     :rows="14"
-                    placeholder="页面内 JS 或 Playwright 脚本"
+                    :placeholder="t('browserAutomation.scriptPlaceholder')"
                     :disabled="!canDebugCurrentProfile"
                   />
                   <div class="row">
@@ -398,19 +420,19 @@
                       :disabled="!canDebugCurrentProfile"
                       :loading="loadingMap.debug"
                       @click="sendDebug('eval')"
-                      >执行页面内 JS</el-button
+                      >{{ t('browserAutomation.execPageJs') }}</el-button
                     >
                     <el-button
                       :disabled="!canDebugCurrentProfile"
                       :loading="loadingMap.debug"
                       @click="sendDebug('playwright')"
-                      >执行 Playwright</el-button
+                      >{{ t('browserAutomation.execPlaywright') }}</el-button
                     >
                   </div>
                 </div>
               </div>
               <div class="card panel">
-                <div class="section-title">结果</div>
+                <div class="section-title">{{ t('browserAutomation.result') }}</div>
                 <div
                   v-if="debugFeedback"
                   class="debug-feedback"
@@ -422,7 +444,9 @@
                       size="small"
                       effect="plain"
                     >
-                      {{ debugFeedback.success ? "成功" : "失败" }}
+                      {{
+                        debugFeedback.success ? t('browserAutomation.success') : t('browserAutomation.failed')
+                      }}
                     </el-tag>
                     <span class="debug-feedback__message">{{ debugFeedback.message }}</span>
                   </div>
@@ -432,42 +456,44 @@
                     "
                     class="debug-feedback__meta"
                   >
-                    <span v-if="debugFeedback.step">步骤：{{ debugFeedback.step }}</span>
-                    <span v-if="debugFeedback.code">代码：{{ debugFeedback.code }}</span>
-                    <span v-if="debugFeedback.pageIndex !== null"
-                      >页面：#{{ debugFeedback.pageIndex }}</span
-                    >
+                    <span v-if="debugFeedback.step">{{ t('browserAutomation.step', { value: debugFeedback.step }) }}</span>
+                    <span v-if="debugFeedback.code">{{ t('browserAutomation.code', { value: debugFeedback.code }) }}</span>
+                    <span v-if="debugFeedback.pageIndex !== null">{{
+                      t('browserAutomation.pageIndex', { value: debugFeedback.pageIndex })
+                    }}</span>
                   </div>
                   <div
                     v-if="debugFeedback.selector || debugFeedback.url"
                     class="debug-feedback__meta"
                   >
-                    <span v-if="debugFeedback.selector"
-                      >Selector：{{ debugFeedback.selector }}</span
-                    >
-                    <span v-if="debugFeedback.url">URL：{{ debugFeedback.url }}</span>
+                    <span v-if="debugFeedback.selector">{{
+                      t('browserAutomation.selector', { value: debugFeedback.selector })
+                    }}</span>
+                    <span v-if="debugFeedback.url">{{
+                      t('browserAutomation.url', { value: debugFeedback.url })
+                    }}</span>
                   </div>
                   <div v-if="debugFeedback.suggestion" class="debug-feedback__hint">
-                    建议：{{ debugFeedback.suggestion }}
+                    {{ t('browserAutomation.suggestion', { value: debugFeedback.suggestion }) }}
                   </div>
                   <div
                     v-if="debugFeedback.detail && debugFeedback.detail !== debugFeedback.message"
                     class="debug-feedback__detail"
                   >
-                    原始信息：{{ debugFeedback.detail }}
+                    {{ t('browserAutomation.rawInfo', { value: debugFeedback.detail }) }}
                   </div>
                 </div>
-                <pre class="result">{{ debugResult || "暂无结果" }}</pre>
+                <pre class="result">{{ debugResult || t('browserAutomation.noResult') }}</pre>
               </div>
             </el-tab-pane>
 
-            <el-tab-pane label="任务中心" name="tasks">
+            <el-tab-pane :label="t('browserAutomation.taskCenter')" name="tasks">
               <div class="card panel">
                 <div class="row wrap">
                   <el-select
                     v-model="taskFilters.status"
                     clearable
-                    placeholder="状态"
+                    :placeholder="t('common.status')"
                     :disabled="!serviceEnabled"
                     ><el-option label="queued" value="queued" /><el-option
                       label="running"
@@ -477,12 +503,12 @@
                   /></el-select>
                   <el-input
                     v-model="taskFilters.kind"
-                    placeholder="任务类型"
+                    :placeholder="t('browserAutomation.taskType')"
                     :disabled="!serviceEnabled"
                   />
                   <el-input
                     v-model="taskFilters.sourceId"
-                    placeholder="来源 ID"
+                    :placeholder="t('browserAutomation.sourceId')"
                     :disabled="!serviceEnabled"
                   />
                   <el-button
@@ -490,35 +516,35 @@
                     :disabled="!serviceEnabled"
                     :loading="loadingMap.tasks"
                     @click="sendTasks"
-                    >查询任务</el-button
+                    >{{ t('browserAutomation.queryTasks') }}</el-button
                   >
                 </div>
                 <el-table :data="taskList" border stripe>
-                  <el-table-column prop="status" label="状态" width="100" />
-                  <el-table-column prop="kind" label="类型" width="120" />
-                  <el-table-column prop="action" label="动作" width="120" />
-                  <el-table-column prop="step" label="步骤" min-width="140" />
+                  <el-table-column prop="status" :label="t('common.status')" width="100" />
+                  <el-table-column prop="kind" :label="t('browserAutomation.type')" width="120" />
+                  <el-table-column prop="action" :label="t('browserAutomation.action')" width="120" />
+                  <el-table-column prop="step" :label="t('browserAutomation.stepColumn')" min-width="140" />
                   <el-table-column
                     prop="id"
-                    label="任务 ID"
+                    :label="t('browserAutomation.taskId')"
                     min-width="240"
                     show-overflow-tooltip
                   />
-                  <el-table-column label="操作" width="150">
+                  <el-table-column :label="t('common.operation')" width="150">
                     <template #default="{ row }">
                       <el-button
                         link
                         type="primary"
                         :disabled="!serviceEnabled"
                         @click="sendTaskDetail(row.id)"
-                        >详情</el-button
+                        >{{ t('common.detail') }}</el-button
                       >
                       <el-button
                         link
                         type="primary"
                         :disabled="!serviceEnabled"
                         @click="sendTaskLogs(row.id)"
-                        >日志</el-button
+                        >{{ t('browserAutomation.log') }}</el-button
                       >
                     </template>
                   </el-table-column>
@@ -531,7 +557,7 @@
 
       <el-dialog
         v-model="profileDialogVisible"
-        :title="editingProfileId ? '编辑执行环境' : '新增执行环境'"
+        :title="editingProfileId ? t('browserAutomation.editEnvironment') : t('browserAutomation.createEnvironment')"
         width="520px"
       >
         <el-form
@@ -541,43 +567,46 @@
           label-position="top"
           class="profile-form"
         >
-          <el-form-item label="环境编号">
+          <el-form-item :label="t('browserAutomation.environmentId')">
             <el-input
               v-model="profileForm.id"
               :disabled="!!editingProfileId"
-              placeholder="环境编号，例如 001；留空则自动生成"
+              :placeholder="t('browserAutomation.environmentIdPlaceholder')"
             />
           </el-form-item>
-          <el-form-item label="环境名称" prop="name" required>
-            <el-input v-model="profileForm.name" placeholder="请输入环境名称" />
+          <el-form-item :label="t('browserAutomation.environmentName')" prop="name" required>
+            <el-input
+              v-model="profileForm.name"
+              :placeholder="t('browserAutomation.environmentNamePlaceholder')"
+            />
           </el-form-item>
-          <el-form-item label="备注">
+          <el-form-item :label="t('browserAutomation.remark')">
             <el-input
               v-model="profileForm.remark"
               type="textarea"
               :rows="3"
-              placeholder="备注，可选"
+              :placeholder="t('browserAutomation.remarkPlaceholder')"
             />
           </el-form-item>
         </el-form>
         <template #footer>
           <div class="row" style="justify-content: flex-end">
-            <el-button @click="profileDialogVisible = false">取消</el-button>
+            <el-button @click="profileDialogVisible = false">{{ t('common.cancel') }}</el-button>
             <el-button
               type="primary"
               :loading="editingProfileId ? loadingMap.updateProfile : loadingMap.createProfile"
               @click="submitProfileForm"
             >
-              {{ editingProfileId ? "保存" : "创建" }}
+              {{ editingProfileId ? t('common.save') : t('browserAutomation.create') }}
             </el-button>
           </div>
         </template>
       </el-dialog>
 
-      <el-dialog v-model="detailVisible" title="任务详情" width="900px">
+      <el-dialog v-model="detailVisible" :title="t('browserAutomation.taskDetail')" width="900px">
         <pre class="result">{{ detailText }}</pre>
       </el-dialog>
-      <el-dialog v-model="logsVisible" title="任务日志" width="900px">
+      <el-dialog v-model="logsVisible" :title="t('browserAutomation.taskLogs')" width="900px">
         <pre class="result">{{ logsText }}</pre>
       </el-dialog>
     </div>
@@ -618,6 +647,7 @@ import {
 } from "@/services/browserAutomationRuntime";
 import { websocketClient, type ServiceCommandResultEvent } from "@/services/websocketClient";
 import { usePluginClientNodes } from "@/services/clientNodeState";
+import { useI18n } from "@/hooks/web/useI18n";
 import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import { formatDate } from "@/utils/formatTime";
 import ExternalClientSidebar, {
@@ -625,6 +655,8 @@ import ExternalClientSidebar, {
 } from "../components/ExternalClientSidebar.vue";
 
 defineOptions({ name: "ExternalBrowserAutomation" });
+
+const { t } = useI18n();
 
 interface BrowserDebugFeedback {
   success: boolean;
@@ -715,7 +747,7 @@ const profileFormRules: FormRules = {
   name: [
     {
       required: true,
-      message: "请填写环境名称",
+      message: t("browserAutomation.pleaseFillEnvironmentName"),
       trigger: "blur",
     },
   ],
@@ -770,7 +802,7 @@ const selectedClient = computed(
   () => clients.value.find((item) => item.clientId === selectedClientId.value) || null,
 );
 const selectedClientName = computed(
-  () => selectedClient.value?.machine?.code || selectedClient.value?.clientId || "未选择节点",
+  () => selectedClient.value?.machine?.code || selectedClient.value?.clientId || t("browserAutomation.noSelectedNode"),
 );
 const selectedService = computed<BrowserAutomationServiceStatus | null>(
   () => selectedClient.value?.uploader || null,
@@ -818,10 +850,10 @@ const profileGridOptions = ref<VxeGridProps<any>>({
     isHover: true,
   },
   columns: [
-    { field: "id", title: "编号", width: 90, align: "left", headerAlign: "left" },
+    { field: "id", title: t("browserAutomation.columnId"), width: 90, align: "left", headerAlign: "left" },
     {
       field: "name",
-      title: "名称",
+      title: t("browserAutomation.columnName"),
       minWidth: 180,
       showOverflow: "tooltip",
       align: "left",
@@ -829,7 +861,7 @@ const profileGridOptions = ref<VxeGridProps<any>>({
     },
     {
       field: "port",
-      title: "端口",
+      title: t("browserAutomation.columnPort"),
       width: 90,
       align: "left",
       headerAlign: "left",
@@ -837,7 +869,7 @@ const profileGridOptions = ref<VxeGridProps<any>>({
     },
     {
       field: "lastUsedAt",
-      title: "最近使用",
+      title: t("browserAutomation.columnLastUsedAt"),
       minWidth: 170,
       align: "left",
       headerAlign: "left",
@@ -845,7 +877,7 @@ const profileGridOptions = ref<VxeGridProps<any>>({
     },
     {
       field: "instance",
-      title: "浏览器状态",
+      title: t("browserAutomation.columnBrowserStatus"),
       minWidth: 200,
       align: "left",
       headerAlign: "left",
@@ -853,7 +885,7 @@ const profileGridOptions = ref<VxeGridProps<any>>({
     },
     {
       field: "headless",
-      title: "运行模式",
+      title: t("browserAutomation.columnRunMode"),
       width: 100,
       align: "left",
       headerAlign: "left",
@@ -861,7 +893,7 @@ const profileGridOptions = ref<VxeGridProps<any>>({
     },
     {
       field: "pageCount",
-      title: "页面",
+      title: t("browserAutomation.columnPage"),
       width: 80,
       align: "left",
       headerAlign: "left",
@@ -869,7 +901,7 @@ const profileGridOptions = ref<VxeGridProps<any>>({
     },
     {
       field: "userDataDir",
-      title: "用户信息目录",
+      title: t("browserAutomation.userDataDir"),
       minWidth: 320,
       showOverflow: "tooltip",
       align: "left",
@@ -878,7 +910,7 @@ const profileGridOptions = ref<VxeGridProps<any>>({
     },
     {
       field: "isActive",
-      title: "状态",
+      title: t("common.status"),
       width: 100,
       align: "left",
       headerAlign: "left",
@@ -921,14 +953,14 @@ const currentProfileName = computed(
     currentProfile.value?.name ||
     currentProfileInstance.value?.profileName ||
     currentProfileId.value ||
-    "未选择环境",
+    t("browserAutomation.noSelectedEnvironment"),
 );
 const operationDialogTitle = computed(() => {
   const clientName = selectedClientName.value;
   const profileName = currentProfileId.value
     ? `${currentProfileName.value} (${currentProfileId.value})`
-    : "未选择环境";
-  return `集中操作台 · ${clientName} · ${profileName}`;
+    : t("browserAutomation.noSelectedEnvironment");
+  return t("browserAutomation.operationConsoleTitle", { clientName, profileName });
 });
 const hasAnyConnectedProfile = computed(
   () =>
@@ -965,11 +997,11 @@ const clientNodeItems = computed<ClientNodeItem[]>(() =>
     connectionId: client.clientId,
     name: client.machine?.code || client.clientId,
     time: dateText(client.lastOnlineAt || client.connectedAt || client.lastOfflineAt),
-    metaLeft: client.appVersion || "未知版本",
-    metaRight: client.location?.ip || client.location?.city || "未知位置",
+    metaLeft: client.appVersion || t("browserAutomation.unknownVersion"),
+    metaRight: client.location?.ip || client.location?.city || t("browserAutomation.unknownLocation"),
     detail: client.workspaceDirectory
-      ? `工作目录: ${client.workspaceDirectory}`
-      : "工作目录: 未上报",
+      ? t("browserAutomation.workspaceDirectory", { dir: client.workspaceDirectory })
+      : t("browserAutomation.workspaceDirectoryUnreported"),
   })),
 );
 
@@ -1097,7 +1129,7 @@ const buildDebugFeedback = (event: ServiceCommandResultEvent, action?: string) =
       toNullableText(errorDetail?.userMessage) ||
       toNullableText(event.message) ||
       toNullableText(event.error) ||
-      (event.success ? "执行成功" : "执行失败"),
+      (event.success ? t("browserAutomation.executionSuccess") : t("browserAutomation.executionFailed")),
     detail:
       toNullableText(errorDetail?.rawMessage) ||
       (event.success ? null : toNullableText(event.error || event.message)),
@@ -1173,7 +1205,7 @@ const normalizePageOption = (page: Record<string, any>, fallbackIndex: number) =
       : typeof page?.pageIndex === "number"
         ? page.pageIndex
         : fallbackIndex;
-  const title = String(page?.title || page?.name || `页面 ${rawIndex}`);
+  const title = String(page?.title || page?.name || t("browserAutomation.pageTitle", { index: rawIndex }));
   const url = String(page?.url || "");
 
   return {
@@ -1250,11 +1282,11 @@ const getPageRowClassName = ({ row }: { row: Record<string, any> }) => {
   return row?.index === debugForm.pageIndex ? "page-row-is-active" : "";
 };
 const getProfileInstanceText = (instance?: BrowserAutomationProfileInstanceSummary | null) => {
-  if (!instance) return "未打开";
-  if (instance.busy) return "执行中";
-  if (instance.connected) return "已打开";
-  if (instance.hasInstance || instance.connecting) return "连接中";
-  return "未打开";
+  if (!instance) return t("browserAutomation.instanceNotOpened");
+  if (instance.busy) return t("browserAutomation.instanceRunning");
+  if (instance.connected) return t("browserAutomation.instanceOpened");
+  if (instance.hasInstance || instance.connecting) return t("browserAutomation.instanceConnecting");
+  return t("browserAutomation.instanceNotOpened");
 };
 const getProfileInstanceTagType = (instance?: BrowserAutomationProfileInstanceSummary | null) => {
   if (instance?.busy) return "warning";
@@ -1263,25 +1295,25 @@ const getProfileInstanceTagType = (instance?: BrowserAutomationProfileInstanceSu
   return "info";
 };
 const getProfileInstanceHint = (instance?: BrowserAutomationProfileInstanceSummary | null) => {
-  if (!instance) return "浏览器窗口未打开";
+  if (!instance) return t("browserAutomation.windowNotOpenedHint");
   if (instance.busy) {
     return instance.currentTaskId
-      ? `任务 ${instance.currentTaskId} 执行中`
-      : "当前环境正在执行任务";
+      ? t("browserAutomation.taskRunning", { taskId: instance.currentTaskId })
+      : t("browserAutomation.environmentExecutingTask");
   }
   if (instance.connected) {
-    return `已打开 ${instance.pageCount ?? 0} 个页面`;
+    return t("browserAutomation.openedPageCount", { count: instance.pageCount ?? 0 });
   }
   if (instance.hasInstance || instance.connecting) {
-    return "浏览器正在建立连接";
+    return t("browserAutomation.browserConnecting");
   }
-  return "浏览器窗口未打开";
+  return t("browserAutomation.windowNotOpenedHint");
 };
 const getProfileHeadlessText = (instance?: BrowserAutomationProfileInstanceSummary | null) => {
-  if (!instance?.hasInstance && !instance?.connected && !instance?.connecting) return "未启动";
-  if (instance.headless === true) return "无头";
-  if (instance.headless === false) return "普通";
-  return "未知";
+  if (!instance?.hasInstance && !instance?.connected && !instance?.connecting) return t("browserAutomation.notStarted");
+  if (instance.headless === true) return t("browserAutomation.headless");
+  if (instance.headless === false) return t("browserAutomation.normal");
+  return t("browserAutomation.unknown");
 };
 const getProfileHeadlessTagType = (instance?: BrowserAutomationProfileInstanceSummary | null) => {
   if (!instance?.hasInstance && !instance?.connected && !instance?.connecting) return "info";
@@ -1381,14 +1413,14 @@ const submitProfileForm = async () => {
           editingProfileId.value as string,
           payload,
         ),
-      "更新环境命令已发送",
+      t("browserAutomation.updateEnvironmentCommandSent"),
     );
   }
 
   return dispatch(
     "createProfile",
     () => createBrowserAutomationProfile(selectedClientId.value, payload),
-    "创建环境命令已发送",
+    t("browserAutomation.createEnvironmentCommandSent"),
   );
 };
 const sendSwitchProfile = async (profileId: string) =>
@@ -1396,18 +1428,18 @@ const sendSwitchProfile = async (profileId: string) =>
   dispatch(
     "switchProfile",
     () => switchBrowserAutomationProfile(selectedClientId.value, profileId),
-    "设为默认环境命令已发送",
+    t("browserAutomation.setDefaultEnvironmentCommandSent"),
   );
 const sendDeleteProfile = async (profileId: string) => {
   if (!selectedClientId.value) return;
   try {
     await ElMessageBox.confirm(
-      `确认删除执行环境 ${profileId} 吗？会同时删除对应缓存目录。`,
-      "删除环境",
+      t("browserAutomation.deleteEnvironmentConfirm", { profileId }),
+      t("browserAutomation.deleteEnvironment"),
       {
         type: "warning",
-        confirmButtonText: "删除",
-        cancelButtonText: "取消",
+        confirmButtonText: t("common.delete"),
+        cancelButtonText: t("common.cancel"),
       },
     );
   } catch {
@@ -1417,7 +1449,7 @@ const sendDeleteProfile = async (profileId: string) => {
   return dispatch(
     "deleteProfile",
     () => deleteBrowserAutomationProfile(selectedClientId.value, profileId),
-    "删除环境命令已发送",
+    t("browserAutomation.deleteEnvironmentCommandSent"),
   );
 };
 
@@ -1455,7 +1487,7 @@ const dispatch = async (
       if (options.profileId) {
         delete pendingConnectProfileIds[options.profileId];
       }
-      ElMessage.error(response?.message || "命令发送失败");
+      ElMessage.error(response?.message || t("browserAutomation.commandSendFailed"));
       return;
     }
     const commandId = response.data?.commandId;
@@ -1483,7 +1515,7 @@ const dispatch = async (
     if (options.profileId) {
       delete pendingConnectProfileIds[options.profileId];
     }
-    ElMessage.error(error?.message || "命令发送失败");
+    ElMessage.error(error?.message || t("browserAutomation.commandSendFailed"));
   }
 };
 
@@ -1512,13 +1544,13 @@ const sendSimple = async (kind: "checkStatus" | "close" | "pages") => {
     return dispatch(
       "checkStatus",
       () => checkBrowserAutomationStatus(selectedClientId.value),
-      "状态刷新命令已发送",
+      t("browserAutomation.statusRefreshCommandSent"),
     );
   if (kind === "close") return sendCloseProfile(targetProfileId);
   return dispatch(
     "pages",
     () => fetchBrowserAutomationPages(selectedClientId.value, targetProfileId),
-    "获取页面命令已发送",
+    t("browserAutomation.getPagesCommandSent"),
   );
 };
 
@@ -1530,7 +1562,7 @@ const sendConnect = async (
   const normalizedProfileId = String(profileId || browserForm.profileId || "").trim();
   const connectKey = normalizedProfileId || "__default__";
   if (pendingConnectProfileIds[connectKey]) {
-    ElMessage.info("该环境正在打开窗口，请稍后");
+    ElMessage.info(t("browserAutomation.windowOpeningPleaseWait"));
     return;
   }
   const resolvedPort = resolveProfilePort(normalizedProfileId, browserForm.port);
@@ -1556,7 +1588,7 @@ const sendConnect = async (
         ...(resolvedPort ? { port: resolvedPort } : {}),
         ...(normalizedProfileId ? { profileId: normalizedProfileId } : {}),
       }),
-    "连接命令已发送",
+    t("browserAutomation.connectCommandSent"),
     {
       profileId: connectKey,
       timeoutMs: 150000,
@@ -1572,7 +1604,7 @@ const sendCloseProfile = async (profileId?: string | null) => {
       normalizedProfileId
         ? closeBrowserAutomationProfile(selectedClientId.value, normalizedProfileId)
         : closeBrowserAutomation(selectedClientId.value),
-    "关闭命令已发送",
+    t("browserAutomation.closeCommandSent"),
   );
 };
 const sendFocusProfile = async (profileId?: string | null) => {
@@ -1581,7 +1613,7 @@ const sendFocusProfile = async (profileId?: string | null) => {
   return dispatch(
     "focus",
     () => focusBrowserAutomationProfile(selectedClientId.value, normalizedProfileId || undefined),
-    "聚焦窗口命令已发送",
+    t("browserAutomation.focusWindowCommandSent"),
   );
 };
 const sendForceClose = async () =>
@@ -1592,7 +1624,7 @@ const sendForceClose = async () =>
       forceCloseBrowserAutomation(selectedClientId.value, {
         port: resolveProfilePort(currentProfileId.value, browserForm.port) || browserForm.port,
       }),
-    "强制关闭命令已发送",
+    t("browserAutomation.forceCloseCommandSent"),
   );
 const sendOpenLink = async () =>
   selectedClientId.value &&
@@ -1604,7 +1636,7 @@ const sendOpenLink = async () =>
         url: openForm.url.trim(),
         ...(currentProfileId.value ? { profileId: currentProfileId.value } : {}),
       }),
-    "打开链接命令已发送",
+    t("browserAutomation.openLinkCommandSent"),
   );
 const sendDebug = async (action: string) =>
   selectedClientId.value &&
@@ -1617,28 +1649,28 @@ const sendDebug = async (action: string) =>
         ...debugForm,
         ...(currentProfileId.value ? { profileId: currentProfileId.value } : {}),
       }),
-    "调试命令已发送",
+    t("browserAutomation.debugCommandSent"),
   ));
 const sendTasks = async () =>
   selectedClientId.value &&
   dispatch(
     "tasks",
     () => queryBrowserAutomationTasks(selectedClientId.value, taskFilters),
-    "任务查询命令已发送",
+    t("browserAutomation.queryTasksCommandSent"),
   );
 const sendTaskDetail = async (taskId: string) =>
   selectedClientId.value &&
   dispatch(
     "taskDetail",
     () => getBrowserAutomationTaskDetail(selectedClientId.value, taskId),
-    "任务详情命令已发送",
+    t("browserAutomation.taskDetailCommandSent"),
   );
 const sendTaskLogs = async (taskId: string) =>
   selectedClientId.value &&
   dispatch(
     "taskLogs",
     () => getBrowserAutomationTaskLogs(selectedClientId.value, taskId),
-    "任务日志命令已发送",
+    t("browserAutomation.taskLogsCommandSent"),
   );
 
 const onCommand = async (event: ServiceCommandResultEvent) => {
