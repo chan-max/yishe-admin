@@ -46,6 +46,8 @@ import TriggerConfigDialog from '@/components/workflow/TriggerConfigDialog.vue'
 import ShortcutGuide from '@/components/workflow/ShortcutGuide.vue'
 import AiGenerateDialog from '@/components/workflow/AiGenerateDialog.vue'
 import { useWorkflowAiContext } from '@/composables/useWorkflowAiContext'
+import AssistantChat from '@/components/AiAssistant/AssistantChat.vue'
+import { useAiAssistantStore } from '@/store/modules/aiAssistant'
 import type { NodeManifest } from './config/node-manifest'
 
 const appStore = useAppStore()
@@ -121,6 +123,8 @@ const handleAiGenerated = (data: { nodes: any[]; edges: any[]; description: stri
 
 
 const { setWorkflowContext } = useWorkflowAiContext()
+const aiStore = useAiAssistantStore()
+const aiPanelVisible = ref(true)
 
 // 同步工作流上下文给 AI 助手
 watch(
@@ -748,6 +752,30 @@ const statusText = computed(() => {
 
       </div>
 
+      <!-- AI 助手侧边面板 -->
+      <div v-if="aiPanelVisible" class="wf-editor-ai-panel">
+        <div class="wf-editor-ai-panel__header">
+          <span class="wf-editor-ai-panel__title">🤖 智能助手</span>
+          <button class="wf-editor-ai-panel__toggle" @click="aiPanelVisible = false" title="收起">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+        </div>
+        <AssistantChat
+          :messages="aiStore.messages"
+          :loading="aiStore.loading"
+          :pending-interaction="aiStore.pendingInteraction"
+          :thinking-text="aiStore.thinkingText"
+          :can-send="true"
+          input-placeholder="描述你想要的工作流..."
+          @send="aiStore.sendMessage"
+          @interaction-submit="(r) => aiStore.resumeInteraction(r.confirmed, r.input, r.reason || '')"
+          @interaction-reject="(r) => aiStore.resumeInteraction(false, { ...(aiStore.pendingInteraction?.input || {}), action: 'reject' }, r.reason || '')"
+        />
+      </div>
+      <button v-else class="wf-editor-ai-toggle" @click="aiPanelVisible = true" title="展开智能助手">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+
       <!-- 右侧配置面板 -->
       <ConfigPanel
         :node="selectedNode"
@@ -787,6 +815,81 @@ const statusText = computed(() => {
 @import url('@vue-flow/controls/dist/style.css');
 @import url('@vue-flow/minimap/dist/style.css');
 
+
+/* AI 助手侧边面板 */
+.wf-editor-ai-panel {
+  display: flex;
+  width: 320px;
+  height: 100%;
+  background: var(--app-content-surface-color);
+  border-left: 1px solid var(--app-content-border-color);
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.wf-editor-ai-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--app-content-border-color);
+  flex-shrink: 0;
+}
+
+.wf-editor-ai-panel__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.wf-editor-ai-panel__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  color: var(--el-text-color-placeholder);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+}
+
+.wf-editor-ai-panel__toggle:hover {
+  background: var(--app-content-surface-muted-color);
+  color: var(--el-text-color-primary);
+}
+
+.wf-editor-ai-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 48px;
+  color: var(--el-text-color-secondary);
+  background: var(--app-content-surface-color);
+  border: 1px solid var(--app-content-border-color);
+  border-right: none;
+  border-radius: 4px 0 0 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wf-editor-ai-toggle:hover {
+  color: var(--el-color-primary);
+  border-color: var(--el-color-primary);
+}
+
+:deep(.wf-editor-ai-panel .assistant-chat) {
+  height: 100%;
+  border: none;
+  border-radius: 0;
+}
 </style>
 
 <style scoped lang="scss">
@@ -979,5 +1082,80 @@ const statusText = computed(() => {
   background: var(--app-content-surface-color);
   border: 1px solid var(--app-content-border-color);
   border-radius: 8px;
+}
+
+/* AI 助手侧边面板 */
+.wf-editor-ai-panel {
+  display: flex;
+  width: 320px;
+  height: 100%;
+  background: var(--app-content-surface-color);
+  border-left: 1px solid var(--app-content-border-color);
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.wf-editor-ai-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--app-content-border-color);
+  flex-shrink: 0;
+}
+
+.wf-editor-ai-panel__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.wf-editor-ai-panel__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  color: var(--el-text-color-placeholder);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+}
+
+.wf-editor-ai-panel__toggle:hover {
+  background: var(--app-content-surface-muted-color);
+  color: var(--el-text-color-primary);
+}
+
+.wf-editor-ai-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 48px;
+  color: var(--el-text-color-secondary);
+  background: var(--app-content-surface-color);
+  border: 1px solid var(--app-content-border-color);
+  border-right: none;
+  border-radius: 4px 0 0 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wf-editor-ai-toggle:hover {
+  color: var(--el-color-primary);
+  border-color: var(--el-color-primary);
+}
+
+:deep(.wf-editor-ai-panel .assistant-chat) {
+  height: 100%;
+  border: none;
+  border-radius: 0;
 }
 </style>

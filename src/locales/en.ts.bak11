@@ -643,8 +643,7 @@ export default {
       diffPwd: 'The Passwords Entered Twice No Match'
     },
   },
-  cropper: {
-    modalTitle: 'Avatar upload',
+  cropper: {    modalTitle: 'Avatar upload',
     okText: 'Confirm and upload',
     btn_reset: 'Reset',
     btn_rotate_left: 'Counterclockwise rotation',

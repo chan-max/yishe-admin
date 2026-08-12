@@ -641,9 +641,7 @@ export default {
       pwdRules: '6 to 20 characters',
       cfPwdMsg: 'Please Enter Confirm Password',
       diffPwd: 'The Passwords Entered Twice No Match'
-    },
-  },
-  cropper: {
+    }
     modalTitle: 'Avatar upload',
     okText: 'Confirm and upload',
     btn_reset: 'Reset',

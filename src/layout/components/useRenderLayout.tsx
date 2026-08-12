@@ -5,7 +5,6 @@ import { TagsView } from "@/layout/components/TagsView";
 import AppView from "./AppView.vue";
 import ToolHeader from "./ToolHeader.vue";
 import { useAppStore } from "@/store/modules/app";
-import { useSplitStore } from "@/store/modules/split";
 import { useDesign } from "@/hooks/web/useDesign";
 
 const { getPrefixCls } = useDesign();
@@ -26,9 +25,7 @@ export const useRenderLayout = ({
   mobileMenuOpen,
   closeMobileMenu,
 }: RenderLayoutOptions) => {
-  const splitStore = useSplitStore();
   const renderBasic = () => {
-    const splitEnabled = splitStore.enabled;
     return (
       <>
         {mobile.value && mobileMenuOpen.value ? (
@@ -98,7 +95,7 @@ export const useRenderLayout = ({
                   "bg-transparent border-none shadow-none",
                 ]}
               />
-              {tagsView.value && !mobile.value && !splitEnabled ? <TagsView /> : undefined}
+              {tagsView.value && !mobile.value ? <TagsView /> : undefined}
             </div>
 
             <AppView />
