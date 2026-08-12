@@ -587,7 +587,7 @@ defineExpose({ scrollToBottom, focusInput: () => textareaRef.value?.focus() });
   border: 1px solid var(--el-border-color);
   border-radius: 22px;
   transition: border-color .15s, box-shadow .15s;
-  align-items: flex-end;
+  align-items: center;
   gap: 8px;
 }
 
