@@ -13,12 +13,12 @@
                 :lg="6"
                 :xl="6"
               >
-                <el-form-item label="任务 ID">
+                <el-form-item :label="t('queue.taskId')">
                   <el-input
                     v-model="queryParams.id"
                     size="small"
                     clearable
-                    placeholder="留空则查询全部"
+                    :placeholder="t('queue.placeholderQueryAll')"
                     @keyup.enter="handleQueryChange"
                   />
                 </el-form-item>
@@ -31,7 +31,7 @@
                 :lg="6"
                 :xl="6"
               >
-                <el-form-item label="任务类型">
+                <el-form-item :label="t('queue.taskType')">
                   <el-select
                     v-model="queryParams.types"
                     size="small"
@@ -40,7 +40,7 @@
                     collapse-tags-tooltip
                     clearable
                     filterable
-                    placeholder="全部类型"
+                    :placeholder="t('queue.allTypes')"
                     @change="handleQueryChange"
                     @clear="handleTypeClear"
                   >
@@ -61,19 +61,19 @@
                 :lg="5"
                 :xl="4"
               >
-                <el-form-item label="任务状态">
+                <el-form-item :label="t('queue.taskStatus')">
                   <el-select
                     v-model="queryParams.status"
                     size="small"
                     clearable
-                    placeholder="全部状态"
+                    :placeholder="t('queue.allStatuses')"
                     @change="handleQueryChange"
                   >
-                    <el-option label="待处理" value="pending" />
-                    <el-option label="等待中" value="waiting" />
-                    <el-option label="处理中" value="processing" />
-                    <el-option label="已完成" value="completed" />
-                    <el-option label="失败" value="failed" />
+                    <el-option :label="t('queue.pending')" value="pending" />
+                    <el-option :label="t('queue.waiting')" value="waiting" />
+                    <el-option :label="t('queue.processing')" value="processing" />
+                    <el-option :label="t('queue.completed')" value="completed" />
+                    <el-option :label="t('queue.failed')" value="failed" />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -85,18 +85,18 @@
                 :lg="5"
                 :xl="4"
               >
-                <el-form-item label="可执行状态">
+                <el-form-item :label="t('queue.executionStatus')">
                   <el-select
                     v-model="queryParams.executionReadinessStatus"
                     size="small"
                     clearable
-                    placeholder="全部"
+                    :placeholder="t('queue.all')"
                     @change="handleQueryChange"
                   >
-                    <el-option label="可执行" value="ready" />
-                    <el-option label="待准备" value="waiting" />
-                    <el-option label="不可执行" value="blocked" />
-                    <el-option label="未知" value="unknown" />
+                    <el-option :label="t('queue.executable')" value="ready" />
+                    <el-option :label="t('queue.toBePrepared')" value="waiting" />
+                    <el-option :label="t('queue.notExecutable')" value="blocked" />
+                    <el-option :label="t('queue.unknown')" value="unknown" />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -108,19 +108,19 @@
                 :lg="7"
                 :xl="8"
               >
-                <el-form-item label="时间排序">
+                <el-form-item :label="t('queue.sortType')">
                   <el-select
                     v-model="queryParams.sortType"
                     size="small"
-                    placeholder="请选择排序"
+                    :placeholder="t('queue.selectSort')"
                     @change="handleSortTypeChange"
                   >
-                    <el-option label="创建时间倒序" value="createdAt_DESC" />
-                    <el-option label="创建时间正序" value="createdAt_ASC" />
-                    <el-option label="更新时间倒序" value="updatedAt_DESC" />
-                    <el-option label="更新时间正序" value="updatedAt_ASC" />
-                    <el-option label="完成时间倒序" value="processedAt_DESC" />
-                    <el-option label="完成时间正序" value="processedAt_ASC" />
+                    <el-option :label="t('queue.createdAtDesc')" value="createdAt_DESC" />
+                    <el-option :label="t('queue.createdAtAsc')" value="createdAt_ASC" />
+                    <el-option :label="t('queue.updatedAtDesc')" value="updatedAt_DESC" />
+                    <el-option :label="t('queue.updatedAtAsc')" value="updatedAt_ASC" />
+                    <el-option :label="t('queue.processedAtDesc')" value="processedAt_DESC" />
+                    <el-option :label="t('queue.processedAtAsc')" value="processedAt_ASC" />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -132,13 +132,13 @@
                 :lg="7"
                 :xl="8"
               >
-                <el-form-item label="创建时间">
+                <el-form-item :label="t('queue.createdAt')">
                   <el-date-picker
                     v-model="queryParams.createdDateRange"
                     type="datetimerange"
-                    range-separator="至"
-                    start-placeholder="开始时间"
-                    end-placeholder="结束时间"
+                    :range-separator="t('queue.to')"
+                    :start-placeholder="t('queue.startTime')"
+                    :end-placeholder="t('queue.endTime')"
                     value-format="YYYY-MM-DD HH:mm:ss"
                     size="small"
                     clearable
@@ -156,11 +156,11 @@
                 :icon="Search"
                 :loading="loading"
                 @click="handleQueryChange"
-                >搜索</el-button
+                >{{ t('queue.search') }}</el-button
               >
-              <el-button size="small" :disabled="loading" @click="handleResetQuery">重置</el-button>
+              <el-button size="small" :disabled="loading" @click="handleResetQuery">{{ t('queue.reset') }}</el-button>
               <el-button size="small" type="primary" :icon="Plus" @click="handleAdd"
-                >新增任务</el-button
+                >{{ t('queue.addTask') }}</el-button
               >
               <el-button
                 size="small"
@@ -169,7 +169,7 @@
                 :disabled="!ids.length"
                 @click="handleDelete(null)"
               >
-                批量删除
+                {{ t('queue.batchDelete') }}
               </el-button>
               <el-button
                 size="small"
@@ -178,7 +178,7 @@
                 :loading="batchResetPendingLoading"
                 @click="handleBatchResetPublishTasksToPending"
               >
-                批量重置为未运行
+                {{ t('queue.batchResetToPending') }}
               </el-button>
               <el-button
                 size="small"
@@ -188,7 +188,7 @@
                 :loading="batchRegenerateLoading"
                 @click="handleBatchRegeneratePublishTasks"
               >
-                批量重新生成
+                {{ t('queue.batchRegenerate') }}
               </el-button>
             </div>
           </el-form>
@@ -199,29 +199,29 @@
         <div class="queue-page__main">
           <div class="queue-page__stats-bar">
             <div class="queue-stats-pill queue-stats-pill--pending">
-              <span class="queue-stats-pill__label">待处理</span>
+              <span class="queue-stats-pill__label">{{ t('queue.pending') }}</span>
               <span class="queue-stats-pill__value">{{ stats.pending }}</span>
             </div>
             <div class="queue-stats-pill queue-stats-pill--processing">
-              <span class="queue-stats-pill__label">处理中</span>
+              <span class="queue-stats-pill__label">{{ t('queue.processing') }}</span>
               <span class="queue-stats-pill__value">{{ stats.processing }}</span>
             </div>
             <div class="queue-stats-pill queue-stats-pill--completed">
-              <span class="queue-stats-pill__label">已完成</span>
+              <span class="queue-stats-pill__label">{{ t('queue.completed') }}</span>
               <span class="queue-stats-pill__value">{{ stats.completed }}</span>
             </div>
             <div class="queue-stats-pill queue-stats-pill--failed">
-              <span class="queue-stats-pill__label">失败</span>
+              <span class="queue-stats-pill__label">{{ t('queue.failed') }}</span>
               <span class="queue-stats-pill__value">{{ stats.failed }}</span>
             </div>
             <div class="queue-stats-pill">
-              <span class="queue-stats-pill__label">总计</span>
+              <span class="queue-stats-pill__label">{{ t('queue.total') }}</span>
               <span class="queue-stats-pill__value">{{ stats.total }}</span>
             </div>
 
             <div v-if="showPublishDispatchPanel" class="queue-dispatch-panel">
               <div class="queue-dispatch-panel__main">
-                <span class="queue-dispatch-panel__title">自动执行</span>
+                <span class="queue-dispatch-panel__title">{{ t('queue.autoExecute') }}</span>
                 <span
                   class="queue-dispatch-panel__status"
                   :class="publishTaskAutoDispatchStatusClass"
@@ -235,7 +235,7 @@
                   :class="publishTaskAutoDispatchTargetClass"
                 >
                   <span class="queue-dispatch-panel__binding-label">{{
-                    currentAutoDispatchRunningRows.length > 0 ? "执行中" : "目标"
+                    currentAutoDispatchRunningRows.length > 0 ? t('queue.processing') : t('queue.target')
                   }}</span>
                   <span class="queue-dispatch-panel__binding-value">
                     {{ publishTaskAutoDispatchTargetText }}
@@ -247,7 +247,7 @@
                 >
                   <span class="queue-dispatch-panel__runtime-dot" />
                   <span>{{
-                    publishTaskAutoDispatchEnabled ? "客户端主动领取模式" : "未开启自动执行"
+                    publishTaskAutoDispatchEnabled ? t('queue.clientActiveClaimMode') : t('queue.autoExecuteDisabled')
                   }}</span>
                 </div>
                 <span
@@ -272,7 +272,7 @@
                 :loading="publishTaskAutoDispatchLoading"
                 @click="handleTogglePublishAutoDispatch(!publishTaskAutoDispatchEnabled)"
               >
-                {{ publishTaskAutoDispatchEnabled ? "关闭" : "开启" }}
+                {{ publishTaskAutoDispatchEnabled ? t('queue.close') : t('queue.open') }}
               </el-button>
             </div>
           </div>
@@ -340,13 +340,13 @@
                           size="small"
                           class="operation-trigger-button"
                         >
-                          操作
+                          {{ t('queue.operation') }}
                         </el-button>
                         <template #dropdown>
                           <el-dropdown-menu class="operation-menu-compact">
-                            <el-dropdown-item :command="'viewData'">查看数据</el-dropdown-item>
+                            <el-dropdown-item :command="'viewData'">{{ t('queue.viewData') }}</el-dropdown-item>
                             <el-dropdown-item :command="'viewRuntimeLogs'">
-                              查看日志
+                              {{ t('queue.viewLogs') }}
                             </el-dropdown-item>
                             <el-dropdown-item
                               v-if="isPublishTaskRow(row)"
@@ -354,7 +354,7 @@
                               divided
                               :disabled="!canStartPublishExecution(row)"
                             >
-                              开始执行
+                              {{ t('queue.startExecution') }}
                             </el-dropdown-item>
                             <el-dropdown-item
                               v-if="String(row.type || '').startsWith('publish-product-')"
@@ -363,27 +363,27 @@
                             >
                               <span v-if="regeneratingTaskIds.has(row.id)" class="is-loading">
                                 <el-icon class="is-loading"><Loading /></el-icon>
-                                生成中...
+                                {{ t('queue.generating') }}
                               </span>
-                              <span v-else>重新生成</span>
+                              <span v-else>{{ t('queue.regenerate') }}</span>
                             </el-dropdown-item>
                             <el-dropdown-item
                               v-if="isPublishTaskRow(row)"
                               :command="'stopExecution'"
                               :disabled="!canStopPublishExecution(row)"
                             >
-                              停止任务
+                              {{ t('queue.stopTask') }}
                             </el-dropdown-item>
                             <el-dropdown-item
                               v-if="isPublishTaskRow(row)"
                               :command="'resetExecutionState'"
                               :disabled="!canResetPublishExecution(row)"
                             >
-                              重置为未运行
+                              {{ t('queue.resetToPending') }}
                             </el-dropdown-item>
-                            <el-dropdown-item :command="'updateData'">更新数据</el-dropdown-item>
+                            <el-dropdown-item :command="'updateData'">{{ t('queue.updateData') }}</el-dropdown-item>
                             <el-dropdown-item v-if="!isPublishTaskRow(row)" :command="'editStatus'">
-                              标记状态
+                              {{ t('queue.markStatus') }}
                             </el-dropdown-item>
                             <el-dropdown-item
                               v-if="userStore.user?.isAdmin"
@@ -391,7 +391,7 @@
                               divided
                               class="operation-menu-item--danger"
                             >
-                              删除
+                              {{ t('queue.delete') }}
                             </el-dropdown-item>
                           </el-dropdown-menu>
                         </template>
@@ -429,10 +429,10 @@
       @close="resetForm"
     >
       <el-form ref="formRef" :model="formData" :rules="formRules" label-width="100px">
-        <el-form-item label="任务类型" prop="type">
+        <el-form-item :label="t('queue.taskType')" prop="type">
           <el-select
             v-model="formData.type"
-            placeholder="请选择任务类型"
+            :placeholder="t('queue.selectTaskType')"
             style="width: 100%"
             clearable
           >
@@ -444,35 +444,35 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="任务描述" prop="description">
+        <el-form-item :label="t('queue.taskDescription')" prop="description">
           <el-input
             v-model="formData.description"
             type="textarea"
             :rows="2"
-            placeholder="请输入任务描述（可选）"
+            :placeholder="t('queue.enterTaskDescription')"
           />
         </el-form-item>
-        <el-form-item label="任务数据" prop="data">
+        <el-form-item :label="t('queue.taskData')" prop="data">
           <el-input
             v-model="formData.dataStr"
             type="textarea"
             :rows="6"
-            placeholder='请输入JSON格式的任务数据，例如：{"key": "value"}'
+            :placeholder="t('queue.taskDataPlaceholder')"
           />
         </el-form-item>
-        <el-form-item label="延迟(秒)" prop="delay">
+        <el-form-item :label="t('queue.delaySeconds')" prop="delay">
           <el-input-number
             v-model="formData.delay"
             :min="0"
-            placeholder="延迟执行时间（秒）"
+            :placeholder="t('queue.delayPlaceholder')"
             style="width: 100%"
           />
         </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button :disabled="submitLoading" @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" :loading="submitLoading" @click="handleSubmit">确定</el-button>
+          <el-button :disabled="submitLoading" @click="dialogVisible = false">{{ t('queue.cancel') }}</el-button>
+          <el-button type="primary" :loading="submitLoading" @click="handleSubmit">{{ t('queue.confirm') }}</el-button>
         </div>
       </template>
     </el-dialog>
@@ -480,7 +480,7 @@
     <!-- 编辑状态对话框 -->
     <el-dialog
       v-model="statusDialogVisible"
-      title="修改任务状态"
+      :title="t('queue.editTaskStatus')"
       width="500px"
       :center="false"
       align-center
@@ -491,43 +491,43 @@
         :rules="statusFormRules"
         label-width="100px"
       >
-        <el-form-item label="任务ID">
+        <el-form-item :label="t('queue.taskId')">
           <el-input v-model="statusFormData.id" disabled />
         </el-form-item>
-        <el-form-item label="当前状态">
+        <el-form-item :label="t('queue.currentStatus')">
           <el-tag :type="getStatusType(statusFormData.status)">
             {{ getStatusText(statusFormData.status) }}
           </el-tag>
         </el-form-item>
-        <el-form-item label="新状态" prop="newStatus">
+        <el-form-item :label="t('queue.newStatus')" prop="newStatus">
           <el-select
             v-model="statusFormData.newStatus"
-            placeholder="请选择新状态"
+            :placeholder="t('queue.selectNewStatus')"
             style="width: 100%"
           >
-            <el-option label="待处理" value="pending" />
-            <el-option label="等待中" value="waiting" />
-            <el-option label="处理中" value="processing" />
-            <el-option label="已完成" value="completed" />
-            <el-option label="失败" value="failed" />
+            <el-option :label="t('queue.pending')" value="pending" />
+            <el-option :label="t('queue.waiting')" value="waiting" />
+            <el-option :label="t('queue.processing')" value="processing" />
+            <el-option :label="t('queue.completed')" value="completed" />
+            <el-option :label="t('queue.failed')" value="failed" />
           </el-select>
         </el-form-item>
-        <el-form-item label="错误信息" prop="error" v-if="statusFormData.newStatus === 'failed'">
+        <el-form-item :label="t('queue.errorMessage')" prop="error" v-if="statusFormData.newStatus === 'failed'">
           <el-input
             v-model="statusFormData.error"
             type="textarea"
             :rows="3"
-            placeholder="请输入错误信息"
+            :placeholder="t('queue.enterErrorMessage')"
           />
         </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
           <el-button :disabled="statusSubmitLoading" @click="statusDialogVisible = false"
-            >取消</el-button
+            >{{ t('queue.cancel') }}</el-button
           >
           <el-button type="primary" :loading="statusSubmitLoading" @click="handleStatusSubmit"
-            >确定</el-button
+            >{{ t('queue.confirm') }}</el-button
           >
         </div>
       </template>
@@ -536,7 +536,7 @@
     <!-- 查看数据对话框 -->
     <el-dialog
       v-model="dataDialogVisible"
-      title="任务数据"
+      :title="t('queue.taskData')"
       fullscreen
       :center="false"
       align-center
@@ -545,7 +545,7 @@
       <div v-loading="dataDialogLoading" class="queue-json-viewer-shell">
         <div class="queue-json-panel queue-json-panel--preview">
           <div class="queue-json-panel__header">
-            <span class="queue-json-panel__title">JSON 预览</span>
+            <span class="queue-json-panel__title">{{ t('queue.jsonPreview') }}</span>
           </div>
           <div class="queue-json-panel__body queue-json-panel__body--viewer">
             <pre class="queue-json-raw">{{ formatRawJson(currentTaskData) }}</pre>
@@ -554,7 +554,7 @@
       </div>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="dataDialogVisible = false">关闭</el-button>
+          <el-button @click="dataDialogVisible = false">{{ t('queue.close') }}</el-button>
         </div>
       </template>
     </el-dialog>
@@ -569,23 +569,23 @@
       <div v-loading="runtimeLogDialogLoading" class="queue-runtime-window">
         <div class="queue-runtime-window__summary">
           <div class="queue-runtime-window__summary-item">
-            <span class="queue-runtime-window__summary-label">任务 ID</span>
+            <span class="queue-runtime-window__summary-label">{{ t('queue.taskId') }}</span>
             <span class="queue-runtime-window__summary-value">{{ currentTaskId || "-" }}</span>
           </div>
           <div class="queue-runtime-window__summary-item">
-            <span class="queue-runtime-window__summary-label">平台</span>
+            <span class="queue-runtime-window__summary-label">{{ t('queue.platform') }}</span>
             <span class="queue-runtime-window__summary-value">{{
               currentTaskRuntime?.platform || "-"
             }}</span>
           </div>
           <div class="queue-runtime-window__summary-item">
-            <span class="queue-runtime-window__summary-label">日志数</span>
+            <span class="queue-runtime-window__summary-label">{{ t('queue.logCount') }}</span>
             <span class="queue-runtime-window__summary-value">{{
               currentTaskRuntime?.logCount ?? currentTaskLogs.length
             }}</span>
           </div>
           <div class="queue-runtime-window__summary-item">
-            <span class="queue-runtime-window__summary-label">最后更新</span>
+            <span class="queue-runtime-window__summary-label">{{ t('queue.lastUpdated') }}</span>
             <span class="queue-runtime-window__summary-value">{{
               formatLogTimestamp(currentTaskRuntime?.updatedAt || currentTaskRuntime?.lastLogTime)
             }}</span>
@@ -617,7 +617,7 @@
                     class="queue-runtime-console__detail-trigger"
                     @click="openRuntimeLogData(log, index)"
                   >
-                    查看详细数据
+                    {{ t('queue.viewDetailData') }}
                   </el-button>
                 </div>
               </div>
@@ -632,7 +632,7 @@
             <div class="queue-runtime-console__empty">
               <span class="queue-runtime-console__user">yishe@admin:</span>
               <span class="queue-runtime-console__location">~</span>
-              <span class="queue-runtime-console__message">暂无匹配日志</span>
+              <span class="queue-runtime-console__message">{{ t('queue.noMatchingLogs') }}</span>
               <span class="queue-runtime-console__cursor" />
             </div>
           </div>
@@ -642,12 +642,12 @@
       <template #footer>
         <div class="queue-runtime-dialog__footer">
           <div class="queue-runtime-dialog__footer-meta">
-            <span>运行日志窗口</span>
-            <span>{{ currentTaskRuntime?.logCount ?? currentTaskLogs.length }} 条记录</span>
+            <span>{{ t('queue.runtimeLogWindow') }}</span>
+            <span>{{ t('queue.recordCount', { count: currentTaskRuntime?.logCount ?? currentTaskLogs.length }) }}</span>
           </div>
           <div class="queue-runtime-dialog__footer-actions">
-            <el-button @click="refreshRuntimeLogDialogDetail()">刷新日志</el-button>
-            <el-button @click="runtimeLogDialogVisible = false">关闭</el-button>
+            <el-button @click="refreshRuntimeLogDialogDetail()">{{ t('queue.refreshLogs') }}</el-button>
+            <el-button @click="runtimeLogDialogVisible = false">{{ t('queue.close') }}</el-button>
           </div>
         </div>
       </template>
@@ -662,7 +662,7 @@
     >
       <template #header>
         <div class="queue-runtime-data-dialog__header">
-          <div class="queue-runtime-data-dialog__title">日志详细数据</div>
+          <div class="queue-runtime-data-dialog__title">{{ t('queue.logDetailData') }}</div>
           <div class="queue-runtime-data-dialog__meta">
             <span>{{ runtimeLogDataDialogMeta.time || "-" }}</span>
             <span>{{ runtimeLogDataDialogMeta.level }}</span>
@@ -677,7 +677,7 @@
       </div>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="runtimeLogDataDialogVisible = false">关闭</el-button>
+          <el-button @click="runtimeLogDataDialogVisible = false">{{ t('queue.close') }}</el-button>
         </div>
       </template>
     </el-dialog>
@@ -685,7 +685,7 @@
     <!-- 更新数据对话框 -->
     <el-dialog
       v-model="dataUpdateDialogVisible"
-      title="更新数据"
+      :title="t('queue.updateData')"
       fullscreen
       :center="false"
       align-center
@@ -694,8 +694,8 @@
       <div class="queue-json-editor-layout">
         <div class="queue-json-panel queue-json-panel--preview">
           <div class="queue-json-panel__header">
-            <span class="queue-json-panel__title">实时预览</span>
-            <span class="queue-json-panel__desc">左侧只读，随右侧输入同步变化</span>
+            <span class="queue-json-panel__title">{{ t('queue.realtimePreview') }}</span>
+            <span class="queue-json-panel__desc">{{ t('queue.previewHint') }}</span>
           </div>
           <div class="queue-json-panel__body queue-json-panel__body--viewer">
             <pre class="queue-json-raw">{{ formatRawJson(parsedUpdateData) }}</pre>
@@ -703,8 +703,8 @@
         </div>
         <div class="queue-json-panel queue-json-panel--editor">
           <div class="queue-json-panel__header">
-            <span class="queue-json-panel__title">JSON 编辑</span>
-            <span class="queue-json-panel__desc">请输入完整 JSON 字符串</span>
+            <span class="queue-json-panel__title">{{ t('queue.jsonEditor') }}</span>
+            <span class="queue-json-panel__desc">{{ t('queue.enterFullJson') }}</span>
           </div>
           <div class="queue-json-panel__body queue-json-panel__body--editor">
             <el-input
@@ -716,7 +716,7 @@
                 resize: 'none',
                 fontFamily: 'Monaco, Menlo, Consolas, monospace',
               }"
-              placeholder="请输入完整的 JSON 字符串格式的数据"
+              :placeholder="t('queue.enterFullJsonData')"
             />
           </div>
         </div>
@@ -724,10 +724,10 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button :disabled="dataUpdateSubmitting" @click="dataUpdateDialogVisible = false"
-            >取消</el-button
+            >{{ t('queue.cancel') }}</el-button
           >
           <el-button type="primary" :loading="dataUpdateSubmitting" @click="handleDataUpdateSubmit"
-            >确认</el-button
+            >{{ t('queue.confirm') }}</el-button
           >
         </div>
       </template>
@@ -735,7 +735,7 @@
 
     <el-dialog
       v-model="publishDispatchDialogVisible"
-      title="开始执行发布任务"
+      :title="t('queue.startPublishTask')"
       width="1220px"
       :center="false"
       align-center
@@ -748,7 +748,7 @@
           :element-loading-text="DISPATCH_DIALOG_LOADING_TEXT"
           class="publish-dispatch-dialog__panel"
         >
-          <div class="publish-dispatch-dialog__panel-title">浏览器自动化节点</div>
+          <div class="publish-dispatch-dialog__panel-title">{{ t('queue.browserAutomationNode') }}</div>
           <div
             v-if="!publishDispatchDialogLoading && dispatchAvailableRows.length"
             class="publish-dispatch-dialog__table"
@@ -762,7 +762,7 @@
               :row-class-name="getDispatchOptionRowClassName"
               @row-click="handleDispatchOptionRowClick"
             >
-              <el-table-column label="选择" width="56" align="center">
+              <el-table-column :label="t('queue.select')" width="56" align="center">
                 <template #default="{ row }">
                   <el-radio
                     :value="row.optionKey"
@@ -772,12 +772,12 @@
                   />
                 </template>
               </el-table-column>
-              <el-table-column label="客户端节点" min-width="124" show-overflow-tooltip>
+              <el-table-column :label="t('queue.clientNode')" min-width="124" show-overflow-tooltip>
                 <template #default="{ row }">
                   <div class="publish-dispatch-dialog__primary">{{ row.clientLabel }}</div>
                 </template>
               </el-table-column>
-              <el-table-column label="在线" width="76" align="center">
+              <el-table-column :label="t('queue.online')" width="76" align="center">
                 <template #default="{ row }">
                   <span
                     class="publish-dispatch-dialog__state-text"
@@ -787,7 +787,7 @@
                   </span>
                 </template>
               </el-table-column>
-              <el-table-column label="服务" width="82" align="center">
+              <el-table-column :label="t('queue.service')" width="82" align="center">
                 <template #default="{ row }">
                   <span
                     class="publish-dispatch-dialog__state-text"
@@ -797,7 +797,7 @@
                   </span>
                 </template>
               </el-table-column>
-              <el-table-column label="模式" width="76" align="center">
+              <el-table-column :label="t('queue.mode')" width="76" align="center">
                 <template #default="{ row }">
                   <span
                     class="publish-dispatch-dialog__state-text"
@@ -809,11 +809,11 @@
               </el-table-column>
               <el-table-column
                 prop="profileLabel"
-                label="支持环境"
+                :label="t('queue.supportedEnvironment')"
                 min-width="120"
                 show-overflow-tooltip
               />
-              <el-table-column label="执行" width="76" align="center">
+              <el-table-column :label="t('queue.execute')" width="76" align="center">
                 <template #default="{ row }">
                   <span
                     class="publish-dispatch-dialog__state-text"
@@ -825,14 +825,14 @@
               </el-table-column>
               <el-table-column
                 prop="description"
-                label="说明"
+                :label="t('queue.description')"
                 min-width="180"
                 show-overflow-tooltip
               />
             </el-table>
           </div>
           <div v-else class="publish-dispatch-dialog__empty">
-            当前没有可执行的浏览器自动化节点。
+            {{ t('queue.noExecutableNode') }}
           </div>
         </div>
       </div>
@@ -841,7 +841,7 @@
           <el-button
             :disabled="publishDispatchSubmitting"
             @click="publishDispatchDialogVisible = false"
-            >取消</el-button
+            >{{ t('queue.cancel') }}</el-button
           >
           <el-button
             type="primary"
@@ -849,7 +849,7 @@
             :disabled="!canConfirmPublishDispatch"
             @click="handleConfirmPublishDispatch"
           >
-            开始执行
+            {{ t('queue.startExecution') }}
           </el-button>
         </div>
       </template>
@@ -857,7 +857,7 @@
 
     <el-dialog
       v-model="autoDispatchTargetDialogVisible"
-      title="自动执行设置"
+      :title="t('queue.autoDispatchSettings')"
       width="1220px"
       :center="false"
       align-center
@@ -866,9 +866,9 @@
     >
       <div class="publish-dispatch-dialog__body">
         <div class="publish-dispatch-dialog__panel publish-dispatch-filter-panel">
-          <div class="publish-dispatch-dialog__panel-title">任务过滤</div>
+          <div class="publish-dispatch-dialog__panel-title">{{ t('queue.taskFilter') }}</div>
           <el-form label-width="72px" size="small" class="publish-dispatch-filter-form">
-            <el-form-item label="任务类型">
+            <el-form-item :label="t('queue.taskType')">
               <el-select
                 v-model="autoDispatchFilterForm.taskTypes"
                 multiple
@@ -876,7 +876,7 @@
                 collapse-tags-tooltip
                 clearable
                 filterable
-                placeholder="全部发布任务类型"
+                :placeholder="t('queue.allPublishTaskTypes')"
               >
                 <el-option
                   v-for="opt in publishTaskTypeOptions"
@@ -886,30 +886,30 @@
                 />
               </el-select>
             </el-form-item>
-            <el-form-item label="创建时间">
+            <el-form-item :label="t('queue.createdAt')">
               <el-date-picker
                 v-model="autoDispatchFilterDateRange"
                 type="datetimerange"
-                range-separator="至"
-                start-placeholder="开始时间"
-                end-placeholder="结束时间"
+                :range-separator="t('queue.to')"
+                :start-placeholder="t('queue.startTime')"
+                :end-placeholder="t('queue.endTime')"
                 value-format="YYYY-MM-DD HH:mm:ss"
                 clearable
                 class="publish-dispatch-filter-form__date"
               />
             </el-form-item>
-            <el-form-item label="包含词">
+            <el-form-item :label="t('queue.includeKeywords')">
               <el-input
                 v-model="autoDispatchFilterForm.includeKeywordsText"
                 clearable
-                placeholder="多个关键词用逗号或换行分隔"
+                :placeholder="t('queue.keywordsSeparatorHint')"
               />
             </el-form-item>
-            <el-form-item label="排除词">
+            <el-form-item :label="t('queue.excludeKeywords')">
               <el-input
                 v-model="autoDispatchFilterForm.excludeKeywordsText"
                 clearable
-                placeholder="命中这些关键词的任务不自动执行"
+                :placeholder="t('queue.excludeKeywordsHint')"
               />
             </el-form-item>
           </el-form>
@@ -919,7 +919,7 @@
           :element-loading-text="DISPATCH_DIALOG_LOADING_TEXT"
           class="publish-dispatch-dialog__panel"
         >
-          <div class="publish-dispatch-dialog__panel-title">目标客户端</div>
+          <div class="publish-dispatch-dialog__panel-title">{{ t('queue.targetClient') }}</div>
           <div
             v-if="!autoDispatchTargetDialogLoading && autoDispatchClientRows.length"
             class="publish-dispatch-dialog__table"
@@ -933,7 +933,7 @@
               :row-class-name="getDispatchOptionRowClassName"
               @row-click="handleAutoDispatchClientRowClick"
             >
-              <el-table-column label="选择" width="56" align="center">
+              <el-table-column :label="t('queue.select')" width="56" align="center">
                 <template #default="{ row }">
                   <el-radio
                     :value="row.optionKey"
@@ -943,12 +943,12 @@
                   />
                 </template>
               </el-table-column>
-              <el-table-column label="客户端节点" min-width="124" show-overflow-tooltip>
+              <el-table-column :label="t('queue.clientNode')" min-width="124" show-overflow-tooltip>
                 <template #default="{ row }">
                   <div class="publish-dispatch-dialog__primary">{{ row.clientLabel }}</div>
                 </template>
               </el-table-column>
-              <el-table-column label="浏览器环境" min-width="180" show-overflow-tooltip>
+              <el-table-column :label="t('queue.browserEnvironment')" min-width="180" show-overflow-tooltip>
                 <template #default="{ row }">
                   <div class="publish-dispatch-dialog__primary">{{ row.profileLabel }}</div>
                   <div
@@ -959,7 +959,7 @@
                   </div>
                 </template>
               </el-table-column>
-              <el-table-column label="在线" width="76" align="center">
+              <el-table-column :label="t('queue.online')" width="76" align="center">
                 <template #default="{ row }">
                   <span
                     class="publish-dispatch-dialog__state-text"
@@ -969,7 +969,7 @@
                   </span>
                 </template>
               </el-table-column>
-              <el-table-column label="服务" width="82" align="center">
+              <el-table-column :label="t('queue.service')" width="82" align="center">
                 <template #default="{ row }">
                   <span
                     class="publish-dispatch-dialog__state-text"
@@ -979,7 +979,7 @@
                   </span>
                 </template>
               </el-table-column>
-              <el-table-column label="模式" width="76" align="center">
+              <el-table-column :label="t('queue.mode')" width="76" align="center">
                 <template #default="{ row }">
                   <span
                     class="publish-dispatch-dialog__state-text"
@@ -989,7 +989,7 @@
                   </span>
                 </template>
               </el-table-column>
-              <el-table-column label="接单" width="76" align="center">
+              <el-table-column :label="t('queue.acceptOrder')" width="76" align="center">
                 <template #default="{ row }">
                   <span
                     class="publish-dispatch-dialog__state-text"
@@ -1001,14 +1001,14 @@
               </el-table-column>
               <el-table-column
                 prop="description"
-                label="说明"
+                :label="t('queue.description')"
                 min-width="180"
                 show-overflow-tooltip
               />
             </el-table>
           </div>
           <div v-else class="publish-dispatch-dialog__empty">
-            当前没有可绑定的浏览器自动化节点。
+            {{ t('queue.noBindableNode') }}
           </div>
         </div>
       </div>
@@ -1018,7 +1018,7 @@
             :disabled="autoDispatchTargetSubmitting"
             @click="autoDispatchTargetDialogVisible = false"
           >
-            取消
+            {{ t('queue.cancel') }}
           </el-button>
           <el-button
             type="primary"
@@ -1026,7 +1026,7 @@
             :disabled="!canConfirmAutoDispatchTarget"
             @click="handleConfirmAutoDispatchTarget"
           >
-            保存并开启
+            {{ t('queue.saveAndEnable') }}
           </el-button>
         </div>
       </template>
@@ -1039,6 +1039,7 @@ import { ref, reactive, watchEffect, onMounted, onUnmounted, watch, computed } f
 import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import { useLocalStorage, useWindowSize } from "@vueuse/core";
 import { ElMessage, ElMessageBox } from "element-plus";
+import { useI18n } from '@/hooks/web/useI18n';
 import { Search, Delete, Plus, Loading } from "@element-plus/icons-vue";
 import {
   getTaskList,
@@ -1151,13 +1152,14 @@ interface DispatchOptionRow {
 }
 
 const userStore = useUserStore();
+const { t } = useI18n();
 const { clients: clientNodes, refresh: refreshClientNodes } = useClientNodeState();
 const getBrowserAutomationRuntime = (client?: Record<string, any> | null) =>
   getClientServiceRuntime(client, "browser-automation");
 const browserAutomationClients = computed(() =>
   clientNodes.value.filter((client) => !!getBrowserAutomationRuntime(client)),
 );
-const DISPATCH_DIALOG_LOADING_TEXT = "正在同步可用节点...";
+const DISPATCH_DIALOG_LOADING_TEXT = t('queue.syncingAvailableNodes');
 const {
   refresh: refreshPublishTaskRuntime,
   setAutoSchedulingEnabled: setPublishTaskAutoSchedulingEnabled,
@@ -1193,7 +1195,7 @@ const queryParams = reactive({
 // 日期范围预设快捷选项
 const dateRangeShortcuts = [
   {
-    text: "今天",
+    text: t('queue.today'),
     value: () => {
       const start = new Date();
       start.setHours(0, 0, 0, 0);
@@ -1203,7 +1205,7 @@ const dateRangeShortcuts = [
     },
   },
   {
-    text: "近24小时",
+    text: t('queue.last24Hours'),
     value: () => {
       const end = new Date();
       const start = new Date(end.getTime() - 24 * 60 * 60 * 1000);
@@ -1211,7 +1213,7 @@ const dateRangeShortcuts = [
     },
   },
   {
-    text: "近3天",
+    text: t('queue.last3Days'),
     value: () => {
       const end = new Date();
       const start = new Date(end.getTime() - 3 * 24 * 60 * 60 * 1000);
@@ -1219,7 +1221,7 @@ const dateRangeShortcuts = [
     },
   },
   {
-    text: "近7天",
+    text: t('queue.last7Days'),
     value: () => {
       const end = new Date();
       const start = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -1227,7 +1229,7 @@ const dateRangeShortcuts = [
     },
   },
   {
-    text: "近30天",
+    text: t('queue.last30Days'),
     value: () => {
       const end = new Date();
       const start = new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -1235,7 +1237,7 @@ const dateRangeShortcuts = [
     },
   },
   {
-    text: "近90天",
+    text: t('queue.last90Days'),
     value: () => {
       const end = new Date();
       const start = new Date(end.getTime() - 90 * 24 * 60 * 60 * 1000);
@@ -1280,17 +1282,17 @@ const gridOptions = ref({
   },
   columns: [
     { type: "checkbox", width: 50, ellipsis: true, reserve: true },
-    { title: "任务ID", field: "id", minWidth: 200, showOverflow: true },
-    { title: "任务类型", field: "type", width: 240 },
+    { title: t('queue.taskId'), field: "id", minWidth: 200, showOverflow: true },
+    { title: t('queue.taskType'), field: "type", width: 240 },
     {
-      title: "创建人",
+      title: t('queue.creator'),
       field: "uploader",
       width: 140,
       showOverflow: true,
       formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
     },
     {
-      title: "任务描述",
+      title: t('queue.taskDescription'),
       field: "description",
       minWidth: 200,
       showOverflow: true,
@@ -1299,7 +1301,7 @@ const gridOptions = ref({
       },
     },
     {
-      title: "状态",
+      title: t('queue.status'),
       field: "status",
       width: 100,
       slots: {
@@ -1307,7 +1309,7 @@ const gridOptions = ref({
       },
     },
     {
-      title: "可执行状态",
+      title: t('queue.executionStatus'),
       field: "executionStatus",
       width: 120,
       slots: {
@@ -1315,7 +1317,7 @@ const gridOptions = ref({
       },
     },
     {
-      title: "执行节点",
+      title: t('queue.executionNode'),
       field: "dispatchTarget",
       minWidth: 220,
       slots: {
@@ -1323,14 +1325,14 @@ const gridOptions = ref({
       },
     },
     {
-      title: "状态说明",
+      title: t('queue.statusMessage'),
       field: "statusMessage",
       minWidth: 280,
       showOverflow: true,
       formatter: ({ row }) => resolveQueueTaskStatusMessage(row),
     },
     {
-      title: "创建时间",
+      title: t('queue.createdAt'),
       field: "createdAt",
       width: 180,
       showOverflow: true,
@@ -1339,7 +1341,7 @@ const gridOptions = ref({
       },
     },
     {
-      title: "更新时间",
+      title: t('queue.updatedAt'),
       field: "updatedAt",
       width: 180,
       showOverflow: true,
@@ -1348,7 +1350,7 @@ const gridOptions = ref({
       },
     },
     {
-      title: "错误信息",
+      title: t('queue.errorMessage'),
       field: "error",
       minWidth: 200,
       showOverflow: true,
@@ -1403,7 +1405,7 @@ let queueStatsRequestSeq = 0;
 
 // 对话框相关
 const dialogVisible = ref(false);
-const dialogTitle = ref("新增任务");
+const dialogTitle = ref(t('queue.addTask'));
 const formRef = ref();
 const formData = reactive({
   type: "",
@@ -1413,16 +1415,16 @@ const formData = reactive({
 });
 
 const formRules = {
-  type: [{ required: true, message: "请输入任务类型", trigger: "blur" }],
+  type: [{ required: true, message: t('queue.enterTaskType'), trigger: "blur" }],
   dataStr: [
-    { required: true, message: "请输入任务数据", trigger: "blur" },
+    { required: true, message: t('queue.enterTaskData'), trigger: "blur" },
     {
       validator: (_rule, value, callback) => {
         try {
           JSON.parse(value);
           callback();
         } catch {
-          callback(new Error("请输入有效的JSON格式"));
+          callback(new Error(t('queue.validJsonFormat')));
         }
       },
       trigger: "blur",
@@ -1442,8 +1444,8 @@ const statusFormData = reactive({
 });
 
 const statusFormRules = {
-  newStatus: [{ required: true, message: "请选择新状态", trigger: "change" }],
-  error: [{ required: true, message: "请输入错误信息", trigger: "blur" }],
+  newStatus: [{ required: true, message: t('queue.selectNewStatus'), trigger: "change" }],
+  error: [{ required: true, message: t('queue.enterErrorMessage'), trigger: "blur" }],
 };
 
 // 查看数据对话框
@@ -1487,7 +1489,7 @@ const parsedUpdateData = computed(() => {
   try {
     return JSON.parse(dataUpdateFormData.dataStr);
   } catch (e) {
-    return { error: "Invalid JSON format (解析异常...)" };
+    return { error: t('queue.invalidJsonHint') };
   }
 });
 
@@ -1504,10 +1506,10 @@ const publishTaskRunningCount = computed(() => Number(stats.value.processing || 
 
 const publishTaskAutoDispatchStatusText = computed(() => {
   if (publishTaskRunningCount.value > 0) {
-    return `执行中 ${publishTaskRunningCount.value} 条`;
+    return t('queue.runningCount', { count: publishTaskRunningCount.value });
   }
 
-  return publishTaskAutoDispatchEnabled.value ? "客户端轮询中" : "已关闭";
+  return publishTaskAutoDispatchEnabled.value ? t('queue.clientPolling') : t('queue.disabled');
 });
 
 const publishTaskAutoDispatchStatusClass = computed(() => ({
@@ -1528,7 +1530,7 @@ const publishTaskAutoDispatchTargetText = computed(() => {
     ? formatClientNodeName(publishTaskAutoDispatchTargetClient.value)
     : autoDispatchTargetClientId.value || null;
   if (!clientLabel) {
-    return "未设置客户端";
+    return t('queue.noClientSet');
   }
 
   const runningRow = currentAutoDispatchRunningRows.value[0];
@@ -1551,17 +1553,17 @@ const publishTaskAutoDispatchTargetHint = computed(() => {
   const runningCount = currentAutoDispatchRunningRows.value.length;
   const client = publishTaskAutoDispatchTargetClient.value;
   if (!autoDispatchTargetClientId.value) {
-    return "当前尚未绑定自动执行目标";
+    return t('queue.autoDispatchNotBound');
   }
   if (!client) {
-    return "目标客户端当前不在已连接列表中";
+    return t('queue.targetClientNotConnected');
   }
   if (!client.isOnline) {
-    return "目标客户端当前离线";
+    return t('queue.targetClientOffline');
   }
   const runtime = getBrowserAutomationRuntime(client) as Record<string, any>;
   if (!(runtime?.available || runtime?.connected)) {
-    return "浏览器自动化服务未就绪";
+    return t('queue.browserAutomationNotReady');
   }
   const matchedRow =
     autoDispatchClientRows.value.find(
@@ -1570,8 +1572,8 @@ const publishTaskAutoDispatchTargetHint = computed(() => {
         item.profileId === normalizeDispatchProfileId(autoDispatchTargetProfileId.value),
     ) ||
     null;
-  const baseText = matchedRow?.description || "目标客户端环境已绑定";
-  return runningCount > 0 ? `${baseText}，当前运行 ${runningCount} 条任务` : baseText;
+  const baseText = matchedRow?.description || t('queue.targetClientBound');
+  return runningCount > 0 ? t('queue.currentRunningTasks', { baseText, count: runningCount }) : baseText;
 });
 
 const publishTaskAutoDispatchFilterSummary = computed(() =>
@@ -1642,7 +1644,7 @@ const dispatchAvailableRows = computed<ManualDispatchOptionRow[]>(() => {
           : [
               {
                 profileId: null,
-                label: "无可用环境",
+                label: t('queue.noAvailableEnvironment'),
                 description: taskState.text,
                 enabled: false,
                 connected: !!getBrowserAutomationRuntime(client)?.available,
@@ -1696,9 +1698,9 @@ const autoDispatchClientRows = computed<DispatchOptionRow[]>(() =>
         : [
             {
               profileId: null,
-              label: "无可用环境",
+              label: t('queue.noAvailableEnvironment'),
               description: clientReady
-                ? "客户端未上报浏览器环境，请先同步环境"
+                ? t('queue.clientNoBrowserEnv')
                 : resolveAutoDispatchUnavailableReason(client),
               enabled: false,
               connected: false,
@@ -1721,13 +1723,13 @@ const autoDispatchClientRows = computed<DispatchOptionRow[]>(() =>
           profileTag: getDispatchProfileTag(client, option),
           runtimeModeTag: option.runtimeModeTag || getDispatchProfileRuntimeModeTag(null),
           acceptTag: selectable
-            ? ({ text: "可接单", type: "success" } as DispatchStatusTag)
-            : ({ text: "不可用", type: clientReady ? "warning" : "info" } as DispatchStatusTag),
+            ? ({ text: t('queue.acceptable'), type: "success" } as DispatchStatusTag)
+            : ({ text: t('queue.unavailable'), type: clientReady ? "warning" : "info" } as DispatchStatusTag),
           description:
             autoDispatchEnabled === false
-              ? "该客户端已关闭自动执行接单"
+              ? t('queue.clientAutoDispatchClosed')
               : clientReady
-                ? option.description || "目标客户端会使用该浏览器环境领取任务"
+                ? option.description || t('queue.targetClientClaimTask')
                 : resolveAutoDispatchUnavailableReason(client),
           selectable,
         };
@@ -1822,8 +1824,8 @@ function getPublishDispatchMeta(row?: QueueMessage | null) {
     return {
       ...normalizedMeta,
       status: "timeout",
-      currentStep: normalizedMeta.currentStep || "执行心跳超时",
-      lastError: normalizedMeta.lastError || "长时间未收到任务心跳，任务可能已中断",
+      currentStep: normalizedMeta.currentStep || t('queue.executionHeartbeatTimeout'),
+      lastError: normalizedMeta.lastError || t('queue.executionHeartbeatLost'),
     };
   }
 
@@ -1908,7 +1910,7 @@ function getDispatchProfileRuntimeModeTag(
   options: { isAuto?: boolean } = {},
 ): DispatchStatusTag {
   if (options.isAuto) {
-    return { text: "自动", type: "info" };
+    return { text: t('queue.auto'), type: "info" };
   }
   const started = !!(
     instance?.hasInstance ||
@@ -1917,19 +1919,19 @@ function getDispatchProfileRuntimeModeTag(
     instance?.connecting
   );
   if (!started) {
-    return { text: "未启动", type: "info" };
+    return { text: t('queue.notStarted'), type: "info" };
   }
   if (instance?.headless === true) {
-    return { text: "无头", type: "warning" };
+    return { text: t('queue.headless'), type: "warning" };
   }
   if (instance?.headless === false) {
-    return { text: "普通", type: "success" };
+    return { text: t('queue.normal'), type: "success" };
   }
-  return { text: "未知", type: "info" };
+  return { text: t('queue.unknown'), type: "info" };
 }
 
 function getDispatchClientOnlineTag(client: any): DispatchStatusTag {
-  return client?.isOnline ? { text: "在线", type: "success" } : { text: "离线", type: "info" };
+  return client?.isOnline ? { text: t('queue.online'), type: "success" } : { text: t('queue.offline'), type: "info" };
 }
 
 function getDispatchClientServiceTag(client: any): DispatchStatusTag {
@@ -1937,16 +1939,16 @@ function getDispatchClientServiceTag(client: any): DispatchStatusTag {
   const status = String(runtime?.status || "").trim();
 
   if (!client?.isOnline) {
-    return { text: "离线", type: "info" };
+    return { text: t('queue.offline'), type: "info" };
   }
   if (status === "error") {
-    return { text: "异常", type: "danger" };
+    return { text: t('queue.abnormal'), type: "danger" };
   }
   if (runtime?.available || runtime?.connected) {
-    return { text: "已开启", type: "success" };
+    return { text: t('queue.enabled'), type: "success" };
   }
 
-  return { text: "未开启", type: "warning" };
+  return { text: t('queue.notEnabled'), type: "warning" };
 }
 
 function getDispatchProfileTag(
@@ -1958,30 +1960,30 @@ function getDispatchProfileTag(
   const normalizedTaskType = String(taskType || "").trim();
 
   if (!client?.isOnline) {
-    return { text: "不可用", type: "info" };
+    return { text: t('queue.unavailable'), type: "info" };
   }
   if (!(runtime?.available || runtime?.connected)) {
-    return { text: "不可用", type: "warning" };
+    return { text: t('queue.unavailable'), type: "warning" };
   }
   if (normalizedTaskType && !supportsTaskType(client, normalizedTaskType)) {
-    return { text: "不支持", type: "warning" };
+    return { text: t('queue.notSupported'), type: "warning" };
   }
   if (option.busy) {
-    return { text: "繁忙", type: "warning" };
+    return { text: t('queue.busy'), type: "warning" };
   }
 
-  return { text: "空闲", type: "success" };
+  return { text: t('queue.idle'), type: "success" };
 }
 
 function resolveAutoDispatchUnavailableReason(client: any) {
   const runtime = getBrowserAutomationRuntime(client) as Record<string, any>;
   if (!client?.isOnline) {
-    return "客户端离线";
+    return t('queue.clientOffline');
   }
   if (!(runtime?.available || runtime?.connected)) {
-    return "浏览器自动化服务未就绪";
+    return t('queue.browserAutomationNotReady');
   }
-  return "目标客户端暂不可接单";
+  return t('queue.targetClientNotAccepting');
 }
 
 function formatDispatchProfileLabel(profileId: string, profile?: Record<string, any> | null) {
@@ -1990,7 +1992,7 @@ function formatDispatchProfileLabel(profileId: string, profile?: Record<string, 
   return `${profileName}${profileId ? ` (${profileId})` : ""}`;
 }
 
-function extractRequestErrorMessage(error: any, fallback = "操作失败") {
+function extractRequestErrorMessage(error: any, fallback = t('queue.operationFailed')) {
   return error?.response?.data?.message || error?.message || fallback;
 }
 
@@ -2035,13 +2037,13 @@ function resolveClientDispatchProfileOptions(
     const connected = instance?.connected === true || instance?.hasInstance === true;
     const pageCount = typeof instance?.pageCount === "number" ? Number(instance.pageCount) : null;
 
-    let description = "浏览器未打开，执行时会自动拉起";
+    let description = t('queue.browserWillLaunch');
     if (busy) {
       description = instance?.currentTaskId
-        ? `当前执行中，任务 ${instance.currentTaskId}`
-        : "当前环境正在执行任务";
+        ? t('queue.currentlyExecutingTask', { id: instance.currentTaskId })
+        : t('queue.envExecutingTask');
     } else if (connected) {
-      description = pageCount !== null ? `浏览器已打开，当前 ${pageCount} 个页面` : "浏览器已打开";
+      description = pageCount !== null ? t('queue.browserOpenPages', { count: pageCount }) : t('queue.browserOpened');
     }
 
     return {
@@ -2063,12 +2065,12 @@ function resolveClientDispatchProfileOptions(
   return [
     {
       profileId: null,
-      label: "自动选择",
+      label: t('queue.autoSelect'),
       description: orderedProfileIds.length
         ? autoEnabled
-          ? `由客户端在 ${enabledConcreteOptions.length} 个空闲浏览器配置中自动选择`
-          : "当前没有空闲浏览器配置可供自动选择"
-        : "当前客户端未上报浏览器配置，将由客户端自行选择",
+          ? t('queue.autoSelectFromIdle', { count: enabledConcreteOptions.length })
+          : t('queue.noIdleBrowserConfig')
+        : t('queue.clientNoReportConfig'),
       enabled: autoEnabled,
       connected: !!runtime?.available,
       busy: !autoEnabled,
@@ -2105,17 +2107,17 @@ function getClientTaskTypeState(client: any, taskType?: string) {
   if (!taskType) {
     return {
       enabled: false,
-      text: "任务类型未知",
+      text: t('queue.taskTypeUnknown'),
       tagType: "info" as QueueTagType,
-      tagText: "未知",
+      tagText: t('queue.unknown'),
     } satisfies DispatchClientState;
   }
   if (!client?.isOnline) {
     return {
       enabled: false,
-      text: "客户端离线",
+      text: t('queue.clientOffline'),
       tagType: "info" as QueueTagType,
-      tagText: "离线",
+      tagText: t('queue.offline'),
     } satisfies DispatchClientState;
   }
   const runtime = getBrowserAutomationRuntime(client);
@@ -2123,17 +2125,17 @@ function getClientTaskTypeState(client: any, taskType?: string) {
   if (!(runtime?.available || runtime?.connected)) {
     return {
       enabled: false,
-      text: runtimeHint ? `自动化服务不可用，${runtimeHint}` : "自动化服务不可用",
+      text: runtimeHint ? t('queue.automationServiceUnavailableHint', { reason: runtimeHint }) : t('queue.automationServiceUnavailable'),
       tagType: "warning" as QueueTagType,
-      tagText: "未就绪",
+      tagText: t('queue.notReady'),
     } satisfies DispatchClientState;
   }
   if (!supportsTaskType(client, taskType)) {
     return {
       enabled: false,
-      text: "当前节点不支持该任务类型",
+      text: t('queue.nodeNotSupportTaskType'),
       tagType: "warning" as QueueTagType,
-      tagText: "不支持",
+      tagText: t('queue.notSupported'),
     } satisfies DispatchClientState;
   }
   const profileOptions = resolveClientDispatchProfileOptions(client, taskType).filter(
@@ -2144,9 +2146,9 @@ function getClientTaskTypeState(client: any, taskType?: string) {
     if (!enabledProfiles.length) {
       return {
         enabled: false,
-        text: "当前节点环境都在忙碌中，请稍后再试",
+        text: t('queue.allEnvironmentsBusy'),
         tagType: "warning" as QueueTagType,
-        tagText: "忙碌",
+        tagText: t('queue.busy'),
       } satisfies DispatchClientState;
     }
     const connectedCount = enabledProfiles.filter((item) => item.connected).length;
@@ -2154,25 +2156,25 @@ function getClientTaskTypeState(client: any, taskType?: string) {
       enabled: true,
       text:
         connectedCount > 0
-          ? `可执行环境 ${enabledProfiles.length} 个，其中已打开 ${connectedCount} 个`
-          : `可执行环境 ${enabledProfiles.length} 个，任务执行时会自动拉起浏览器`,
+          ? t('queue.executableEnvironmentsWithOpened', { count: enabledProfiles.length, opened: connectedCount })
+          : t('queue.executableEnvironmentsAutoLaunch', { count: enabledProfiles.length }),
       tagType: "success" as QueueTagType,
-      tagText: "可执行",
+      tagText: t('queue.executable'),
     } satisfies DispatchClientState;
   }
   if (isBrowserAutomationClientBusy(client)) {
     return {
       enabled: false,
-      text: runtimeHint ? `节点当前忙碌中，${runtimeHint}` : "节点当前忙碌中",
+      text: runtimeHint ? t('queue.nodeBusyHint', { reason: runtimeHint }) : t('queue.nodeBusy'),
       tagType: "warning" as QueueTagType,
-      tagText: "忙碌",
+      tagText: t('queue.busy'),
     } satisfies DispatchClientState;
   }
   return {
     enabled: true,
-    text: "可立即执行",
+    text: t('queue.readyToExecute'),
     tagType: "success" as QueueTagType,
-    tagText: "可执行",
+    tagText: t('queue.executable'),
   } satisfies DispatchClientState;
 }
 
@@ -2204,11 +2206,11 @@ function getStatusType(status: QueueMessage["status"]) {
 // 获取状态文本
 function getStatusText(status: QueueMessage["status"]) {
   const map = {
-    pending: "待处理",
-    waiting: "等待中",
-    processing: "处理中",
-    completed: "已完成",
-    failed: "失败",
+    pending: t('queue.pending'),
+    waiting: t('queue.waiting'),
+    processing: t('queue.processing'),
+    completed: t('queue.completed'),
+    failed: t('queue.failed'),
   };
   return map[status] || status;
 }
@@ -2251,13 +2253,13 @@ function getQueueTaskDispatchTargetText(row?: QueueMessage | null) {
     return "-";
   }
 
-  return target.machineCode || target.clientId || "未知客户端";
+  return target.machineCode || target.clientId || t('queue.unknownClient');
 }
 
 function getQueueTaskDispatchTargetHint(row?: QueueMessage | null) {
   const meta = getPublishDispatchMeta(row);
   const hints = [
-    meta?.status ? `调度状态: ${meta.status}` : "",
+    meta?.status ? t('queue.dispatchStatus', { status: meta.status }) : "",
     meta?.currentStep ? String(meta.currentStep) : "",
   ]
     .map((item) => String(item || "").trim())
@@ -2291,7 +2293,7 @@ function resolveQueueTaskStatusMessage(row?: QueueMessage | null) {
   }
 
   if (dispatchStatus === "timeout") {
-    return lastError || currentStep || "执行超时";
+    return lastError || currentStep || t('queue.executionTimeout');
   }
 
   if (currentStep) {
@@ -2300,15 +2302,15 @@ function resolveQueueTaskStatusMessage(row?: QueueMessage | null) {
 
   switch (normalizedStatus) {
     case "completed":
-      return "执行完成";
+      return t('queue.executionCompleted');
     case "failed":
-      return lastError || "执行失败";
+      return lastError || t('queue.executionFailed');
     case "processing":
-      return "执行中";
+      return t('queue.processing');
     case "waiting":
-      return "等待服务端准备";
+      return t('queue.waitingServerPrepare');
     case "pending":
-      return getExecutionStatusInfo(row as QueueMessage).reason || "待处理";
+      return getExecutionStatusInfo(row as QueueMessage).reason || t('queue.pending');
     default:
       return lastError || "-";
   }
@@ -2483,7 +2485,7 @@ function formatLogData(value: any) {
 function openRuntimeLogData(log: any, index: number) {
   runtimeLogDataDialogMeta.time = formatLogTimestamp(log?.time || log?.timestamp);
   runtimeLogDataDialogMeta.level = String(log?.level || "info").toUpperCase();
-  runtimeLogDataDialogMeta.message = String(log?.message || `日志 #${index + 1}`);
+  runtimeLogDataDialogMeta.message = String(log?.message || t('queue.logN', { n: index + 1 }));
   runtimeLogDataDialogText.value = formatLogData(log?.data);
   runtimeLogDataDialogVisible.value = true;
 }
@@ -2612,7 +2614,7 @@ async function getList(options?: unknown) {
   } catch (error: any) {
     if (requestSeq === queueListRequestSeq) {
       if (!silent) {
-        ElMessage.error(error?.message || "获取列表失败");
+        ElMessage.error(error?.message || t('queue.fetchListFailed'));
         dataSource.value = [];
         total.value = 0;
       }
@@ -2746,7 +2748,7 @@ function handleTypeClear() {
 
 // 新增
 function handleAdd() {
-  dialogTitle.value = "新增任务";
+  dialogTitle.value = t('queue.addTask');
   dialogVisible.value = true;
   // 延迟重置表单，确保 dialogVisible 已更新
   setTimeout(() => {
@@ -2768,7 +2770,7 @@ function normalizeTaskDetailMessageResponse(payload: any) {
   if (payload && typeof payload === "object" && !Array.isArray(payload)) {
     if ("success" in payload) {
       if (payload.success === false) {
-        throw new Error(String(payload.message || "获取任务详情失败"));
+        throw new Error(String(payload.message || t('queue.fetchTaskDetailFailed')));
       }
       return payload.data;
     }
@@ -2835,7 +2837,7 @@ async function refreshRuntimeLogDialogDetail(options: { silent?: boolean } = {})
     await fetchTaskDetailPayload(queue, messageId, { silent: options.silent });
   } catch (error) {
     if (!options.silent) {
-      ElMessage.warning("运行日志获取失败，已显示最近一次日志快照");
+      ElMessage.warning(t('queue.fetchRuntimeLogFailed'));
     }
   } finally {
     if (!options.silent) {
@@ -2868,7 +2870,7 @@ async function handleViewData(row: QueueMessage) {
   } catch (error) {
     currentTaskData.value = parseMaybeJson(row?.data) ?? row?.data ?? {};
     currentTaskRuntimeLog.value = normalizeTaskRuntimeLogRecord(row?.taskRuntimeLog) ?? null;
-    ElMessage.warning("任务详情获取失败，已显示列表中的数据快照");
+    ElMessage.warning(t('queue.fetchTaskDetailSnapshot'));
   } finally {
     dataDialogLoading.value = false;
   }
@@ -2889,7 +2891,7 @@ async function handleViewRuntimeLogs(row: QueueMessage) {
   } catch (error) {
     currentTaskData.value = parseMaybeJson(row?.data) ?? row?.data ?? {};
     currentTaskRuntimeLog.value = normalizeTaskRuntimeLogRecord(row?.taskRuntimeLog) ?? null;
-    ElMessage.warning("运行日志获取失败，已显示列表中的数据快照");
+    ElMessage.warning(t('queue.fetchRuntimeLogSnapshot'));
   } finally {
     runtimeLogDialogLoading.value = false;
   }
@@ -2898,7 +2900,7 @@ async function handleViewRuntimeLogs(row: QueueMessage) {
 function openPublishDispatchDialog(row: QueueMessage) {
   const executionStatus = getExecutionStatusInfo(row);
   if (!executionStatus.ready) {
-    ElMessage.warning(executionStatus.reason || "当前任务尚未满足执行条件");
+    ElMessage.warning(executionStatus.reason || t('queue.taskNotReady'));
     return;
   }
 
@@ -2977,25 +2979,25 @@ function getAutoDispatchFilterSummary(filter?: Partial<PublishTaskAutoDispatchFi
   const excludeCount = Array.isArray(filter?.excludeKeywords) ? filter.excludeKeywords.length : 0;
 
   if (taskTypeCount > 0) {
-    parts.push(`${taskTypeCount} 类任务`);
+    parts.push(t('queue.taskTypeCount', { count: taskTypeCount }));
   }
   if (includeCount > 0) {
-    parts.push(`包含 ${includeCount}`);
+    parts.push(t('queue.includesCount', { count: includeCount }));
   }
   if (excludeCount > 0) {
-    parts.push(`排除 ${excludeCount}`);
+    parts.push(t('queue.excludesCount', { count: excludeCount }));
   }
   if (filter?.createdAfter || filter?.createdBefore) {
-    parts.push("限定时间");
+    parts.push(t('queue.timeLimited'));
   }
 
-  return parts.length ? `过滤：${parts.join(" / ")}` : "过滤：全部待处理";
+  return parts.length ? `${t('queue.filterPrefix')}${parts.join(" / ")}` : t('queue.filterAllPending');
 }
 
 function getAutoDispatchTaskTypeLabel(type: string) {
   const normalizedType = String(type || "").trim();
   const matched = publishTaskTypeOptions.value.find((item) => item.value === normalizedType);
-  return matched?.label ? `${matched.label}（${normalizedType}）` : normalizedType;
+  return matched?.label ? t('queue.taskTypeLabelWithType', { label: matched.label, type: normalizedType }) : normalizedType;
 }
 
 function getAutoDispatchFilterDetail(filter?: Partial<PublishTaskAutoDispatchFilter> | null) {
@@ -3012,12 +3014,19 @@ function getAutoDispatchFilterDetail(filter?: Partial<PublishTaskAutoDispatchFil
   const createdBefore = String(filter?.createdBefore || "").trim();
 
   return [
-    `任务类型：${
-      taskTypes.length ? taskTypes.map(getAutoDispatchTaskTypeLabel).join("、") : "全部"
-    }`,
-    `创建时间：${createdAfter || "不限"} 至 ${createdBefore || "不限"}`,
-    `包含词：${includeKeywords.length ? includeKeywords.join("、") : "无"}`,
-    `排除词：${excludeKeywords.length ? excludeKeywords.join("、") : "无"}`,
+    t('queue.filterTaskTypes', {
+      value: taskTypes.length ? taskTypes.map(getAutoDispatchTaskTypeLabel).join("、") : t('queue.all'),
+    }),
+    t('queue.filterCreatedTime', {
+      start: createdAfter || t('queue.unlimited'),
+      end: createdBefore || t('queue.unlimited'),
+    }),
+    t('queue.filterIncludeKeywords', {
+      value: includeKeywords.length ? includeKeywords.join("、") : t('queue.none'),
+    }),
+    t('queue.filterExcludeKeywords', {
+      value: excludeKeywords.length ? excludeKeywords.join("、") : t('queue.none'),
+    }),
   ].join("\n");
 }
 
@@ -3074,11 +3083,11 @@ async function handleConfirmPublishDispatch() {
   }
   const selectedRow = selectedDispatchRow.value;
   if (!selectedRow) {
-    ElMessage.warning("请选择一个客户端节点");
+    ElMessage.warning(t('queue.selectClientNode'));
     return;
   }
   if (!selectedRow.selectable) {
-    ElMessage.warning("请选择一个可执行节点");
+    ElMessage.warning(t('queue.selectExecutableNode'));
     return;
   }
 
@@ -3089,17 +3098,17 @@ async function handleConfirmPublishDispatch() {
     !selectedClient ||
     !getClientTaskTypeState(selectedClient, dispatchTargetTask.value.type).enabled
   ) {
-    ElMessage.warning("当前选中的节点已不可执行，请重新选择");
+    ElMessage.warning(t('queue.selectedNodeNotExecutable'));
     return;
   }
 
   try {
     await ElMessageBox.confirm(
-      `确认由客户端 ${formatClientNodeName(selectedClient)} 开始执行该发布任务吗？`,
-      "开始执行确认",
+      t('queue.confirmStartPublishTask', { client: formatClientNodeName(selectedClient) }),
+      t('queue.startExecutionConfirm'),
       {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
+        confirmButtonText: t('queue.confirm'),
+        cancelButtonText: t('queue.cancel'),
         type: "info",
       },
     );
@@ -3114,11 +3123,11 @@ async function handleConfirmPublishDispatch() {
       profileId: selectedRow.profileId || undefined,
     });
     schedulePublishTaskMenuRuntimeSync();
-    ElMessage.success("发布任务已分配到客户端执行");
+    ElMessage.success(t('queue.taskAssignedToClient'));
     publishDispatchDialogVisible.value = false;
     await refreshPublishDispatchPageState();
   } catch (error: any) {
-    ElMessage.error(extractRequestErrorMessage(error, "发布任务分发失败"));
+    ElMessage.error(extractRequestErrorMessage(error, t('queue.taskDispatchFailed')));
   } finally {
     publishDispatchSubmitting.value = false;
   }
@@ -3127,11 +3136,11 @@ async function handleConfirmPublishDispatch() {
 async function handleConfirmAutoDispatchTarget() {
   const selectedRow = selectedAutoDispatchClientRow.value;
   if (!selectedRow?.selectable) {
-    ElMessage.warning("请选择一个可接单的客户端环境");
+    ElMessage.warning(t('queue.selectAcceptableClientEnv'));
     return;
   }
   if (!selectedRow.profileId) {
-    ElMessage.warning("请选择一个明确的浏览器环境");
+    ElMessage.warning(t('queue.selectBrowserEnv'));
     return;
   }
 
@@ -3152,16 +3161,16 @@ async function handleConfirmAutoDispatchTarget() {
 
     schedulePublishTaskMenuRuntimeSync();
     if (triggerResult?.success === false) {
-      ElMessage.warning(triggerResult?.message || "已保存自动执行设置，但立即触发失败");
+      ElMessage.warning(triggerResult?.message || t('queue.savedButTriggerFailed'));
     } else {
-      ElMessage.success(triggerResult?.message || "已保存自动执行设置并开启");
+      ElMessage.success(triggerResult?.message || t('queue.savedAndEnabled'));
     }
     await refreshPublishDispatchPageState({
       includeAutoDispatchSetting: true,
       includeSchedulerRuntime: true,
     });
   } catch (error: any) {
-    ElMessage.error(error?.message || "保存自动执行设置失败");
+    ElMessage.error(error?.message || t('queue.saveAutoDispatchFailed'));
   } finally {
     autoDispatchTargetSubmitting.value = false;
     publishTaskAutoDispatchLoading.value = false;
@@ -3188,13 +3197,13 @@ async function handleTogglePublishAutoDispatch(enabled: boolean) {
       filter: buildAutoDispatchFilterFromForm(),
     });
     applyPublishTaskAutoDispatchSettingState(setting);
-    ElMessage.success("已关闭自动执行");
+    ElMessage.success(t('queue.autoDispatchClosed'));
     await refreshPublishDispatchPageState({
       includeAutoDispatchSetting: true,
       includeSchedulerRuntime: true,
     });
   } catch (error: any) {
-    ElMessage.error(error?.message || "更新自动执行开关失败");
+    ElMessage.error(error?.message || t('queue.updateAutoDispatchToggleFailed'));
   } finally {
     publishTaskAutoDispatchLoading.value = false;
   }
@@ -3404,7 +3413,7 @@ function applyPublishTaskCommandResultEvent(event: ServiceCommandResultEvent) {
             ...currentDispatchMeta,
             status: "completed",
             assignedClientId: event.clientId || currentDispatchMeta.assignedClientId || null,
-            currentStep: event.message || "执行完成",
+            currentStep: event.message || t('queue.executionCompleted'),
             progress: 100,
             lastHeartbeatAt: event.finishedAt || new Date().toISOString(),
             finishedAt: event.finishedAt || new Date().toISOString(),
@@ -3422,20 +3431,20 @@ function applyPublishTaskCommandResultEvent(event: ServiceCommandResultEvent) {
 function handleDelete(row?: QueueMessage) {
   if (deleteLoading.value) return;
   if (!userStore.user?.isAdmin) {
-    return ElMessage.warning("无权限：仅管理员可执行删除操作");
+    return ElMessage.warning(t('queue.noPermissionDelete'));
   }
   let delIds: string[] = [];
   if (row) {
     delIds = [row.id];
   } else if (!ids.value.length) {
-    return ElMessage.warning("请选择要删除的数据");
+    return ElMessage.warning(t('queue.selectDataToDelete'));
   } else {
     delIds = [...ids.value];
   }
 
-  ElMessageBox.confirm(`确认删除选中的${delIds.length}条数据吗`, "删除提示", {
-    confirmButtonText: "确认",
-    cancelButtonText: "取消",
+  ElMessageBox.confirm(t('queue.confirmDeleteData', { count: delIds.length }), t('queue.deleteTip'), {
+    confirmButtonText: t('queue.confirm'),
+    cancelButtonText: t('queue.cancel'),
     type: "error",
   })
     .then(async () => {
@@ -3447,11 +3456,11 @@ function handleDelete(row?: QueueMessage) {
             await deleteTask(task.queue, id);
           }
         }
-        ElMessage.success("删除成功");
+        ElMessage.success(t('queue.deleteSuccess'));
         await getList();
         await refreshStats();
       } catch (error) {
-        ElMessage.error("删除失败");
+        ElMessage.error(t('queue.deleteFailed'));
       } finally {
         deleteLoading.value = false;
       }
@@ -3463,23 +3472,23 @@ async function handleBatchResetPublishTasksToPending() {
   if (batchResetPendingLoading.value) return;
   const selectedRows = getSelectedQueueRows();
   if (!selectedRows.length) {
-    return ElMessage.warning("请选择要重置的平台任务");
+    return ElMessage.warning(t('queue.selectTaskToReset'));
   }
 
   const publishRows = selectedRows.filter((row) => isPublishTaskRow(row));
   const ignoredNonPublishCount = selectedRows.length - publishRows.length;
   if (!publishRows.length) {
-    return ElMessage.warning("选中的数据里没有平台发布任务");
+    return ElMessage.warning(t('queue.noPublishTaskSelected'));
   }
 
   try {
     await ElMessageBox.confirm(
-      `确认将选中的 ${publishRows.length} 条平台任务重置为未运行吗？执行中的任务会自动跳过。`,
-      "批量重置为未运行",
+      t('queue.confirmBatchReset', { count: publishRows.length }),
+      t('queue.batchResetToPending'),
       {
         type: "warning",
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
+        confirmButtonText: t('queue.confirm'),
+        cancelButtonText: t('queue.cancel'),
       },
     );
 
@@ -3491,11 +3500,11 @@ async function handleBatchResetPublishTasksToPending() {
     const skippedCount = skipped.length + ignoredNonPublishCount;
 
     if (updated > 0 && skippedCount > 0) {
-      ElMessage.warning(`已重置 ${updated} 条，跳过 ${skippedCount} 条`);
+      ElMessage.warning(t('queue.resetSkipped', { updated, skipped: skippedCount }));
     } else if (updated > 0) {
-      ElMessage.success(`已重置 ${updated} 条平台任务`);
+      ElMessage.success(t('queue.resetPlatformTasks', { count: updated }));
     } else {
-      ElMessage.warning(skipped[0]?.reason || "没有可重置的平台任务");
+      ElMessage.warning(skipped[0]?.reason || t('queue.noTaskToReset'));
     }
 
     schedulePublishTaskMenuRuntimeSync();
@@ -3504,7 +3513,7 @@ async function handleBatchResetPublishTasksToPending() {
     if (error === "cancel" || error === "close") {
       return;
     }
-    ElMessage.error(error?.message || "批量重置失败");
+    ElMessage.error(error?.message || t('queue.batchResetFailed'));
   } finally {
     batchResetPendingLoading.value = false;
   }
@@ -3514,7 +3523,7 @@ async function handleBatchRegeneratePublishTasks() {
   if (batchRegenerateLoading.value) return;
   const selectedRows = getSelectedQueueRows();
   if (!selectedRows.length) {
-    return ElMessage.warning("请选择要重新生成的平台任务");
+    return ElMessage.warning(t('queue.selectTaskToRegenerate'));
   }
 
   const publishRows = selectedRows.filter((row) =>
@@ -3522,17 +3531,17 @@ async function handleBatchRegeneratePublishTasks() {
   );
   const ignoredNonPublishCount = selectedRows.length - publishRows.length;
   if (!publishRows.length) {
-    return ElMessage.warning("选中的数据里没有可重新生成的平台发布任务");
+    return ElMessage.warning(t('queue.noRegenerableTask'));
   }
 
   try {
     await ElMessageBox.confirm(
-      `确认重新生成选中的 ${publishRows.length} 条平台任务吗？系统会清理旧发布数据、错误和日志，并重新进入准备流程；执行中的任务会自动跳过。`,
-      "批量重新生成发布数据",
+      t('queue.confirmBatchRegenerate', { count: publishRows.length }),
+      t('queue.batchRegenerateTitle'),
       {
         type: "warning",
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
+        confirmButtonText: t('queue.confirm'),
+        cancelButtonText: t('queue.cancel'),
       },
     );
 
@@ -3544,11 +3553,11 @@ async function handleBatchRegeneratePublishTasks() {
     const skippedCount = skipped.length + ignoredNonPublishCount;
 
     if (updated > 0 && skippedCount > 0) {
-      ElMessage.warning(`已提交重新生成 ${updated} 条，跳过 ${skippedCount} 条`);
+      ElMessage.warning(t('queue.regenerateSubmittedSkipped', { count: updated, skipped: skippedCount }));
     } else if (updated > 0) {
-      ElMessage.success(`已提交重新生成 ${updated} 条平台任务`);
+      ElMessage.success(t('queue.regenerateSubmitted', { count: updated }));
     } else {
-      ElMessage.warning(skipped[0]?.reason || "没有可重新生成的平台任务");
+      ElMessage.warning(skipped[0]?.reason || t('queue.noTaskToRegenerate'));
     }
 
     schedulePublishTaskMenuRuntimeSync();
@@ -3557,7 +3566,7 @@ async function handleBatchRegeneratePublishTasks() {
     if (error === "cancel" || error === "close") {
       return;
     }
-    ElMessage.error(error?.message || "批量重新生成失败");
+    ElMessage.error(error?.message || t('queue.batchRegenerateFailed'));
   } finally {
     batchRegenerateLoading.value = false;
   }
@@ -3572,7 +3581,7 @@ async function handleSubmit() {
 
     // 检查任务类型
     if (!formData.type || !formData.type.trim()) {
-      ElMessage.warning("请输入任务类型");
+      ElMessage.warning(t('queue.enterTaskType'));
       return;
     }
 
@@ -3580,7 +3589,7 @@ async function handleSubmit() {
     try {
       taskData = JSON.parse(formData.dataStr);
     } catch (e) {
-      ElMessage.error("任务数据格式错误，请输入有效的JSON");
+      ElMessage.error(t('queue.taskDataFormatError'));
       return;
     }
 
@@ -3592,7 +3601,7 @@ async function handleSubmit() {
       delay: formData.delay,
     });
 
-    ElMessage.success("任务创建成功");
+    ElMessage.success(t('queue.taskCreated'));
     dialogVisible.value = false;
 
     // 创建成功后，自动设置查询条件并刷新列表和统计
@@ -3618,7 +3627,7 @@ async function handleSubmit() {
       }
     }
   } catch (error: any) {
-    ElMessage.error(error?.message || "创建任务失败");
+    ElMessage.error(error?.message || t('queue.createTaskFailed'));
   } finally {
     submitLoading.value = false;
   }
@@ -3633,7 +3642,7 @@ async function handleStatusSubmit() {
 
     // 如果新状态和当前状态相同，直接返回
     if (statusFormData.newStatus === statusFormData.status) {
-      ElMessage.info("状态未发生变化");
+      ElMessage.info(t('queue.statusUnchanged'));
       statusDialogVisible.value = false;
       return;
     }
@@ -3645,12 +3654,12 @@ async function handleStatusSubmit() {
       statusFormData.newStatus === "failed" ? statusFormData.error : undefined,
     );
 
-    ElMessage.success("状态修改成功");
+    ElMessage.success(t('queue.statusUpdated'));
     statusDialogVisible.value = false;
     await getList();
     await refreshStats();
   } catch (error: any) {
-    ElMessage.error(error?.message || "操作失败");
+    ElMessage.error(error?.message || t('queue.operationFailed'));
   } finally {
     statusSubmitLoading.value = false;
   }
@@ -3694,7 +3703,7 @@ async function handleUpdateData(row: QueueMessage) {
       typeof currentData === "string" ? JSON.parse(currentData) : currentData || {};
     dataUpdateDialogVisible.value = true;
   } catch (e) {
-    ElMessage.error((e as Error)?.message || "获取任务详情失败");
+    ElMessage.error((e as Error)?.message || t('queue.fetchTaskDetailFailed'));
   }
 }
 
@@ -3705,18 +3714,18 @@ async function handleDataUpdateSubmit() {
   try {
     data = JSON.parse(dataUpdateFormData.dataStr);
   } catch (e) {
-    ElMessage.error("请输入有效的JSON格式");
+    ElMessage.error(t('queue.validJsonFormat'));
     return;
   }
 
   try {
     dataUpdateSubmitting.value = true;
     await updateTaskData(dataUpdateFormData.queue, dataUpdateFormData.messageId, data);
-    ElMessage.success("数据已更新");
+    ElMessage.success(t('queue.dataUpdated'));
     dataUpdateDialogVisible.value = false;
     await getList();
   } catch (error: any) {
-    ElMessage.error(error?.message || "更新数据失败");
+    ElMessage.error(error?.message || t('queue.updateDataFailed'));
   } finally {
     dataUpdateSubmitting.value = false;
   }
@@ -3728,18 +3737,18 @@ const actionPendingTaskIds = ref<Set<string>>(new Set());
 async function handleRegeneratePublishTask(row: QueueMessage) {
   const taskId = String(row?.id || "").trim();
   if (!taskId) {
-    ElMessage.warning("缺少任务ID");
+    ElMessage.warning(t('queue.missingTaskId'));
     return;
   }
 
   try {
     await ElMessageBox.confirm(
-      "将清理这条任务的旧发布数据、错误和日志，并基于当前套图信息和任务配置重新进入准备流程，是否继续？",
-      "重新生成发布数据",
+      t('queue.confirmRegenerate'),
+      t('queue.regeneratePublishData'),
       {
         type: "warning",
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
+        confirmButtonText: t('queue.confirm'),
+        cancelButtonText: t('queue.cancel'),
       },
     );
 
@@ -3748,9 +3757,9 @@ async function handleRegeneratePublishTask(row: QueueMessage) {
     const payload = result?.data?.data ?? result?.data ?? result;
 
     if (payload?.asyncRegenerate) {
-      ElMessage.success("已提交后台重新生成，完成后会推送通知，请稍后刷新查看");
+      ElMessage.success(t('queue.regenerateSubmittedAsync'));
     } else {
-      ElMessage.success("发布数据已重新生成");
+      ElMessage.success(t('queue.publishDataRegenerated'));
     }
 
     await getList();
@@ -3759,7 +3768,7 @@ async function handleRegeneratePublishTask(row: QueueMessage) {
     if (error === "cancel") {
       return;
     }
-    ElMessage.error(error?.message || "重新生成发布数据失败");
+    ElMessage.error(error?.message || t('queue.regenerateFailed'));
   } finally {
     const nextRegeneratingTaskIds = new Set(regeneratingTaskIds.value);
     nextRegeneratingTaskIds.delete(taskId);
@@ -3799,13 +3808,13 @@ function resolveClientConcreteDispatchProfileOptions(client: any): DispatchProfi
     const busy = instance?.busy === true;
     const connected = instance?.connected === true || instance?.hasInstance === true;
     const pageCount = typeof instance?.pageCount === "number" ? Number(instance.pageCount) : null;
-    let description = "指定环境未打开，执行时会自动拉起";
+    let description = t('queue.specifiedEnvNotOpen');
     if (busy) {
       description = instance?.currentTaskId
-        ? `当前执行中，任务 ${instance.currentTaskId}`
-        : "当前环境正在执行任务";
+        ? t('queue.currentlyExecutingTask', { id: instance.currentTaskId })
+        : t('queue.envExecutingTask');
     } else if (connected) {
-      description = pageCount !== null ? `浏览器已打开，当前 ${pageCount} 个页面` : "浏览器已打开";
+      description = pageCount !== null ? t('queue.browserOpenPages', { count: pageCount }) : t('queue.browserOpened');
     }
 
     return {
@@ -3823,23 +3832,23 @@ function resolveClientConcreteDispatchProfileOptions(client: any): DispatchProfi
 async function handleStopPublishTask(row: QueueMessage) {
   const taskId = String(row?.id || "").trim();
   if (!taskId) {
-    ElMessage.warning("缺少任务标识");
+    ElMessage.warning(t('queue.missingTaskIdentifier'));
     return;
   }
 
   if (!canStopPublishExecution(row)) {
-    ElMessage.warning("当前任务不在执行中");
+    ElMessage.warning(t('queue.taskNotRunning'));
     return;
   }
 
   try {
     await ElMessageBox.confirm(
-      "停止后当前运行会立即中断，并标记为失败，后续可以再重置为未运行状态重新执行，是否继续？",
-      "停止任务",
+      t('queue.confirmStopTask'),
+      t('queue.stopTask'),
       {
         type: "warning",
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
+        confirmButtonText: t('queue.confirm'),
+        cancelButtonText: t('queue.cancel'),
       },
     );
 
@@ -3849,9 +3858,9 @@ async function handleStopPublishTask(row: QueueMessage) {
     });
     const payload = response?.data?.data ?? response?.data ?? response;
     if (payload?.alreadyStopped) {
-      ElMessage.warning(response?.message || payload?.message || "当前任务已不在执行中");
+      ElMessage.warning(response?.message || payload?.message || t('queue.taskNotRunning'));
     } else {
-      ElMessage.success(response?.message || "停止指令已发送");
+      ElMessage.success(response?.message || t('queue.stopCommandSent'));
     }
     schedulePublishTaskMenuRuntimeSync();
     await refreshPublishDispatchPageState();
@@ -3859,7 +3868,7 @@ async function handleStopPublishTask(row: QueueMessage) {
     if (error === "cancel" || error === "close") {
       return;
     }
-    ElMessage.error(error?.message || "停止任务失败");
+    ElMessage.error(error?.message || t('queue.stopTaskFailed'));
   } finally {
     actionPendingTaskIds.value.delete(taskId);
   }
@@ -3868,23 +3877,23 @@ async function handleStopPublishTask(row: QueueMessage) {
 async function handleResetPublishTask(row: QueueMessage) {
   const taskId = String(row?.id || "").trim();
   if (!taskId) {
-    ElMessage.warning("缺少任务标识");
+    ElMessage.warning(t('queue.missingTaskIdentifier'));
     return;
   }
 
   if (!canResetPublishExecution(row)) {
-    ElMessage.warning("任务执行中，请先停止任务");
+    ElMessage.warning(t('queue.taskRunningStopFirst'));
     return;
   }
 
   try {
     await ElMessageBox.confirm(
-      "这会清空当前任务的执行状态、错误信息和运行日志，并恢复为未运行的初始状态，是否继续？",
-      "重置为未运行",
+      t('queue.confirmResetTask'),
+      t('queue.resetToPending'),
       {
         type: "warning",
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
+        confirmButtonText: t('queue.confirm'),
+        cancelButtonText: t('queue.cancel'),
       },
     );
 
@@ -3892,14 +3901,14 @@ async function handleResetPublishTask(row: QueueMessage) {
     await resetPublishTaskDispatch(taskId, {
       reason: "管理员重置为未运行状态",
     });
-    ElMessage.success("任务已重置为未运行状态");
+    ElMessage.success(t('queue.taskResetToPending'));
     schedulePublishTaskMenuRuntimeSync();
     await refreshPublishDispatchPageState();
   } catch (error: any) {
     if (error === "cancel" || error === "close") {
       return;
     }
-    ElMessage.error(error?.message || "重置任务失败");
+    ElMessage.error(error?.message || t('queue.resetTaskFailed'));
   } finally {
     actionPendingTaskIds.value.delete(taskId);
   }

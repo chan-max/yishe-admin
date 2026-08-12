@@ -3,13 +3,12 @@ import request from '@/config/axios'
 /** 沙箱健康状态 */
 export function getSandboxHealth() {
   return request.get({
-    url: '/code-script/sandbox/health',
+    url: '/sandbox/health',
   })
 }
 
-/** 创建临时脚本并执行（用于沙箱控制台） */
+/** 直接执行代码（不经过脚本管理） */
 export function consoleExecute(data: { code: string; params?: Record<string, any>; timeoutMs?: number }) {
-  // 先创建脚本，再执行
   return request.post({
     url: '/code-script/create',
     data: {
@@ -29,25 +28,25 @@ export function consoleExecute(data: { code: string; params?: Record<string, any
   })
 }
 
-/** 获取沙箱运行记录列表 */
-export function getSandboxRunList(data: { currentPage?: number; pageSize?: number }) {
+/** 分页查询沙箱运行记录（用户隔离） */
+export function getSandboxRunList(data: { currentPage?: number; pageSize?: number; scriptId?: number }) {
   return request.post({
-    url: '/code-script/run/page',
+    url: '/sandbox/run/page',
     data,
   })
 }
 
-/** 获取单条运行记录详情 */
+/** 查询单条运行记录详情 */
 export function getSandboxRun(id: number | string) {
   return request.get({
-    url: `/code-script/run/get?id=${id}`,
+    url: `/sandbox/run/get?id=${id}`,
   })
 }
 
 /** 取消沙箱运行 */
 export function cancelSandboxRun(data: { id: number }) {
   return request.post({
-    url: '/code-script/run/cancel',
+    url: '/sandbox/run/cancel',
     data,
   })
 }
@@ -55,7 +54,7 @@ export function cancelSandboxRun(data: { id: number }) {
 /** 删除运行记录 */
 export function deleteSandboxRun(data: { ids: number[] }) {
   return request.delete({
-    url: '/code-script/run/delete',
+    url: '/sandbox/run/delete',
     data,
   })
 }

@@ -83,30 +83,30 @@
               </el-col>
 
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3" :xl="3">
-                <el-form-item label="抠图">
-                  <el-select v-model="queryParams.isCutout" size="small" placeholder="抠图" clearable @change="getList">
-                    <el-option label="全部" value="" />
-                    <el-option label="是" :value="true" />
-                    <el-option label="否" :value="false" />
+                <el-form-item :label="t('material.cutout')">
+                  <el-select v-model="queryParams.isCutout" size="small" :placeholder="t('material.cutout')" clearable @change="getList">
+                    <el-option :label="t('material.all')" value="" />
+                    <el-option :label="t('material.yes')" :value="true" />
+                    <el-option :label="t('material.no')" :value="false" />
                   </el-select>
                 </el-form-item>
               </el-col>
 
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3" :xl="3">
-                <el-form-item label="无缝">
-                  <el-select v-model="queryParams.seamless" size="small" placeholder="无缝" clearable @change="getList">
-                    <el-option label="全部" value="" />
-                    <el-option label="是" :value="true" />
-                    <el-option label="否" :value="false" />
+                <el-form-item :label="t('material.seamless')">
+                  <el-select v-model="queryParams.seamless" size="small" :placeholder="t('material.seamless')" clearable @change="getList">
+                    <el-option :label="t('material.all')" value="" />
+                    <el-option :label="t('material.yes')" :value="true" />
+                    <el-option :label="t('material.no')" :value="false" />
                   </el-select>
                 </el-form-item>
               </el-col>
 
               <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="12" :lg="7" :xl="6">
-                <el-form-item label="尺寸">
-                  <el-select v-model="queryParams.sizeShape" size="small" placeholder="尺寸形状" clearable multiple
+                <el-form-item :label="t('material.size')">
+                  <el-select v-model="queryParams.sizeShape" size="small" :placeholder="t('material.sizeShape')" clearable multiple
                     collapse-tags collapse-tags-tooltip @change="getList" :teleported="false">
-                    <el-option-group label="正方形">
+                    <el-option-group :label="t('material.square')">
                       <el-option v-for="config in sizeShapeGroups.square" :key="config.key" :value="config.key"
                         :label="getFullLabel(config)">
                         <div class="size-option">
@@ -119,7 +119,7 @@
                         </div>
                       </el-option>
                     </el-option-group>
-                    <el-option-group label="横图 (宽>高)">
+                    <el-option-group :label="t('material.landscapeWide')">
                       <el-option v-for="config in sizeShapeGroups.landscape" :key="config.key" :value="config.key"
                         :label="getFullLabel(config)">
                         <div class="size-option">
@@ -132,7 +132,7 @@
                         </div>
                       </el-option>
                     </el-option-group>
-                    <el-option-group label="竖图 (高>宽)">
+                    <el-option-group :label="t('material.portraitTall')">
                       <el-option v-for="config in sizeShapeGroups.portrait" :key="config.key" :value="config.key"
                         :label="getFullLabel(config)">
                         <div class="size-option">
@@ -150,7 +150,7 @@
               </el-col>
 
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="2" :xl="2">
-                <el-form-item label="随机">
+                <el-form-item :label="t('material.random')">
                   <div class="material-index-search-form__switch">
                     <el-switch v-model="queryParams.random" size="small" @change="getList" />
                   </div>
@@ -158,7 +158,7 @@
               </el-col>
 
               <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="12" :lg="5" :xl="5">
-                <el-form-item label="时间">
+                <el-form-item :label="t('material.time')">
                   <DateRangePicker @change="
                     (val) => {
                       queryParams.startTime = val.start;
@@ -171,41 +171,41 @@
 
               <el-col v-if="!phashSearchDisabled" class="list-page-search-form__col--full" :xs="24" :sm="24" :md="24"
                 :lg="24" :xl="24">
-                <el-form-item label="相似搜索">
+                <el-form-item :label="t('material.similarSearch')">
                   <div class="material-index-phash">
                     <div class="material-index-phash__row">
-                      <el-input v-model="queryParams.phash" size="small" placeholder="输入 phash 或图片地址" clearable
+                      <el-input v-model="queryParams.phash" size="small" :placeholder="t('material.enterPhashOrUrl')" clearable
                         @blur="onPhashInputBlur" />
                       <div class="material-index-phash__modes">
                         <el-check-tag :checked="queryParams.phashMode === 'range'"
                           @change="() => (queryParams.phashMode = 'range')">
-                          相似匹配
+                          {{ t('material.similarMatch') }}
                         </el-check-tag>
-                        <el-tooltip content="只找 phash 完全一致，速度最快，需已有 phash。" placement="top">
+                        <el-tooltip :content="t('material.exactMatchTip')" placement="top">
                           <el-check-tag :checked="queryParams.phashMode === 'exact'"
                             @change="() => (queryParams.phashMode = 'exact')">
-                            精确匹配
+                            {{ t('material.exactMatch') }}
                           </el-check-tag>
                         </el-tooltip>
                       </div>
                       <div class="material-index-phash__actions">
-                        <el-button size="small" type="primary" @click="handlePhashSearch">搜索相似图片</el-button>
-                        <el-button size="small" @click="clearPhashSearch">清空</el-button>
+                        <el-button size="small" type="primary" @click="handlePhashSearch">{{ t('material.searchSimilarImages') }}</el-button>
+                        <el-button size="small" @click="clearPhashSearch">{{ t('material.clear') }}</el-button>
                       </div>
                     </div>
                   </div>
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
-                <el-form-item label="查重配置">
+                <el-form-item :label="t('material.duplicateCheckConfig')">
                   <div class="flex items-center gap-2" style="min-width: 0">
-                    <el-select v-model="queryParams.publishUsageConfigId" size="small" placeholder="选择后标记已用图片" clearable
+                    <el-select v-model="queryParams.publishUsageConfigId" size="small" :placeholder="t('material.selectToMarkUsed')" clearable
                       filterable multiple style="min-width: 200px" @change="handlePublishUsageViewChange">
                       <el-option v-for="item in publishUsageConfigOptions" :key="item.id"
                         :label="formatPublishUsageConfigLabel(item)" :value="item.id" />
                     </el-select>
                     <el-button size="small" @click="toggleSelectAll">
-                      {{ isAllSelected ? "取消全选" : "全选" }}
+                      {{ isAllSelected ? t('material.deselectAll') : t('material.selectAll') }}
                     </el-button>
                   </div>
                 </el-form-item>
@@ -213,71 +213,71 @@
             </el-row>
             <div class="list-page-search-form__actions material-index-search-form__actions">
               <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="getList">
-                搜索
+                {{ t('material.search') }}
               </el-button>
               <el-button size="small" type="success" plain :icon="Picture" :loading="similarImageSubmitting"
                 @click="openSimilarImageDialog()">
-                模糊搜索
+                {{ t('material.fuzzySearch') }}
               </el-button>
               <el-button size="small" type="primary" @click="
                 () => {
                   uploadModalVisible = true;
                 }
               ">
-                上传
+                {{ t('material.upload') }}
               </el-button>
               <el-button size="small" @click="
                 () => {
                   urlUploadModalVisible = true;
                 }
               ">
-                URL上传
+                {{ t('material.urlUpload') }}
               </el-button>
               <el-button size="small" @click="handleMultiDownload">
-                下载 ({{ ids.length }})
+                {{ t('material.downloadCount', { count: ids.length }) }}
               </el-button>
               <el-button size="small" type="danger" :loading="deleteLoading" @click="handleDelete(null)">
                 <el-icon>
                   <Delete />
                 </el-icon>
-                <span>批量删除({{ ids.length }})</span>
+                <span>{{ t('material.batchDelete', { count: ids.length }) }}</span>
               </el-button>
               <el-dropdown trigger="click" popper-class="material-tool-dropdown"
                 @command="(cmd: StickerUserTransferAction) => openStickerUserTransferDialog(cmd)">
                 <el-button size="small" type="success" :disabled="loading || !ids.length">
-                  分享 ({{ ids.length }})
+                  {{ t('material.shareCount', { count: ids.length }) }}
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item command="share">
-                      <span>共享</span>
+                      <span>{{ t('material.share') }}</span>
                     </el-dropdown-item>
                     <el-dropdown-item command="copy">
-                      <span>转存副本</span>
+                      <span>{{ t('material.copyCopy') }}</span>
                     </el-dropdown-item>
                     <el-dropdown-item command="move">
-                      <span>移交所有人</span>
+                      <span>{{ t('material.transferAll') }}</span>
                     </el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
               <el-dropdown trigger="click" popper-class="material-tool-dropdown" :disabled="loading || !ids.length">
                 <el-button size="small" type="primary" :disabled="loading || !ids.length">
-                  制作工具 ({{ ids.length }})
+                  {{ t('material.toolsCount', { count: ids.length }) }}
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item @click="() => openPsdSetDialog(false)">
-                      <span>制作PS套图</span>
+                      <span>{{ t('material.createPsSet') }}</span>
                     </el-dropdown-item>
                     <el-dropdown-item @click="openMaterialPublishConfigDialog">
-                      <span>选择发布配置</span>
+                      <span>{{ t('material.selectPublishConfig') }}</span>
                     </el-dropdown-item>
                     <el-dropdown-item @click="openMaterialProductConfigDialog">
-                      <span>生成独立站商品</span>
+                      <span>{{ t('material.generateSiteProduct') }}</span>
                     </el-dropdown-item>
                     <el-dropdown-item @click="openBatchImageProcessing('process')">
-                      <span>图片链式处理</span>
+                      <span>{{ t('material.imageChainProcess') }}</span>
                     </el-dropdown-item>
                     <el-dropdown-item :title="addToGroupButtonTitle" @click="openBatchAddToGroupDialog">
                       <span>{{ addToGroupButtonText }}</span>
@@ -289,7 +289,7 @@
           </el-form>
         </div>
         <div v-else class="material-index-mobile-filter">
-          <el-button size="small" type="primary" @click="filterDialogVisible = true">筛选</el-button>
+          <el-button size="small" type="primary" @click="filterDialogVisible = true">{{ t('material.filter') }}</el-button>
         </div>
         <div v-if="similarImageSearchStatusVisible" class="similar-image-search-status">
           <div v-if="similarImageActiveSourceType === 'text'"
@@ -299,136 +299,136 @@
             </el-icon>
           </div>
           <div v-else class="similar-image-search-status__thumb">
-            <img :src="similarImageActivePreviewUrl" alt="相似图查询图片" />
+            <img :src="similarImageActivePreviewUrl" :alt="t('material.similarImageQuery')" />
           </div>
           <div class="similar-image-search-status__content">
             <div class="similar-image-search-status__line">
               <el-tag size="small" type="success" effect="plain">
-                {{ similarImageActiveSourceType === 'text' ? '文字搜索' : '相似图' }}
+                {{ similarImageActiveSourceType === 'text' ? t('material.textSearch') : t('material.similarImage') }}
               </el-tag>
               <span class="similar-image-search-status__source">
                 {{ similarImageActiveSourceText }}
               </span>
               <span v-if="similarImageSearchMeta" class="similar-image-search-status__meta">
-                （耗时: {{ similarImageSearchMeta.searchTimeMs }}ms | 最匹配: {{ similarImageSearchMeta.scoreRange?.max ?
-                  (similarImageSearchMeta.scoreRange.max * 100).toFixed(1) + '%' : '-' }}）
+                {{ t('material.searchMeta', { time: similarImageSearchMeta.searchTimeMs, score: similarImageSearchMeta.scoreRange?.max ?
+                  (similarImageSearchMeta.scoreRange.max * 100).toFixed(1) + '%' : '-' }) }}
               </span>
             </div>
           </div>
           <div class="similar-image-search-status__actions">
             <el-button size="small" text type="primary" @click="openSimilarImageDialog()">
-              {{ similarImageActiveSourceType === 'text' ? '重新搜索' : '更换图片' }}
+              {{ similarImageActiveSourceType === 'text' ? t('material.searchAgain') : t('material.changeImage') }}
             </el-button>
             <el-button size="small" text @click="clearSimilarImageSearchResults">
-              清除
+              {{ t('material.clear') }}
             </el-button>
           </div>
         </div>
-        <el-dialog v-model="filterDialogVisible" title="筛选" width="90%" align-center>
+        <el-dialog v-model="filterDialogVisible" :title="t('material.filter')" width="90%" align-center>
           <el-form :model="queryParams" label-width="80px">
-            <el-form-item label="搜索">
-              <el-input v-model="queryParams.searchText" placeholder="请输入名称、描述或关键词（空格分隔，支持引号精确匹配）" clearable />
+            <el-form-item :label="t('common.search')">
+              <el-input v-model="queryParams.searchText" :placeholder="t('material.searchTextPlaceholder')" clearable />
             </el-form-item>
-            <el-form-item label="排序">
-              <el-select v-model="queryParams.sortingFields" placeholder="请选择排序方式">
-                <el-option label="创建时间倒序" value="createTime DESC" />
-                <el-option label="创建时间正序" value="createTime ASC" />
+            <el-form-item :label="t('material.sort')">
+              <el-select v-model="queryParams.sortingFields" :placeholder="t('material.selectSort')">
+                <el-option :label="t('material.createTimeDesc')" value="createTime DESC" />
+                <el-option :label="t('material.createTimeAsc')" value="createTime ASC" />
               </el-select>
             </el-form-item>
-            <el-form-item label="自定义贴纸">
-              <el-select v-model="queryParams.isCustom" placeholder="请选择类型">
-                <el-option label="全部" value="" />
-                <el-option label="是" :value="true" />
-                <el-option label="否" :value="false" />
+            <el-form-item :label="t('material.custom')">
+              <el-select v-model="queryParams.isCustom" :placeholder="t('material.selectType')">
+                <el-option :label="t('material.all')" value="" />
+                <el-option :label="t('material.yes')" :value="true" />
+                <el-option :label="t('material.no')" :value="false" />
               </el-select>
             </el-form-item>
-            <el-form-item label="侵权状态">
-              <el-select v-model="queryParams.isInfringement" placeholder="请选择状态">
-                <el-option label="全部" value="" />
-                <el-option label="侵权" :value="true" />
-                <el-option label="非侵权" :value="false" />
+            <el-form-item :label="t('material.infringement')">
+              <el-select v-model="queryParams.isInfringement" :placeholder="t('material.selectStatus')">
+                <el-option :label="t('material.all')" value="" />
+                <el-option :label="t('material.infringement')" :value="true" />
+                <el-option :label="t('material.notInfringement')" :value="false" />
               </el-select>
             </el-form-item>
-            <el-form-item label="抠图素材">
-              <el-select v-model="queryParams.isCutout" placeholder="请选择类型">
-                <el-option label="全部" value="" />
-                <el-option label="是" :value="true" />
-                <el-option label="否" :value="false" />
+            <el-form-item :label="t('material.cutout')">
+              <el-select v-model="queryParams.isCutout" :placeholder="t('material.selectType')">
+                <el-option :label="t('material.all')" value="" />
+                <el-option :label="t('material.yes')" :value="true" />
+                <el-option :label="t('material.no')" :value="false" />
               </el-select>
             </el-form-item>
-            <el-form-item label="无缝贴图">
-              <el-select v-model="queryParams.seamless" placeholder="请选择类型">
-                <el-option label="全部" value="" />
-                <el-option label="是" :value="true" />
-                <el-option label="否" :value="false" />
+            <el-form-item :label="t('material.seamless')">
+              <el-select v-model="queryParams.seamless" :placeholder="t('material.selectType')">
+                <el-option :label="t('material.all')" value="" />
+                <el-option :label="t('material.yes')" :value="true" />
+                <el-option :label="t('material.no')" :value="false" />
               </el-select>
             </el-form-item>
-            <el-form-item label="尺寸形状">
-              <el-select v-model="queryParams.sizeShape" placeholder="请选择尺寸形状" clearable multiple>
-                <el-option-group label="常用">
-                  <el-option value="landscape" label="横图">
+            <el-form-item :label="t('material.sizeShape')">
+              <el-select v-model="queryParams.sizeShape" :placeholder="t('material.selectSizeShape')" clearable multiple>
+                <el-option-group :label="t('material.common')">
+                  <el-option value="landscape" :label="t('material.landscape')">
                     <div class="size-option">
                       <div class="size-thumb landscape-thumb"></div>
-                      <span class="size-label">横图</span>
+                      <span class="size-label">{{ t('material.landscape') }}</span>
                     </div>
                   </el-option>
-                  <el-option value="portrait" label="竖图">
+                  <el-option value="portrait" :label="t('material.portrait')">
                     <div class="size-option">
                       <div class="size-thumb portrait-thumb"></div>
-                      <span class="size-label">竖图</span>
+                      <span class="size-label">{{ t('material.portrait') }}</span>
                     </div>
                   </el-option>
-                  <el-option value="square" label="正方图">
+                  <el-option value="square" :label="t('material.squareImage')">
                     <div class="size-option">
                       <div class="size-thumb square-thumb"></div>
-                      <span class="size-label">正方图</span>
+                      <span class="size-label">{{ t('material.squareImage') }}</span>
                     </div>
                   </el-option>
                 </el-option-group>
-                <el-option-group label="横图细分">
-                  <el-option value="ultra-wide" label="超宽图 (≥2:1)">
+                <el-option-group :label="t('material.landscapeDetail')">
+                  <el-option value="ultra-wide" :label="t('material.ultraWide')">
                     <div class="size-option">
                       <div class="size-thumb ultra-wide-thumb"></div>
-                      <span class="size-label">超宽图 (≥2:1)</span>
+                      <span class="size-label">{{ t('material.ultraWide') }}</span>
                     </div>
                   </el-option>
-                  <el-option value="wide" label="宽图 (1.5:1 - 2:1)">
+                  <el-option value="wide" :label="t('material.wide')">
                     <div class="size-option">
                       <div class="size-thumb wide-thumb"></div>
-                      <span class="size-label">宽图 (1.5:1 - 2:1)</span>
+                      <span class="size-label">{{ t('material.wide') }}</span>
                     </div>
                   </el-option>
-                  <el-option value="slightly-wide" label="微宽图 (1.1:1 - 1.5:1)">
+                  <el-option value="slightly-wide" :label="t('material.slightlyWide')">
                     <div class="size-option">
                       <div class="size-thumb slightly-wide-thumb"></div>
-                      <span class="size-label">微宽图 (1.1:1 - 1.5:1)</span>
+                      <span class="size-label">{{ t('material.slightlyWide') }}</span>
                     </div>
                   </el-option>
                 </el-option-group>
-                <el-option-group label="竖图细分">
-                  <el-option value="slightly-long" label="微长图 (1:1.1 - 1:1.5)">
+                <el-option-group :label="t('material.portraitDetail')">
+                  <el-option value="slightly-long" :label="t('material.slightlyLong')">
                     <div class="size-option">
                       <div class="size-thumb slightly-long-thumb"></div>
-                      <span class="size-label">微长图 (1:1.1 - 1:1.5)</span>
+                      <span class="size-label">{{ t('material.slightlyLong') }}</span>
                     </div>
                   </el-option>
-                  <el-option value="long" label="长图 (1:1.5 - 1:2)">
+                  <el-option value="long" :label="t('material.longImage')">
                     <div class="size-option">
                       <div class="size-thumb long-thumb"></div>
-                      <span class="size-label">长图 (1:1.5 - 1:2)</span>
+                      <span class="size-label">{{ t('material.longImage') }}</span>
                     </div>
                   </el-option>
-                  <el-option value="ultra-long" label="超长图 (≤1:2)">
+                  <el-option value="ultra-long" :label="t('material.ultraLong')">
                     <div class="size-option">
                       <div class="size-thumb ultra-long-thumb"></div>
-                      <span class="size-label">超长图 (≤1:2)</span>
+                      <span class="size-label">{{ t('material.ultraLong') }}</span>
                     </div>
                   </el-option>
                 </el-option-group>
               </el-select>
             </el-form-item>
-            <el-form-item label="后缀">
-              <el-select v-model="queryParams.suffix" placeholder="请选择后缀" multiple clearable>
+            <el-form-item :label="t('material.suffix')">
+              <el-select v-model="queryParams.suffix" :placeholder="t('material.selectSuffix')" multiple clearable>
                 <el-option label="jpg" value="jpg" />
                 <el-option label="jpeg" value="jpeg" />
                 <el-option label="png" value="png" />
@@ -439,22 +439,22 @@
                 <el-option label="tiff" value="tiff" />
               </el-select>
             </el-form-item>
-            <el-form-item label="查重配置">
+            <el-form-item :label="t('material.duplicateCheckConfig')">
               <div class="flex items-center gap-2">
-                <el-select v-model="queryParams.publishUsageConfigId" placeholder="选择后标记已用图片" clearable filterable
+                <el-select v-model="queryParams.publishUsageConfigId" :placeholder="t('material.selectToMarkUsed')" clearable filterable
                   multiple collapse-tags collapse-tags-tooltip style="min-width: 200px">
                   <el-option v-for="item in publishUsageConfigOptions" :key="item.id"
                     :label="formatPublishUsageConfigLabel(item)" :value="item.id" />
                 </el-select>
                 <el-button size="small" @click="toggleSelectAll">
-                  {{ isAllSelected ? "取消全选" : "全选" }}
+                  {{ isAllSelected ? t('material.deselectAll') : t('material.selectAll') }}
                 </el-button>
               </div>
             </el-form-item>
-            <el-form-item label="随机顺序">
-              <el-switch v-model="queryParams.random" active-text="随机" inactive-text="默认" />
+            <el-form-item :label="t('material.randomOrder')">
+              <el-switch v-model="queryParams.random" :active-text="t('material.random')" :inactive-text="t('material.default')" />
             </el-form-item>
-            <el-form-item label="按时间查询">
+            <el-form-item :label="t('material.queryByTime')">
               <DateRangePicker @change="
                 (val) => {
                   queryParams.startTime = val.start;
@@ -464,8 +464,8 @@
             </el-form-item>
           </el-form>
           <template #footer>
-            <el-button @click="filterDialogVisible = false">取消</el-button>
-            <el-button type="primary" @click="onMobileFilterSubmit">确定</el-button>
+            <el-button @click="filterDialogVisible = false">{{ t('material.cancel') }}</el-button>
+            <el-button type="primary" @click="onMobileFilterSubmit">{{ t('material.confirm') }}</el-button>
           </template>
         </el-dialog>
         <!-- PC 顶部筛选栅格布局样式 -->
@@ -476,15 +476,15 @@
           <template #header>
             <div class="material-publish-config-dialog__header">
               <div class="material-publish-config-dialog__header-main">
-                <div class="material-publish-config-dialog__header-title">选择发布配置</div>
+                <div class="material-publish-config-dialog__header-title">{{ t('material.selectPublishConfig') }}</div>
               </div>
 
               <div class="material-publish-config-dialog__header-chips">
                 <span class="material-publish-config-dialog__header-chip">
-                  素材 {{ selectedMaterialsForPublishConfig.length }} 张
+                  {{ t('material.materialCount', { count: selectedMaterialsForPublishConfig.length }) }}
                 </span>
                 <span class="material-publish-config-dialog__header-chip">
-                  可用配置 {{ materialPublishConfigUsableCount }} 个
+                  {{ t('material.usableConfigCount', { count: materialPublishConfigUsableCount }) }}
                 </span>
               </div>
             </div>
@@ -494,22 +494,22 @@
             <div class="material-publish-config-dialog__panel material-publish-config-dialog__panel--materials">
               <div class="material-publish-config-dialog__section-head">
                 <div>
-                  <div class="material-publish-config-dialog__section-eyebrow">步骤 1</div>
-                  <div class="material-publish-config-dialog__section-title">已选图片</div>
+                  <div class="material-publish-config-dialog__section-eyebrow">{{ t('material.step1') }}</div>
+                  <div class="material-publish-config-dialog__section-title">{{ t('material.selectedImages') }}</div>
                   <div class="material-publish-config-dialog__section-desc">
-                    当前共 {{ selectedMaterialsForPublishConfig.length }} 张素材，可先确认格式与尺寸信息
+                    {{ t('material.materialCountConfirm', { count: selectedMaterialsForPublishConfig.length }) }}
                   </div>
                 </div>
                 <div class="material-publish-config-dialog__tag-list">
                   <el-tag :type="hasInvalidFormatMaterials ? 'warning' : 'success'" effect="plain">
                     {{
                       hasInvalidFormatMaterials
-                        ? `${invalidFormatMaterialsList.length} 张格式需处理`
-                        : "格式检查通过"
+                        ? t('material.formatNeedsProcess', { count: invalidFormatMaterialsList.length })
+                        : t('material.formatCheckPassed')
                     }}
                   </el-tag>
                   <el-tag type="info" effect="plain">
-                    允许格式：{{ psdSetAllowedFormats.join("、") }}
+                    {{ t('material.allowedFormats') }}：{{ psdSetAllowedFormats.join("、") }}
                   </el-tag>
                 </div>
               </div>
@@ -517,9 +517,10 @@
               <el-alert v-if="hasInvalidFormatMaterials" type="warning" :closable="false" show-icon
                 class="material-publish-config-dialog__warning">
                 <template #title>
-                  所选素材中有 {{ invalidFormatMaterialsList.length }} 张图片格式不符合要求：{{
-                    invalidFormatMaterialsList.map((item) => item.name).join("、")
-                  }}
+                  {{ t('material.invalidFormatAlert', {
+                    count: invalidFormatMaterialsList.length,
+                    names: invalidFormatMaterialsList.map((item) => item.name).join("、")
+                  }) }}
                 </template>
               </el-alert>
 
@@ -529,30 +530,30 @@
                     'material-publish-config-dialog__material-item--invalid':
                       isMaterialFormatInvalid(material.id),
                   }">
-                  <button type="button" class="material-publish-config-dialog__material-remove" title="移除该图片"
+                  <button type="button" class="material-publish-config-dialog__material-remove" :title="t('material.removeImage')"
                     @click.stop="removeSelectedMaterial(material.id)">
                     ×
                   </button>
                   <div class="material-publish-config-dialog__material-preview">
                     <img v-if="getMaterialPreviewSource(material)"
                       :src="getFastPreviewImageUrl(getMaterialPreviewSource(material), { width: 220 })"
-                      :alt="material.name || `素材${material.id}`" :title="material.name || `素材${material.id}`" />
+                      :alt="material.name || t('material.materialId', { id: material.id })" :title="material.name || t('material.materialId', { id: material.id })" />
                     <div v-else class="material-publish-config-dialog__material-placeholder">
-                      暂无预览
+                      {{ t('material.noPreview') }}
                     </div>
                   </div>
 
                   <div class="material-publish-config-dialog__material-meta">
                     <span class="material-publish-config-dialog__material-name">
-                      {{ material.name || `素材${material.id}` }}
+                      {{ material.name || t('material.materialId', { id: material.id }) }}
                     </span>
                     <span class="material-publish-config-dialog__material-suffix">
-                      {{ getMaterialSuffix(material.id) || "未知格式" }}
+                      {{ getMaterialSuffix(material.id) || t('material.unknownFormat') }}
                     </span>
                   </div>
                 </div>
 
-                <el-empty v-if="!selectedMaterialsForPublishConfig.length" description="请先选择图片素材" :image-size="84" />
+                <el-empty v-if="!selectedMaterialsForPublishConfig.length" :description="t('material.selectMaterialFirst')" :image-size="84" />
               </div>
             </div>
 
@@ -560,18 +561,18 @@
               <div
                 class="material-publish-config-dialog__section-head material-publish-config-dialog__section-head--configs">
                 <div>
-                  <div class="material-publish-config-dialog__section-eyebrow">步骤 2</div>
-                  <div class="material-publish-config-dialog__section-title">发布配置</div>
+                  <div class="material-publish-config-dialog__section-eyebrow">{{ t('material.step2') }}</div>
+                  <div class="material-publish-config-dialog__section-title">{{ t('material.publishConfig') }}</div>
                   <div class="material-publish-config-dialog__section-desc">
-                    已统一按配置名称、任务类型和平台搜索，未配置 PSD 模板的配置不可用
+                    {{ t('material.publishConfigSectionDesc') }}
                   </div>
                 </div>
                 <div class="material-publish-config-dialog__section-tools">
                   <el-tag type="success" effect="plain">
-                    可用 {{ materialPublishConfigUsableCount }} / {{ filteredMaterialPublishConfigs.length }}
+                    {{ t('material.usable') }} {{ materialPublishConfigUsableCount }} / {{ filteredMaterialPublishConfigs.length }}
                   </el-tag>
                   <div class="material-publish-config-dialog__search">
-                    <el-input v-model="materialPublishConfigSearchText" clearable placeholder="搜索配置名称、任务类型或平台"
+                    <el-input v-model="materialPublishConfigSearchText" clearable :placeholder="t('material.searchConfigPlaceholder')"
                       @input="materialPublishConfigCurrentPage = 1">
                       <template #prefix>
                         <el-icon>
@@ -600,29 +601,29 @@
             <div class="material-publish-config-dialog__footer">
               <div class="material-publish-config-dialog__footer-info">
                 <span class="material-publish-config-dialog__footer-chip">
-                  素材 {{ ids.length }} 张
+                  {{ t('material.materialCount', { count: ids.length }) }}
                 </span>
                 <span class="material-publish-config-dialog__footer-chip">
-                  发布配置 {{ materialPublishConfigSelectedIds.length }} 个
+                  {{ t('material.publishConfigCount', { count: materialPublishConfigSelectedIds.length }) }}
                 </span>
                 <span class="material-publish-config-dialog__footer-chip">
-                  预计生成 {{ materialPublishConfigTaskCount }} 条套图任务
+                  {{ t('material.expectedPsdTasks', { count: materialPublishConfigTaskCount }) }}
                 </span>
                 <span v-if="hasInvalidFormatMaterials" class="material-publish-config-dialog__footer-tip">
-                  当前存在格式不兼容素材，请处理后再开始制作
+                  {{ t('material.incompatibleFormatTip') }}
                 </span>
                 <span v-else
                   class="material-publish-config-dialog__footer-tip material-publish-config-dialog__footer-tip--muted">
-                  选好配置后即可直接创建任务，业务逻辑与原流程保持一致
+                  {{ t('material.publishConfigFooterMuted') }}
                 </span>
               </div>
               <div class="material-publish-config-dialog__footer-actions">
-                <el-button @click="handleCloseMaterialPublishConfigDialog">取消</el-button>
+                <el-button @click="handleCloseMaterialPublishConfigDialog">{{ t('material.cancel') }}</el-button>
                 <el-button type="primary" :loading="materialPublishConfigSubmitting" :disabled="!ids.length ||
                   !materialPublishConfigSelectedIds.length ||
                   hasInvalidFormatMaterials
                   " @click="handleCreatePsdSetsByPublishConfig">
-                  创建发布任务
+                  {{ t('material.createPublishTask') }}
                 </el-button>
               </div>
             </div>
@@ -635,16 +636,16 @@
             <div class="material-publish-config-dialog__header">
               <div class="material-publish-config-dialog__header-main">
                 <div class="material-publish-config-dialog__header-title">
-                  生成独立站商品
+                  {{ t('material.generateSiteProduct') }}
                 </div>
               </div>
 
               <div class="material-publish-config-dialog__header-chips">
                 <span class="material-publish-config-dialog__header-chip">
-                  素材 {{ selectedMaterialsForPublishConfig.length }} 张
+                  {{ t('material.materialCount', { count: selectedMaterialsForPublishConfig.length }) }}
                 </span>
                 <span class="material-publish-config-dialog__header-chip">
-                  可用配置 {{ materialProductConfigUsableCount }} 个
+                  {{ t('material.usableConfigCount', { count: materialProductConfigUsableCount }) }}
                 </span>
               </div>
             </div>
@@ -654,22 +655,22 @@
             <div class="material-publish-config-dialog__panel material-publish-config-dialog__panel--materials">
               <div class="material-publish-config-dialog__section-head">
                 <div>
-                  <div class="material-publish-config-dialog__section-eyebrow">步骤 1</div>
-                  <div class="material-publish-config-dialog__section-title">已选图片</div>
+                  <div class="material-publish-config-dialog__section-eyebrow">{{ t('material.step1') }}</div>
+                  <div class="material-publish-config-dialog__section-title">{{ t('material.selectedImages') }}</div>
                   <div class="material-publish-config-dialog__section-desc">
-                    当前共 {{ selectedMaterialsForPublishConfig.length }} 张素材
+                    {{ t('material.materialCountSimple', { count: selectedMaterialsForPublishConfig.length }) }}
                   </div>
                 </div>
                 <div class="material-publish-config-dialog__tag-list">
                   <el-tag :type="hasInvalidFormatMaterials ? 'warning' : 'success'" effect="plain">
                     {{
                       hasInvalidFormatMaterials
-                        ? `${invalidFormatMaterialsList.length} 张格式需处理`
-                        : "格式检查通过"
+                        ? t('material.formatNeedsProcess', { count: invalidFormatMaterialsList.length })
+                        : t('material.formatCheckPassed')
                     }}
                   </el-tag>
                   <el-tag type="info" effect="plain">
-                    允许格式：{{ psdSetAllowedFormats.join("、") }}
+                    {{ t('material.allowedFormats') }}：{{ psdSetAllowedFormats.join("、") }}
                   </el-tag>
                 </div>
               </div>
@@ -677,9 +678,10 @@
               <el-alert v-if="hasInvalidFormatMaterials" type="warning" :closable="false" show-icon
                 class="material-publish-config-dialog__warning">
                 <template #title>
-                  所选素材中有 {{ invalidFormatMaterialsList.length }} 张图片格式不符合要求：{{
-                    invalidFormatMaterialsList.map((item) => item.name).join("、")
-                  }}
+                  {{ t('material.invalidFormatAlert', {
+                    count: invalidFormatMaterialsList.length,
+                    names: invalidFormatMaterialsList.map((item) => item.name).join("、")
+                  }) }}
                 </template>
               </el-alert>
 
@@ -689,30 +691,30 @@
                     'material-publish-config-dialog__material-item--invalid':
                       isMaterialFormatInvalid(material.id),
                   }">
-                  <button type="button" class="material-publish-config-dialog__material-remove" title="移除该图片"
+                  <button type="button" class="material-publish-config-dialog__material-remove" :title="t('material.removeImage')"
                     @click.stop="removeSelectedMaterial(material.id)">
                     ×
                   </button>
                   <div class="material-publish-config-dialog__material-preview">
                     <img v-if="getMaterialPreviewSource(material)"
                       :src="getFastPreviewImageUrl(getMaterialPreviewSource(material), { width: 220 })"
-                      :alt="material.name || `素材${material.id}`" :title="material.name || `素材${material.id}`" />
+                      :alt="material.name || t('material.materialId', { id: material.id })" :title="material.name || t('material.materialId', { id: material.id })" />
                     <div v-else class="material-publish-config-dialog__material-placeholder">
-                      暂无预览
+                      {{ t('material.noPreview') }}
                     </div>
                   </div>
 
                   <div class="material-publish-config-dialog__material-meta">
                     <span class="material-publish-config-dialog__material-name">
-                      {{ material.name || `素材${material.id}` }}
+                      {{ material.name || t('material.materialId', { id: material.id }) }}
                     </span>
                     <span class="material-publish-config-dialog__material-suffix">
-                      {{ getMaterialSuffix(material.id) || "未知格式" }}
+                      {{ getMaterialSuffix(material.id) || t('material.unknownFormat') }}
                     </span>
                   </div>
                 </div>
 
-                <el-empty v-if="!selectedMaterialsForPublishConfig.length" description="请先选择图片素材" :image-size="84" />
+                <el-empty v-if="!selectedMaterialsForPublishConfig.length" :description="t('material.selectMaterialFirst')" :image-size="84" />
               </div>
             </div>
 
@@ -720,21 +722,21 @@
               <div
                 class="material-publish-config-dialog__section-head material-publish-config-dialog__section-head--configs">
                 <div>
-                  <div class="material-publish-config-dialog__section-eyebrow">步骤 2</div>
+                  <div class="material-publish-config-dialog__section-eyebrow">{{ t('material.step2') }}</div>
                   <div class="material-publish-config-dialog__section-title">
-                    独立站商品配置
+                    {{ t('material.siteProductConfig') }}
                   </div>
                   <div class="material-publish-config-dialog__section-desc">
-                    未绑定 PSD 模板的商品配置不可用于图片直达商品流程
+                    {{ t('material.siteProductSectionDesc') }}
                   </div>
                 </div>
                 <div class="material-publish-config-dialog__section-tools">
                   <el-tag type="success" effect="plain">
-                    可用 {{ materialProductConfigUsableCount }} /
+                    {{ t('material.usable') }} {{ materialProductConfigUsableCount }} /
                     {{ filteredMaterialProductConfigs.length }}
                   </el-tag>
                   <div class="material-publish-config-dialog__search">
-                    <el-input v-model="materialProductConfigSearchText" clearable placeholder="搜索配置名称、商品类型或标签"
+                    <el-input v-model="materialProductConfigSearchText" clearable :placeholder="t('material.searchProductConfigPlaceholder')"
                       @input="materialProductConfigCurrentPage = 1">
                       <template #prefix>
                         <el-icon>
@@ -763,29 +765,29 @@
             <div class="material-publish-config-dialog__footer">
               <div class="material-publish-config-dialog__footer-info">
                 <span class="material-publish-config-dialog__footer-chip">
-                  素材 {{ ids.length }} 张
+                  {{ t('material.materialCount', { count: ids.length }) }}
                 </span>
                 <span class="material-publish-config-dialog__footer-chip">
-                  商品配置 {{ materialProductConfigSelectedIds.length }} 个
+                  {{ t('material.productConfigCount', { count: materialProductConfigSelectedIds.length }) }}
                 </span>
                 <span class="material-publish-config-dialog__footer-chip">
-                  预计生成 {{ materialProductConfigTaskCount }} 个独立站商品
+                  {{ t('material.expectedSiteProducts', { count: materialProductConfigTaskCount }) }}
                 </span>
                 <span v-if="hasInvalidFormatMaterials" class="material-publish-config-dialog__footer-tip">
-                  当前存在格式不兼容素材，请处理后再创建任务
+                  {{ t('material.incompatibleFormatTipProduct') }}
                 </span>
                 <span v-else
                   class="material-publish-config-dialog__footer-tip material-publish-config-dialog__footer-tip--muted">
-                  套图完成后将自动生成商品信息、SEO和价格
+                  {{ t('material.siteProductFooterMuted') }}
                 </span>
               </div>
               <div class="material-publish-config-dialog__footer-actions">
-                <el-button @click="handleCloseMaterialProductConfigDialog">取消</el-button>
+                <el-button @click="handleCloseMaterialProductConfigDialog">{{ t('material.cancel') }}</el-button>
                 <el-button type="primary" :loading="materialProductConfigSubmitting" :disabled="!ids.length ||
                   !materialProductConfigSelectedIds.length ||
                   hasInvalidFormatMaterials
                   " @click="handleCreatePsdSetsByProductConfig">
-                  创建商品任务
+                  {{ t('material.createProductTask') }}
                 </el-button>
               </div>
             </div>
@@ -801,16 +803,16 @@
               </div>
               <div class="psd-set-dialog__header-chips">
                 <span v-if="isImageGroupPsdSet" class="psd-set-dialog__header-chip">
-                  组图 {{ psdSetImageGroups.length }} 个
+                  {{ t('material.groupCount', { count: psdSetImageGroups.length }) }}
                 </span>
                 <span class="psd-set-dialog__header-chip">
-                  素材 {{ psdSetSelectedMaterialIds.length }} 张
+                  {{ t('material.materialCount', { count: psdSetSelectedMaterialIds.length }) }}
                 </span>
                 <span class="psd-set-dialog__header-chip">
-                  模板 {{ selectedPsdTemplateIds.length }} 个
+                  {{ t('material.templateCount', { count: selectedPsdTemplateIds.length }) }}
                 </span>
                 <span class="psd-set-dialog__header-chip is-accent">
-                  预计 {{ psdSetTaskCount }} 条任务
+                  {{ t('material.expectedTasks', { count: psdSetTaskCount }) }}
                 </span>
               </div>
             </div>
@@ -820,16 +822,16 @@
             <div class="psd-set-materials">
               <div class="psd-set-panel__head">
                 <div>
-                  <div class="psd-set-panel__eyebrow">步骤 1</div>
+                  <div class="psd-set-panel__eyebrow">{{ t('material.step1') }}</div>
                   <div class="section-title">
-                    {{ isImageGroupPsdSet ? "已选择组图" : "已选择素材" }}
+                    {{ isImageGroupPsdSet ? t('material.selectedGroups') : t('material.selectedMaterials') }}
                     ({{ isImageGroupPsdSet ? psdSetImageGroups.length : psdSetSelectedMaterialIds.length }})
                   </div>
                   <div class="psd-set-panel__desc">
                     {{
                       isImageGroupPsdSet
-                        ? "每个组图会按图片序号独立创建套图任务。"
-                        : "可直接按当前素材的尺寸和抠图属性筛选模板。"
+                        ? t('material.groupTaskDesc')
+                        : t('material.materialTaskDesc')
                     }}
                   </div>
                 </div>
@@ -837,8 +839,8 @@
                   <el-tag :type="hasInvalidFormatMaterials ? 'warning' : 'success'" effect="plain">
                     {{
                       hasInvalidFormatMaterials
-                        ? `${invalidFormatMaterialsList.length} 张格式需处理`
-                        : "格式检查通过"
+                        ? t('material.formatNeedsProcess', { count: invalidFormatMaterialsList.length })
+                        : t('material.formatCheckPassed')
                     }}
                   </el-tag>
                 </div>
@@ -846,9 +848,10 @@
               <el-alert v-if="hasInvalidFormatMaterials" type="warning" :closable="false" show-icon
                 class="psd-set-panel__alert">
                 <template #title>
-                  当前有 {{ invalidFormatMaterialsList.length }} 张素材格式不兼容：{{
-                    invalidFormatMaterialsList.map((item) => item.name).join("、")
-                  }}
+                  {{ t('material.incompatibleFormatAlert', {
+                    count: invalidFormatMaterialsList.length,
+                    names: invalidFormatMaterialsList.map((item) => item.name).join("、")
+                  }) }}
                 </template>
               </el-alert>
               <div v-if="isImageGroupPsdSet" class="psd-set-source-groups">
@@ -856,7 +859,7 @@
                   <div class="psd-set-source-group__head">
                     <span class="psd-set-source-group__name">{{ group.name }}</span>
                     <el-tag size="small" type="info" effect="plain">
-                      {{ group.stickers.length }} 张
+                      {{ t('material.imageCount', { count: group.stickers.length }) }}
                     </el-tag>
                   </div>
                   <div class="psd-set-source-group__members">
@@ -864,7 +867,7 @@
                       class="psd-set-source-group__member">
                       <span class="psd-set-source-group__order">#{{ index + 1 }}</span>
                       <img :src="getFastPreviewImageUrl(getMaterialPreviewSource(sticker), { width: 120 })"
-                        :alt="sticker.name || `图片 ${index + 1}`" loading="lazy" />
+                        :alt="sticker.name || t('material.imageIndex', { index: index + 1 })" loading="lazy" />
                     </div>
                   </div>
                 </div>
@@ -872,7 +875,7 @@
               <div v-else class="thumbs">
                 <div v-for="id in psdSetSelectedMaterialIds" :key="id" class="thumb"
                   :class="{ 'thumb-invalid-format': isMaterialFormatInvalid(id) }">
-                  <button type="button" class="thumb-remove" title="移除该图片" @click.stop="removeSelectedMaterial(id)">
+                  <button type="button" class="thumb-remove" :title="t('material.removeImage')" @click.stop="removeSelectedMaterial(id)">
                     ×
                   </button>
                   <div class="thumb-image-wrapper">
@@ -880,12 +883,12 @@
                       getMaterialPreviewSource(getMaterialById(id)),
                       { width: 150 },
                     )
-                      " class="thumb-img" alt="素材预览" loading="lazy" />
+                      " class="thumb-img" :alt="t('material.materialPreview')" loading="lazy" />
                     <div v-if="isMaterialFormatInvalid(id)" class="thumb-format-badge">
                       <el-icon>
                         <Warning />
                       </el-icon>
-                      <span>{{ getMaterialSuffix(id) || "未知" }}</span>
+                      <span>{{ getMaterialSuffix(id) || t('material.unknown') }}</span>
                     </div>
                     <div v-else-if="getMaterialSuffix(id)" class="thumb-format-badge valid">
                       <span>{{ getMaterialSuffix(id) }}</span>
@@ -897,14 +900,14 @@
                     </el-tag>
                     <el-tag v-if="getMaterialCutoutStatus(id) !== null" size="small"
                       :type="getMaterialCutoutStatus(id) ? 'success' : 'info'" class="thumb-info-tag">
-                      {{ getMaterialCutoutStatus(id) ? "抠图" : "非抠图" }}
+                      {{ getMaterialCutoutStatus(id) ? t('material.cutout') : t('material.nonCutout') }}
                     </el-tag>
                   </div>
                   <div class="thumb-action-row">
                     <el-button size="small" type="primary" link
                       :disabled="!getMaterialShapeKey(id) && !getMaterialCutoutMode(id)"
                       @click="applyMaterialFilters(id)">
-                      用当前图筛选模板
+                      {{ t('material.filterByThisImage') }}
                     </el-button>
                   </div>
                 </div>
@@ -913,42 +916,42 @@
             <div class="psd-set-templates">
               <div class="psd-set-panel__head">
                 <div>
-                  <div class="psd-set-panel__eyebrow">步骤 2</div>
+                  <div class="psd-set-panel__eyebrow">{{ t('material.step2') }}</div>
                   <div class="section-title">
-                    选择PSD模板 (可多选，支持跨页勾选)
+                    {{ t('material.selectPsdTemplate') }}
                     <span v-if="psdSetTemplatePageParams.total > 0" class="template-count-info">
-                      (共 {{ psdSetTemplatePageParams.total }} 个)
+                      ({{ t('material.totalCount', { count: psdSetTemplatePageParams.total }) }})
                     </span>
                   </div>
                   <div class="psd-set-panel__desc">
-                    模板列表会保留当前筛选条件和勾选状态，方便连续操作。
+                    {{ t('material.templateListDesc') }}
                   </div>
                 </div>
                 <div class="psd-set-panel__tags">
                   <el-tag type="primary" effect="plain">
-                    已选 {{ selectedPsdTemplateIds.length }} 个
+                    {{ t('material.selectedCount', { count: selectedPsdTemplateIds.length }) }}
                   </el-tag>
-                  <el-tag type="info" effect="plain">预计 {{ psdSetTaskCount }} 条任务</el-tag>
+                  <el-tag type="info" effect="plain">{{ t('material.expectedTasks', { count: psdSetTaskCount }) }}</el-tag>
                 </div>
               </div>
 
               <div class="psd-set-content-container">
                 <div class="psd-template-folder-filter">
-                  <span class="psd-template-folder-filter__label">文件夹</span>
+                  <span class="psd-template-folder-filter__label">{{ t('material.folder') }}</span>
                   <el-cascader v-model="selectedPsdFolderId" :options="psdFolderTreeData" :props="{
                     value: 'id',
                     label: 'name',
                     children: 'children',
                     checkStrictly: true,
                     emitPath: false,
-                  }" placeholder="选择模板文件夹" filterable clearable :show-all-levels="false"
+                  }" :placeholder="t('material.selectTemplateFolder')" filterable clearable :show-all-levels="false"
                     popper-class="psd-template-folder-cascader-popper" class="psd-template-folder-filter__cascader"
                     @change="handlePsdFolderChange" />
                 </div>
 
                 <div class="psd-template-list-container">
                   <div class="psd-set-template-toolbar">
-                    <el-input v-model="psdSetTemplateSearchText" placeholder="搜索" clearable
+                    <el-input v-model="psdSetTemplateSearchText" :placeholder="t('material.search')" clearable
                       class="psd-set-template-toolbar__search">
                       <template #prefix>
                         <el-icon>
@@ -958,48 +961,48 @@
                     </el-input>
 
                     <!-- 尺寸过滤 -->
-                    <el-select v-model="psdSetTemplatePageParams.suitableSizesArray" placeholder="尺寸" clearable multiple
+                    <el-select v-model="psdSetTemplatePageParams.suitableSizesArray" :placeholder="t('material.size')" clearable multiple
                       style="max-width: 200px" @change="
                         () => {
                           psdSetTemplatePageParams.currentPage = 1;
                           loadPsdTemplatesForPsdSet();
                         }
                       ">
-                      <el-option-group label="正方形">
+                      <el-option-group :label="t('material.square')">
                         <el-option v-for="config in SIZE_SHAPE_GROUPS.square" :key="config.key" :label="config.label"
                           :value="config.key" />
                       </el-option-group>
-                      <el-option-group label="横图">
+                      <el-option-group :label="t('material.landscape')">
                         <el-option v-for="config in SIZE_SHAPE_GROUPS.landscape" :key="config.key" :label="config.label"
                           :value="config.key" />
                       </el-option-group>
-                      <el-option-group label="竖图">
+                      <el-option-group :label="t('material.portrait')">
                         <el-option v-for="config in SIZE_SHAPE_GROUPS.portrait" :key="config.key" :label="config.label"
                           :value="config.key" />
                       </el-option-group>
                     </el-select>
 
                     <!-- 抠图过滤 -->
-                    <el-select v-model="psdSetTemplatePageParams.cutoutModesArray" placeholder="抠图支持" clearable multiple
+                    <el-select v-model="psdSetTemplatePageParams.cutoutModesArray" :placeholder="t('material.cutoutSupport')" clearable multiple
                       style="max-width: 200px" @change="
                         () => {
                           psdSetTemplatePageParams.currentPage = 1;
                           loadPsdTemplatesForPsdSet();
                         }
                       ">
-                      <el-option label="抠图" value="CUTOUT" />
-                      <el-option label="非抠图" value="NON_CUTOUT" />
+                      <el-option :label="t('material.cutout')" value="CUTOUT" />
+                      <el-option :label="t('material.nonCutout')" value="NON_CUTOUT" />
                     </el-select>
 
                     <el-button size="default" class="psd-template-toolbar-button" @click="handlePsdTemplateSelectAll">
-                      {{ isAllPsdTemplatesSelected ? "取消全选" : "全选" }}
+                      {{ isAllPsdTemplatesSelected ? t('material.deselectAll') : t('material.selectAll') }}
                     </el-button>
                     <el-button size="default" :icon="Edit" class="psd-template-toolbar-button"
                       @click="handlePsdTemplateDetailConfig">
-                      详细配置
+                      {{ t('material.detailConfig') }}
                     </el-button>
                     <span class="selected-count" v-if="selectedPsdTemplateIds.length > 0">
-                      已选中 {{ selectedPsdTemplateIds.length }} 个
+                      {{ t('material.selectedCount', { count: selectedPsdTemplateIds.length }) }}
                     </span>
                   </div>
                   <div class="template-list-wrapper">
@@ -1010,22 +1013,22 @@
                           <img v-if="tpl.thumbnail || tpl.preview || tpl.image" :src="getFastPreviewImageUrl(tpl.thumbnail || tpl.preview || tpl.image, {
                             width: 200,
                           })
-                            " :alt="tpl.name || '模板缩略图'" class="template-thumbnail" loading="lazy" title="点击预览"
+                            " :alt="tpl.name || t('material.templateThumbnail')" class="template-thumbnail" loading="lazy" :title="t('material.clickToPreview')"
                             @click.stop="openImagePreview(tpl.thumbnail || tpl.preview || tpl.image, tpl.name)"
                             @error="handleTemplateImageError" />
                           <div class="template-info">
                             <div class="template-header">
                               <div class="template-title-row">
-                                <div class="template-title">{{ tpl.name || "未命名模板" }}</div>
+                                <div class="template-title">{{ tpl.name || t('material.unnamedTemplate') }}</div>
                                 <el-link type="primary" underline="never" class="template-detail-link"
                                   @click.stop="openTemplateDetail(tpl)">
-                                  查看详情
+                                  {{ t('material.viewDetail') }}
                                 </el-link>
                               </div>
                             </div>
                             <div class="template-paths">
                               <div class="path-row">
-                                <span class="path-label">适用尺寸：</span>
+                                <span class="path-label">{{ t('material.suitableSizes') }}：</span>
                                 <div v-if="tpl.suitableSizes && tpl.suitableSizes.length > 0"
                                   class="suitable-sizes-wrap">
                                   <el-tag v-for="sizeKey in tpl.suitableSizes" :key="sizeKey" size="small" :style="{
@@ -1037,24 +1040,24 @@
                                     {{ getSizeShapeUiConfig(sizeKey)?.label || sizeKey }}
                                   </el-tag>
                                 </div>
-                                <span v-else class="path-empty">暂无</span>
+                                <span v-else class="path-empty">{{ t('material.none') }}</span>
                               </div>
                               <div class="path-row">
-                                <span class="path-label">适用抠图：</span>
+                                <span class="path-label">{{ t('material.suitableCutout') }}：</span>
                                 <div v-if="tpl.cutoutModes && tpl.cutoutModes.length > 0" class="suitable-cutout-wrap">
                                   <el-tag v-for="mode in tpl.cutoutModes" :key="mode" size="small" type="info"
                                     style="margin-right: 4px">
                                     {{ getCutoutModeLabel(mode) }}
                                   </el-tag>
                                 </div>
-                                <span v-else class="path-empty">暂无</span>
+                                <span v-else class="path-empty">{{ t('material.none') }}</span>
                               </div>
                             </div>
                           </div>
                         </div>
                       </div>
                       <el-empty v-if="!filteredPsdSetTemplates.length && !psdSetTemplatesLoading"
-                        :description="psdSetTemplateSearchText ? '未找到匹配的模板' : '暂无PSD模板'" />
+                        :description="psdSetTemplateSearchText ? t('material.noMatchingTemplate') : t('material.noPsdTemplate')" />
                     </div>
                     <!-- PSD模板分页 -->
                     <div class="template-pagination" v-if="psdSetTemplatePageParams.total > 0">
@@ -1077,59 +1080,58 @@
                   <span class="psd-set-info-chip">
                     {{
                       isImageGroupPsdSet
-                        ? `将生成 ${psdSetImageGroups.length} 个组图 × ${selectedPsdTemplateIds.length} 个模板 = ${psdSetTaskCount}
-                    条套图任务`
+                        ? t('material.groupTaskInfo', { groups: psdSetImageGroups.length, templates: selectedPsdTemplateIds.length, count: psdSetTaskCount })
                         : psdSetMergeSticker
-                          ? `合并生成，每个模板各生成 1 条，共 ${psdSetTaskCount} 条套图任务`
-                          : `将生成 ${ids.length} × ${selectedPsdTemplateIds.length} = ${psdSetTaskCount} 条套图任务`
+                          ? t('material.mergeTaskInfo', { count: psdSetTaskCount })
+                          : t('material.singleTaskInfo', { materials: ids.length, templates: selectedPsdTemplateIds.length, count: psdSetTaskCount })
                     }}
                   </span>
                   <span class="psd-set-info-chip psd-set-info-chip--subtle">
-                    允许的图片格式：{{ allowedFormatsForSelectedTemplates.join("、") }}
+                    {{ t('material.allowedFormats') }}：{{ allowedFormatsForSelectedTemplates.join("、") }}
                   </span>
                   <span class="psd-set-info-chip psd-set-info-chip--subtle">
-                    自动化动作：{{
-                      enabledPsdSetAutomationCount ? enabledPsdSetAutomationKeys.join("、") : "未启用"
+                    {{ t('material.automationActions') }}：{{
+                      enabledPsdSetAutomationCount ? enabledPsdSetAutomationKeys.join("、") : t('material.notEnabled')
                     }}
                   </span>
                 </div>
               </div>
 
               <div class="psd-set-mode-inline">
-                <span class="psd-set-mode-label">生成方式:</span>
+                <span class="psd-set-mode-label">{{ t('material.generateMode') }}:</span>
                 <el-tag :type="psdSetMergeSticker ? 'success' : 'primary'" size="large">
                   {{
                     isImageGroupPsdSet
-                      ? "组图 × 模板"
+                      ? t('material.groupXTemplate')
                       : psdSetMergeSticker
-                        ? "合并素材 × 模板"
-                        : "单素材 × 模板"
+                        ? t('material.mergedXTemplate')
+                        : t('material.singleXTemplate')
                   }}
                 </el-tag>
               </div>
 
               <div class="psd-set-footer-actions">
-                <el-button @click="psdSetDialogVisible = false">取消</el-button>
+                <el-button @click="psdSetDialogVisible = false">{{ t('material.cancel') }}</el-button>
                 <el-button plain @click="psdSetAutomationDialogVisible = true">
-                  完成后动作{{ enabledPsdSetAutomationCount ? `(${enabledPsdSetAutomationCount})` : "" }}
+                  {{ t('material.postActions') }}{{ enabledPsdSetAutomationCount ? `(${enabledPsdSetAutomationCount})` : "" }}
                 </el-button>
                 <el-button type="info" plain
                   :disabled="!psdSetSelectedMaterialIds.length || !selectedPsdTemplateIds.length"
-                  @click="showPsdSetParams">查看发送参数</el-button>
+                  @click="showPsdSetParams">{{ t('material.viewSendParams') }}</el-button>
                 <el-tooltip v-if="hasInvalidFormatMaterials"
-                  :content="`所选素材中包含不符合格式要求的图片（${invalidFormatMaterialsList.map((m) => m.name).join('、')}），请移除后重试`"
+                  :content="t('material.invalidFormatTooltip', { names: invalidFormatMaterialsList.map((m) => m.name).join('、') })"
                   placement="top">
                   <el-button type="primary" :disabled="!psdSetSelectedMaterialIds.length ||
                     !selectedPsdTemplateIds.length ||
                     hasInvalidFormatMaterials
                     " :loading="psdSetSubmitting" @click="handleCreatePsdSets">
-                    开始制作
+                    {{ t('material.startMaking') }}
                   </el-button>
                 </el-tooltip>
                 <el-button v-else type="primary"
                   :disabled="!psdSetSelectedMaterialIds.length || !selectedPsdTemplateIds.length"
                   :loading="psdSetSubmitting" @click="handleCreatePsdSets">
-                  开始制作
+                  {{ t('material.startMaking') }}
                 </el-button>
               </div>
             </div>
@@ -1141,17 +1143,17 @@
           <template #header>
             <div class="psd-set-automation-dialog__header">
               <div>
-                <div class="psd-set-automation-dialog__eyebrow">可选增强</div>
-                <div class="psd-set-automation-dialog__title">完成后自动执行</div>
+                <div class="psd-set-automation-dialog__eyebrow">{{ t('material.optionalEnhancement') }}</div>
+                <div class="psd-set-automation-dialog__title">{{ t('material.autoExecuteAfter') }}</div>
                 <div class="psd-set-automation-dialog__subtitle">
-                  套图成功后可继续自动生成商品或创建发布任务，不影响当前制作主流程。
+                  {{ t('material.autoExecuteSubtitle') }}
                 </div>
               </div>
             </div>
           </template>
           <div class="psd-set-automation-dialog-body">
             <div class="psd-set-automation-dialog__intro">
-              勾选需要的动作即可，只有启用后的字段会参与提交。
+              {{ t('material.autoExecuteIntro') }}
             </div>
             <div v-for="action in psdSetAutomationActions" :key="action.key" class="psd-set-automation-item"
               :class="{ 'is-active': action.enabled }">
@@ -1160,7 +1162,7 @@
                   {{ action.label }}
                 </el-checkbox>
                 <el-tag :type="action.enabled ? 'success' : 'info'" effect="plain">
-                  {{ action.enabled ? "已启用" : "未启用" }}
+                  {{ action.enabled ? t('material.enabled') : t('material.notEnabled') }}
                 </el-tag>
                 <span class="psd-set-automation-key">{{ action.key }}</span>
               </div>
@@ -1177,9 +1179,9 @@
                   <div v-else-if="field.component === 'product-template-list'" class="psd-set-automation-list">
                     <div class="psd-set-automation-list__toolbar">
                       <el-input v-model="psdSetAutomationProductTemplateSearchText" size="small" clearable
-                        placeholder="搜索模板名称/商品类型/标签" />
+                        :placeholder="t('material.searchTemplateNameType')" />
                       <el-tag size="small" type="info">
-                        已选 {{ action.params[field.key]?.length || 0 }} 个模板
+                        {{ t('material.selectedTemplates', { count: action.params[field.key]?.length || 0 }) }}
                       </el-tag>
                     </div>
                     <vxe-grid class="psd-set-automation-list__grid" border size="mini"
@@ -1195,9 +1197,9 @@
                   <div v-else-if="field.component === 'publish-config-list'" class="psd-set-automation-list">
                     <div class="psd-set-automation-list__toolbar">
                       <el-input v-model="psdSetAutomationPublishConfigSearchText" size="small" clearable
-                        placeholder="搜索任务配置名称、任务类型或平台" />
+                        :placeholder="t('material.searchTaskConfig')" />
                       <el-tag size="small" type="info">
-                        已选 {{ action.params[field.key]?.length || 0 }} 个配置
+                        {{ t('material.selectedConfigs', { count: action.params[field.key]?.length || 0 }) }}
                       </el-tag>
                     </div>
                     <vxe-grid class="psd-set-automation-list__grid" border size="mini"
@@ -1216,52 +1218,52 @@
             </div>
           </div>
           <template #footer>
-            <el-button @click="psdSetAutomationDialogVisible = false">关闭</el-button>
+            <el-button @click="psdSetAutomationDialogVisible = false">{{ t('material.close') }}</el-button>
           </template>
         </el-dialog>
 
         <!-- 批量详细配置全屏弹窗（选中的PSD模板） -->
-        <el-dialog v-model="batchDetailConfigDialogVisible" title="详细配置 - 选中的模板" fullscreen append-to-body
+        <el-dialog v-model="batchDetailConfigDialogVisible" :title="t('material.detailConfigSelectedTemplates')" fullscreen append-to-body
           :destroy-on-close="true">
           <div class="batch-detail-config-content">
             <div class="batch-detail-config-header">
               <div class="batch-detail-config-title">
-                <span>共 {{ templateConfigList.length }} 个模板</span>
+                <span>{{ t('material.templateTotalCount', { count: templateConfigList.length }) }}</span>
               </div>
             </div>
             <div class="batch-detail-config-body">
               <div v-for="(template, index) in templateConfigList" :key="template.id" class="template-config-row">
                 <div class="template-config-left">
                   <div class="template-config-header-row">
-                    <span class="template-name">{{ template.name || `模板 ${index + 1}` }}</span>
+                    <span class="template-name">{{ template.name || t('material.templateIndex', { index: index + 1 }) }}</span>
                     <el-tag :type="template.psdTemplateConfig ? 'success' : 'info'" size="small">
-                      {{ template.psdTemplateConfig ? "已配置" : "未配置" }}
+                      {{ template.psdTemplateConfig ? t('material.configured') : t('material.notConfigured') }}
                     </el-tag>
                   </div>
                   <div class="template-config-images">
                     <div class="config-image-item">
-                      <div class="config-image-label">素材图</div>
+                      <div class="config-image-label">{{ t('material.materialImage') }}</div>
                       <div class="config-image-wrapper">
                         <template v-if="template.materialId !== undefined">
                           <!-- 单素材模式：显示单个匹配的素材图 -->
                           <img v-if="getMatchedMaterialId(index)"
-                            :src="getMaterialImageUrl(getMatchedMaterialId(index))" :alt="'素材'" class="config-image" />
-                          <span v-else class="config-image-placeholder">无匹配素材</span>
+                            :src="getMaterialImageUrl(getMatchedMaterialId(index))" :alt="t('material.materialImage')" class="config-image" />
+                          <span v-else class="config-image-placeholder">{{ t('material.noMatchingMaterial') }}</span>
                         </template>
                         <template v-else>
                           <!-- 合并模式：显示所有素材图 -->
                           <img v-for="materialId in ids" :key="materialId" :src="getMaterialImageUrl(materialId)"
-                            :alt="'素材'" class="config-image" />
-                          <span v-if="!ids.length" class="config-image-placeholder">无素材</span>
+                            :alt="t('material.materialImage')" class="config-image" />
+                          <span v-if="!ids.length" class="config-image-placeholder">{{ t('material.noMaterial') }}</span>
                         </template>
                       </div>
                     </div>
                     <div class="config-image-item">
-                      <div class="config-image-label">模板配置图</div>
+                      <div class="config-image-label">{{ t('material.templateConfigImage') }}</div>
                       <div class="config-image-wrapper">
                         <img v-if="template.thumbnail" :src="getFastPreviewImageUrl(template.thumbnail, { width: 200 })"
                           :alt="template.name" class="config-image" />
-                        <span v-else class="config-image-placeholder">无缩略图</span>
+                        <span v-else class="config-image-placeholder">{{ t('material.noThumbnail') }}</span>
                       </div>
                     </div>
                   </div>
@@ -1270,23 +1272,23 @@
                   <div class="config-editor-toolbar">
                     <el-button @click="handleResetConfigForTemplate(index)" type="warning" :icon="RefreshLeft"
                       size="small">
-                      重置为默认
+                      {{ t('material.resetToDefault') }}
                     </el-button>
                   </div>
                   <el-input v-model="template.configText" type="textarea" :rows="18"
-                    placeholder='请输入JSON配置（例如：{"key1": "value1", "key2": "value2"}）' class="config-textarea" />
+                    :placeholder='t("material.jsonConfigPlaceholder")' class="config-textarea" />
                 </div>
               </div>
             </div>
           </div>
           <template #footer>
-            <el-button @click="batchDetailConfigDialogVisible = false">取消</el-button>
-            <el-button type="primary" @click="handleSaveConfigToMemory"> 保存（暂存） </el-button>
+            <el-button @click="batchDetailConfigDialogVisible = false">{{ t('material.cancel') }}</el-button>
+            <el-button type="primary" @click="handleSaveConfigToMemory"> {{ t('material.saveTemporary') }} </el-button>
           </template>
         </el-dialog>
 
         <!-- PSD模板详情弹窗 -->
-        <el-dialog v-model="psdTemplateDetailDialogVisible" title="PSD模板详情" fullscreen align-center append-to-body
+        <el-dialog v-model="psdTemplateDetailDialogVisible" :title="t('material.psdTemplateDetail')" fullscreen align-center append-to-body
           :destroy-on-close="true">
           <div v-if="currentPsdTemplate" class="psd-template-detail">
             <div class="detail-layout">
@@ -1302,56 +1304,56 @@
                     currentPsdTemplate.image,
                     { width: 600, quality: 90, format: 'webp' },
                   )
-                    " :alt="currentPsdTemplate.name || '模板缩略图'" class="detail-thumbnail-img" loading="lazy" />
-                  <div v-else class="detail-thumbnail-placeholder">暂无缩略图</div>
+                    " :alt="currentPsdTemplate.name || t('material.templateThumbnail')" class="detail-thumbnail-img" loading="lazy" />
+                  <div v-else class="detail-thumbnail-placeholder">{{ t('material.noThumbnail') }}</div>
                 </div>
               </div>
 
               <div class="detail-right">
                 <div class="detail-item">
-                  <span class="detail-label">模板名称：</span>
-                  <span class="detail-value">{{ currentPsdTemplate.name || "未命名模板" }}</span>
+                  <span class="detail-label">{{ t('material.templateName') }}：</span>
+                  <span class="detail-value">{{ currentPsdTemplate.name || t('material.unnamedTemplate') }}</span>
                 </div>
 
                 <div class="detail-item">
-                  <span class="detail-label">描述：</span>
-                  <span class="detail-value">{{ currentPsdTemplate.description || "暂无" }}</span>
+                  <span class="detail-label">{{ t('material.description') }}：</span>
+                  <span class="detail-value">{{ currentPsdTemplate.description || t('material.none') }}</span>
                 </div>
 
                 <div class="detail-item">
-                  <span class="detail-label">关键字：</span>
-                  <span class="detail-value">{{ currentPsdTemplate.keywords || "暂无" }}</span>
+                  <span class="detail-label">{{ t('material.keywords') }}：</span>
+                  <span class="detail-value">{{ currentPsdTemplate.keywords || t('material.none') }}</span>
                 </div>
 
                 <div v-if="currentPsdTemplate.psdTemplateConfig" class="detail-item">
-                  <span class="detail-label">PSD配置：</span>
+                  <span class="detail-label">{{ t('material.psdConfig') }}：</span>
                   <div class="detail-value psd-config-value">
                     {{ currentPsdTemplate.psdTemplateConfig }}
                   </div>
                 </div>
 
                 <div class="detail-item">
-                  <span class="detail-label">远程链接：</span>
+                  <span class="detail-label">{{ t('material.remoteLink') }}：</span>
                   <div class="detail-value">
                     <el-link v-if="currentPsdTemplate.url" :href="currentPsdTemplate.url" target="_blank" type="primary"
                       underline="never">
                       {{ currentPsdTemplate.url }}
                     </el-link>
-                    <span v-else class="detail-empty">暂无</span>
+                    <span v-else class="detail-empty">{{ t('material.none') }}</span>
                   </div>
                 </div>
 
                 <div class="detail-item">
-                  <span class="detail-label">本地路径：</span>
+                  <span class="detail-label">{{ t('material.localPath') }}：</span>
                   <span class="detail-value">{{
-                    currentPsdTemplate.windowsLocalPath || "暂无"
+                    currentPsdTemplate.windowsLocalPath || t('material.none')
                   }}</span>
                 </div>
               </div>
             </div>
           </div>
           <template #footer>
-            <el-button @click="psdTemplateDetailDialogVisible = false">关闭</el-button>
+            <el-button @click="psdTemplateDetailDialogVisible = false">{{ t('material.close') }}</el-button>
           </template>
         </el-dialog>
       </template>
@@ -1392,14 +1394,14 @@
                   <div class="material-compact-preview"
                     :class="{ 'material-compact-preview--custom': isCustomMaterial(row) }">
                     <span v-if="isCustomMaterial(row)" class="material-compact-preview__corner">
-                      定制
+                      {{ t('material.custom') }}
                     </span>
                     <div class="material-compact-preview__image-wrap">
                       <img v-if="row.url && !row._imageError" :key="`preview-${row.id}-${row.url}`"
-                        :src="getFastPreviewImageUrl(row.url, { width: 160 })" :alt="row.name || '素材图片'"
+                        :src="getFastPreviewImageUrl(row.url, { width: 160 })" :alt="row.name || t('material.materialImage')"
                         class="material-compact-preview__image" loading="lazy" decoding="async"
                         @error="row._imageError = true" @click="openImagePreview(row.url, row.name)" />
-                      <div v-else class="material-compact-preview__empty">无图</div>
+                      <div v-else class="material-compact-preview__empty">{{ t('material.noImage') }}</div>
                     </div>
                   </div>
                 </template>
@@ -1407,34 +1409,34 @@
                 <template #compactNameSlot="{ row }">
                   <div class="material-compact-name">
                     <div class="material-compact-name__title material-compact-name__title--wrap">
-                      <span>{{ row.name || `素材 ${row.id}` }}</span>
+                      <span>{{ row.name || t('material.materialSpaceId', { id: row.id }) }}</span>
                     </div>
                   </div>
                 </template>
 
                 <template #shareTypeSlot="{ row }">
-                  <el-tooltip v-if="row.shareType === 'shared'" content="这是共享快捷引用，请将资源转存副本备份，防止源文件删除导致丢失"
+                  <el-tooltip v-if="row.shareType === 'shared'" :content="t('material.sharedReferenceTip')"
                     placement="top">
                     <el-tag type="warning" size="small" effect="light" style="cursor: help">
                       {{ (row.sourceUserId && String(row.sourceUserId) !== String(row.userId)) ?
-                        `由【${row.sourceUser?.name || row.sourceUser?.account || ('用户' + row.sourceUserId)}】共享` : '共享' }}
+                        t('material.sharedBy', { name: row.sourceUser?.name || row.sourceUser?.account || t('material.userId', { id: row.sourceUserId }) }) : t('material.share') }}
                     </el-tag>
                   </el-tooltip>
                   <el-tag
                     v-else-if="row.shareType === 'copy' || (row.sourceUserId && String(row.sourceUserId) !== String(row.userId))"
                     type="success" size="small" effect="light">
-                    {{ (row.sourceUserId && String(row.sourceUserId) !== String(row.userId)) ? `由【${row.sourceUser?.name
-                      || row.sourceUser?.account || ('用户' + row.sourceUserId)}】转存` : '转存副本' }}
+                    {{ (row.sourceUserId && String(row.sourceUserId) !== String(row.userId)) ? t('material.copiedBy', { name: row.sourceUser?.name
+                      || row.sourceUser?.account || t('material.userId', { id: row.sourceUserId }) }) : t('material.copyCopy') }}
                   </el-tag>
-                  <el-tag v-else type="info" size="small" effect="plain">我上传的</el-tag>
+                  <el-tag v-else type="info" size="small" effect="plain">{{ t('material.uploadedByMe') }}</el-tag>
                 </template>
 
                 <template #codeSlot="{ row }">
                   <div v-if="row.code || row.id" class="code-cell">
-                    <span v-if="row.code" class="code-value code-clickable" @click.stop="handleCopyText(row.code, '编码')"
-                      title="点击复制编码">{{ row.code }}</span>
+                    <span v-if="row.code" class="code-value code-clickable" @click.stop="handleCopyText(row.code, t('material.code'))"
+                      :title="t('material.clickToCopyCode')">{{ row.code }}</span>
                     <span v-if="row.id" class="id-value id-clickable" @click.stop="handleCopyText(row.id, 'ID')"
-                      title="点击复制ID">#{{ row.id }}</span>
+                      :title="t('material.clickToCopyId')">#{{ row.id }}</span>
                   </div>
                   <span v-else class="table-cell-empty">-</span>
                 </template>
@@ -1459,15 +1461,15 @@
 
                 <template #cutoutSlot="{ row }">
                   <el-tag :type="row.isCutout ? 'success' : 'info'" effect="plain" size="small" class="cutout-tag">
-                    {{ row.isCutout ? "是" : "否" }}
+                    {{ row.isCutout ? t('material.yes') : t('material.no') }}
                   </el-tag>
                 </template>
 
                 <template #nameBilingualSlot="{ row }">
                   <div class="table-bilingual-cell">
                     <div class="table-bilingual-cell__item" :class="{ 'table-bilingual-cell__item--empty': !row.name }"
-                      @click.stop="handleCopyText(row.name, '中文名称')" role="button">
-                      <span class="table-bilingual-cell__label">中：</span>
+                      @click.stop="handleCopyText(row.name, t('material.zhName'))" role="button">
+                      <span class="table-bilingual-cell__label">{{ t('material.zhLabel') }}</span>
                       <el-tooltip :content="row.name || '-'" placement="top" effect="light" :show-after="500"
                         :disabled="!(row.name && row.name.length > 0)" popper-class="text-cell-tooltip">
                         <span class="table-bilingual-cell__content">{{ row.name || "-" }}</span>
@@ -1478,7 +1480,7 @@
                     </div>
                     <div class="table-bilingual-cell__item"
                       :class="{ 'table-bilingual-cell__item--empty': !row.nameEn }"
-                      @click.stop="handleCopyText(row.nameEn, '英文名称')" role="button">
+                      @click.stop="handleCopyText(row.nameEn, t('material.enName'))" role="button">
                       <span class="table-bilingual-cell__label">En:</span>
                       <el-tooltip :content="row.nameEn || '-'" placement="top" effect="light" :show-after="500"
                         :disabled="!(row.nameEn && row.nameEn.length > 0)" popper-class="text-cell-tooltip">
@@ -1495,10 +1497,11 @@
                   <div class="table-bilingual-cell">
                     <div class="table-bilingual-cell__item table-bilingual-cell__item--multiline"
                       :class="{ 'table-bilingual-cell__item--empty': !row.description }"
-                      @click.stop="handleCopyText(row.description, '中文描述')" role="button">
-                      <span class="table-bilingual-cell__label">中：</span>
+                      @click.stop="handleCopyText(row.description, t('material.zhDescription'))" role="button">
+                      <span class="table-bilingual-cell__label">{{ t('material.zhLabel') }}</span>
                       <el-tooltip :content="row.description || '-'" placement="top" effect="light" :show-after="500"
-                        :disabled="!(row.description && row.description.length > 0)" popper-class="text-cell-tooltip">
+                        :disabled="!(row.description && row.description.length > 0)"
+                        popper-class="text-cell-tooltip">
                         <span class="table-bilingual-cell__content">
                           {{ row.description || "-" }}
                         </span>
@@ -1509,7 +1512,7 @@
                     </div>
                     <div class="table-bilingual-cell__item table-bilingual-cell__item--multiline"
                       :class="{ 'table-bilingual-cell__item--empty': !row.descriptionEn }"
-                      @click.stop="handleCopyText(row.descriptionEn, '英文描述')" role="button">
+                      @click.stop="handleCopyText(row.descriptionEn, t('material.enDescription'))" role="button">
                       <span class="table-bilingual-cell__label">En:</span>
                       <el-tooltip :content="row.descriptionEn || '-'" placement="top" effect="light" :show-after="500"
                         :disabled="!(row.descriptionEn && row.descriptionEn.length > 0)"
@@ -1529,8 +1532,8 @@
                   <div class="table-bilingual-cell">
                     <div class="table-bilingual-cell__item table-bilingual-cell__item--multiline"
                       :class="{ 'table-bilingual-cell__item--empty': !row.keywords }"
-                      @click.stop="handleCopyText(row.keywords, '中文关键词')" role="button">
-                      <span class="table-bilingual-cell__label">中：</span>
+                      @click.stop="handleCopyText(row.keywords, t('material.zhKeywords'))" role="button">
+                      <span class="table-bilingual-cell__label">{{ t('material.zhLabel') }}</span>
                       <el-tooltip :content="row.keywords || '-'" placement="top" effect="light" :show-after="500"
                         :disabled="!(row.keywords && row.keywords.length > 0)" popper-class="text-cell-tooltip">
                         <span class="table-bilingual-cell__content">
@@ -1543,7 +1546,102 @@
                     </div>
                     <div class="table-bilingual-cell__item table-bilingual-cell__item--multiline"
                       :class="{ 'table-bilingual-cell__item--empty': !row.keywordsEn }"
-                      @click.stop="handleCopyText(row.keywordsEn, '英文关键词')" role="button">
+                      @click.stop="handleCopyText(row.keywordsEn, t('material.enKeywords'))" role="button">
+                      <span class="table-bilingual-cell__label">En:</span>
+                      <el-tooltip :content="row.keywordsEn || '-'" placement="top" effect="light" :show-after="500"
+                        :disabled="!(row.keywordsEn && row.keywordsEn.length > 0)" popper-class="text-cell-tooltip">
+                        <span class="table-bilingual-cell__content">
+                          {{ row.keywordsEn || "-" }}
+                        </span>
+                      </el-tooltip>
+                      <el-icon v-if="row.keywordsEn" class="table-bilingual-cell__icon">
+                        <DocumentCopy />
+                      </el-icon>
+                    </div>
+                  </div>
+                </template>
+
+                <template #nameBilingualSlot="{ row }">
+                  <div class="table-bilingual-cell">
+                    <div class="table-bilingual-cell__item" :class="{ 'table-bilingual-cell__item--empty': !row.name }"
+                      @click.stop="handleCopyText(row.name, t('material.zhName'))" role="button">
+                      <span class="table-bilingual-cell__label">{{ t('material.zhLabel') }}</span>
+                      <el-tooltip :content="row.name || '-'" placement="top" effect="light" :show-after="500"
+                        :disabled="!(row.name && row.name.length > 0)" popper-class="text-cell-tooltip">
+                        <span class="table-bilingual-cell__content">{{ row.name || "-" }}</span>
+                      </el-tooltip>
+                      <el-icon v-if="row.name" class="table-bilingual-cell__icon">
+                        <DocumentCopy />
+                      </el-icon>
+                    </div>
+                    <div class="table-bilingual-cell__item"
+                      :class="{ 'table-bilingual-cell__item--empty': !row.nameEn }"
+                      @click.stop="handleCopyText(row.nameEn, t('material.enName'))" role="button">
+                      <span class="table-bilingual-cell__label">En:</span>
+                      <el-tooltip :content="row.nameEn || '-'" placement="top" effect="light" :show-after="500"
+                        :disabled="!(row.nameEn && row.nameEn.length > 0)" popper-class="text-cell-tooltip">
+                        <span class="table-bilingual-cell__content">{{ row.nameEn || "-" }}</span>
+                      </el-tooltip>
+                      <el-icon v-if="row.nameEn" class="table-bilingual-cell__icon">
+                        <DocumentCopy />
+                      </el-icon>
+                    </div>
+                  </div>
+                </template>
+
+                <template #descriptionBilingualSlot="{ row }">
+                  <div class="table-bilingual-cell">
+                    <div class="table-bilingual-cell__item table-bilingual-cell__item--multiline"
+                      :class="{ 'table-bilingual-cell__item--empty': !row.description }"
+                      @click.stop="handleCopyText(row.description, t('material.zhDescription'))" role="button">
+                      <span class="table-bilingual-cell__label">{{ t('material.zhLabel') }}</span>
+                      <el-tooltip :content="row.description || '-'" placement="top" effect="light" :show-after="500"
+                        :disabled="!(row.description && row.description.length > 0)" popper-class="text-cell-tooltip">
+                        <span class="table-bilingual-cell__content">
+                          {{ row.description || "-" }}
+                        </span>
+                      </el-tooltip>
+                      <el-icon v-if="row.description" class="table-bilingual-cell__icon">
+                        <DocumentCopy />
+                      </el-icon>
+                    </div>
+                    <div class="table-bilingual-cell__item table-bilingual-cell__item--multiline"
+                      :class="{ 'table-bilingual-cell__item--empty': !row.descriptionEn }"
+                      @click.stop="handleCopyText(row.descriptionEn, t('material.enDescription'))" role="button">
+                      <span class="table-bilingual-cell__label">En:</span>
+                      <el-tooltip :content="row.descriptionEn || '-'" placement="top" effect="light" :show-after="500"
+                        :disabled="!(row.descriptionEn && row.descriptionEn.length > 0)"
+                        popper-class="text-cell-tooltip">
+                        <span class="table-bilingual-cell__content">
+                          {{ row.descriptionEn || "-" }}
+                        </span>
+                      </el-tooltip>
+                      <el-icon v-if="row.descriptionEn" class="table-bilingual-cell__icon">
+                        <DocumentCopy />
+                      </el-icon>
+                    </div>
+                  </div>
+                </template>
+
+                <template #keywordsBilingualSlot="{ row }">
+                  <div class="table-bilingual-cell">
+                    <div class="table-bilingual-cell__item table-bilingual-cell__item--multiline"
+                      :class="{ 'table-bilingual-cell__item--empty': !row.keywords }"
+                      @click.stop="handleCopyText(row.keywords, t('material.zhKeywords'))" role="button">
+                      <span class="table-bilingual-cell__label">{{ t('material.zhLabel') }}</span>
+                      <el-tooltip :content="row.keywords || '-'" placement="top" effect="light" :show-after="500"
+                        :disabled="!(row.keywords && row.keywords.length > 0)" popper-class="text-cell-tooltip">
+                        <span class="table-bilingual-cell__content">
+                          {{ row.keywords || "-" }}
+                        </span>
+                      </el-tooltip>
+                      <el-icon v-if="row.keywords" class="table-bilingual-cell__icon">
+                        <DocumentCopy />
+                      </el-icon>
+                    </div>
+                    <div class="table-bilingual-cell__item table-bilingual-cell__item--multiline"
+                      :class="{ 'table-bilingual-cell__item--empty': !row.keywordsEn }"
+                      @click.stop="handleCopyText(row.keywordsEn, t('material.enKeywords'))" role="button">
                       <span class="table-bilingual-cell__label">En:</span>
                       <el-tooltip :content="row.keywordsEn || '-'" placement="top" effect="light" :show-after="500"
                         :disabled="!(row.keywordsEn && row.keywordsEn.length > 0)" popper-class="text-cell-tooltip">
@@ -1571,25 +1669,25 @@
 
                 <template #isCustomSlot="{ row }">
                   <el-tag :type="row.isCustom ? 'success' : 'info'" size="small">
-                    {{ row.isCustom ? "是" : "否" }}
+                    {{ row.isCustom ? t('material.yes') : t('material.no') }}
                   </el-tag>
                 </template>
 
                 <template #isInfringementSlot="{ row }">
                   <el-tag :type="row.isInfringement ? 'danger' : 'success'" size="small">
-                    {{ row.isInfringement ? "侵权" : "非侵权" }}
+                    {{ row.isInfringement ? t('material.infringement') : t('material.notInfringement') }}
                   </el-tag>
                 </template>
 
                 <template #isCutoutSlot="{ row }">
                   <el-tag :type="row.isCutout ? 'success' : 'info'" size="small">
-                    {{ row.isCutout ? "是" : "否" }}
+                    {{ row.isCutout ? t('material.yes') : t('material.no') }}
                   </el-tag>
                 </template>
 
                 <template #seamlessSlot="{ row }">
                   <el-tag :type="normalizeBooleanValue(row.seamless) ? 'success' : 'info'" size="small">
-                    {{ normalizeBooleanValue(row.seamless) ? "是" : "否" }}
+                    {{ normalizeBooleanValue(row.seamless) ? t('material.yes') : t('material.no') }}
                   </el-tag>
                 </template>
 
@@ -1665,7 +1763,7 @@
                     </el-icon>
                     {{ row.folder }}
                   </el-tag>
-                  <span v-else class="table-cell-empty">根目录</span>
+                  <span v-else class="table-cell-empty">{{ t('material.rootDirectory') }}</span>
                 </template>
 
                 <template #operationDefaultSlot="{ row }">
@@ -1674,7 +1772,7 @@
                       popper-class="operation-dropdown-popper" placement="bottom-end" trigger="click"
                       @visible-change="(visible) => handleOperationDropdownVisibleChange(visible, row)">
                       <el-button type="primary" link size="small" class="operation-trigger-button"
-                        :loading="operationCommandLoadingId === String(row.id)">操作</el-button>
+                        :loading="operationCommandLoadingId === String(row.id)">{{ t('material.operation') }}</el-button>
                       <template #dropdown>
                         <div class="op-menu" @click.stop>
                           <!-- 内容相关（仅管理员） -->
@@ -1683,21 +1781,21 @@
                             <el-icon class="op-menu-arrow">
                               <ArrowLeft />
                             </el-icon>
-                            <span class="op-menu-label">内容相关</span>
+                            <span class="op-menu-label">{{ t('material.contentRelated') }}</span>
                             <div class="op-submenu" data-submenu="content" @mouseenter="handleSubmenuKeepVisible"
                               @mouseleave="handleSubmenuHide">
                               <div class="op-submenu-item" @click.stop="handleOperationCommand('ai-generate', row)">
-                                AI自动生成内容
+                                {{ t('material.aiAutoGenerateContent') }}
                               </div>
                               <div class="op-submenu-item"
                                 @click.stop="handleOperationCommand('generate-image-info', row)">
-                                生成图片信息
+                                {{ t('material.generateImageInfo') }}
                               </div>
                               <div class="op-submenu-item" @click.stop="handleOperationCommand('story-script', row)">
-                                生成故事脚本
+                                {{ t('material.generateStoryScript') }}
                               </div>
                               <div class="op-submenu-item" @click.stop="handleOperationCommand('view-meta', row)">
-                                查看元数据
+                                {{ t('material.viewMetaData') }}
                               </div>
                             </div>
                           </div>
@@ -1708,14 +1806,14 @@
                             <el-icon class="op-menu-arrow">
                               <ArrowLeft />
                             </el-icon>
-                            <span class="op-menu-label">制作</span>
+                            <span class="op-menu-label">{{ t('material.make') }}</span>
                             <div class="op-submenu" data-submenu="design" @mouseenter="handleSubmenuKeepVisible"
                               @mouseleave="handleSubmenuHide">
                               <div class="op-submenu-item" @click.stop="handleOperationCommand('create-ps-set', row)">
-                                制作PS套图
+                                {{ t('material.createPsSet') }}
                               </div>
                               <div class="op-submenu-item" @click.stop="handleOperationCommand('view-ps-sets', row)">
-                                查看该素材套图
+                                {{ t('material.viewMaterialPsSets') }}
                               </div>
                             </div>
                           </div>
@@ -1726,38 +1824,38 @@
                             <el-icon class="op-menu-arrow">
                               <ArrowLeft />
                             </el-icon>
-                            <span class="op-menu-label">图片操作</span>
+                            <span class="op-menu-label">{{ t('material.imageOperations') }}</span>
                             <div class="op-submenu" data-submenu="image" @mouseenter="handleSubmenuKeepVisible"
                               @mouseleave="handleSubmenuHide">
                               <div class="op-submenu-item" @click.stop="handleOperationCommand('download', row)">
-                                下载
+                                {{ t('material.download') }}
                               </div>
                               <div class="op-submenu-item"
                                 @click.stop="handleOperationCommand('download-rotated-90', row)">
-                                下载旋转90°
+                                {{ t('material.downloadRotated90') }}
                               </div>
                               <div v-if="isAdmin" class="op-submenu-item"
                                 @click.stop="handleOperationCommand('copy', row)">
-                                复制
+                                {{ t('material.copy') }}
                               </div>
                               <div class="op-submenu-item" @click.stop="handleOperationCommand('copy-origin-url', row)">
-                                复制原始链接
+                                {{ t('material.copyOriginUrl') }}
                               </div>
                               <div v-if="!visualSimilarSearchDisabled" class="op-submenu-item"
                                 @click.stop="handleOperationCommand('find-similar', row)">
-                                找相似图
+                                {{ t('material.findSimilarImages') }}
                               </div>
                               <div class="op-submenu-item"
                                 @click.stop="handleOperationCommand('view-publish-usage', row)">
-                                查看发布绑定
+                                {{ t('material.viewPublishBinding') }}
                               </div>
                               <div v-if="isAdmin && (row.suffix || '').toLowerCase() === 'png'" class="op-submenu-item"
                                 @click.stop="handleOperationCommand('trim-png', row)">
-                                生成无空白PNG
+                                {{ t('material.generateNoBlankPng') }}
                               </div>
                               <div v-if="isAdmin && (row.suffix || '').toLowerCase() === 'svg'" class="op-submenu-item"
                                 @click.stop="handleOperationCommand('svg-to-png', row)">
-                                SVG转PNG
+                                {{ t('material.svgToPng') }}
                               </div>
                             </div>
                           </div>
@@ -1767,17 +1865,17 @@
                             <el-icon class="op-menu-arrow">
                               <ArrowLeft />
                             </el-icon>
-                            <span class="op-menu-label">归属操作</span>
+                            <span class="op-menu-label">{{ t('material.ownershipOperations') }}</span>
                             <div class="op-submenu" data-submenu="ownership" @mouseenter="handleSubmenuKeepVisible"
                               @mouseleave="handleSubmenuHide">
                               <div class="op-submenu-item" @click.stop="handleOperationCommand('share-to-user', row)">
-                                共享
+                                {{ t('material.share') }}
                               </div>
                               <div class="op-submenu-item" @click.stop="handleOperationCommand('copy-to-user', row)">
-                                转存副本
+                                {{ t('material.copyCopy') }}
                               </div>
                               <div class="op-submenu-item" @click.stop="handleOperationCommand('move-to-user', row)">
-                                移交所有人
+                                {{ t('material.transferAll') }}
                               </div>
                             </div>
                           </div>
@@ -1786,7 +1884,7 @@
                             <el-icon>
                               <Connection />
                             </el-icon>
-                            <span>查看分享</span>
+                            <span>{{ t('material.viewShare') }}</span>
                           </div>
 
                           <!-- 图片裂变和视频制作 -->
@@ -1795,18 +1893,18 @@
                             <el-icon class="op-menu-arrow">
                               <ArrowLeft />
                             </el-icon>
-                            <span class="op-menu-label">制作工具</span>
+                            <span class="op-menu-label">{{ t('material.makeTools') }}</span>
                             <div class="op-submenu" data-submenu="production" @mouseenter="handleSubmenuKeepVisible"
                               @mouseleave="handleSubmenuHide">
                               <div class="op-submenu-item" @click.stop="handleOperationCommand('image-process', row)">
-                                图片处理
+                                {{ t('material.imageProcess') }}
                               </div>
                               <div class="op-submenu-item" @click.stop="handleOperationCommand('image-split', row)">
-                                图片裂变
+                                {{ t('material.imageSplit') }}
                               </div>
                               <div class="op-submenu-item"
                                 @click.stop="handleOperationCommand('video-production', row)">
-                                视频制作
+                                {{ t('material.videoProduction') }}
                               </div>
                             </div>
                           </div>
@@ -1814,17 +1912,17 @@
                           <div class="op-divider"></div>
                           <div class="op-menu-item" @click.stop="handleOperationCommand('view-detail', row)">
                             <span class="op-menu-arrow-placeholder"></span>
-                            <span class="op-menu-label">查看详情</span>
+                            <span class="op-menu-label">{{ t('material.viewDetail') }}</span>
                           </div>
 
                           <div class="op-divider"></div>
                           <div class="op-menu-item" @click.stop="handleOperationCommand('edit', row)">
                             <span class="op-menu-arrow-placeholder"></span>
-                            <span class="op-menu-label">编辑</span>
+                            <span class="op-menu-label">{{ t('material.edit') }}</span>
                           </div>
                           <div class="op-menu-item danger" @click.stop="handleOperationCommand('delete', row)">
                             <span class="op-menu-arrow-placeholder"></span>
-                            <span class="op-menu-label">删除</span>
+                            <span class="op-menu-label">{{ t('material.delete') }}</span>
                           </div>
                         </div>
                       </template>
@@ -1849,78 +1947,78 @@
       </template>
     </ListPageLayout>
 
-    <el-dialog v-model="addToGroupDialogVisible" title="添加到组图" width="520px" append-to-body destroy-on-close>
+    <el-dialog v-model="addToGroupDialogVisible" :title="t('material.addToGroup')" width="520px" append-to-body destroy-on-close>
       <el-form label-width="88px" @submit.prevent="submitBatchAddToGroup">
-        <el-form-item label="已选素材">
-          <el-tag type="info" effect="plain">{{ selectedGroupStickerIds.length }} 张</el-tag>
+        <el-form-item :label="t('material.selectedMaterials')">
+          <el-tag type="info" effect="plain">{{ t('material.imageCount', { count: selectedGroupStickerIds.length }) }}</el-tag>
         </el-form-item>
 
-        <el-form-item label="添加方式">
+        <el-form-item :label="t('material.addMethod')">
           <el-radio-group v-model="addToGroupMode">
-            <el-radio-button value="existing">已有组图</el-radio-button>
-            <el-radio-button value="new">新建组图</el-radio-button>
+            <el-radio-button value="existing">{{ t('material.existingGroups') }}</el-radio-button>
+            <el-radio-button value="new">{{ t('material.newGroup') }}</el-radio-button>
           </el-radio-group>
         </el-form-item>
 
-        <el-form-item v-if="addToGroupMode === 'existing'" label="目标组图" required>
-          <el-select v-model="targetGroupValue" :loading="availableGroupsLoading" placeholder="选择已有组图" filterable
+        <el-form-item v-if="addToGroupMode === 'existing'" :label="t('material.targetGroup')" required>
+          <el-select v-model="targetGroupValue" :loading="availableGroupsLoading" :placeholder="t('material.selectExistingGroup')" filterable
             clearable style="width: 100%">
             <el-option v-for="group in availableGroupList" :key="group.id"
               :label="`${group.name} (${group.stickersCount || 0})`" :value="group.id" />
           </el-select>
         </el-form-item>
 
-        <el-form-item v-else label="组图名称" required>
-          <el-input v-model="newGroupName" maxlength="255" show-word-limit clearable placeholder="输入新组图名称"
+        <el-form-item v-else :label="t('material.groupName')" required>
+          <el-input v-model="newGroupName" maxlength="255" show-word-limit clearable :placeholder="t('material.enterNewGroupName')"
             @keyup.enter="submitBatchAddToGroup" />
         </el-form-item>
 
-        <el-form-item v-if="addToGroupMode === 'existing' && selectedTargetGroup" label="已有图片">
+        <el-form-item v-if="addToGroupMode === 'existing' && selectedTargetGroup" :label="t('material.existingImages')">
           <div class="add-to-group-preview">
             <div v-if="selectedTargetGroup.stickers.length" class="add-to-group-preview__grid">
               <el-image v-for="sticker in selectedTargetGroup.stickers" :key="sticker.id" :src="sticker.url || ''"
                 fit="cover" class="add-to-group-preview__image"
                 :preview-src-list="getGroupPreviewUrls(selectedTargetGroup)" preview-teleported />
             </div>
-            <span v-else class="table-cell-empty">暂无图片</span>
+            <span v-else class="table-cell-empty">{{ t('material.noImages') }}</span>
           </div>
         </el-form-item>
 
       </el-form>
 
       <template #footer>
-        <el-button @click="addToGroupDialogVisible = false">取消</el-button>
+        <el-button @click="addToGroupDialogVisible = false">{{ t('material.cancel') }}</el-button>
         <el-button type="primary" :loading="addingToGroup" :disabled="!canSubmitAddToGroup"
           @click="submitBatchAddToGroup">
-          {{ addToGroupMode === "new" ? "创建组图" : `添加 ${selectedGroupStickerIds.length} 张` }}
+          {{ addToGroupMode === "new" ? t('material.createGroup') : t('material.addCount', { count: selectedGroupStickerIds.length }) }}
         </el-button>
       </template>
     </el-dialog>
 
-    <el-dialog v-model="similarImageDialogVisible" title="模糊搜索" width="560px" align-center :destroy-on-close="false"
+    <el-dialog v-model="similarImageDialogVisible" :title="t('material.fuzzySearch')" width="560px" align-center :destroy-on-close="false"
       class="similar-image-search-dialog" @closed="resetSimilarImageDialog">
       <div class="similar-image-search">
         <el-tabs v-model="similarImageSearchTab" class="similar-image-search__tabs">
-          <el-tab-pane label="文字搜索" name="text">
+          <el-tab-pane :label="t('material.textSearch')" name="text">
             <div class="similar-image-search__section">
-              <el-input v-model="similarImageSearchText" placeholder="输入文字描述，例如：可爱的猫咪、樱花树下的少女" clearable
+              <el-input v-model="similarImageSearchText" :placeholder="t('material.textSearchPlaceholder')" clearable
                 @keyup.enter="submitSimilarImageSearch" />
             </div>
           </el-tab-pane>
-          <el-tab-pane label="图片 URL" name="url">
+          <el-tab-pane :label="t('material.imageUrl')" name="url">
             <div class="similar-image-search__section">
-              <el-input v-model="similarImageUrl" placeholder="粘贴图片 URL，例如 https://example.com/image.png" clearable
+              <el-input v-model="similarImageUrl" :placeholder="t('material.imageUrlPlaceholder')" clearable
                 @keyup.enter="submitSimilarImageSearch" />
             </div>
           </el-tab-pane>
-          <el-tab-pane label="本地图片" name="file">
+          <el-tab-pane :label="t('material.localImage')" name="file">
             <div class="similar-image-search__section">
               <el-upload class="similar-image-upload" drag action="#" accept="image/*" :auto-upload="false"
                 :show-file-list="false" :on-change="handleSimilarImageUploadChange">
                 <el-icon class="similar-image-upload__icon">
                   <UploadFilled />
                 </el-icon>
-                <div class="similar-image-upload__text">拖拽图片到这里，或点击选择</div>
+                <div class="similar-image-upload__text">{{ t('material.dragImageHere') }}</div>
               </el-upload>
               <div v-if="similarImageFileName" class="similar-image-file-name">
                 {{ similarImageFileName }}
@@ -1931,42 +2029,42 @@
 
         <div class="similar-image-search__options">
           <div class="similar-image-search__option-item">
-            <span class="similar-image-search__option-label">检索数量：</span>
+            <span class="similar-image-search__option-label">{{ t('material.searchCount') }}：</span>
             <el-input-number v-model="similarImageSearchLimit" size="small" :min="1" :max="200"
               controls-position="right" style="width: 100px" />
           </div>
         </div>
 
         <div v-if="similarImageSearchTab !== 'text'" class="similar-image-preview">
-          <div class="similar-image-preview__title">查询图片</div>
+          <div class="similar-image-preview__title">{{ t('material.queryImage') }}</div>
           <div v-if="similarImagePreviewSrc" class="similar-image-preview__frame">
-            <img :src="similarImagePreviewSrc" alt="查询图片预览" />
+            <img :src="similarImagePreviewSrc" :alt="t('material.queryImagePreview')" />
           </div>
           <div v-else class="similar-image-preview__empty">
             <el-icon>
               <PictureFilled />
             </el-icon>
-            <span>等待选择图片</span>
+            <span>{{ t('material.waitingForImage') }}</span>
           </div>
         </div>
       </div>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="similarImageDialogVisible = false">取消</el-button>
+          <el-button @click="similarImageDialogVisible = false">{{ t('material.cancel') }}</el-button>
           <el-button type="primary" :loading="similarImageSubmitting" @click="submitSimilarImageSearch">
-            搜索
+            {{ t('material.search') }}
           </el-button>
         </div>
       </template>
     </el-dialog>
 
-    <el-dialog v-model="uploadModalVisible" title="素材上传" width="calc(100vw - 32px)" top="16px" :footer="false"
+    <el-dialog v-model="uploadModalVisible" :title="t('material.materialUpload')" width="calc(100vw - 32px)" top="16px" :footer="false"
       :destroy-on-close="false" class="material-upload-dialog" @close="uploadModalClose">
       <template #header="{ titleId, titleClass }">
         <div class="material-upload-dialog__header">
-          <span :id="titleId" :class="titleClass">素材上传</span>
+          <span :id="titleId" :class="titleClass">{{ t('material.materialUpload') }}</span>
           <el-button size="small" type="danger" plain @click="clearUploadDialogState">
-            清空
+            {{ t('material.clear') }}
           </el-button>
         </div>
       </template>
@@ -1977,22 +2075,22 @@
     </el-dialog>
 
     <!-- URL上传弹窗 -->
-    <el-dialog v-model="urlUploadModalVisible" title="URL上传素材" width="500px" align-center :destroy-on-close="true"
+    <el-dialog v-model="urlUploadModalVisible" :title="t('material.urlUploadMaterial')" width="500px" align-center :destroy-on-close="true"
       @close="resetUrlUploadForm">
       <el-form ref="urlUploadFormRef" :model="urlUploadForm" :rules="urlUploadFormRules" label-width="80px">
-        <el-form-item label="图片URL" prop="url">
-          <el-input v-model="urlUploadForm.url" placeholder="请输入图片的完整URL地址" style="width: 100%" clearable />
+        <el-form-item :label="t('material.imageUrl')" prop="url">
+          <el-input v-model="urlUploadForm.url" :placeholder="t('material.enterFullImageUrl')" style="width: 100%" clearable />
         </el-form-item>
-        <el-form-item label="文件名" prop="name">
-          <el-input v-model="urlUploadForm.name" placeholder="请输入文件名" style="width: 100%" clearable />
+        <el-form-item :label="t('material.fileName')" prop="name">
+          <el-input v-model="urlUploadForm.name" :placeholder="t('material.enterFileName')" style="width: 100%" clearable />
         </el-form-item>
-        <el-form-item label="AI生成">
-          <el-switch v-model="urlUploadForm.useAiGenerate" active-text="使用AI自动生成补全内容" />
+        <el-form-item :label="t('material.aiGenerate')">
+          <el-switch v-model="urlUploadForm.useAiGenerate" :active-text="t('material.useAiAutoGenerate')" />
         </el-form-item>
-        <el-form-item label="文件夹">
-          <el-select v-model="urlUploadForm.folderId" placeholder="请选择文件夹（留空为根目录）" clearable filterable
+        <el-form-item :label="t('material.folder')">
+          <el-select v-model="urlUploadForm.folderId" :placeholder="t('material.selectFolderPlaceholder')" clearable filterable
             style="width: 100%">
-            <el-option label="根目录" :value="null" />
+            <el-option :label="t('material.rootDirectory')" :value="null" />
             <el-option v-for="folder in stickerFolderSelectOptions" :key="folder.value || 'root'" :label="folder.label"
               :value="folder.value" />
           </el-select>
@@ -2001,81 +2099,81 @@
 
       <!-- 预览区域 -->
       <div class="preview-section">
-        <div class="preview-label">图片预览</div>
+        <div class="preview-label">{{ t('material.imagePreview') }}</div>
         <div v-if="urlUploadForm.url && urlPreviewVisible" class="image-preview">
-          <img :src="urlUploadForm.url" alt="预览图片" class="preview-image" loading="lazy" @error="handlePreviewError"
+          <img :src="urlUploadForm.url" :alt="t('material.previewImage')" class="preview-image" loading="lazy" @error="handlePreviewError"
             @load="handlePreviewLoad" />
           <div v-if="imageInfo" class="image-info">
-            <el-tag size="small" type="info">尺寸: {{ imageInfo.width }} × {{ imageInfo.height }}</el-tag>
+            <el-tag size="small" type="info">{{ t('material.size') }}: {{ imageInfo.width }} × {{ imageInfo.height }}</el-tag>
           </div>
         </div>
         <div v-else-if="urlUploadForm.url && !urlPreviewVisible" class="preview-error">
           <el-icon size="32" color="#f56c6c">
             <PictureFilled />
           </el-icon>
-          <p>图片预览加载失败</p>
-          <p class="error-text">请检查URL是否正确</p>
+          <p>{{ t('material.previewLoadFailed') }}</p>
+          <p class="error-text">{{ t('material.checkUrl') }}</p>
         </div>
         <div v-else class="preview-placeholder">
           <el-icon size="32" color="#c0c4cc">
             <PictureFilled />
           </el-icon>
-          <p>请输入图片URL后显示预览</p>
+          <p>{{ t('material.enterUrlForPreview') }}</p>
         </div>
       </div>
 
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="urlUploadModalVisible = false">取消</el-button>
-          <el-button type="primary" :loading="urlUploadLoading" @click="handleUrlUpload">上传</el-button>
+          <el-button @click="urlUploadModalVisible = false">{{ t('material.cancel') }}</el-button>
+          <el-button type="primary" :loading="urlUploadLoading" @click="handleUrlUpload">{{ t('material.upload') }}</el-button>
         </div>
       </template>
     </el-dialog>
 
     <!-- 制作设计模型弹窗 -->
 
-    <el-dialog v-model="editDialogVisible" title="编辑素材信息" fullscreen :destroy-on-close="true"
+    <el-dialog v-model="editDialogVisible" :title="t('material.editMaterialInfo')" fullscreen :destroy-on-close="true"
       class="edit-material-dialog">
       <div class="edit-material-body">
         <el-form :model="editForm" label-position="top" size="small" class="edit-form material-index-search-form">
           <section class="edit-section">
-            <div class="edit-section-title">基础信息</div>
+            <div class="edit-section-title">{{ t('material.basicInfo') }}</div>
             <el-row :gutter="12">
               <el-col :xs="24" :md="12">
-                <el-form-item label="名称">
-                  <el-input v-model="editForm.name" placeholder="请输入名称" clearable />
+                <el-form-item :label="t('material.name')">
+                  <el-input v-model="editForm.name" :placeholder="t('material.enterName')" clearable />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :md="12">
-                <el-form-item label="英文名称">
-                  <el-input v-model="editForm.nameEn" placeholder="请输入英文名称" clearable />
+                <el-form-item :label="t('material.enName')">
+                  <el-input v-model="editForm.nameEn" :placeholder="t('material.enterEnName')" clearable />
                 </el-form-item>
               </el-col>
               <el-col :xs="24">
-                <el-form-item label="描述">
-                  <el-input v-model="editForm.description" type="textarea" :rows="4" placeholder="请输入描述"
+                <el-form-item :label="t('material.description')">
+                  <el-input v-model="editForm.description" type="textarea" :rows="4" :placeholder="t('material.enterDescription')"
                     maxlength="1000" show-word-limit />
                 </el-form-item>
               </el-col>
               <el-col :xs="24">
-                <el-form-item label="英文描述">
-                  <el-input v-model="editForm.descriptionEn" type="textarea" :rows="4" placeholder="请输入英文描述"
+                <el-form-item :label="t('material.enDescription')">
+                  <el-input v-model="editForm.descriptionEn" type="textarea" :rows="4" :placeholder="t('material.enterEnDescription')"
                     maxlength="1000" show-word-limit />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :md="12">
-                <el-form-item label="关键字">
-                  <el-input v-model="editForm.keywords" placeholder="请输入关键字（逗号分隔）" clearable />
+                <el-form-item :label="t('material.keywords')">
+                  <el-input v-model="editForm.keywords" :placeholder="t('material.enterKeywords')" clearable />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :md="12">
-                <el-form-item label="英文关键字">
-                  <el-input v-model="editForm.keywordsEn" placeholder="请输入英文关键字（逗号分隔）" clearable />
+                <el-form-item :label="t('material.enKeywords')">
+                  <el-input v-model="editForm.keywordsEn" :placeholder="t('material.enterEnKeywords')" clearable />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :md="12">
-                <el-form-item label="适用场景">
-                  <el-input v-model="editForm.suitableFor" placeholder="请输入适用场景（逗号分隔，如：phone_case,tshirt,mug）"
+                <el-form-item :label="t('material.suitableScene')">
+                  <el-input v-model="editForm.suitableFor" :placeholder="t('material.enterSuitableScene')"
                     clearable />
                 </el-form-item>
               </el-col>
@@ -2083,53 +2181,53 @@
           </section>
 
           <section class="edit-section">
-            <div class="edit-section-title">状态与属性</div>
+            <div class="edit-section-title">{{ t('material.statusAndAttributes') }}</div>
             <el-row :gutter="12">
               <el-col :xs="12" :sm="8" :lg="4">
-                <el-form-item label="自定义贴纸">
-                  <el-switch v-model="editForm.isCustom" size="small" active-text="是" inactive-text="否" />
+                <el-form-item :label="t('material.custom')">
+                  <el-switch v-model="editForm.isCustom" size="small" :active-text="t('material.yes')" :inactive-text="t('material.no')" />
                 </el-form-item>
               </el-col>
               <el-col :xs="12" :sm="8" :lg="4">
-                <el-form-item label="是否公开">
-                  <el-switch v-model="editForm.isPublic" size="small" active-text="是" inactive-text="否" />
+                <el-form-item :label="t('material.isPublic')">
+                  <el-switch v-model="editForm.isPublic" size="small" :active-text="t('material.yes')" :inactive-text="t('material.no')" />
                 </el-form-item>
               </el-col>
               <el-col :xs="12" :sm="8" :lg="4">
-                <el-form-item label="是否为材质">
-                  <el-switch v-model="editForm.isTexture" size="small" active-text="是" inactive-text="否" />
+                <el-form-item :label="t('material.isTexture')">
+                  <el-switch v-model="editForm.isTexture" size="small" :active-text="t('material.yes')" :inactive-text="t('material.no')" />
                 </el-form-item>
               </el-col>
               <el-col :xs="12" :sm="8" :lg="4">
-                <el-form-item label="抠图素材">
-                  <el-switch v-model="editForm.isCutout" size="small" active-text="是" inactive-text="否" />
+                <el-form-item :label="t('material.cutout')">
+                  <el-switch v-model="editForm.isCutout" size="small" :active-text="t('material.yes')" :inactive-text="t('material.no')" />
                 </el-form-item>
               </el-col>
               <el-col :xs="12" :sm="8" :lg="4">
-                <el-form-item label="无缝贴图">
-                  <el-switch v-model="editForm.seamless" size="small" active-text="是" inactive-text="否" />
+                <el-form-item :label="t('material.seamless')">
+                  <el-switch v-model="editForm.seamless" size="small" :active-text="t('material.yes')" :inactive-text="t('material.no')" />
                 </el-form-item>
               </el-col>
               <el-col :xs="12" :sm="8" :lg="4">
-                <el-form-item label="侵权状态">
-                  <el-select v-model="editForm.isInfringement" placeholder="请选择" style="width: 100%">
-                    <el-option label="非侵权" :value="false" />
-                    <el-option label="侵权" :value="true" />
+                <el-form-item :label="t('material.infringement')">
+                  <el-select v-model="editForm.isInfringement" :placeholder="t('material.pleaseSelect')" style="width: 100%">
+                    <el-option :label="t('material.notInfringement')" :value="false" />
+                    <el-option :label="t('material.infringement')" :value="true" />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :md="12">
-                <el-form-item label="素材编码">
-                  <el-input v-model="editForm.code" placeholder="格式：3-6位随机字母+2-7位数字，如 abc123" clearable maxlength="14">
+                <el-form-item :label="t('material.materialCode')">
+                  <el-input v-model="editForm.code" :placeholder="t('material.codeFormat')" clearable maxlength="14">
                     <template #append>
                       <el-button size="small" :loading="generatingCode"
-                        @click="handleGenerateMaterialCode">生成编码</el-button>
+                        @click="handleGenerateMaterialCode">{{ t('material.generateCode') }}</el-button>
                     </template>
                   </el-input>
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :md="12">
-                <el-form-item label="文件后缀">
+                <el-form-item :label="t('material.fileSuffix')">
                   <el-input v-model="editForm.suffix" placeholder="如：png, jpg, svg" clearable maxlength="20" />
                 </el-form-item>
               </el-col>
@@ -2137,10 +2235,10 @@
           </section>
 
           <section class="edit-section">
-            <div class="edit-section-title">元信息（只读）</div>
+            <div class="edit-section-title">{{ t('material.metaInfoReadonly') }}</div>
             <el-row :gutter="12">
               <el-col :xs="24" :sm="12" :lg="8">
-                <el-form-item label="图片尺寸">
+                <el-form-item :label="t('material.imageSize')">
                   <el-input :value="editForm.width && editForm.height
                     ? `${editForm.width} × ${editForm.height}`
                     : '-'
@@ -2148,39 +2246,39 @@
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :lg="8">
-                <el-form-item label="宽高比">
+                <el-form-item :label="t('material.aspectRatio')">
                   <el-input :value="editForm.aspectRatio ? editForm.aspectRatio.toFixed(4) : '-'" disabled />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :lg="8">
-                <el-form-item label="文件大小">
+                <el-form-item :label="t('material.fileSize')">
                   <el-input :value="editForm.fileSize ? formatFileSize(editForm.fileSize) : '-'" disabled />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :md="12">
-                <el-form-item label="色系">
-                  <el-input :value="editForm.colorPalette || '-'" disabled placeholder="自动生成" />
+                <el-form-item :label="t('material.colorPalette')">
+                  <el-input :value="editForm.colorPalette || '-'" disabled :placeholder="t('material.autoGenerate')" />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :md="12">
-                <el-form-item label="感知哈希">
-                  <el-input :value="editForm.phash || '-'" disabled placeholder="自动生成" />
+                <el-form-item :label="t('material.phash')">
+                  <el-input :value="editForm.phash || '-'" disabled :placeholder="t('material.autoGenerate')" />
                 </el-form-item>
               </el-col>
             </el-row>
           </section>
 
           <section class="edit-section">
-            <div class="edit-section-title">来源信息</div>
+            <div class="edit-section-title">{{ t('material.sourceInfo') }}</div>
             <el-row :gutter="12">
               <el-col :xs="24">
-                <el-form-item label="原始地址">
-                  <el-input v-model="editForm.originUrl" placeholder="请输入原始地址" clearable />
+                <el-form-item :label="t('material.originUrl')">
+                  <el-input v-model="editForm.originUrl" :placeholder="t('material.enterOriginUrl')" clearable />
                 </el-form-item>
               </el-col>
               <el-col :xs="24">
-                <el-form-item label="来源">
-                  <el-input v-model="editForm.source" placeholder="请输入来源（文字介绍或链接）" clearable />
+                <el-form-item :label="t('material.source')">
+                  <el-input v-model="editForm.source" :placeholder="t('material.enterSource')" clearable />
                 </el-form-item>
               </el-col>
             </el-row>
@@ -2189,33 +2287,33 @@
       </div>
       <template #footer>
         <div class="edit-dialog-footer">
-          <el-button size="small" @click="editDialogVisible = false">取消</el-button>
-          <el-button size="small" type="primary" :loading="editLoading" @click="submitEdit">保存</el-button>
+          <el-button size="small" @click="editDialogVisible = false">{{ t('material.cancel') }}</el-button>
+          <el-button size="small" type="primary" :loading="editLoading" @click="submitEdit">{{ t('material.save') }}</el-button>
         </div>
       </template>
     </el-dialog>
 
-    <el-dialog v-model="detailDialogVisible" title="素材详情" fullscreen :destroy-on-close="true"
+    <el-dialog v-model="detailDialogVisible" :title="t('material.materialDetail')" fullscreen :destroy-on-close="true"
       class="material-detail-dialog">
       <div v-loading="detailDialogLoading" class="material-detail-body">
-        <el-empty v-if="!stickerDetailCurrent && !detailDialogLoading" description="暂无素材详情" />
+        <el-empty v-if="!stickerDetailCurrent && !detailDialogLoading" :description="t('material.noMaterialDetail')" />
         <template v-else-if="stickerDetailCurrent">
           <section class="material-detail-hero">
             <div class="material-detail-preview">
               <el-image v-if="stickerDetailCurrent.url" :src="stickerDetailCurrent.url" fit="contain"
                 :preview-src-list="[stickerDetailCurrent.url]" :preview-teleported="true">
                 <template #error>
-                  <div class="material-detail-preview__empty">图片加载失败</div>
+                  <div class="material-detail-preview__empty">{{ t('material.imageLoadFailed') }}</div>
                 </template>
               </el-image>
-              <div v-else class="material-detail-preview__empty">暂无图片</div>
+              <div v-else class="material-detail-preview__empty">{{ t('material.noImage') }}</div>
             </div>
             <div class="material-detail-summary">
               <div class="material-detail-title">
-                {{ stickerDetailCurrent.name || stickerDetailCurrent.code || stickerDetailCurrent.id || "未命名素材" }}
+                {{ stickerDetailCurrent.name || stickerDetailCurrent.code || stickerDetailCurrent.id || t('material.unnamedMaterial') }}
               </div>
               <div class="material-detail-subtitle">
-                {{ stickerDetailCurrent.nameEn || stickerDetailCurrent.description || "无英文名称或描述" }}
+                {{ stickerDetailCurrent.nameEn || stickerDetailCurrent.description || t('material.noEnNameOrDescription') }}
               </div>
               <div class="material-detail-tags">
                 <el-tag v-if="stickerDetailCurrent.code" size="small" effect="plain">
@@ -2225,66 +2323,66 @@
                   {{ stickerDetailCurrent.suffix }}
                 </el-tag>
                 <el-tag v-if="stickerDetailCurrent.isInfringement" size="small" type="danger" effect="plain">
-                  侵权
+                  {{ t('material.infringement') }}
                 </el-tag>
                 <el-tag v-if="stickerDetailCurrent.isCutout" size="small" type="success" effect="plain">
-                  抠图
+                  {{ t('material.cutout') }}
                 </el-tag>
                 <el-tag v-if="normalizeBooleanValue(stickerDetailCurrent.seamless)" size="small" type="warning"
                   effect="plain">
-                  无缝
+                  {{ t('material.seamless') }}
                 </el-tag>
               </div>
               <div class="material-detail-actions">
                 <el-button size="small" :disabled="!stickerDetailCurrent.url"
-                  @click="handleCopyText(stickerDetailCurrent.url || '', '图片链接')">
-                  复制图片链接
+                  @click="handleCopyText(stickerDetailCurrent.url || '', t('material.imageLink'))">
+                  {{ t('material.copyImageLink') }}
                 </el-button>
                 <el-button size="small" :disabled="!stickerDetailCurrent.phash"
-                  @click="handleCopyText(stickerDetailCurrent.phash || '', '感知哈希')">
-                  复制感知哈希
+                  @click="handleCopyText(stickerDetailCurrent.phash || '', t('material.phash'))">
+                  {{ t('material.copyPhash') }}
                 </el-button>
                 <el-button size="small" :disabled="!stickerDetailCurrent.originUrl"
-                  @click="handleCopyText(stickerDetailCurrent.originUrl || '', '原始地址')">
-                  复制原始地址
+                  @click="handleCopyText(stickerDetailCurrent.originUrl || '', t('material.originUrl'))">
+                  {{ t('material.copyOriginUrl') }}
                 </el-button>
               </div>
             </div>
           </section>
 
           <section class="material-detail-section">
-            <div class="material-detail-section__title">基础信息</div>
+            <div class="material-detail-section__title">{{ t('material.basicInfo') }}</div>
             <div class="material-detail-grid">
               <div class="material-detail-field">
                 <span class="material-detail-label">ID</span>
                 <span class="material-detail-value">{{ formatDetailValue(stickerDetailCurrent.id) }}</span>
               </div>
               <div class="material-detail-field">
-                <span class="material-detail-label">素材编码</span>
+                <span class="material-detail-label">{{ t('material.materialCode') }}</span>
                 <span class="material-detail-value">{{ formatDetailValue(stickerDetailCurrent.code) }}</span>
               </div>
               <div class="material-detail-field">
-                <span class="material-detail-label">文件后缀</span>
+                <span class="material-detail-label">{{ t('material.fileSuffix') }}</span>
                 <span class="material-detail-value">{{ formatDetailValue(stickerDetailCurrent.suffix) }}</span>
               </div>
               <div class="material-detail-field">
-                <span class="material-detail-label">分组</span>
+                <span class="material-detail-label">{{ t('material.group') }}</span>
                 <span class="material-detail-value">{{ formatDetailValue(stickerDetailCurrent.group) }}</span>
               </div>
               <div class="material-detail-field">
-                <span class="material-detail-label">上传者</span>
+                <span class="material-detail-label">{{ t('material.uploader') }}</span>
                 <span class="material-detail-value">{{ getDetailUploaderLabel(stickerDetailCurrent) }}</span>
               </div>
               <div class="material-detail-field">
-                <span class="material-detail-label">归属用户ID</span>
+                <span class="material-detail-label">{{ t('material.ownerUserId') }}</span>
                 <span class="material-detail-value">{{ formatDetailValue(stickerDetailCurrent.userId) }}</span>
               </div>
               <div class="material-detail-field">
-                <span class="material-detail-label">文件夹ID</span>
+                <span class="material-detail-label">{{ t('material.folderId') }}</span>
                 <span class="material-detail-value">{{ formatDetailValue(stickerDetailCurrent.folderId) }}</span>
               </div>
               <div class="material-detail-field">
-                <span class="material-detail-label">文件夹路径</span>
+                <span class="material-detail-label">{{ t('material.folderPath') }}</span>
                 <span class="material-detail-value">{{ formatDetailValue(stickerDetailCurrent.folder ||
                   stickerDetailCurrent.folderEntity?.path) }}</span>
               </div>
@@ -2292,38 +2390,38 @@
           </section>
 
           <section class="material-detail-section">
-            <div class="material-detail-section__title">文案信息</div>
+            <div class="material-detail-section__title">{{ t('material.copywritingInfo') }}</div>
             <div class="material-detail-grid">
               <div class="material-detail-field">
-                <span class="material-detail-label">名称</span>
+                <span class="material-detail-label">{{ t('material.name') }}</span>
                 <span class="material-detail-value">{{ formatDetailValue(stickerDetailCurrent.name) }}</span>
               </div>
               <div class="material-detail-field">
-                <span class="material-detail-label">英文名称</span>
+                <span class="material-detail-label">{{ t('material.enName') }}</span>
                 <span class="material-detail-value">{{ formatDetailValue(stickerDetailCurrent.nameEn) }}</span>
               </div>
               <div class="material-detail-field material-detail-field--wide">
-                <span class="material-detail-label">描述</span>
+                <span class="material-detail-label">{{ t('material.description') }}</span>
                 <span class="material-detail-value material-detail-value--multiline">{{
                   formatDetailValue(stickerDetailCurrent.description) }}</span>
               </div>
               <div class="material-detail-field material-detail-field--wide">
-                <span class="material-detail-label">英文描述</span>
+                <span class="material-detail-label">{{ t('material.enDescription') }}</span>
                 <span class="material-detail-value material-detail-value--multiline">{{
                   formatDetailValue(stickerDetailCurrent.descriptionEn) }}</span>
               </div>
               <div class="material-detail-field material-detail-field--wide">
-                <span class="material-detail-label">关键词</span>
+                <span class="material-detail-label">{{ t('material.keywords') }}</span>
                 <span class="material-detail-value material-detail-value--multiline">{{
                   formatDetailValue(stickerDetailCurrent.keywords) }}</span>
               </div>
               <div class="material-detail-field material-detail-field--wide">
-                <span class="material-detail-label">英文关键词</span>
+                <span class="material-detail-label">{{ t('material.enKeywords') }}</span>
                 <span class="material-detail-value material-detail-value--multiline">{{
                   formatDetailValue(stickerDetailCurrent.keywordsEn) }}</span>
               </div>
               <div class="material-detail-field material-detail-field--wide">
-                <span class="material-detail-label">适用场景</span>
+                <span class="material-detail-label">{{ t('material.suitableScene') }}</span>
                 <span class="material-detail-value material-detail-value--multiline">{{
                   formatDetailValue(stickerDetailCurrent.suitableFor) }}</span>
               </div>
@@ -2331,10 +2429,10 @@
           </section>
 
           <section class="material-detail-section">
-            <div class="material-detail-section__title">图片信息</div>
+            <div class="material-detail-section__title">{{ t('material.imageInfo') }}</div>
             <div class="material-detail-grid">
               <div class="material-detail-field">
-                <span class="material-detail-label">图片尺寸</span>
+                <span class="material-detail-label">{{ t('material.imageSize') }}</span>
                 <span class="material-detail-value">
                   {{
                     stickerDetailCurrent.width && stickerDetailCurrent.height
@@ -2344,15 +2442,15 @@
                 </span>
               </div>
               <div class="material-detail-field">
-                <span class="material-detail-label">宽高比</span>
+                <span class="material-detail-label">{{ t('material.aspectRatio') }}</span>
                 <span class="material-detail-value">{{ formatAspectRatio(stickerDetailCurrent.aspectRatio) }}</span>
               </div>
               <div class="material-detail-field">
-                <span class="material-detail-label">文件大小</span>
+                <span class="material-detail-label">{{ t('material.fileSize') }}</span>
                 <span class="material-detail-value">{{ formatDetailFileSize(stickerDetailCurrent.fileSize) }}</span>
               </div>
               <div class="material-detail-field">
-                <span class="material-detail-label">色系</span>
+                <span class="material-detail-label">{{ t('material.colorPalette') }}</span>
                 <span class="material-detail-value">
                   <span v-if="stickerDetailCurrent.colorPalette" class="material-detail-palette">
                     <span v-for="color in stickerDetailCurrent.colorPalette.split(',').slice(0, 12)" :key="color"
@@ -2362,23 +2460,23 @@
                 </span>
               </div>
               <div class="material-detail-field material-detail-field--wide">
-                <span class="material-detail-label">图片链接</span>
+                <span class="material-detail-label">{{ t('material.imageLink') }}</span>
                 <span class="material-detail-value material-detail-value--break">{{
                   formatDetailValue(stickerDetailCurrent.url)
                 }}</span>
               </div>
               <div class="material-detail-field material-detail-field--wide">
-                <span class="material-detail-label">原始地址</span>
+                <span class="material-detail-label">{{ t('material.originUrl') }}</span>
                 <span class="material-detail-value material-detail-value--break">{{
                   formatDetailValue(stickerDetailCurrent.originUrl) }}</span>
               </div>
               <div class="material-detail-field material-detail-field--wide">
-                <span class="material-detail-label">来源</span>
+                <span class="material-detail-label">{{ t('material.source') }}</span>
                 <span class="material-detail-value material-detail-value--break">{{
                   formatDetailValue(stickerDetailCurrent.source) }}</span>
               </div>
               <div class="material-detail-field material-detail-field--wide">
-                <span class="material-detail-label">感知哈希</span>
+                <span class="material-detail-label">{{ t('material.phash') }}</span>
                 <span class="material-detail-value material-detail-value--break">{{
                   formatDetailValue(stickerDetailCurrent.phash) }}</span>
               </div>
@@ -2386,97 +2484,97 @@
           </section>
 
           <section class="material-detail-section">
-            <div class="material-detail-section__title">状态与时间</div>
+            <div class="material-detail-section__title">{{ t('material.statusAndTime') }}</div>
             <div class="material-detail-grid">
               <div class="material-detail-field">
-                <span class="material-detail-label">公开</span>
+                <span class="material-detail-label">{{ t('material.public') }}</span>
                 <span class="material-detail-value">{{ formatBooleanDetail(stickerDetailCurrent.isPublic) }}</span>
               </div>
               <div class="material-detail-field">
-                <span class="material-detail-label">材质</span>
+                <span class="material-detail-label">{{ t('material.texture') }}</span>
                 <span class="material-detail-value">{{ formatBooleanDetail(stickerDetailCurrent.isTexture) }}</span>
               </div>
               <div class="material-detail-field">
-                <span class="material-detail-label">自定义贴纸</span>
+                <span class="material-detail-label">{{ t('material.custom') }}</span>
                 <span class="material-detail-value">{{ formatBooleanDetail(stickerDetailCurrent.isCustom) }}</span>
               </div>
               <div class="material-detail-field">
-                <span class="material-detail-label">侵权</span>
+                <span class="material-detail-label">{{ t('material.infringement') }}</span>
                 <span class="material-detail-value">{{ formatBooleanDetail(stickerDetailCurrent.isInfringement)
                 }}</span>
               </div>
               <div class="material-detail-field">
-                <span class="material-detail-label">抠图</span>
+                <span class="material-detail-label">{{ t('material.cutout') }}</span>
                 <span class="material-detail-value">{{ formatBooleanDetail(stickerDetailCurrent.isCutout) }}</span>
               </div>
               <div class="material-detail-field">
-                <span class="material-detail-label">无缝贴图</span>
+                <span class="material-detail-label">{{ t('material.seamless') }}</span>
                 <span class="material-detail-value">{{ formatBooleanDetail(stickerDetailCurrent.seamless) }}</span>
               </div>
               <div class="material-detail-field">
-                <span class="material-detail-label">创建时间</span>
+                <span class="material-detail-label">{{ t('material.createTime') }}</span>
                 <span class="material-detail-value">{{ formatDetailDate(stickerDetailCurrent.createTime) }}</span>
               </div>
               <div class="material-detail-field">
-                <span class="material-detail-label">修改时间</span>
+                <span class="material-detail-label">{{ t('material.updateTime') }}</span>
                 <span class="material-detail-value">{{ formatDetailDate(stickerDetailCurrent.updateTime) }}</span>
               </div>
             </div>
           </section>
 
           <section class="material-detail-section">
-            <div class="material-detail-section__title">元数据</div>
+            <div class="material-detail-section__title">{{ t('material.metaData') }}</div>
             <vue-json-pretty v-if="parsedDetailMetaData" :data="parsedDetailMetaData" />
-            <pre v-else class="material-detail-raw">{{ formatDetailValue(stickerDetailCurrent.meta, "暂无元数据") }}</pre>
+            <pre v-else class="material-detail-raw">{{ formatDetailValue(stickerDetailCurrent.meta, t('material.noMetaData')) }}</pre>
           </section>
 
           <section class="material-detail-section">
-            <div class="material-detail-section__title">完整详情 JSON</div>
+            <div class="material-detail-section__title">{{ t('material.fullDetailJson') }}</div>
             <vue-json-pretty :data="stickerDetailJsonData" />
           </section>
         </template>
       </div>
       <template #footer>
         <div class="edit-dialog-footer">
-          <el-button size="small" @click="detailDialogVisible = false">关闭</el-button>
+          <el-button size="small" @click="detailDialogVisible = false">{{ t('material.close') }}</el-button>
         </div>
       </template>
     </el-dialog>
 
-    <el-dialog v-model="aiGenDialogVisible" title="AI自动生成内容" width="1000px" align-center :destroy-on-close="true">
+    <el-dialog v-model="aiGenDialogVisible" :title="t('material.aiAutoGenerateContent')" width="1000px" align-center :destroy-on-close="true">
       <div class="ai-gen-form">
         <div class="form-section">
-          <label class="section-label">原始信息（可选）</label>
-          <div class="section-desc">粘贴网页内容或其他原始信息，帮助AI更好地理解图片内容</div>
-          <el-input v-model="aiGenerateRawInfo" type="textarea" :rows="10" placeholder="如：网页上关于这张图片的描述、产品介绍等..."
+          <label class="section-label">{{ t('material.rawInfo') }}</label>
+          <div class="section-desc">{{ t('material.rawInfoDesc') }}</div>
+          <el-input v-model="aiGenerateRawInfo" type="textarea" :rows="10" :placeholder="t('material.rawInfoPlaceholder')"
             style=" width: 100%; min-height: 200px;font-size: 14px; resize: vertical" />
         </div>
 
         <div class="form-section">
-          <label class="section-label">分析风格（可选）</label>
-          <div class="section-desc">请输入你希望AI分析的内容风格或角度</div>
-          <el-input v-model="aiGenPrompt" type="textarea" :rows="10" placeholder="如：请用艺术化语言描述图片内容、突出色彩特点等..."
+          <label class="section-label">{{ t('material.analysisStyle') }}</label>
+          <div class="section-desc">{{ t('material.analysisStyleDesc') }}</div>
+          <el-input v-model="aiGenPrompt" type="textarea" :rows="10" :placeholder="t('material.analysisStylePlaceholder')"
             style=" width: 100%; min-height: 200px;font-size: 14px; resize: vertical" />
         </div>
       </div>
       <template #footer>
-        <el-button @click="aiGenDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="aiGenDialogLoading" @click="submitAiGenDialog">确定</el-button>
+        <el-button @click="aiGenDialogVisible = false">{{ t('material.cancel') }}</el-button>
+        <el-button type="primary" :loading="aiGenDialogLoading" @click="submitAiGenDialog">{{ t('material.confirm') }}</el-button>
       </template>
     </el-dialog>
 
-    <el-dialog v-model="metaDialogVisible" fullscreen title="元数据详情" :close-on-click-modal="false">
+    <el-dialog v-model="metaDialogVisible" fullscreen :title="t('material.metaDataDetail')" :close-on-click-modal="false">
       <div v-if="metaDialogContent">
         <vue-json-pretty v-if="parsedMetaData" :data="parsedMetaData" />
         <div v-else class="meta-error">
-          <el-alert type="warning" :closable="false" show-icon title="元数据格式错误" description="无法解析元数据，请检查数据格式。" />
+          <el-alert type="warning" :closable="false" show-icon :title="t('material.metaFormatError')" :description="t('material.metaFormatErrorDesc')" />
           <div class="meta-raw-content">
             <pre>{{ metaDialogContent }}</pre>
           </div>
         </div>
       </div>
       <div v-else class="meta-empty">
-        <el-empty description="该素材没有元数据信息" />
+        <el-empty :description="t('material.noMetaInfo')" />
       </div>
     </el-dialog>
 
@@ -2485,36 +2583,36 @@
       <div class="sticker-user-transfer-dialog">
 
         <el-form label-width="96px" class="sticker-user-transfer-form">
-          <el-form-item label="目标用户" required>
+          <el-form-item :label="t('material.targetUser')" required>
             <el-select v-model="stickerUserTransferTargetUserId" class="sticker-user-transfer-form__select" filterable
-              clearable :loading="stickerUserTransferUsersLoading" placeholder="请选择目标用户">
+              clearable :loading="stickerUserTransferUsersLoading" :placeholder="t('material.selectTargetUser')">
               <el-option v-for="item in stickerUserTransferUserOptions" :key="item.id" :label="item.label"
                 :value="item.id">
                 <div class="sticker-user-transfer-option">
                   <div class="sticker-user-transfer-option__main">
-                    <span>{{ item.name || item.account || `用户 #${item.id}` }}</span>
-                    <el-tag v-if="item.isAdmin" size="small" type="warning">管理员</el-tag>
+                    <span>{{ item.name || item.account || t('material.userIdTemplate', { id: item.id }) }}</span>
+                    <el-tag v-if="item.isAdmin" size="small" type="warning">{{ t('material.admin') }}</el-tag>
                   </div>
                   <span class="sticker-user-transfer-option__meta">
-                    {{ item.account || `ID ${item.id}` }}
+                    {{ item.account || t('material.idTemplate', { id: item.id }) }}
                   </span>
                 </div>
               </el-option>
             </el-select>
           </el-form-item>
 
-          <el-form-item label="素材数量">
+          <el-form-item :label="t('material.materialCount')">
             <el-tag type="info">{{ stickerUserTransferIds.length }}</el-tag>
           </el-form-item>
 
-          <el-form-item label="选中素材">
+          <el-form-item :label="t('material.selectedMaterials')">
             <div class="sticker-user-transfer-preview">
               <el-tag v-for="item in stickerUserTransferPreviewItems" :key="item.id" size="small" effect="plain">
                 {{ item.label }}
               </el-tag>
               <span v-if="stickerUserTransferIds.length > stickerUserTransferPreviewItems.length"
                 class="sticker-user-transfer-preview__more">
-                等 {{ stickerUserTransferIds.length }} 条
+                {{ t('material.andMoreCount', { count: stickerUserTransferIds.length }) }}
               </span>
             </div>
           </el-form-item>
@@ -2522,7 +2620,7 @@
       </div>
 
       <template #footer>
-        <el-button @click="stickerUserTransferDialogVisible = false">取消</el-button>
+        <el-button @click="stickerUserTransferDialogVisible = false">{{ t('material.cancel') }}</el-button>
         <el-button type="primary" :loading="stickerUserTransferSubmitting" @click="submitStickerUserTransfer">
           {{ stickerUserTransferSubmitText }}
         </el-button>
@@ -2530,33 +2628,32 @@
     </el-dialog>
 
     <!-- SVG转PNG尺寸设置弹窗 -->
-    <el-dialog v-model="svgToPngDialogVisible" title="SVG转PNG - 设置输出尺寸" width="500px" align-center
+    <el-dialog v-model="svgToPngDialogVisible" :title="t('material.svgToPngSizeSetting')" width="500px" align-center
       :destroy-on-close="true">
       <div class="svg-to-png-form">
         <div class="form-section">
-          <h4 class="section-title">输出尺寸设置</h4>
+          <h4 class="section-title">{{ t('material.outputSizeSetting') }}</h4>
           <div class="original-info" v-if="svgToPngForm.originalWidth && svgToPngForm.originalHeight">
             <el-tag type="info" size="small">
-              原始尺寸: {{ svgToPngForm.originalWidth }} ×
-              {{ svgToPngForm.originalHeight }} (宽高比: {{ svgToPngForm.aspectRatio.toFixed(2) }})
+              {{ t('material.originalSize', { width: svgToPngForm.originalWidth, height: svgToPngForm.originalHeight, ratio: svgToPngForm.aspectRatio.toFixed(2) }) }}
             </el-tag>
           </div>
           <el-form :model="svgToPngForm" label-width="120px">
-            <el-form-item label="输出宽度 (px)">
+            <el-form-item :label="t('material.outputWidthPx')">
               <el-input-number v-model="svgToPngForm.width" :min="64" :max="4096" :step="64" controls-position="right"
                 style="width: 200px" @change="handleWidthChange" />
             </el-form-item>
-            <el-form-item label="自动计算高度">
+            <el-form-item :label="t('material.autoHeight')">
               <el-tag type="info" size="large"> {{ svgToPngForm.height }} px </el-tag>
               <span class="aspect-ratio-info">
-                (基于原始宽高比 {{ svgToPngForm.aspectRatio.toFixed(2) }} 自动计算)
+                {{ t('material.autoHeightHint', { ratio: svgToPngForm.aspectRatio.toFixed(2) }) }}
               </span>
             </el-form-item>
           </el-form>
         </div>
 
         <div class="preset-section">
-          <h4 class="section-title">常用尺寸预设</h4>
+          <h4 class="section-title">{{ t('material.commonSizePresets') }}</h4>
           <div class="preset-buttons">
             <el-button v-for="preset in sizePresets" :key="preset.name" size="small" @click="applyPreset(preset)">
               {{ preset.name }}<br />
@@ -2566,53 +2663,52 @@
         </div>
 
         <div class="preview-section">
-          <h4 class="section-title">预览信息</h4>
+          <h4 class="section-title">{{ t('material.previewInfo') }}</h4>
           <div class="preview-info">
             <el-tag type="info" size="large">
-              输出尺寸: {{ svgToPngForm.width }} × {{ svgToPngForm.height }} px
+              {{ t('material.outputSize', { width: svgToPngForm.width, height: svgToPngForm.height }) }}
             </el-tag>
             <el-tag type="success" size="large" style="margin-left: 8px">
-              文件大小: 约
-              {{ Math.round((svgToPngForm.width * svgToPngForm.height * 4) / 1024) }} KB
+              {{ t('material.approxFileSize', { size: Math.round((svgToPngForm.width * svgToPngForm.height * 4) / 1024) }) }}
             </el-tag>
           </div>
         </div>
       </div>
 
       <template #footer>
-        <el-button @click="svgToPngDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="confirmSvgToPng">开始转换</el-button>
+        <el-button @click="svgToPngDialogVisible = false">{{ t('material.cancel') }}</el-button>
+        <el-button type="primary" @click="confirmSvgToPng">{{ t('material.startConvert') }}</el-button>
       </template>
     </el-dialog>
 
     <RelatedPsdSetDialog ref="relatedPsdSetDialogRef" />
     <el-dialog v-model="storyScriptDialogVisible" fullscreen destroy-on-close class="story-script-dialog"
-      :title="`故事脚本 - ${storyScriptCurrentSticker?.name || '素材图'}`">
+      :title="t('material.storyScriptFor', { name: storyScriptCurrentSticker?.name || t('material.materialImage') })">
       <div
         class="grid h-[calc(100vh-96px)] min-h-0 grid-cols-1 gap-4 overflow-hidden lg:grid-cols-[320px_minmax(0,1fr)]">
         <aside class="min-h-0 overflow-hidden rounded-2xl border shadow-sm">
           <div class="flex h-full min-h-0 flex-col overflow-hidden">
             <div class="border-b px-5 py-4">
-              <div class="text-base font-semibold">脚本列表</div>
-              <div class="mt-1 text-xs opacity-70">选择一个版本，在右侧查看内容和操作。</div>
+              <div class="text-base font-semibold">{{ t('material.scriptList') }}</div>
+              <div class="mt-1 text-xs opacity-70">{{ t('material.scriptListHint') }}</div>
             </div>
 
             <div v-if="storyScriptCurrentSticker" class="border-b px-5 py-4 text-sm">
               <div class="truncate font-medium">
-                {{ storyScriptCurrentSticker.name || "未命名素材" }}
+                {{ storyScriptCurrentSticker.name || t('material.unnamedMaterial') }}
               </div>
               <div class="mt-2 line-clamp-3 text-xs opacity-70">
                 {{
                   storyScriptCurrentSticker.description ||
                   storyScriptCurrentSticker.keywords ||
-                  "暂无素材补充信息"
+                  t('material.noMaterialInfo')
                 }}
               </div>
             </div>
 
             <div v-if="!storyScriptList.length && !storyScriptListLoading"
               class="flex flex-1 items-center justify-center px-4">
-              <el-empty description="暂无脚本" :image-size="88" />
+              <el-empty :description="t('material.noScript')" :image-size="88" />
             </div>
 
             <div v-else class="flex-1 overflow-y-auto p-3">
@@ -2622,7 +2718,7 @@
                 @click="selectedStoryScriptId = item.id">
                 <div class="flex items-center justify-between gap-3">
                   <div class="min-w-0 truncate text-sm font-medium">
-                    {{ item.title || `版本 ${item.versionNo}` }}
+                    {{ item.title || t('material.versionNo', { no: item.versionNo }) }}
                   </div>
                 </div>
                 <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs opacity-70">
@@ -2630,7 +2726,7 @@
                   <span>{{ item.sceneType }}</span>
                 </div>
                 <div class="mt-2 line-clamp-3 text-xs leading-5 opacity-80">
-                  {{ item.content || "暂无正文" }}
+                  {{ item.content || t('material.noContent') }}
                 </div>
               </button>
             </div>
@@ -2642,7 +2738,7 @@
             <div class="grid min-h-0 flex-1 grid-cols-1 xl:grid-cols-[minmax(0,1fr)_380px]">
               <div class="min-h-0 px-6 py-5 xl:border-r">
                 <div v-if="!selectedStoryScript" class="flex h-full items-center justify-center">
-                  <el-empty description="请选择左侧版本或先生成脚本" />
+                  <el-empty :description="t('material.selectScriptFirst')" />
                 </div>
 
                 <div v-else class="flex h-full min-h-0 flex-col">
@@ -2650,15 +2746,15 @@
                     <div class="min-w-0">
                       <div class="flex flex-wrap items-center gap-2">
                         <h3 class="break-words text-lg font-semibold">
-                          {{ selectedStoryScript.title || `版本 ${selectedStoryScript.versionNo}` }}
+                          {{ selectedStoryScript.title || t('material.versionNo', { no: selectedStoryScript.versionNo }) }}
                         </h3>
                         <el-tag effect="plain">{{
                           selectedStoryScript.status || "generated"
                         }}</el-tag>
                       </div>
                       <div class="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-xs opacity-70">
-                        <span>版本 v{{ selectedStoryScript.versionNo }}</span>
-                        <span>场景 {{ selectedStoryScript.sceneType }}</span>
+                        <span>{{ t('material.versionV', { no: selectedStoryScript.versionNo }) }}</span>
+                        <span>{{ t('material.scene', { type: selectedStoryScript.sceneType }) }}</span>
                         <span>{{
                           selectedStoryScript.createTime
                             ? formatTimestamp(selectedStoryScript.createTime)
@@ -2669,19 +2765,19 @@
 
                     <div class="flex flex-wrap gap-2">
                       <el-button size="small"
-                        @click="handleCopyStoryScript(selectedStoryScript.content, '正文')">复制正文</el-button>
+                        @click="handleCopyStoryScript(selectedStoryScript.content, t('material.scriptBody'))">{{ t('material.copyScriptBody') }}</el-button>
                       <el-button v-if="selectedStoryScript.subtitleContent" size="small" @click="
-                        handleCopyStoryScript(selectedStoryScript.subtitleContent, '字幕稿')
-                        ">复制字幕</el-button>
+                        handleCopyStoryScript(selectedStoryScript.subtitleContent, t('material.scriptSubtitle'))
+                        ">{{ t('material.copySubtitle') }}</el-button>
                       <el-button size="small" type="danger" plain
-                        @click="handleDeleteStoryScript(selectedStoryScript)">删除</el-button>
+                        @click="handleDeleteStoryScript(selectedStoryScript)">{{ t('material.delete') }}</el-button>
                     </div>
                   </div>
 
                   <div class="mt-5 min-h-0 flex-1 overflow-y-auto pr-1">
                     <div class="rounded-2xl border p-4">
                       <div class="mb-2 text-xs font-medium uppercase tracking-wide opacity-60">
-                        正文
+                        {{ t('material.scriptBody') }}
                       </div>
                       <div class="whitespace-pre-wrap break-words text-[15px] leading-7">
                         {{ selectedStoryScript.content || "-" }}
@@ -2690,7 +2786,7 @@
 
                     <div v-if="selectedStoryScript.subtitleContent" class="mt-4 rounded-2xl border p-4">
                       <div class="mb-2 text-xs font-medium uppercase tracking-wide opacity-60">
-                        字幕稿
+                        {{ t('material.scriptSubtitle') }}
                       </div>
                       <pre class="whitespace-pre-wrap break-words font-sans text-sm leading-7">{{
                         selectedStoryScript.subtitleContent
@@ -2699,7 +2795,7 @@
 
                     <div v-if="selectedStoryScript.hashtags" class="mt-4 rounded-2xl border p-4 text-sm">
                       <div class="mb-2 text-xs font-medium uppercase tracking-wide opacity-60">
-                        标签
+                        {{ t('material.tags') }}
                       </div>
                       <div class="break-all">{{ selectedStoryScript.hashtags }}</div>
                     </div>
@@ -2710,30 +2806,30 @@
               <div class="min-h-0 border-t px-6 py-5 xl:border-t-0 xl:border-l">
                 <div class="h-full overflow-y-auto pl-0 xl:pl-1">
                   <div class="mb-4">
-                    <div class="text-base font-semibold">生成配置</div>
+                    <div class="text-base font-semibold">{{ t('material.generateConfig') }}</div>
                     <div class="mt-1 text-xs opacity-70">
-                      填写右侧控制条件后生成新版本故事脚本。
+                      {{ t('material.generateConfigHint') }}
                     </div>
                   </div>
 
                   <el-form label-position="top" class="space-y-1">
-                    <el-form-item label="使用场景">
+                    <el-form-item :label="t('material.usageScene')">
                       <el-select v-model="storyScriptForm.sceneType" class="w-full">
-                        <el-option label="社交平台文案" value="social_post" />
-                        <el-option label="短视频字幕" value="short_video_subtitle" />
-                        <el-option label="口播脚本" value="voiceover" />
+                        <el-option :label="t('material.socialPost')" value="social_post" />
+                        <el-option :label="t('material.shortVideoSubtitle')" value="short_video_subtitle" />
+                        <el-option :label="t('material.voiceoverScript')" value="voiceover" />
                       </el-select>
                     </el-form-item>
-                    <el-form-item label="风格要求">
+                    <el-form-item :label="t('material.styleRequirement')">
                       <el-input v-model="storyScriptForm.stylePrompt" type="textarea" :rows="4" resize="vertical" />
                     </el-form-item>
-                    <el-form-item label="语气要求">
+                    <el-form-item :label="t('material.toneRequirement')">
                       <el-input v-model="storyScriptForm.tonePrompt" type="textarea" :rows="4" resize="vertical" />
                     </el-form-item>
-                    <el-form-item label="长度要求">
+                    <el-form-item :label="t('material.lengthRequirement')">
                       <el-input v-model="storyScriptForm.lengthPrompt" />
                     </el-form-item>
-                    <el-form-item label="补充要求">
+                    <el-form-item :label="t('material.extraRequirement')">
                       <el-input v-model="storyScriptForm.extraPrompt" type="textarea" :rows="8" resize="vertical" />
                     </el-form-item>
                   </el-form>
@@ -2741,9 +2837,9 @@
                   <div class="mt-4 flex flex-col gap-3">
                     <el-button type="primary" class="!ml-0 w-full" :loading="storyScriptSubmitting"
                       @click="handleGenerateStoryScript">
-                      生成故事脚本
+                      {{ t('material.generateStoryScript') }}
                     </el-button>
-                    <el-button class="!ml-0 w-full" @click="refreshStoryScriptList">刷新列表</el-button>
+                    <el-button class="!ml-0 w-full" @click="refreshStoryScriptList">{{ t('material.refreshList') }}</el-button>
                   </div>
                 </div>
               </div>
@@ -2754,23 +2850,23 @@
     </el-dialog>
 
     <!-- PSD套图参数查看弹窗 -->
-    <el-dialog v-model="psdSetParamsDialogVisible" title="PSD套图发送参数" width="80%" :destroy-on-close="true" align-center>
+    <el-dialog v-model="psdSetParamsDialogVisible" :title="t('material.psdSetParams')" width="80%" :destroy-on-close="true" align-center>
       <div class="psd-params-viewer">
         <pre class="params-content">{{ psdSetParamsContent }}</pre>
       </div>
       <template #footer>
-        <el-button @click="psdSetParamsDialogVisible = false">关闭</el-button>
+        <el-button @click="psdSetParamsDialogVisible = false">{{ t('material.close') }}</el-button>
         <el-button type="primary"
-          @click="() => { (navigator as any).clipboard.writeText(psdSetParamsContent); ElMessage.success('已复制到剪贴板') }">复制参数</el-button>
+          @click="() => { (navigator as any).clipboard.writeText(psdSetParamsContent); ElMessage.success(t('material.copiedToClipboard')) }">{{ t('material.copyParams') }}</el-button>
       </template>
     </el-dialog>
 
     <!-- 图片预览弹窗 -->
     <ImagePreview :visible="imagePreviewVisible" :image-url="currentImageUrl" @close="closeImagePreview" />
 
-    <el-dialog v-model="publishUsageDialogVisible" title="图片发布绑定" width="920px" :destroy-on-close="true">
+    <el-dialog v-model="publishUsageDialogVisible" :title="t('material.publishBinding')" width="920px" :destroy-on-close="true">
       <div v-loading="publishUsageLoading" class="publish-usage-dialog">
-        <el-empty v-if="!publishUsageLoading && !publishUsageRecords.length" description="暂无发布绑定" />
+        <el-empty v-if="!publishUsageLoading && !publishUsageRecords.length" :description="t('material.noPublishBinding')" />
         <vxe-grid v-else v-bind="publishUsageGridOptions" :data="publishUsageRecords">
           <template #usageImageSlot="{ row }">
             <el-image v-if="row.imageUrl" :src="row.imageUrl" fit="cover" class="publish-usage-image"
@@ -2792,24 +2888,24 @@
     </el-dialog>
 
     <!-- 查看分享记录弹窗 -->
-    <el-dialog v-model="shareRecordsDialogVisible" :title="`分享记录 - ${shareRecordsResourceName}`" width="600px"
+    <el-dialog v-model="shareRecordsDialogVisible" :title="t('material.shareRecordsFor', { name: shareRecordsResourceName })" width="600px"
       destroy-on-close>
       <div v-loading="shareRecordsLoading">
-        <el-empty v-if="!shareRecordsLoading && shareRecordsList.length === 0" description="暂无分享记录" />
+        <el-empty v-if="!shareRecordsLoading && shareRecordsList.length === 0" :description="t('material.noShareRecords')" />
         <el-table v-else :data="shareRecordsList" style="width: 100%">
-          <el-table-column prop="userName" label="分享给" min-width="120">
+          <el-table-column prop="userName" :label="t('material.sharedTo')" min-width="120">
             <template #default="{ row }">
               <span>{{ row.userName || row.userId }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="shareType" label="分享类型" width="120">
+          <el-table-column prop="shareType" :label="t('material.shareType')" width="120">
             <template #default="{ row }">
-              <el-tag v-if="row.shareType === 'shared'" type="warning" size="small" effect="light">快捷共享</el-tag>
-              <el-tag v-else-if="row.shareType === 'copy'" type="success" size="small" effect="light">物理副本</el-tag>
+              <el-tag v-if="row.shareType === 'shared'" type="warning" size="small" effect="light">{{ t('material.quickShare') }}</el-tag>
+              <el-tag v-else-if="row.shareType === 'copy'" type="success" size="small" effect="light">{{ t('material.physicalCopy') }}</el-tag>
               <el-tag v-else type="info" size="small" effect="plain">{{ row.shareType || '-' }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="createTime" label="分享时间" width="180">
+          <el-table-column prop="createTime" :label="t('material.shareTime')" width="180">
             <template #default="{ row }">
               {{ formatTimestamp(row.createTime) }}
             </template>

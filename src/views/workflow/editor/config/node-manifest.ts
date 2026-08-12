@@ -7,6 +7,7 @@ export type NodeType =
   | 'code'
   | 'condition'
   | 'switch'
+  | 'js_code'
   | 'loop'
   | 'while_loop'
   | 'llm'

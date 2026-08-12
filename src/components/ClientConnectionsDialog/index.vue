@@ -10,7 +10,7 @@
     destroy-on-close
   >
     <template #header>
-      <span>客户端连接</span>
+      <span>{{ t('clientConnections.title') }}</span>
     </template>
 
     <ClientControl />
@@ -19,9 +19,12 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
+import { useI18n } from '@/hooks/web/useI18n'
 import ClientControl from '@/components/ClientControl/index.vue'
 
 defineOptions({ name: 'ClientConnectionsDialog' })
+
+const { t } = useI18n()
 
 const props = defineProps<{
   modelValue: boolean

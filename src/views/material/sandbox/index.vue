@@ -22,6 +22,13 @@
       <el-tabs v-model="activeTab" class="sandbox-tabs">
         <!-- 控制台 -->
         <el-tab-pane label="在线控制台" name="console">
+          <!-- 参考按钮 -->
+          <div class="sandbox-ref-trigger">
+            <el-button size="small" :icon="Document" @click="showRef = true">
+              沙箱使用参考
+            </el-button>
+          </div>
+
           <div class="sandbox-console">
             <div class="sandbox-console__editor">
               <div class="sandbox-console__label">
@@ -146,6 +153,102 @@
         </el-tab-pane>
       </el-tabs>
 
+      <!-- 参考弹窗 -->
+      <el-dialog
+        v-model="showRef"
+        title="沙箱使用参考"
+        width="800px"
+        destroy-on-close
+        class="sandbox-ref-dialog"
+      >
+        <div class="sandbox-ref-body">
+          <!-- 魔术变量 -->
+          <div class="sandbox-ref-section">
+            <div class="sandbox-ref-section__title">内置变量（脚本体内直接使用）</div>
+            <div class="sandbox-ref-table">
+              <div class="sandbox-ref-table__row sandbox-ref-table__row--head">
+                <span class="sandbox-ref-table__col">变量</span>
+                <span class="sandbox-ref-table__col">说明</span>
+                <span class="sandbox-ref-table__col">示例</span>
+              </div>
+              <div class="sandbox-ref-table__row">
+                <span class="sandbox-ref-table__col"><code>$params</code></span>
+                <span class="sandbox-ref-table__col">执行时传入的参数对象</span>
+                <span class="sandbox-ref-table__col"><code>$params.key</code></span>
+              </div>
+              <div class="sandbox-ref-table__row">
+                <span class="sandbox-ref-table__col"><code>$tools</code></span>
+                <span class="sandbox-ref-table__col">沙箱工具集（http/files/cos/log/utils）</span>
+                <span class="sandbox-ref-table__col"><code>$tools.http.get(url)</code></span>
+              </div>
+              <div class="sandbox-ref-table__row">
+                <span class="sandbox-ref-table__col"><code>$log</code></span>
+                <span class="sandbox-ref-table__col">日志输出工具</span>
+                <span class="sandbox-ref-table__col"><code>$log.info('msg')</code></span>
+              </div>
+              <div class="sandbox-ref-table__row">
+                <span class="sandbox-ref-table__col"><code>$runId</code></span>
+                <span class="sandbox-ref-table__col">当前运行唯一标识</span>
+                <span class="sandbox-ref-table__col"><code>`run-${$runId}`</code></span>
+              </div>
+              <div class="sandbox-ref-table__row">
+                <span class="sandbox-ref-table__col"><code>$result</code></span>
+                <span class="sandbox-ref-table__col">赋值后作为脚本返回值</span>
+                <span class="sandbox-ref-table__col"><code>$result = { ok: true }</code></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 工具 API -->
+          <div class="sandbox-ref-section">
+            <div class="sandbox-ref-section__title">工具 API</div>
+            <div class="sandbox-ref-apis">
+              <div class="sandbox-ref-api">
+                <div class="sandbox-ref-api__name"><code>$tools.http</code> — HTTP 请求</div>
+                <div class="sandbox-ref-api__items">
+                  <code>http.get(url, config)</code> / <code>http.post(url, data, config)</code> / <code>http.request(config)</code>
+                </div>
+              </div>
+              <div class="sandbox-ref-api">
+                <div class="sandbox-ref-api__name"><code>$tools.files</code> — 临时文件操作</div>
+                <div class="sandbox-ref-api__items">
+                  <code>files.tempDir()</code> / <code>files.writeText(path, content)</code> / <code>files.readText(path)</code> / <code>files.download(url, opts)</code> / <code>files.remove(path)</code>
+                </div>
+              </div>
+              <div class="sandbox-ref-api">
+                <div class="sandbox-ref-api__name"><code>$tools.cos</code> — 腾讯云 COS 上传</div>
+                <div class="sandbox-ref-api__items">
+                  <code>cos.uploadFile(localPath, opts)</code> / <code>cos.uploadBuffer(data, opts)</code> / <code>cos.uploadFromUrl(url, opts)</code>
+                </div>
+              </div>
+              <div class="sandbox-ref-api">
+                <div class="sandbox-ref-api__name"><code>$tools.utils</code> — 通用工具</div>
+                <div class="sandbox-ref-api__items">
+                  <code>utils.sleep(ms)</code> / <code>utils.randomId()</code> / <code>utils.now()</code>
+                </div>
+              </div>
+              <div class="sandbox-ref-api">
+                <div class="sandbox-ref-api__name"><code>$tools.log</code> — 日志输出</div>
+                <div class="sandbox-ref-api__items">
+                  <code>log.info(msg)</code> / <code>log.warn(msg)</code> / <code>log.error(msg)</code> / <code>log.debug(msg)</code>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 可用库 -->
+          <div class="sandbox-ref-section">
+            <div class="sandbox-ref-section__title">预装代码库（可直接 require）</div>
+            <div class="sandbox-ref-libs">
+              <span class="sandbox-ref-lib" v-for="lib in sandboxLibs" :key="lib.name">
+                <code>{{ lib.name }}</code>
+                <small>{{ lib.desc }}</small>
+              </span>
+            </div>
+          </div>
+        </div>
+      </el-dialog>
+
       <!-- 运行详情弹窗 -->
       <el-dialog
         v-model="detailVisible"
@@ -214,7 +317,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
 import Pagination from '@/components/Pagination/index.vue'
-import { Refresh } from '@element-plus/icons-vue'
+import { Refresh, Document, ArrowDown } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   getSandboxHealth,
@@ -226,6 +329,21 @@ import {
 } from '@/api/sandbox'
 
 const activeTab = ref('console')
+const showRef = ref(false)
+
+const sandboxLibs = [
+  { name: 'axios', desc: 'HTTP 客户端' },
+  { name: 'dayjs', desc: '日期处理' },
+  { name: 'cheerio', desc: 'HTML 解析' },
+  { name: 'lodash', desc: '工具函数库' },
+  { name: 'qs', desc: 'URL 参数序列化' },
+  { name: 'dotenv', desc: '环境变量加载' },
+  { name: 'mysql2', desc: 'MySQL 数据库驱动' },
+  { name: 'sharp', desc: '图像处理' },
+  { name: 'imghash', desc: '图片哈希' },
+  { name: 'colorthief', desc: '主色调提取' },
+  { name: 'cos-nodejs-sdk-v5', desc: '腾讯云 COS SDK' },
+]
 
 // ─── 健康状态 ──────────────────────────────────────────────
 const healthLoading = ref(false)
@@ -720,3 +838,145 @@ onMounted(() => {
 }
 
 </style>
+
+/* 沙箱参考弹窗样式 */
+.sandbox-ref-trigger {
+  margin-bottom: 12px;
+}
+
+.sandbox-ref-body {
+  max-height: 60vh;
+  overflow: auto;
+  padding: 0 4px;
+}
+
+.sandbox-ref-section {
+  margin-bottom: 24px;
+}
+
+.sandbox-ref-section:last-child {
+  margin-bottom: 0;
+}
+
+.sandbox-ref-section__title {
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.sandbox-ref-table {
+  border: 1px solid var(--el-border-color);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.sandbox-ref-table__row {
+  display: grid;
+  grid-template-columns: 130px 1fr 1.2fr;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.sandbox-ref-table__row:last-child {
+  border-bottom: none;
+}
+
+.sandbox-ref-table__row--head {
+  background: var(--app-content-surface-color, #f8fafc);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.sandbox-ref-table__col {
+  padding: 10px 14px;
+  font-size: 12px;
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+.sandbox-ref-table__col code {
+  font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+  font-size: 11px;
+  color: var(--el-color-primary);
+  background: color-mix(in srgb, var(--el-color-primary) 8%, transparent);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.sandbox-ref-apis {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sandbox-ref-api {
+  padding: 12px 16px;
+  background: var(--app-content-surface-color, #f8fafc);
+  border-radius: 8px;
+  border: 1px solid var(--el-border-color-lighter);
+}
+
+.sandbox-ref-api__name {
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sandbox-ref-api__name code {
+  font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+  color: var(--el-color-primary);
+}
+
+.sandbox-ref-api__items {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+.sandbox-ref-api__items code {
+  font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+  color: var(--el-text-color-regular);
+  background: var(--el-border-color-lighter);
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin: 0 2px;
+}
+
+.sandbox-ref-libs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.sandbox-ref-lib {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 10px 14px;
+  min-width: 140px;
+  background: var(--app-content-surface-color, #f8fafc);
+  border-radius: 8px;
+  border: 1px solid var(--el-border-color-lighter);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.sandbox-ref-lib:hover {
+  border-color: var(--el-color-primary);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--el-color-primary) 12%, transparent);
+}
+
+.sandbox-ref-lib code {
+  font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--el-color-primary);
+}
+
+.sandbox-ref-lib small {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+}

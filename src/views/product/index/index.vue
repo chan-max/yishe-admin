@@ -1916,7 +1916,7 @@
                   type="success"
                   link
                   size="small"
-                  @click="downloadThumbnail(row.thumbnail, row.name || '缩略图')"
+                  @click="downloadThumbnail(row.thumbnail, row.name || t('product.thumbnail'))"
                 >
                   {{ t('product.downloadThumbnail') }}
                 </el-button>
@@ -4127,7 +4127,7 @@ function handleEdit(row) {
   };
   if (images.length > 0) {
     fileList.value = images.map((url, index) => ({
-      name: `图片${index + 1}`,
+      name: t('product.imageWithIndex', { index: index + 1 }),
       url: url,
     }));
     pendingFiles.value = [];
@@ -4137,7 +4137,7 @@ function handleEdit(row) {
   }
   if (videos.length > 0) {
     videoFileList.value = videos.map((url, index) => ({
-      name: `视频${index + 1}`,
+      name: t('product.videoWithIndex', { index: index + 1 }),
       url: url,
     }));
     pendingVideoFiles.value = [];
@@ -4386,7 +4386,10 @@ async function handlePublishSubmit() {
             images: pForm.selectedImages,
             videos: pForm.selectedVideos,
           },
-          description: `手动发布商品"${row.name || row.id}"到${getPlatformName(platform)}`,
+          description: t('product.manualPublishTaskDesc', {
+            name: row.name || row.id,
+            platform: getPlatformName(platform),
+          }),
           metadata: {
             platform: platform,
             productId: row.id,
@@ -4827,7 +4830,7 @@ async function handleDownloadRowImages(row: any) {
     return;
   }
 
-  const baseName = row.name || "商品图片";
+  const baseName = row.name || t('product.productImages');
 
   ElMessage.info(t('product.startDownloadingImages', { count: images.length }));
 

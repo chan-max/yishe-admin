@@ -721,7 +721,37 @@ const getShortcutLabel = (win: string, mac: string) => {
   width: 100%;
 }
 
-.config-panel__insert-var-icon--textarea {
+.config-panel__code-wrapper {
+    position: relative;
+    width: 100%;
+  }
+
+  .config-panel__code-editor {
+    width: 100%;
+    padding: 8px 10px;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--el-text-color-primary);
+    background: var(--el-bg-color-page);
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 4px;
+    outline: none;
+    resize: vertical;
+    tab-size: 2;
+    white-space: pre;
+    overflow: auto;
+  }
+
+  .config-panel__code-editor:focus {
+    border-color: var(--el-color-primary);
+  }
+
+  .config-panel__code-editor::placeholder {
+    color: var(--el-text-color-placeholder);
+  }
+
+  .config-panel__insert-var-icon--textarea {
   position: absolute;
   right: 6px;
   bottom: 6px;

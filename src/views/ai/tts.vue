@@ -6,18 +6,18 @@
           <el-form :model="queryParams" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="8" :lg="6">
-                <el-form-item label="搜索">
-                  <el-input v-model="queryParams.search" size="small" placeholder="文案 / 返回URL" clearable @keyup.enter="getList"
+                <el-form-item :label="t('common.search')">
+                  <el-input v-model="queryParams.search" size="small" :placeholder="t('aiTts.searchPlaceholder')" clearable @keyup.enter="getList"
                     @clear="getList" />
                 </el-form-item>
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" :loading="loading" @click="getList">搜索</el-button>
-              <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">创建</el-button>
+              <el-button size="small" type="primary" :loading="loading" @click="getList">{{ t('common.search') }}</el-button>
+              <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">{{ t('aiTts.create') }}</el-button>
               <el-button size="small" type="danger" :icon="Delete" :disabled="selectedRows.length === 0"
                 @click="handleBatchDelete">
-                批量删除({{ selectedRows.length }})
+                {{ t('aiTts.batchDeleteCount', { count: selectedRows.length }) }}
               </el-button>
             </div>
           </el-form>
@@ -54,7 +54,7 @@
                     </ul>
                   </div>
                 </div>
-                <div v-else>无字幕</div>
+                <div v-else>{{ t('aiTts.noSubtitle') }}</div>
               </template>
               <template #previewSlot="{ row }">
                 <audio v-if="row.resultUrl" :src="row.resultUrl" controls preload="none" class="audio-preview" />
@@ -66,13 +66,13 @@
                   placement="bottom-end"
                   @command="(cmd) => handleOperation(row, String(cmd))"
                 >
-                  <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
+                  <el-button type="primary" link size="small" class="operation-trigger-button">{{ t('common.operation') }}</el-button>
                   <template #dropdown>
                     <el-dropdown-menu class="operation-menu-compact">
-                      <el-dropdown-item command="preview">预览字幕</el-dropdown-item>
-                      <el-dropdown-item command="metadata">查看字幕元数据</el-dropdown-item>
-                      <el-dropdown-item command="copyParams">复制参数</el-dropdown-item>
-                      <el-dropdown-item command="delete" class="operation-menu-item--danger">删除</el-dropdown-item>
+                      <el-dropdown-item command="preview">{{ t('aiTts.previewSubtitle') }}</el-dropdown-item>
+                      <el-dropdown-item command="metadata">{{ t('aiTts.viewSubtitleMetadata') }}</el-dropdown-item>
+                      <el-dropdown-item command="copyParams">{{ t('aiTts.copyParams') }}</el-dropdown-item>
+                      <el-dropdown-item command="delete" class="operation-menu-item--danger">{{ t('common.delete') }}</el-dropdown-item>
                     </el-dropdown-menu>
                   </template>
                 </el-dropdown>
@@ -85,13 +85,13 @@
               <SubtitlePreview v-model="previewDialogVisible" :row="previewRow" />
 
               <!-- 字幕元数据弹窗 -->
-              <el-dialog v-model="metadataDialogVisible" title="字幕元数据" width="800px" :destroy-on-close="true">
+              <el-dialog v-model="metadataDialogVisible" :title="t('aiTts.subtitleMetadata')" width="800px" :destroy-on-close="true">
                 <div class="metadata-container">
                   <pre class="metadata-pre">{{ JSON.stringify(metadataContent, null, 2) }}</pre>
                 </div>
                 <template #footer>
-                  <el-button type="primary" @click="copyMetadata">复制 JSON</el-button>
-                  <el-button @click="metadataDialogVisible = false">关闭</el-button>
+                  <el-button type="primary" @click="copyMetadata">{{ t('aiTts.copyJson') }}</el-button>
+                  <el-button @click="metadataDialogVisible = false">{{ t('common.close') }}</el-button>
                 </template>
               </el-dialog>
             </div>
@@ -111,44 +111,44 @@
       :destroy-on-close="true">
       <div class="tts-create-body">
         <el-form ref="formRef" :model="form" :rules="rules" label-width="96px">
-          <el-form-item label="文案" prop="text">
+          <el-form-item :label="t('aiTts.text')" prop="text">
             <el-input v-model="form.text" type="textarea" :rows="6" maxlength="1000" show-word-limit />
           </el-form-item>
 
-          <el-form-item v-if="isInstructModel" label="指令模板">
-            <el-select v-model="selectedInstructionTemplate" class="w-full" placeholder="选择模板后会自动填入指令"
+          <el-form-item v-if="isInstructModel" :label="t('aiTts.instructionTemplate')">
+            <el-select v-model="selectedInstructionTemplate" class="w-full" :placeholder="t('aiTts.instructionTemplatePlaceholder')"
               @change="applyInstructionTemplate">
-              <el-option v-for="item in instructionTemplates" :key="item.label" :label="item.label"
+              <el-option v-for="item in instructionTemplates" :key="item.labelKey" :label="t(item.labelKey)"
                 :value="item.value" />
             </el-select>
           </el-form-item>
 
-          <el-form-item v-if="isInstructModel" label="指令控制" prop="instructions">
+          <el-form-item v-if="isInstructModel" :label="t('aiTts.instructionControl')" prop="instructions">
             <el-input v-model="form.instructions" type="textarea" :rows="5" maxlength="1600" show-word-limit
-              placeholder="示例：语速较快，带有明显的上扬语调，适合介绍时尚产品" />
+              :placeholder="t('aiTts.instructionPlaceholder')" />
             <div class="instruction-tip">
-              仅支持 qwen3-tts-instruct-flash，指令文本仅支持中文/英文，建议描述音调、语速、情感等特征。
+              {{ t('aiTts.instructionTip') }}
             </div>
           </el-form-item>
 
           <!-- 声音复刻模型的音色选择 -->
-          <el-form-item v-if="isVoiceCloneModel" label="音色来源" required>
+          <el-form-item v-if="isVoiceCloneModel" :label="t('aiTts.voiceSource')" required>
             <el-radio-group v-model="voiceSource">
-              <el-radio value="existing">选择已有音色</el-radio>
-              <el-radio value="material">从文件资源创建</el-radio>
+              <el-radio value="existing">{{ t('aiTts.voiceSourceExisting') }}</el-radio>
+              <el-radio value="material">{{ t('aiTts.voiceSourceMaterial') }}</el-radio>
             </el-radio-group>
           </el-form-item>
 
           <!-- 选择已有音色 -->
-          <el-form-item v-if="isVoiceCloneModel && voiceSource === 'existing'" label="选择音色" required>
+          <el-form-item v-if="isVoiceCloneModel && voiceSource === 'existing'" :label="t('aiTts.selectVoice')" required>
             <div class="voice-list-container">
               <div class="voice-list-header">
-                <span>已创建音色列表</span>
+                <span>{{ t('aiTts.createdVoiceList') }}</span>
                 <el-button :icon="Refresh" size="small" :loading="loadingVoices" @click="loadCustomVoices">
-                  刷新
+                  {{ t('common.refresh') }}
                 </el-button>
               </div>
-              <el-select v-model="form.voice" class="w-full" placeholder="请选择音色" :loading="loadingVoices" clearable
+              <el-select v-model="form.voice" class="w-full" :placeholder="t('aiTts.selectVoicePlaceholder')" :loading="loadingVoices" clearable
                 @change="handleVoiceSelect" @clear="customVoiceInfo = null">
                 <el-option v-for="item in customVoiceList" :key="item.voice"
                   :label="`${formatVoiceName(item)} (${new Date(item.gmt_create).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })})`"
@@ -161,37 +161,37 @@
                 </el-option>
               </el-select>
               <div v-if="customVoiceList.length === 0 && !loadingVoices" class="voice-empty">
-                暂无已创建音色，请从文件资源创建
+                {{ t('aiTts.noCreatedVoice') }}
               </div>
             </div>
           </el-form-item>
 
           <!-- 从文件资源创建音色 -->
-          <el-form-item v-if="isVoiceCloneModel && voiceSource === 'material'" label="音色名称">
-            <el-input v-model="customVoiceName" placeholder="请输入音色名称（可选，留空则使用素材名称）" :disabled="uploadingAudio" clearable
+          <el-form-item v-if="isVoiceCloneModel && voiceSource === 'material'" :label="t('aiTts.voiceName')">
+            <el-input v-model="customVoiceName" :placeholder="t('aiTts.voiceNamePlaceholder')" :disabled="uploadingAudio" clearable
               maxlength="32" show-word-limit />
             <div class="voice-name-tip">
-              仅支持字母、数字、下划线、横线，不能以数字开头，最多32个字符
+              {{ t('aiTts.voiceNameTip') }}
             </div>
           </el-form-item>
 
-          <el-form-item v-if="isVoiceCloneModel && voiceSource === 'material'" label="音频素材" required>
+          <el-form-item v-if="isVoiceCloneModel && voiceSource === 'material'" :label="t('aiTts.audioMaterial')" required>
             <div class="voice-list-container">
               <div class="file-resource-toolbar">
-                <el-input v-model="fileResourceKeyword" placeholder="搜索素材名称/描述/关键词" clearable
+                <el-input v-model="fileResourceKeyword" :placeholder="t('aiTts.searchMaterialPlaceholder')" clearable
                   @keyup.enter="loadFileResourceAudios" />
-                <el-button :loading="loadingFileResources" @click="loadFileResourceAudios">查询</el-button>
+                <el-button :loading="loadingFileResources" @click="loadFileResourceAudios">{{ t('common.query') }}</el-button>
               </div>
 
-              <el-select v-model="selectedFileResourceId" class="w-full" placeholder="请选择音频素材"
+              <el-select v-model="selectedFileResourceId" class="w-full" :placeholder="t('aiTts.selectAudioMaterialPlaceholder')"
                 :loading="loadingFileResources" clearable>
                 <el-option v-for="item in fileResourceAudios" :key="item.id"
-                  :label="`${item.name || '未命名'} (${(item.suffix || '').toLowerCase()})`" :value="item.id" />
+                  :label="`${item.name || t('aiTts.unnamed')} (${(item.suffix || '').toLowerCase()})`" :value="item.id" />
               </el-select>
 
               <div class="file-resource-actions">
                 <el-button type="primary" :loading="uploadingAudio" @click="handleCreateVoiceFromMaterial">
-                  使用所选素材创建音色
+                  {{ t('aiTts.createVoiceFromMaterial') }}
                 </el-button>
               </div>
 
@@ -201,145 +201,145 @@
             <div v-if="customVoiceInfo" class="voice-info">
               <el-alert type="success" :closable="false">
                 <template #title>
-                  <span>已创建音色：{{ customVoiceInfo.preferredName }}</span>
+                  <span>{{ t('aiTts.createdVoiceWithName', { name: customVoiceInfo.preferredName }) }}</span>
                 </template>
               </el-alert>
             </div>
             <div v-if="!customVoiceInfo && form.model === 'qwen3-tts-vc-2026-01-22'" class="voice-tip">
-              请先选择剪辑音频素材创建自定义音色，然后才能生成语音
+              {{ t('aiTts.voiceCloneTip') }}
             </div>
           </el-form-item>
 
           <el-row :gutter="16">
             <el-col :xs="24" :md="12">
-              <el-form-item v-if="!isVoiceCloneModel" label="音色" prop="voice">
+              <el-form-item v-if="!isVoiceCloneModel" :label="t('aiTts.voice')" prop="voice">
                 <el-select v-model="form.voice" class="w-full">
-                  <el-option label="Cherry（音色名：芊悦｜描述：阳光积极、亲切自然小姐姐（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceCherry')"
                     value="Cherry" />
-                  <el-option label="Serena（音色名：苏瑶｜描述：温柔小姐姐（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceSerena')"
                     value="Serena" />
                   <el-option
-                    label="Ethan（音色名：晨煦｜描述：标准普通话，带部分北方口音。阳光、温暖、活力、朝气（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    :label="t('aiTts.voiceEthan')"
                     value="Ethan" />
-                  <el-option label="Chelsie（音色名：千雪｜描述：二次元虚拟女友（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceChelsie')"
                     value="Chelsie" />
-                  <el-option label="Momo（音色名：茉兔｜描述：撒娇搞怪，逗你开心（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceMomo')"
                     value="Momo" />
-                  <el-option label="Vivian（音色名：十三｜描述：拽拽的、可爱的小暴躁（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceVivian')"
                     value="Vivian" />
-                  <el-option label="Moon（音色名：月白｜描述：率性帅气的月白（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceMoon')"
                     value="Moon" />
-                  <el-option label="Maia（音色名：四月｜描述：知性与温柔的碰撞（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceMaia')"
                     value="Maia" />
-                  <el-option label="Kai（音色名：凯｜描述：耳朵的一场SPA（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceKai')"
                     value="Kai" />
-                  <el-option label="Nofish（音色名：不吃鱼｜描述：不会翘舌音的设计师（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceNofish')"
                     value="Nofish" />
-                  <el-option label="Bella（音色名：萌宝｜描述：喝酒不打醉拳的小萝莉（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceBella')"
                     value="Bella" />
                   <el-option
-                    label="Jennifer（音色名：詹妮弗｜描述：品牌级、电影质感般美语女声（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    :label="t('aiTts.voiceJennifer')"
                     value="Jennifer" />
-                  <el-option label="Ryan（音色名：甜茶｜描述：节奏拉满，戏感炸裂，真实与张力共舞（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceRyan')"
                     value="Ryan" />
-                  <el-option label="Katerina（音色名：卡捷琳娜｜描述：御姐音色，韵律回味十足（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceKaterina')"
                     value="Katerina" />
-                  <el-option label="Aiden（音色名：艾登｜描述：精通厨艺的美语大男孩（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceAiden')"
                     value="Aiden" />
                   <el-option
-                    label="Eldric Sage（音色名：沧明子｜描述：沉稳睿智的老者，沧桑如松却心明如镜（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    :label="t('aiTts.voiceEldricSage')"
                     value="Eldric Sage" />
-                  <el-option label="Mia（音色名：乖小妹｜描述：温顺如春水，乖巧如初雪（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceMia')"
                     value="Mia" />
                   <el-option
-                    label="Mochi（音色名：沙小弥｜描述：聪明伶俐的小大人，童真未泯却早慧如禅（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    :label="t('aiTts.voiceMochi')"
                     value="Mochi" />
                   <el-option
-                    label="Bellona（音色名：燕铮莺｜描述：声音洪亮，吐字清晰，人物鲜活，听得人热血沸腾；金戈铁马入梦来，字正腔圆间尽显千面人声的江湖（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    :label="t('aiTts.voiceBellona')"
                     value="Bellona" />
                   <el-option
-                    label="Vincent（音色名：田叔｜描述：一口独特的沙哑烟嗓，一开口便道尽了千军万马与江湖豪情（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    :label="t('aiTts.voiceVincent')"
                     value="Vincent" />
-                  <el-option label="Bunny（音色名：萌小姬｜描述：“萌属性”爆棚的小萝莉（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceBunny')"
                     value="Bunny" />
                   <el-option
-                    label="Neil（音色名：阿闻｜描述：平直的基线语调，字正腔圆的咬字发音，这就是最专业的新闻主持人（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    :label="t('aiTts.voiceNeil')"
                     value="Neil" />
                   <el-option
-                    label="Elias（音色名：墨讲师｜描述：既保持学科严谨性，又通过叙事技巧将复杂知识转化为可消化的认知模块（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    :label="t('aiTts.voiceElias')"
                     value="Elias" />
                   <el-option
-                    label="Arthur（音色名：徐大爷｜描述：被岁月和旱烟浸泡过的质朴嗓音，不疾不徐地摇开了满村的奇闻异事（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    :label="t('aiTts.voiceArthur')"
                     value="Arthur" />
                   <el-option
-                    label="Nini（音色名：邻家妹妹｜描述：糯米糍一样又软又黏的嗓音，那一声声拉长了的“哥哥”，甜得能把人的骨头都叫酥了（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    :label="t('aiTts.voiceNini')"
                     value="Nini" />
                   <el-option
-                    label="Ebona（音色名：诡婆婆｜描述：她的低语像一把生锈的钥匙，缓慢转动你内心最深处的幽暗角落——那里藏着所有你不敢承认的童年阴影与未知恐惧（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    :label="t('aiTts.voiceEbona')"
                     value="Ebona" />
                   <el-option
-                    label="Seren（音色名：小婉｜描述：温和舒缓的声线，助你更快地进入睡眠，晚安，好梦（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    :label="t('aiTts.voiceSeren')"
                     value="Seren" />
                   <el-option
-                    label="Pip（音色名：顽屁小孩｜描述：调皮捣蛋却充满童真的他来了，这是你记忆中的小新吗（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    :label="t('aiTts.voicePip')"
                     value="Pip" />
                   <el-option
-                    label="Stella（音色名：少女阿月｜描述：平时是甜到发腻的迷糊少女音，但在喊出“代表月亮消灭你”时，瞬间充满不容置疑的爱与正义（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    :label="t('aiTts.voiceStella')"
                     value="Stella" />
-                  <el-option label="Bodega（音色名：博德加｜描述：热情的西班牙大叔（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceBodega')"
                     value="Bodega" />
-                  <el-option label="Sonrisa（音色名：索尼莎｜描述：热情开朗的拉美大姐（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceSonrisa')"
                     value="Sonrisa" />
                   <el-option
-                    label="Alek（音色名：阿列克｜描述：一开口，是战斗民族的冷，也是毛呢大衣下的暖（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    :label="t('aiTts.voiceAlek')"
                     value="Alek" />
-                  <el-option label="Dolce（音色名：多尔切｜描述：慵懒的意大利大叔（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceDolce')"
                     value="Dolce" />
-                  <el-option label="Sohee（音色名：素熙｜描述：温柔开朗，情绪丰富的韩国欧尼（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceSohee')"
                     value="Sohee" />
-                  <el-option label="Ono Anna（音色名：小野杏｜描述：鬼灵精怪的青梅竹马（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceOnoAnna')"
                     value="Ono Anna" />
                   <el-option
-                    label="Lenn（音色名：莱恩｜描述：理性是底色，叛逆藏在细节里——穿西装也听后朋克的德国青年（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    :label="t('aiTts.voiceLenn')"
                     value="Lenn" />
-                  <el-option label="Emilien（音色名：埃米尔安｜描述：浪漫的法国大哥哥（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceEmilien')"
                     value="Emilien" />
-                  <el-option label="Andre（音色名：安德雷｜描述：声音磁性，自然舒服、沉稳男生（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceAndre')"
                     value="Andre" />
                   <el-option
-                    label="Radio Gol（音色名：拉迪奥·戈尔｜描述：足球诗人Rádio Gol！今天我要用名字为你们解说足球（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    :label="t('aiTts.voiceRadioGol')"
                     value="Radio Gol" />
-                  <el-option label="Jada（音色名：上海-阿珍｜描述：风风火火的沪上阿姐（女性）｜支持语种：中文（上海话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceJada')"
                     value="Jada" />
-                  <el-option label="Dylan（音色名：北京-晓东｜描述：北京胡同里长大的少年（男性）｜支持语种：中文（北京话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceDylan')"
                     value="Dylan" />
-                  <el-option label="Li（音色名：南京-老李｜描述：耐心的瑜伽老师（男性）｜支持语种：中文（南京话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceLi')"
                     value="Li" />
                   <el-option
-                    label="Marcus（音色名：陕西-秦川｜描述：面宽话短，心实声沉——老陕的味道（男性）｜支持语种：中文（陕西话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    :label="t('aiTts.voiceMarcus')"
                     value="Marcus" />
                   <el-option
-                    label="Roy（音色名：闽南-阿杰｜描述：诙谐直爽、市井活泼的台湾哥仔形象（男性）｜支持语种：中文（闽南语）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    :label="t('aiTts.voiceRoy')"
                     value="Roy" />
-                  <el-option label="Peter（音色名：天津-李彼得｜描述：天津相声，专业捧哏（男性）｜支持语种：中文（天津话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voicePeter')"
                     value="Peter" />
-                  <el-option label="Sunny（音色名：四川-晴儿｜描述：甜到你心里的川妹子（女性）｜支持语种：中文（四川话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceSunny')"
                     value="Sunny" />
-                  <el-option label="Eric（音色名：四川-程川｜描述：一个跳脱市井的四川成都男子（男性）｜支持语种：中文（四川话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceEric')"
                     value="Eric" />
-                  <el-option label="Rocky（音色名：粤语-阿强｜描述：幽默风趣的阿强，在线陪聊（男性）｜支持语种：中文（粤语）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceRocky')"
                     value="Rocky" />
-                  <el-option label="Kiki（音色名：粤语-阿清｜描述：甜美的港妹闺蜜（女性）｜支持语种：中文（粤语）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                  <el-option :label="t('aiTts.voiceKiki')"
                     value="Kiki" />
                 </el-select>
               </el-form-item>
             </el-col>
             <el-col :xs="24" :md="12">
-              <el-form-item label="模型" prop="model">
+              <el-form-item :label="t('aiTts.model')" prop="model">
                 <el-select v-model="form.model" class="w-full">
-                  <el-option label="qwen3-tts-flash【快速】" value="qwen3-tts-flash" />
-                  <el-option label="qwen3-tts-instruct-flash【指令控制】" value="qwen3-tts-instruct-flash" />
-                  <el-option label="qwen3-tts-vc-2026-01-22【声音复刻】" value="qwen3-tts-vc-2026-01-22" />
+                  <el-option :label="t('aiTts.modelFlash')" value="qwen3-tts-flash" />
+                  <el-option :label="t('aiTts.modelInstruct')" value="qwen3-tts-instruct-flash" />
+                  <el-option :label="t('aiTts.modelVoiceClone')" value="qwen3-tts-vc-2026-01-22" />
                 </el-select>
               </el-form-item>
             </el-col>
@@ -347,7 +347,7 @@
 
           <el-row :gutter="16">
             <el-col :xs="24" :md="8">
-              <el-form-item label="格式" prop="format">
+              <el-form-item :label="t('aiTts.format')" prop="format">
                 <el-select v-model="form.format" class="w-full">
                   <el-option label="mp3" value="mp3" />
                   <el-option label="wav" value="wav" />
@@ -355,12 +355,12 @@
               </el-form-item>
             </el-col>
             <el-col :xs="24" :md="8">
-              <el-form-item label="语速" prop="speed">
+              <el-form-item :label="t('aiTts.speed')" prop="speed">
                 <el-input-number v-model="form.speed" :min="0.5" :max="2" :step="0.1" class="w-full" />
               </el-form-item>
             </el-col>
             <el-col :xs="24" :md="8">
-              <el-form-item label="语调" prop="pitch">
+              <el-form-item :label="t('aiTts.pitch')" prop="pitch">
                 <el-input-number v-model="form.pitch" :min="0.5" :max="2" :step="0.1" class="w-full" />
               </el-form-item>
             </el-col>
@@ -369,10 +369,10 @@
       </div>
 
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button @click="copyCreateParams">复制参数</el-button>
+        <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button @click="copyCreateParams">{{ t('aiTts.copyParams') }}</el-button>
         <el-button type="primary" :loading="submitLoading" :disabled="uploadingAudio"
-          @click="submitForm">创建并生成</el-button>
+          @click="submitForm">{{ t('aiTts.createAndGenerate') }}</el-button>
       </template>
     </el-dialog>
   </ContentWrap>
@@ -393,11 +393,14 @@ import {
 } from '@/api/ai/tts'
 import { getFileResourceList } from '@/api/file-resource'
 import { buildOperationColumn, commonGridOptions } from '@/common/table'
+import { useI18n } from '@/hooks/web/useI18n'
 import { useWindowSize } from '@vueuse/core'
 import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
 import ListPageLayout from '@/components/ListPageLayout/index.vue'
 import Pagination from '@/components/Pagination/index.vue'
 import SubtitlePreview from './SubtitlePreview.vue'
+
+const { t } = useI18n()
 
 const formatDuration = (val: any) => {
   if (val === undefined || val === null || val === '') return '-'
@@ -409,7 +412,7 @@ const formatDuration = (val: any) => {
 const loading = ref(false)
 const submitLoading = ref(false)
 const dialogVisible = ref(false)
-const dialogTitle = ref('创建语音')
+const dialogTitle = ref('')
 const total = ref(0)
 const dataSource = ref<any[]>([])
 const formRef = ref()
@@ -454,7 +457,7 @@ const openMetadataDialog = (row: any) => {
 const copyMetadata = () => {
   const text = JSON.stringify(metadataContent.value, null, 2)
   navigator.clipboard.writeText(text).then(() => {
-    ElMessage.success('已复制到剪贴板')
+    ElMessage.success(t('aiTts.copiedToClipboard'))
   })
 }
 
@@ -485,9 +488,9 @@ const copyCreateParams = async () => {
   try {
     const text = JSON.stringify(composeCreateParams(), null, 2)
     await navigator.clipboard.writeText(text)
-    ElMessage.success('创建参数已复制到剪贴板')
+    ElMessage.success(t('aiTts.createParamsCopied'))
   } catch (err: any) {
-    ElMessage.error(err?.message || '复制失败')
+    ElMessage.error(err?.message || t('aiTts.copyFailed'))
   }
 }
 
@@ -506,9 +509,9 @@ const copyRecordParams = async (row: any) => {
     }
 
     await navigator.clipboard.writeText(JSON.stringify(params, null, 2))
-    ElMessage.success('记录参数已复制到剪贴板')
+    ElMessage.success(t('aiTts.recordParamsCopied'))
   } catch (err: any) {
-    ElMessage.error(err?.message || '复制失败')
+    ElMessage.error(err?.message || t('aiTts.copyFailed'))
   }
 }
 
@@ -524,11 +527,11 @@ const gridOptions = ref<any>({
   columns: [
     { type: 'checkbox', width: 50 },
     { type: 'seq', title: '#', width: 58 },
-    { title: '文案', field: 'text', minWidth: 220, slots: { default: 'textSlot' } },
-    { title: '配置参数', field: 'configParams', minWidth: 260, slots: { default: 'configSlot' } },
-    { title: '试听', field: 'preview', width: 320, slots: { default: 'previewSlot' } },
-    { title: '时长(秒)', field: 'duration', width: 96, formatter: ({ cellValue }) => formatDuration(cellValue) },
-    { title: '创建时间', field: 'createTime', width: 170 },
+    { title: t('aiTts.text'), field: 'text', minWidth: 220, slots: { default: 'textSlot' } },
+    { title: t('aiTts.configParams'), field: 'configParams', minWidth: 260, slots: { default: 'configSlot' } },
+    { title: t('aiTts.preview'), field: 'preview', width: 320, slots: { default: 'previewSlot' } },
+    { title: t('aiTts.durationSec'), field: 'duration', width: 96, formatter: ({ cellValue }) => formatDuration(cellValue) },
+    { title: t('common.createTime'), field: 'createTime', width: 170 },
     buildOperationColumn('operationSlot')
   ]
 })
@@ -596,55 +599,55 @@ const formatVoiceName = (item: any) => {
 
 const instructionTemplates = [
   {
-    label: '标准播音风格：字正腔圆，吐字清晰',
+    labelKey: 'aiTts.instructStandardBroadcast',
     value: '标准播音风格：吐字清晰精准，字正腔圆，语速中等，语调稳健。'
   },
   {
-    label: '广告配音：活力感染力强',
+    labelKey: 'aiTts.instructAdVoiceover',
     value: '广告配音风格：音调偏高，语速中等偏快，充满活力和感染力，强调卖点。'
   },
   {
-    label: '温柔治愈：语速偏慢，温暖亲切',
+    labelKey: 'aiTts.instructGentleHealing',
     value: '温柔治愈风格：语速偏慢，音调柔和甜美，语气温暖关怀，像贴心朋友。'
   },
   {
-    label: '新闻播报：冷静客观',
+    labelKey: 'aiTts.instructNewsBroadcast',
     value: '新闻播报风格：语速中等偏快，吐字清晰，语调平稳，客观冷静。'
   },
   {
-    label: '纪录片解说：沉稳厚重',
+    labelKey: 'aiTts.instructDocumentary',
     value: '纪录片解说：语速中等，音色浑厚，语调沉稳，叙事感强。'
   },
   {
-    label: '有声书朗读：情感细腻',
+    labelKey: 'aiTts.instructAudiobook',
     value: '有声书朗读：语速中等偏慢，情感细腻，停顿自然，带叙事节奏。'
   },
   {
-    label: '游戏角色：性格鲜明',
+    labelKey: 'aiTts.instructGameCharacter',
     value: '游戏角色配音：语调起伏明显，情绪鲜明，节奏感强，角色感突出。'
   },
   {
-    label: '情绪递进：由平静到激动',
+    labelKey: 'aiTts.instructEmotionProgression',
     value: '情绪递进效果：从平静叙述逐渐增强情绪，音量上扬，语速略快。'
   },
   {
-    label: '低沉磁性：稳重有力',
+    labelKey: 'aiTts.instructDeepMagnetic',
     value: '低沉磁性：音调偏低，语速中等，音色有磁性，沉稳有力。'
   },
   {
-    label: '清脆甜美：轻快俏皮',
+    labelKey: 'aiTts.instructCrispSweet',
     value: '清脆甜美：音调偏高，语速偏快，语气轻快俏皮，活泼明亮。'
   },
   {
-    label: '理性教学：清晰有条理',
+    labelKey: 'aiTts.instructRationalTeaching',
     value: '理性教学风格：语速中等，吐字清楚，逻辑感强，节奏有条理。'
   },
   {
-    label: '高能发布：节奏紧凑',
+    labelKey: 'aiTts.instructHighEnergy',
     value: '高能发布：语速偏快，语调上扬，节奏紧凑，情绪饱满。'
   },
   {
-    label: '舒缓冥想：平稳放松',
+    labelKey: 'aiTts.instructCalmMeditation',
     value: '舒缓冥想：语速慢，音调平稳，语气柔和放松，适合引导与放松。'
   }
 ]
@@ -691,9 +694,9 @@ watch(
 )
 
 const rules = {
-  text: [{ required: true, message: '请输入文案', trigger: 'blur' }],
-  voice: [{ required: true, message: '请选择音色', trigger: 'change' }],
-  model: [{ required: true, message: '请选择模型', trigger: 'change' }]
+  text: [{ required: true, message: t('aiTts.textRequired'), trigger: 'blur' }],
+  voice: [{ required: true, message: t('aiTts.selectVoicePlaceholder'), trigger: 'change' }],
+  model: [{ required: true, message: t('aiTts.selectModelRequired'), trigger: 'change' }]
 }
 
 const resetForm = () => {
@@ -729,7 +732,7 @@ const loadCustomVoices = async () => {
     }
   } catch (error: any) {
     console.error('loadCustomVoices error:', error)
-    ElMessage.error(error?.message || '加载音色列表失败')
+    ElMessage.error(error?.message || t('aiTts.loadVoicesFailed'))
   } finally {
     loadingVoices.value = false
   }
@@ -750,14 +753,14 @@ const handleVoiceSelect = (voice: string) => {
 // 删除自定义音色
 const handleDeleteVoice = async (voice: string) => {
   try {
-    await ElMessageBox.confirm('确认删除该音色吗？删除后将无法恢复。', '删除确认', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
+    await ElMessageBox.confirm(t('aiTts.confirmDeleteVoice'), t('aiTts.deleteConfirm'), {
+      confirmButtonText: t('common.confirm'),
+      cancelButtonText: t('common.cancel'),
       type: 'warning'
     })
 
     await deleteCustomVoice(voice)
-    ElMessage.success('音色删除成功')
+    ElMessage.success(t('aiTts.voiceDeleted'))
 
     // 如果删除的是当前选中的音色，清空选择
     if (form.voice === voice) {
@@ -769,7 +772,7 @@ const handleDeleteVoice = async (voice: string) => {
     await loadCustomVoices()
   } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error(error?.message || '删除音色失败')
+      ElMessage.error(error?.message || t('aiTts.deleteVoiceFailed'))
     }
   }
 }
@@ -788,7 +791,7 @@ const loadFileResourceAudios = async () => {
     const list = payload?.list || []
     fileResourceAudios.value = list.filter((item) => audioSuffixSet.has(String(item?.suffix || '').toLowerCase()))
   } catch (error: any) {
-    ElMessage.error(error?.message || '查询剪辑音频素材失败')
+    ElMessage.error(error?.message || t('aiTts.queryMaterialFailed'))
   } finally {
     loadingFileResources.value = false
   }
@@ -796,7 +799,7 @@ const loadFileResourceAudios = async () => {
 
 const handleCreateVoiceFromMaterial = async () => {
   if (!selectedFileResource.value?.url) {
-    ElMessage.warning('请先选择音频素材')
+    ElMessage.warning(t('aiTts.selectAudioMaterialFirst'))
     return
   }
 
@@ -823,13 +826,13 @@ const handleCreateVoiceFromMaterial = async () => {
       }
       form.voice = payload.voice
       customVoiceName.value = ''
-      ElMessage.success(`自定义音色"${payload.preferredName}"创建成功`)
+      ElMessage.success(t('aiTts.customVoiceCreated', { name: payload.preferredName }))
       await loadCustomVoices()
     } else {
-      throw new Error('创建音色失败')
+      throw new Error(t('aiTts.createVoiceFailed'))
     }
   } catch (error: any) {
-    ElMessage.error(error?.message || '创建自定义音色失败')
+    ElMessage.error(error?.message || t('aiTts.createCustomVoiceFailed'))
     customVoiceInfo.value = null
   } finally {
     uploadingAudio.value = false
@@ -881,7 +884,7 @@ const getList = async () => {
 }
 
 const handleAdd = () => {
-  dialogTitle.value = '创建语音'
+  dialogTitle.value = t('aiTts.createVoice')
   resetForm()
   dialogVisible.value = true
   // 默认加载音色列表（声音复刻模型可能用到）
@@ -895,11 +898,11 @@ const submitForm = async () => {
   // 如果是声音复刻模型，检查音色
   if (form.model === 'qwen3-tts-vc-2026-01-22') {
     if (voiceSource.value === 'existing' && !form.voice) {
-      ElMessage.warning('请选择已有音色')
+      ElMessage.warning(t('aiTts.selectExistingVoice'))
       return
     }
     if (voiceSource.value === 'material' && !customVoiceInfo.value) {
-      ElMessage.warning('请先从文件资源创建自定义音色')
+      ElMessage.warning(t('aiTts.createVoiceFromMaterialFirst'))
       return
     }
   }
@@ -919,9 +922,9 @@ const submitForm = async () => {
     const payload = res?.data ?? res
 
     if (payload?.status === 'failed') {
-      ElMessage.warning(`创建成功，但生成失败：${payload?.errorMessage || '未知错误'}`)
+      ElMessage.warning(t('aiTts.generatedFailedWithError', { message: payload?.errorMessage || t('aiTts.unknownError') }))
     } else {
-      ElMessage.success('创建并生成成功')
+      ElMessage.success(t('aiTts.createAndGenerateSuccess'))
     }
 
     dialogVisible.value = false
@@ -932,9 +935,9 @@ const submitForm = async () => {
 }
 
 const handleDelete = async (row: any) => {
-  await ElMessageBox.confirm('确认删除该记录吗？', '提示', { type: 'warning' })
+  await ElMessageBox.confirm(t('aiTts.confirmDeleteRecord'), t('common.tip'), { type: 'warning' })
   await deleteTtsRecord(row.id)
-  ElMessage.success('删除成功')
+  ElMessage.success(t('common.deleteSuccess'))
   await getList()
 }
 
@@ -951,26 +954,26 @@ const handleCheckboxAll = ({ records }: any) => {
 // 批量删除
 const handleBatchDelete = async () => {
   if (selectedRows.value.length === 0) {
-    ElMessage.warning('请选择要删除的记录')
+    ElMessage.warning(t('aiTts.selectDeleteRecord'))
     return
   }
 
   try {
-    await ElMessageBox.confirm(`确认删除选中的 ${selectedRows.value.length} 条记录吗？`, '批量删除确认', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
+    await ElMessageBox.confirm(t('aiTts.confirmBatchDelete', { count: selectedRows.value.length }), t('aiTts.batchDeleteConfirm'), {
+      confirmButtonText: t('common.confirm'),
+      cancelButtonText: t('common.cancel'),
       type: 'warning'
     })
 
     loading.value = true
     await batchDeleteTtsRecord(selectedRows.value.map(row => row.id))
 
-    ElMessage.success(`成功删除 ${selectedRows.value.length} 条记录`)
+    ElMessage.success(t('aiTts.batchDeleteSuccess', { count: selectedRows.value.length }))
     selectedRows.value = []
     await getList()
   } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error(error?.message || '批量删除失败')
+      ElMessage.error(error?.message || t('aiTts.batchDeleteFailed'))
     }
   } finally {
     loading.value = false

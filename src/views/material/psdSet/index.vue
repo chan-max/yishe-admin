@@ -6,39 +6,39 @@
           <el-form :model="queryParams" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
-                <el-form-item label="ID">
-                  <el-input v-model="queryParams.id" size="small" placeholder="套图ID" clearable
+                <el-form-item :label="t('common.id')">
+                  <el-input v-model="queryParams.id" size="small" :placeholder="t('psdSet.psdSetId')" clearable
                     @change="handleIdChange" />
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="8" :lg="5">
-                <el-form-item label="关键词">
-                  <el-input v-model="queryParams.keyword" size="small" placeholder="名称 / 描述 / 关键词" clearable
+                <el-form-item :label="t('psdSet.keyword')">
+                  <el-input v-model="queryParams.keyword" size="small" :placeholder="t('psdSet.keywordPlaceholder')" clearable
                     @change="handleKeywordChange" />
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
-                <el-form-item label="图片ID">
-                  <el-input v-model="queryParams.stickerId" size="small" placeholder="素材/图片ID" clearable
+                <el-form-item :label="t('psdSet.imageId')">
+                  <el-input v-model="queryParams.stickerId" size="small" :placeholder="t('psdSet.imageIdPlaceholder')" clearable
                     @change="handleStickerIdChange" />
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
-                <el-form-item label="PSD模板ID">
-                  <el-input v-model="queryParams.psdTemplateId" size="small" placeholder="PSD模板ID" clearable
+                <el-form-item :label="t('psdSet.psdTemplateId')">
+                  <el-input v-model="queryParams.psdTemplateId" size="small" :placeholder="t('psdSet.psdTemplateId')" clearable
                     @change="handlePsdTemplateIdChange" />
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
-                <el-form-item label="状态">
-                  <el-select v-model="queryParams.status" size="small" placeholder="全部状态" clearable @change="getList">
+                <el-form-item :label="t('common.status')">
+                  <el-select v-model="queryParams.status" size="small" :placeholder="t('psdSet.allStatus')" clearable @change="getList">
                     <el-option v-for="item in statusOptions" :key="item.value" :label="item.label"
                       :value="item.value" />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
-                <el-form-item label="排序方式">
+                <el-form-item :label="t('psdSet.sortType')">
                   <el-select v-model="queryParams.sortingFields" size="small" @change="getList">
                     <el-option v-for="item in sortTypeOptions" :key="item.value" :label="item.label"
                       :value="item.value" />
@@ -46,15 +46,15 @@
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="12" :lg="7">
-                <el-form-item label="创建时间">
-                  <el-date-picker v-model="dateRange" size="small" type="datetimerange" range-separator="至"
-                    start-placeholder="开始时间" end-placeholder="结束时间" format="YYYY-MM-DD HH:mm:ss"
+                <el-form-item :label="t('common.createTime')">
+                  <el-date-picker v-model="dateRange" size="small" type="datetimerange" :range-separator="t('psdSet.to')"
+                    :start-placeholder="t('common.startTimeText')" :end-placeholder="t('common.endTimeText')" format="YYYY-MM-DD HH:mm:ss"
                     value-format="YYYY-MM-DD HH:mm:ss" :shortcuts="dateShortcuts" @change="handleDateRangeChange" />
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="12" :lg="6">
-                <el-form-item label="查重配置">
-                  <el-select v-model="queryParams.publishUsageConfigId" size="small" placeholder="选择后标记已用套图"
+                <el-form-item :label="t('psdSet.deduplicateConfig')">
+                  <el-select v-model="queryParams.publishUsageConfigId" size="small" :placeholder="t('psdSet.deduplicateConfigPlaceholder')"
                     clearable filterable multiple collapse-tags collapse-tags-tooltip
                     @change="handlePublishUsageViewChange">
                     <el-option v-for="item in publishUsageConfigOptions" :key="item.id"
@@ -65,30 +65,30 @@
             </el-row>
             <div class="list-page-search-form__actions psd-set-page__actions">
               <el-button size="small" type="primary" :icon="Search" :loading="loading"
-                @click="() => getList()">搜索</el-button>
+                @click="() => getList()">{{ t('common.search') }}</el-button>
               <el-dropdown trigger="click" :disabled="!selectedIds.length">
                 <el-button size="small" :disabled="!selectedIds.length" :loading="batchUpdatingStatus">
-                  批量改状态 ({{ selectedIds.length }})
+                  {{ t('psdSet.batchUpdateStatus', { count: selectedIds.length }) }}
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu class="operation-menu-compact">
-                    <el-dropdown-item @click="() => handleBatchUpdateStatus('pending')">待制作</el-dropdown-item>
-                    <el-dropdown-item @click="() => handleBatchUpdateStatus('processing')">制作中</el-dropdown-item>
-                    <el-dropdown-item @click="() => handleBatchUpdateStatus('completed')">已完成</el-dropdown-item>
-                    <el-dropdown-item @click="() => handleBatchUpdateStatus('failed')">失败</el-dropdown-item>
+                    <el-dropdown-item @click="() => handleBatchUpdateStatus('pending')">{{ t('psdSet.statusPending') }}</el-dropdown-item>
+                    <el-dropdown-item @click="() => handleBatchUpdateStatus('processing')">{{ t('psdSet.statusProcessing') }}</el-dropdown-item>
+                    <el-dropdown-item @click="() => handleBatchUpdateStatus('completed')">{{ t('psdSet.statusCompleted') }}</el-dropdown-item>
+                    <el-dropdown-item @click="() => handleBatchUpdateStatus('failed')">{{ t('psdSet.statusFailed') }}</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
               <el-button size="small" type="success" :disabled="!selectedIds.length" :loading="batchGeneratingProducts"
                 @click="handleBatchGenerateProduct">
-                生成产品 ({{ selectedIds.length }})
+                {{ t('psdSet.batchGenerateProduct', { count: selectedIds.length }) }}
               </el-button>
               <el-button size="small" type="primary" :disabled="!selectedIds.length" :loading="publishConfigSubmitting"
                 @click="handleBatchCreatePublishTask">
-                生成发布任务 ({{ selectedIds.length }})
+                {{ t('psdSet.batchCreatePublishTask', { count: selectedIds.length }) }}
               </el-button>
               <el-button size="small" type="danger" @click="handleBatchDelete">
-                批量删除 ({{ selectedIds.length }})
+                {{ t('psdSet.batchDelete', { count: selectedIds.length }) }}
               </el-button>
               <div class="psd-set-page__auto-dispatch-row">
                 <div class="psd-set-page__auto-dispatch">
@@ -103,7 +103,7 @@
                       <div v-for="item in autoDispatchProcessingRows" :key="item.key"
                         class="psd-set-page__auto-dispatch-work-item">
                         <span class="psd-set-page__auto-dispatch-client">{{ item.clientLabel }}</span>
-                        <span class="psd-set-page__auto-dispatch-action">正在处理</span>
+                        <span class="psd-set-page__auto-dispatch-action">{{ t('psdSet.processing') }}</span>
                         <span class="psd-set-page__auto-dispatch-task">
                           <span class="psd-set-page__auto-dispatch-task-id">{{ item.taskId }}</span>
                           <span v-if="item.taskName" class="psd-set-page__auto-dispatch-task-name">{{ item.taskName }}</span>
@@ -112,24 +112,24 @@
                       </div>
                     </template>
                     <div v-else class="psd-set-page__auto-dispatch-empty">
-                      <span>{{ psdSetAutoDispatchTargetLabel || "未选择目标客户端" }}</span>
+                      <span>{{ psdSetAutoDispatchTargetLabel || t('psdSet.noTargetClient') }}</span>
                       <span>{{ psdSetSchedulerRuntimeSummary }}</span>
-                      <span>待制作 {{ schedulerClientStats.pending }}</span>
+                      <span>{{ t('psdSet.pendingCount', { count: schedulerClientStats.pending }) }}</span>
                     </div>
                   </div>
                   <div class="psd-set-page__auto-dispatch-side">
                     <span class="psd-set-page__auto-dispatch-status"
                       :class="userAutoSchedulingEnabled ? 'is-success' : 'is-info'">
                       <span class="psd-set-page__auto-dispatch-dot" />
-                      <span>{{ userAutoSchedulingEnabled ? "已开启" : "已关闭" }}</span>
+                      <span>{{ userAutoSchedulingEnabled ? t('psdSet.enabled') : t('psdSet.disabled') }}</span>
                     </span>
                     <el-button size="small" :type="userAutoSchedulingEnabled ? 'danger' : 'success'"
                       :loading="userAutoSchedulingLoading"
                       @click="handleToggleUserAutoScheduling(!userAutoSchedulingEnabled)">
-                      {{ userAutoSchedulingEnabled ? "关闭自动制作" : "开启自动制作" }}
+                      {{ userAutoSchedulingEnabled ? t('psdSet.disableAutoProduction') : t('psdSet.enableAutoProduction') }}
                     </el-button>
                     <el-button size="small" :loading="resettingPsRuntime" @click="handleResetAllPsAutomationRuntime">
-                      重置状态
+                      {{ t('psdSet.resetStatus') }}
                     </el-button>
                   </div>
                 </div>
@@ -159,7 +159,7 @@
                   <el-tag :type="getStickersCount(row) > 1 ? 'success' : 'info'" size="small" effect="plain"
                     class="material-association-tag">
                     <span class="tag-text">{{
-                      getStickersCount(row) > 1 ? `多素材(${getStickersCount(row)})` : "单素材"
+                      getStickersCount(row) > 1 ? t('psdSet.multiMaterials', { count: getStickersCount(row) }) : t('psdSet.singleMaterial')
                       }}</span>
                   </el-tag>
                 </div>
@@ -182,47 +182,47 @@
                 <div class="flex items-center gap-2">
                   <el-tag v-if="row.hasConfig" type="info" size="small" effect="plain" class="cursor-pointer"
                     @click="() => handleViewConfig(row)">
-                    已配置
+                    {{ t('psdSet.configured') }}
                   </el-tag>
-                  <span v-else class="table-cell-empty">未配置</span>
+                  <span v-else class="table-cell-empty">{{ t('psdSet.notConfigured') }}</span>
                 </div>
               </template>
               <!-- 关联信息插槽：合并显示贴纸详情和PSD模板详情 -->
               <template #operationSlot="{ row }">
                 <el-dropdown class="operation-dropdown" placement="bottom-end">
-                  <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
+                  <el-button type="primary" link size="small" class="operation-trigger-button">{{ t('common.operation') }}</el-button>
                   <template #dropdown>
                     <el-dropdown-menu class="operation-menu-compact">
-                      <el-dropdown-item @click="() => handleViewDetail(row)">查看详情</el-dropdown-item>
-                      <el-dropdown-item @click="() => handleEditConfigDirectly(row)">编辑配置</el-dropdown-item>
+                      <el-dropdown-item @click="() => handleViewDetail(row)">{{ t('psdSet.viewDetail') }}</el-dropdown-item>
+                      <el-dropdown-item @click="() => handleEditConfigDirectly(row)">{{ t('psdSet.editConfig') }}</el-dropdown-item>
                       <el-dropdown-item
                         divided
                         :disabled="!isClientConnected || startingProductionId === row.id"
                         @click="() => handleStartProduction(row)"
                       >
-                        开始制作
+                        {{ t('psdSet.startProduction') }}
                       </el-dropdown-item>
-                      <el-dropdown-item divided @click="() => updateRowStatus(row, 'pending')">标记待制作</el-dropdown-item>
-                      <el-dropdown-item @click="() => updateRowStatus(row, 'processing')">标记制作中</el-dropdown-item>
-                      <el-dropdown-item @click="() => updateRowStatus(row, 'completed')">标记已完成</el-dropdown-item>
-                      <el-dropdown-item @click="() => updateRowStatus(row, 'failed')">标记失败</el-dropdown-item>
+                      <el-dropdown-item divided @click="() => updateRowStatus(row, 'pending')">{{ t('psdSet.markPending') }}</el-dropdown-item>
+                      <el-dropdown-item @click="() => updateRowStatus(row, 'processing')">{{ t('psdSet.markProcessing') }}</el-dropdown-item>
+                      <el-dropdown-item @click="() => updateRowStatus(row, 'completed')">{{ t('psdSet.markCompleted') }}</el-dropdown-item>
+                      <el-dropdown-item @click="() => updateRowStatus(row, 'failed')">{{ t('psdSet.markFailed') }}</el-dropdown-item>
                       <el-dropdown-item
                         divided
                         :disabled="generatingProductId === row.id"
                         @click="() => handleToProduct(row)"
                       >
-                        生成产品
+                        {{ t('psdSet.generateProduct') }}
                       </el-dropdown-item>
-                      <el-dropdown-item @click="() => handleCreatePublishTask(row)">生成发布任务</el-dropdown-item>
-                      <el-dropdown-item @click="() => handleViewPublishTasks(row)">查看发布任务</el-dropdown-item>
-                      <el-dropdown-item @click="() => handleViewProducts(row)">查看产品</el-dropdown-item>
-                      <el-dropdown-item @click="() => handleViewPublishUsageRecords(row)">查看使用记录</el-dropdown-item>
+                      <el-dropdown-item @click="() => handleCreatePublishTask(row)">{{ t('psdSet.generatePublishTask') }}</el-dropdown-item>
+                      <el-dropdown-item @click="() => handleViewPublishTasks(row)">{{ t('psdSet.viewPublishTasks') }}</el-dropdown-item>
+                      <el-dropdown-item @click="() => handleViewProducts(row)">{{ t('psdSet.viewProducts') }}</el-dropdown-item>
+                      <el-dropdown-item @click="() => handleViewPublishUsageRecords(row)">{{ t('psdSet.viewPublishUsageRecords') }}</el-dropdown-item>
                       <el-dropdown-item
                         divided
                         class="operation-menu-item--danger"
                         @click="() => handleDelete(row)"
                       >
-                        删除
+                        {{ t('common.delete') }}
                       </el-dropdown-item>
                     </el-dropdown-menu>
                   </template>
@@ -247,9 +247,9 @@
       <template #header>
         <div class="psd-set-detail-header">
           <div class="psd-set-detail-heading">
-            <div class="psd-set-detail-title">{{ detailData?.name || "套图详情" }}</div>
+            <div class="psd-set-detail-title">{{ detailData?.name || t('psdSet.psdSetDetail') }}</div>
             <div class="psd-set-detail-subtitle">
-              {{ formatTimestamp(detailData?.createTime) }} 创建
+              {{ t('psdSet.createdAt', { time: formatTimestamp(detailData?.createTime) }) }}
               <span v-if="detailData?.uploader?.account || detailData?.uploader?.name || detailData?.userId">
                 · {{ detailData?.uploader?.account || detailData?.uploader?.name || detailData?.userId }}
               </span>
@@ -259,10 +259,10 @@
             <el-tag :type="statusTagType(getPsdSetDisplayStatus(detailData))" effect="plain" size="small">{{
               statusLabel(getPsdSetDisplayStatus(detailData))
               }}</el-tag>
-            <el-tag type="info" effect="plain" size="small">图片 {{ detailImages.length }}</el-tag>
-            <el-tag type="info" effect="plain" size="small">素材 {{ detailStickers.length }}</el-tag>
+            <el-tag type="info" effect="plain" size="small">{{ t('psdSet.images', { count: detailImages.length }) }}</el-tag>
+            <el-tag type="info" effect="plain" size="small">{{ t('psdSet.materials', { count: detailStickers.length }) }}</el-tag>
             <el-tag v-if="detailAutomationCount" type="warning" effect="plain" size="small">
-              自动任务 {{ detailAutomationCount }}
+              {{ t('psdSet.autoTasks', { count: detailAutomationCount }) }}
             </el-tag>
           </div>
         </div>
@@ -272,8 +272,8 @@
         <section class="psd-set-detail-top">
           <div class="psd-set-detail-panel psd-set-detail-panel--hero">
             <div class="detail-header">
-              <span class="detail-label">做好的图</span>
-              <span class="detail-count">{{ detailImages.length }} 张</span>
+              <span class="detail-label">{{ t('psdSet.finishedImages') }}</span>
+              <span class="detail-count">{{ t('psdSet.pieceCount', { count: detailImages.length }) }}</span>
             </div>
             <div class="psd-set-detail-image-grid">
               <div v-for="(img, idx) in detailImages" :key="idx" class="psd-set-detail-image-card">
@@ -282,29 +282,29 @@
                   loading="lazy" />
                 <span class="psd-set-detail-image-index">{{ Number(idx) + 1 }}</span>
               </div>
-              <el-empty v-if="!detailImages.length" description="暂无套图图片" :image-size="80" />
+              <el-empty v-if="!detailImages.length" :description="t('psdSet.noPsdSetImages')" :image-size="80" />
             </div>
           </div>
 
           <div class="psd-set-detail-panel psd-set-detail-panel--compact">
             <div class="detail-header">
-              <span class="detail-label">套图信息</span>
+              <span class="detail-label">{{ t('psdSet.psdSetInfo') }}</span>
             </div>
             <div class="psd-set-detail-summary">
               <div class="psd-set-detail-summary__item">
-                <span class="info-label">套图ID</span>
+                <span class="info-label">{{ t('psdSet.psdSetId') }}</span>
                 <span class="info-value cursor-pointer" @click="copyId(detailData.id)">{{
                   detailData.id || "-"
                   }}</span>
               </div>
               <div class="psd-set-detail-summary__item">
-                <span class="info-label">状态</span>
+                <span class="info-label">{{ t('common.status') }}</span>
                 <el-tag :type="statusTagType(getPsdSetDisplayStatus(detailData))" size="small" effect="plain">
                   {{ statusLabel(getPsdSetDisplayStatus(detailData)) }}
                 </el-tag>
               </div>
               <div class="psd-set-detail-summary__item">
-                <span class="info-label">上传者</span>
+                <span class="info-label">{{ t('psdSet.uploader') }}</span>
                 <span class="info-value">{{
                   detailData?.uploader?.account ||
                   detailData?.uploader?.name ||
@@ -313,35 +313,35 @@
                   }}</span>
               </div>
               <div class="psd-set-detail-summary__item">
-                <span class="info-label">制作耗时</span>
+                <span class="info-label">{{ t('psdSet.processingTime') }}</span>
                 <span class="info-value">{{
                   formatProcessingTime(detailData.processingTime)
                   }}</span>
               </div>
               <div class="psd-set-detail-summary__item">
-                <span class="info-label">创建时间</span>
+                <span class="info-label">{{ t('common.createTime') }}</span>
                 <span class="info-value">{{ formatTimestamp(detailData.createTime) }}</span>
               </div>
               <div class="psd-set-detail-summary__item">
-                <span class="info-label">更新时间</span>
+                <span class="info-label">{{ t('common.updateTime') }}</span>
                 <span class="info-value">{{ formatTimestamp(detailData.updateTime) }}</span>
               </div>
               <div class="psd-set-detail-summary__item">
-                <span class="info-label">发布任务数</span>
+                <span class="info-label">{{ t('psdSet.publishTaskCount') }}</span>
                 <span class="info-value">{{ detailPublishTaskCount }}</span>
               </div>
             </div>
             <div class="psd-set-detail-text-grid">
               <div class="psd-set-detail-text-card">
-                <div class="info-label">描述</div>
+                <div class="info-label">{{ t('common.description') }}</div>
                 <div class="info-value">{{ detailData.description || "-" }}</div>
               </div>
               <div class="psd-set-detail-text-card">
-                <div class="info-label">关键词</div>
+                <div class="info-label">{{ t('psdSet.keyword') }}</div>
                 <div class="info-value">{{ detailData.keywords || "-" }}</div>
               </div>
               <div class="psd-set-detail-text-card">
-                <div class="info-label">状态说明</div>
+                <div class="info-label">{{ t('psdSet.statusDescription') }}</div>
                 <div class="info-value">{{ resolvePsdSetStatusMessage(detailData) }}</div>
               </div>
             </div>
@@ -351,22 +351,22 @@
         <section class="psd-set-detail-middle">
           <div class="psd-set-detail-panel psd-set-detail-panel--balanced">
             <div class="detail-header">
-              <span class="detail-label">图片信息</span>
-              <span class="detail-count">{{ detailStickers.length }} 项</span>
+              <span class="detail-label">{{ t('psdSet.imageInfo') }}</span>
+              <span class="detail-count">{{ t('psdSet.itemCount', { count: detailStickers.length }) }}</span>
             </div>
             <div class="psd-set-detail-meta-list psd-set-detail-meta-list--inline">
               <div>
-                <span class="info-label">来源贴纸 ID</span>
+                <span class="info-label">{{ t('psdSet.sourceStickerId') }}</span>
                 <span class="info-value break-all">{{ detailStickerIdsText }}</span>
               </div>
               <div>
-                <span class="info-label">自动动作</span>
+                <span class="info-label">{{ t('psdSet.autoAction') }}</span>
                 <span class="info-value">{{ detailAutomationText }}</span>
               </div>
               <div>
-                <span class="info-label">发布任务</span>
+                <span class="info-label">{{ t('psdSet.publishTask') }}</span>
                 <span class="info-value">{{
-                  detailPublishTaskCount ? `${detailPublishTaskCount} 条` : "暂无"
+                  detailPublishTaskCount ? t('psdSet.records', { count: detailPublishTaskCount }) : t('psdSet.none')
                   }}</span>
               </div>
             </div>
@@ -376,7 +376,7 @@
                   :preview-src-list="detailStickers.map((s) => s.url).filter(Boolean)"
                   :initial-index="detailStickers.findIndex((s) => s.id === sticker.id)" :preview-teleported="true"
                   :hide-on-click-modal="false" fit="contain" class="detail-thumb-image" />
-                <span v-else class="text-gray-400 text-xs">无图</span>
+                <span v-else class="text-gray-400 text-xs">{{ t('psdSet.noImage') }}</span>
                 <div class="detail-sticker-meta">
                   <div v-if="sticker.id" class="detail-sticker-id cursor-pointer" @click="copyId(sticker.id)">
                     ID: {{ sticker.id }}
@@ -387,33 +387,33 @@
                   <div v-if="sticker.code" class="detail-sticker-code">
                     Code: {{ sticker.code }}
                   </div>
-                  <div class="detail-sticker-name">{{ sticker.name || "未命名贴纸" }}</div>
+                  <div class="detail-sticker-name">{{ sticker.name || t('psdSet.unnamedSticker') }}</div>
                   <div class="detail-sticker-desc">{{ sticker.description || "-" }}</div>
                   <div class="detail-sticker-keywords">{{ sticker.keywords || "-" }}</div>
                 </div>
               </div>
             </div>
-            <el-empty v-else description="暂无来源素材" :image-size="72" />
+            <el-empty v-else :description="t('psdSet.noSourceMaterials')" :image-size="72" />
           </div>
 
           <div class="psd-set-detail-panel psd-set-detail-panel--balanced">
             <div class="detail-header">
-              <span class="detail-label">PSD 模板信息</span>
+              <span class="detail-label">{{ t('psdSet.psdTemplateInfo') }}</span>
             </div>
             <div v-if="detailData.psdTemplate" class="psd-set-detail-side-card">
               <div class="psd-set-detail-meta-list psd-set-detail-meta-list--inline">
                 <div>
-                  <span class="info-label">模板 ID</span>
+                  <span class="info-label">{{ t('psdSet.templateId') }}</span>
                   <span class="info-value cursor-pointer break-all" @click="copyId(detailData.psdTemplate.id)">
                     {{ detailData.psdTemplate.id || "-" }}
                   </span>
                 </div>
                 <div>
-                  <span class="info-label">模板名称</span>
-                  <span class="info-value">{{ detailData.psdTemplate.name || "未命名模板" }}</span>
+                  <span class="info-label">{{ t('psdSet.templateName') }}</span>
+                  <span class="info-value">{{ detailData.psdTemplate.name || t('psdSet.unnamedTemplate') }}</span>
                 </div>
                 <div>
-                  <span class="info-label">关键词</span>
+                  <span class="info-label">{{ t('psdSet.keyword') }}</span>
                   <span class="info-value">{{ detailData.psdTemplate.keywords || "-" }}</span>
                 </div>
               </div>
@@ -425,7 +425,7 @@
                 })
                   " :preview-src-list="[detailData.psdTemplate.thumbnail]" :preview-teleported="true"
                   :hide-on-click-modal="false" fit="contain" class="detail-thumb-image detail-thumb-image--template" />
-                <span v-else class="text-gray-400 text-xs">无图</span>
+                <span v-else class="text-gray-400 text-xs">{{ t('psdSet.noImage') }}</span>
                 <div class="detail-sticker-meta">
                   <div class="detail-sticker-id cursor-pointer" @click="copyId(detailData.psdTemplate.id)">
                     ID: {{ detailData.psdTemplate.id || "-" }}
@@ -434,50 +434,50 @@
                     </el-icon>
                   </div>
                   <div class="detail-sticker-name">
-                    {{ detailData.psdTemplate.name || "未命名模板" }}
+                    {{ detailData.psdTemplate.name || t('psdSet.unnamedTemplate') }}
                   </div>
                   <div class="detail-sticker-desc">{{ detailData.psdTemplate.description || "-" }}</div>
                   <div class="detail-sticker-keywords">{{ detailData.psdTemplate.keywords || "-" }}</div>
-                  <div class="detail-sticker-path break-all">云资源：{{ detailData.psdTemplate.url || "-" }}</div>
+                  <div class="detail-sticker-path break-all">{{ t('psdSet.cloudResource', { value: detailData.psdTemplate.url || "-" }) }}</div>
                   <div class="detail-sticker-path break-all">
-                    本地路径：{{ detailData.psdTemplate.windowsLocalPath || "-" }}
+                    {{ t('psdSet.localPath', { value: detailData.psdTemplate.windowsLocalPath || "-" }) }}
                   </div>
                 </div>
               </div>
             </div>
-            <span v-else class="text-gray-400 text-sm">无模板</span>
+            <span v-else class="text-gray-400 text-sm">{{ t('psdSet.noTemplate') }}</span>
           </div>
         </section>
 
         <section class="psd-set-detail-bottom">
           <div class="psd-set-detail-panel psd-set-detail-panel--muted">
             <div class="detail-header">
-              <span class="detail-label">配置与元信息</span>
+              <span class="detail-label">{{ t('psdSet.configAndMeta') }}</span>
             </div>
 
             <div class="psd-set-detail-json-stack">
               <div class="psd-set-detail-json-block">
                 <div class="psd-set-detail-json-title">
-                  <span>套图配置</span>
+                  <span>{{ t('psdSet.psdSetConfig') }}</span>
                   <el-tag v-if="detailData?.stickerPsdSetConfig" type="info" size="small" effect="plain">
-                    已配置
+                    {{ t('psdSet.configured') }}
                   </el-tag>
                 </div>
                 <div v-if="detailData?.stickerPsdSetConfig" class="config-preview-container">
                   <pre class="config-preview">{{ formattedConfig }}</pre>
                 </div>
-                <span v-else class="text-gray-400 text-sm">未配置</span>
+                <span v-else class="text-gray-400 text-sm">{{ t('psdSet.notConfigured') }}</span>
               </div>
 
               <div class="psd-set-detail-json-block">
                 <div class="psd-set-detail-json-title">
-                  <span>元信息</span>
+                  <span>{{ t('psdSet.metaInfo') }}</span>
                   <el-tag v-if="detailMetaFormatted" type="info" size="small" effect="plain">JSON</el-tag>
                 </div>
                 <div v-if="detailMetaFormatted" class="config-preview-container">
                   <pre class="config-preview">{{ detailMetaFormatted }}</pre>
                 </div>
-                <span v-else class="text-gray-400 text-sm">无元信息</span>
+                <span v-else class="text-gray-400 text-sm">{{ t('psdSet.noMetaInfo') }}</span>
               </div>
             </div>
           </div>
@@ -486,21 +486,21 @@
     </el-dialog>
 
     <!-- 编辑配置对话框 -->
-    <el-dialog v-model="configEditDialogVisible" title="编辑配置信息" width="60%" align-center :destroy-on-close="true">
+    <el-dialog v-model="configEditDialogVisible" :title="t('psdSet.editConfigInfo')" width="60%" align-center :destroy-on-close="true">
       <div v-loading="configEditDialogLoading" class="config-edit-dialog-content">
         <div v-if="configEditDialogData" class="config-edit-info">
           <div class="config-edit-info-item">
-            <span class="config-edit-info-label">套图名称：</span>
+            <span class="config-edit-info-label">{{ t('psdSet.psdSetName') }}：</span>
             <span class="config-edit-info-value">{{ configEditDialogData.name || "-" }}</span>
           </div>
           <div class="config-edit-info-item">
-            <span class="config-edit-info-label">套图ID：</span>
+            <span class="config-edit-info-label">{{ t('psdSet.psdSetId') }}：</span>
             <span class="config-edit-info-value">{{ configEditDialogData.id || "-" }}</span>
           </div>
         </div>
         <div class="config-editor-container">
           <el-input v-model="configEditDialogValue" type="textarea" :rows="16"
-            placeholder='请输入JSON格式的配置信息，例如：&#10;{&#10;  "key1": "value1",&#10;  "key2": "value2"&#10;}'
+            :placeholder='t("psdSet.jsonConfigPlaceholder")'
             class="config-textarea" @input="handleConfigInputChange" />
           <div v-if="configEditDialogError" class="config-error">
             <el-icon>
@@ -512,28 +512,28 @@
             <el-icon>
               <CircleCheck />
             </el-icon>
-            <span>JSON格式正确</span>
+            <span>{{ t('psdSet.jsonFormatValid') }}</span>
           </div>
         </div>
       </div>
       <template #footer>
-        <el-button @click="handleCancelConfigEditDialog">取消</el-button>
+        <el-button @click="handleCancelConfigEditDialog">{{ t('common.cancel') }}</el-button>
         <el-button type="primary" :loading="configEditDialogSaving" @click="handleSaveConfigDialog">
-          保存
+          {{ t('common.save') }}
         </el-button>
       </template>
     </el-dialog>
 
     <!-- 查看配置对话框 -->
-    <el-dialog v-model="configViewDialogVisible" title="查看配置信息" width="60%" align-center :destroy-on-close="true">
+    <el-dialog v-model="configViewDialogVisible" :title="t('psdSet.viewConfigInfo')" width="60%" align-center :destroy-on-close="true">
       <div v-loading="configViewDialogLoading" class="config-view-dialog-content">
         <div v-if="configViewDialogData" class="config-view-info">
           <div class="config-view-info-item">
-            <span class="config-view-info-label">套图名称：</span>
+            <span class="config-view-info-label">{{ t('psdSet.psdSetName') }}：</span>
             <span class="config-view-info-value">{{ configViewDialogData.name || "-" }}</span>
           </div>
           <div class="config-view-info-item">
-            <span class="config-view-info-label">套图ID：</span>
+            <span class="config-view-info-label">{{ t('psdSet.psdSetId') }}：</span>
             <span class="config-view-info-value">{{ configViewDialogData.id || "-" }}</span>
           </div>
         </div>
@@ -541,13 +541,13 @@
           <pre class="config-view-content">{{ configViewFormatted }}</pre>
         </div>
         <div v-else class="config-view-empty">
-          <span class="text-gray-400">未配置</span>
+          <span class="text-gray-400">{{ t('psdSet.notConfigured') }}</span>
         </div>
       </div>
       <template #footer>
-        <el-button @click="configViewDialogVisible = false">关闭</el-button>
+        <el-button @click="configViewDialogVisible = false">{{ t('common.close') }}</el-button>
         <el-button v-if="configViewDialogData?.stickerPsdSetConfig" type="primary" @click="handleEditFromView">
-          编辑配置
+          {{ t('psdSet.editConfig') }}
         </el-button>
       </template>
     </el-dialog>
@@ -557,9 +557,9 @@
       <template #header>
         <div class="generate-product-dialog-header">
           <div>
-            <div class="generate-product-dialog-title">套图生成产品</div>
+            <div class="generate-product-dialog-title">{{ t('psdSet.generateProductTitle') }}</div>
             <div class="generate-product-dialog-subtitle">
-              已选择 {{ generateProductTargetIds.length }} 个套图，配置商品生成模板
+              {{ t('psdSet.generateProductSubtitle', { count: generateProductTargetIds.length }) }}
             </div>
           </div>
         </div>
@@ -567,9 +567,9 @@
 
       <div v-loading="generateProductDialogLoading" class="generate-product-dialog-body">
         <div class="generate-product-panel">
-          <div class="generate-product-panel-title">基础配置</div>
+          <div class="generate-product-panel-title">{{ t('psdSet.basicConfig') }}</div>
           <el-form label-position="top">
-            <el-form-item label="商品生成模板">
+            <el-form-item :label="t('psdSet.productGenerationTemplate')">
               <el-alert
                 :type="generateProductTargetTemplateAlert.type"
                 :title="generateProductTargetTemplateAlert.title"
@@ -582,13 +582,13 @@
                   v-model="generateProductTemplateSearchText"
                   size="small"
                   clearable
-                  placeholder="搜索模板名称/商品类型/标签"
+                  :placeholder="t('psdSet.searchTemplatePlaceholder')"
                 />
                 <el-tag size="small" type="info">
-                  已选 {{ generateProductSelectedTemplateIds.length }} 个模板
+                  {{ t('psdSet.selectedTemplates', { count: generateProductSelectedTemplateIds.length }) }}
                 </el-tag>
                 <el-tag size="small" type="warning">
-                  预计生成 {{ generateProductExpectedCount }} 个商品
+                  {{ t('psdSet.expectedProducts', { count: generateProductExpectedCount }) }}
                 </el-tag>
               </div>
               <vxe-grid
@@ -606,7 +606,7 @@
                 @checkbox-all="handleGenerateProductTemplateCheckboxChange"
               />
               <div class="generate-product-tip">
-                用于生成商品的名称、描述、关键词、价格、库存等独立站商品信息，与发布平台无关。
+                {{ t('psdSet.generateProductTip') }}
               </div>
               <div v-if="generateProductBatchProgress" class="generate-product-progress">
                 <el-progress
@@ -614,10 +614,10 @@
                   :status="generateProductBatchProgress.status === 'failed' ? 'exception' : undefined"
                 />
                 <div class="generate-product-progress__text">
-                  {{ generateProductBatchProgress.message || "处理中" }}
-                  · 成功 {{ generateProductBatchProgress.completed || 0 }}
-                  · 失败 {{ generateProductBatchProgress.failed || 0 }}
-                  · 总数 {{ generateProductBatchProgress.total || 0 }}
+                  {{ generateProductBatchProgress.message || t('psdSet.processing') }}
+                  · {{ t('psdSet.successCount', { count: generateProductBatchProgress.completed || 0 }) }}
+                  · {{ t('psdSet.failedCount', { count: generateProductBatchProgress.failed || 0 }) }}
+                  · {{ t('psdSet.totalCount', { count: generateProductBatchProgress.total || 0 }) }}
                 </div>
                 <div
                   v-if="generateProductFailedItems.length"
@@ -628,7 +628,7 @@
                     :key="`${item.psdSetId}-${item.productGenerationTemplateId}`"
                     class="generate-product-progress__error"
                   >
-                    套图 {{ item.psdSetId }} / 模板 {{ item.productGenerationTemplateId }}：{{ item.error || "生成失败" }}
+                    {{ t('psdSet.generateFailedItem', { psdSetId: item.psdSetId, templateId: item.productGenerationTemplateId, error: item.error || t('psdSet.generateFailed') }) }}
                   </div>
                 </div>
               </div>
@@ -639,14 +639,14 @@
 
       <template #footer>
         <div class="generate-product-dialog-footer">
-          <el-button @click="handleCloseGenerateProductDialog">取消</el-button>
+          <el-button @click="handleCloseGenerateProductDialog">{{ t('common.cancel') }}</el-button>
           <el-button
             type="primary"
             :loading="generateProductSubmitting"
             :disabled="isGenerateProductBatchRunning"
             @click="handleSubmitGenerateProduct"
           >
-            {{ isGenerateProductBatchRunning ? "后台生成中" : "确定生成产品" }}
+            {{ isGenerateProductBatchRunning ? t('psdSet.generatingInBackground') : t('psdSet.confirmGenerateProduct') }}
           </el-button>
         </div>
       </template>
@@ -657,9 +657,9 @@
       <template #header>
         <div class="generate-product-dialog-header">
           <div>
-            <div class="generate-product-dialog-title">套图生成发布任务</div>
+            <div class="generate-product-dialog-title">{{ t('psdSet.generatePublishTaskTitle') }}</div>
             <div class="generate-product-dialog-subtitle">
-              已选择 {{ publishConfigTargetIds.length }} 个套图，选择任务配置来创建发布任务
+              {{ t('psdSet.generatePublishTaskSubtitle', { count: publishConfigTargetIds.length }) }}
             </div>
           </div>
         </div>
@@ -670,19 +670,19 @@
           <div class="publish-config-toolbar">
             <div class="publish-config-toolbar__stats">
               <div class="publish-config-stat-card">
-                <div class="publish-config-stat-card__label">目标套图</div>
+                <div class="publish-config-stat-card__label">{{ t('psdSet.targetPsdSets') }}</div>
                 <div class="publish-config-stat-card__value">
                   {{ publishConfigTargetIds.length }}
                 </div>
               </div>
               <div class="publish-config-stat-card">
-                <div class="publish-config-stat-card__label">可选任务配置</div>
+                <div class="publish-config-stat-card__label">{{ t('psdSet.availableTaskConfigs') }}</div>
                 <div class="publish-config-stat-card__value">
                   {{ filteredPublishConfigs.length }}
                 </div>
               </div>
               <div class="publish-config-stat-card">
-                <div class="publish-config-stat-card__label">已选任务配置</div>
+                <div class="publish-config-stat-card__label">{{ t('psdSet.selectedTaskConfigs') }}</div>
                 <div class="publish-config-stat-card__value">
                   {{ publishConfigSelectedIds.length }}
                 </div>
@@ -696,7 +696,7 @@
               :closable="false"
             />
             <div class="publish-config-toolbar__actions">
-              <el-input v-model="publishConfigSearchText" placeholder="搜索任务配置名称、任务类型或平台..." clearable
+              <el-input v-model="publishConfigSearchText" :placeholder="t('psdSet.searchTaskConfigPlaceholder')" clearable
                 @input="publishConfigCurrentPage = 1" class="publish-config-search" />
               <el-tag v-if="publishConfigSelectedNames.length" type="primary" effect="plain">
                 {{ publishConfigSelectedNames.join("、") }}
@@ -729,9 +729,9 @@
 
       <template #footer>
         <div class="generate-product-dialog-footer">
-          <el-button @click="handleClosePublishConfigDialog">取消</el-button>
+          <el-button @click="handleClosePublishConfigDialog">{{ t('common.cancel') }}</el-button>
           <el-button type="primary" :loading="publishConfigSubmitting" @click="handleSubmitCreatePublishTask">
-            确定生成发布任务
+            {{ t('psdSet.confirmGeneratePublishTask') }}
           </el-button>
         </div>
       </template>
@@ -742,9 +742,9 @@
       <template #header>
         <div class="generate-product-dialog-header">
           <div>
-            <div class="generate-product-dialog-title">套图关联发布任务</div>
+            <div class="generate-product-dialog-title">{{ t('psdSet.publishTasksTitle') }}</div>
             <div class="generate-product-dialog-subtitle">
-              当前共 {{ publishTasks.length }} 条任务记录
+              {{ t('psdSet.publishTasksCount', { count: publishTasks.length }) }}
             </div>
           </div>
         </div>
@@ -753,14 +753,14 @@
       <div v-loading="publishTasksLoading" class="publish-task-list-body">
         <div class="publish-task-list-toolbar">
           <div class="publish-task-list-toolbar__stats">
-            <el-tag type="info" effect="plain">总数 {{ publishTasks.length }}</el-tag>
-            <el-tag type="success" effect="plain">完成 {{ publishTaskStatusCount.completed }}</el-tag>
-            <el-tag type="warning" effect="plain">处理中 {{ publishTaskStatusCount.processing }}</el-tag>
-            <el-tag type="danger" effect="plain">失败 {{ publishTaskStatusCount.failed }}</el-tag>
+            <el-tag type="info" effect="plain">{{ t('psdSet.totalCount', { count: publishTasks.length }) }}</el-tag>
+            <el-tag type="success" effect="plain">{{ t('psdSet.completedCount', { count: publishTaskStatusCount.completed }) }}</el-tag>
+            <el-tag type="warning" effect="plain">{{ t('psdSet.processingCount', { count: publishTaskStatusCount.processing }) }}</el-tag>
+            <el-tag type="danger" effect="plain">{{ t('psdSet.failedCount', { count: publishTaskStatusCount.failed }) }}</el-tag>
           </div>
         </div>
 
-        <el-empty v-if="!publishTasksLoading && publishTasks.length === 0" description="暂无发布任务" />
+        <el-empty v-if="!publishTasksLoading && publishTasks.length === 0" :description="t('psdSet.noPublishTasks')" />
         <vxe-grid v-else v-bind="publishTasksGridOptions" :data="publishTasks" class="publish-task-list-grid">
           <template #taskPlatformSlot="{ row }">
             <el-tag size="small" effect="plain">{{ formatPlatformName(row.platform) }}</el-tag>
@@ -777,13 +777,13 @@
           <template #taskActionSlot="{ row }">
             <el-button link type="primary" :disabled="publishTasksLoading || getPsdSetDisplayStatus(row) === 'processing'"
               @click="handleRegeneratePublishTask(row)">
-              重新生成发布数据
+              {{ t('psdSet.regeneratePublishData') }}
             </el-button>
           </template>
         </vxe-grid>
       </div>
       <template #footer>
-        <el-button @click="publishTasksVisible = false">关闭</el-button>
+        <el-button @click="publishTasksVisible = false">{{ t('common.close') }}</el-button>
       </template>
     </el-dialog>
 
@@ -793,9 +793,9 @@
       <template #header>
         <div class="generate-product-dialog-header">
           <div>
-            <div class="generate-product-dialog-title">套图关联产品</div>
+            <div class="generate-product-dialog-title">{{ t('psdSet.productsTitle') }}</div>
             <div class="generate-product-dialog-subtitle">
-              共 {{ productsDialogTotal }} 个产品
+              {{ t('psdSet.productsTotal', { count: productsDialogTotal }) }}
             </div>
           </div>
         </div>
@@ -803,11 +803,11 @@
 
       <div v-loading="productsDialogLoading" class="publish-task-list-body">
         <div v-if="productsDialogData.length" class="publish-task-list-toolbar">
-          <el-tag type="info" effect="plain">总数 {{ productsDialogTotal }}</el-tag>
-          <el-tag type="success" effect="plain">已发布 {{ productsDialogData.filter((p: any) => p.isPublish).length }}</el-tag>
+          <el-tag type="info" effect="plain">{{ t('psdSet.totalCount', { count: productsDialogTotal }) }}</el-tag>
+          <el-tag type="success" effect="plain">{{ t('psdSet.publishedCount', { count: productsDialogData.filter((p: any) => p.isPublish).length }) }}</el-tag>
         </div>
 
-        <el-empty v-if="!productsDialogLoading && productsDialogData.length === 0" description="暂无关联产品" />
+        <el-empty v-if="!productsDialogLoading && productsDialogData.length === 0" :description="t('psdSet.noRelatedProducts')" />
         <vxe-grid v-else v-bind="productsGridOptions" :data="productsDialogData" class="publish-task-list-grid">
           <template #productImageSlot="{ row }">
             <div v-if="row.images && row.images.length" class="product-thumb-cell">
@@ -815,11 +815,11 @@
                 :preview-src-list="row.images" :preview-teleported="true" :hide-on-click-modal="false"
                 fit="contain" class="product-thumb-image" />
             </div>
-            <span v-else class="text-gray-400 text-xs">无图</span>
+            <span v-else class="text-gray-400 text-xs">{{ t('psdSet.noImage') }}</span>
           </template>
           <template #productStatusSlot="{ row }">
             <el-tag :type="row.isPublish ? 'success' : 'info'" size="small" effect="plain">
-              {{ row.isPublish ? '已发布' : '未发布' }}
+              {{ row.isPublish ? t('psdSet.published') : t('psdSet.unpublished') }}
             </el-tag>
           </template>
           <template #productPriceSlot="{ row }">
@@ -831,7 +831,7 @@
           </template>
           <template #productActionSlot="{ row }">
             <el-button link type="primary" size="small" @click="handleOpenProductDetail(row)">
-              查看详情
+              {{ t('psdSet.viewDetail') }}
             </el-button>
           </template>
         </vxe-grid>
@@ -844,7 +844,7 @@
         </div>
       </div>
       <template #footer>
-        <el-button @click="productsDialogVisible = false">关闭</el-button>
+        <el-button @click="productsDialogVisible = false">{{ t('common.close') }}</el-button>
       </template>
     </el-dialog>
 
@@ -854,7 +854,7 @@
       <div class="production-dispatch-dialog__body">
         <div v-loading="productionDispatchLoading" :element-loading-text="DISPATCH_DIALOG_LOADING_TEXT"
           class="production-dispatch-dialog__panel">
-          <div class="production-dispatch-dialog__panel-title">客户端节点</div>
+          <div class="production-dispatch-dialog__panel-title">{{ t('psdSet.clientNode') }}</div>
           <div v-if="!productionDispatchLoading && dispatchClientRows.length" class="production-dispatch-dialog__table">
             <el-table :data="dispatchClientRows" border size="small" row-key="id" :max-height="420"
               class="production-dispatch-dialog__table-main" :row-class-name="resolveDispatchClientRowClassName"
@@ -865,9 +865,9 @@
                     @click.stop />
                 </template>
               </el-table-column>
-              <el-table-column prop="clientLabel" label="客户端节点" min-width="190" show-overflow-tooltip />
-              <el-table-column prop="connectedAtLabel" label="连接时间" min-width="170" show-overflow-tooltip />
-              <el-table-column label="当前套图" min-width="260" show-overflow-tooltip>
+              <el-table-column prop="clientLabel" :label="t('psdSet.clientNode')" min-width="190" show-overflow-tooltip />
+              <el-table-column prop="connectedAtLabel" :label="t('psdSet.connectedAt')" min-width="170" show-overflow-tooltip />
+              <el-table-column :label="t('psdSet.currentPsdSet')" min-width="260" show-overflow-tooltip>
                 <template #default="{ row }">
                   <div class="production-dispatch-dialog__task">
                     <span>{{ row.activeTaskLabel }}</span>
@@ -875,7 +875,7 @@
                   </div>
                 </template>
               </el-table-column>
-              <el-table-column label="在线" width="76" align="center">
+              <el-table-column :label="t('psdSet.online')" width="76" align="center">
                 <template #default="{ row }">
                   <span class="production-dispatch-dialog__state-text" :class="`is-${row.onlineStatusTone}`">
                     {{ row.onlineStatusText }}
@@ -899,7 +899,7 @@
                   </div>
                 </template>
               </el-table-column>
-              <el-table-column label="制作" width="82" align="center">
+              <el-table-column :label="t('psdSet.production')" width="82" align="center">
                 <template #default="{ row }">
                   <span class="production-dispatch-dialog__state-text" :class="`is-${row.productionStatusTone}`">
                     {{ row.productionStatusText }}
@@ -908,41 +908,41 @@
               </el-table-column>
             </el-table>
           </div>
-          <div v-else class="production-dispatch-dialog__empty">暂无可选客户端节点。</div>
+          <div v-else class="production-dispatch-dialog__empty">{{ t('psdSet.noClientNodes') }}</div>
         </div>
         <div v-if="productionDispatchMode === 'auto'" class="production-dispatch-dialog__filters">
-          <div class="production-dispatch-dialog__panel-title">自动领取条件</div>
+          <div class="production-dispatch-dialog__panel-title">{{ t('psdSet.autoClaimConditions') }}</div>
           <el-form label-position="top" class="production-dispatch-dialog__filter-form">
             <el-row :gutter="12">
               <el-col :xs="24" :sm="12">
-                <el-form-item label="关键词">
+                <el-form-item :label="t('psdSet.keyword')">
                   <el-input
                     v-model="autoDispatchFilterForm.keyword"
                     clearable
-                    placeholder="名称 / 描述 / 关键词 / ID"
+                    :placeholder="t('psdSet.nameDescKeywordId')"
                   />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
-                <el-form-item label="排序">
+                <el-form-item :label="t('psdSet.sort')">
                   <el-select
                     v-model="autoDispatchFilterForm.sortOrder"
-                    placeholder="请选择排序方式"
+                    :placeholder="t('psdSet.selectSortType')"
                     style="width: 100%"
                   >
-                    <el-option label="最早优先" value="oldest" />
-                    <el-option label="最新优先" value="newest" />
+                    <el-option :label="t('psdSet.oldestFirst')" value="oldest" />
+                    <el-option :label="t('psdSet.newestFirst')" value="newest" />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col :span="24">
-                <el-form-item label="创建时间">
+                <el-form-item :label="t('common.createTime')">
                   <el-date-picker
                     v-model="autoDispatchFilterForm.createdAtRange"
                     type="datetimerange"
-                    range-separator="至"
-                    start-placeholder="开始时间"
-                    end-placeholder="结束时间"
+                    :range-separator="t('psdSet.to')"
+                    :start-placeholder="t('common.startTimeText')"
+                    :end-placeholder="t('common.endTimeText')"
                     format="YYYY-MM-DD HH:mm:ss"
                     value-format="YYYY-MM-DD HH:mm:ss"
                     clearable
@@ -956,7 +956,7 @@
       </div>
       <template #footer>
         <div class="production-dispatch-dialog__footer">
-          <el-button @click="productionDispatchDialogVisible = false">取消</el-button>
+          <el-button @click="productionDispatchDialogVisible = false">{{ t('common.cancel') }}</el-button>
           <el-button type="primary" :loading="productionDispatchSubmitting"
             :disabled="!selectedDispatchClientId || !selectedDispatchClient"
             @click="handleConfirmStartProduction">
@@ -966,9 +966,9 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="publishUsageDialogVisible" title="套图使用记录" width="920px" :destroy-on-close="true">
+    <el-dialog v-model="publishUsageDialogVisible" :title="t('psdSet.publishUsageRecords')" width="920px" :destroy-on-close="true">
       <div v-loading="publishUsageLoading" class="publish-usage-dialog">
-        <el-empty v-if="!publishUsageLoading && !publishUsageRecords.length" description="暂无套图使用记录" />
+        <el-empty v-if="!publishUsageLoading && !publishUsageRecords.length" :description="t('psdSet.noPublishUsageRecords')" />
         <vxe-grid v-else v-bind="publishUsageGridOptions" :data="publishUsageRecords">
           <template #usageImageSlot="{ row }">
             <el-image v-if="row.imageUrl" :src="row.imageUrl" fit="cover" class="publish-usage-image"
@@ -1004,6 +1004,7 @@ import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import { useWindowSize } from "@vueuse/core";
 import { Search, DocumentCopy, WarningFilled, CircleCheck } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
+import { useI18n } from "@/hooks/web/useI18n";
 import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { stickerPsdSetApi } from "@/api/stickerPsdSet";
@@ -1040,6 +1041,7 @@ import {
 import { downloadImageEnhanced } from "@/common/download";
 import { useGlobalNotificationStore } from "@/store/modules/globalNotification";
 const globalNotificationStore = useGlobalNotificationStore();
+const { t } = useI18n();
 const loading = ref(false);
 const dataSource = ref<any[]>([]);
 const total = ref(0);
@@ -1056,7 +1058,7 @@ const tableImageViewerDisplayIndex = computed(() =>
     : 0,
 );
 let tableImageViewerLabelEl: HTMLDivElement | null = null;
-const DISPATCH_DIALOG_LOADING_TEXT = "正在同步可用节点...";
+const DISPATCH_DIALOG_LOADING_TEXT = t("psdSet.syncingAvailableNodes");
 const generatingProductId = ref<string>("");
 const batchGeneratingProducts = ref(false);
 const batchUpdatingStatus = ref(false);
@@ -1120,18 +1122,18 @@ const generateProductTargetTemplateAlert = computed(() => {
   if (generateProductTargetTemplateMode.value === "single") {
     return {
       type: "success" as const,
-      title: `当前套图使用同一个 PSD 模板（${generateProductTargetTemplateIds.value[0]}），只能选择绑定该模板的商品生成模板。`,
+      title: t("psdSet.sameTemplateAlert", { templateId: generateProductTargetTemplateIds.value[0] }),
     };
   }
   if (generateProductTargetTemplateMode.value === "multiple") {
     return {
       type: "warning" as const,
-      title: `当前选择包含 ${generateProductTargetTemplateIds.value.length} 个 PSD 模板，请按 PSD 模板分批生成商品。`,
+      title: t("psdSet.multipleTemplatesAlert", { count: generateProductTargetTemplateIds.value.length }),
     };
   }
   return {
     type: "warning" as const,
-    title: "当前套图缺少 PSD 模板信息，无法匹配商品生成模板。",
+    title: t("psdSet.missingTemplateAlert"),
   };
 });
 const generateProductTemplateCheckboxConfig = computed(() => ({
@@ -1160,50 +1162,52 @@ const filteredGenerateProductTemplateOptions = computed(() => {
 });
 const generateProductTemplateColumns: any[] = [
   { type: "checkbox", width: 48 },
-  { field: "name", title: "模板名称", minWidth: 180, showOverflow: true },
-  { field: "productType", title: "商品类型", width: 120, showOverflow: true },
+  { field: "name", title: t("psdSet.templateName"), minWidth: 180, showOverflow: true },
+  { field: "productType", title: t("psdSet.productType"), width: 120, showOverflow: true },
   {
     field: "psdTemplateId",
-    title: "绑定PSD模板",
+    title: t("psdSet.boundPsdTemplate"),
     minWidth: 190,
     showOverflow: true,
-    formatter: ({ cellValue }) => String(cellValue || "").trim() || "未绑定",
+    formatter: ({ cellValue }) => String(cellValue || "").trim() || t("psdSet.notBound"),
   },
   {
     field: "matchStatus",
-    title: "匹配状态",
+    title: t("psdSet.matchStatus"),
     width: 130,
     formatter: ({ row }) => getGenerateProductTemplateMatchInfo(row).label,
   },
   {
     field: "imagePolicy",
-    title: "图片",
+    title: t("psdSet.image"),
     width: 120,
     formatter: ({ row }) =>
       row?.imagePolicy?.psdImageIndexes ||
       row?.imagePolicy?.imageIndexes ||
       row?.imagePolicy?.indexes ||
-      "全部",
+      t("psdSet.all"),
   },
   {
     field: "salePrice",
-    title: "售价",
+    title: t("psdSet.salePrice"),
     width: 90,
     formatter: ({ cellValue }) => {
       const amount = Number(cellValue || 0);
       return amount > 0 ? amount.toFixed(2) : "-";
     },
   },
-  { field: "stock", title: "库存", width: 80 },
-  { field: "tags", title: "标签", minWidth: 180, showOverflow: true },
+  { field: "stock", title: t("psdSet.stock"), width: 80 },
+  { field: "tags", title: t("psdSet.tags"), minWidth: 180, showOverflow: true },
   {
     field: "seoPrompt",
-    title: "SEO提示",
+    title: t("psdSet.seoPrompt"),
     width: 110,
     formatter: ({ cellValue }) => {
       const length = getTextLength(cellValue);
       if (!length) return "-";
-      return length > SEO_DESCRIPTION_SAFE_LENGTH ? `${length}字 偏长` : `${length}字`;
+      return length > SEO_DESCRIPTION_SAFE_LENGTH
+        ? t("psdSet.seoPromptLengthLong", { length })
+        : t("psdSet.seoPromptLength", { length });
     },
   },
 ];
@@ -1272,18 +1276,18 @@ function schedulePsdSetMenuRuntimeSync() {
 }
 
 const publishPlatformNameMap: Record<string, string> = {
-  douyin: "抖音",
-  kuaishou: "快手",
-  xiaohongshu: "小红书",
-  weibo: "微博",
-  doudian: "抖店",
-  kuaishou_shop: "快手小店",
-  xianyu: "闲鱼",
+  douyin: t("psdSet.platformDouyin"),
+  kuaishou: t("psdSet.platformKuaishou"),
+  xiaohongshu: t("psdSet.platformXiaohongshu"),
+  weibo: t("psdSet.platformWeibo"),
+  doudian: t("psdSet.platformDoudian"),
+  kuaishou_shop: t("psdSet.platformKuaishouShop"),
+  xianyu: t("psdSet.platformXianyu"),
   bilibili: "Bilibili",
   tiktok: "TikTok",
   youtube: "YouTube",
   temu: "Temu",
-  pdd: "拼多多",
+  pdd: t("psdSet.platformPdd"),
 };
 
 function formatPlatformName(platform?: string) {
@@ -1302,14 +1306,14 @@ function formatPublishUsageConfigLabel(config: any) {
 
 function getPublishUsageStatusLabel(status?: string) {
   const map: Record<string, string> = {
-    pending: "发布中",
-    waiting: "等待中",
-    processing: "发布中",
-    completed: "已使用",
-    success: "已使用",
-    failed: "失败",
-    expired: "已过期",
-    deleted: "已释放",
+    pending: t("psdSet.usagePublishing"),
+    waiting: t("psdSet.usageWaiting"),
+    processing: t("psdSet.usagePublishing"),
+    completed: t("psdSet.usageUsed"),
+    success: t("psdSet.usageUsed"),
+    failed: t("psdSet.usageFailed"),
+    expired: t("psdSet.usageExpired"),
+    deleted: t("psdSet.usageReleased"),
   };
   return map[String(status || "")] || String(status || "-");
 }
@@ -1330,11 +1334,11 @@ function getPublishUsageStatusTag(status?: string) {
 
 function getPublishTaskStatusLabel(status?: string) {
   const map: Record<string, string> = {
-    pending: "待处理",
-    waiting: "等待中",
-    processing: "处理中",
-    completed: "已完成",
-    failed: "失败",
+    pending: t("psdSet.taskPending"),
+    waiting: t("psdSet.usageWaiting"),
+    processing: t("psdSet.taskProcessing"),
+    completed: t("psdSet.taskCompleted"),
+    failed: t("psdSet.usageFailed"),
   };
   return map[String(status || "")] || String(status || "-");
 }
@@ -1397,24 +1401,24 @@ const publishConfigTargetTemplateAlert = computed(() => {
   if (publishConfigTargetTemplateMode.value === "single") {
     return {
       type: "success" as const,
-      title: `当前选择来自同一 PSD 模板（${publishConfigTargetTemplateIds.value[0]}），可使用通用配置或该模板绑定配置。`,
+      title: t("psdSet.sameTemplateConfigAlert", { templateId: publishConfigTargetTemplateIds.value[0] }),
     };
   }
   if (publishConfigTargetTemplateMode.value === "multiple") {
     return {
       type: "warning" as const,
-      title: `当前选择包含 ${publishConfigTargetTemplateIds.value.length} 个 PSD 模板，仅可使用通用任务配置。`,
+      title: t("psdSet.multipleTemplatesConfigAlert", { count: publishConfigTargetTemplateIds.value.length }),
     };
   }
   if (publishConfigTargetTemplateIds.value.length === 1) {
     return {
       type: "warning" as const,
-      title: "当前选择中有套图缺少 PSD 模板信息，仅可使用通用任务配置。",
+      title: t("psdSet.partialMissingTemplateConfigAlert"),
     };
   }
   return {
     type: "warning" as const,
-    title: "当前套图缺少 PSD 模板信息，仅可使用通用任务配置。",
+    title: t("psdSet.missingTemplateConfigAlert"),
   };
 });
 
@@ -1440,25 +1444,25 @@ const publishConfigGridOptions = computed(() => ({
     { type: "checkbox" as any, width: 60, align: "center" as any },
     {
       field: "taskType",
-      title: "任务类型",
+      title: t("psdSet.taskType"),
       width: 180,
       formatter: ({ row }: any) => formatTaskTypeName(row?.taskType, row?.platform),
     },
-    { field: "name", title: "配置名称", minWidth: 180, showOverflow: true },
+    { field: "name", title: t("psdSet.configName"), minWidth: 180, showOverflow: true },
     {
       field: "templateBinding",
-      title: "绑定模板",
+      title: t("psdSet.boundTemplate"),
       width: 180,
       showOverflow: true,
       slots: { default: "publishConfigTemplateSlot" },
     },
     {
       field: "matchStatus",
-      title: "匹配状态",
+      title: t("psdSet.matchStatus"),
       width: 160,
       slots: { default: "publishConfigMatchSlot" },
     },
-    { field: "description", title: "备注说明", minWidth: 220, showOverflow: true },
+    { field: "description", title: t("psdSet.remark"), minWidth: 220, showOverflow: true },
   ],
 }));
 
@@ -1468,33 +1472,33 @@ const publishTasksGridOptions = computed(() => ({
   rowConfig: { isHover: true, keyField: "id" },
   columnConfig: { resizable: true },
   columns: [
-    { field: "id", title: "任务ID", minWidth: 240, showOverflow: true },
-    { field: "platform", title: "平台", width: 120, slots: { default: "taskPlatformSlot" } },
+    { field: "id", title: t("psdSet.taskId"), minWidth: 240, showOverflow: true },
+    { field: "platform", title: t("psdSet.platform"), width: 120, slots: { default: "taskPlatformSlot" } },
     {
       field: "uploader",
-      title: "创建人",
+      title: t("psdSet.creator"),
       width: 140,
       showOverflow: true,
       formatter: ({ row }: any) =>
         row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
     },
-    { field: "status", title: "状态", width: 120, slots: { default: "taskStatusSlot" } },
-    { field: "description", title: "描述", minWidth: 280, showOverflow: true },
+    { field: "status", title: t("common.status"), width: 120, slots: { default: "taskStatusSlot" } },
+    { field: "description", title: t("psdSet.description"), minWidth: 280, showOverflow: true },
     {
       field: "createdAt",
-      title: "创建时间",
+      title: t("common.createTime"),
       width: 180,
       formatter: ({ cellValue }: any) => formatTimestamp(cellValue),
     },
     {
       field: "updatedAt",
-      title: "更新时间",
+      title: t("common.updateTime"),
       width: 180,
       formatter: ({ cellValue }: any) => formatTimestamp(cellValue),
     },
     {
       field: "error",
-      title: "错误信息",
+      title: t("psdSet.errorInfo"),
       minWidth: 260,
       showOverflow: true,
       slots: { default: "taskErrorSlot" },
@@ -1509,19 +1513,19 @@ const publishUsageGridOptions = computed(() => ({
   rowConfig: { isHover: true, keyField: "id" },
   columnConfig: { resizable: true },
   columns: [
-    { field: "imageUrl", title: "关联图片", width: 96, slots: { default: "usageImageSlot" } },
-    { field: "publishConfigId", title: "发布配置", minWidth: 220, slots: { default: "usageConfigSlot" } },
-    { field: "status", title: "状态", width: 110, slots: { default: "usageStatusSlot" } },
-    { field: "taskId", title: "任务ID", minWidth: 220, showOverflow: true },
+    { field: "imageUrl", title: t("psdSet.relatedImage"), width: 96, slots: { default: "usageImageSlot" } },
+    { field: "publishConfigId", title: t("psdSet.publishConfig"), minWidth: 220, slots: { default: "usageConfigSlot" } },
+    { field: "status", title: t("common.status"), width: 110, slots: { default: "usageStatusSlot" } },
+    { field: "taskId", title: t("psdSet.taskId"), minWidth: 220, showOverflow: true },
     {
       field: "createTime",
-      title: "创建时间",
+      title: t("common.createTime"),
       width: 170,
       formatter: ({ cellValue }: any) => formatTimestamp(cellValue),
     },
     {
       field: "updateTime",
-      title: "更新时间",
+      title: t("common.updateTime"),
       width: 170,
       formatter: ({ cellValue }: any) => formatTimestamp(cellValue),
     },
@@ -1534,16 +1538,16 @@ const productsGridOptions = computed(() => ({
   rowConfig: { isHover: true, keyField: "id" },
   columnConfig: { resizable: true },
   columns: [
-    { field: "id", title: "产品ID", minWidth: 200, showOverflow: true },
-    { field: "images", title: "图片", width: 100, slots: { default: "productImageSlot" } },
-    { field: "name", title: "产品名称", minWidth: 220, showOverflow: true },
-    { field: "type", title: "类型", width: 110, showOverflow: true },
-    { field: "salePrice", title: "价格", width: 140, slots: { default: "productPriceSlot" } },
-    { field: "stock", title: "库存", width: 80 },
-    { field: "isPublish", title: "状态", width: 100, slots: { default: "productStatusSlot" } },
+    { field: "id", title: t("psdSet.productId"), minWidth: 200, showOverflow: true },
+    { field: "images", title: t("psdSet.image"), width: 100, slots: { default: "productImageSlot" } },
+    { field: "name", title: t("psdSet.productName"), minWidth: 220, showOverflow: true },
+    { field: "type", title: t("psdSet.type"), width: 110, showOverflow: true },
+    { field: "salePrice", title: t("psdSet.price"), width: 140, slots: { default: "productPriceSlot" } },
+    { field: "stock", title: t("psdSet.stock"), width: 80 },
+    { field: "isPublish", title: t("common.status"), width: 100, slots: { default: "productStatusSlot" } },
     {
       field: "createTime",
-      title: "创建时间",
+      title: t("common.createTime"),
       width: 180,
       formatter: ({ cellValue }: any) => formatTimestamp(cellValue),
     },
@@ -1566,10 +1570,10 @@ const publishTaskStatusCount = computed(() => {
 });
 
 const statusOptions = [
-  { label: "待制作", value: "pending" },
-  { label: "制作中", value: "processing" },
-  { label: "已完成", value: "completed" },
-  { label: "失败", value: "failed" },
+  { label: t("psdSet.statusPending"), value: "pending" },
+  { label: t("psdSet.statusProcessing"), value: "processing" },
+  { label: t("psdSet.statusCompleted"), value: "completed" },
+  { label: t("psdSet.statusFailed"), value: "failed" },
 ];
 
 const queryParams = reactive({
@@ -1692,9 +1696,9 @@ const detailAutomationList = computed(() => {
 });
 const detailAutomationCount = computed(() => detailAutomationList.value.length);
 const detailAutomationText = computed(() => {
-  if (!detailAutomationList.value.length) return "无";
+  if (!detailAutomationList.value.length) return t("psdSet.none");
   return detailAutomationList.value
-    .map((item: any) => item?.type || item?.action || item?.kind || "未命名动作")
+    .map((item: any) => item?.type || item?.action || item?.kind || t("psdSet.unnamedAction"))
     .join("、");
 });
 const detailStickerIdsText = computed(() => {
@@ -1727,30 +1731,30 @@ function getGenerateProductTemplateMatchInfo(template: any) {
   if (!boundTemplateId) {
     return {
       selectable: false,
-      label: "未绑定模板",
-      reason: "该商品生成模板未绑定 PSD 模板",
+      label: t("psdSet.notBoundTemplate"),
+      reason: t("psdSet.notBoundTemplateReason"),
     };
   }
   if (generateProductTargetTemplateMode.value === "multiple") {
     return {
       selectable: false,
-      label: "需分批生成",
-      reason: "所选套图包含多个 PSD 模板，请按 PSD 模板分批生成商品",
+      label: t("psdSet.needBatchGenerate"),
+      reason: t("psdSet.needBatchGenerateReason"),
     };
   }
   if (generateProductTargetTemplateMode.value !== "single") {
     return {
       selectable: false,
-      label: "套图模板缺失",
-      reason: "当前套图缺少 PSD 模板信息，无法校验商品生成模板",
+      label: t("psdSet.missingTemplate"),
+      reason: t("psdSet.missingTemplateReason"),
     };
   }
 
   const matched = boundTemplateId === generateProductTargetTemplateIds.value[0];
   return {
     selectable: matched,
-    label: matched ? "模板匹配" : "模板不一致",
-    reason: matched ? "" : "商品生成模板绑定的 PSD 模板与当前套图模板不一致",
+    label: matched ? t("psdSet.templateMatched") : t("psdSet.templateMismatch"),
+    reason: matched ? "" : t("psdSet.templateMismatchReason"),
   };
 }
 
@@ -1768,7 +1772,7 @@ function getPublishConfigBoundTemplateId(config: any) {
 
 function getPublishConfigBindingLabel(config: any) {
   const boundTemplateId = getPublishConfigBoundTemplateId(config);
-  return boundTemplateId || "通用配置";
+  return boundTemplateId || t("psdSet.generalConfig");
 }
 
 function getPublishConfigMatchInfo(config: any) {
@@ -1776,7 +1780,7 @@ function getPublishConfigMatchInfo(config: any) {
   if (!boundTemplateId) {
     return {
       selectable: true,
-      label: "可选",
+      label: t("psdSet.selectable"),
       type: "success" as const,
       reason: "",
     };
@@ -1785,18 +1789,18 @@ function getPublishConfigMatchInfo(config: any) {
   if (publishConfigTargetTemplateMode.value === "multiple") {
     return {
       selectable: false,
-      label: "多模板不可用",
+      label: t("psdSet.multiTemplateUnavailable"),
       type: "warning" as const,
-      reason: "所选套图包含多个 PSD 模板，绑定模板配置需按模板分批生成",
+      reason: t("psdSet.multiTemplateUnavailableReason"),
     };
   }
 
   if (publishConfigTargetTemplateMode.value !== "single") {
     return {
       selectable: false,
-      label: "缺少模板",
+      label: t("psdSet.missingTemplate"),
       type: "warning" as const,
-      reason: "当前套图缺少 PSD 模板信息，无法使用绑定模板配置",
+      reason: t("psdSet.missingTemplateConfigReason"),
     };
   }
 
@@ -1804,9 +1808,9 @@ function getPublishConfigMatchInfo(config: any) {
   const matched = boundTemplateId === targetTemplateId;
   return {
     selectable: matched,
-    label: matched ? "模板匹配" : "模板不一致",
+    label: matched ? t("psdSet.templateMatched") : t("psdSet.templateMismatch"),
     type: matched ? ("success" as const) : ("danger" as const),
-    reason: matched ? "" : "任务配置绑定的 PSD 模板与当前套图模板不一致",
+    reason: matched ? "" : t("psdSet.configTemplateMismatchReason"),
   };
 }
 
@@ -1952,20 +1956,20 @@ const detailMetaFormatted = computed(() => {
 function getColumns() {
   const baseColumns = [
     { type: "checkbox", width: 50, fixed: "left" as const },
-    { title: "套图图片", field: "images", width: 200, slots: { default: "imagesSlot" } },
-    { title: "套图名称", field: "name", minWidth: 180 },
-    { title: "多素材关联", field: "stickers", width: 120, slots: { default: "stickersCountSlot" } },
-    { title: "状态", field: "status", width: 120, slots: { default: "statusSlot" } },
+    { title: t("psdSet.psdSetImage"), field: "images", width: 200, slots: { default: "imagesSlot" } },
+    { title: t("psdSet.psdSetName"), field: "name", minWidth: 180 },
+    { title: t("psdSet.multiMaterialAssociation"), field: "stickers", width: 120, slots: { default: "stickersCountSlot" } },
+    { title: t("common.status"), field: "status", width: 120, slots: { default: "statusSlot" } },
     {
-      title: "状态说明",
+      title: t("psdSet.statusDescription"),
       field: "statusMessage",
       width: 280,
       showOverflow: true,
       formatter: ({ row }) => resolvePsdSetStatusMessage(row),
     },
-    { title: "配置信息", field: "config", width: 150, slots: { default: "configSlot" } },
+    { title: t("psdSet.configInfo"), field: "config", width: 150, slots: { default: "configSlot" } },
     {
-      title: "制作耗时",
+      title: t("psdSet.processingDuration"),
       field: "processingTime",
       width: 140,
       formatter: ({ cellValue }) => formatProcessingTime(cellValue),
@@ -1978,13 +1982,13 @@ function getColumns() {
       slots: { default: "idSlot" },
     },
     {
-      title: "创建时间",
+      title: t("common.createTime"),
       field: "createTime",
       width: 160,
       formatter: ({ cellValue }) => formatTimestamp(cellValue),
     },
     {
-      title: "更新时间",
+      title: t("common.updateTime"),
       field: "updateTime",
       width: 160,
       formatter: ({ cellValue }) => formatTimestamp(cellValue),
@@ -2096,16 +2100,16 @@ function handlePsdTemplateIdChange(val: string) {
 function formatProcessingTime(seconds: any): string {
   const s = Number(seconds);
   if (isNaN(s) || s <= 0) return "-";
-  if (s < 60) return `${s.toFixed(2)}秒`;
+  if (s < 60) return t("psdSet.secondsShort", { count: s.toFixed(2) });
   if (s < 3600) {
     const minutes = Math.floor(s / 60);
     const secs = s % 60;
-    return `${minutes}分${secs.toFixed(2)}秒`;
+    return t("psdSet.minutesSeconds", { minutes, seconds: secs.toFixed(2) });
   }
   const hours = Math.floor(s / 3600);
   const minutes = Math.floor((s % 3600) / 60);
   const secs = s % 60;
-  return `${hours}小时${minutes}分${secs.toFixed(2)}秒`;
+  return t("psdSet.hoursMinutesSeconds", { hours, minutes, seconds: secs.toFixed(2) });
 }
 
 function getPreviewImageList(row: any): string[] {
@@ -2224,7 +2228,10 @@ function updateTableImageViewerIndexLabel() {
     return;
   }
 
-  tableImageViewerLabelEl.textContent = `第 ${tableImageViewerDisplayIndex.value} / 共 ${tableImageViewerUrls.value.length} 张`;
+  tableImageViewerLabelEl.textContent = t("psdSet.imageViewerIndex", {
+    index: tableImageViewerDisplayIndex.value,
+    total: tableImageViewerUrls.value.length,
+  });
 }
 
 function removeTableImageViewerIndexLabel() {
@@ -2235,18 +2242,18 @@ function removeTableImageViewerIndexLabel() {
 // 批量下载套图图片（与商品页面逻辑一致）
 async function handleDownloadPsdSetImages(row: any) {
   if (!row || !Array.isArray(row.images) || !row.images.length) {
-    ElMessage.warning("暂无可下载的套图图片");
+    ElMessage.warning(t("psdSet.noDownloadableImages"));
     return;
   }
 
   const images: string[] = row.images.filter((u: any) => typeof u === "string" && u.trim());
   if (!images.length) {
-    ElMessage.warning("暂无可下载的套图图片");
+    ElMessage.warning(t("psdSet.noDownloadableImages"));
     return;
   }
 
-  const baseName = row.name || "套图图片";
-  ElMessage.info(`开始下载 ${images.length} 张图片，请稍候...`);
+  const baseName = row.name || t("psdSet.psdSetImages");
+  ElMessage.info(t("psdSet.startDownloading", { count: images.length }));
 
   for (let i = 0; i < images.length; i++) {
     const url = images[i];
@@ -2261,7 +2268,7 @@ async function handleDownloadPsdSetImages(row: any) {
     }
   }
 
-  ElMessage.success("套图图片批量下载任务已完成");
+  ElMessage.success(t("psdSet.batchDownloadCompleted"));
 }
 
 function statusLabel(status: string) {
@@ -2344,7 +2351,7 @@ function resolvePhotoshopServiceIssue(service: any) {
   if (!service) {
     return {
       kind: "missing" as const,
-      reason: "未上报 PS 自动化服务",
+      reason: t("psdSet.psAutomationNotReported"),
     };
   }
 
@@ -2358,14 +2365,14 @@ function resolvePhotoshopServiceIssue(service: any) {
   if (isPhotoshopServiceReady(service)) {
     return {
       kind: "ready" as const,
-      reason: message || "PS 已就绪，可执行套图制作",
+      reason: message || t("psdSet.psReady"),
     };
   }
 
   if (state === "error" || service?.status === "error") {
     return {
       kind: "error" as const,
-      reason: fallbackReason || "PS 服务状态异常",
+      reason: fallbackReason || t("psdSet.psServiceError"),
     };
   }
 
@@ -2379,7 +2386,7 @@ function resolvePhotoshopServiceIssue(service: any) {
   if (state === "offline" || state === "disconnected" || service?.status === "disconnected") {
     return {
       kind: "offline" as const,
-      reason: message || "PS 自动化未连接",
+      reason: message || t("psdSet.psAutomationDisconnected"),
     };
   }
 
@@ -2392,7 +2399,7 @@ function resolvePhotoshopServiceIssue(service: any) {
 
   return {
     kind: "not_ready" as const,
-    reason: fallbackReason || "PS 未就绪，请确认客户端已启动 Photoshop",
+    reason: fallbackReason || t("psdSet.psNotReady"),
   };
 }
 
@@ -2417,20 +2424,20 @@ function isPhotoshopServiceReady(service: any) {
 
 function getDispatchClientUnavailableReason(client: any) {
   if (!client?.isOnline) {
-    return "所选客户端不在线";
+    return t("psdSet.clientOffline");
   }
   const service = getClientPhotoshopService(client);
   if (!service) {
-    return "所选客户端未上报 PS 自动化服务";
+    return t("psdSet.clientNoPsAutomation");
   }
   if (isDispatchClientBusy(client)) {
-    return "所选客户端正在制作其他套图";
+    return t("psdSet.clientMakingOtherPsdSet");
   }
   const issue = resolvePhotoshopServiceIssue(service);
   if (issue.kind === "ready") {
     return "";
   }
-  return issue.reason || "所选客户端 PS 不可用";
+  return issue.reason || t("psdSet.clientPsUnavailable");
 }
 
 function getClientDisplayName(client: any) {
@@ -2454,7 +2461,7 @@ function getClientRuntimePsdSet(client: any) {
     currentStep:
       String(psAutomation?.currentStep || "").trim() ||
       String(service?.message || "").trim() ||
-      "Photoshop 正在制作",
+      t("psdSet.photoshopMaking"),
     progress,
   };
 }
@@ -2490,46 +2497,51 @@ function isDispatchClientExecutable(client: any) {
 }
 
 function getDispatchClientOnlineStatus(client: any) {
-  return client?.isOnline ? { text: "在线", tone: "success" } : { text: "离线", tone: "danger" };
+  return client?.isOnline
+    ? { text: t("psdSet.online"), tone: "success" }
+    : { text: t("psdSet.offline"), tone: "danger" };
 }
 
 function getDispatchClientPsStatus(client: any) {
   const service = getClientPhotoshopService(client);
   if (!client?.isOnline) {
-    return { text: "不可用", tone: "danger", reason: "客户端离线" };
+    return { text: t("psdSet.unavailable"), tone: "danger", reason: t("psdSet.clientOffline") };
   }
   if (!service) {
-    return { text: "未开启", tone: "muted", reason: "未上报 PS 自动化服务" };
+    return { text: t("psdSet.notEnabled"), tone: "muted", reason: t("psdSet.psAutomationNotReported") };
   }
 
   const issue = resolvePhotoshopServiceIssue(service);
   if (issue.kind === "ready") {
-    return { text: "已开启", tone: "success", reason: issue.reason };
+    return { text: t("psdSet.enabled"), tone: "success", reason: issue.reason };
   }
   if (issue.kind === "error") {
-    return { text: "异常", tone: "danger", reason: issue.reason };
+    return { text: t("psdSet.abnormal"), tone: "danger", reason: issue.reason };
   }
   if (issue.kind === "offline") {
-    return { text: "未连接", tone: "danger", reason: issue.reason };
+    return { text: t("psdSet.notConnected"), tone: "danger", reason: issue.reason };
   }
   if (service.connected) {
-    return { text: "未就绪", tone: "info", reason: issue.reason };
+    return { text: t("psdSet.notReady"), tone: "info", reason: issue.reason };
   }
-  return { text: "未开启", tone: "muted", reason: issue.reason };
+  return { text: t("psdSet.notEnabled"), tone: "muted", reason: issue.reason };
 }
 
 function getDispatchClientProductionStatus(client: any) {
   const activeItems = getDispatchClientActivePsdSets(client);
   if (activeItems.length > 0) {
     return {
-      text: activeItems.length > 1 ? `制作中(${activeItems.length})` : "制作中",
+      text:
+        activeItems.length > 1
+          ? `${t("psdSet.making")}(${activeItems.length})`
+          : t("psdSet.making"),
       tone: "warning",
     };
   }
   if (getClientRuntimePsdSet(client)) {
-    return { text: "忙碌", tone: "warning" };
+    return { text: t("psdSet.busy"), tone: "warning" };
   }
-  return { text: "空闲", tone: isDispatchClientExecutable(client) ? "success" : "muted" };
+  return { text: t("psdSet.idle"), tone: isDispatchClientExecutable(client) ? "success" : "muted" };
 }
 
 const dispatchCandidateClients = computed(() =>
@@ -2576,9 +2588,9 @@ const dispatchClientRows = computed(() =>
 function getDispatchClientTaskLabel(client: any) {
   const item = getDispatchClientActivePsdSets(client)[0];
   if (!item) {
-    return getClientRuntimePsdSet(client) ? "客户端忙碌，等待服务端确认" : "无";
+    return getClientRuntimePsdSet(client) ? t("psdSet.clientBusyWaiting") : t("psdSet.none");
   }
-  return String(item?.name || item?.id || "未命名套图");
+  return String(item?.name || item?.id || t("psdSet.unnamedPsdSet"));
 }
 
 function formatDispatchTaskStep(item: any) {
@@ -2611,7 +2623,7 @@ function getDispatchClientLabelById(clientId: unknown, fallbackMachineCode?: unk
     (client ? getClientDisplayName(client) : "") ||
     String(fallbackMachineCode || "").trim() ||
     normalizedClientId ||
-    "未知客户端"
+    t("psdSet.unknownClient")
   );
 }
 
@@ -2640,7 +2652,7 @@ function buildAutoDispatchProcessingRow(client: any, item: any) {
     clientLabel: client ? getClientDisplayName(client) : getDispatchClientLabelById(clientId, runtimeSource.assignedMachineCode),
     taskId,
     taskName: String(runtimeSource.name || "").trim(),
-    taskLabel: String(runtimeSource.name || runtimeSource.id || "未命名套图"),
+    taskLabel: String(runtimeSource.name || runtimeSource.id || t("psdSet.unnamedPsdSet")),
     stepLabel: formatDispatchTaskStep(runtimeSource),
   };
 }
@@ -2654,7 +2666,7 @@ function mergeAutoDispatchProcessingRows(
     key: taskRow.key || clientRow.key,
     clientId: clientRow.clientId || taskRow.clientId,
     clientLabel:
-      clientRow.clientLabel && clientRow.clientLabel !== "未知客户端"
+      clientRow.clientLabel && clientRow.clientLabel !== t("psdSet.unknownClient")
         ? clientRow.clientLabel
         : taskRow.clientLabel,
     stepLabel: clientRow.stepLabel || taskRow.stepLabel,
@@ -2698,11 +2710,11 @@ const selectedDispatchClient = computed(
 );
 
 const productionDispatchDialogTitle = computed(() =>
-  productionDispatchMode.value === "auto" ? "开启自动制作" : "开始制作",
+  productionDispatchMode.value === "auto" ? t("psdSet.enableAutoProduction") : t("psdSet.startProduction"),
 );
 
 const productionDispatchConfirmText = computed(() =>
-  productionDispatchMode.value === "auto" ? "开启自动制作" : "开始制作",
+  productionDispatchMode.value === "auto" ? t("psdSet.enableAutoProduction") : t("psdSet.startProduction"),
 );
 
 const productionDispatchSubmitting = computed(() =>
@@ -2719,19 +2731,19 @@ const psdSetAutoDispatchTargetLabel = computed(() => {
   }
   const client = dispatchCandidateClients.value.find((item) => item.id === clientId);
   const clientLabel = client ? getClientDisplayName(client) : clientId;
-  return `目标 / ${clientLabel}`;
+  return `${t("psdSet.target")} / ${clientLabel}`;
 });
 
 const autoDispatchFilterSummary = computed(() => {
   const parts = [];
   const keyword = autoDispatchFilterForm.keyword.trim();
   if (keyword) {
-    parts.push(`关键词：${keyword}`);
+    parts.push(`${t("psdSet.keyword")}：${keyword}`);
   }
   if (autoDispatchFilterForm.createdAtRange?.length === 2) {
-    parts.push(`创建时间：${autoDispatchFilterForm.createdAtRange[0]} 至 ${autoDispatchFilterForm.createdAtRange[1]}`);
+    parts.push(`${t("common.createTime")}：${autoDispatchFilterForm.createdAtRange[0]} ${t("psdSet.to")} ${autoDispatchFilterForm.createdAtRange[1]}`);
   }
-  parts.push(autoDispatchFilterForm.sortOrder === "newest" ? "最新优先" : "最早优先");
+  parts.push(autoDispatchFilterForm.sortOrder === "newest" ? t("psdSet.newestFirst") : t("psdSet.oldestFirst"));
   return parts.join("，");
 });
 
@@ -2747,14 +2759,14 @@ const formatDurationSeconds = (milliseconds?: number | null) => {
 const psdSetSchedulerRuntimeSummary = computed(() => {
   const runtime = psdSetSchedulerRuntime.value;
   if (!runtime) {
-    return "等待检测";
+    return t("psdSet.waitingDetection");
   }
   if (runtime.running) {
-    return `检测中 ${formatDurationSeconds(runtime.cycleElapsedMs)}`;
+    return `${t("psdSet.detecting")} ${formatDurationSeconds(runtime.cycleElapsedMs)}`;
   }
   return runtime.dispatchIntervalMs > 0
-    ? `${Math.round(runtime.dispatchIntervalMs / 1000)} 秒检测`
-    : "实时检测";
+    ? `${Math.round(runtime.dispatchIntervalMs / 1000)} ${t("psdSet.secondsDetection")}`
+    : t("psdSet.realTimeDetection");
 });
 
 function normalizeAutoDispatchFilters(filters?: Record<string, any> | null) {
@@ -2993,7 +3005,7 @@ async function copyId(id: string) {
   if (!id) return;
   try {
     await navigator.clipboard.writeText(id);
-    ElMessage.success("ID 已复制到剪贴板");
+    ElMessage.success(t("psdSet.idCopied"));
   } catch (e) {
     // 降级方案
     const textarea = document.createElement("textarea");
@@ -3002,7 +3014,7 @@ async function copyId(id: string) {
     textarea.select();
     document.execCommand("copy");
     document.body.removeChild(textarea);
-    ElMessage.success("ID 已复制到剪贴板");
+    ElMessage.success(t("psdSet.idCopied"));
   }
 }
 
@@ -3018,16 +3030,16 @@ async function updateRowStatus(row, status: string) {
   try {
     await stickerPsdSetApi.updateStatus(row.id, { status });
     applyManualPsdSetStatusLocally(row.id, status);
-    ElMessage.success("状态已更新");
+    ElMessage.success(t("psdSet.statusUpdated"));
     getList(true);
   } catch (error: any) {
-    ElMessage.error(error?.message || "状态更新失败");
+    ElMessage.error(error?.message || t("psdSet.statusUpdateFailed"));
   }
 }
 
 async function handleToProduct(row: any) {
   if (!row?.id) {
-    return ElMessage.warning("缺少ID，无法生成产品");
+    return ElMessage.warning(t("psdSet.missingIdCannotGenerateProduct"));
   }
   generatingProductId.value = row.id;
   await openGenerateProductDialog([row.id]);
@@ -3036,7 +3048,7 @@ async function handleToProduct(row: any) {
 // 查看配置信息（独立的弹窗）
 async function handleViewConfig(row: any) {
   if (!row?.id) {
-    return ElMessage.warning("缺少ID，无法查看配置");
+    return ElMessage.warning(t("psdSet.missingIdCannotViewConfig"));
   }
   configViewDialogVisible.value = true;
   configViewDialogLoading.value = true;
@@ -3047,7 +3059,7 @@ async function handleViewConfig(row: any) {
     configViewDialogData.value = res?.data || res || {};
   } catch (error: any) {
     console.error("获取套图详情失败:", error);
-    ElMessage.error(error?.message || "获取配置失败");
+    ElMessage.error(error?.message || t("psdSet.getConfigFailed"));
     configViewDialogVisible.value = false;
   } finally {
     configViewDialogLoading.value = false;
@@ -3057,7 +3069,7 @@ async function handleViewConfig(row: any) {
 // 从查看配置弹窗跳转到编辑配置
 function handleEditFromView() {
   if (!configViewDialogData.value?.id) {
-    return ElMessage.warning("缺少ID，无法编辑配置");
+    return ElMessage.warning(t("psdSet.missingIdCannotEditConfig"));
   }
   // 关闭查看配置弹窗
   configViewDialogVisible.value = false;
@@ -3067,7 +3079,7 @@ function handleEditFromView() {
 
 async function handleViewDetail(row: any) {
   if (!row?.id) {
-    return ElMessage.warning("缺少ID，无法查看详情");
+    return ElMessage.warning(t("psdSet.missingIdCannotViewDetail"));
   }
   detailDialogVisible.value = true;
   await loadPsdSetDetailById(row.id);
@@ -3081,7 +3093,7 @@ function handleCloseDetailDialog() {
 // 直接编辑配置信息（打开独立的编辑配置对话框）
 async function handleEditConfigDirectly(row: any) {
   if (!row?.id) {
-    return ElMessage.warning("缺少ID，无法编辑配置");
+    return ElMessage.warning(t("psdSet.missingIdCannotEditConfig"));
   }
   configEditDialogVisible.value = true;
   configEditDialogLoading.value = true;
@@ -3101,14 +3113,14 @@ async function handleEditConfigDirectly(row: any) {
       } catch (e) {
         // 如果解析失败，显示原始值并提示错误
         configEditDialogValue.value = String(config);
-        configEditDialogError.value = "当前配置格式不正确，请修正后保存";
+        configEditDialogError.value = t("psdSet.configFormatInvalidSave");
       }
     } else {
       configEditDialogValue.value = "{}";
     }
   } catch (error: any) {
     console.error("获取套图详情失败:", error);
-    ElMessage.error(error?.message || "获取详情失败");
+    ElMessage.error(error?.message || t("psdSet.getDetailFailed"));
     configEditDialogVisible.value = false;
   } finally {
     configEditDialogLoading.value = false;
@@ -3129,11 +3141,11 @@ function validateJsonEnhanced(jsonString: string): { valid: boolean; error?: str
   const lastChar = trimmed.charAt(trimmed.length - 1);
 
   if (firstChar === "{" && lastChar !== "}") {
-    return { valid: false, error: "JSON对象缺少闭合括号 }" };
+    return { valid: false, error: t("psdSet.jsonMissingClosingBrace") };
   }
 
   if (firstChar === "[" && lastChar !== "]") {
-    return { valid: false, error: "JSON数组缺少闭合括号 ]" };
+    return { valid: false, error: t("psdSet.jsonMissingClosingBracket") };
   }
 
   // 尝试解析JSON
@@ -3142,22 +3154,22 @@ function validateJsonEnhanced(jsonString: string): { valid: boolean; error?: str
 
     // 额外检查：确保解析后是对象或数组（不允许原始值）
     if (parsed !== null && typeof parsed !== "object" && !Array.isArray(parsed)) {
-      return { valid: false, error: "配置必须是JSON对象或数组，不能是原始值" };
+      return { valid: false, error: t("psdSet.jsonMustBeObjectOrArray") };
     }
 
     return { valid: true };
   } catch (e: any) {
     // 提供更友好的错误信息
-    let errorMsg = "JSON格式错误";
+    let errorMsg = t("psdSet.jsonFormatError");
     if (e.message) {
       if (e.message.includes("Unexpected token")) {
-        errorMsg = `JSON语法错误：${e.message}`;
+        errorMsg = t("psdSet.jsonSyntaxError", { detail: e.message });
       } else if (e.message.includes("Unexpected end")) {
-        errorMsg = "JSON不完整，请检查是否缺少引号、括号或逗号";
+        errorMsg = t("psdSet.jsonIncomplete");
       } else if (e.message.includes("Unexpected string")) {
-        errorMsg = "字符串格式错误，请检查引号是否匹配";
+        errorMsg = t("psdSet.jsonStringError");
       } else {
-        errorMsg = `JSON解析错误：${e.message}`;
+        errorMsg = t("psdSet.jsonParseError", { detail: e.message });
       }
     }
     return { valid: false, error: errorMsg };
@@ -3213,12 +3225,12 @@ async function handleSaveConfigDialog() {
   // 验证JSON格式
   const validation = validateJsonEnhanced(trimmedValue);
   if (!validation.valid) {
-    configEditDialogError.value = validation.error || "JSON格式错误";
+    configEditDialogError.value = validation.error || t("psdSet.jsonFormatError");
     return;
   }
 
   if (!configEditDialogData.value?.id) {
-    return ElMessage.warning("缺少ID，无法保存配置");
+    return ElMessage.warning(t("psdSet.missingIdCannotSaveConfig"));
   }
 
   configEditDialogSaving.value = true;
@@ -3234,7 +3246,7 @@ async function handleSaveConfigDialog() {
       stickerPsdSetConfig: configValue,
     });
 
-    ElMessage.success("配置信息已保存");
+    ElMessage.success(t("psdSet.configSaved"));
 
     // 清理定时器
     if (configValidateTimer) {
@@ -3255,21 +3267,21 @@ async function handleSaveConfigDialog() {
     }, 300);
   } catch (error: any) {
     console.error("保存配置信息失败:", error);
-    ElMessage.error(error?.message || "保存配置信息失败");
+    ElMessage.error(error?.message || t("psdSet.saveConfigFailed"));
   } finally {
     configEditDialogSaving.value = false;
   }
 }
 
 function handleDelete(row) {
-  ElMessageBox.confirm("确定删除该套图记录吗？", "删除确认", {
-    confirmButtonText: "删除",
-    cancelButtonText: "取消",
+  ElMessageBox.confirm(t("psdSet.confirmDeletePsdSet"), t("psdSet.deleteConfirm"), {
+    confirmButtonText: t("common.delete"),
+    cancelButtonText: t("common.cancel"),
     type: "warning",
   })
     .then(async () => {
       await stickerPsdSetApi.remove(row.id);
-      ElMessage.success("删除成功");
+      ElMessage.success(t("psdSet.deleteSuccess"));
       selectedIds.value = selectedIds.value.filter((id) => id !== row.id);
       selectedPsdSetRows.value = selectedPsdSetRows.value.filter((r) => r.id !== row.id);
       getList();
@@ -3279,16 +3291,16 @@ function handleDelete(row) {
 
 function handleBatchDelete() {
   if (!selectedIds.value.length) {
-    return ElMessage.warning("请至少选择一条记录");
+    return ElMessage.warning(t("psdSet.selectAtLeastOne"));
   }
-  ElMessageBox.confirm(`确定删除选中的 ${selectedIds.value.length} 条记录吗？`, "批量删除", {
-    confirmButtonText: "删除",
-    cancelButtonText: "取消",
+  ElMessageBox.confirm(t("psdSet.confirmBatchDelete", { count: selectedIds.value.length }), t("psdSet.batchDelete"), {
+    confirmButtonText: t("common.delete"),
+    cancelButtonText: t("common.cancel"),
     type: "warning",
   })
     .then(async () => {
       await stickerPsdSetApi.removeBatch(selectedIds.value);
-      ElMessage.success("批量删除成功");
+      ElMessage.success(t("psdSet.batchDeleteSuccess"));
       selectedIds.value = [];
       selectedPsdSetRows.value = [];
       psdSetGridRef.value?.clearCheckboxRow();
@@ -3299,17 +3311,17 @@ function handleBatchDelete() {
 
 async function handleBatchUpdateStatus(status: string) {
   if (!selectedIds.value.length) {
-    return ElMessage.warning("请至少选择一条记录");
+    return ElMessage.warning(t("psdSet.selectAtLeastOne"));
   }
 
   const statusLabel = statusOptions.find((s) => s.value === status)?.label || status;
   try {
     await ElMessageBox.confirm(
-      `确定将选中的 ${selectedIds.value.length} 条记录的状态改为"${statusLabel}"吗？`,
-      "批量修改状态",
+      t("psdSet.confirmBatchUpdateStatus", { count: selectedIds.value.length, status: statusLabel }),
+      t("psdSet.batchUpdateStatusTitle"),
       {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
+        confirmButtonText: t("common.confirm"),
+        cancelButtonText: t("common.cancel"),
         type: "info",
       },
     );
@@ -3334,10 +3346,10 @@ async function handleBatchUpdateStatus(status: string) {
     }
 
     if (successCount) {
-      ElMessage.success(`成功更新 ${successCount} 条记录的状态`);
+      ElMessage.success(t("psdSet.batchUpdateStatusSuccess", { count: successCount }));
     }
     if (failCount) {
-      ElMessage.warning(`有 ${failCount} 条记录更新失败，请稍后重试`);
+      ElMessage.warning(t("psdSet.batchUpdateStatusPartialFail", { count: failCount }));
     }
 
     if (successCount > 0) {
@@ -3351,7 +3363,7 @@ async function handleBatchUpdateStatus(status: string) {
 
 async function handleBatchGenerateProduct() {
   if (!selectedIds.value.length) {
-    return ElMessage.warning("请选择需要生成产品的记录");
+    return ElMessage.warning(t("psdSet.selectProductGenerationRecords"));
   }
   await openGenerateProductDialog(selectedIds.value);
 }
@@ -3372,7 +3384,7 @@ async function ensurePublishConfigOptions() {
     publishConfigOptions.value = list.filter((item: any) => item?.isActive !== false);
   } catch (error: any) {
     console.error("加载任务配置失败:", error);
-    ElMessage.error(error?.message || "加载任务配置失败");
+    ElMessage.error(error?.message || t("psdSet.loadPublishConfigsFailed"));
   } finally {
     publishConfigDialogLoading.value = false;
   }
@@ -3383,7 +3395,7 @@ async function openPublishConfigDialog(ids: string[]) {
     new Set((ids || []).map((item) => String(item).trim()).filter(Boolean)),
   );
   if (!normalizedIds.length) {
-    return ElMessage.warning("请选择需要生成发布任务的套图");
+    return ElMessage.warning(t("psdSet.selectPublishTaskPsdSets"));
   }
 
   const selectedRowMap = new Map<string, any>();
@@ -3420,7 +3432,7 @@ function handleClosePublishConfigDialog() {
 
 function handlePublishConfigCheckboxChange({ checked, row }) {
   if (checked && !isPublishConfigSelectable(row)) {
-    ElMessage.warning(getPublishConfigMatchInfo(row).reason || "当前任务配置不可选");
+    ElMessage.warning(getPublishConfigMatchInfo(row).reason || t("psdSet.taskConfigNotSelectable"));
     return;
   }
   if (checked) {
@@ -3451,24 +3463,24 @@ function handlePublishConfigCheckboxAllChange({ checked }) {
 
 async function handleCreatePublishTask(row: any) {
   if (!row?.id) {
-    return ElMessage.warning("缺少ID，无法生成发布任务");
+    return ElMessage.warning(t("psdSet.missingIdCannotCreatePublishTask"));
   }
   await openPublishConfigDialog([row.id]);
 }
 
 async function handleBatchCreatePublishTask() {
   if (!selectedIds.value.length) {
-    return ElMessage.warning("请选择需要生成发布任务的套图");
+    return ElMessage.warning(t("psdSet.selectPublishTaskPsdSets"));
   }
   await openPublishConfigDialog(selectedIds.value);
 }
 
 async function handleSubmitCreatePublishTask() {
   if (!publishConfigTargetIds.value.length) {
-    return ElMessage.warning("未选择套图");
+    return ElMessage.warning(t("psdSet.noPsdSetSelected"));
   }
   if (!publishConfigSelectedIds.value.length) {
-    return ElMessage.warning("请选择任务配置");
+    return ElMessage.warning(t("psdSet.selectTaskConfig"));
   }
 
   const invalidSelectedConfigs = publishConfigSelectedIds.value
@@ -3481,7 +3493,7 @@ async function handleSubmitCreatePublishTask() {
       return config && isPublishConfigSelectable(config);
     });
     return ElMessage.warning(
-      getPublishConfigMatchInfo(firstInvalid).reason || "已选任务配置与当前套图模板不匹配",
+      getPublishConfigMatchInfo(firstInvalid).reason || t("psdSet.selectedConfigTemplateMismatch"),
     );
   }
 
@@ -3503,14 +3515,14 @@ async function handleSubmitCreatePublishTask() {
             config?.platform || resolveTaskTypePlatform(resolvedTaskType),
           ).trim();
           if (!resolvedTaskType || !resolvedPlatform) {
-            throw new Error("任务配置缺少任务类型或平台信息");
+            throw new Error(t("psdSet.taskConfigMissingTypeOrPlatform"));
           }
           await createPublishTaskApi({
             psdSetId,
             taskType: resolvedTaskType,
             platform: resolvedPlatform,
             publishConfigId,
-            description: `套图 ${psdSetId} -> ${config.name || resolvedTaskType || publishConfigId}`,
+            description: `${t("psdSet.psdSet")} ${psdSetId} -> ${config.name || resolvedTaskType || publishConfigId}`,
             metadata: {
               publishConfigId,
               publishConfigName: config?.name || "",
@@ -3528,11 +3540,11 @@ async function handleSubmitCreatePublishTask() {
     }
 
     if (successCount > 0) {
-      ElMessage.success(`成功创建 ${successCount} 个发布任务`);
+      ElMessage.success(t("psdSet.publishTasksCreated", { count: successCount }));
       handleClosePublishConfigDialog();
     }
     if (failCount > 0) {
-      ElMessage.warning(`有 ${failCount} 个发布任务创建失败`);
+      ElMessage.warning(t("psdSet.publishTasksCreatePartialFail", { count: failCount }));
     }
   } finally {
     publishConfigSubmitting.value = false;
@@ -3541,7 +3553,7 @@ async function handleSubmitCreatePublishTask() {
 
 async function handleViewPublishTasks(row: any) {
   if (!row?.id) {
-    return ElMessage.warning("缺少ID，无法查看发布任务");
+    return ElMessage.warning(t("psdSet.missingIdCannotViewPublishTasks"));
   }
 
   currentPublishTasksPsdSetId.value = String(row.id);
@@ -3567,7 +3579,7 @@ async function handleViewPublishTasks(row: any) {
 
 async function handleViewPublishUsageRecords(row: any) {
   if (!row?.id) {
-    return ElMessage.warning("缺少套图ID，无法查看使用记录");
+    return ElMessage.warning(t("psdSet.missingPsdSetIdCannotViewUsage"));
   }
   publishUsageDialogVisible.value = true;
   publishUsageLoading.value = true;
@@ -3585,7 +3597,7 @@ async function handleViewPublishUsageRecords(row: any) {
         : [];
   } catch (error: any) {
     console.error("获取套图使用记录失败:", error);
-    ElMessage.error(error?.message || "获取套图使用记录失败");
+    ElMessage.error(error?.message || t("psdSet.getPublishUsageRecordsFailed"));
     publishUsageDialogVisible.value = false;
   } finally {
     publishUsageLoading.value = false;
@@ -3595,7 +3607,7 @@ async function handleViewPublishUsageRecords(row: any) {
 // 查看套图关联的产品
 async function handleViewProducts(row: any) {
   if (!row?.id) {
-    return ElMessage.warning("缺少套图ID，无法查看产品");
+    return ElMessage.warning(t("psdSet.missingPsdSetIdCannotViewProducts"));
   }
   currentProductsPsdSetId.value = String(row.id);
   productsDialogPage.value = 1;
@@ -3619,7 +3631,7 @@ async function loadProductsForPsdSet(psdSetId: string) {
     productsDialogTotal.value = Number(res?.total || 0);
   } catch (error: any) {
     console.error("获取套图关联产品失败:", error);
-    ElMessage.error(error?.message || "获取产品失败");
+    ElMessage.error(error?.message || t("psdSet.getProductsFailed"));
     productsDialogVisible.value = false;
   } finally {
     productsDialogLoading.value = false;

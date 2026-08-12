@@ -2,20 +2,20 @@
   <div class="ps-console" v-loading="loading">
     <div class="ops-header">
       <div>
-        <div class="ops-header__title">PS 服务控制台</div>
+        <div class="ops-header__title">{{ t('psConsole.title') }}</div>
       </div>
       <div class="ops-header__actions">
         <div class="inline-status-group">
           <div class="inline-status" :class="`is-${serviceStatus.level}`">
             <span class="inline-status__dot" />
-            <span class="inline-status__label">PS 服务</span>
+            <span class="inline-status__label">{{ t('psConsole.psService') }}</span>
             <span class="inline-status__text">{{ serviceStatus.text }}</span>
           </div>
         </div>
         <el-button type="primary" :disabled="!selectedClient" @click="operationDialogVisible = true"
-          >打开操作面板</el-button
+          >{{ t('psConsole.openPanel') }}</el-button
         >
-        <el-button type="primary" @click="refreshClients">刷新节点</el-button>
+        <el-button type="primary" @click="refreshClients">{{ t('psConsole.refreshNodes') }}</el-button>
       </div>
     </div>
 
@@ -25,8 +25,8 @@
         :items="clientNodeItems"
         :loading="loading"
         :selected-client-id="selectedClientId"
-        section-title="客户端节点"
-        empty-text="暂无可用客户端"
+        :section-title="t('psConsole.clientNodes')"
+        :empty-text="t('psConsole.noAvailableClient')"
         @select="selectedClientId = $event"
       />
 
@@ -34,7 +34,7 @@
         <div class="ops-panel">
           <div class="ops-panel__head">
             <div>
-              <div class="ops-panel__title">节点 PS 服务状态</div>
+              <div class="ops-panel__title">{{ t('psConsole.nodePsServiceStatus') }}</div>
               <div class="ops-panel__sub" v-if="selectedClient">
                 {{ selectedClientDisplayName }}
               </div>
@@ -44,7 +44,7 @@
           <template v-if="selectedClient">
             <div class="compact-info compact-info--grid">
               <div class="compact-info__item">
-                <span class="compact-info__label">整体</span>
+                <span class="compact-info__label">{{ t('psConsole.overall') }}</span>
                 <span class="compact-info__value">
                   <span class="status-chip" :class="`is-${serviceStatus.level}`">
                     <span class="status-chip__dot" />
@@ -53,7 +53,7 @@
                 </span>
               </div>
               <div class="compact-info__item">
-                <span class="compact-info__label">服务状态</span>
+                <span class="compact-info__label">{{ t('psConsole.serviceStatus') }}</span>
                 <span class="compact-info__value">
                   <span class="status-chip" :class="`is-${selectedPsServiceConnectionStatus.tone}`">
                     <span class="status-chip__dot" />
@@ -71,49 +71,49 @@
                 </span>
               </div>
               <div class="compact-info__item">
-                <span class="compact-info__label">运行态</span>
+                <span class="compact-info__label">{{ t('psConsole.runningState') }}</span>
                 <span class="compact-info__value">{{
                   resolvePsStateText(selectedPsBridgeService?.state)
                 }}</span>
               </div>
               <div class="compact-info__item">
-                <span class="compact-info__label">版本</span>
+                <span class="compact-info__label">{{ t('psConsole.version') }}</span>
                 <span class="compact-info__value">{{
                   selectedPsBridgeService?.version || "-"
                 }}</span>
               </div>
               <div class="compact-info__item">
-                <span class="compact-info__label">服务地址</span>
+                <span class="compact-info__label">{{ t('psConsole.serviceAddress') }}</span>
                 <span class="compact-info__value">{{
                   selectedPsBridgeService?.endpoint || "-"
                 }}</span>
               </div>
               <div class="compact-info__item">
-                <span class="compact-info__label">当前任务</span>
+                <span class="compact-info__label">{{ t('psConsole.currentTask') }}</span>
                 <span class="compact-info__value">{{
                   selectedPsBridgeService?.currentTaskId || "-"
                 }}</span>
               </div>
               <div class="compact-info__item">
-                <span class="compact-info__label">最近检测</span>
+                <span class="compact-info__label">{{ t('psConsole.lastChecked') }}</span>
                 <span class="compact-info__value">{{
                   formatDateSafe(selectedPsBridgeService?.lastCheckedAt)
                 }}</span>
               </div>
               <div class="compact-info__item">
-                <span class="compact-info__label">支持命令</span>
+                <span class="compact-info__label">{{ t('psConsole.supportedCommands') }}</span>
                 <span class="compact-info__value">{{
                   formatListSafe(selectedPsBridgeService?.supportedCommands)
                 }}</span>
               </div>
               <div class="compact-info__item compact-info__item--full">
-                <span class="compact-info__label">说明</span>
+                <span class="compact-info__label">{{ t('psConsole.description') }}</span>
                 <span class="compact-info__value">{{
                   selectedPsBridgeService?.message || "-"
                 }}</span>
               </div>
               <div class="compact-info__item compact-info__item--full">
-                <span class="compact-info__label">最后错误</span>
+                <span class="compact-info__label">{{ t('psConsole.lastError') }}</span>
                 <span class="compact-info__value">{{
                   selectedPsBridgeService?.lastError || "-"
                 }}</span>
@@ -121,7 +121,7 @@
             </div>
           </template>
 
-          <el-empty v-else description="请选择客户端节点" />
+          <el-empty v-else :description="t('psConsole.selectClient')" />
         </div>
       </section>
     </div>
@@ -136,18 +136,18 @@
     >
       <div v-if="selectedClient" class="operation-shell">
         <el-tabs v-model="activeTab" class="operation-tabs">
-          <el-tab-pane label="服务" name="service">
+          <el-tab-pane :label="t('psConsole.service')" name="service">
             <div class="operation-grid operation-grid--service">
               <div class="ops-panel">
                 <div class="ops-panel__head">
                   <div>
-                    <div class="ops-panel__title">服务控制</div>
+                    <div class="ops-panel__title">{{ t('psConsole.serviceControl') }}</div>
                   </div>
                 </div>
 
                 <div class="form-grid form-grid--service">
                   <div class="field-block">
-                    <label>启动超时（秒）</label>
+                    <label>{{ t('psConsole.startTimeout') }}</label>
                     <el-input-number
                       v-model="serviceForm.startTimeout"
                       :min="5"
@@ -156,11 +156,11 @@
                     />
                   </div>
                   <div class="field-block field-block--switch">
-                    <label>关闭策略</label>
+                    <label>{{ t('psConsole.stopStrategy') }}</label>
                     <el-switch
                       v-model="serviceForm.forceStop"
-                      active-text="强制关闭"
-                      inactive-text="优雅关闭"
+                      :active-text="t('psConsole.forceStop')"
+                      :inactive-text="t('psConsole.gracefulStop')"
                     />
                   </div>
                 </div>
@@ -169,12 +169,12 @@
                   <el-button
                     :loading="loadingMap.refreshRuntime"
                     @click="dispatchPsCommand('refreshRuntime')"
-                    >刷新状态</el-button
+                    >{{ t('psConsole.refreshStatus') }}</el-button
                   >
                   <el-button
                     :loading="loadingMap.health"
                     @click="dispatchPsCommand('health', {}, 'maintenance')"
-                    >健康检测</el-button
+                    >{{ t('psConsole.healthCheck') }}</el-button
                   >
                   <el-button
                     type="primary"
@@ -186,7 +186,7 @@
                         'maintenance',
                       )
                     "
-                    >启动 Photoshop</el-button
+                    >{{ t('psConsole.startPhotoshop') }}</el-button
                   >
                   <el-button
                     :loading="loadingMap.restartPhotoshop"
@@ -197,7 +197,7 @@
                         'maintenance',
                       )
                     "
-                    >重启 Photoshop</el-button
+                    >{{ t('psConsole.restartPhotoshop') }}</el-button
                   >
                   <el-button
                     type="danger"
@@ -209,7 +209,7 @@
                         'maintenance',
                       )
                     "
-                    >关闭 Photoshop</el-button
+                    >{{ t('psConsole.stopPhotoshop') }}</el-button
                   >
                 </div>
               </div>
@@ -217,13 +217,13 @@
               <div class="ops-panel">
                 <div class="ops-panel__head">
                   <div>
-                    <div class="ops-panel__title">服务详情</div>
+                    <div class="ops-panel__title">{{ t('psConsole.serviceDetail') }}</div>
                   </div>
                 </div>
 
                 <div class="compact-info compact-info--grid">
                   <div class="compact-info__item">
-                    <span class="compact-info__label">整体</span>
+                    <span class="compact-info__label">{{ t('psConsole.overall') }}</span>
                     <span class="compact-info__value">
                       <span class="status-chip" :class="`is-${serviceStatus.level}`">
                         <span class="status-chip__dot" />
@@ -232,7 +232,7 @@
                     </span>
                   </div>
                   <div class="compact-info__item">
-                    <span class="compact-info__label">服务状态</span>
+                    <span class="compact-info__label">{{ t('psConsole.serviceStatus') }}</span>
                     <span class="compact-info__value">
                       <span class="status-chip" :class="`is-${selectedPsServiceConnectionStatus.tone}`">
                         <span class="status-chip__dot" />
@@ -250,25 +250,25 @@
                     </span>
                   </div>
                   <div class="compact-info__item">
-                    <span class="compact-info__label">运行态</span>
+                    <span class="compact-info__label">{{ t('psConsole.runningState') }}</span>
                     <span class="compact-info__value">{{
                       resolvePsStateText(selectedPsBridgeService?.state)
                     }}</span>
                   </div>
                   <div class="compact-info__item">
-                    <span class="compact-info__label">版本</span>
+                    <span class="compact-info__label">{{ t('psConsole.version') }}</span>
                     <span class="compact-info__value">{{
                       selectedPsBridgeService?.version || "-"
                     }}</span>
                   </div>
                   <div class="compact-info__item">
-                    <span class="compact-info__label">最近检测</span>
+                    <span class="compact-info__label">{{ t('psConsole.lastChecked') }}</span>
                     <span class="compact-info__value">{{
                       formatDateSafe(selectedPsBridgeService?.lastCheckedAt)
                     }}</span>
                   </div>
                   <div class="compact-info__item compact-info__item--full">
-                    <span class="compact-info__label">说明</span>
+                    <span class="compact-info__label">{{ t('psConsole.description') }}</span>
                     <span class="compact-info__value">{{
                       selectedPsBridgeService?.message || "-"
                     }}</span>
@@ -278,21 +278,21 @@
             </div>
           </el-tab-pane>
 
-          <el-tab-pane label="PSD 分析" name="analyze">
+          <el-tab-pane :label="t('psConsole.psdAnalysis')" name="analyze">
             <div class="operation-grid">
               <div class="ops-panel">
                 <div class="ops-panel__head">
                   <div>
-                    <div class="ops-panel__title">分析参数</div>
+                    <div class="ops-panel__title">{{ t('psConsole.analysisParams') }}</div>
                     <div class="ops-panel__sub">
-                      分析当前节点可访问的 PSD 文件结构和智能对象信息
+                      {{ t('psConsole.analysisParamsDesc') }}
                     </div>
                   </div>
                 </div>
 
                 <div class="form-stack">
                   <div class="field-block">
-                    <label>PSD 文件路径</label>
+                    <label>{{ t('psConsole.psdPath') }}</label>
                     <el-input v-model="analyzeForm.psdPath" placeholder="D:\\path\\to\\file.psd" />
                   </div>
 
@@ -301,62 +301,62 @@
                       type="primary"
                       :loading="loadingMap.analyzePsd"
                       @click="handleAnalyzePsd('static')"
-                      >静态分析</el-button
+                      >{{ t('psConsole.staticAnalysis') }}</el-button
                     >
                     <el-button
                       :loading="loadingMap.runtimeAnalyzePsd"
                       @click="handleAnalyzePsd('runtime')"
-                      >运行时探测</el-button
+                      >{{ t('psConsole.runtimeProbe') }}</el-button
                     >
                     <el-button
                       :disabled="!analysisResult"
-                      @click="copyJson(analysisResult, '分析结果已复制')"
-                      >复制 JSON</el-button
+                      @click="copyJson(analysisResult, t('psConsole.analysisResultCopied'))"
+                      >{{ t('psConsole.copyJson') }}</el-button
                     >
                     <el-button
                       :disabled="!analysisResult"
                       :type="analysisViewMode === 'detail' ? 'primary' : 'default'"
                       plain
                       @click="analysisViewMode = 'detail'"
-                      >分析详情</el-button
+                      >{{ t('psConsole.analysisDetail') }}</el-button
                     >
                     <el-button
                       :disabled="!analysisResult"
                       :type="analysisViewMode === 'compact' ? 'primary' : 'default'"
                       plain
                       @click="analysisViewMode = 'compact'"
-                      >精简信息</el-button
+                      >{{ t('psConsole.compactInfo') }}</el-button
                     >
                   </div>
                 </div>
 
                 <div class="compact-info compact-info--grid" v-if="analysisResult">
                   <div class="compact-info__item">
-                    <span class="compact-info__label">文档尺寸</span>
+                    <span class="compact-info__label">{{ t('psConsole.docSize') }}</span>
                     <span class="compact-info__value">{{
                       formatDocumentSize(analysisDocumentInfo)
                     }}</span>
                   </div>
                   <div class="compact-info__item">
-                    <span class="compact-info__label">画板数</span>
+                    <span class="compact-info__label">{{ t('psConsole.artboardCount') }}</span>
                     <span class="compact-info__value">{{
                       analysisStatistics.artboard_count ?? 0
                     }}</span>
                   </div>
                   <div class="compact-info__item">
-                    <span class="compact-info__label">智能对象</span>
+                    <span class="compact-info__label">{{ t('psConsole.smartObjects') }}</span>
                     <span class="compact-info__value">{{
                       analysisStatistics.total_smart_objects ?? 0
                     }}</span>
                   </div>
                   <div class="compact-info__item">
-                    <span class="compact-info__label">图层数</span>
+                    <span class="compact-info__label">{{ t('psConsole.layerCount') }}</span>
                     <span class="compact-info__value">{{
                       analysisStatistics.total_layers ?? 0
                     }}</span>
                   </div>
                   <div class="compact-info__item compact-info__item--full">
-                    <span class="compact-info__label">分析来源</span>
+                    <span class="compact-info__label">{{ t('psConsole.analysisSource') }}</span>
                     <span class="compact-info__value">{{ analysisSourceLabel }}</span>
                   </div>
                 </div>
@@ -371,9 +371,9 @@
                     class="analysis-preview-card"
                   >
                     <div class="analysis-preview-card__head">
-                      <div class="analysis-preview-card__title">{{ artboard.name || "未命名画板" }}</div>
+                      <div class="analysis-preview-card__title">{{ artboard.name || t('psConsole.unnamedArtboard') }}</div>
                       <div class="analysis-preview-card__meta">
-                        {{ artboard.sizeLabel }} · {{ artboard.smartObjectCount }} 个智能对象
+                        {{ artboard.sizeLabel }} · {{ artboard.smartObjectCount }} {{ t('psConsole.smartObjectCount') }}
                       </div>
                     </div>
                     <div class="analysis-preview-stage">
@@ -419,66 +419,66 @@
                 <div class="ops-panel__head">
                   <div>
                     <div class="ops-panel__title">{{
-                      analysisViewMode === "compact" ? "精简信息" : "分析结果"
+                      analysisViewMode === "compact" ? t('psConsole.compactInfo') : t('psConsole.analysisResult')
                     }}</div>
                     <div class="ops-panel__sub">{{
                       analysisViewMode === "compact"
-                        ? `只保留画板层级与画板下的智能对象关键信息 · ${analysisSourceLabel}`
-                        : `保留完整 JSON，便于和 yishe-ps 输出对齐 · ${analysisSourceLabel}`
+                        ? t('psConsole.compactInfoDesc', { source: analysisSourceLabel })
+                        : t('psConsole.analysisResultDesc', { source: analysisSourceLabel })
                     }}</div>
                   </div>
                 </div>
                 <pre class="result">{{
                   analysisResult
                     ? jsonText(analysisViewMode === "compact" ? compactAnalysisResult : analysisResult)
-                    : "暂无分析结果"
+                    : t('psConsole.noAnalysisResult')
                 }}</pre>
               </div>
             </div>
           </el-tab-pane>
 
-          <el-tab-pane label="调试处理" name="process">
+          <el-tab-pane :label="t('psConsole.debugProcess')" name="process">
             <div class="operation-grid">
               <div class="ops-panel">
                 <div class="ops-panel__head">
                   <div>
-                    <div class="ops-panel__title">处理参数</div>
-                    <div class="ops-panel__sub">通过 debugProcess 调用当前节点的 /processPsd</div>
+                    <div class="ops-panel__title">{{ t('psConsole.processParams') }}</div>
+                    <div class="ops-panel__sub">{{ t('psConsole.processParamsDesc') }}</div>
                   </div>
                 </div>
 
                 <div class="form-stack">
                   <div class="field-block">
-                    <label>PSD 路径 *</label>
+                    <label>{{ t('psConsole.psdPathRequired') }}</label>
                     <el-input
                       v-model="processForm.psdPath"
                       placeholder="D:\\templates\\template.psd"
                     />
                   </div>
                   <div class="field-block">
-                    <label>导出目录</label>
-                    <el-input v-model="processForm.exportDir" placeholder="由客户端自动使用工作目录\\psd-test" disabled />
+                    <label>{{ t('psConsole.exportDir') }}</label>
+                    <el-input v-model="processForm.exportDir" :placeholder="t('psConsole.exportDirPlaceholder')" disabled />
                   </div>
                   <div class="form-grid">
                     <div class="field-block">
-                      <label>导出文件名</label>
+                      <label>{{ t('psConsole.exportFilename') }}</label>
                       <el-input
                         v-model="processForm.outputFilename"
-                        placeholder="可选，自动加时间戳"
+                        :placeholder="t('psConsole.exportFilenamePlaceholder')"
                       />
                     </div>
                     <div class="field-block">
                       <label>verbose</label>
                       <el-switch
                         v-model="processForm.verbose"
-                        active-text="开启"
-                        inactive-text="关闭"
+                        :active-text="t('psConsole.on')"
+                        :inactive-text="t('psConsole.off')"
                       />
                     </div>
                   </div>
                   <div class="subsection-head">
-                    <div class="subsection-title">智能对象配置</div>
-                    <el-button size="small" @click="addSmartObject">添加智能对象</el-button>
+                    <div class="subsection-title">{{ t('psConsole.smartObjectConfig') }}</div>
+                    <el-button size="small" @click="addSmartObject">{{ t('psConsole.addSmartObject') }}</el-button>
                   </div>
                   <div class="smart-object-list">
                     <div
@@ -487,38 +487,38 @@
                       class="smart-object-card"
                     >
                       <div class="smart-object-card__head">
-                        <div class="smart-object-card__title">智能对象 #{{ index + 1 }}</div>
+                        <div class="smart-object-card__title">{{ t('psConsole.smartObjectTitle', { index: index + 1 }) }}</div>
                         <el-button
                           link
                           type="danger"
                           :disabled="processForm.smartObjects.length <= 1"
                           @click="removeSmartObject(index)"
-                          >删除</el-button
+                          >{{ t('common.delete') }}</el-button
                         >
                       </div>
                       <div class="form-grid">
                         <div class="field-block">
-                          <label>智能对象名称</label>
+                          <label>{{ t('psConsole.smartObjectName') }}</label>
                           <el-input
                             v-model="item.smartObjectName"
-                            placeholder="可选，不指定则按顺序匹配"
+                            :placeholder="t('psConsole.smartObjectNamePlaceholder')"
                           />
                         </div>
                         <div class="field-block">
-                          <label>素材图片路径 *</label>
+                          <label>{{ t('psConsole.imagePathRequired') }}</label>
                           <el-input v-model="item.imagePath" placeholder="D:\\images\\image.jpg" />
                         </div>
                         <div class="field-block">
-                          <label>背景图片路径</label>
+                          <label>{{ t('psConsole.backgroundImagePath') }}</label>
                           <el-input
                             v-model="item.backgroundImagePath"
-                            placeholder="contain 可选，D:\\images\\background.jpg"
+                            :placeholder="t('psConsole.backgroundImagePathPlaceholder')"
                           />
                         </div>
                       </div>
                       <div class="form-grid">
                         <div class="field-block">
-                          <label>缩放模式</label>
+                          <label>{{ t('psConsole.resizeMode') }}</label>
                           <el-select v-model="item.resizeMode">
                             <el-option label="contain" value="contain" />
                             <el-option label="cover" value="cover" />
@@ -544,7 +544,7 @@
                             :key="template.key"
                             size="small"
                             @click="applyCustomOptionsTemplate(index, template.key)"
-                            >{{ template.label }}</el-button
+                            >{{ template.label() }}</el-button
                           >
                         </div>
                         <el-input
@@ -562,10 +562,10 @@
                       type="primary"
                       :loading="loadingMap.debugProcess"
                       @click="handleDebugProcess"
-                      >开始处理</el-button
+                      >{{ t('psConsole.startProcess') }}</el-button
                     >
-                    <el-button @click="copyText(processPayloadPreview, '处理参数已复制')"
-                      >复制参数</el-button
+                    <el-button @click="copyText(processPayloadPreview, t('psConsole.processPayloadCopied'))"
+                      >{{ t('psConsole.copyParams') }}</el-button
                     >
                   </div>
                 </div>
@@ -574,51 +574,51 @@
               <div class="ops-panel">
                 <div class="ops-panel__head">
                   <div>
-                    <div class="ops-panel__title">后端参数与结果</div>
-                    <div class="ops-panel__sub">同时查看 processPsd 请求体和返回结果</div>
+                    <div class="ops-panel__title">{{ t('psConsole.backendParamsAndResult') }}</div>
+                    <div class="ops-panel__sub">{{ t('psConsole.backendParamsAndResultDesc') }}</div>
                   </div>
                 </div>
                 <pre class="result">{{ processPayloadPreview }}</pre>
                 <pre class="result result--secondary">{{
-                  processResult ? jsonText(processResult) : "暂无处理结果"
+                  processResult ? jsonText(processResult) : t('psConsole.noProcessResult')
                 }}</pre>
               </div>
             </div>
           </el-tab-pane>
 
-          <el-tab-pane label="日志" name="logs">
+          <el-tab-pane :label="t('psConsole.logs')" name="logs">
             <div class="operation-grid">
               <div class="ops-panel">
                 <div class="ops-panel__head">
                   <div>
-                    <div class="ops-panel__title">最新命令结果</div>
-                    <div class="ops-panel__sub">最近一次 service-command-result 返回值</div>
+                    <div class="ops-panel__title">{{ t('psConsole.latestCommandResult') }}</div>
+                    <div class="ops-panel__sub">{{ t('psConsole.latestCommandResultDesc') }}</div>
                   </div>
                   <div class="ops-panel__actions">
                     <el-button
                       :disabled="!latestCommandResult"
-                      @click="copyJson(latestCommandResult, '命令结果已复制')"
-                      >复制结果</el-button
+                      @click="copyJson(latestCommandResult, t('psConsole.commandResultCopied'))"
+                      >{{ t('psConsole.copyResult') }}</el-button
                     >
                   </div>
                 </div>
                 <pre class="result">{{
-                  latestCommandResult ? jsonText(latestCommandResult) : "暂无命令结果"
+                  latestCommandResult ? jsonText(latestCommandResult) : t('psConsole.noCommandResult')
                 }}</pre>
               </div>
 
               <div class="ops-panel">
                 <div class="ops-panel__head">
                   <div>
-                    <div class="ops-panel__title">调试日志</div>
-                    <div class="ops-panel__sub">记录命令发送、回包和错误信息</div>
+                    <div class="ops-panel__title">{{ t('psConsole.debugLogs') }}</div>
+                    <div class="ops-panel__sub">{{ t('psConsole.debugLogsDesc') }}</div>
                   </div>
                   <div class="ops-panel__actions">
-                    <el-button @click="clearCommandLogs">清空日志</el-button>
+                    <el-button @click="clearCommandLogs">{{ t('psConsole.clearLogs') }}</el-button>
                   </div>
                 </div>
                 <div class="log-list">
-                  <div v-if="!commandLogs.length" class="log-empty">暂无调试日志</div>
+                  <div v-if="!commandLogs.length" class="log-empty">{{ t('psConsole.noDebugLogs') }}</div>
                   <div
                     v-for="item in commandLogs"
                     :key="item.id"
@@ -637,7 +637,7 @@
           </el-tab-pane>
         </el-tabs>
       </div>
-      <el-empty v-else description="请选择客户端节点" />
+      <el-empty v-else :description="t('psConsole.selectClientNode')" />
     </el-dialog>
   </div>
 </template>
@@ -646,6 +646,7 @@
 import { computed, onActivated, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { useLocalStorage } from "@vueuse/core";
 import { ElMessage } from "element-plus";
+import { useI18n } from "@/hooks/web/useI18n";
 import { formatDate } from "@/utils/formatTime";
 import { sendServiceCommand } from "@/api/system/websocket";
 import ExternalClientSidebar, {
@@ -660,6 +661,8 @@ import {
 import { usePluginClientNodes } from "@/services/clientNodeState";
 
 defineOptions({ name: "PsConsolePanel" });
+
+const { t } = useI18n();
 
 type PsCommandAction =
   | "refreshRuntime"
@@ -847,10 +850,10 @@ watch(
 );
 
 const customTemplateOptions = [
-  { key: "px-contain", label: "像素 contain" },
-  { key: "px-cover", label: "像素 cover" },
-  { key: "percent-contain", label: "百分比 contain" },
-  { key: "percent-cover", label: "百分比 cover" },
+  { key: "px-contain", label: () => t('psConsole.pixelContain') },
+  { key: "px-cover", label: () => t('psConsole.pixelCover') },
+  { key: "percent-contain", label: () => t('psConsole.percentContain') },
+  { key: "percent-cover", label: () => t('psConsole.percentCover') },
 ];
 
 const customOptionsTemplates: Record<string, Record<string, any>> = {
@@ -910,8 +913,8 @@ const hasPsServiceError = (service?: any) =>
 const resolvePsRuntimeDisplay = (service?: any) => {
   if (!service) {
     return {
-      summary: { text: "未上报", tone: "info" as ClientNodeBadge["tone"] },
-      service: { text: "未上报", tone: "info" as ClientNodeBadge["tone"] },
+      summary: { text: t('psConsole.statusNotReported'), tone: "info" as ClientNodeBadge["tone"] },
+      service: { text: t('psConsole.statusNotReported'), tone: "info" as ClientNodeBadge["tone"] },
       application: { text: "-", tone: "info" as ClientNodeBadge["tone"] },
       hasError: false,
     };
@@ -946,36 +949,36 @@ const resolvePsRuntimeDisplay = (service?: any) => {
   );
 
   const serviceStatus = hasError
-    ? { text: "服务异常", tone: "danger" as ClientNodeBadge["tone"] }
+    ? { text: t('psConsole.serviceError'), tone: "danger" as ClientNodeBadge["tone"] }
     : connected
-      ? { text: "服务在线", tone: "success" as ClientNodeBadge["tone"] }
+      ? { text: t('psConsole.serviceOnline'), tone: "success" as ClientNodeBadge["tone"] }
       : service?.status === "disconnected" || service?.state === "offline"
-        ? { text: "服务未启动", tone: "info" as ClientNodeBadge["tone"] }
-        : { text: "未就绪", tone: "info" as ClientNodeBadge["tone"] };
+        ? { text: t('psConsole.serviceNotStarted'), tone: "info" as ClientNodeBadge["tone"] }
+        : { text: t('psConsole.notReady'), tone: "info" as ClientNodeBadge["tone"] };
 
   const applicationStatus = busy
-    ? { text: "执行中", tone: "warning" as ClientNodeBadge["tone"] }
+    ? { text: t('psConsole.running'), tone: "warning" as ClientNodeBadge["tone"] }
     : available || photoshopStatus === "ready"
-      ? { text: "可用", tone: "success" as ClientNodeBadge["tone"] }
+      ? { text: t('psConsole.available'), tone: "success" as ClientNodeBadge["tone"] }
       : connected && (photoshopStatus === "starting" || photoshopRunning)
-        ? { text: "启动中", tone: "warning" as ClientNodeBadge["tone"] }
+        ? { text: t('psConsole.starting'), tone: "warning" as ClientNodeBadge["tone"] }
         : connected
-          ? { text: "未启动", tone: "info" as ClientNodeBadge["tone"] }
-          : { text: "不可用", tone: "info" as ClientNodeBadge["tone"] };
+          ? { text: t('psConsole.notStarted'), tone: "info" as ClientNodeBadge["tone"] }
+          : { text: t('psConsole.unavailable'), tone: "info" as ClientNodeBadge["tone"] };
 
   const summary = busy
-    ? { text: "执行中", tone: "warning" as ClientNodeBadge["tone"] }
+    ? { text: t('psConsole.running'), tone: "warning" as ClientNodeBadge["tone"] }
     : available
-      ? { text: "可用", tone: "success" as ClientNodeBadge["tone"] }
+      ? { text: t('psConsole.available'), tone: "success" as ClientNodeBadge["tone"] }
       : hasError
-        ? { text: "服务异常", tone: "danger" as ClientNodeBadge["tone"] }
-        : connected && applicationStatus.text === "启动中"
-          ? { text: "等待就绪", tone: "warning" as ClientNodeBadge["tone"] }
+        ? { text: t('psConsole.serviceError'), tone: "danger" as ClientNodeBadge["tone"] }
+        : connected && applicationStatus.text === t('psConsole.starting')
+          ? { text: t('psConsole.waitingReady'), tone: "warning" as ClientNodeBadge["tone"] }
           : connected
-            ? { text: "服务在线", tone: "info" as ClientNodeBadge["tone"] }
+            ? { text: t('psConsole.serviceOnline'), tone: "info" as ClientNodeBadge["tone"] }
             : service?.status === "disconnected" || service?.state === "offline"
-              ? { text: "服务未启动", tone: "info" as ClientNodeBadge["tone"] }
-              : { text: "未就绪", tone: "info" as ClientNodeBadge["tone"] };
+              ? { text: t('psConsole.serviceNotStarted'), tone: "info" as ClientNodeBadge["tone"] }
+              : { text: t('psConsole.notReady'), tone: "info" as ClientNodeBadge["tone"] };
 
   return {
     summary,
@@ -996,7 +999,9 @@ const selectedClient = computed(() => {
 const selectedClientDisplayName = computed(
   () => selectedClient.value?.clientInfo?.machine?.code || selectedClient.value?.id || "-",
 );
-const operationDialogTitle = computed(() => `PS 服务操作 · ${selectedClientDisplayName.value}`);
+const operationDialogTitle = computed(
+  () => `${t('psConsole.operationTitlePrefix')} · ${selectedClientDisplayName.value}`,
+);
 
 const normalizePluginKey = (value?: string | null) => {
   const normalized = String(value || "").trim();
@@ -1017,8 +1022,8 @@ const getPsBridgeService = (client: any) => {
       busy: false,
       hasError: false,
       level: "info" as ClientNodeBadge["tone"],
-      text: "同步中",
-      serviceStatus: { text: "同步中", tone: "info" as ClientNodeBadge["tone"] },
+      text: t('psConsole.syncing'),
+      serviceStatus: { text: t('psConsole.syncing'), tone: "info" as ClientNodeBadge["tone"] },
       applicationStatus: { text: "-", tone: "info" as ClientNodeBadge["tone"] },
     };
   }
@@ -1071,11 +1076,11 @@ const clientNodeItems = computed<ClientNodeItem[]>(() =>
       connectionId: client.id,
       name: client.clientInfo?.machine?.code || client.id,
       time: formatDateSafe(client.connectedAt || undefined),
-      metaLeft: client.clientInfo?.appVersion || "未知版本",
-      metaRight: client.clientInfo?.machine?.platform || "未知平台",
+      metaLeft: client.clientInfo?.appVersion || t('psConsole.unknownVersion'),
+      metaRight: client.clientInfo?.machine?.platform || t('psConsole.unknownPlatform'),
       detail: client.clientInfo?.workspaceDirectory
-        ? `工作目录: ${client.clientInfo.workspaceDirectory}`
-        : "工作目录: 未上报",
+        ? `${t('psConsole.workDir')}: ${client.clientInfo.workspaceDirectory}`
+        : `${t('psConsole.workDir')}: ${t('psConsole.workDirNotReported')}`,
     };
   }),
 );
@@ -1087,7 +1092,7 @@ const analysisStatistics = computed<Record<string, any>>(
   () => analysisResult.value?.statistics || {},
 );
 const analysisSourceLabel = computed(() =>
-  analysisExecutionMode.value === "runtime" ? "运行时探测" : "静态分析",
+  analysisExecutionMode.value === "runtime" ? t('psConsole.runtimeProbe') : t('psConsole.staticAnalysis'),
 );
 const compactAnalysisResult = computed(() => {
   const result = analysisResult.value;
@@ -1169,7 +1174,7 @@ const compactArtboardPreviews = computed(() => {
 
           return {
             key: `${artboardIndex}-${index}-${item.path || item.name || "smart-object"}`,
-            name: item.name || `智能对象 ${index + 1}`,
+            name: item.name || t('psConsole.smartObjectFallback', { index: index + 1 }),
             left,
             top,
             width: scaledWidth,
@@ -1181,7 +1186,7 @@ const compactArtboardPreviews = computed(() => {
 
     return {
       key: `${artboardIndex}-${artboard.path || artboard.name || "artboard"}`,
-      name: artboard.name || `画板 ${artboardIndex + 1}`,
+      name: artboard.name || t('psConsole.artboardFallback', { index: artboardIndex + 1 }),
       sizeLabel: `${Math.round(width)} x ${Math.round(height)}`,
       smartObjectCount:
         Number(artboard.smart_object_count) || (Array.isArray(artboard.smart_objects) ? artboard.smart_objects.length : 0),
@@ -1232,11 +1237,11 @@ const findClientDisplayName = (clientId?: string | null) => {
 const resolvePsStateText = (value?: string | null) => {
   if (!value) return "-";
   const stateMap: Record<string, string> = {
-    idle: "空闲",
-    busy: "执行中",
-    error: "异常",
-    offline: "离线",
-    connected: "服务在线",
+    idle: t('psConsole.stateIdle'),
+    busy: t('psConsole.running'),
+    error: t('psConsole.stateError'),
+    offline: t('psConsole.stateOffline'),
+    connected: t('psConsole.serviceOnline'),
   };
   return stateMap[value] || value;
 };
@@ -1252,14 +1257,14 @@ const formatDocumentSize = (value?: Record<string, any> | null) => {
 
 const resolveActionText = (value?: string | null) => {
   const actionMap: Record<string, string> = {
-    refreshRuntime: "刷新状态",
-    health: "健康检测",
-    startPhotoshop: "启动 Photoshop",
-    stopPhotoshop: "关闭 Photoshop",
-    restartPhotoshop: "重启 Photoshop",
-    analyzePsd: "分析 PSD",
-    runtimeAnalyzePsd: "运行时分析 PSD",
-    debugProcess: "调试处理",
+    refreshRuntime: t('psConsole.refreshStatus'),
+    health: t('psConsole.healthCheck'),
+    startPhotoshop: t('psConsole.startPhotoshop'),
+    stopPhotoshop: t('psConsole.stopPhotoshop'),
+    restartPhotoshop: t('psConsole.restartPhotoshop'),
+    analyzePsd: t('psConsole.staticAnalysis'),
+    runtimeAnalyzePsd: t('psConsole.runtimeProbe'),
+    debugProcess: t('psConsole.debugProcess'),
   };
   return actionMap[String(value || "").trim()] || String(value || "-");
 };
@@ -1291,7 +1296,7 @@ const serviceStatus = computed(() => {
   if (!psClients.value.length) {
     return {
       level: "danger",
-      text: "无可用节点",
+      text: t('psConsole.noAvailableClient'),
     };
   }
 
@@ -1304,14 +1309,14 @@ const serviceStatus = computed(() => {
 
   return {
     level: "info",
-    text: "未就绪",
+    text: t('psConsole.notReady'),
   };
 });
 
 const selectedPsServiceConnectionStatus = computed(
   () =>
     selectedPsBridgeService.value?.serviceStatus || {
-      text: "未上报",
+      text: t('psConsole.statusNotReported'),
       tone: "info" as ClientNodeBadge["tone"],
     },
 );
@@ -1378,9 +1383,9 @@ watch(selectedClientId, (value, previousValue) => {
   clearPendingState();
 });
 
-const copyText = async (text: string, successMessage = "已复制") => {
+const copyText = async (text: string, successMessage = t('psConsole.copied')) => {
   if (!text) {
-    ElMessage.warning("没有可复制的内容");
+    ElMessage.warning(t('psConsole.nothingToCopy'));
     return;
   }
 
@@ -1399,11 +1404,11 @@ const copyText = async (text: string, successMessage = "已复制") => {
     }
     ElMessage.success(successMessage);
   } catch (error: any) {
-    ElMessage.error(error?.message || "复制失败");
+    ElMessage.error(error?.message || t('psConsole.copyFailed'));
   }
 };
 
-const copyJson = async (value: any, successMessage = "JSON 已复制") => {
+const copyJson = async (value: any, successMessage = t('psConsole.jsonCopied')) => {
   await copyText(jsonText(value), successMessage);
 };
 
@@ -1415,7 +1420,7 @@ const dispatchPsCommand = async (
 ) => {
   const client = selectedClient.value;
   if (!client) {
-    ElMessage.warning("请选择客户端节点");
+    ElMessage.warning(t('psConsole.selectClientNode'));
     return;
   }
 
@@ -1425,7 +1430,7 @@ const dispatchPsCommand = async (
 
   loadingMap[action] = true;
   if (!options.silent) {
-    pushCommandLog(action, "info", `已发送${resolveActionText(action)}命令`, client.id);
+    pushCommandLog(action, "info", t('psConsole.commandSent', { action: resolveActionText(action) }), client.id);
   }
 
   try {
@@ -1443,7 +1448,7 @@ const dispatchPsCommand = async (
 
     if (!response?.success) {
       finishAction(action);
-      const message = response?.message || "命令发送失败";
+      const message = response?.message || t('psConsole.commandSendFailed');
       if (options.silent && action === "refreshRuntime") {
         completeRuntimeBootstrap();
       }
@@ -1465,11 +1470,11 @@ const dispatchPsCommand = async (
     }
 
     if (!options.silent) {
-      ElMessage.success(response.message || "命令已发送");
+      ElMessage.success(response.message || t('psConsole.commandSentSuccess'));
     }
   } catch (error: any) {
     finishAction(action);
-    const message = error?.message || "命令发送失败";
+    const message = error?.message || t('psConsole.commandSendFailed');
     if (options.silent && action === "refreshRuntime") {
       completeRuntimeBootstrap();
     }
@@ -1510,7 +1515,7 @@ const applyCustomOptionsTemplate = (index: number, templateKey: string) => {
 const buildProcessRequest = (strict = true) => {
   const psdPath = normalizeWindowsPath(processForm.psdPath);
   if (strict && !psdPath) {
-    throw new Error("请填写 PSD 路径");
+    throw new Error(t('psConsole.psdPathRequired'));
   }
   const preserveEmptyStructure = !strict;
 
@@ -1535,7 +1540,7 @@ const buildProcessRequest = (strict = true) => {
       }
 
       if (strict && !imagePath) {
-        throw new Error(`智能对象 #${index + 1} 的素材图片路径不能为空`);
+        throw new Error(t('psConsole.smartObjectImageRequired', { index: index + 1 }));
       }
 
       const payload: Record<string, any> = {
@@ -1554,7 +1559,7 @@ const buildProcessRequest = (strict = true) => {
 
       if (payload.resize_mode === "custom") {
         if (strict && !customOptionsText) {
-          throw new Error(`智能对象 #${index + 1} 使用 custom 模式时必须填写 custom_options`);
+          throw new Error(t('psConsole.customOptionsRequired', { index: index + 1 }));
         }
         if (customOptionsText) {
           try {
@@ -1562,7 +1567,7 @@ const buildProcessRequest = (strict = true) => {
           } catch (error: any) {
             if (strict) {
               throw new Error(
-                `智能对象 #${index + 1} 的 custom_options 不是有效 JSON: ${error?.message || error}`,
+                t('psConsole.customOptionsInvalidJson', { index: index + 1, detail: error?.message || error }),
               );
             }
           }
@@ -1574,7 +1579,7 @@ const buildProcessRequest = (strict = true) => {
     .filter(Boolean) as Record<string, any>[];
 
   if (strict && !smartObjects.length) {
-    throw new Error("至少需要配置一个智能对象");
+    throw new Error(t('psConsole.atLeastOneSmartObject'));
   }
 
   const request: Record<string, any> = {
@@ -1602,7 +1607,7 @@ const buildProcessRequest = (strict = true) => {
 const handleAnalyzePsd = async (mode: "static" | "runtime" = "static") => {
   const psdPath = normalizeWindowsPath(analyzeForm.psdPath);
   if (!psdPath) {
-    ElMessage.warning("请填写 PSD 文件路径");
+    ElMessage.warning(t('psConsole.psdPathRequired'));
     return;
   }
 
@@ -1619,7 +1624,7 @@ const handleDebugProcess = async () => {
     processResult.value = null;
     await dispatchPsCommand("debugProcess", { request }, "debug");
   } catch (error: any) {
-    const message = error?.message || "处理参数校验失败";
+    const message = error?.message || t('psConsole.processValidationFailed');
     pushCommandLog("debugProcess", "error", message, selectedClient.value?.id);
     ElMessage.warning(message);
   }
@@ -1647,7 +1652,7 @@ const handleServiceCommandResult = async (event: ServiceCommandResultEvent) => {
   }
 
   const action = pendingAction || event.action || "refreshRuntime";
-  const message = event.message || event.error || (event.success ? "执行成功" : "执行失败");
+  const message = event.message || event.error || (event.success ? t('psConsole.execSuccess') : t('psConsole.execFailed'));
 
   latestCommandResult.value = event;
   pushCommandLog(action, event.success ? "success" : "error", message, event.clientId);
