@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Handle, Position } from '@vue-flow/core'
+import { javaScriptIcon } from '@/assets/icons/apps'
 
 defineProps<{ data: { label?: string; config?: any } }>()
 </script>
@@ -8,7 +9,7 @@ defineProps<{ data: { label?: string; config?: any } }>()
   <div class="wf-node wf-node--jscode">
     <Handle type="target" :position="Position.Top" />
     <div class="wf-node__header">
-      <span class="wf-node__dot" style="background: #10b981" />
+      <img :src="javaScriptIcon" class="wf-node__icon" />
       <span class="wf-node__title">{{ data.label || '执行 JS 代码' }}</span>
     </div>
     <div class="wf-node__code-preview">
@@ -36,7 +37,7 @@ defineProps<{ data: { label?: string; config?: any } }>()
 
 .wf-node__header { display: flex; align-items: center; gap: 5px; margin-bottom: 4px; }
 
-.wf-node__dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.wf-node__icon { width: 16px; height: 16px; flex-shrink: 0; }
 
 .wf-node__title { font-size: 12px; font-weight: 600; color: var(--el-text-color-primary); }
 

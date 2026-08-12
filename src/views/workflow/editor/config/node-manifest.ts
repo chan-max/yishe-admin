@@ -1,4 +1,4 @@
-import { weiboIcon, notificationIcon, feishuIcon, wecomIcon, douyinIcon, bilibiliIcon, zhihuIcon, toutiaoIcon, doubanIcon, kuaishouIcon } from '@/assets/icons/apps'
+import { weiboIcon, notificationIcon, feishuIcon, wecomIcon, douyinIcon, bilibiliIcon, zhihuIcon, toutiaoIcon, doubanIcon, kuaishouIcon, javaScriptIcon } from '@/assets/icons/apps'
 
 export type NodeType =
   | 'start'
@@ -136,7 +136,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     type: 'js_code',
     name: '执行 JS 代码',
     category: 'logic',
-    icon: 'ep:cpu',
+    iconImage: javaScriptIcon,
     color: '#10b981',
     description: '在安全沙箱中执行 JavaScript 代码。支持 $params、$tools(HTTP/文件/COS)、$result、$log。预装 axios、dayjs、cheerio、lodash、sharp 等库。',
     defaultData: { name: '执行 JS 代码', config: { code: '', timeoutMs: 30000 } },
