@@ -99,6 +99,92 @@ export function getNodeOutputSchema(node: any): NodeIOSchemaField[] {
 }
 
 export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
+  // ─── 条件分支 ────────────────────────────────────────────
+  {
+    type: 'condition',
+    name: '条件分支',
+    category: 'logic',
+    icon: 'ep:connection',
+    color: '#f59e0b',
+    description: '根据条件表达式将工作流导向不同分支。支持多条件判断，每个条件对应一个输出端口。',
+    defaultData: { name: '条件分支', config: { conditions: [] } },
+    inputSchema: [],
+    outputSchema: [
+      { field: 'branch', label: '匹配分支', type: 'string' },
+      { field: 'matched', label: '是否匹配', type: 'boolean' },
+    ],
+    requirements: [],
+  },
+  // ─── 多路切换 ────────────────────────────────────────────
+  {
+    type: 'switch',
+    name: '多路切换',
+    category: 'logic',
+    icon: 'ep:connection',
+    color: '#06b6d4',
+    description: '根据字段值匹配多个 case 分支。配置多个值和对应标签，匹配则从对应端口输出。',
+    defaultData: { name: '多路切换', config: { cases: [] } },
+    inputSchema: [],
+    outputSchema: [
+      { field: 'branch', label: '匹配分支', type: 'string' },
+      { field: 'matched', label: '是否匹配', type: 'boolean' },
+    ],
+    requirements: [],
+  },
+  // ─── JS 代码沙箱 ────────────────────────────────────────
+  {
+    type: 'js_code',
+    name: '执行 JS 代码',
+    category: 'logic',
+    icon: 'ep:cpu',
+    color: '#10b981',
+    description: '在安全沙箱中执行 JavaScript 代码。支持 $params、$tools(HTTP/文件/COS)、$result、$log。预装 axios、dayjs、cheerio、lodash、sharp 等库。',
+    defaultData: { name: '执行 JS 代码', config: { code: '', timeoutMs: 30000 } },
+    inputSchema: [
+      { field: 'code', label: 'JavaScript 代码', type: 'code', required: true, placeholder: '// $params 包含上游节点输出\n// $result = { ok: true }' },
+      { field: 'timeoutMs', label: '超时时间(ms)', type: 'number', defaultValue: 30000 },
+    ],
+    outputSchema: [
+      { field: 'result', label: '执行结果', type: 'any' },
+      { field: 'logs', label: '执行日志', type: 'array' },
+      { field: 'durationMs', label: '耗时(ms)', type: 'number' },
+    ],
+    requirements: [],
+  },
+  // ─── For Each 循环 ──────────────────────────────────────
+  {
+    type: 'loop',
+    name: 'For 循环',
+    category: 'logic',
+    icon: 'ep:refresh',
+    color: '#8b5cf6',
+    description: '遍历数组中的每个元素，依次执行循环体。有两个输出端口：循环体和完成。',
+    defaultData: { name: 'For 循环', config: { items: [] } },
+    inputSchema: [],
+    outputSchema: [
+      { field: 'items', label: '遍历数组', type: 'array' },
+      { field: 'results', label: '执行结果', type: 'array' },
+      { field: 'count', label: '循环次数', type: 'number' },
+    ],
+    requirements: [],
+  },
+  // ─── While 循环 ─────────────────────────────────────────
+  {
+    type: 'while_loop',
+    name: 'While 循环',
+    category: 'logic',
+    icon: 'ep:refresh',
+    color: '#ec4899',
+    description: '当条件满足时重复执行循环体。有两个输出端口：循环体和完成。',
+    defaultData: { name: 'While 循环', config: { condition: {}, maxIterations: 100 } },
+    inputSchema: [],
+    outputSchema: [
+      { field: 'results', label: '执行结果', type: 'array' },
+      { field: 'count', label: '循环次数', type: 'number' },
+    ],
+    requirements: [],
+  },
+  // ─── 微博热搜采集 ────────────────────────────────────────
   {
     type: 'hotsearch_weibo',
     name: '微博热搜采集',
