@@ -39,9 +39,9 @@ const remainingTime = computed(() => {
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
-  if (days > 0) return `还有 ${days} 天到期`;
-  if (hours > 0) return `还有 ${hours} 小时到期`;
-  if (minutes > 0) return `还有 ${minutes} 分钟到期`;
+  if (days > 0) return t('layout.userInfo.remainingDays', { days });
+  if (hours > 0) return t('layout.userInfo.remainingHours', { hours });
+  if (minutes > 0) return t('layout.userInfo.remainingMinutes', { minutes });
   return t("layout.userInfo.expiringSoon");
 });
 
@@ -135,7 +135,7 @@ function handleViewToken() {
       <div class="user-meta <lg:hidden">
         <span class="user-name">{{ userName }}</span>
         <span class="user-role" :class="isAdmin ? 'is-admin' : 'is-member'">
-          {{ isAdmin ? "Administrator" : "Member" }}
+          {{ isAdmin ? t("layout.userInfo.administrator") : t("layout.userInfo.member") }}
         </span>
       </div>
       <Icon icon="ep:caret-bottom" class="user-caret" />

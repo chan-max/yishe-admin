@@ -28,9 +28,9 @@
 
       <div class="header-connection-status__panel">
         <div class="header-connection-status__panel-head">
-          <div class="header-connection-status__panel-title">连接状态</div>
+          <div class="header-connection-status__panel-title">{{ t("layout.connection.connectionStatusTitle") }}</div>
           <el-button text size="small" :loading="isRefreshing" @click="refreshAllStatuses">
-            刷新
+            {{ t("layout.connection.refresh") }}
           </el-button>
         </div>
 
@@ -84,7 +84,7 @@
                 </div>
               </div>
               <el-button v-if="!isRemoteConnected" link size="small" @click="reconnectRemote">
-                重连
+                {{ t("layout.connection.reconnect") }}
               </el-button>
             </div>
 
@@ -102,7 +102,7 @@
                 </div>
               </div>
               <el-button link size="small" @click="handleClientAction">
-                {{ hasClientRecords ? "查看" : "启动" }}
+                {{ hasClientRecords ? t("layout.connection.view") : t("layout.connection.start") }}
               </el-button>
             </div>
 
@@ -207,10 +207,10 @@ const triggerSummaryText = computed(() => {
     : "无节点";
 
   if (runtimeTotalCount.value > 0) {
-    return `在线 ${runtimeTotalCount.value} · ${nodeText}`;
+    return t('layout.connection.onlineWithNodes', { total: runtimeTotalCount.value, nodeText });
   }
 
-  return isRemoteConnected.value ? `已连接 · ${nodeText}` : `远程未连接`;
+  return isRemoteConnected.value ? t('layout.connection.connectedWithNodes', { nodeText }) : t('layout.connection.remoteNotConnected');
 });
 const clientNodeStatusText = computed(() => {
   return t("layout.connection.connectionCount", { count: clientRuntimeCount.value });
@@ -225,7 +225,7 @@ const clientNodeMeta = computed(() => {
   }
 
   if (onlineClientCount.value > 0) {
-    return `节点 ${onlineClientCount.value}/${clientRecordCount.value} 在线`;
+    return t('layout.connection.nodesOnlineCount', { online: onlineClientCount.value, total: clientRecordCount.value });
   }
 
   return t("layout.connection.nodesOffline", { count: offlineClientCount.value });
@@ -294,7 +294,7 @@ function reconnectRemote() {
 
   websocketClient.reconnect();
   startWebSocketConnection();
-  ElMessage.success("已发起远程重连");
+  ElMessage.success(t("layout.connection.initiatedReconnect"));
 }
 
 function handleTriggerClick(event: MouseEvent) {

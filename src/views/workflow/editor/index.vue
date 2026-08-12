@@ -45,6 +45,7 @@ import NodePickerDialog from '@/components/workflow/NodePickerDialog.vue'
 import TriggerConfigDialog from '@/components/workflow/TriggerConfigDialog.vue'
 import ShortcutGuide from '@/components/workflow/ShortcutGuide.vue'
 import AiGenerateDialog from '@/components/workflow/AiGenerateDialog.vue'
+import { useWorkflowAiContext } from '@/composables/useWorkflowAiContext'
 import type { NodeManifest } from './config/node-manifest'
 
 const appStore = useAppStore()
@@ -118,6 +119,28 @@ const handleAiGenerated = (data: { nodes: any[]; edges: any[]; description: stri
   ElMessage.success('AI 工作流已生成到画布')
 }
 
+
+const { setWorkflowContext } = useWorkflowAiContext()
+
+// 同步工作流上下文给 AI 助手
+watch(
+  () => ({
+    workflowId: workflowId.value,
+    name: workflow.value?.name,
+    nodes: nodes.value,
+    edges: edges.value,
+  }),
+  (val) => {
+    if (val.workflowId) {
+      setWorkflowContext({
+        workflowId: val.workflowId,
+        workflowName: val.name,
+        canvas: { nodes: val.nodes, edges: val.edges },
+      })
+    }
+  },
+  { deep: true }
+)
 
 const handleOpenAiGenerate = () => {
   aiGenerateVisible.value = true

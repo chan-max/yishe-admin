@@ -1,13 +1,13 @@
-import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { defineStore } from "pinia"
+import { ref } from "vue"
+
+export type SplitPaneSide = "left" | "right"
 
 export interface SplitTab {
   id: string
-  path: string
+  fullPath: string
   title: string
-  icon?: string
-  query?: Record<string, any>
-  params?: Record<string, any>
+  name?: string
 }
 
 export interface SplitPaneState {
@@ -15,108 +15,96 @@ export interface SplitPaneState {
   activeTabId: string | null
 }
 
-export const useSplitStore = defineStore('split', () => {
+const createPane = (): SplitPaneState => ({ tabs: [], activeTabId: null })
+
+export const useSplitStore = defineStore("split", () => {
   // 是否启用分屏
-  const isEnabled = ref(false)
+  const enabled = ref(false)
 
-  // 左侧面板
-  const leftPane = ref<SplitPaneState>({
-    tabs: [],
-    activeTabId: null,
-  })
-
-  // 右侧面板
-  const rightPane = ref<SplitPaneState>({
-    tabs: [],
-    activeTabId: null,
-  })
-
-  // 分屏比例
+  // 分屏比例（左面板占比 0-100）
   const splitPercent = ref(50)
 
-  // 当前激活的面板
-  const activePane = ref<'left' | 'right'>('left')
+  // 当前激活的面板：新页面、菜单点击落入该面板
+  const activePane = ref<SplitPaneSide>("left")
 
-  const leftActiveTab = computed(() =>
-    leftPane.value.tabs.find((t) => t.id === leftPane.value.activeTabId),
-  )
+  const leftPane = ref<SplitPaneState>(createPane())
+  const rightPane = ref<SplitPaneState>(createPane())
 
-  const rightActiveTab = computed(() =>
-    rightPane.value.tabs.find((t) => t.id === rightPane.value.activeTabId),
-  )
+  // 路由同步挂起标记：标签/菜单等由 UI 主动发起的跳转期间，
+  // 临时禁止 SplitLayout 根据 URL 自动同步，避免产生幽灵标签
+  const syncSuspended = ref(false)
+  let syncSuspendCount = 0
 
-  function enableSplit() {
-    isEnabled.value = true
-    if (!rightPane.value.tabs.length && leftPane.value.tabs.length > 1) {
-      // 把左侧最后一个标签移到右侧
-      const tab = leftPane.value.tabs.pop()!
-      rightPane.value.tabs.push(tab)
-      rightPane.value.activeTabId = tab.id
+  const paneOf = (side: SplitPaneSide): SplitPaneState =>
+    side === "left" ? leftPane.value : rightPane.value
+
+  function suspendSync() {
+    syncSuspendCount += 1
+    syncSuspended.value = true
+  }
+
+  function resumeSync() {
+    syncSuspendCount = Math.max(0, syncSuspendCount - 1)
+    if (syncSuspendCount === 0) {
+      syncSuspended.value = false
     }
   }
 
-  function disableSplit() {
-    isEnabled.value = false
-    // 把右侧所有标签合并到左侧
-    if (rightPane.value.tabs.length) {
-      leftPane.value.tabs.push(...rightPane.value.tabs)
-      rightPane.value.tabs = []
-      rightPane.value.activeTabId = null
-    }
+  function enable() {
+    enabled.value = true
+    activePane.value = "left"
   }
 
-  function toggleSplit() {
-    if (isEnabled.value) {
-      disableSplit()
-    } else {
-      enableSplit()
-    }
+  function disable() {
+    enabled.value = false
   }
 
-  function openInLeft(tab: SplitTab) {
-    const existing = leftPane.value.tabs.find((t) => t.path === tab.path)
+  function setActivePane(side: SplitPaneSide) {
+    activePane.value = side
+  }
+
+  function findTab(side: SplitPaneSide, fullPath: string): SplitTab | undefined {
+    return paneOf(side).tabs.find((t) => t.fullPath === fullPath)
+  }
+
+  function openInPane(side: SplitPaneSide, tab: Omit<SplitTab, "id">) {
+    const pane = paneOf(side)
+    const existing = pane.tabs.find((t) => t.fullPath === tab.fullPath)
     if (existing) {
-      leftPane.value.activeTabId = existing.id
+      pane.activeTabId = existing.id
     } else {
-      leftPane.value.tabs.push(tab)
-      leftPane.value.activeTabId = tab.id
+      const id = `${side}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+      pane.tabs.push({ ...tab, id })
+      pane.activeTabId = id
     }
-    activePane.value = 'left'
+    activePane.value = side
   }
 
-  function openInRight(tab: SplitTab) {
-    if (!isEnabled.value) {
-      enableSplit()
-    }
-    const existing = rightPane.value.tabs.find((t) => t.path === tab.path)
-    if (existing) {
-      rightPane.value.activeTabId = existing.id
-    } else {
-      rightPane.value.tabs.push(tab)
-      rightPane.value.activeTabId = tab.id
-    }
-    activePane.value = 'right'
-  }
-
-  function closeLeftTab(tabId: string) {
-    const idx = leftPane.value.tabs.findIndex((t) => t.id === tabId)
-    if (idx === -1) return
-    leftPane.value.tabs.splice(idx, 1)
-    if (leftPane.value.activeTabId === tabId) {
-      leftPane.value.activeTabId = leftPane.value.tabs[Math.min(idx, leftPane.value.tabs.length - 1)]?.id || null
+  function setActiveTab(side: SplitPaneSide, tabId: string) {
+    const pane = paneOf(side)
+    if (pane.tabs.some((t) => t.id === tabId)) {
+      pane.activeTabId = tabId
     }
   }
 
-  function closeRightTab(tabId: string) {
-    const idx = rightPane.value.tabs.findIndex((t) => t.id === tabId)
-    if (idx === -1) return
-    rightPane.value.tabs.splice(idx, 1)
-    if (rightPane.value.activeTabId === tabId) {
-      rightPane.value.activeTabId = rightPane.value.tabs[Math.min(idx, rightPane.value.tabs.length - 1)]?.id || null
+  function closeTab(
+    side: SplitPaneSide,
+    tabId: string,
+  ): { closedActive: boolean; nextTab: SplitTab | null } {
+    const pane = paneOf(side)
+    const index = pane.tabs.findIndex((t) => t.id === tabId)
+    if (index === -1) {
+      return { closedActive: false, nextTab: null }
     }
-    // 如果右侧没有标签了，自动关闭分屏
-    if (!rightPane.value.tabs.length) {
-      disableSplit()
+    const closedActive = pane.activeTabId === tabId
+    pane.tabs.splice(index, 1)
+    if (closedActive) {
+      const next = pane.tabs[Math.min(index, pane.tabs.length - 1)]
+      pane.activeTabId = next?.id ?? null
+    }
+    return {
+      closedActive,
+      nextTab: pane.tabs.find((t) => t.id === pane.activeTabId) ?? null,
     }
   }
 
@@ -125,20 +113,21 @@ export const useSplitStore = defineStore('split', () => {
   }
 
   return {
-    isEnabled,
-    leftPane,
-    rightPane,
+    enabled,
     splitPercent,
     activePane,
-    leftActiveTab,
-    rightActiveTab,
-    enableSplit,
-    disableSplit,
-    toggleSplit,
-    openInLeft,
-    openInRight,
-    closeLeftTab,
-    closeRightTab,
+    leftPane,
+    rightPane,
+    syncSuspended,
+    enable,
+    disable,
+    setActivePane,
+    findTab,
+    openInPane,
+    setActiveTab,
+    closeTab,
     setSplitPercent,
+    suspendSync,
+    resumeSync,
   }
 })

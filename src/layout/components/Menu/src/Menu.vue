@@ -6,6 +6,7 @@ import { Search } from "@element-plus/icons-vue";
 import { useDesign } from "@/hooks/web/useDesign";
 import { usePermissionStore } from "@/store/modules/permission";
 import { useAppStore } from "@/store/modules/app";
+import { useSplitStore } from "@/store/modules/split";
 import { isUrl } from "@/utils/is";
 import { pathResolve } from "@/utils/routerHelper";
 import { Logo } from "@/layout/components/Logo";
@@ -48,11 +49,12 @@ export default defineComponent({
   setup() {
     const appStore = useAppStore();
     const permissionStore = usePermissionStore();
-    const { push, currentRoute } = useRouter();
+    const { push, currentRoute, resolve } = useRouter();
     const closeMobileMenu = inject<() => void>("closeMobileMenu", () => {});
     const logo = computed(() => appStore.logo);
     const mobile = computed(() => appStore.getMobile);
     const menuKeyword = ref("");
+    const splitStore = useSplitStore();
     const { t } = useI18n();
 
     const collapseMenu = () => {
@@ -269,7 +271,7 @@ export default defineComponent({
       }
 
       const hint = getBrowserAutomationRuntimeHint(targetRuntime);
-      if (hint === "自动化服务未启动") {
+      if (hint === t("layout.menu.automationServiceNotStarted")) {
         return t("layout.menu.clientConnectedButServiceNotStarted");
       }
       if (hint === t("layout.menu.automationServiceError")) {
@@ -602,11 +604,41 @@ export default defineComponent({
       return getRoutePath(route) === activeMenu.value || hasActiveChild(route);
     };
 
-    const selectMenu = (path: string) => {
+    const resolveMenuTitle = (path: string): string => {
+      try {
+        const resolved = resolve(path)
+        const record = resolved.matched[resolved.matched.length - 1]
+        if (record?.meta?.title) return record.meta.title as string
+      } catch {
+        // ignore
+      }
+      return path.split("/").filter(Boolean).pop() || path
+    }
+
+    const selectMenu = async (path: string) => {
       if (isUrl(path)) {
         window.open(path);
+        closeMobileMenu();
+        return;
+      }
+      if (splitStore.enabled) {
+        // 分屏模式：打开到当前激活面板，同时同步地址栏
+        const side = splitStore.activePane
+        splitStore.suspendSync();
+        try {
+          splitStore.openInPane(side, {
+            fullPath: path,
+            title: resolveMenuTitle(path),
+            name: String(resolve(path).name ?? ""),
+          });
+          await push(path);
+        } finally {
+          await nextTick();
+          splitStore.resumeSync();
+        }
       } else {
-        push(path);
+        // 单屏模式：原始行为
+        await push(path);
       }
       closeMobileMenu();
     };

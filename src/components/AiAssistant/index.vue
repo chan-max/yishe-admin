@@ -1297,7 +1297,7 @@ onUnmounted(() => {
 
 .chat__scroll {
   min-height: 0;
-  padding: 16px 0 24px;
+  padding: 16px 0 100px;
   overflow-y: auto;
   flex: 1;
 }

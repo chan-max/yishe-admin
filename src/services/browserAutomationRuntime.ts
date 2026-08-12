@@ -1,4 +1,5 @@
 import type { WebsocketConnectionVO } from "@/api/system/websocket";
+import { useI18n } from "@/hooks/web/useI18n";
 import type { BrowserAutomationServiceStatus } from "@/api/external/browserAutomation";
 import {
   getClientServiceRuntimeSafe,
@@ -117,12 +118,13 @@ export function getBrowserAutomationCurrentTaskText(
 }
 
 export function getBrowserAutomationRuntimeHint(runtime?: BrowserAutomationRuntimeLike): string {
+  const { t } = useI18n();
   const safeRuntime = getBrowserAutomationRuntimeSafe(runtime);
   const details = safeRuntime.details || {};
   const currentExecution = details.currentExecution || {};
 
   if (safeRuntime.lastError) {
-    return `最近错误：${safeRuntime.lastError}`;
+    return t("layout.menu.lastError", { error: safeRuntime.lastError });
   }
 
   if (currentExecution.currentStep) {
@@ -134,20 +136,20 @@ export function getBrowserAutomationRuntimeHint(runtime?: BrowserAutomationRunti
   }
 
   if (details.browserConnected && safeRuntime.available) {
-    return "空闲，可立即执行";
+    return t("layout.menu.automationServiceIdle");
   }
 
   if (details.hasInstance) {
-    return "浏览器实例存在，但连接尚未完成";
+    return t("layout.menu.browserInstanceExists");
   }
 
   if (safeRuntime.connected) {
-    return "自动化服务已连接，等待浏览器实例就绪";
+    return t("layout.menu.automationServiceWaiting");
   }
 
   if (safeRuntime.status === "error") {
-    return "自动化服务异常";
+    return t("layout.menu.automationServiceError");
   }
 
-  return "自动化服务未启动";
+  return t("layout.menu.automationServiceNotStarted");
 }

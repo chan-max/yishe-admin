@@ -5,7 +5,6 @@ import { useDesign } from '@/hooks/web/useDesign'
 import { CACHE_KEY, useCache } from '@/hooks/web/useCache'
 import routerSearch from '@/components/RouterSearch/index.vue'
 import ToolWindowHost from '@/components/ToolWindowHost/index.vue'
-import ToolLauncherFloating from '@/components/ToolWindowHost/ToolLauncherFloating.vue'
 import GlobalUploadTaskPanel from '@/components/GlobalUploadTaskPanel.vue'
 import GlobalTemuBatchProgress from '@/components/GlobalTemuBatchProgress.vue'
 import AiAssistantFloating from '@/components/AiAssistantFloating.vue'
@@ -34,7 +33,6 @@ setDefaultTheme()
     <RouterView :class="greyMode ? `${prefixCls}-grey-mode` : ''" />
     <routerSearch />
     <ToolWindowHost />
-    <ToolLauncherFloating />
     <AiAssistantFloating />
     <GlobalUploadTaskPanel />
     <GlobalTemuBatchProgress />

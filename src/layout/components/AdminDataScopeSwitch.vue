@@ -8,6 +8,7 @@
     trigger="click"
     :transition="''"
     popper-class="header-data-scope-popper"
+    @show="handleShow"
   >
     <template #reference>
       <button type="button" class="ads-trigger" :aria-label="t('layout.dataScope.dataScope')">
@@ -17,152 +18,144 @@
     </template>
 
     <div class="ads-panel">
-      <div class="ads-panel__title">{{ t("layout.dataScope.dataScope") }}</div>
+      <div class="ads-panel__title">{{ t('layout.dataScope.dataScope') }}</div>
+
       <el-radio-group
-        v-model="radioValue"
+        v-model="currentMode"
         :disabled="switching"
         class="ads-radios"
-        @change="handleRadioChange"
+        @change="handleModeChange"
       >
-        <el-radio-button value="self">{{ t("layout.dataScope.myData") }}</el-radio-button>
-        <el-radio-button value="all">{{ t("layout.dataScope.allData") }}</el-radio-button>
+        <el-radio-button value="self">{{ t('layout.dataScope.myData') }}</el-radio-button>
+        <el-radio-button value="all">{{ t('layout.dataScope.allData') }}</el-radio-button>
       </el-radio-group>
+
+      <div class="ads-divider" />
+
       <el-select
-        v-if="userOptions.length"
-        v-model="selectedValue"
+        v-model="selectedUserId"
         filterable
-        :loading="loading || switching"
+        remote
+        :remote-method="remoteSearch"
+        :loading="loading"
         :disabled="switching"
         :placeholder="t('layout.dataScope.selectUserPlaceholder')"
         class="ads-select"
         size="small"
-        @change="handleSelectChange"
+        @change="handleUserChange"
       >
-        <el-option-group :label="t('layout.dataScope.specifiedUser')">
-          <el-option
-            v-for="item in userOptions"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          />
-        </el-option-group>
+        <el-option
+          v-for="item in userOptions"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value"
+        />
       </el-select>
+
+      <div v-if="dataScopeStore.mode === 'user' && dataScopeStore.userLabel" class="ads-current">
+        <span class="ads-current__label">当前查看:</span>
+        <span class="ads-current__value">{{ dataScopeStore.userLabel }}</span>
+      </div>
     </div>
   </el-popover>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
-import { Icon } from "@/components/Icon";
-import { ElMessage } from "element-plus";
-import { getUserList } from "@/api/user";
-import { useTagsView } from "@/hooks/web/useTagsView";
-import { useDataScopeStore } from "@/store/modules/dataScope";
-import { useUserStore } from "@/store/modules/user";
+import { computed, ref } from 'vue'
+import { Icon } from '@/components/Icon'
+import { ElMessage } from 'element-plus'
+import { getUserList } from '@/api/user'
+import { useTagsView } from '@/hooks/web/useTagsView'
+import { useDataScopeStore } from '@/store/modules/dataScope'
+import { useUserStore } from '@/store/modules/user'
 
 type UserOption = {
-  value: string;
-  label: string;
-  userId: string;
-};
+  value: string
+  label: string
+}
 
-defineOptions({ name: "AdminDataScopeSwitch" });
+defineOptions({ name: 'AdminDataScopeSwitch' })
 
-const { t } = useI18n();
+const { t } = useI18n()
+const userStore = useUserStore()
+const dataScopeStore = useDataScopeStore()
+const { refreshPage } = useTagsView()
 
-const userStore = useUserStore();
-const dataScopeStore = useDataScopeStore();
-const { refreshPage } = useTagsView();
-const loading = ref(false);
-const loaded = ref(false);
-const userOptions = ref<UserOption[]>([]);
-const switching = ref(false);
+const loading = ref(false)
+const loaded = ref(false)
+const userOptions = ref<UserOption[]>([])
+const switching = ref(false)
+const selectedUserId = ref('')
 
-const visible = computed(() => !!userStore.user?.isAdmin);
+const visible = computed(() => !!userStore.user?.isAdmin)
 
-const selectedValue = computed({
-  get: () => {
-    if (dataScopeStore.mode === "all") return "all";
-    if (dataScopeStore.mode === "user" && dataScopeStore.userId)
-      return `user:${dataScopeStore.userId}`;
-    return "self";
-  },
+const currentMode = computed({
+  get: () => dataScopeStore.mode === 'user' ? '' : dataScopeStore.mode,
   set: () => undefined,
-});
+})
 
-const radioValue = computed({
-  get: () => {
-    const v = selectedValue.value;
-    if (v === "self" || v === "all") return v;
-    return "";
-  },
-  set: () => undefined,
-});
-
-async function loadUsers() {
-  if (loading.value || loaded.value || !visible.value) return;
-  loading.value = true;
+async function loadUsers(query?: string) {
+  if (loading.value) return
+  loading.value = true
   try {
-    const res = await getUserList({ currentPage: 1, pageSize: 1000 });
-    const currentUserId = String(userStore.user?.id || "");
-    userOptions.value = (res.list || [])
+    const res = await getUserList({ currentPage: 1, pageSize: 100, search: query })
+    const currentUserId = String(userStore.user?.id || '')
+    userOptions.value = (res.list || res.data?.list || [])
       .map((item: any) => ({
-        value: `user:${String(item.id)}`,
+        value: String(item.id),
         label: `${item.name || item.account} (${item.account})`,
-        userId: String(item.id),
       }))
-      .filter((item: UserOption) => item.userId !== currentUserId);
-    loaded.value = true;
+      .filter((u: UserOption) => u.value !== currentUserId)
+    loaded.value = true
   } catch {
-    ElMessage.error(t("layout.dataScope.loadUserListFailed"));
+    // silent
   } finally {
-    loading.value = false;
+    loading.value = false
+  }
+}
+
+function remoteSearch(query: string) {
+  if (query) loadUsers(query)
+}
+
+async function handleShow() {
+  if (!loaded.value) await loadUsers()
+  if (dataScopeStore.mode === 'user') {
+    selectedUserId.value = dataScopeStore.userId
   }
 }
 
 async function refreshCurrentView() {
-  switching.value = true;
+  switching.value = true
   try {
-    await refreshPage();
+    await refreshPage()
   } finally {
-    switching.value = false;
+    switching.value = false
   }
 }
 
-async function handleRadioChange(value: string) {
-  if (value === "all") {
-    dataScopeStore.setAll();
-    ElMessage.success(t("layout.dataScope.switchedToAllData"));
-    await refreshCurrentView();
-  } else if (value === "self") {
-    dataScopeStore.setSelf();
-    ElMessage.success(t("layout.dataScope.switchedToMyData"));
-    await refreshCurrentView();
+async function handleModeChange(value: string) {
+  if (value === 'self') {
+    dataScopeStore.setSelf()
+    selectedUserId.value = ''
+    ElMessage.success(t('layout.dataScope.switchedToMyData'))
+    await refreshCurrentView()
+  } else if (value === 'all') {
+    dataScopeStore.setAll()
+    selectedUserId.value = ''
+    ElMessage.success(t('layout.dataScope.switchedToAllData'))
+    await refreshCurrentView()
   }
 }
 
-async function handleSelectChange(value: string) {
-  if (!value || value === "self" || value === "all") return;
-  if (value.startsWith("user:")) {
-    const userId = value.slice(5);
-    const option = userOptions.value.find((item) => item.userId === userId);
-    if (!option) {
-      dataScopeStore.setSelf();
-      ElMessage.success(t("layout.dataScope.switchedToMyData"));
-      await refreshCurrentView();
-      return;
-    }
-    dataScopeStore.setUser(option.userId, option.label);
-    ElMessage.success(t("layout.dataScope.switchedToUser", { label: option.label }));
-    await refreshCurrentView();
-  }
+async function handleUserChange(userId: string) {
+  if (!userId) return
+  const option = userOptions.value.find((u) => u.value === userId)
+  if (!option) return
+  dataScopeStore.setUser(option.value, option.label)
+  ElMessage.success(t('layout.dataScope.switchedToUser', { label: option.label }))
+  await refreshCurrentView()
 }
-
-onMounted(() => {
-  if (dataScopeStore.mode === "user" && dataScopeStore.userId) {
-    loadUsers();
-  }
-});
 </script>
 
 <style lang="scss" scoped>
@@ -171,22 +164,31 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: inherit;
+  width: auto;
+  min-width: 48px;
+  min-height: calc(var(--top-tool-height) - 14px);
+  padding: 4px 6px 3px;
+  margin: 0;
+  color: var(--top-header-text-color);
   cursor: pointer;
   background: transparent;
   border: none;
-  transition:
-    background 0.15s ease,
-    color 0.15s ease,
-    transform 0.15s ease;
+  border-radius: 10px;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+
+  &:hover {
+    color: var(--el-color-primary);
+    background-color: color-mix(in srgb, var(--top-header-hover-color) 65%, transparent 35%);
+    transform: scale(1.06);
+  }
 
   &:active {
-    transform: scale(0.94);
+    transform: scale(0.96);
   }
 }
 
 .ads-panel {
-  padding: 8px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -196,7 +198,7 @@ onMounted(() => {
   font-size: 12px;
   font-weight: 600;
   color: var(--el-text-color-primary);
-  padding: 4px 4px 0;
+  padding: 2px 4px 0;
 }
 
 .ads-radios {
@@ -205,11 +207,37 @@ onMounted(() => {
 
   :deep(.el-radio-button__inner) {
     flex: 1;
+    font-size: 12px;
   }
+}
+
+.ads-divider {
+  height: 1px;
+  background: var(--el-border-color-lighter);
+  margin: 2px 0;
 }
 
 .ads-select {
   width: 100%;
+}
+
+.ads-current {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  font-size: 11px;
+  background: color-mix(in srgb, var(--el-color-primary) 8%, transparent);
+  border-radius: 6px;
+}
+
+.ads-current__label {
+  color: var(--el-text-color-secondary);
+}
+
+.ads-current__value {
+  color: var(--el-color-primary);
+  font-weight: 500;
 }
 </style>
 

@@ -510,12 +510,19 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
 
     messages.value.push(createLocalMessage({ role: "user", content: message }));
 
+    // 自动合并工作流上下文
+    const { workflowContext } = useWorkflowAiContext()
+    const finalPageContext: AiAssistantPageContext = {
+      ...pageContext,
+      workflowContext: workflowContext.value,
+    }
+
     await consumeStream((handlers) =>
       AiAssistantApi.chatStream(
         {
           message,
           conversationId: currentConversationId.value || undefined,
-          pageContext,
+          pageContext: finalPageContext,
         },
         handlers,
       ),

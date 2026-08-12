@@ -98,14 +98,13 @@ const splitStore = useSplitStore();
           color="var(--top-header-text-color)"
         />
 
-        <!-- 分屏 — 图标 + 文字 -->
+        <!-- 分屏 -->
         <button
           type="button"
           class="split-btn"
-          :class="{ 'is-active': splitStore.isEnabled }"
-          :aria-label="splitStore.isEnabled ? '关闭分屏' : '开启分屏'"
-          :title="splitStore.isEnabled ? '关闭分屏' : '开启分屏'"
-          @click="splitStore.toggleSplit()"
+          :class="{ 'is-active': splitStore.enabled }"
+          :title="splitStore.enabled ? t('layout.split.disableSplit') : t('layout.split.enableSplit')"
+          @click="splitStore.enabled ? splitStore.disable() : splitStore.enable()"
         >
           <span class="th-action-icon">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -113,7 +112,7 @@ const splitStore = useSplitStore();
               <line x1="12" y1="3" x2="12" y2="21" />
             </svg>
           </span>
-          <span class="th-action-label">{{ splitStore.isEnabled ? '退出分屏' : '分屏' }}</span>
+          <span class="th-action-label">{{ splitStore.enabled ? t('layout.split.exitSplit') : t('layout.split.split') }}</span>
         </button>
 
         <!-- 语言切换 — 图标 + 文字 -->

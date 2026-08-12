@@ -9,6 +9,15 @@ export interface AiAssistantPageContext {
   routeTitle?: string;
   query?: Record<string, any>;
   params?: Record<string, any>;
+  /** 当前工作流编辑器上下文 */
+  workflowContext?: {
+    workflowId: string;
+    workflowName?: string;
+    canvas: {
+      nodes: any[];
+      edges: any[];
+    };
+  } | null;
 }
 
 export interface AiAssistantPersona {
