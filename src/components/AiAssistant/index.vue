@@ -3,11 +3,6 @@
     <aside class="sidebar">
       <div class="sidebar__logo">
         <button class="sidebar__new" @click="handleCreateConversation">+ 新建会话</button>
-        <el-tooltip effect="dark" content="清空所有会话与历史记录" placement="bottom">
-          <button v-if="store.conversations.length" class="sidebar__clear-all" @click="store.clearAllConversations">
-            <el-icon><Delete /></el-icon>
-          </button>
-        </el-tooltip>
       </div>
       <div class="sidebar__nav">
         <div class="sidebar__section">
@@ -66,6 +61,11 @@
         <el-tooltip effect="dark" content="工具" placement="right">
           <button class="sidebar__item sidebar__item--icon" @click="handleOpenToolDialog">
             <el-icon :size="16"><Tools /></el-icon>
+          </button>
+        </el-tooltip>
+        <el-tooltip effect="dark" content="清空所有会话与历史记录" placement="right">
+          <button class="sidebar__item sidebar__item--icon sidebar__item--danger" @click="store.clearAllConversations()">
+            <el-icon :size="16"><Delete /></el-icon>
           </button>
         </el-tooltip>
       </div>
@@ -1157,6 +1157,9 @@ onUnmounted(() => {
 }
 
 .sidebar__bottom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   flex-shrink: 0;
   padding: 0 8px 8px;
 }
@@ -1173,6 +1176,16 @@ onUnmounted(() => {
 .sidebar__item--icon:hover {
   color: var(--primary);
   background: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
+  transform: scale(1.08);
+}
+
+.sidebar__item--danger {
+  color: #f56c6c;
+}
+
+.sidebar__item--danger:hover {
+  color: #f56c6c !important;
+  background: rgba(245, 108, 108, 0.12) !important;
   transform: scale(1.08);
 }
 
