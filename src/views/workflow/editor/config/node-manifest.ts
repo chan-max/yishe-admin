@@ -1,4 +1,4 @@
-import { weiboIcon, feishuIcon, wecomIcon, douyinIcon, bilibiliIcon, zhihuIcon, toutiaoIcon, doubanIcon, kuaishouIcon, javaScriptIcon, openaiIcon, googleArtsCultureIcon, pinterestIcon, wikimediaIcon, pexelsIcon, pixabayIcon, rawpixelIcon, stocksnapIcon } from '@/assets/icons/apps'
+import { weiboIcon, feishuIcon, wecomIcon, douyinIcon, bilibiliIcon, zhihuIcon, toutiaoIcon, doubanIcon, kuaishouIcon, javaScriptIcon, openaiIcon, googleArtsCultureIcon, pinterestIcon, wikimediaIcon, pexelsIcon, pixabayIcon, rawpixelIcon, stocksnapIcon, openverseIcon } from '@/assets/icons/apps'
 
 export type NodeType =
   | 'start'
@@ -22,6 +22,7 @@ export type NodeType =
   | 'pixabay_search'
   | 'rawpixel_search'
   | 'stocksnap_search'
+  | 'openverse_search'
   | 'custom'
 
 export type NodeRequirementType = 'client' | 'client_browser' | 'internet' | 'config'
@@ -652,6 +653,31 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: cat, vintage, nature' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
       { field: 'sort', label: '排序模式', type: 'select', defaultValue: 'date', options: [{ label: '最新发布', value: 'date' }, { label: '热门浏览', value: 'popular' }] },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'images', label: '图片列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'openverse_search',
+    name: 'Openverse 采集',
+    category: 'app_integration',
+    description: '通过客户端从 Openverse 6 亿+ CC/CC0 共享图库按关键词搜索并同步上传至素材库',
+    iconImage: openverseIcon,
+    color: '#B23A22',
+    defaultData: {
+      label: 'Openverse 采集',
+      config: { keyword: '', maxCount: 10 },
+    },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: cat, vintage, nature' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
     ],
     outputSchema: [
       { field: 'successCount', label: '成功数量', type: 'number' },
