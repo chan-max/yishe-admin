@@ -1,5 +1,6 @@
 import request from '@/config/axios'
-import { sendServiceCommand, waitForServiceCommandResult } from '@/api/system/websocket'
+import { sendServiceCommand } from '@/api/system/websocket'
+import { websocketClient } from '@/services/websocketClient'
 
 export interface RawpixelPhoto {
   id: string
@@ -29,6 +30,32 @@ export interface RawpixelSearchResult {
   error?: string
 }
 
+function waitForServiceCommandResult(
+  commandId: string,
+  timeoutMs = 30000,
+): Promise<{ success: boolean; message: string; data?: any }> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      websocketClient.events.off('serviceCommandResult', handler)
+      reject(new Error(`命令执行超时 (${timeoutMs / 1000}s)`))
+    }, timeoutMs)
+
+    const handler = (event: any) => {
+      if (event.commandId === commandId) {
+        clearTimeout(timer)
+        websocketClient.events.off('serviceCommandResult', handler)
+        resolve({
+          success: event.success,
+          message: event.message,
+          data: event.data,
+        })
+      }
+    }
+
+    websocketClient.events.on('serviceCommandResult', handler)
+  })
+}
+
 export const searchRawpixel = async (params: {
   keyword: string
   limit?: number
@@ -55,7 +82,7 @@ export const searchRawpixelAndWait = async (params: {
 }): Promise<RawpixelSearchResult> => {
   const { timeoutMs = 60000, ...payload } = params
   const commandId = `rawpixel-search-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-  const resultPromise = waitForServiceCommandResult(commandId, { timeoutMs })
+  const resultPromise = waitForServiceCommandResult(commandId, timeoutMs)
 
   await sendServiceCommand({
     commandId,
@@ -81,7 +108,7 @@ export const collectRawpixel = async (params: {
 }) => {
   const { timeoutMs = 120000, ...payload } = params
   const commandId = `rawpixel-collect-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-  const resultPromise = waitForServiceCommandResult(commandId, { timeoutMs })
+  const resultPromise = waitForServiceCommandResult(commandId, timeoutMs)
 
   await sendServiceCommand({
     commandId,
