@@ -58,14 +58,14 @@
         </div>
       </div>
       <div class="sidebar__bottom">
-        <el-tooltip effect="dark" content="工具" placement="right">
+        <el-tooltip effect="dark" content="工具" placement="top">
           <button class="sidebar__item sidebar__item--icon" @click="handleOpenToolDialog">
-            <el-icon :size="16"><Tools /></el-icon>
+            <el-icon :size="14"><Tools /></el-icon>
           </button>
         </el-tooltip>
-        <el-tooltip effect="dark" content="清空所有会话与历史记录" placement="right">
+        <el-tooltip effect="dark" content="清空所有会话与历史记录" placement="top">
           <button class="sidebar__item sidebar__item--icon sidebar__item--danger" @click="store.clearAllConversations()">
-            <el-icon :size="16"><Delete /></el-icon>
+            <el-icon :size="14"><Delete /></el-icon>
           </button>
         </el-tooltip>
       </div>
@@ -1159,18 +1159,18 @@ onUnmounted(() => {
 .sidebar__bottom {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
+  justify-content: flex-start;
+  gap: 4px;
   flex-shrink: 0;
-  padding: 0 8px 8px;
+  padding: 0 10px 8px;
 }
 
 .sidebar__item--icon {
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
   padding: 0;
-  border-radius: 8px;
+  border-radius: 6px;
   transition: all 0.2s ease;
 }
 
