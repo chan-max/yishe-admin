@@ -204,49 +204,6 @@
 
           <el-empty v-else description="请选择在线客户端节点" />
         </section>
-
-        <!-- 侧边服务详情 -->
-        <aside v-if="selectedClient" class="collect-sidebar">
-          <div class="side-card">
-            <div class="side-card__header">设备配置</div>
-            <div class="side-card__body">
-              <div class="info-row">
-                <span class="info-label">设备编码</span>
-                <span class="info-val">{{ selectedClient.machine?.code || '-' }}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">平台/架构</span>
-                <span class="info-val">{{ selectedClient.machine?.platform || '-' }} / {{ selectedClient.machine?.arch || '-' }}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">IP 地址</span>
-                <span class="info-val">{{ selectedClient.ip || '-' }}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">客户端版本</span>
-                <span class="info-val">{{ selectedClient.appVersion || '-' }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="side-card">
-            <div class="side-card__header">Openverse 支持规范</div>
-            <div class="side-card__body">
-              <div class="info-row">
-                <span class="info-label">图库类型</span>
-                <span class="info-val">CC / CC0 公共共享图库</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">知识共享协议</span>
-                <span class="info-val">CC BY / CC0 / Public Domain</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">海量储备</span>
-                <span class="info-val">6 亿+ 高清摄影与矢量素材</span>
-              </div>
-            </div>
-          </div>
-        </aside>
       </div>
 
       <!-- 图片大图预览 Modal -->
