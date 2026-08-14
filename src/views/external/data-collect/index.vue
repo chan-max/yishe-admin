@@ -93,13 +93,6 @@ const activeComponent = computed(() => {
   return target ? target.component : GoogleArtView
 })
 
-const initTabFromRoute = () => {
-  const tab = route.query.tab as TabKey
-  if (tab && ['google-art', 'pinterest', 'wikimedia', 'pexels', 'pixabay', 'rawpixel'].includes(tab)) {
-    activeTab.value = tab
-  }
-}
-
 const switchTab = (key: TabKey) => {
   if (activeTab.value === key) return
   activeTab.value = key
@@ -114,13 +107,14 @@ const switchTab = (key: TabKey) => {
 watch(
   () => route.query.tab,
   (newTab) => {
-    if (newTab && ['google-art', 'pinterest', 'wikimedia', 'pexels'].includes(newTab as string)) {
-      activeTab.value = newTab as TabKey
+    if (newTab && menuItems.some((m) => m.key === newTab)) {
+      if (activeTab.value !== newTab) {
+        activeTab.value = newTab as TabKey
+      }
     }
   },
+  { immediate: true }
 )
-
-initTabFromRoute()
 </script>
 
 <style scoped>
