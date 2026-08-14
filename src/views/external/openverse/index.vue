@@ -290,16 +290,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getOnlineClients } from '@/api/client'
-import { searchOpenverseAndWait, collectOpenverse } from '@/api/external/openverse'
-import type { OpenversePhoto } from '@/api/external/openverse'
+import { usePluginClientNodes } from '@/services/clientNodeState'
+import { searchOpenverseAndWait, collectOpenverse, type OpenversePhoto } from '@/api/external/openverse'
 import '@/styles/external-collect.css'
 
-const clients = ref<any[]>([])
+defineOptions({ name: 'ExternalOpenverse' })
+
+const {
+  clients: rawClients,
+  loading,
+  refresh: refreshClientNodes,
+  getServiceRuntime,
+} = usePluginClientNodes('openverse')
+
 const selectedClientId = ref<string>('')
-const loading = ref(false)
 const searchLoading = ref(false)
 const actionLoading = ref({ refreshRuntime: false })
 
@@ -317,44 +323,49 @@ const batchSyncLoading = ref(false)
 const previewVisible = ref(false)
 const previewItem = ref<OpenversePhoto | null>(null)
 
-const selectedClient = computed(() => {
-  return clients.value.find((c) => c.clientId === selectedClientId.value)
-})
-
-const clientTone = computed(() => (selectedClient.value?.isOnline ? 'success' : 'info'))
-const clientStatusText = computed(() => (selectedClient.value?.isOnline ? '设备在线' : '设备离线'))
-const siteTone = computed(() => 'success')
-const siteStatusBadge = computed(() => 'Openverse API 可用')
-const availabilityTone = computed(() => 'success')
-const availabilityText = computed(() => '已就绪 (6 亿+ CC/CC0 素材)')
-const platformText = computed(() => `架构: ${selectedClient.value?.machine?.platform || 'macOS'}`)
-const checkedAtText = computed(() => `刷新于 ${new Date().toLocaleTimeString()}`)
-
-const selectedCount = computed(() => selectedItemIds.value.size)
-const isAllSelected = computed(() => {
-  if (!searchResults.value.length) return false
-  return searchResults.value.every((item) => selectedItemIds.value.has(item.id))
-})
-const isIndeterminate = computed(() => {
-  return selectedCount.value > 0 && !isAllSelected.value
-})
-
-async function refreshClientNodes() {
-  loading.value = true
-  try {
-    const res = await getOnlineClients()
-    if (res.success && Array.isArray(res.data)) {
-      clients.value = res.data
-      if (!selectedClientId.value && clients.value.length > 0) {
-        selectedClientId.value = clients.value[0].clientId
-      }
+const clients = computed(() => {
+  return rawClients.value.map((client) => {
+    const openverse = getServiceRuntime(client) || null
+    return {
+      clientId: client.id,
+      isOnline: client.isOnline,
+      nodeStatus: client.nodeStatus,
+      connectedAt: client.connectedAt,
+      lastOnlineAt: client.lastOnlineAt,
+      appVersion: client.clientInfo?.appVersion || null,
+      workspaceDirectory: client.clientInfo?.workspaceDirectory || null,
+      machine: client.clientInfo?.machine || null,
+      location: client.clientInfo?.location || null,
+      os: client.clientInfo?.os || null,
+      openverse,
     }
-  } catch (err: any) {
-    ElMessage.error(err?.message || '获取在线节点失败')
-  } finally {
-    loading.value = false
-  }
-}
+  })
+})
+
+watch(
+  clients,
+  (list) => {
+    if (list.length > 0 && !selectedClientId.value) {
+      const onlineClient = list.find((c) => c.isOnline)
+      selectedClientId.value = onlineClient ? onlineClient.clientId : list[0].clientId
+    }
+  },
+  { immediate: true }
+)
+
+const selectedClient = computed(() => {
+  if (!selectedClientId.value) return null
+  return clients.value.find((c) => c.clientId === selectedClientId.value) || null
+})
+
+const clientTone = computed(() => (selectedClient.value?.isOnline ? 'online' : 'offline'))
+const clientStatusText = computed(() => (selectedClient.value?.isOnline ? '客户端在线' : '客户端离线'))
+const siteTone = computed(() => 'online')
+const siteStatusBadge = computed(() => 'Openverse API 可用')
+const availabilityTone = computed(() => (selectedClient.value?.isOnline ? 'online' : 'offline'))
+const availabilityText = computed(() => (selectedClient.value?.isOnline ? 'Openverse 开放图库就绪 (6 亿+ CC 素材)' : '节点离线'))
+const platformText = computed(() => `平台: ${selectedClient.value?.os?.platform || selectedClient.value?.machine?.platform || 'Unknown'}`)
+const checkedAtText = computed(() => `检查于: ${new Date().toLocaleTimeString()}`)
 
 function handleSelectClient() {
   searchResults.value = []
