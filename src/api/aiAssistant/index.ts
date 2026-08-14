@@ -385,6 +385,12 @@ export const AiAssistantApi = {
     });
   },
 
+  clearAllConversations: async () => {
+    return request.delete({
+      url: "/ai-assistant/conversations",
+    });
+  },
+
   getMessages: async (
     arg?: number | { limit?: number; conversationId?: number },
     conversationId?: number | null,

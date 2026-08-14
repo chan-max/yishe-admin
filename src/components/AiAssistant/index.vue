@@ -3,6 +3,11 @@
     <aside class="sidebar">
       <div class="sidebar__logo">
         <button class="sidebar__new" @click="handleCreateConversation">+ 新建会话</button>
+        <el-tooltip effect="dark" content="清空所有会话与历史记录" placement="bottom">
+          <button v-if="store.conversations.length" class="sidebar__clear-all" @click="store.clearAllConversations">
+            <el-icon><Delete /></el-icon>
+          </button>
+        </el-tooltip>
       </div>
       <div class="sidebar__nav">
         <div class="sidebar__section">
@@ -78,8 +83,13 @@
               <el-icon><Refresh /></el-icon>
             </button>
           </el-tooltip>
-          <el-tooltip v-if="store.messages.length" effect="dark" content="清空" placement="bottom">
+          <el-tooltip v-if="store.messages.length" effect="dark" content="清空当前消息" placement="bottom">
             <button class="topbar__btn topbar__btn--icon" @click="store.clearMessages()">
+              <el-icon><Delete /></el-icon>
+            </button>
+          </el-tooltip>
+          <el-tooltip v-if="store.conversations.length" effect="dark" content="清空所有会话与对话记录" placement="bottom">
+            <button class="topbar__btn topbar__btn--icon topbar__btn--danger" @click="store.clearAllConversations()">
               <el-icon><Delete /></el-icon>
             </button>
           </el-tooltip>
@@ -931,13 +941,16 @@ onUnmounted(() => {
 }
 
 .sidebar__logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 12px;
   flex-shrink: 0;
 }
 
 .sidebar__new {
   display: flex;
-  width: 100%;
+  flex: 1;
   height: 32px;
   font-size: 12px;
   color: var(--text-2);
@@ -953,6 +966,35 @@ onUnmounted(() => {
 .sidebar__new:hover {
   color: var(--text);
   background: var(--surface-hover);
+}
+
+.sidebar__clear-all {
+  display: flex;
+  width: 32px;
+  height: 32px;
+  font-size: 14px;
+  color: #f56c6c;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition: all 0.15s;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sidebar__clear-all:hover {
+  background: rgba(245, 108, 108, 0.1);
+  border-color: #f56c6c;
+}
+
+.topbar__btn--danger {
+  color: #f56c6c !important;
+}
+
+.topbar__btn--danger:hover {
+  background: rgba(245, 108, 108, 0.1) !important;
 }
 
 .sidebar__nav {

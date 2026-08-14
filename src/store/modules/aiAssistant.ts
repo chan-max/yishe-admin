@@ -210,6 +210,24 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
     }
   }
 
+  async function clearAllConversations() {
+    try {
+      await ElMessageBox.confirm("确认要清空所有会话及其全部历史对话记录吗？此操作不可撤销！", "清空所有对话", {
+        type: "warning",
+        confirmButtonText: "确定清空",
+        cancelButtonText: "取消",
+      });
+      await AiAssistantApi.clearAllConversations();
+      conversations.value = [];
+      currentConversationId.value = null;
+      messages.value = [];
+      pendingInteraction.value = null;
+      ElMessage.success("已清空所有会话与对话记录");
+    } catch (error) {
+      if (error !== "cancel") ElMessage.error("清空失败");
+    }
+  }
+
   // ========== Stream Handling ==========
 
   function ensureAssistantMessage(context: StreamContext) {
@@ -647,6 +665,7 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
     selectConversation,
     createConversation,
     deleteConversation,
+    clearAllConversations,
     sendMessage,
     resumeInteraction,
     clearMessages,
