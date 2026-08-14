@@ -45,6 +45,7 @@ import WikimediaNode from '@/components/workflow/nodes/WikimediaNode.vue'
 import PexelsNode from '@/components/workflow/nodes/PexelsNode.vue'
 import PixabayNode from '@/components/workflow/nodes/PixabayNode.vue'
 import RawpixelNode from '@/components/workflow/nodes/RawpixelNode.vue'
+import StockSnapNode from '@/components/workflow/nodes/StockSnapNode.vue'
 
 import NodePanel from '@/components/workflow/NodePanel.vue'
 import ConfigPanel from '@/components/workflow/ConfigPanel.vue'
@@ -190,6 +191,7 @@ const nodeTypes = {
   pexels_search: markRaw(PexelsNode),
   pixabay_search: markRaw(PixabayNode),
   rawpixel_search: markRaw(RawpixelNode),
+  stocksnap_search: markRaw(StockSnapNode),
 }
 
 // ─── 撤销/重做历史 ─────────────────────────────────────────────

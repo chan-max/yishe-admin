@@ -19,4 +19,6 @@ export { default as wikimediaIcon } from './wikimedia.svg'
 export { default as pexelsIcon } from './pexels.png'
 export { default as pixabayIcon } from './pixabay.svg'
 export { default as rawpixelIcon } from './rawpixel.svg'
+export { default as stocksnapIcon } from './stocksnap.svg'
+
 

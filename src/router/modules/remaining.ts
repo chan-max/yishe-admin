@@ -591,6 +591,11 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: { hidden: true },
       },
       {
+        path: "stocksnap",
+        redirect: "/external/data-collect?tab=stocksnap",
+        meta: { hidden: true },
+      },
+      {
         path: "client-management",
         component: () => import("@/views/external/client-management/index.vue"),
         name: "ClientManagement",
