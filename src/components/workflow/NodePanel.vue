@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { Connection } from '@element-plus/icons-vue'
+const props = defineProps<{
+  aiPanelVisible?: boolean
+}>()
+
 const emit = defineEmits<{
   (e: 'openNodePicker'): void
-  (e: 'openAiGenerate'): void
+  (e: 'toggleAiPanel'): void
 }>()
 
 const NODE_GROUPS: Array<{ title: string; items: Array<{ type: string; label: string; color: string }> }> = [
@@ -21,6 +25,12 @@ const NODE_GROUPS: Array<{ title: string; items: Array<{ type: string; label: st
     items: [
       { type: 'http', label: 'HTTP', color: '#06b6d4' },
       { type: 'code', label: '代码', color: '#f97316' },
+    ],
+  },
+  {
+    title: '素材',
+    items: [
+      { type: 'google_arts_culture', label: 'Google 艺术', color: '#4285f4' },
     ],
   },
 ]
@@ -65,13 +75,19 @@ const onDragStart = (event: DragEvent, type: string, label: string) => {
 
     <!-- 底部：AI 生成 + 全部节点 -->
     <div class="node-panel__footer">
-      <button class="node-panel__ai-btn" @click="emit('openAiGenerate')">
-        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <button class="node-panel__ai-btn" :class="{ 'node-panel__ai-btn--active': props.aiPanelVisible }" @click="emit('toggleAiPanel')">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 2L14.5 9.5 22 12 14.5 14.5 12 22 9.5 14.5 2 12 9.5 9.5z"/>
         </svg>
         AI 生成
       </button>
       <button class="node-panel__all-btn" @click="emit('openNodePicker')">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1"/>
+          <rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/>
+          <rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
         全部节点
       </button>
     </div>
@@ -93,9 +109,9 @@ const onDragStart = (event: DragEvent, type: string, label: string) => {
 }
 
 .node-panel__header {
-  padding: 0 2px 6px;
+  padding: 0 4px 6px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--el-text-color-secondary);
   border-bottom: 1px solid var(--app-content-border-color);
 }
@@ -109,7 +125,7 @@ const onDragStart = (event: DragEvent, type: string, label: string) => {
 }
 
 .node-panel__group-title {
-  padding: 0 2px;
+  padding: 0 4px;
   margin-bottom: 3px;
   font-size: 9px;
   font-weight: 600;
@@ -126,13 +142,13 @@ const onDragStart = (event: DragEvent, type: string, label: string) => {
 
 .node-panel__item {
   display: flex;
-  padding: 5px 6px;
+  padding: 5px 8px;
   cursor: grab;
   border-radius: 4px;
   transition: background 0.12s ease;
   user-select: none;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 
   &:hover {
     background: color-mix(in srgb, var(--el-color-primary) 8%, transparent);
@@ -164,7 +180,6 @@ const onDragStart = (event: DragEvent, type: string, label: string) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 8px;
   padding: 20px 8px;
   text-align: center;
@@ -177,7 +192,6 @@ const onDragStart = (event: DragEvent, type: string, label: string) => {
   background: color-mix(in srgb, var(--el-text-color-secondary) 8%, transparent);
   border-radius: 10px;
   align-items: center;
-  justify-content: center;
 }
 
 .node-panel__empty-icon {
@@ -201,53 +215,36 @@ const onDragStart = (event: DragEvent, type: string, label: string) => {
 }
 
 .node-panel__footer {
-  padding-top: 8px;
-  border-top: 1px solid var(--app-content-border-color);
+  padding-top: 6px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 1px;
 }
 
-.node-panel__ai-btn {
+.node-panel__ai-btn,
+.node-panel__all-btn {
   display: flex;
   width: 100%;
-  padding: 5px 0;
+  padding: 5px 0 5px 10px;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 400;
+  text-align: left;
   cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.1s ease;
+  transition: color 0.1s ease;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
-  color: var(--el-text-color-primary);
+  gap: 5px;
+  color: var(--el-text-color-secondary);
   background: transparent;
-  border: 1px solid var(--el-border-color);
+  border: none;
+  border-radius: 4px;
 
   &:hover {
-    background: var(--app-content-surface-muted-color);
+    color: var(--el-text-color-primary);
   }
 }
 
-.node-panel__all-btn {
-  width: 100%;
-  padding: 6px 0;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--el-color-primary);
-  cursor: pointer;
-  background: transparent;
-  border: 1px solid var(--el-color-primary);
-  border-radius: 4px;
-  transition: all 0.12s ease;
-
-  &:hover {
-    background: color-mix(in srgb, var(--el-color-primary) 12%, transparent);
-  }
-
-  &:active {
-    background: color-mix(in srgb, var(--el-color-primary) 20%, transparent);
-  }
+.node-panel__ai-btn--active {
+  color: var(--el-text-color-primary);
 }
 </style>

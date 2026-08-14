@@ -189,7 +189,13 @@ export default {
     SmsSendMsg: '验证码已发送',
     resetPassword: "重置密码",
     resetPasswordSuccess: "重置密码成功",
-    invalidTenantName: "无效的租户名称"
+    invalidTenantName: "无效的租户名称",
+    subtitle: "欢迎登录",
+    copyright: "© 2026 All Rights Reserved",
+    contactAdmin: "请联系管理员重置密码",
+    showPassword: "显示密码",
+    hidePassword: "隐藏密码",
+    forgetPasswordTitle: "忘记密码？"
   },
   captcha: {
     verification: '请完成安全验证',
@@ -925,6 +931,10 @@ export default {
       last30Days: '30天',
       module: '模块',
       totalRecords: '总记录',
+      periodCreated: '周期新增',
+      periodUpdated: '周期修改',
+      createdToday: '今日新增',
+      updatedToday: '今日修改',
       loadStatsFail: '加载统计数据失败',
       sortDialog: {
         title: '模块排序',
@@ -1064,6 +1074,25 @@ export default {
       machine: '机器',
       onlineConnection: '当前账号的在线连接',
       refreshFail: '刷新当前账号连接失败',
+    },
+
+    dashboard: {
+      clientOnline: "客户端在线",
+      designToolOnline: "设计工具在线",
+      pluginOnline: "插件在线",
+      adminOnline: "后台在线",
+      psAutomation: "PS 自动化",
+      browserAutomation: "浏览器自动化",
+      totalConnections: "总连接数",
+      online: "在线",
+      total: "总计",
+      active: "活跃",
+      enabledClients: "已启用客户端",
+      availableClients: "可用客户端",
+      activeSessions: "活跃会话",
+      activeConnections: "活跃连接",
+      onlinePsEnv: "在线 PS 环境",
+      onlineBrowserEnv: "在线浏览器环境",
     },
   },
   shop: {

@@ -11,6 +11,8 @@ import '@/plugins/unocss'
 
 // 导入全局的svg图标
 import '@/plugins/svgIcon'
+// 注册 Material Symbols 图标集
+import '@/plugins/iconify/material-symbols'
 
 // 初始化多语言
 import { setupI18n } from '@/plugins/vueI18n'
@@ -33,6 +35,7 @@ import { setupElementPlus } from '@/plugins/elementPlus'
 
 // 引入 form-create
 import { setupFormCreate } from '@/plugins/formCreate'
+// 注册 Material Symbols 图标集
 
 // 引入全局样式
 import '@/styles/index.scss'

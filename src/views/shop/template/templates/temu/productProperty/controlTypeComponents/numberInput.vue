@@ -12,9 +12,9 @@
 
 <script setup>
 import { ref, watch, computed } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { i18n } from '@/plugins/vueI18n'
 
-const { t } = useI18n()
+const { t } = i18n.global
 
 const props = defineProps({
   modelValue: [Number, String],
@@ -32,7 +32,7 @@ const props = defineProps({
   },
   placeholder: {
     type: String,
-    default: () => t('common.inputPlaceholder')
+    default: () => i18n.global.t('common.inputPlaceholder')
   }
 })
 

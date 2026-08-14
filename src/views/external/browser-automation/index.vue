@@ -175,7 +175,7 @@
         </section>
 
         <section v-else class="main-empty card">
-          <el-empty :description="t('browserAutomation.selectClientNode')" />
+          <ElEmpty :description="t('browserAutomation.selectClientNode')" />
         </section>
       </div>
 
@@ -653,6 +653,7 @@ import { formatDate } from "@/utils/formatTime";
 import ExternalClientSidebar, {
   type ClientNodeItem,
 } from "../components/ExternalClientSidebar.vue";
+import { ElEmpty } from "@/components/ElEmpty";
 
 defineOptions({ name: "ExternalBrowserAutomation" });
 

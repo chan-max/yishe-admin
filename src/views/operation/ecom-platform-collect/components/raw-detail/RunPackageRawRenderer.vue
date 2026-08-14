@@ -1110,8 +1110,7 @@ const packageJson = computed(() => formatJson(rawPackage.value));
   margin-top: 6px;
   font-size: 12px;
   line-height: 1.6;
-  color: var(--el-text</longcat_think>
--color-secondary);
+  color: var(--el-text-color-secondary);
 }
 
 .run-package-renderer__snapshot-grid {

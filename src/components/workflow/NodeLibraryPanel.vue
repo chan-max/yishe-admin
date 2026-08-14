@@ -97,7 +97,8 @@ const handleQuickAdd = (capability: SystemNodeCapability) => {
         @dragstart="onDragStart($event, cap)"
       >
         <div class="node-library-card__icon-box" :style="{ background: cap.color }">
-          <Icon :icon="cap.icon" class="node-library-card__icon" />
+          <img v-if="cap.iconImage" :src="cap.iconImage" class="node-library-card__icon-img" style="width: 20px; height: 20px; object-fit: contain;" />
+          <Icon v-else :icon="cap.icon" class="node-library-card__icon" />
         </div>
 
         <div class="node-library-card__content">

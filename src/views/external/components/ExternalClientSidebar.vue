@@ -1,7 +1,7 @@
 <template>
   <aside class="sidebar">
     <div class="sidebar__title">{{ sectionTitle }}</div>
-    <el-empty v-if="!items.length && !loading" :description="emptyText" :image-size="48" />
+    <ElEmpty v-if="!items.length && !loading" :description="emptyText" :image-size="48" />
     <div v-else class="sidebar__list">
       <button
         v-for="item in items"
@@ -31,6 +31,8 @@
 </template>
 
 <script setup lang="ts">
+import { ElEmpty } from "@/components/ElEmpty"
+
 export interface ClientNodeItem {
   connectionId: string
   name: string

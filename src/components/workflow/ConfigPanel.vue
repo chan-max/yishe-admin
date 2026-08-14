@@ -324,6 +324,110 @@ const getShortcutLabel = (win: string, mac: string) => {
             </el-form-item>
           </template>
 
+          <!-- 2. HTTP 请求节点专属配置 -->
+          <template v-if="node.type === 'http'">
+            <el-form-item label="请求 URL">
+              <el-input
+                v-model="form.config.url"
+                placeholder="https://api.example.com/data"
+                @input="handleDataChange"
+              >
+                <template #prefix>
+                  <span class="http-method-tag" :class="`http-method--${(form.config.method || 'GET').toLowerCase()}`">
+                    {{ form.config.method || 'GET' }}
+                  </span>
+                </template>
+              </el-input>
+            </el-form-item>
+            <el-form-item label="请求方法">
+              <el-select v-model="form.config.method" @change="handleDataChange">
+                <el-option label="GET" value="GET" />
+                <el-option label="POST" value="POST" />
+                <el-option label="PUT" value="PUT" />
+                <el-option label="DELETE" value="DELETE" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="超时时间 (ms)">
+              <el-input-number v-model="form.config.timeout" :min="1000" :max="60000" :step="1000" @change="handleDataChange" />
+            </el-form-item>
+            <el-form-item label="请求头 (JSON)">
+              <el-input v-model="form.config.headers" type="textarea" :rows="2" placeholder='{"Content-Type": "application/json"}' @input="handleDataChange" />
+            </el-form-item>
+            <el-form-item label="请求体 (JSON)">
+              <el-input v-model="form.config.body" type="textarea" :rows="2" placeholder='{"key": "value"}' @input="handleDataChange" />
+            </el-form-item>
+            <div class="wf-config-info-box">
+              <div class="wf-config-info-title">📌 输出变量</div>
+              <div class="wf-config-info-item"><code>{{node.id}}.status</code> - HTTP 状态码</div>
+              <div class="wf-config-info-item"><code>{{node.id}}.body</code> - 响应体</div>
+              <div class="wf-config-info-item"><code>{{node.id}}.headers</code> - 响应头</div>
+            </div>
+          </template>
+
+          <!-- 3. AI 调用节点专属配置 -->
+          <template v-if="node.type === 'ai_call'">
+            <el-form-item label="系统提示词">
+              <el-input v-model="form.config.systemPrompt" type="textarea" :rows="2" placeholder="定义 AI 的角色和行为" @input="handleDataChange" />
+            </el-form-item>
+            <el-form-item label="用户提示词" required>
+              <el-input v-model="form.config.userPrompt" type="textarea" :rows="4" placeholder="支持 {{节点ID.字段}} 变量引用" @input="handleDataChange" />
+            </el-form-item>
+            <el-form-item label="温度">
+              <el-slider v-model="form.config.temperature" :min="0" :max="2" :step="0.1" @change="handleDataChange" />
+            </el-form-item>
+            <el-form-item label="最大 Token">
+              <el-input-number v-model="form.config.maxTokens" :min="100" :max="8000" :step="100" @change="handleDataChange" />
+            </el-form-item>
+            <el-form-item label="输出格式">
+              <el-select v-model="form.config.outputFormat" @change="handleDataChange">
+                <el-option label="文本" value="text" />
+                <el-option label="JSON" value="json" />
+              </el-select>
+            </el-form-item>
+            <div class="wf-config-info-box">
+              <div class="wf-config-info-title">📌 输出变量</div>
+              <div class="wf-config-info-item"><code>{{node.id}}.content</code> - 生成内容</div>
+              <div class="wf-config-info-item"><code>{{node.id}}.tokens</code> - Token 用量</div>
+              <div class="wf-config-info-item"><code>{{node.id}}.model</code> - 使用模型</div>
+            </div>
+          </template>
+
+          <!-- 4. 消息推送节点专属配置 -->
+          <template v-if="node.type === 'message_push_feishu' || node.type === 'message_push_wecom'">
+            <el-form-item label="推送渠道" required>
+              <el-select v-model="form.config.channelId" @change="handleDataChange">
+                <el-option v-for="ch in messagePushChannels" :key="ch.id" :label="`${ch.name} (${ch.platform === 'feishu' ? '飞书' : '企微'})`" :value="ch.id" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="消息标题">
+              <el-input v-model="form.config.title" placeholder="支持 {{变量引用}}" @input="handleDataChange" />
+            </el-form-item>
+            <el-form-item label="消息内容" required>
+              <el-input v-model="form.config.content" type="textarea" :rows="4" placeholder="支持 {{变量引用}}" @input="handleDataChange" />
+            </el-form-item>
+            <div class="wf-config-info-box">
+              <div class="wf-config-info-title">📌 输出变量</div>
+              <div class="wf-config-info-item"><code>{{node.id}}.sent</code> - 是否成功</div>
+              <div class="wf-config-info-item"><code>{{node.id}}.channelName</code> - 渠道名称</div>
+            </div>
+          </template>
+
+          <!-- 5. 热搜采集节点专属配置 -->
+          <template v-if="node.type && node.type.startsWith('hotsearch_')">
+            <el-form-item label="平台">
+              <span class="hotsearch-platform-badge" :data-platform="form.config.platform || node.type.replace('hotsearch_', '')">
+                {{ (form.config.platform || node.type.replace('hotsearch_', '')).toUpperCase() }}
+              </span>
+            </el-form-item>
+            <div class="wf-config-info-box">
+              <div class="wf-config-info-title">📌 输出变量</div>
+              <div class="wf-config-info-item"><code>{{node.id}}.platform</code> - 平台标识</div>
+              <div class="wf-config-info-item"><code>{{node.id}}.name</code> - 平台名称</div>
+              <div class="wf-config-info-item"><code>{{node.id}}.itemCount</code> - 条目数</div>
+              <div class="wf-config-info-item"><code>{{node.id}}.items</code> - 热搜条目数组</div>
+            </div>
+          </template>
+
           <!-- 2. 基于 Schema 动态渲染输入表单 -->
           <template v-if="resolvedInputSchema.length">
             <div class="config-panel__section-title">节点入参配置</div>
@@ -781,4 +885,56 @@ const getShortcutLabel = (win: string, mac: string) => {
   gap: 4px;
   width: 100%;
 }
+.http-method-tag {
+  display: inline-block;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 3px;
+  margin-right: 4px;
+}
+.http-method--get { background: #e8f5e9; color: #2e7d32; }
+.http-method--post { background: #e3f2fd; color: #1565c0; }
+.http-method--put { background: #fff3e0; color: #e65100; }
+.http-method--delete { background: #ffebee; color: #c62828; }
+
+.hotsearch-platform-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 4px;
+  background: var(--el-fill-color);
+  color: var(--el-text-color-primary);
+}
+
+.wf-config-info-box {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: var(--el-fill-color-light);
+  border-radius: 6px;
+  border-left: 3px solid var(--el-color-primary);
+}
+
+.wf-config-info-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  margin-bottom: 6px;
+}
+
+.wf-config-info-item {
+  font-size: 10px;
+  color: var(--el-text-color-secondary);
+  padding: 2px 0;
+}
+
+.wf-config-info-item code {
+  padding: 1px 4px;
+  background: var(--el-bg-color);
+  border-radius: 3px;
+  font-family: monospace;
+  color: var(--el-color-primary);
+}
+
 </style>

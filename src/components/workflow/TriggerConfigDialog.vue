@@ -63,6 +63,47 @@
           </div>
         </div>
       </el-tab-pane>
+
+      <!-- 3. Webhook 触发 -->
+      <el-tab-pane name="webhook">
+        <template #label>
+          <span class="wf-tab-label">
+            Webhook 触发            <span :class="['wf-tab-status', webhookConfigured ? 'wf-tab-status--on' : 'wf-tab-status--off']">
+              {{ webhookConfigured ? '已设置' : '未设置' }}
+            </span>
+          </span>
+        </template>
+        <div class="wf-pane-content">
+          <div class="wf-setting-item">
+            <div class="wf-setting-label">
+              <span>启用 Webhook 触发</span>
+              <span class="wf-setting-desc">通过 HTTP 请求远程触发工作流</span>
+            </div>
+            <el-switch v-model="webhookEnabled" size="small" @change="saveWebhookTrigger" />
+          </div>
+
+          <div v-if="webhookPath" class="wf-webhook-info">
+            <div class="wf-code-box">
+              <div class="wf-code-title">Webhook URL（开发环境）：</div>
+              <code>{{ webhookDevUrl }}</code>
+              <button class="wf-copy-btn" @click="copyWebhookUrl(webhookDevUrl)">复制</button>
+            </div>
+            <div class="wf-code-box" style="margin-top: 8px;">
+              <div class="wf-code-title">Webhook URL（线上环境）：</div>
+              <code>{{ webhookProdUrl }}</code>
+              <button class="wf-copy-btn" @click="copyWebhookUrl(webhookProdUrl)">复制</button>
+            </div>
+            <div class="wf-webhook-meta">
+              <span>请求方法：<code>{{ webhookMethod }}</code></span>
+              <span>路径标识：<code>{{ webhookPath }}</code></span>
+            </div>
+            <div class="wf-webhook-tip">
+              <strong>调用方式：</strong>向上述 URL 发送 POST 请求即可触发工作流。
+              请求体会作为工作流的输入参数传入。
+            </div>
+          </div>
+        </div>
+      </el-tab-pane>
     </el-tabs>
 
     <AdvancedCronDialog v-model="advancedCronVisible" :workflow-id="props.workflowId" @saved="loadTriggers" />
@@ -100,6 +141,14 @@ const cronEnabled = ref(false)
 const cronExpression = ref('0 8 * * *')
 const cronNextRunTime = ref<string | null>(null)
 const cronConfigured = ref(false)
+
+// Webhook 触发
+const webhookEnabled = ref(false)
+const webhookPath = ref('')
+const webhookMethod = ref('POST')
+const webhookDevUrl = ref('')
+const webhookProdUrl = ref('')
+const webhookConfigured = ref(false)
 
 // 时间选择器
 const timePickerValue = ref<Date | null>(new Date(2026, 0, 1, 8, 0))
@@ -165,6 +214,18 @@ const loadTriggers = async () => {
       cronEnabled.value = false
       cronConfigured.value = false
     }
+
+    const webhook = list.find((t: any) => t.type === 'webhook')
+    if (webhook) {
+      webhookEnabled.value = webhook.enabled
+      webhookPath.value = webhook.config?.path || ''
+      webhookMethod.value = webhook.config?.method || 'POST'
+      webhookConfigured.value = true
+      updateWebhookUrls()
+    } else {
+      webhookEnabled.value = false
+      webhookConfigured.value = false
+    }
   } catch (error) {
     console.error('加载触发器配置失败', error)
   }
@@ -196,6 +257,58 @@ const saveCronTrigger = async () => {
     ElMessage.success('定时触发配置已保存')
   } catch (err: any) {
     ElMessage.error(err.message || '保存失败，请检查 Cron 表达式')
+  }
+}
+
+
+const saveWebhookTrigger = async () => {
+  try {
+    const config: Record<string, any> = {
+      method: webhookMethod.value,
+    }
+    if (webhookPath.value) {
+      config.path = webhookPath.value
+    }
+    const res = await saveWorkflowTriggerApi(props.workflowId, {
+      type: 'webhook',
+      enabled: webhookEnabled.value,
+      config,
+    })
+    if (res?.config?.path) {
+      webhookPath.value = res.config.path
+      updateWebhookUrls()
+    }
+    webhookConfigured.value = true
+    ElMessage.success('Webhook 触发配置已保存')
+  } catch (err: any) {
+    ElMessage.error(err.message || '保存失败')
+  }
+}
+
+const updateWebhookUrls = () => {
+  if (!webhookPath.value) return
+  const basePath = `/api/workflow/webhook/${webhookPath.value}`
+  // 开发环境：localhost
+  const devOrigin = 'http://localhost:1520'
+  // 线上环境：api.1s.design
+  const prodOrigin = 'https://api.1s.design'
+  webhookDevUrl.value = `${devOrigin}${basePath}`
+  webhookProdUrl.value = `${prodOrigin}${basePath}`
+}
+
+const copyWebhookUrl = async (url: string) => {
+  try {
+    await navigator.clipboard.writeText(url)
+    ElMessage.success('Webhook URL 已复制到剪贴板')
+  } catch {
+    // fallback
+    const input = document.createElement('input')
+    input.value = url
+    document.body.appendChild(input)
+    input.select()
+    document.execCommand('copy')
+    document.body.removeChild(input)
+    ElMessage.success('Webhook URL 已复制到剪贴板')
   }
 }
 
@@ -326,5 +439,55 @@ watch(
   opacity: 0.85;
 }
 
+
+
+.wf-webhook-info {
+  margin-top: 12px;
+}
+
+.wf-webhook-meta {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+
+  code {
+    padding: 1px 4px;
+    font-family: monospace;
+    color: var(--el-color-primary);
+    background: var(--app-content-surface-muted-color);
+    border-radius: 3px;
+  }
+}
+
+.wf-webhook-tip {
+  margin-top: 8px;
+  padding: 8px 10px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--el-text-color-secondary);
+  background: var(--app-content-surface-muted-color);
+  border-radius: 6px;
+  border-left: 3px solid var(--el-color-primary);
+}
+
+.wf-copy-btn {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: var(--el-color-primary);
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid var(--el-color-primary);
+  border-radius: 4px;
+  transition: all 0.15s;
+
+  &:hover {
+    color: #fff;
+    background: var(--el-color-primary);
+  }
+}
 
 </style>

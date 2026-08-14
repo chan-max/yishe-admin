@@ -307,7 +307,7 @@ defineExpose({ scrollToBottom, focusInput: () => textareaRef.value?.focus() });
           {{ loading ? "处理中" : "发送" }}
         </button>
       </div>
-      <p class="chat__hint">Enter 发送 · Shift + Enter 换行</p>
+      <!-- hint removed -->
     </div>
   </div>
 </template>
@@ -382,6 +382,7 @@ defineExpose({ scrollToBottom, focusInput: () => textareaRef.value?.focus() });
   display: flex;
   flex-direction: column;
   align-items: center;
+  line-height: 22px;
   justify-content: center;
   gap: 8px;
   padding: 24px 16px;
@@ -452,7 +453,10 @@ defineExpose({ scrollToBottom, focusInput: () => textareaRef.value?.focus() });
   background: var(--el-fill-color-dark, #333);
   border-radius: 6px;
   flex-shrink: 0;
+  margin-top: auto;
+  margin-bottom: auto;
   align-items: center;
+  line-height: 22px;
   justify-content: center;
 }
 
@@ -494,6 +498,7 @@ defineExpose({ scrollToBottom, focusInput: () => textareaRef.value?.focus() });
   background: var(--el-fill-color-light);
   border-radius: 6px;
   align-items: center;
+  line-height: 22px;
   gap: 6px;
 }
 
@@ -523,6 +528,8 @@ defineExpose({ scrollToBottom, focusInput: () => textareaRef.value?.focus() });
   height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 .msg__tool-name {
@@ -542,6 +549,7 @@ defineExpose({ scrollToBottom, focusInput: () => textareaRef.value?.focus() });
 .msg__typing {
   display: flex;
   align-items: center;
+  line-height: 22px;
   gap: 4px;
   padding: 4px 0;
 }
@@ -576,32 +584,34 @@ defineExpose({ scrollToBottom, focusInput: () => textareaRef.value?.focus() });
 /* ── Input ── */
 .chat__input {
   flex-shrink: 0;
-  padding: 8px 20px 12px;
+  
+  
+  padding: 6px 12px 8px;
 }
 
 .chat__input-box {
   position: relative;
   display: flex;
-  padding: 6px 8px 6px 14px;
+  padding: 3px 5px 3px 10px;
   background: var(--el-bg-color);
-  border: 1px solid var(--el-border-color);
-  border-radius: 22px;
-  transition: border-color .15s, box-shadow .15s;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 16px;
+  transition: border-color .2s, box-shadow .2s;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .chat__input-box:focus-within {
   border-color: var(--el-color-primary);
-  box-shadow: 0 0 0 2px var(--el-color-primary-light-9);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--el-color-primary) 20%, transparent);
 }
 
 .chat__textarea {
-  max-height: 160px;
-  min-height: 22px;
-  padding: 4px 0;
+  max-height: 120px;
+  min-height: 20px;
+  padding: 3px 0;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.5;
   color: var(--el-text-color-primary);
   background: transparent;
@@ -616,21 +626,26 @@ defineExpose({ scrollToBottom, focusInput: () => textareaRef.value?.focus() });
 }
 
 .chat__send {
-  height: 28px;
-  padding: 0 12px;
-  font-size: 12px;
+  height: 24px;
+  padding: 0 10px;
+  font-size: 11px;
   font-weight: 500;
   color: #fff;
   cursor: pointer;
   background: var(--el-color-primary);
   border: none;
-  border-radius: 14px;
-  transition: opacity .15s;
+  border-radius: 12px;
+  transition: opacity .15s, transform .15s;
   flex-shrink: 0;
 }
 
+
 .chat__send:hover:not(:disabled) {
   opacity: .85;
+  transform: scale(1.05);
+}
+.chat__send:active:not(:disabled) {
+  transform: scale(0.95);
 }
 
 .chat__send:disabled {
@@ -638,10 +653,5 @@ defineExpose({ scrollToBottom, focusInput: () => textareaRef.value?.focus() });
   opacity: .3;
 }
 
-.chat__hint {
-  margin: 6px 0 0;
-  font-size: 11px;
-  color: var(--el-text-color-placeholder);
-  text-align: center;
-}
+/* .chat__hint removed */
 </style>

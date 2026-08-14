@@ -1216,23 +1216,13 @@ html.dark .el-alert {
   --el-empty-fill-color-7: transparent;
   --el-empty-fill-color-8: transparent;
   --el-empty-fill-color-9: transparent;
-  padding: 22px 16px;
-  border: 1px dashed var(--ep-cover-border-color);
-  border-radius: var(--ep-cover-radius-md);
-  background: color-mix(in srgb, var(--ep-cover-soft-bg) 72%, transparent);
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
 }
 
-.el-empty__image {
-  position: relative;
-  display: flex;
-  width: 72px;
-  height: 52px;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 10px;
-}
-
-.el-empty__image svg {
+.el-empty__image > svg {
   display: none;
 }
 
@@ -1254,13 +1244,82 @@ html.dark .el-alert {
 }
 
 html.dark .el-empty {
-  background: color-mix(in srgb, var(--ep-cover-soft-bg) 88%, transparent);
+  background: transparent;
 }
 
 html.dark .el-empty__image::before {
-  background: linear-gradient(
-    180deg,
-    rgba(36, 36, 36, 0.9) 0%,
-    rgba(24, 24, 24, 0.96) 100%
-  );
+  background: transparent;
+}
+
+
+/* ── el-input-number: minimalist controls ── */
+.el-input-number .el-input-number__decrease,
+.el-input-number .el-input-number__increase {
+  background: transparent;
+  border: none;
+  border-left: 1px solid var(--ep-cover-border-color);
+  color: var(--ep-cover-muted-color);
+  width: 22px;
+  transition:
+    color var(--ep-cover-motion-fast),
+    background-color var(--ep-cover-motion-fast),
+    opacity var(--ep-cover-motion-fast);
+}
+
+.el-input-number .el-input-number__decrease {
+  border-top: 1px solid var(--ep-cover-border-color);
+  border-radius: 0 var(--ep-cover-radius-sm) 0 0;
+}
+
+.el-input-number .el-input-number__increase {
+  border-bottom: 1px solid var(--ep-cover-border-color);
+  border-radius: 0 0 var(--ep-cover-radius-sm) 0;
+}
+
+.el-input-number .el-input-number__decrease:hover,
+.el-input-number .el-input-number__increase:hover {
+  color: var(--el-text-color-primary);
+  background: var(--ep-cover-soft-bg-hover);
+}
+
+.el-input-number .el-input-number__decrease:active,
+.el-input-number .el-input-number__increase:active {
+  color: var(--el-color-primary);
+  background: var(--ep-cover-soft-bg-active);
+}
+
+.el-input-number .el-input-number__decrease.is-disabled,
+.el-input-number .el-input-number__increase.is-disabled {
+  color: var(--el-text-color-placeholder);
+  background: transparent;
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.el-input-number .el-input-number__decrease .el-icon,
+.el-input-number .el-input-number__increase .el-icon {
+  font-size: 10px;
+}
+
+/* wrapper border-radius fix */
+.el-input-number .el-input__wrapper {
+  border-radius: var(--ep-cover-radius-sm) 0 0 var(--ep-cover-radius-sm);
+}
+
+/* dark mode tweaks */
+html.dark .el-input-number .el-input-number__decrease,
+html.dark .el-input-number .el-input-number__increase {
+  border-color: var(--ep-cover-border-color);
+}
+
+html.dark .el-input-number .el-input-number__decrease:hover,
+html.dark .el-input-number .el-input-number__increase:hover {
+  background: var(--ep-cover-soft-bg-hover);
+  color: var(--el-text-color-primary);
+}
+
+html.dark .el-input-number .el-input-number__decrease:active,
+html.dark .el-input-number .el-input-number__increase:active {
+  background: var(--ep-cover-soft-bg-active);
+  color: var(--el-color-primary);
 }

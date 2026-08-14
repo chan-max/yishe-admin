@@ -27,7 +27,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     redirect: '/workflow/index',
     meta: {
       title: '工作流',
-      icon: 'ep:connection',
+      icon: 'material-symbols:account-tree-rounded',
       order: 10,
       alwaysShow: true,
     },
@@ -89,7 +89,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     redirect: "/home/index",
     meta: {
       title: "工作台",
-      icon: "ep:home-filled",
+      icon: "material-symbols:dashboard-rounded",
       order: 1,
       alwaysShow: true,
     },
@@ -206,7 +206,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     meta: {
       hidden: false,
       title: "资源中心",
-      icon: "ep:collection",
+      icon: "material-symbols:folder-rounded",
       noCache: false,
       affix: false,
       order: 2,
@@ -345,7 +345,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     redirect: "/ai/assistant",
     meta: {
       title: "AI创作",
-      icon: "ep:cpu",
+      icon: "material-symbols:auto-awesome-rounded",
       order: 3,
       alwaysShow: true,
     },
@@ -429,7 +429,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     redirect: "/content/code-script",
     meta: {
       title: "内容与自动化",
-      icon: "ep:files",
+      icon: "material-symbols:smart-toy-rounded",
       order: 4,
       alwaysShow: true,
     },
@@ -502,7 +502,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     redirect: "/external/browser-automation",
     meta: {
       title: "客户端功能",
-      icon: "ep:connection",
+      icon: "material-symbols:desktop-windows-rounded",
       order: 5,
       alwaysShow: true,
     },
@@ -585,7 +585,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     redirect: "/operation/toolkit/temu",
     meta: {
       title: "工具集",
-      icon: "ep:box",
+      icon: "material-symbols:build-rounded",
       order: 6,
       alwaysShow: true,
     },
@@ -663,7 +663,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     redirect: "/independent-site/product",
     meta: {
       title: "独立站",
-      icon: "ep:shop",
+      icon: "material-symbols:storefront-rounded",
       order: 7,
       alwaysShow: true,
     },
@@ -751,7 +751,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     redirect: "/product-publish/psd-set",
     meta: {
       title: "商品发布",
-      icon: "ep:shopping-bag",
+      icon: "material-symbols:shopping-cart-rounded",
       order: 9,
       alwaysShow: true,
     },
@@ -805,7 +805,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     redirect: "/ecom-platform-collect/tasks",
     meta: {
       title: "电商数据链路",
-      icon: "ep:data-analysis",
+      icon: "material-symbols:analytics-rounded",
       order: 10,
       alwaysShow: true,
     },
@@ -919,7 +919,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     redirect: "/operation/link-navigation",
     meta: {
       title: "运营支持",
-      icon: "ep:shop",
+      icon: "material-symbols:business-center-rounded",
       order: 11,
       alwaysShow: true,
     },
@@ -966,7 +966,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     redirect: "/personal/settings",
     meta: {
       title: "个人设置",
-      icon: "ep:user-filled",
+      icon: "material-symbols:person-rounded",
       order: 12,
       alwaysShow: true,
     },
@@ -997,7 +997,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     redirect: "/system/user",
     meta: {
       title: "系统管理",
-      icon: "ep:setting",
+      icon: "material-symbols:settings-rounded",
       order: 13,
       alwaysShow: true,
     },

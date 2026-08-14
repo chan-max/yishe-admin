@@ -12,14 +12,13 @@ import { DEFAULT_LOADING_STYLE, isValidLoadingStyle } from '@/config/loadingTemp
 const { wsCache } = useCache()
 
 const DARK_THEME: ThemeTypes = {
-  elColorPrimary: '#5b8cff',
+  elColorPrimary: '#6900ff',
   leftMenuBorderColor: '#242424',
   leftMenuBgColor: '#101010',
   leftMenuBgLightColor: '#141414',
   leftMenuBgActiveColor: '#181818',
   leftMenuCollapseBgActiveColor: '#181818',
   leftMenuTextColor: '#b9c0cc',
-  leftMenuTextActiveColor: '#8cbcff',
   logoTitleTextColor: '#f3f4f6',
   logoBorderColor: 'inherit',
   topHeaderBgColor: 'rgba(16, 16, 16, 0.94)',
@@ -29,14 +28,13 @@ const DARK_THEME: ThemeTypes = {
 }
 
 const LIGHT_THEME: ThemeTypes = {
-  elColorPrimary: '#2d6bff',
+  elColorPrimary: '#6900ff',
   leftMenuBorderColor: '#d9e1ec',
   leftMenuBgColor: '#f7f9fc',
   leftMenuBgLightColor: '#ffffff',
   leftMenuBgActiveColor: '#edf4ff',
   leftMenuCollapseBgActiveColor: '#edf4ff',
   leftMenuTextColor: '#566277',
-  leftMenuTextActiveColor: '#2d6bff',
   logoTitleTextColor: '#162033',
   logoBorderColor: 'inherit',
   topHeaderBgColor: 'rgba(255, 255, 255, 0.9)',

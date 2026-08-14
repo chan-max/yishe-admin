@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch, markRaw } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
-import { ArrowLeft, EditPen, Loading, Check, Warning , Reading } from '@element-plus/icons-vue'
+import { ArrowLeft, EditPen, Reading } from '@element-plus/icons-vue'
 import {
   VueFlow,
   useVueFlow,
@@ -23,6 +23,7 @@ import { useSmartSave } from '@/composables/useSmartSave'
 
 // 自定义节点
 import StartNode from '@/components/workflow/nodes/StartNode.vue'
+import WebhookTriggerNode from '@/components/workflow/nodes/WebhookTriggerNode.vue'
 import DefaultNode from '@/components/workflow/nodes/DefaultNode.vue'
 import EndNode from '@/components/workflow/nodes/EndNode.vue'
 import ConditionNode from '@/components/workflow/nodes/ConditionNode.vue'
@@ -38,14 +39,15 @@ import MessagePushNode from '@/components/workflow/nodes/MessagePushNode.vue'
 import HotsearchNode from '@/components/workflow/nodes/HotsearchNode.vue'
 import FeishuNode from '@/components/workflow/nodes/FeishuNode.vue'
 import WecomNode from '@/components/workflow/nodes/WecomNode.vue'
+import GoogleArtsCultureNode from '@/components/workflow/nodes/GoogleArtsCultureNode.vue'
 
 import NodePanel from '@/components/workflow/NodePanel.vue'
 import ConfigPanel from '@/components/workflow/ConfigPanel.vue'
 import NodePickerDialog from '@/components/workflow/NodePickerDialog.vue'
 import TriggerConfigDialog from '@/components/workflow/TriggerConfigDialog.vue'
 import ShortcutGuide from '@/components/workflow/ShortcutGuide.vue'
-import AiGenerateDialog from '@/components/workflow/AiGenerateDialog.vue'
 import { useWorkflowAiContext } from '@/composables/useWorkflowAiContext'
+import { websocketClient } from '@/services/websocketClient'
 import AssistantChat from '@/components/AiAssistant/AssistantChat.vue'
 import { useAiAssistantStore } from '@/store/modules/aiAssistant'
 import type { NodeManifest } from './config/node-manifest'
@@ -77,9 +79,7 @@ const {
   project,
   findNode,
   updateNodeData,
-  updateEdge,
-  getSelectedNodes,
-  getSelectedEdges
+  updateEdge
 } = useVueFlow()
 
 // 状态
@@ -96,35 +96,19 @@ const nodePickerVisible = ref(false)
 const handleOpenNodePicker = () => {
   nodePickerVisible.value = true
 }
+
 const runningWorkflow = ref(false)
-const aiGenerateVisible = ref(false)
-
-const handleAiGenerated = (data: { nodes: any[]; edges: any[]; description: string }) => {
-  pushHistory()
-  // If canvas has existing nodes, merge (append new after existing)
-  const existingNodes = nodes.value
-  if (existingNodes.length > 0) {
-    // Offset new nodes below existing ones
-    const maxY = Math.max(...existingNodes.map((n) => n.position?.y || 0))
-    const offsetY = maxY + 200
-    const newNodes = data.nodes.map((n: any) => ({
-      ...n,
-      position: { x: n.position?.x || 300, y: (n.position?.y || 100) + offsetY },
-    }))
-    addNodes(newNodes)
-    addEdges(data.edges || [])
-  } else {
-    // Fresh canvas, apply directly with default viewport
-    addNodes(data.nodes)
-    addEdges(data.edges || [])
-  }
-  ElMessage.success('AI 工作流已生成到画布')
-}
-
-
 const { setWorkflowContext } = useWorkflowAiContext()
 const aiStore = useAiAssistantStore()
 const aiPanelVisible = ref(true)
+
+const handleToggleAiPanel = async () => {
+  // 只有在没有当前会话时才创建新会话
+  if (!aiPanelVisible.value && !aiStore.currentConversationId) {
+    await aiStore.createConversation()
+  }
+  aiPanelVisible.value = !aiPanelVisible.value
+}
 
 // 同步工作流上下文给 AI 助手
 watch(
@@ -145,11 +129,6 @@ watch(
   },
   { deep: true }
 )
-
-const handleOpenAiGenerate = () => {
-  aiGenerateVisible.value = true
-}
-
 const handleRunWorkflow = async () => {
   if (!workflowId.value) return
   runningWorkflow.value = true
@@ -174,6 +153,7 @@ const edgeType = ref<'default' | 'smoothstep' | 'straight'>('default')
 // 自定义节点类型映射 (使用 markRaw 避免 Vue 响应式代理警告)
 const nodeTypes = {
   start: markRaw(StartNode),
+  webhook_trigger: markRaw(WebhookTriggerNode),
   default: markRaw(DefaultNode),
   end: markRaw(EndNode),
   condition: markRaw(ConditionNode),
@@ -199,6 +179,7 @@ const nodeTypes = {
   hotsearch_ithome: markRaw(HotsearchNode),
   message_push_feishu: markRaw(FeishuNode),
   message_push_wecom: markRaw(WecomNode),
+  google_arts_culture: markRaw(GoogleArtsCultureNode),
 }
 
 // ─── 撤销/重做历史 ─────────────────────────────────────────────
@@ -206,7 +187,6 @@ const {
   undo,
   redo,
   pushHistory,
-  clearHistory,
   canUndo,
   canRedo
 } = useWorkflowHistory(nodes, edges, setNodes, setEdges)
@@ -526,11 +506,33 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
+
+  // 监听工作流实时变更（AI 操作同步）
+  websocketClient.events.on('workflow:updated', handleWorkflowUpdate)
 })
+
+// 处理工作流实时更新
+const handleWorkflowUpdate = (data: { workflowId: string; name: string; canvas: any }) => {
+  if (data.workflowId !== workflowId.value) return
+  // 更新画布
+  if (data.canvas) {
+    setNodes(data.canvas.nodes || [])
+    setEdges(data.canvas.edges || [])
+    if (data.canvas.viewport) {
+      setViewport(data.canvas.viewport)
+    }
+  }
+  // 更新工作流信息
+  if (data.name && workflow.value) {
+    workflow.value.name = data.name
+  }
+}
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydown)
   cancelSave()
+  // 移除工作流更新监听
+  websocketClient.events.off('workflow:updated', handleWorkflowUpdate)
 })
 
 // ─── 自动保存 ─────────────────────────────────────────────────
@@ -566,13 +568,13 @@ onConnect((params: Connection) => {
 })
 
 // ─── 连线更新（重新连接）────────────────────────────────────
-onEdgeUpdate((oldEdge: Edge, newConnection: Connection) => {
+onEdgeUpdate(({ edge, connection }) => {
   pushHistory()
-  updateEdge(oldEdge, {
-    source: newConnection.source,
-    target: newConnection.target,
-    sourceHandle: newConnection.sourceHandle,
-    targetHandle: newConnection.targetHandle,
+  updateEdge(edge, {
+    source: connection.source,
+    target: connection.target,
+    sourceHandle: connection.sourceHandle,
+    targetHandle: connection.targetHandle,
   })
 })
 
@@ -655,7 +657,7 @@ const statusText = computed(() => {
             placement="bottom-start"
             :width="240"
             :show-arrow="false"
-            trigger="manual"
+            trigger="click"
           >
             <template #reference>
               <span class="wf-title" @click="startEditTitle">
@@ -724,8 +726,9 @@ const statusText = computed(() => {
     <div class="wf-editor-body">
       <!-- 左侧基础节点面板 -->
       <NodePanel
-        @openNodePicker="handleOpenNodePicker"
-        @openAiGenerate="handleOpenAiGenerate"
+        :ai-panel-visible="aiPanelVisible"
+        @open-node-picker="handleOpenNodePicker"
+        @toggle-ai-panel="handleToggleAiPanel"
       />
 
       <!-- 画布区 -->
@@ -755,7 +758,14 @@ const statusText = computed(() => {
       <!-- AI 助手侧边面板 -->
       <div v-if="aiPanelVisible" class="wf-editor-ai-panel">
         <div class="wf-editor-ai-panel__header">
-          <span class="wf-editor-ai-panel__title">🤖 智能助手</span>
+          <div class="wf-editor-ai-panel__actions">
+            <button class="wf-editor-ai-panel__toggle" @click="aiStore.createConversation" title="新对话">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+            <button class="wf-editor-ai-panel__toggle" @click="aiStore.clearMessages" title="清空">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+            </button>
+          </div>
           <button class="wf-editor-ai-panel__toggle" @click="aiPanelVisible = false" title="收起">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
           </button>
@@ -770,9 +780,11 @@ const statusText = computed(() => {
           @send="aiStore.sendMessage"
           @interaction-submit="(r) => aiStore.resumeInteraction(r.confirmed, r.input, r.reason || '')"
           @interaction-reject="(r) => aiStore.resumeInteraction(false, { ...(aiStore.pendingInteraction?.input || {}), action: 'reject' }, r.reason || '')"
+          @new-conversation="aiStore.createConversation"
+          @clear-conversation="aiStore.clearMessages"
         />
       </div>
-      <button v-else class="wf-editor-ai-toggle" @click="aiPanelVisible = true" title="展开智能助手">
+      <button v-else class="wf-editor-ai-toggle" @click="aiPanelVisible = true" title="展开 AI 面板">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
 
@@ -800,12 +812,6 @@ const statusText = computed(() => {
       @select="handleAddNodeFromLibrary"
     />
 
-    <!-- AI 生成工作流弹窗 -->
-    <AiGenerateDialog
-      v-model="aiGenerateVisible"
-      :current-canvas="{ nodes: nodes, edges: edges, viewport: getViewport() }"
-      @generated="handleAiGenerated"
-    />
   </div>
 </template>
 
@@ -819,7 +825,7 @@ const statusText = computed(() => {
 /* AI 助手侧边面板 */
 .wf-editor-ai-panel {
   display: flex;
-  width: 320px;
+  width: 400px;
   height: 100%;
   background: var(--app-content-surface-color);
   border-left: 1px solid var(--app-content-border-color);
@@ -830,17 +836,13 @@ const statusText = computed(() => {
 .wf-editor-ai-panel__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
+  justify-content: flex-end;
+  padding: 4px 8px;
   border-bottom: 1px solid var(--app-content-border-color);
   flex-shrink: 0;
 }
 
-.wf-editor-ai-panel__title {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-}
+
 
 .wf-editor-ai-panel__toggle {
   display: flex;
@@ -972,7 +974,7 @@ const statusText = computed(() => {
   cursor: pointer;
   border-radius: 4px;
   transition: background-color 0.15s ease;
-  max-width: 320px;
+  max-width: 480px;
 
   &:hover {
     background: var(--app-content-surface-muted-color);
@@ -1087,7 +1089,7 @@ const statusText = computed(() => {
 /* AI 助手侧边面板 */
 .wf-editor-ai-panel {
   display: flex;
-  width: 320px;
+  width: 400px;
   height: 100%;
   background: var(--app-content-surface-color);
   border-left: 1px solid var(--app-content-border-color);
@@ -1104,11 +1106,7 @@ const statusText = computed(() => {
   flex-shrink: 0;
 }
 
-.wf-editor-ai-panel__title {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-}
+
 
 .wf-editor-ai-panel__toggle {
   display: flex;

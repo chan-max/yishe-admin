@@ -78,7 +78,7 @@ const handleMouseMove = (e: MouseEvent) => {
   if (!isDragging.value) return;
   const dx = e.clientX - dragStart.value.x;
   const dy = e.clientY - dragStart.value.y;
-  const panelWidth = 400;
+  const panelWidth = 480;
   const panelHeight = 600;
   popperOffset.value = {
     x: clampOffset(popperOffset.value.x + dx, -window.innerWidth + panelWidth + 16, 16),
@@ -115,8 +115,13 @@ onBeforeUnmount(() => {
       >
         <!-- 头部（拖动区域） -->
         <div class="popper-header" @mousedown="handleMouseDown">
-          <span class="header-title">智能助手</span>
           <div class="header-actions">
+            <button class="icon-btn" @click="store.createConversation" title="新对话">
+              <Icon icon="ep:plus" />
+            </button>
+            <button class="icon-btn" @click="store.clearMessages" title="清空">
+              <Icon icon="ep:delete" />
+            </button>
             <button class="icon-btn" @click="openFull" title="完整模式">
               <Icon icon="ep:full-screen" />
             </button>
@@ -145,7 +150,7 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- 悬浮按钮 -->
-      <div class="floating-btn" @click="toggle" title="智能助手">
+      <div class="floating-btn" @click="toggle">
         <Icon icon="ep:chat-dot-round" class="btn-icon" />
       </div>
     </div>
@@ -165,7 +170,7 @@ onBeforeUnmount(() => {
   right: 0;
   bottom: 30px;
   display: flex;
-  width: min(400px, calc(100vw - 32px));
+  width: min(480px, calc(100vw - 32px));
   height: min(600px, calc(100vh - 72px));
   overflow: hidden;
   background: var(--el-bg-color-overlay, var(--el-bg-color, #fff));
@@ -217,7 +222,7 @@ onBeforeUnmount(() => {
   background: var(--el-bg-color-overlay, #fff);
   border-bottom: 1px solid var(--el-border-color-lighter, #f0f0f0);
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   flex-shrink: 0;
 }
 
@@ -228,28 +233,6 @@ onBeforeUnmount(() => {
 :global(html.dark) .popper-header {
   background: var(--el-bg-color-overlay, #1d1e1f);
   border-bottom-color: var(--el-border-color-darker, #363637);
-}
-
-.header-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--el-text-color-primary, #1f2329);
-}
-
-.header-title::before {
-  width: 8px;
-  height: 8px;
-  background: var(--el-color-primary, #1677ff);
-  border-radius: 50%;
-  content: "";
-  box-shadow: 0 0 0 3px rgb(22 119 255 / 12%);
-}
-
-:global(html.dark) .header-title::before {
-  box-shadow: 0 0 0 3px rgb(22 119 255 / 25%);
 }
 
 .header-actions {

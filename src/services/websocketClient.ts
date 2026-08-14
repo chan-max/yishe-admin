@@ -467,6 +467,7 @@ export type WebsocketEvents = {
   amazonCrawlerTaskUpdate: Record<string, any>;
   "remote-result": RemoteResultEvent;
   "mcp-async-result": { requestId: string; toolName: string; result: any };
+  "workflow:updated": any;
 };
 
 const emitter = mitt<WebsocketEvents>();

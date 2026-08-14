@@ -182,84 +182,17 @@ onBeforeUnmount(() => {
   text-align: left;
   word-break: break-word;
 
+  // ── Dark Mode Overrides ──────────────────────────────
   :global(html.dark) & {
     color: var(--el-text-color-primary, #e5eaf3) !important;
 
-    strong,
-    b,
-    h1,
-    h2,
-    h3,
-    h4,
-    h5,
-    h6 {
-      color: #fff !important;
-    }
-
-    ul,
-    ol,
-    li,
-    p {
-      color: var(--el-text-color-primary, #e5eaf3) !important;
-    }
+    strong, b, h1, h2, h3, h4, h5, h6 { color: #fff !important; }
+    ul, ol, li, p { color: var(--el-text-color-primary, #e5eaf3) !important; }
 
     code:not(.hljs) {
-      color: #58a6ff !important;
-      background: rgb(110 118 129 / 30%) !important;
-      border-color: rgb(240 246 252 / 15%) !important;
-    }
-
-    .markdown-view__code-block {
-      background: #161b22 !important;
-      border-color: #30363d !important;
-      box-shadow: 0 2px 8px rgb(0 0 0 / 30%);
-
-      code.hljs {
-        color: #c9d1d9 !important;
-
-        .hljs-keyword,
-        .hljs-selector-tag,
-        .hljs-subst {
-          color: #ff7b72 !important;
-        }
-
-        .hljs-string,
-        .hljs-title,
-        .hljs-section,
-        .hljs-attribute,
-        .hljs-literal,
-        .hljs-template-tag,
-        .hljs-template-variable,
-        .hljs-type,
-        .hljs-addition {
-          color: #a5d6ff !important;
-        }
-
-        .hljs-comment,
-        .hljs-quote,
-        .hljs-deletion,
-        .hljs-meta {
-          color: #8b949e !important;
-        }
-
-        .hljs-number,
-        .hljs-regexp,
-        .hljs-link {
-          color: #79c0ff !important;
-        }
-      }
-    }
-
-    .markdown-view__copy-button {
-      color: #c9d1d9 !important;
-      background: #21262d !important;
-      border-color: #363b42 !important;
-
-      &:hover {
-        color: #58a6ff !important;
-        background: #30363d !important;
-        border-color: #58a6ff !important;
-      }
+      color: var(--el-color-primary-light-3, #58a6ff) !important;
+      background: color-mix(in srgb, var(--el-color-primary) 12%, transparent) !important;
+      border-color: color-mix(in srgb, var(--el-border-color) 60%, transparent) !important;
     }
 
     blockquote {
@@ -273,23 +206,13 @@ onBeforeUnmount(() => {
       background: rgb(255 255 255 / 8%) !important;
     }
 
-    td,
-    th {
-      border-color: rgb(255 255 255 / 12%) !important;
-    }
+    td, th { border-color: rgb(255 255 255 / 12%) !important; }
   }
 
-  > :first-child {
-    margin-top: 0 !important;
-  }
+  > :first-child { margin-top: 0 !important; }
+  > :last-child { margin-bottom: 0 !important; }
 
-  > :last-child {
-    margin-bottom: 0 !important;
-  }
-
-  :deep(pre) {
-    margin: 0;
-  }
+  :deep(pre) { margin: 0; }
 
   :deep(code.hljs) {
     display: block;
@@ -307,20 +230,13 @@ onBeforeUnmount(() => {
   a {
     color: var(--ai-primary, var(--el-color-primary));
     text-decoration: none;
-    border-bottom: 1px solid
-      color-mix(in srgb, var(--ai-primary, var(--el-color-primary)) 18%, transparent 82%);
-    transition:
-      color 0.18s ease,
-      border-color 0.18s ease;
+    border-bottom: 1px solid color-mix(in srgb, var(--ai-primary, var(--el-color-primary)) 18%, transparent 82%);
+    transition: color 0.18s ease, border-color 0.18s ease;
   }
 
   a:hover {
     color: color-mix(in srgb, var(--ai-primary, var(--el-color-primary)) 86%, #000 14%);
-    border-bottom-color: color-mix(
-      in srgb,
-      var(--ai-primary, var(--el-color-primary)) 32%,
-      transparent 68%
-    );
+    border-bottom-color: color-mix(in srgb, var(--ai-primary, var(--el-color-primary)) 32%, transparent 68%);
   }
 
   :deep(.markdown-view__image-block) {
@@ -355,25 +271,14 @@ onBeforeUnmount(() => {
     color: var(--ai-text-secondary, var(--el-text-color-secondary));
   }
 
-  strong,
-  b {
+  strong, b {
     color: var(--markdown-heading-color, var(--ai-text, var(--el-text-color-primary, #1f2329)));
   }
 
-  p {
-    margin: 0 0 var(--markdown-paragraph-gap);
-  }
+  p { margin: 0 0 var(--markdown-paragraph-gap); }
+  p + p { margin-top: 2px; }
 
-  p + p {
-    margin-top: 2px;
-  }
-
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
+  h1, h2, h3, h4, h5, h6 {
     margin: var(--markdown-heading-gap-top) 0 var(--markdown-heading-gap-bottom);
     font-weight: 600;
     line-height: 1.35;
@@ -381,29 +286,13 @@ onBeforeUnmount(() => {
     color: var(--markdown-heading-color, var(--ai-text, var(--el-text-color-primary, #1f2329)));
   }
 
-  h1 {
-    font-size: 20px;
-  }
+  h1 { font-size: 20px; }
+  h2 { font-size: 18px; }
+  h3 { font-size: 16px; }
+  h4 { font-size: 15px; }
+  h5, h6 { font-size: 14px; }
 
-  h2 {
-    font-size: 18px;
-  }
-
-  h3 {
-    font-size: 16px;
-  }
-
-  h4 {
-    font-size: 15px;
-  }
-
-  h5,
-  h6 {
-    font-size: 14px;
-  }
-
-  ul,
-  ol {
+  ul, ol {
     padding-left: calc(var(--markdown-list-indent) + 4px);
     margin: 0 0 var(--markdown-paragraph-gap);
     font-size: inherit;
@@ -416,26 +305,12 @@ onBeforeUnmount(() => {
     margin: 0;
   }
 
-  li + li {
-    margin-top: 4px;
-  }
+  li + li { margin-top: 4px; }
+  li > p { margin: 0; }
+  ol > li { list-style-type: decimal; }
+  ul > li { list-style-type: disc; }
 
-  li > p {
-    margin: 0;
-  }
-
-  ol > li {
-    list-style-type: decimal;
-  }
-
-  ul > li {
-    list-style-type: disc;
-  }
-
-  ul ul,
-  ul ol,
-  ol ul,
-  ol ol {
+  ul ul, ul ol, ol ul, ol ol {
     margin-top: 4px;
     margin-bottom: 0;
   }
@@ -447,9 +322,7 @@ onBeforeUnmount(() => {
     border-left: 3px solid var(--markdown-quote-border);
   }
 
-  blockquote > :last-child {
-    margin-bottom: 0;
-  }
+  blockquote > :last-child { margin-bottom: 0; }
 
   hr {
     margin: 14px 0;
@@ -466,8 +339,7 @@ onBeforeUnmount(() => {
     table-layout: fixed;
   }
 
-  th,
-  td {
+  th, td {
     padding: 7px 8px;
     text-align: left;
     vertical-align: top;
@@ -476,11 +348,7 @@ onBeforeUnmount(() => {
 
   th {
     font-weight: 600;
-    background: color-mix(
-      in srgb,
-      var(--ai-panel-soft-bg, var(--el-fill-color-light)) 78%,
-      transparent 22%
-    );
+    background: color-mix(in srgb, var(--ai-panel-soft-bg, var(--el-fill-color-light)) 78%, transparent 22%);
   }
 
   code:not(.hljs) {
@@ -497,6 +365,7 @@ onBeforeUnmount(() => {
     border-radius: 4px;
   }
 
+  // ── Code Block (Light Mode) ──────────────────────────
   :deep(.markdown-view__code-block) {
     position: relative;
     margin: var(--markdown-block-gap) 0;
@@ -510,37 +379,53 @@ onBeforeUnmount(() => {
       color: #24292f;
       background: transparent;
 
-      .hljs-keyword,
-      .hljs-selector-tag,
-      .hljs-subst {
+      .hljs-keyword, .hljs-selector-tag, .hljs-subst {
         font-weight: 600;
         color: #cf222e;
       }
 
-      .hljs-string,
-      .hljs-title,
-      .hljs-section,
-      .hljs-attribute,
-      .hljs-literal,
-      .hljs-template-tag,
-      .hljs-template-variable,
-      .hljs-type,
-      .hljs-addition {
+      .hljs-string, .hljs-title, .hljs-section, .hljs-attribute,
+      .hljs-literal, .hljs-template-tag, .hljs-template-variable,
+      .hljs-type, .hljs-addition {
         color: #0a3069;
       }
 
-      .hljs-comment,
-      .hljs-quote,
-      .hljs-deletion,
-      .hljs-meta {
+      .hljs-comment, .hljs-quote, .hljs-deletion, .hljs-meta {
         font-style: italic;
         color: #6e7781;
       }
 
-      .hljs-number,
-      .hljs-regexp,
-      .hljs-link {
+      .hljs-number, .hljs-regexp, .hljs-link {
         color: #0550ae;
+      }
+    }
+
+    // ── Dark Mode Code Block ──────────────────────────
+    :global(html.dark) & {
+      background: color-mix(in srgb, var(--el-bg-color) 92%, #000) !important;
+      border-color: var(--el-border-color-darker, #30363d) !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+
+      code.hljs {
+        color: var(--el-text-color-primary, #c9d1d9) !important;
+
+        .hljs-keyword, .hljs-selector-tag, .hljs-subst {
+          color: var(--el-color-danger, #ff7b72) !important;
+        }
+
+        .hljs-string, .hljs-title, .hljs-section, .hljs-attribute,
+        .hljs-literal, .hljs-template-tag, .hljs-template-variable,
+        .hljs-type, .hljs-addition {
+          color: var(--el-color-primary-light-3, #a5d6ff) !important;
+        }
+
+        .hljs-comment, .hljs-quote, .hljs-deletion, .hljs-meta {
+          color: var(--el-text-color-placeholder, #8b949e) !important;
+        }
+
+        .hljs-number, .hljs-regexp, .hljs-link {
+          color: var(--el-color-primary-light-5, #79c0ff) !important;
+        }
       }
     }
   }
@@ -560,12 +445,25 @@ onBeforeUnmount(() => {
     border-radius: 6px;
     box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
     transition: all 0.16s ease;
-  }
 
-  :deep(.markdown-view__copy-button:hover) {
-    color: var(--el-color-primary, #0969da);
-    background: var(--el-fill-color-light, #f3f4f6);
-    border-color: var(--el-color-primary-light-5, #85b8ff);
+    &:hover {
+      color: var(--el-color-primary, #0969da);
+      background: var(--el-fill-color-light, #f3f4f6);
+      border-color: var(--el-color-primary-light-5, #85b8ff);
+    }
+
+    // ── Dark Mode Copy Button ─────────────────────────
+    :global(html.dark) & {
+      color: var(--el-text-color-regular, #c9d1d9) !important;
+      background: color-mix(in srgb, var(--el-bg-color-overlay) 80%, #000) !important;
+      border-color: var(--el-border-color-darker, #363b42) !important;
+
+      &:hover {
+        color: var(--el-color-primary, #58a6ff) !important;
+        background: color-mix(in srgb, var(--el-fill-color) 80%, #000) !important;
+        border-color: var(--el-color-primary, #58a6ff) !important;
+      }
+    }
   }
 }
 </style>

@@ -1,136 +1,71 @@
 <template>
-  <el-form
-    v-show="getShow"
-    v-bind="$attrs"
-    ref="formLogin"
-    :model="loginData.loginForm"
-    :rules="LoginRules"
-    class="login-form"
-    label-position="top"
-    label-width="120px"
-  >
-    <el-row style="margin-right: -10px; margin-left: -10px">
-      <el-col :span="24" style="padding-right: 10px; padding-left: 10px">
-        <LoginFormTitle style="width: 100%" />
-      </el-col>
-      <el-col :span="24" style="padding-right: 10px; padding-left: 10px">
-        <!-- 租户功能暂时注释掉 -->
-      </el-col>
-      <el-col :span="24" style="padding-right: 10px; padding-left: 10px">
-        <el-form-item prop="account">
-          <el-input
-            v-model="loginData.loginForm.account"
-            placeholder="请输入账号"
-            class="login-form__input"
-            :prefix-icon="iconAvatar"
-          />
-        </el-form-item>
-      </el-col>
-      <el-col :span="24" style="padding-right: 10px; padding-left: 10px">
-        <el-form-item prop="password">
-          <el-input
-            v-model="loginData.loginForm.password"
-            :placeholder="t('login.passwordPlaceholder')"
-            class="login-form__input"
-            :prefix-icon="iconLock"
-            show-password
-            type="password"
-            @keyup.enter="handleLogin()"
-          />
-        </el-form-item>
-      </el-col>
-      <el-col :span="24" style="padding-right: 10px; padding-left: 10px">
-        <el-form-item>
-          <XButton
-            :loading="loginLoading"
-            :title="t('login.login')"
-            class="w-[100%]"
-            type="primary"
-            @click="handleLogin()"
-          />
-        </el-form-item>
-      </el-col>
-      <el-col :span="24" style="padding-right: 10px; padding-left: 10px; margin-top: -10px">
-        <el-row justify="space-between" style="width: 100%">
-          <el-col :span="10">
-            <el-checkbox v-model="loginData.loginForm.rememberMe" size="small">
-              {{ t("login.remember") }}
-            </el-checkbox>
-          </el-col>
-          <el-col :span="12">
-            <el-link
-              style="float: right; font-size: 13px"
-              type="primary"
-              :underline="false"
-              @click="handleForgetPassword"
-            >
-              {{ t("login.forgetPassword") }}
-            </el-link>
-          </el-col>
-        </el-row>
-      </el-col>
-      <!-- <el-col :span="24" style="padding-right: 10px; padding-left: 10px">
-        <el-form-item>
-          <el-row :gutter="5" justify="space-between" style="width: 100%">
-            <el-col :span="8">
-              <XButton
-                :title="t('login.btnMobile')"
-                class="w-[100%]"
-                @click="setLoginState(LoginStateEnum.MOBILE)"
-              />
-            </el-col>
-            <el-col :span="8">
-              <XButton
-                :title="t('login.btnQRCode')"
-                class="w-[100%]"
-                @click="setLoginState(LoginStateEnum.QR_CODE)"
-              />
-            </el-col>
-            <el-col :span="8">
-              <XButton
-                :title="t('login.btnRegister')"
-                class="w-[100%]"
-                @click="setLoginState(LoginStateEnum.REGISTER)"
-              />
-            </el-col>
-          </el-row>
-        </el-form-item>
-      </el-col> -->
-      <!-- <el-divider content-position="center">{{ t('login.otherLogin') }}</el-divider>
-      <el-col :span="24" style="padding-right: 10px; padding-left: 10px">
-        <el-form-item>
-          <div class="w-[100%] flex justify-between">
-            <Icon
-              v-for="(item, key) in socialList"
-              :key="key"
-              :icon="item.icon"
-              :size="30"
-              class="anticon cursor-pointer"
-              color="#999"
-              @click="doSocialLogin(item.type)"
-            />
-          </div>
-        </el-form-item>
-      </el-col>
-      <el-divider content-position="center">萌新必读</el-divider>
-      <el-col :span="24" style="padding-right: 10px; padding-left: 10px">
-        <el-form-item>
-          <div class="w-[100%] flex justify-between">
-            <el-link href="https://doc.iocoder.cn/" target="_blank">📚开发指南</el-link>
-            <el-link href="https://doc.iocoder.cn/video/" target="_blank">🔥视频教程</el-link>
-            <el-link href="https://www.iocoder.cn/Interview/good-collection/" target="_blank">
-              ⚡面试手册
-            </el-link>
-            <el-link href="http://static.yudao.iocoder.cn/mp/Aix9975.jpeg" target="_blank">
-              🤝外包咨询
-            </el-link>
-          </div>
-        </el-form-item>
-      </el-col> -->
-    </el-row>
-  </el-form>
+  <div v-show="getShow" class="ds-form">
+    <!-- Header -->
+    <div class="ds-form__header">
+      <p class="ds-form__welcome">欢迎使用</p>
+      <h1 class="ds-form__title">衣设系统</h1>
+    </div>
+
+    <!-- Form fields -->
+    <el-form ref="formLogin" :model="loginData.loginForm" :rules="LoginRules" class="ds-form__form">
+      <!-- Account -->
+      <div class="ds-form__field">
+        <label class="ds-form__label">账号</label>
+        <el-input
+          v-model="loginData.loginForm.account"
+          placeholder="请输入账号"
+          size="large"
+          class="ds-form__input"
+        />
+      </div>
+
+      <!-- Password -->
+      <div class="ds-form__field">
+        <label class="ds-form__label">密码</label>
+        <el-input
+          v-model="loginData.loginForm.password"
+          type="password"
+          placeholder="请输入密码"
+          size="large"
+          class="ds-form__input"
+          show-password
+          @keyup.enter="handleLogin()"
+        />
+      </div>
+
+      <!-- Remember & Forgot -->
+      <div class="ds-form__actions">
+        <el-checkbox v-model="loginData.loginForm.rememberMe" class="ds-form__checkbox">
+          记住我
+        </el-checkbox>
+        <button type="button" class="ds-form__link" @click="handleForgetPassword">
+          忘记密码?
+        </button>
+      </div>
+
+      <!-- Submit -->
+      <el-button
+        type="primary"
+        size="large"
+        class="ds-form__submit"
+        :loading="loginLoading"
+        @click="handleLogin()"
+      >
+        登 录
+      </el-button>
+
+      <!-- Get Account Link -->
+      <div class="ds-form__get-account">
+        <button type="button" class="ds-form__link" @click="handleGetAccount">
+          获取账号
+        </button>
+      </div>
+    </el-form>
+  </div>
+
+  <!-- Contact Admin Dialog -->
   <el-dialog
-    v-model="showForgetDialog"
+    v-model="showContactDialog"
     width="370px"
     align-center
     :show-close="true"
@@ -139,278 +74,342 @@
   >
     <template #header>
       <div style="display: flex; align-items: center; gap: 10px">
-        <el-icon size="22"><i class="el-icon-lock"></i></el-icon>
-        <span style="font-size: 19px; font-weight: bold; letter-spacing: 1px">忘记密码？</span>
+        <el-icon size="22"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></el-icon>
+        <span style="font-size: 19px; font-weight: bold; letter-spacing: 1px">获取账号</span>
       </div>
     </template>
-    <div style=" padding: 18px 0 10px;text-align: center">
-      <div style=" margin-bottom: 10px;font-size: 17px; font-weight: 500">请联系管理员重置密码</div>
-      <div style=" margin-bottom: 6px;font-size: 16px; font-weight: bold; letter-spacing: 1px">
+    <div style="padding: 18px 0 10px; text-align: center">
+      <div style="margin-bottom: 8px; font-size: 17px; font-weight: 500">请联系系统管理员获取账号</div>
+      <div style="margin-bottom: 6px; font-size: 12px; font-weight: bold; letter-spacing: 1px">
         <span>TEL</span> & <span>WECHAT</span>：18742539196
       </div>
       <el-tag type="success" effect="plain" style="margin-top: 4px">24小时在线</el-tag>
     </div>
     <template #footer>
-      <el-button
-        type="primary"
-        style="width: 100%; font-size: 16px"
-        @click="showForgetDialog = false"
-        >我知道了</el-button
-      >
+      <el-button type="primary" style="width: 100%; font-size: 12px" @click="showContactDialog = false">
+        我知道了
+      </el-button>
     </template>
   </el-dialog>
 </template>
+
 <script lang="ts" setup>
-import { ElLoading } from "element-plus";
-import LoginFormTitle from "./LoginFormTitle.vue";
-import type { RouteLocationNormalizedLoaded } from "vue-router";
+import { ElLoading } from "element-plus"
+import type { RouteLocationNormalizedLoaded } from "vue-router"
+import * as authUtil from "@/utils/auth"
+import { usePermissionStoreWithOut } from "@/store/modules/permission"
+import { resolveFirstAccessibleMenuPath } from "@/router/menu-path"
+import * as LoginApi from "@/api/login"
+import { LoginStateEnum, useFormValid, useLoginState } from "./useLogin"
+import { useUserStoreWithOut } from "@/store/modules/user"
+import { removeToken, setAccessToken } from "@/utils/auth"
+import { getDeviceInfo } from "@/utils/device"
 
-import * as authUtil from "@/utils/auth";
-import { useIcon } from "@/hooks/web/useIcon";
-import { usePermissionStoreWithOut } from "@/store/modules/permission";
-import { resolveFirstAccessibleMenuPath } from "@/router/menu-path";
-import * as LoginApi from "@/api/login";
-import { LoginStateEnum, useFormValid, useLoginState } from "./useLogin";
-import { useUserStoreWithOut } from "@/store/modules/user";
-import { removeToken, setAccessToken } from "@/utils/auth";
-import { getDeviceInfo } from "@/utils/device";
+defineOptions({ name: "DsLoginForm" })
 
-defineOptions({ name: "LoginForm" });
+const message = useMessage()
+const formLogin = ref()
+const { validForm } = useFormValid(formLogin)
+const { getLoginState } = useLoginState()
+const { currentRoute, push } = useRouter()
+const redirect = ref<string>("")
+const loginLoading = ref(false)
+const loading = ref()
+const showContactDialog = ref(false)
 
-const { t } = useI18n();
-const message = useMessage();
-const iconAvatar = useIcon({ icon: "ep:user", color: "#7c8aa5" });
-const iconLock = useIcon({ icon: "ep:lock", color: "#7c8aa5" });
-const formLogin = ref();
-const { validForm } = useFormValid(formLogin);
-const { getLoginState } = useLoginState();
-const { currentRoute, push } = useRouter();
-const redirect = ref<string>("");
-const loginLoading = ref(false);
-const loading = ref(); // ElLoading.service 返回的实例
-const showForgetDialog = ref(false);
-
-const getShow = computed(() => unref(getLoginState) === LoginStateEnum.LOGIN);
+const getShow = computed(() => unref(getLoginState) === LoginStateEnum.LOGIN)
 
 const LoginRules = {
-  tenantName: [required],
   account: [required],
   password: [required],
-};
+}
 
 const resolveFirstAccessiblePath = () => {
-  const permissionStore = usePermissionStoreWithOut();
-  return resolveFirstAccessibleMenuPath(permissionStore.getAddRouters) || "/403";
-};
+  const permissionStore = usePermissionStoreWithOut()
+  return resolveFirstAccessibleMenuPath(permissionStore.getAddRouters) || "/403"
+}
 
 const loginData = reactive({
-  isShowPassword: false,
-  tenantEnable: import.meta.env.VITE_APP_TENANT_ENABLE,
   loginForm: {
-    // tenantName: import.meta.env.VITE_APP_DEFAULT_LOGIN_TENANT || "",
     account: import.meta.env.VITE_APP_DEFAULT_LOGIN_USERNAME || "",
     password: import.meta.env.VITE_APP_DEFAULT_LOGIN_PASSWORD || "",
-    rememberMe: true, // 默认记录我。如果不需要，可手动修改
+    rememberMe: true,
   },
-});
+})
 
-// const socialList = [
-//   { icon: 'ant-design:wechat-filled', type: 30 },
-//   { icon: 'ant-design:dingtalk-circle-filled', type: 20 },
-//   { icon: 'ant-design:github-filled', type: 0 },
-//   { icon: 'ant-design:alipay-circle-filled', type: 0 }
-// ]
-
-// 获取验证码
-// const getCode = async () => {
-//   // 情况一，未开启：则直接登录
-//   if (loginData.captchaEnable === 'false') {
-//     await handleLogin({})
-//   } else {
-//     // 情况二，已开启：则展示验证码；只有完成验证码的情况，才进行登录
-//     // 弹出验证码
-//     verify.value.show()
-//   }
-// }
-// 获取租户 ID
-// const getTenantId = async () => {
-//   if (loginData.tenantEnable === 'true') {
-//     const res = await LoginApi.getTenantIdByName(loginData.loginForm.tenantName)
-//     authUtil.setTenantId(res)
-//   }
-// }
-// 记住我
 const getLoginFormCache = () => {
-  const loginForm = authUtil.getLoginForm();
+  const loginForm = authUtil.getLoginForm()
   if (loginForm) {
     loginData.loginForm = {
       ...loginData.loginForm,
       account: loginForm.username ? loginForm.username : loginData.loginForm.account,
       password: loginForm.password ? loginForm.password : loginData.loginForm.password,
       rememberMe: loginForm.rememberMe,
-    };
-  }
-};
-// 根据域名，获得租户信息
-// const getTenantByWebsite = async () => {
-//   const website = location.host
-//   const res = await LoginApi.getTenantByWebsite(website)
-//   if (res) {
-//     loginData.loginForm.tenantName = res.name
-//     authUtil.setTenantId(res.id)
-//   }
-// }
-
-// 登录
-const handleLogin = async () => {
-  loginLoading.value = true;
-  try {
-    const data = await validForm();
-    if (!data) {
-      return;
     }
+  }
+}
+
+const handleLogin = async () => {
+  loginLoading.value = true
+  try {
+    const data = await validForm()
+    if (!data) return
 
     const loginDataLoginForm = {
-      username: loginData.loginForm.account, // 使用正确的字段名
+      username: loginData.loginForm.account,
       password: loginData.loginForm.password,
       terminalType: "admin" as const,
-      deviceInfo: getDeviceInfo(), // 添加设备信息
-    };
-    removeToken();
-    const res = await LoginApi.login(loginDataLoginForm);
-    if (!res) {
-      return;
+      deviceInfo: getDeviceInfo(),
     }
+    removeToken()
+    const res = await LoginApi.login(loginDataLoginForm)
+    if (!res) return
+
     loading.value = ElLoading.service({
       lock: true,
       text: "正在加载系统中...",
       background: "rgba(0, 0, 0, 0.7)",
-    });
+    })
     if (loginData.loginForm.rememberMe) {
       authUtil.setLoginForm({
         tenantName: "",
         username: loginData.loginForm.account,
         password: loginData.loginForm.password,
         rememberMe: true,
-      });
+      })
     } else {
-      authUtil.removeLoginForm();
+      authUtil.removeLoginForm()
     }
-    // 存储token
-    setAccessToken(res.token);
-    console.log("🔑 token:", res.token);
+    setAccessToken(res.token)
 
-    // 获取用户信息和权限
-    const userStore = useUserStoreWithOut();
-    const permissionStore = usePermissionStoreWithOut();
-
+    const userStore = useUserStoreWithOut()
+    const permissionStore = usePermissionStoreWithOut()
     try {
-      // 获取用户信息
-      await userStore.setUserInfoAction();
-      // 生成路由
-      await permissionStore.generateRoutes();
-
-      await push({ path: resolveFirstAccessiblePath() });
+      await userStore.setUserInfoAction()
+      await permissionStore.generateRoutes()
+      await push({ path: "/" })
     } catch (error) {
-      console.error("获取用户信息或生成路由失败:", error);
-      message.error("系统初始化失败，请刷新页面重试");
+      console.error("获取用户信息或生成路由失败:", error)
+      message.error("系统初始化失败，请刷新页面重试")
     }
   } finally {
-    loginLoading.value = false;
-    loading.value.close();
+    loginLoading.value = false
+    loading.value?.close()
   }
-};
+}
 
-// 社交登录
-// const doSocialLogin = async (type: number) => {
-//   if (type === 0) {
-//     message.error('此方式未配置')
-//   } else {
-//     loginLoading.value = true
-//     if (loginData.tenantEnable === 'true') {
-//       // 尝试先通过 tenantName 获取租户
-//       await getTenantId()
-//       // 如果获取不到，则需要弹出提示，进行处理
-//       if (!authUtil.getTenantId()) {
-//         try {
-//           const data = await message.prompt('请输入租户名称', t('common.reminder'))
-//           if (data?.action !== 'confirm') throw 'cancel'
-//           const res = await LoginApi.getTenantIdByName(data.value)
-//           authUtil.setTenantId(res)
-//         } catch (error) {
-//           if (error === 'cancel') return
-//         } finally {
-//           loginLoading.value = false
-//         }
-//       }
-//     }
-//     // 计算 redirectUri
-//     // tricky: type、redirect需要先encode一次，否则钉钉回调会丢失。
-//     // 配合 Login/SocialLogin.vue#getUrlValue() 使用
-//     const redirectUri =
-//       location.origin +
-//       '/social-login?' +
-//       encodeURIComponent(`type=${type}&redirect=${redirect.value || '/'}`)
-
-//     // 进行跳转
-//     window.location.href = await LoginApi.socialAuthRedirect(type, encodeURIComponent(redirectUri))
-//   }
-// }
 const handleForgetPassword = () => {
-  showForgetDialog.value = true;
-};
+  showContactDialog.value = true
+}
+
+const handleGetAccount = () => {
+  showContactDialog.value = true
+}
+
 watch(
   () => currentRoute.value,
   (route: RouteLocationNormalizedLoaded) => {
-    redirect.value = route?.query?.redirect as string;
+    redirect.value = route?.query?.redirect as string
   },
-  {
-    immediate: true,
-  },
-);
+  { immediate: true },
+)
+
 onMounted(() => {
-  getLoginFormCache();
-  // getTenantByWebsite()
-});
+  getLoginFormCache()
+})
 </script>
 
 <style lang="scss" scoped>
-:deep(.anticon) {
-  &:hover {
-    color: var(--el-color-primary) !important;
-  }
-}
-
-.login-form {
-  :deep(.el-form-item) {
-    margin-bottom: 24px; /* 原来是 18px-22px，增加到 24px */
-  }
-
-  :deep(.login-form__input .el-input__wrapper) {
-    min-height: 46px;
-    border-radius: 14px;
-  }
-
-  :deep(.login-form__input .el-input__prefix-inner) {
-    color: #7c8aa5;
-  }
-
-  :deep(.login-form__input .el-input__prefix-inner svg) {
-    font-size: 16px;
-  }
-}
-
-.login-code {
-  float: right;
+.ds-form {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
   width: 100%;
-  height: 38px;
+  gap: 0;
 
-  img {
-    width: 100%;
-    height: auto;
-    max-width: 100px;
-    vertical-align: middle;
+  &__header {
+    margin-bottom: 12px;
+  }
+
+  &__welcome {
+    margin: 0;
+    font-size: 12px;
+    color: #666;
+    font-weight: 400;
+  }
+
+  &__title {
+    margin: 4px 0 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #635BFF;
+    letter-spacing: -0.02em;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+
+  &__label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #777;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  &__input {
+    :deep(.el-input__wrapper) {
+      background: #F5F5FA;
+      border: none;
+      border-radius: 6px;
+      box-shadow: none !important;
+      padding: 0 12px;
+    }
+
+    :deep(.el-input__inner) {
+      height: 32px;
+      font-size: 12px;
+      color: #1a1a2e;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 2px;
+    margin-bottom: 8px;
+  }
+
+  &__checkbox {
+    :deep(.el-checkbox__label) {
+      font-size: 12px;
+      color: #555;
+    }
+  }
+
+  &__link {
+    padding: 0;
+    font-size: 12px;
+    font-weight: 500;
+    color: #635BFF;
+    background: transparent;
+    border: none;
     cursor: pointer;
+    transition: color 0.15s ease;
+
+    &:hover {
+      color: #5146E5;
+    }
+  }
+
+  &__submit {
+    width: 100%;
+    height: 32px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    background: #635BFF;
+    border: none;
+    border-radius: 6px;
+    margin-top: 0;
+
+    &:hover {
+      background: #5146E5;
+    }
+  }
+
+  &__get-account {
+    display: flex;
+    justify-content: center;
+    margin-top: 8px;
+  }
+}
+
+// Dark mode
+:global(html.dark) {
+  .ds-form {
+    &__welcome {
+      color: #9ca3af;
+    }
+
+    &__title {
+      color: #a5b4fc;
+    }
+
+    &__label {
+      color: #9ca3af;
+    }
+
+    &__input {
+      :deep(.el-input__wrapper) {
+        background: #2a2a3e;
+      }
+
+      :deep(.el-input__inner) {
+        color: #f0f0f5;
+      }
+    }
+
+    &__checkbox {
+      :deep(.el-checkbox__label) {
+        color: #9ca3af;
+      }
+    }
+
+    &__submit {
+      background: #635BFF;
+
+      &:hover {
+        background: #5146E5;
+      }
+    }
+  }
+}
+
+// Tablet
+@media (max-width: 1200px) {
+  .ds-form {
+    padding: 16px;
+  }
+}
+
+// Mobile
+@media (max-width: 768px) {
+  .ds-form {
+    padding: 18px;
+
+    &__welcome {
+      font-size: 12px;
+    }
+
+    &__title {
+      font-size: 16px;
+    }
+
+    &__header {
+      margin-bottom: 12px;
+    }
+
+    &__input {
+      :deep(.el-input__inner) {
+        height: 38px;
+      }
+    }
+
+    &__submit {
+      height: 38px;
+    }
   }
 }
 </style>

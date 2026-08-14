@@ -1,4 +1,4 @@
-import { weiboIcon, notificationIcon, feishuIcon, wecomIcon, douyinIcon, bilibiliIcon, zhihuIcon, toutiaoIcon, doubanIcon, kuaishouIcon, javaScriptIcon, openaiIcon } from '@/assets/icons/apps'
+import { weiboIcon, feishuIcon, wecomIcon, douyinIcon, bilibiliIcon, zhihuIcon, toutiaoIcon, doubanIcon, kuaishouIcon, javaScriptIcon, openaiIcon, googleArtsCultureIcon } from '@/assets/icons/apps'
 
 export type NodeType =
   | 'start'
@@ -15,6 +15,7 @@ export type NodeType =
   | 'message_push_feishu'
   | 'message_push_wecom'
   | 'hotsearch_weibo'
+  | 'google_arts_culture'
   | 'custom'
 
 export type NodeRequirementType = 'client' | 'client_browser' | 'internet' | 'config'
@@ -28,7 +29,7 @@ export interface NodeRequirement {
 export interface NodeIOSchemaField {
   field: string
   label: string
-  type: 'string' | 'number' | 'boolean' | 'select' | 'code' | 'json' | 'textarea' | 'array'
+  type: 'string' | 'number' | 'boolean' | 'select' | 'code' | 'json' | 'textarea' | 'array' | 'any'
   required?: boolean
   defaultValue?: any
   placeholder?: string
@@ -50,7 +51,7 @@ export interface NodeManifest {
   type: string
   name: string
   category: string
-  icon: string
+  icon?: string
   color: string
   badge?: string
   description: string
@@ -100,6 +101,28 @@ export function getNodeOutputSchema(node: any): NodeIOSchemaField[] {
 }
 
 export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
+  // ─── Webhook 触发 ────────────────────────────────────────
+  {
+    type: 'webhook_trigger',
+    name: 'Webhook 触发',
+    category: 'trigger',
+    icon: 'ep:link',
+    color: '#8b5cf6',
+    badge: '触发',
+    description: '通过 HTTP Webhook 请求远程触发工作流。支持开发环境(localhost)和线上环境(api.1s.design)自动切换。',
+    defaultData: { name: 'Webhook 触发', config: { method: 'POST', path: '' } },
+    inputSchema: [
+      { field: 'method', label: '请求方法', type: 'select', defaultValue: 'POST', options: [{ label: 'POST', value: 'POST' }, { label: 'GET', value: 'GET' }, { label: 'PUT', value: 'PUT' }] },
+      { field: 'path', label: '路径标识', type: 'string', placeholder: '自动生成或自定义' },
+    ],
+    outputSchema: [
+      { field: 'body', label: '请求体', type: 'json' },
+      { field: 'headers', label: '请求头', type: 'json' },
+      { field: 'query', label: '查询参数', type: 'json' },
+    ],
+    requirements: [],
+  },
+
   // ─── 条件分支 ────────────────────────────────────────────
   {
     type: 'condition',
@@ -157,7 +180,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     type: 'ai_call',
     name: 'AI 调用',
     category: 'logic',
-    icon: 'ep:magic-stick',
+    iconImage: openaiIcon,
     color: '#6366f1',
     description: '调用 AI 大模型进行文本生成、内容分析、数据处理。支持变量插值引用上游节点输出，输出格式可选文本或 JSON。',
     defaultData: { name: 'AI 调用', config: { userPrompt: '', systemPrompt: '', temperature: 0.7, maxTokens: 2000, outputFormat: 'text' } },
@@ -451,6 +474,32 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
       { field: 'sent', label: '是否发送成功', type: 'boolean' },
       { field: 'channelName', label: '推送渠道名称', type: 'string' },
       { field: 'sentAt', label: '发送时间', type: 'string' },
+    ],
+  },  // ─── Google Art 高清素材采集 ────────────────────────────
+  {
+    type: 'google_arts_culture',
+    name: 'Google Art 素材采集',
+    category: 'material',
+    iconImage: googleArtsCultureIcon,
+    color: '#4285f4',
+    badge: '采集',
+    description: '从 Google Arts & Culture 搜索艺术作品，批量添加到素材库。需客户端在线且可访问 Google。',
+    defaultData: {
+      name: 'Google Art 素材采集',
+      config: { keyword: '', maxCount: 10 },
+    },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: false, placeholder: '例如: van gogh, impressionism (留空默认精选素材)' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'images', label: '图片列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
     ],
   },
 ]

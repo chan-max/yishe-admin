@@ -13,6 +13,7 @@ const appStore = useAppStore();
 const drawerVisible = ref(false);
 
 const PRESET_COLORS = [
+  "#6900ff",
   "#2d6bff",
   "#5b8cff",
   "#409eff",
@@ -32,7 +33,7 @@ const PRESET_COLORS = [
 const themeColor = computed(() => {
   const primary = appStore.getTheme?.elColorPrimary;
   if (primary) return primary;
-  return appStore.getIsDark ? "#5b8cff" : "#2d6bff";
+  return "#6900ff";
 });
 
 const isDark = computed({
@@ -52,7 +53,7 @@ const handlePickerChange = (color: string | null) => {
 };
 
 const handleReset = () => {
-  const def = appStore.getIsDark ? "#5b8cff" : "#2d6bff";
+  const def = "#6900ff";
   applyThemeColor(def);
   ElMessage.success(t("layout.personalization.themeColorResetSuccess"));
 };

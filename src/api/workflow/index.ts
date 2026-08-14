@@ -117,8 +117,3 @@ export const deleteWorkflowExecutionApi = (executionId: string) =>
 export const clearWorkflowExecutionsApi = (workflowId: string) =>
   request.delete({ url: `/workflow/${workflowId}/executions` })
 
-// ✨ AI 生成工作流
-export const aiGenerateWorkflowApi = (data: {
-  description: string
-  currentCanvas?: { nodes: any[]; edges: any[]; viewport?: any }
-}) => request.post({ url: '/workflow/ai-generate', data })

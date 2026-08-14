@@ -14,6 +14,7 @@ import {
   markAiAssistantRuntimeIdle,
   markAiAssistantRuntimeRunning,
 } from "@/services/aiAssistantRuntimeState";
+import { useWorkflowAiContext } from "@/composables/useWorkflowAiContext";
 
 // ========== Internal Types ==========
 
@@ -25,6 +26,9 @@ interface StreamContext {
 // ========== Store ==========
 
 export const useAiAssistantStore = defineStore("ai-assistant", () => {
+  // ========== Workflow Context (singleton) ==========
+  const { workflowContext } = useWorkflowAiContext();
+
   // ========== State ==========
 
   const conversations = ref<AiAssistantConversation[]>([]);
@@ -511,7 +515,6 @@ export const useAiAssistantStore = defineStore("ai-assistant", () => {
     messages.value.push(createLocalMessage({ role: "user", content: message }));
 
     // 自动合并工作流上下文
-    const { workflowContext } = useWorkflowAiContext()
     const finalPageContext: AiAssistantPageContext = {
       ...pageContext,
       workflowContext: workflowContext.value,

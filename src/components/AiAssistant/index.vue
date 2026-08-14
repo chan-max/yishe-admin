@@ -6,15 +6,9 @@
       </div>
       <div class="sidebar__nav">
         <div class="sidebar__section">
-          <div
-            v-for="conv in store.conversations"
-            :key="conv.id"
-            class="sidebar__item"
-            :class="{ active: store.currentConversationId === conv.id }"
-            @click="handleSelectConversation(conv.id)"
-            @mouseenter="showConversationDetail(conv, $event)"
-            @mouseleave="hideConversationDetail"
-          >
+          <div v-for="conv in store.conversations" :key="conv.id" class="sidebar__item"
+            :class="{ active: store.currentConversationId === conv.id }" @click="handleSelectConversation(conv.id)"
+            @mouseenter="showConversationDetail(conv, $event)" @mouseleave="hideConversationDetail">
             <div class="sidebar__item-main">
               <span class="sidebar__item-text">{{ conv.title || "未命名会话" }}</span>
             </div>
@@ -31,7 +25,7 @@
         <div class="conversation-detail-header">
           <span class="conversation-detail-title">{{
             hoveredConversation.title || "未命名会话"
-          }}</span>
+            }}</span>
         </div>
         <div class="conversation-detail-body">
           <div class="detail-row">
@@ -53,20 +47,22 @@
             <span class="detail-label">总耗时</span>
             <span class="detail-value">{{
               formatDuration(hoveredConversation.totalDurationMs)
-            }}</span>
+              }}</span>
           </div>
           <div class="detail-row" v-if="hoveredConversation.avgAiResponseMs">
             <span class="detail-label">平均AI响应</span>
             <span class="detail-value">{{
               formatDuration(hoveredConversation.avgAiResponseMs)
-            }}</span>
+              }}</span>
           </div>
         </div>
       </div>
       <div class="sidebar__bottom">
-        <button class="sidebar__item" @click="handleOpenToolDialog">
-          <span class="sidebar__item-text">工具</span>
-        </button>
+        <el-tooltip effect="dark" content="工具" placement="right">
+          <button class="sidebar__item sidebar__item--icon" @click="handleOpenToolDialog">
+            <el-icon :size="16"><Tools /></el-icon>
+          </button>
+        </el-tooltip>
       </div>
     </aside>
 
@@ -77,12 +73,16 @@
           <span class="topbar__title">{{ store.activeConversationTitle }}</span>
         </div>
         <div class="topbar__right">
-          <button class="topbar__btn" @click="handleRefresh">
-            刷新
-          </button>
-          <button v-if="store.messages.length" class="topbar__btn" @click="store.clearMessages()">
-            清空
-          </button>
+          <el-tooltip effect="dark" content="刷新" placement="bottom">
+            <button class="topbar__btn topbar__btn--icon" @click="handleRefresh">
+              <el-icon><Refresh /></el-icon>
+            </button>
+          </el-tooltip>
+          <el-tooltip v-if="store.messages.length" effect="dark" content="清空" placement="bottom">
+            <button class="topbar__btn topbar__btn--icon" @click="store.clearMessages()">
+              <el-icon><Delete /></el-icon>
+            </button>
+          </el-tooltip>
         </div>
       </header>
 
@@ -116,36 +116,27 @@
                       <div v-if="msg.content" class="md-body">
                         <MarkdownView :content="msg.content" />
                       </div>
-                      <div
-                        v-if="
-                          msg.content &&
-                          store.thinkingText &&
-                          store.loading &&
-                          msg === visibleMessages[visibleMessages.length - 1]
-                        "
-                        class="thinking-block"
-                      >
+                      <div v-if="
+                        msg.content &&
+                        store.thinkingText &&
+                        store.loading &&
+                        msg === visibleMessages[visibleMessages.length - 1]
+                      " class="thinking-block">
                         <span class="thinking-dot"></span>
                         <span>{{ store.thinkingText }}</span>
                       </div>
                     </template>
                   </div>
                   <div v-if="hasMessageDetails(msg)" class="msg__meta">
-                    <el-popover
-                      trigger="click"
-                      placement="bottom-start"
-                      :width="360"
-                      popper-class="ai-message-detail-popover"
-                    >
+                    <el-popover trigger="click" placement="bottom-start" :width="360"
+                      popper-class="ai-message-detail-popover">
                       <template #reference>
                         <span>
-                          <el-tooltip
-                            effect="dark"
-                            placement="top"
-                            :content="getMessageDetailsTooltip(msg)"
-                          >
+                          <el-tooltip effect="dark" placement="top" :content="getMessageDetailsTooltip(msg)">
                             <button class="msg__meta-toggle" aria-label="消息详情">
-                              <el-icon><InfoFilled /></el-icon>
+                              <el-icon>
+                                <InfoFilled />
+                              </el-icon>
                             </button>
                           </el-tooltip>
                         </span>
@@ -181,16 +172,10 @@
                         </div>
                         <div v-if="getMessageToolDetails(msg).length" class="msg__meta-tools">
                           <div class="msg__meta-tools-title">工具调用</div>
-                          <div
-                            v-for="tool in getMessageToolDetails(msg)"
-                            :key="`${tool.tool}-${tool.startedAt || tool.summary}`"
-                            class="msg__meta-tool"
-                          >
+                          <div v-for="tool in getMessageToolDetails(msg)"
+                            :key="`${tool.tool}-${tool.startedAt || tool.summary}`" class="msg__meta-tool">
                             <div class="msg__meta-tool-main">
-                              <span
-                                class="msg__meta-tool-status"
-                                :class="{ failed: tool.success === false }"
-                              ></span>
+                              <span class="msg__meta-tool-status" :class="{ failed: tool.success === false }"></span>
                               <strong>{{ tool.label || tool.tool }}</strong>
                             </div>
                             <span>{{ formatDuration(tool.durationMs) }}</span>
@@ -204,18 +189,13 @@
                       </div>
                     </el-popover>
                   </div>
-                  <template
-                    v-if="
-                      msg.role === 'assistant' &&
-                      msg === visibleMessages[visibleMessages.length - 1] &&
-                      store.pendingInteraction
-                    "
-                  >
-                    <InteractionRenderer
-                      :payload="store.pendingInteraction"
-                      @submit="handleInteractionSubmit"
-                      @reject="handleInteractionReject"
-                    />
+                  <template v-if="
+                    msg.role === 'assistant' &&
+                    msg === visibleMessages[visibleMessages.length - 1] &&
+                    store.pendingInteraction
+                  ">
+                    <InteractionRenderer :payload="store.pendingInteraction" @submit="handleInteractionSubmit"
+                      @reject="handleInteractionReject" />
                   </template>
                 </div>
               </div>
@@ -231,22 +211,12 @@
         </div>
         <div class="composer">
           <div class="composer__wrap">
-            <textarea
-              ref="textareaRef"
-              v-model="inputMessage"
-              class="composer__input"
-              :placeholder="store.senderPlaceholder"
-              rows="1"
-              @keydown.enter.exact.prevent="handleSend"
-              @input="autoResize"
-            ></textarea>
+            <textarea ref="textareaRef" v-model="inputMessage" class="composer__input"
+              :placeholder="store.senderPlaceholder" rows="1" @keydown.enter.exact.prevent="handleSend"
+              @input="autoResize"></textarea>
             <div class="composer__actions">
-              <button
-                class="composer__send"
-                :disabled="!canSend || store.loading"
-                @click="handleSend"
-              >
-                ↑
+              <button class="composer__send" :disabled="!canSend || store.loading" @click="handleSend">
+                发送
               </button>
             </div>
           </div>
@@ -254,128 +224,75 @@
       </div>
     </div>
 
-    <el-dialog
-      v-model="showToolDialog"
-      title="Agent 工具目录"
-      fullscreen
-      :close-on-click-modal="true"
-      class="tools-dialog"
-    >
+    <el-dialog v-model="showToolDialog" title="Agent 工具目录" fullscreen :close-on-click-modal="true" class="tools-dialog">
       <div class="tools-dialog__body">
         <div class="tools-dialog__search">
-          <el-input
-            v-model="toolSearchQuery"
-            placeholder="搜索..."
-            clearable
-            @input="handleToolSearch"
-            :prefix-icon="Search"
-          />
+          <el-input v-model="toolSearchQuery" placeholder="搜索..." clearable @input="handleToolSearch"
+            :prefix-icon="Search" />
           <span class="tools-dialog__count">{{ filteredTools.length }}</span>
         </div>
         <div class="tools-dialog__summary" v-if="toolCatalogUpdatedAt">
           <span class="tools-dialog__updated">更新于 {{ toolCatalogUpdatedAt }}</span>
         </div>
         <div class="tools-dialog__filters">
-          <button
-            v-for="filter in toolSourceFilters"
-            :key="filter.key"
-            type="button"
-            class="tools-filter"
-            :class="{ active: toolSourceFilter === filter.key }"
-            @click="setToolSourceFilter(filter.key)"
-          >
+          <button v-for="filter in toolSourceFilters" :key="filter.key" type="button" class="tools-filter"
+            :class="{ active: toolSourceFilter === filter.key }" @click="setToolSourceFilter(filter.key)">
             {{ filter.label }}
           </button>
         </div>
         <el-scrollbar class="tools-dialog__list">
           <div v-if="toolsLoading" class="tools-dialog__loading">
-            <el-icon class="is-loading"><Loading /></el-icon>
+            <el-icon class="is-loading">
+              <Loading />
+            </el-icon>
           </div>
           <template v-else>
             <div v-for="source in filteredToolTree" :key="source.key" class="tools-tree__source">
-              <button
-                type="button"
-                class="tools-tree__source-head"
-                @click="toggleToolSource(source.key)"
-              >
-                <span
-                  class="tools-tree__arrow"
-                  :class="{ expanded: expandedToolSources.has(source.key) }"
-                  >›</span
-                >
+              <button type="button" class="tools-tree__source-head" @click="toggleToolSource(source.key)">
+                <span class="tools-tree__arrow" :class="{ expanded: expandedToolSources.has(source.key) }">›</span>
                 <strong>{{ source.label }}</strong>
                 <em>{{ source.total }}</em>
               </button>
               <div v-if="expandedToolSources.has(source.key)" class="tools-tree__domains">
                 <div v-for="domain in source.domains" :key="domain.key" class="tools-tree__domain">
-                  <button
-                    type="button"
-                    class="tools-tree__domain-head"
-                    @click="toggleToolGroup(domain.key)"
-                  >
-                    <span
-                      class="tools-tree__arrow"
-                      :class="{ expanded: expandedToolGroups.has(domain.key) }"
-                      >›</span
-                    >
+                  <button type="button" class="tools-tree__domain-head" @click="toggleToolGroup(domain.key)">
+                    <span class="tools-tree__arrow" :class="{ expanded: expandedToolGroups.has(domain.key) }">›</span>
                     <span>{{ domain.label }}</span>
                     <em>{{ domain.tools.length }}</em>
                   </button>
                   <div v-if="expandedToolGroups.has(domain.key)" class="tools-tree__tools">
-                    <div
-                      v-for="tool in domain.tools"
-                      :key="tool.name"
-                      class="tools-row"
-                      :class="{ expanded: expandedTool === tool.name }"
-                      @click="toggleToolExpand(tool)"
-                    >
+                    <div v-for="tool in domain.tools" :key="tool.name" class="tools-row"
+                      :class="{ expanded: expandedTool === tool.name }" @click="toggleToolExpand(tool)">
                       <div class="tools-row__head">
                         <code class="tools-row__name">{{ tool.name }}</code>
                         <span class="tools-row__label">{{ tool.label }}</span>
-                        <span
-                          class="tools-row__runtime"
-                          :class="tool.runtime === 'client' ? 'is-client' : 'is-server'"
-                          >{{
+                        <span class="tools-row__runtime"
+                          :class="tool.runtime === 'client' ? 'is-client' : 'is-server'">{{
                             tool.sourceLabel ||
                             (tool.runtime === "client" ? "客户端 MCP" : "服务端")
-                          }}</span
-                        >
+                          }}</span>
                       </div>
                       <div class="tools-row__desc">{{ tool.summary || tool.description }}</div>
                       <div class="tools-row__chips">
                         <span v-if="tool.hierarchy?.capability?.label">{{
                           tool.hierarchy.capability.label
-                        }}</span>
+                          }}</span>
                         <span v-if="tool.hierarchy?.action?.label">{{
                           tool.hierarchy.action.label
-                        }}</span>
-                        <span v-if="getToolParameters(tool).length"
-                          >{{ getToolParameters(tool).length }} 个参数</span
-                        >
+                          }}</span>
+                        <span v-if="getToolParameters(tool).length">{{ getToolParameters(tool).length }} 个参数</span>
                         <span v-if="tool.children?.length">{{ tool.children.length }} 个操作</span>
-                        <span v-if="tool.workflow?.requiresConfirmation" class="is-warning"
-                          >需确认</span
-                        >
+                        <span v-if="tool.workflow?.requiresConfirmation" class="is-warning">需确认</span>
                       </div>
                       <div v-if="expandedTool === tool.name" class="tools-row__detail" @click.stop>
                         <div class="tools-row__meta">
-                          <span
-                            >层级：{{ tool.groupLabel || getCategoryLabel(tool.category) }}</span
-                          >
-                          <span v-if="tool.hierarchy?.action?.label"
-                            >动作：{{ tool.hierarchy.action.label }}</span
-                          >
-                          <span
-                            >执行位置：{{ tool.runtime === "client" ? "客户端" : "服务端" }}</span
-                          >
+                          <span>层级：{{ tool.groupLabel || getCategoryLabel(tool.category) }}</span>
+                          <span v-if="tool.hierarchy?.action?.label">动作：{{ tool.hierarchy.action.label }}</span>
+                          <span>执行位置：{{ tool.runtime === "client" ? "客户端" : "服务端" }}</span>
                           <span v-if="tool.riskLevel">风险：{{ tool.riskLevel }}</span>
                           <span v-if="tool.confirmRequired">需要确认</span>
                         </div>
-                        <div
-                          v-for="p in getToolParameters(tool)"
-                          :key="p.name"
-                          class="tools-row__param"
-                        >
+                        <div v-for="p in getToolParameters(tool)" :key="p.name" class="tools-row__param">
                           <div>
                             <code>{{ p.name }}</code>
                             <span v-if="p.required" class="req">必填</span>
@@ -387,11 +304,7 @@
                           <div class="tools-row__children-title">
                             支持的{{ tool.children[0]?.kind === "action" ? "动作" : "操作" }}
                           </div>
-                          <div
-                            v-for="child in tool.children"
-                            :key="child.key"
-                            class="tools-row__child"
-                          >
+                          <div v-for="child in tool.children" :key="child.key" class="tools-row__child">
                             <code>{{ child.key }}</code>
                             <span>{{ child.label }}</span>
                             <small v-if="child.description">{{ child.description }}</small>
@@ -420,7 +333,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { ElMessage } from "element-plus";
-import { InfoFilled, Loading, Search } from "@element-plus/icons-vue";
+import { Delete, InfoFilled, Loading, Refresh, Search, Tools } from "@element-plus/icons-vue";
 import { AiAssistantApi } from "@/api/aiAssistant";
 import { useAiAssistantStore } from "@/store/modules/aiAssistant";
 import { websocketClient } from "@/services/websocketClient";
@@ -836,8 +749,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-
-
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -851,6 +762,7 @@ onUnmounted(() => {
 }
 
 @keyframes pulse {
+
   0%,
   100% {
     opacity: 0.4;
@@ -862,6 +774,7 @@ onUnmounted(() => {
 }
 
 @keyframes typingBounce {
+
   0%,
   60%,
   100% {
@@ -876,7 +789,7 @@ onUnmounted(() => {
 }
 
 /* ── Mobile ── */
-@media (width <= 768px) {
+@media (width <=768px) {
   .sidebar {
     position: fixed;
     top: 0;
@@ -955,7 +868,7 @@ onUnmounted(() => {
   }
 }
 
-@media (width <= 480px) {
+@media (width <=480px) {
   .sidebar {
     width: 240px;
   }
@@ -1206,6 +1119,25 @@ onUnmounted(() => {
   padding: 0 8px 8px;
 }
 
+.sidebar__item--icon {
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.sidebar__item--icon:hover {
+  color: var(--primary);
+  background: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
+  transform: scale(1.08);
+}
+
+.sidebar__item--icon:active {
+  transform: scale(0.95);
+}
+
 /* ── Workspace ── */
 .workspace {
   display: flex;
@@ -1286,6 +1218,36 @@ onUnmounted(() => {
   background: var(--surface-hover);
 }
 
+.topbar__btn--icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.topbar__btn--icon:hover {
+  color: var(--primary);
+  background: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
+  transform: scale(1.1);
+}
+
+.topbar__btn--icon:active {
+  transform: scale(0.95);
+}
+
+.topbar__btn--icon .el-icon {
+  font-size: 14px;
+  transition: transform 0.2s ease;
+}
+
+.topbar__btn--icon:hover .el-icon {
+  transform: scale(1.15);
+}
+
 /* ── Chat ── */
 .chat {
   position: relative;
@@ -1297,14 +1259,14 @@ onUnmounted(() => {
 
 .chat__scroll {
   min-height: 0;
-  padding: 16px 0 100px;
+  padding: 12px 0 80px;
   overflow-y: auto;
   flex: 1;
 }
 
 .chat__list {
   max-width: 800px;
-  padding: 0 24px;
+  padding: 0 16px;
   margin: 0 auto;
 }
 
@@ -1313,7 +1275,7 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 0;
+  padding: 24px 0;
 }
 
 .chat__empty-text {
@@ -1324,8 +1286,8 @@ onUnmounted(() => {
 /* ── Message ── */
 .msg {
   display: flex;
-  gap: 14px;
-  padding: 8px 0;
+  gap: 10px;
+  padding: 5px 0;
 }
 
 .msg--user {
@@ -1338,13 +1300,13 @@ onUnmounted(() => {
 
 .msg--user .msg__text {
   display: inline-block;
-  padding: 10px 16px;
-  font-size: 14px;
-  line-height: 1.6;
+  padding: 7px 12px;
+  font-size: 13px;
+  line-height: 1.55;
   color: var(--text);
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 16px 16px 4px;
+  border-radius: 12px 12px 3px;
 }
 
 .msg--assistant {
@@ -1357,8 +1319,8 @@ onUnmounted(() => {
 }
 
 .msg__content {
-  font-size: 14px;
-  line-height: 1.7;
+  font-size: 13px;
+  line-height: 1.6;
   color: var(--text);
 }
 
@@ -1588,18 +1550,18 @@ onUnmounted(() => {
 
 /* ── Tool Card ── */
 .tool-card {
-  padding: 12px 14px;
-  margin: 6px 0;
+  padding: 8px 10px;
+  margin: 4px 0;
   background: var(--el-fill-color-lighter);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 10px;
 }
 
 .tool-card__head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
+  gap: 6px;
+  font-size: 12px;
   color: var(--text-2);
 }
 
@@ -1617,34 +1579,34 @@ onUnmounted(() => {
 }
 
 .tool-card__result {
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .tool-card__pre {
-  padding: 10px;
+  padding: 8px;
   margin: 0;
   overflow-x: auto;
   font-family: "JetBrains Mono", monospace;
-  font-size: 12px;
-  line-height: 1.5;
+  font-size: 11px;
+  line-height: 1.45;
   color: var(--text-2);
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 6px;
 }
 
 /* ── Thinking Block ── */
 .thinking-block {
   display: inline-flex;
-  padding: 10px 16px;
-  margin-top: 8px;
-  font-size: 13px;
+  padding: 6px 12px;
+  margin-top: 6px;
+  font-size: 12px;
   color: var(--text-2);
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 12px;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .thinking-dot {
@@ -1658,13 +1620,13 @@ onUnmounted(() => {
 /* ── Typing Indicator ── */
 .typing-indicator {
   display: inline-flex;
-  gap: 4px;
-  padding: 4px 0;
+  gap: 3px;
+  padding: 2px 0;
 }
 
 .typing-indicator span {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   background: var(--text-3);
   border-radius: 50%;
   animation: typingBounce 1.4s infinite;
@@ -1684,12 +1646,13 @@ onUnmounted(() => {
   right: 0;
   bottom: 0;
   left: 0;
-  padding: 0 24px 12px;
+  padding: 0 16px 8px;
   pointer-events: none;
 }
 
 .composer__wrap {
   position: relative;
+  display: flex;
   max-width: 700px;
   margin: 0 auto;
   pointer-events: auto;
@@ -1697,16 +1660,16 @@ onUnmounted(() => {
 
 .composer__input {
   width: 100%;
-  max-height: 200px;
-  min-height: 44px;
-  padding: 10px 48px 10px 16px;
+  max-height: 160px;
+  min-height: 38px;
+  padding: 8px 48px 8px 14px;
   font-family: inherit;
   font-size: 13px;
   line-height: 1.5;
   color: var(--text);
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: 16px;
   outline: none;
   transition: border-color 0.15s;
   resize: none;
@@ -1723,25 +1686,23 @@ onUnmounted(() => {
 
 .composer__actions {
   position: absolute;
-  top: 50%;
-  right: 8px;
-  transform: translateY(-50%);
+  top: 0;
+  bottom: 0;
+  right: 6px;
+  display: flex;
+  align-items: center;
 }
 
 .composer__send {
-  display: flex;
-  width: 28px;
-  height: 28px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--surface);
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
   cursor: pointer;
-  background: var(--primary);
+  background: var(--el-color-primary);
   border: none;
   border-radius: 8px;
   transition: opacity 0.15s;
-  align-items: center;
-  justify-content: center;
 }
 
 .composer__send:disabled {

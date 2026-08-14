@@ -1,7 +1,7 @@
 {
   "name": "yishe-admin",
-  "version": "0.0.258",
-  "description": "基于vue3、vite4、element-plus、typesScript",
+  "version": "0.0.259",
+  "description": "\u57fa\u4e8evue3\u3001vite4\u3001element-plus\u3001typesScript",
   "author": "jc",
   "private": false,
   "packageManager": "pnpm@10.3.0",

@@ -1219,7 +1219,7 @@ $prefix-cls: #{$namespace}-menu;
 
   &__collapse-button:hover,
   &__collapse-button:focus-visible {
-    color: var(--left-menu-text-active-color);
+    color: var(--left-menu-text-active-color) !important;
     background: var(--left-menu-hover-color);
     outline: none;
   }
@@ -1324,7 +1324,7 @@ $prefix-cls: #{$namespace}-menu;
 
   &__section--active > .#{$prefix-cls}__section-head .#{$prefix-cls}__section-icon,
   &__section--active > .#{$prefix-cls}__section-head .#{$prefix-cls}__section-title {
-    color: var(--left-menu-text-active-color);
+    color: var(--left-menu-text-active-color) !important;
   }
 
   &__links {
