@@ -93,7 +93,7 @@
                 <el-input
                   v-model="searchKeyword"
                   clearable
-                  placeholder="输入关键词搜索 Openverse 素材（如 cat, flower, art, pattern）"
+                  placeholder="输入关键词搜索 Openverse 免费素材（如 cat, flower, vintage, pattern）"
                   @keyup.enter="handleSearch"
                 />
                 <el-button type="primary" :loading="searchLoading" @click="handleSearch">
@@ -105,142 +105,147 @@
               <div v-if="searchResults.length > 0" class="collect-search__results">
                 <!-- 顶部批量操作及状态信息 -->
                 <div class="collect-search__header">
-                  <div class="batch-bar">
-                    <el-checkbox
-                      v-model="isAllSelected"
-                      :indeterminate="isIndeterminate"
-                      @change="handleSelectAll"
-                    >
-                      全选 ({{ selectedCount }}/{{ searchResults.length }})
-                    </el-checkbox>
-                    <el-button
-                      type="success"
-                      size="small"
-                      :disabled="selectedCount === 0"
-                      :loading="batchSyncLoading"
-                      @click="handleBatchSync"
-                    >
-                      批量保存到素材库 ({{ selectedCount }})
-                    </el-button>
-                    <el-button
-                      size="small"
-                      :disabled="selectedCount === 0"
-                      @click="handleBatchCopyLinks"
-                    >
-                      复制选中链接
-                    </el-button>
+                  <div class="collect-search__info">
+                    共 {{ searchTotal }} 个结果，第 {{ currentPage }} / {{ totalPages }} 页
                   </div>
-                  <div class="result-stats">
-                    找到 {{ totalCount }} 条素材
+                  <div class="collect-actions-bar">
+                    <el-checkbox
+                      :model-value="isAllSelected"
+                      :indeterminate="isIndeterminate"
+                      @change="toggleSelectAll"
+                    >
+                      全选
+                    </el-checkbox>
+                    <span class="collect-actions-bar__count">已选 {{ selectedItems.length }} 项</span>
+                    <el-button
+                      type="primary"
+                      size="small"
+                      :disabled="selectedItems.length === 0"
+                      :loading="batchDownloadLoading"
+                      @click="handleBatchDownload"
+                    >
+                      批量入库
+                    </el-button>
+                    <el-button
+                      size="small"
+                      :disabled="selectedItems.length === 0"
+                      @click="copySelectedLinks"
+                    >
+                      复制链接
+                    </el-button>
+                    <el-button size="small" @click="clearSelection">清空</el-button>
                   </div>
                 </div>
 
-                <!-- 网格列表 -->
-                <div class="photo-grid">
+                <!-- 统一列表渲染 -->
+                <div class="collect-list">
                   <div
                     v-for="item in searchResults"
                     :key="item.id"
-                    class="photo-card"
-                    :class="{ 'is-selected': isItemSelected(item.id) }"
-                    @click="toggleItemSelect(item.id)"
+                    class="collect-item"
+                    :class="{ 'is-selected': selectedItems.includes(item.id) }"
                   >
-                    <div class="photo-card__checkbox" @click.stop>
-                      <el-checkbox
-                        :model-value="isItemSelected(item.id)"
-                        @change="toggleItemSelect(item.id)"
+                    <el-checkbox
+                      :model-value="selectedItems.includes(item.id)"
+                      @change="toggleSelect(item)"
+                    />
+                    <div class="collect-item__thumb" @click="handlePreviewPhoto(item)">
+                      <img
+                        v-if="item.image || item.thumbnail"
+                        :src="item.thumbnail || item.image || ''"
+                        :alt="item.title || 'Openverse Photo'"
+                        loading="lazy"
                       />
-                    </div>
-                    <div class="photo-card__thumb">
-                      <img :src="item.thumbnail" :alt="item.title" loading="lazy" />
-                      <div class="photo-card__overlay">
-                        <el-button
-                          type="primary"
-                          circle
-                          size="small"
-                          icon="View"
-                          title="查看大图"
-                          @click.stop="openPreview(item)"
-                        />
-                        <el-button
-                          type="success"
-                          circle
-                          size="small"
-                          icon="FolderAdd"
-                          title="保存到素材库"
-                          :loading="syncingId === item.id"
-                          @click.stop="handleSyncSingle(item)"
-                        />
+                      <div v-else class="collect-item__thumb-error">
+                        <el-icon><Picture /></el-icon>
                       </div>
                     </div>
-                    <div class="photo-card__meta">
-                      <div class="photo-card__title" :title="item.title">{{ item.title }}</div>
-                      <div class="photo-card__author">
-                        <span>BY {{ item.author || 'Openverse' }}</span>
-                        <el-tag size="small" type="info" class="license-tag">{{ item.license }}</el-tag>
+                    <div class="collect-item__info">
+                      <div class="collect-item__title" :title="item.title || 'Openverse 素材'">
+                        {{ item.title || 'Openverse 素材' }}
                       </div>
+                      <div class="collect-item__meta">
+                        <span v-if="item.author">📷 {{ item.author }}</span>
+                        <span v-if="item.license" class="collect-item__size">
+                          {{ item.license }}
+                        </span>
+                        <span v-if="item.width" class="collect-item__size">
+                          {{ item.width }} × {{ item.height }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="collect-item__actions">
+                      <el-button
+                        size="small"
+                        @click.stop="copyLink(item.link || item.url || item.image || '')"
+                        title="复制详情页链接"
+                      >
+                        复制链接
+                      </el-button>
+                      <el-button
+                        type="primary"
+                        size="small"
+                        :loading="loadingItems.has(item.id)"
+                        :disabled="!item.image && !item.thumbnail"
+                        @click.stop="handleSyncOne(item)"
+                        title="同步到素材库"
+                      >
+                        入库
+                      </el-button>
                     </div>
                   </div>
                 </div>
 
-                <!-- 分页 -->
-                <div class="pagination-wrapper">
-                  <el-pagination
-                    v-model:current-page="currentPage"
-                    :page-size="pageSize"
-                    :total="totalCount"
-                    layout="prev, pager, next, jumper"
-                    @current-change="handlePageChange"
-                  />
+                <!-- 底部统计与分页 -->
+                <div class="collect-search__footer">
+                  <div class="collect-search__pagination">
+                    <el-pagination
+                      v-model:current-page="currentPage"
+                      v-model:page-size="pageSize"
+                      :page-sizes="[10, 20, 30, 50]"
+                      :total="searchTotal"
+                      layout="total, sizes, prev, pager, next, jumper"
+                      @size-change="handleSizeChange"
+                      @current-change="handlePageChange"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <!-- 搜索为空时提示 -->
               <el-empty
-                v-else-if="hasSearched && !searchLoading"
-                description="未找到相关素材，请尝试切换关键字"
+                v-else-if="hasSearched"
+                description="未搜到匹配的 Openverse 素材"
               />
             </div>
           </div>
-
-          <el-empty v-else description="请选择在线客户端节点" />
+          <div v-else class="collect-empty">
+            <el-empty description="暂无可用的客户端节点" />
+          </div>
         </section>
       </div>
 
-      <!-- 图片大图预览 Modal -->
-      <el-dialog
-        v-model="previewVisible"
-        title="素材详情预览"
-        width="800px"
-        destroy-on-close
-      >
-        <div v-if="previewItem" class="preview-modal">
+      <!-- 预览模态框 -->
+      <el-dialog v-model="previewVisible" title="图片详情" width="700px" destroy-on-close>
+        <div v-if="activePhoto" class="preview-modal">
           <div class="preview-modal__img">
-            <img :src="previewItem.image" :alt="previewItem.title" />
+            <img :src="activePhoto.image || activePhoto.thumbnail" :alt="activePhoto.title" />
           </div>
           <div class="preview-modal__info">
-            <h3>{{ previewItem.title }}</h3>
-            <p v-if="previewItem.description">{{ previewItem.description }}</p>
-            <div class="preview-meta-grid">
-              <div><strong>作者:</strong> {{ previewItem.author }}</div>
-              <div><strong>授权协议:</strong> {{ previewItem.license }}</div>
-              <div><strong>尺寸:</strong> {{ previewItem.width }} x {{ previewItem.height }}</div>
-              <div><strong>来源网站:</strong> {{ previewItem.provider }}</div>
-            </div>
-            <div class="preview-modal__actions">
-              <el-button type="primary" icon="Link" @click="openOriginalUrl(previewItem.url)">
-                查看来源页面
-              </el-button>
-              <el-button
-                type="success"
-                icon="FolderAdd"
-                :loading="syncingId === previewItem.id"
-                @click="handleSyncSingle(previewItem)"
-              >
-                保存到素材库
-              </el-button>
+            <h3>{{ activePhoto.title }}</h3>
+            <p v-if="activePhoto.description">{{ activePhoto.description }}</p>
+            <div class="preview-modal__meta">
+              <div><strong>ID:</strong> {{ activePhoto.id }}</div>
+              <div><strong>作者:</strong> {{ activePhoto.author || 'Openverse Contributor' }}</div>
+              <div><strong>授权协议:</strong> {{ activePhoto.license || 'CC / Public Domain' }}</div>
+              <div v-if="activePhoto.width"><strong>分辨率:</strong> {{ activePhoto.width }} x {{ activePhoto.height }}</div>
+              <div v-if="activePhoto.provider"><strong>数据源:</strong> {{ activePhoto.provider }}</div>
             </div>
           </div>
         </div>
+        <template #footer>
+          <el-button @click="previewVisible = false">关闭</el-button>
+          <el-button type="primary" @click="handleSyncOne(activePhoto)">入库素材库</el-button>
+        </template>
       </el-dialog>
     </div>
   </ContentWrap>
@@ -249,8 +254,10 @@
 <script setup lang="ts">
 import { ref, computed, watch, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Picture } from '@element-plus/icons-vue'
 import { usePluginClientNodes } from '@/services/clientNodeState'
-import { searchOpenverseAndWait, collectOpenverse, type OpenversePhoto } from '@/api/external/openverse'
+import { searchOpenverseAndWait, type OpenversePhoto } from '@/api/external/openverse'
+import { sendServiceCommand } from '@/api/system/websocket'
 import '@/styles/external-collect.css'
 
 defineOptions({ name: 'ExternalOpenverse' })
@@ -262,23 +269,22 @@ const {
   getServiceRuntime,
 } = usePluginClientNodes('openverse')
 
-const selectedClientId = ref<string>('')
-const searchLoading = ref(false)
-const actionLoading = ref({ refreshRuntime: false })
-
+const selectedClientId = ref('')
 const searchKeyword = ref('')
+const searchLoading = ref(false)
+const hasSearched = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(20)
-const totalCount = ref(0)
+const searchTotal = ref(0)
 const searchResults = ref<OpenversePhoto[]>([])
-const hasSearched = ref(false)
 
-const selectedItemIds = ref<Set<string>>(new Set())
-const syncingId = ref<string | null>(null)
-const batchSyncLoading = ref(false)
+const selectedItems = ref<string[]>([])
+const loadingItems = ref<Set<string>>(new Set())
+const batchDownloadLoading = ref(false)
 
+const actionLoading = reactive({ refreshRuntime: false })
+const activePhoto = ref<OpenversePhoto | null>(null)
 const previewVisible = ref(false)
-const previewItem = ref<OpenversePhoto | null>(null)
 
 const clients = computed(() => {
   return rawClients.value.map((client) => {
@@ -315,29 +321,89 @@ const selectedClient = computed(() => {
   return clients.value.find((c) => c.clientId === selectedClientId.value) || null
 })
 
+const availabilityTone = computed(() => (selectedClient.value?.isOnline ? 'online' : 'offline'))
+const availabilityText = computed(() => (selectedClient.value?.isOnline ? 'Openverse 开放图库采集服务就绪' : '节点离线'))
 const clientTone = computed(() => (selectedClient.value?.isOnline ? 'online' : 'offline'))
 const clientStatusText = computed(() => (selectedClient.value?.isOnline ? '客户端在线' : '客户端离线'))
 const siteTone = computed(() => 'online')
-const siteStatusBadge = computed(() => 'Openverse API 可用')
-const availabilityTone = computed(() => (selectedClient.value?.isOnline ? 'online' : 'offline'))
-const availabilityText = computed(() => (selectedClient.value?.isOnline ? 'Openverse 开放图库就绪 (6 亿+ CC 素材)' : '节点离线'))
+const siteStatusBadge = computed(() => 'openverse.org 可用')
 const platformText = computed(() => `平台: ${selectedClient.value?.os?.platform || selectedClient.value?.machine?.platform || 'Unknown'}`)
 const checkedAtText = computed(() => `检查于: ${new Date().toLocaleTimeString()}`)
 
-function handleSelectClient() {
+const totalPages = computed(() => Math.ceil(searchTotal.value / pageSize.value) || 1)
+
+// ─── 多选逻辑 ──────────────────────────────────────────────
+
+const isAllSelected = computed(() => {
+  if (searchResults.value.length === 0) return false
+  return searchResults.value.every((item) => selectedItems.value.includes(item.id))
+})
+
+const isIndeterminate = computed(() => {
+  if (searchResults.value.length === 0) return false
+  const count = searchResults.value.filter((item) => selectedItems.value.includes(item.id)).length
+  return count > 0 && count < searchResults.value.length
+})
+
+const toggleSelectAll = (val: boolean) => {
+  if (val) {
+    const pageIds = searchResults.value.map((item) => item.id)
+    selectedItems.value = Array.from(new Set([...selectedItems.value, ...pageIds]))
+  } else {
+    const pageIds = new Set(searchResults.value.map((item) => item.id))
+    selectedItems.value = selectedItems.value.filter((id) => !pageIds.has(id))
+  }
+}
+
+const toggleSelect = (item: OpenversePhoto) => {
+  const index = selectedItems.value.indexOf(item.id)
+  if (index > -1) {
+    selectedItems.value.splice(index, 1)
+  } else {
+    selectedItems.value.push(item.id)
+  }
+}
+
+const clearSelection = () => {
+  selectedItems.value = []
+}
+
+const copyLink = (url: string) => {
+  if (!url) return
+  navigator.clipboard.writeText(url)
+  ElMessage.success('已复制链接到剪贴板')
+}
+
+const copySelectedLinks = () => {
+  const selectedPhotos = searchResults.value.filter((item) => selectedItems.value.includes(item.id))
+  const links = selectedPhotos.map((item) => item.link || item.url || item.image).filter(Boolean)
+  if (links.length === 0) {
+    ElMessage.warning('没有可复制的链接')
+    return
+  }
+  navigator.clipboard.writeText(links.join('\n'))
+  ElMessage.success(`已复制 ${links.length} 个链接到剪贴板`)
+}
+
+// ─── 页面交互 ──────────────────────────────────────────────
+
+const handleSelectClient = () => {
   searchResults.value = []
   hasSearched.value = false
-  selectedItemIds.value.clear()
+  clearSelection()
 }
 
-async function handleRefreshRuntime() {
-  actionLoading.value.refreshRuntime = true
-  await refreshClientNodes()
-  actionLoading.value.refreshRuntime = false
-  ElMessage.success('节点状态刷新完成')
+const handleRefreshRuntime = async () => {
+  actionLoading.refreshRuntime = true
+  try {
+    await refreshClientNodes()
+    ElMessage.success('刷新就绪状态成功')
+  } finally {
+    actionLoading.refreshRuntime = false
+  }
 }
 
-async function handleSearch() {
+const handleSearch = async () => {
   if (!searchKeyword.value.trim()) {
     ElMessage.warning('请输入搜索关键词')
     return
@@ -346,9 +412,10 @@ async function handleSearch() {
     ElMessage.warning('请选择客户端节点')
     return
   }
-
   searchLoading.value = true
-  selectedItemIds.value.clear()
+  hasSearched.value = true
+  clearSelection()
+
   try {
     const res = await searchOpenverseAndWait({
       keyword: searchKeyword.value.trim(),
@@ -356,162 +423,105 @@ async function handleSearch() {
       page: currentPage.value,
       clientId: selectedClientId.value,
     })
-
-    if (res.success) {
-      searchResults.value = res.items || []
-      totalCount.value = res.total || res.items.length
-      hasSearched.value = true
-      if (!res.items.length) {
-        ElMessage.info('未搜到匹配的素材')
-      }
+    searchResults.value = res?.items || []
+    searchTotal.value = res?.total || res?.count || (res?.items || []).length
+    if (res?.items?.length) {
+      ElMessage.success(`找到 ${res.items.length} 张 Openverse 图片`)
     } else {
-      ElMessage.error(res.error || '搜索失败')
+      ElMessage.info('未搜到匹配结果')
     }
-  } catch (err: any) {
-    ElMessage.error(err?.message || '搜索请求发生错误')
+  } catch (e: any) {
+    ElMessage.error(e?.message || '搜索 Openverse 失败')
   } finally {
     searchLoading.value = false
   }
 }
 
-function handleSizeChange() {
-  currentPage.value = 1
-  if (searchKeyword.value.trim()) {
-    handleSearch()
-  }
-}
-
-function handlePageChange(page: number) {
+const handlePageChange = (page: number) => {
   currentPage.value = page
   handleSearch()
 }
 
-function isItemSelected(id: string): boolean {
-  return selectedItemIds.value.has(id)
+const handleSizeChange = (size: number) => {
+  pageSize.value = size
+  currentPage.value = 1
+  handleSearch()
 }
 
-function toggleItemSelect(id: string) {
-  if (selectedItemIds.value.has(id)) {
-    selectedItemIds.value.delete(id)
-  } else {
-    selectedItemIds.value.add(id)
-  }
-}
-
-function handleSelectAll(val: any) {
-  if (val) {
-    searchResults.value.forEach((item) => selectedItemIds.value.add(item.id))
-  } else {
-    selectedItemIds.value.clear()
-  }
-}
-
-async function handleSyncSingle(item: OpenversePhoto) {
-  if (!selectedClientId.value) return
-  syncingId.value = item.id
-  try {
-    const res = await collectOpenverse({
-      keyword: searchKeyword.value.trim() || item.title,
-      maxCount: 1,
-      syncToMaterial: true,
-      clientId: selectedClientId.value,
-    })
-    if (res.success) {
-      ElMessage.success(`素材《${item.title}》同步成功`)
-    } else {
-      ElMessage.error(res.message || '同步失败')
-    }
-  } catch (err: any) {
-    ElMessage.error(err?.message || '同步报错')
-  } finally {
-    syncingId.value = null
-  }
-}
-
-async function handleBatchSync() {
-  if (selectedCount.value === 0 || !selectedClientId.value) return
-  batchSyncLoading.value = true
-  let okCount = 0
-  for (const item of searchResults.value) {
-    if (selectedItemIds.value.has(item.id)) {
-      try {
-        const res = await collectOpenverse({
-          keyword: item.title,
-          maxCount: 1,
-          syncToMaterial: true,
-          clientId: selectedClientId.value,
-        })
-        if (res.success) okCount++
-      } catch {
-        // ignore
-      }
-    }
-  }
-  batchSyncLoading.value = false
-  ElMessage.success(`成功保存 ${okCount} 张素材到素材库`)
-}
-
-function handleBatchCopyLinks() {
-  const links: string[] = []
-  searchResults.value.forEach((item) => {
-    if (selectedItemIds.value.has(item.id) && item.image) {
-      links.push(item.image)
-    }
-  })
-  if (links.length > 0) {
-    navigator.clipboard.writeText(links.join('\n'))
-    ElMessage.success(`已复制 ${links.length} 条高清链接到剪贴板`)
-  }
-}
-
-function openPreview(item: OpenversePhoto) {
-  previewItem.value = item
+const handlePreviewPhoto = (photo: OpenversePhoto) => {
+  activePhoto.value = photo
   previewVisible.value = true
 }
 
-function openOriginalUrl(url: string) {
-  if (url) window.open(url, '_blank')
+const handleSyncOne = async (item: OpenversePhoto | null) => {
+  if (!item || !selectedClientId.value) return
+  loadingItems.value.add(item.id)
+  try {
+    await sendServiceCommand({
+      target: { clientId: selectedClientId.value, pluginKey: 'openverse' },
+      command: {
+        name: 'sync',
+        payload: {
+          imageUrl: item.image,
+          metadata: {
+            title: item.title,
+            url: item.url,
+            author: item.author,
+            width: item.width,
+            height: item.height,
+            id: item.id,
+          },
+        },
+      },
+      mode: 'production',
+    })
+    ElMessage.success(`已发起同步: ${item.title || item.id}`)
+  } catch (e: any) {
+    ElMessage.error(e?.message || '同步失败')
+  } finally {
+    loadingItems.value.delete(item.id)
+  }
+}
+
+const handleBatchDownload = async () => {
+  if (!selectedClientId.value || selectedItems.value.length === 0) return
+  batchDownloadLoading.value = true
+
+  const selectedPhotos = searchResults.value.filter((item) => selectedItems.value.includes(item.id))
+  let successCount = 0
+  let failCount = 0
+
+  for (const item of selectedPhotos) {
+    try {
+      await sendServiceCommand({
+        target: { clientId: selectedClientId.value, pluginKey: 'openverse' },
+        command: {
+          name: 'sync',
+          payload: {
+            imageUrl: item.image,
+            metadata: {
+              title: item.title,
+              url: item.url,
+              author: item.author,
+              width: item.width,
+              height: item.height,
+              id: item.id,
+            },
+          },
+        },
+        mode: 'production',
+      })
+      successCount++
+    } catch {
+      failCount++
+    }
+  }
+
+  batchDownloadLoading.value = false
+  ElMessage.success(`批量入库指令已发送：成功 ${successCount} 个，失败 ${failCount} 个`)
 }
 
 onMounted(() => {
   refreshClientNodes()
 })
 </script>
-
-<style scoped>
-.preview-modal {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-.preview-modal__img {
-  text-align: center;
-  background: #f8fafc;
-  border-radius: 8px;
-  padding: 12px;
-}
-.preview-modal__img img {
-  max-width: 100%;
-  max-height: 450px;
-  object-fit: contain;
-  border-radius: 6px;
-}
-.preview-modal__info h3 {
-  margin: 0 0 8px 0;
-  font-size: 1.1rem;
-}
-.preview-meta-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px 16px;
-  font-size: 0.9rem;
-  color: #475569;
-  margin-top: 12px;
-}
-.preview-modal__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 16px;
-}
-</style>
