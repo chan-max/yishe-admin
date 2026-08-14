@@ -28,7 +28,7 @@
           </el-select>
         </div>
         <div class="collect-toolbar__actions">
-          <el-button @click="loadClients">刷新节点</el-button>
+          <el-button @click="refreshClientNodes">刷新节点</el-button>
           <el-button
             type="primary"
             :disabled="!selectedClientId || !selectedClient?.isOnline"
@@ -174,6 +174,7 @@
               </div>
             </div>
           </div>
+          <el-empty v-else description="请先在上方选择客户端节点" />
         </section>
       </div>
 
@@ -205,7 +206,8 @@
         <el-form label-width="100px">
           <el-form-item label="关键词">
             <el-input v-model="batchKeyword" placeholder="输入搜索关键词" />
-          </el-form-item>          <el-form-item label="入库数量">
+          </el-form-item>
+          <el-form-item label="入库数量">
             <el-input-number v-model="batchMaxCount" :min="1" :max="50" />
           </el-form-item>
           <el-form-item label="排序方式">
@@ -226,28 +228,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getClientNodes, type ClientNodeVo } from '@/api/system/websocket'
+import { usePluginClientNodes } from '@/services/clientNodeState'
 import { searchRawpixelAndWait, collectRawpixel, type RawpixelPhoto } from '@/api/external/rawpixel'
+import '@/styles/external-collect.css'
 
 defineOptions({ name: 'ExternalRawpixel' })
 
-const clients = ref<ClientNodeVo[]>([])
-const selectedClientId = ref<string>('')
-const loading = ref(false)
+const {
+  clients: rawClients,
+  loading,
+  refresh: refreshClientNodes,
+  getServiceRuntime,
+} = usePluginClientNodes('rawpixel')
+
+const selectedClientId = ref('')
 const searching = ref(false)
 const hasSearched = ref(false)
 const searchKeyword = ref('cat')
 const queryKeyword = ref('')
 const sort = ref('curated')
-const type = ref('image')
 const currentPage = ref(1)
 const pageSize = ref(20)
 const searchCount = ref(0)
 const searchResults = ref<RawpixelPhoto[]>([])
 
-const actionLoading = ref({ refreshRuntime: false })
+const actionLoading = reactive({ refreshRuntime: false })
 const activePhoto = ref<RawpixelPhoto | null>(null)
 const previewVisible = ref(false)
 
@@ -257,7 +264,40 @@ const batchMaxCount = ref(10)
 const batchSort = ref('curated')
 const batchLoading = ref(false)
 
-const selectedClient = computed(() => clients.value.find((c) => c.clientId === selectedClientId.value))
+const clients = computed(() => {
+  return rawClients.value.map((client) => {
+    const rawpixel = getServiceRuntime(client) || null
+    return {
+      clientId: client.id,
+      isOnline: client.isOnline,
+      nodeStatus: client.nodeStatus,
+      connectedAt: client.connectedAt,
+      lastOnlineAt: client.lastOnlineAt,
+      appVersion: client.clientInfo?.appVersion || null,
+      workspaceDirectory: client.clientInfo?.workspaceDirectory || null,
+      machine: client.clientInfo?.machine || null,
+      location: client.clientInfo?.location || null,
+      os: client.clientInfo?.os || null,
+      rawpixel,
+    }
+  })
+})
+
+watch(
+  clients,
+  (list) => {
+    if (list.length > 0 && !selectedClientId.value) {
+      const onlineClient = list.find((c) => c.isOnline)
+      selectedClientId.value = onlineClient ? onlineClient.clientId : list[0].clientId
+    }
+  },
+  { immediate: true }
+)
+
+const selectedClient = computed(() => {
+  if (!selectedClientId.value) return null
+  return clients.value.find((c) => c.clientId === selectedClientId.value) || null
+})
 
 const availabilityTone = computed(() => (selectedClient.value?.isOnline ? 'online' : 'offline'))
 const availabilityText = computed(() => (selectedClient.value?.isOnline ? 'Rawpixel 图库采集服务就绪' : '节点离线'))
@@ -268,33 +308,18 @@ const siteStatusBadge = computed(() => 'www.rawpixel.com 可用')
 const platformText = computed(() => `平台: ${selectedClient.value?.os?.platform || 'Unknown'}`)
 const checkedAtText = computed(() => `检查于: ${new Date().toLocaleTimeString()}`)
 
-const loadClients = async () => {
-  loading.value = true
-  try {
-    const list = await getClientNodes()
-    clients.value = list || []
-    if (list && list.length && !selectedClientId.value) {
-      selectedClientId.value = list[0].clientId
-    }
-  } catch (e: any) {
-    ElMessage.error(e?.message || '获取客户端节点失败')
-  } finally {
-    loading.value = false
-  }
-}
-
 const handleSelectClient = () => {
   searchResults.value = []
   hasSearched.value = false
 }
 
 const handleRefreshRuntime = async () => {
-  actionLoading.value.refreshRuntime = true
+  actionLoading.refreshRuntime = true
   try {
-    await loadClients()
+    await refreshClientNodes()
     ElMessage.success('刷新就绪状态成功')
   } finally {
-    actionLoading.value.refreshRuntime = false
+    actionLoading.refreshRuntime = false
   }
 }
 
@@ -395,10 +420,6 @@ const handleExecuteBatch = async () => {
 const openExternalUrl = (url: string) => {
   if (url) window.open(url, '_blank')
 }
-
-onMounted(() => {
-  loadClients()
-})
 </script>
 
 <style scoped>
