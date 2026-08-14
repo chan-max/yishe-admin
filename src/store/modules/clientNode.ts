@@ -19,6 +19,10 @@ export type ClientPluginKey =
   | "browser-automation"
   | "ps-automation"
   | "google-art"
+  | "pinterest"
+  | "wikimedia"
+  | "pexels"
+  | "pixabay"
   | "image-processing"
   | "video-template"
   | "file-download";
@@ -269,6 +273,15 @@ export const getClientServiceRuntime = (
   if (pluginKey === "file-download") {
     return services["file-download"] || null;
   }
+  if (pluginKey === "pinterest") {
+    return services["pinterest"] || null;
+  }
+  if (pluginKey === "wikimedia") {
+    return services["wikimedia"] || null;
+  }
+  if (pluginKey === "pexels") {
+    return services["pexels"] || null;
+  }
   return services["google-art"] || services.googleArt || null;
 };
 
@@ -315,6 +328,9 @@ export const useClientNodeStore = defineStore("client-node", () => {
       "browser-automation": "offline",
       "ps-automation": "offline",
       "google-art": "offline",
+      "pinterest": "offline",
+      "wikimedia": "offline",
+      "pexels": "offline",
       "image-processing": "offline",
       "video-template": "offline",
       "file-download": "offline",
@@ -325,6 +341,9 @@ export const useClientNodeStore = defineStore("client-node", () => {
         "browser-automation",
         "ps-automation",
         "google-art",
+        "pinterest",
+        "wikimedia",
+        "pexels",
         "image-processing",
         "video-template",
         "file-download",

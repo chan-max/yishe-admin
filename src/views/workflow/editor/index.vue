@@ -40,6 +40,10 @@ import HotsearchNode from '@/components/workflow/nodes/HotsearchNode.vue'
 import FeishuNode from '@/components/workflow/nodes/FeishuNode.vue'
 import WecomNode from '@/components/workflow/nodes/WecomNode.vue'
 import GoogleArtsCultureNode from '@/components/workflow/nodes/GoogleArtsCultureNode.vue'
+import PinterestNode from '@/components/workflow/nodes/PinterestNode.vue'
+import WikimediaNode from '@/components/workflow/nodes/WikimediaNode.vue'
+import PexelsNode from '@/components/workflow/nodes/PexelsNode.vue'
+import PixabayNode from '@/components/workflow/nodes/PixabayNode.vue'
 
 import NodePanel from '@/components/workflow/NodePanel.vue'
 import ConfigPanel from '@/components/workflow/ConfigPanel.vue'
@@ -180,6 +184,10 @@ const nodeTypes = {
   message_push_feishu: markRaw(FeishuNode),
   message_push_wecom: markRaw(WecomNode),
   google_arts_culture: markRaw(GoogleArtsCultureNode),
+  pinterest_culture: markRaw(PinterestNode),
+  wikimedia_culture: markRaw(WikimediaNode),
+  pexels_search: markRaw(PexelsNode),
+  pixabay_search: markRaw(PixabayNode),
 }
 
 // ─── 撤销/重做历史 ─────────────────────────────────────────────

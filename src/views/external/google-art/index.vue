@@ -1,10 +1,33 @@
 <template>
   <ContentWrap :plain="true">
-    <div class="google-art-page">
+    <div class="collect-page">
       <!-- 工具栏 -->
-      <div class="google-art-toolbar">
-        <div class="google-art-toolbar__title">Google Art 控制台</div>
-        <div class="google-art-toolbar__actions">
+      <div class="collect-toolbar">
+        <div class="collect-toolbar__left">
+          <div class="collect-toolbar__title">Google Art 控制台</div>
+          <el-select
+            v-model="selectedClientId"
+            placeholder="选择客户端节点"
+            size="default"
+            style="width: 220px;"
+            @change="handleSelectClient"
+          >
+            <el-option
+              v-for="item in clients"
+              :key="item.clientId"
+              :label="item.machine?.code || item.clientId"
+              :value="item.clientId"
+            >
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                <span>{{ item.machine?.code || item.clientId }}</span>
+                <el-tag :type="item.isOnline ? 'success' : 'info'" size="small">
+                  {{ item.isOnline ? '在线' : '离线' }}
+                </el-tag>
+              </div>
+            </el-option>
+          </el-select>
+        </div>
+        <div class="collect-toolbar__actions">
           <el-button @click="loadClients">刷新节点</el-button>
           <el-button
             type="primary"
@@ -18,20 +41,10 @@
       </div>
 
       <!-- 客户端节点区域 -->
-      <div class="google-art-layout" v-loading="loading">
-        <!-- 左侧节点栏 -->
-        <ExternalClientSidebar
-          :items="clientNodeItems"
-          :loading="loading"
-          :selected-client-id="selectedClientId"
-          section-title="客户端节点"
-          empty-text="暂无可用客户端"
-          @select="handleSelectClient"
-        />
-
-        <!-- 右侧主区域 -->
-        <section class="google-art-main">
-          <div v-if="selectedClient" class="google-art-panel">
+      <div class="collect-layout" v-loading="loading">
+        <!-- 主区域 -->
+        <section class="collect-main">
+          <div v-if="selectedClient" class="collect-panel">
             <!-- 状态卡片 -->
             <div class="status-hero">
               <div class="hero-main" :class="`is-${availabilityTone}`">
@@ -60,19 +73,22 @@
             </div>
 
             <!-- 作品搜索 -->
-            <div class="google-art-section">
-              <div class="google-art-search__header">
-                <div class="google-art-section__title">作品搜索</div>
-                <div class="google-art-search__count">
-                  <span class="google-art-search__count-label">每页</span>
-                  <el-select v-model="pageSize" size="small" style="width: 80px">
-                    <el-option :value="10" label="10 条" />
-                    <el-option :value="20" label="20 条" />
-                    <el-option :value="30" label="30 条" />
-                  </el-select>
+            <div class="collect-section">
+              <div class="collect-search__header">
+                <div class="collect-section__title">作品搜索</div>
+                <div class="collect-search__opts">
+                  <div class="collect-search__field">
+                    <span class="collect-search__label">每页数量</span>
+                    <el-select v-model="pageSize" size="small" style="width: 100px" @change="handleSizeChange">
+                      <el-option :value="10" label="10 条" />
+                      <el-option :value="20" label="20 条" />
+                      <el-option :value="30" label="30 条" />
+                      <el-option :value="50" label="50 条" />
+                    </el-select>
+                  </div>
                 </div>
               </div>
-              <div class="google-art-inline">
+              <div class="collect-inline">
                 <el-input
                   v-model="searchKeyword"
                   clearable
@@ -89,23 +105,62 @@
               </div>
 
               <!-- 搜索结果 -->
-              <div v-if="searchResults.length > 0" class="google-art-search__results">
-                <div class="google-art-search__info">
-                  共 {{ searchTotal }} 个结果，第 {{ currentPage }} / {{ totalPages }} 页
+              <div v-if="searchResults.length > 0" class="collect-search__results">
+                <!-- 顶部批量操作及状态信息 -->
+                <div class="collect-search__header">
+                  <div class="collect-search__info">
+                    共 {{ searchTotal }} 个结果，第 {{ currentPage }} / {{ totalPages }} 页
+                  </div>
+                  <div class="collect-actions-bar">
+                    <el-checkbox
+                      :model-value="isAllSelected"
+                      :indeterminate="isIndeterminate"
+                      @change="toggleSelectAll"
+                    >
+                      全选
+                    </el-checkbox>
+                    <span class="collect-actions-bar__count">已选 {{ selectedItems.length }} 项</span>
+                    <el-select
+                      v-model="batchQualityPreference"
+                      size="small"
+                      style="width: 155px; margin-right: 8px;"
+                      placeholder="清晰度选择"
+                    >
+                      <el-option label="按最大像素(最高清)" value="max" />
+                      <el-option label="按最小像素(最低清)" value="min" />
+                    </el-select>
+                    <el-button
+                      type="primary"
+                      size="small"
+                      :disabled="selectedItems.length === 0"
+                      :loading="batchDownloadLoading"
+                      @click="handleBatchDownload"
+                    >
+                      批量入库
+                    </el-button>
+                    <el-button
+                      size="small"
+                      :disabled="selectedItems.length === 0"
+                      @click="copySelectedLinks"
+                    >
+                      复制链接
+                    </el-button>
+                    <el-button size="small" @click="clearSelection">清空</el-button>
+                  </div>
                 </div>
 
-                <div class="google-art-list">
+                <div class="collect-list">
                   <div
                     v-for="item in searchResults"
                     :key="item.id"
-                    class="google-art-item"
+                    class="collect-item"
                     :class="{ 'is-selected': selectedItems.includes(item.url) }"
                   >
                     <el-checkbox
                       :model-value="selectedItems.includes(item.url)"
                       @change="toggleSelect(item)"
                     />
-                    <div class="google-art-item__thumb">
+                    <div class="collect-item__thumb">
                       <img
                         v-if="item.thumbnail"
                         :src="item.thumbnail"
@@ -113,29 +168,28 @@
                         loading="lazy"
                         @error="onImageError"
                       />
-                      <div v-else class="google-art-item__thumb-error">
+                      <div v-else class="collect-item__thumb-error">
                         <el-icon><Picture /></el-icon>
                       </div>
                     </div>
-                    <div class="google-art-item__info">
-                      <div class="google-art-item__title" :title="item.title">{{ item.title }}</div>
-                      <div class="google-art-item__meta">
+                    <div class="collect-item__info">
+                      <div class="collect-item__title" :title="item.title">{{ item.title }}</div>
+                      <div class="collect-item__meta">
                         <span v-if="item.artist">{{ item.artist }}</span>
                         <span v-if="item.institution">{{ item.institution }}</span>
                       </div>
                     </div>
-                    <div class="google-art-item__actions">
+                    <div class="collect-item__actions">
                       <el-button
-                        link
                         size="small"
-                        :icon="Link"
                         @click.stop="copyLink(item.url)"
-                        title="复制链接"
-                      />
+                        title="复制详情页链接"
+                      >
+                        复制链接
+                      </el-button>
                       <el-button
-                        link
-                        size="small"
                         type="primary"
+                        size="small"
                         :loading="loadingItems.has(item.id)"
                         @click.stop="openZoomDialog(item)"
                         title="添加到素材库"
@@ -194,51 +248,23 @@
               </el-dialog>
 
               <!-- 分页 -->
-              <div class="google-art-pagination">
+              <div class="collect-pagination">
                 <el-pagination
                   v-model:current-page="currentPage"
-                  :page-size="pageSize"
+                  v-model:page-size="pageSize"
                   :total="searchTotal"
                   layout="prev, pager, next, jumper"
                   background
                   @current-change="handlePageChange"
+                  @size-change="handleSizeChange"
                 />
-              </div>
-
-              <!-- 批量操作栏 -->
-              <div v-if="searchResults.length > 0" class="google-art-actions-bar">
-                <el-checkbox
-                  :model-value="isAllSelected"
-                  :indeterminate="isIndeterminate"
-                  @change="toggleSelectAll"
-                >
-                  全选
-                </el-checkbox>
-                <span class="google-art-actions-bar__count">已选 {{ selectedItems.length }} 个</span>
-                <el-button
-                  type="primary"
-                  size="small"
-                  :disabled="selectedItems.length === 0"
-                  :loading="batchDownloadLoading"
-                  @click="handleBatchDownload"
-                >
-                  批量入库
-                </el-button>
-                <el-button
-                  size="small"
-                  :disabled="selectedItems.length === 0"
-                  @click="copySelectedLinks"
-                >
-                  复制链接
-                </el-button>
-                <el-button size="small" @click="clearSelection">清空</el-button>
               </div>
             </div>
 
             <!-- 单链接下载（兼容旧模式） -->
-            <div class="google-art-section">
-              <div class="google-art-section__title">单链接下载</div>
-              <div class="google-art-inline">
+            <div class="collect-section">
+              <div class="collect-section__title">单链接下载</div>
+              <div class="collect-inline">
                 <el-input
                   v-model="artUrl"
                   clearable
@@ -255,8 +281,8 @@
                 </el-button>
               </div>
 
-              <div v-if="zoomOptions.length" class="google-art-field">
-                <div class="google-art-field__label">分辨率</div>
+              <div v-if="zoomOptions.length" class="collect-field">
+                <div class="collect-field__label">分辨率</div>
                 <el-radio-group v-model="selectedZoom" class="zoom-group">
                   <el-radio-button v-for="item in zoomOptions" :key="item.idx" :label="item.idx">
                     {{ item.width }} × {{ item.height }}
@@ -264,7 +290,7 @@
                 </el-radio-group>
               </div>
 
-              <div class="google-art-actions">
+              <div class="collect-actions">
                 <el-button
                   type="primary"
                   :disabled="!canOperate || !artUrl.trim() || selectedZoom === null"
@@ -277,8 +303,8 @@
             </div>
 
             <!-- 执行结果 -->
-            <div class="google-art-section">
-              <div class="google-art-section__title">执行结果</div>
+            <div class="collect-section">
+              <div class="collect-section__title">执行结果</div>
               <el-empty v-if="!lastResult" description="暂无执行结果" />
               <div v-else class="result-block">
                 <div class="result-row">
@@ -301,7 +327,7 @@
             </div>
           </div>
 
-          <div v-else class="google-art-panel google-art-panel--empty">
+          <div v-else class="collect-panel collect-panel--empty">
             <el-empty description="请选择客户端节点" />
           </div>
         </section>
@@ -433,6 +459,7 @@ const zoomDialogItem = ref<GoogleArtAsset | null>(null)
 const zoomDialogOptions = ref<GoogleArtZoomLevel[]>([])
 const selectedZoomLevel = ref<number | null>(null)
 const batchDownloadLoading = ref(false)
+const batchQualityPreference = ref<'max' | 'min'>('min')
 
 // ─── 计算属性 ────────────────────────────────────────────────
 
@@ -572,7 +599,14 @@ const handleSearch = async () => {
       return
     }
     searchResults.value = result.items || []
-    searchTotal.value = result.total || 0
+    if (result.total) {
+      searchTotal.value = result.total;
+    } else if (result.data && result.data.length > 0) {
+      // 伪造 total 以支持分页组件的“下一页”功能
+      searchTotal.value = currentPage.value * pageSize.value + 1;
+    } else {
+      searchTotal.value = 0;
+    }
     totalPages.value = Math.ceil(searchTotal.value / pageSize.value)
     nextCursor.value = result.nextCursor || null
     cursorHistory.value.push(nextCursor.value || '')
@@ -607,29 +641,31 @@ const handleBatchDownload = async () => {
   let successCount = 0
   let failCount = 0
 
+  const qualityLabel = batchQualityPreference.value === 'min' ? '按最小像素' : '按最大像素'
+
   ElNotification.info({
     title: '批量下载',
-    message: `开始下载 ${selectedItems.value.length} 个作品...`,
+    message: `开始下载 ${selectedItems.value.length} 个作品 (${qualityLabel})...`,
     duration: 3000,
   })
 
   for (let i = 0; i < selectedItems.value.length; i++) {
     const url = selectedItems.value[i]
     try {
-      // 获取分辨率
+      // 获取分辨率列表
       const zoomsResult = await fetchGoogleArtZoomsAndWait(selectedClientId.value, url)
       if (!zoomsResult.success || !zoomsResult.data?.zooms?.length) {
         failCount++
         continue
       }
 
-      const zooms = zoomsResult.data.zooms
-      const maxZoom = zooms[zooms.length - 1]
+      const sortedZooms = [...zoomsResult.data.zooms].sort((a, b) => (a.width * a.height) - (b.width * b.height))
+      const targetZoom = batchQualityPreference.value === 'min' ? sortedZooms[0] : sortedZooms[sortedZooms.length - 1]
 
-      // 下载
+      // 下载并入库
       const syncResult = await syncGoogleArtToMaterialLibraryAndWait(selectedClientId.value, {
         url,
-        zoomLevel: maxZoom.idx,
+        zoomLevel: targetZoom.idx,
       })
 
       if (syncResult.success) {
@@ -646,7 +682,7 @@ const handleBatchDownload = async () => {
 
   ElNotification({
     title: '批量下载完成',
-    message: `成功 ${successCount} 个，失败 ${failCount} 个`,
+    message: `成功 ${successCount} 个，失败 ${failCount} 个 (${qualityLabel})`,
     type: failCount === 0 ? 'success' : 'warning',
     duration: 5000,
   })
@@ -725,6 +761,12 @@ const handlePageChange = async (page: number) => {
   } finally {
     searchLoading.value = false
   }
+}
+
+const handleSizeChange = (newSize: number) => {
+  pageSize.value = newSize
+  currentPage.value = 1
+  handleSearch()
 }
 
 // ─── 单链接下载 ──────────────────────────────────────────────
@@ -940,515 +982,4 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
-.google-art-page {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.google-art-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.google-art-toolbar__title {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.google-art-toolbar__actions {
-  display: flex;
-  gap: 8px;
-}
-
-/* ─── 搜索区域 ─── */
-.google-art-search__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-
-.google-art-search__count {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.google-art-search__count-label {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
-.google-art-search__results {
-  margin-top: 12px;
-}
-
-.google-art-search__info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  font-size: 13px;
-  color: var(--el-text-color-secondary);
-}
-
-/* ─── 列表 ─── */
-.google-art-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  max-height: 480px;
-  overflow-y: auto;
-  border: 1px solid var(--el-border-color);
-  border-radius: 6px;
-}
-
-/* 窄滚动条 */
-.google-art-list::-webkit-scrollbar {
-  width: 4px;
-}
-.google-art-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-.google-art-list::-webkit-scrollbar-thumb {
-  background: var(--el-border-color);
-  border-radius: 2px;
-}
-.google-art-list::-webkit-scrollbar-thumb:hover {
-  background: var(--el-text-color-secondary);
-}
-
-.google-art-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 10px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.google-art-item:last-child {
-  border-bottom: none;
-}
-
-.google-art-item:hover {
-  background: var(--el-fill-color-light);
-}
-
-.google-art-item.is-selected {
-  background: var(--el-color-primary-light-9);
-}
-
-.google-art-item__thumb {
-  flex-shrink: 0;
-  width: 48px;
-  height: 48px;
-  border-radius: 4px;
-  overflow: hidden;
-  background: var(--el-fill-color);
-}
-
-.google-art-item__thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.google-art-item__thumb-error {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  color: var(--el-text-color-placeholder);
-  font-size: 16px;
-}
-
-.google-art-item__info {
-  flex: 1;
-  min-width: 0;
-}
-
-.google-art-item__title {
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 1.4;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.google-art-item__meta {
-  display: flex;
-  gap: 8px;
-  margin-top: 2px;
-  font-size: 11px;
-  color: var(--el-text-color-secondary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.google-art-item__actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
-/* ─── 分辨率选择对话框 ─── */
-.zoom-dialog__preview {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-}
-
-.zoom-dialog__preview img {
-  width: 80px;
-  height: 80px;
-  border-radius: 6px;
-  object-fit: cover;
-  background: var(--el-fill-color-light);
-}
-
-.zoom-dialog__info {
-  flex: 1;
-  min-width: 0;
-}
-
-.zoom-dialog__title {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 4px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.zoom-dialog__meta {
-  display: flex;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
-.zoom-dialog__options {
-  margin-top: 8px;
-}
-
-.zoom-dialog__label {
-  margin-bottom: 10px;
-  font-size: 13px;
-  color: var(--el-text-color-regular);
-}
-
-.zoom-options {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-}
-
-.zoom-option {
-  display: flex !important;
-  align-items: center;
-  margin-right: 0 !important;
-  margin-left: 0 !important;
-  gap: 12px;
-  margin-bottom: 8px;
-  padding: 8px 12px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 6px;
-  transition: all 0.2s;
-  max-width: 520px;
-  width: 100% !important;
-  justify-content: flex-start;
-  text-align: left;
-}
-
-.zoom-option :deep(.el-radio__label) {
-  display: flex;
-  align-items: center;
-  flex: 1;
-  min-width: 0;
-  gap: 12px;
-  padding-left: 8px;
-}
-
-.zoom-option:hover {
-  border-color: var(--el-color-primary-light-5);
-  background: var(--el-fill-color-light);
-}
-
-.zoom-option__size {
-  font-size: 13px;
-  font-weight: 600;
-  width: 120px;
-  flex-shrink: 0;
-  text-align: left;
-}
-
-.zoom-option__label {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: left;
-}
-
-.zoom-option__tiles {
-  font-size: 11px;
-  color: var(--el-text-color-placeholder);
-  flex-shrink: 0;
-  text-align: right;
-  min-width: 60px;
-}
-
-/* ─── 分页 ─── */
-.google-art-pagination {
-  display: flex;
-  justify-content: center;
-  margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px solid var(--el-border-color-lighter);
-}
-
-/* ─── 操作栏 ─── */
-.google-art-actions-bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 16px;
-  padding: 12px;
-  background: var(--el-color-primary-light-9);
-  border: 1px solid var(--el-color-primary-light-5);
-  border-radius: 8px;
-}
-
-.google-art-actions-bar__count {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--el-color-primary);
-}
-
-/* ─── 布局 ─── */
-.google-art-layout {
-  display: grid;
-  grid-template-columns: 320px minmax(0, 1fr);
-  gap: 12px;
-}
-
-.google-art-panel {
-  padding: 12px;
-  background: var(--el-bg-color);
-  border: 1px solid var(--el-border-color);
-  border-radius: 12px;
-}
-
-.google-art-panel--empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 420px;
-}
-
-.google-art-inline {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.google-art-section + .google-art-section {
-  margin-top: 16px;
-}
-
-.google-art-section__title {
-  margin-bottom: 10px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-}
-
-.google-art-inline {
-  justify-content: flex-start;
-}
-
-.google-art-inline :deep(.el-input) {
-  flex: 1;
-}
-
-.google-art-field {
-  margin-top: 12px;
-}
-
-.google-art-field__label {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
-.zoom-group {
-  display: flex;
-  flex-wrap: wrap;
-}
-
-.google-art-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-/* ─── 状态卡片 ─── */
-.status-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.hero-main {
-  padding: 12px 14px;
-  color: var(--el-text-color-primary);
-  background: var(--el-bg-color-page);
-  border: 1px solid var(--el-border-color);
-  border-radius: 12px;
-}
-
-.hero-main.is-success {
-  background: var(--el-color-success-light-9);
-  border-color: var(--el-color-success-light-5);
-}
-
-.hero-main.is-warning {
-  background: var(--el-color-warning-light-9);
-  border-color: var(--el-color-warning-light-5);
-}
-
-.hero-main.is-muted {
-  background: var(--el-fill-color-light);
-}
-
-.hero-eyebrow {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: var(--el-text-color-secondary);
-  text-transform: uppercase;
-}
-
-.hero-value {
-  margin-top: 4px;
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-}
-
-.hero-subtitle {
-  margin-top: 8px;
-  font-size: 11px;
-  color: var(--el-text-color-secondary);
-}
-
-.status-pills {
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: 8px;
-  padding: 2px 0;
-}
-
-.status-pill {
-  display: inline-flex;
-  min-height: 30px;
-  padding: 0 10px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--el-text-color-secondary);
-  background: var(--el-fill-color-light);
-  border: 1px solid var(--el-border-color);
-  border-radius: 999px;
-  align-items: center;
-  gap: 7px;
-}
-
-.status-pill__dot {
-  width: 7px;
-  height: 7px;
-  background: currentcolor;
-  border-radius: 999px;
-}
-
-.status-pill.is-success {
-  color: var(--el-color-success);
-  background: var(--el-color-success-light-9);
-  border-color: var(--el-color-success-light-5);
-}
-
-.status-pill.is-warning {
-  color: var(--el-color-warning);
-  background: var(--el-color-warning-light-9);
-  border-color: var(--el-color-warning-light-5);
-}
-
-.status-pill.is-muted {
-  color: var(--el-text-color-secondary);
-}
-
-.status-pill.is-neutral {
-  color: var(--el-text-color-secondary);
-}
-
-/* ─── 结果区域 ─── */
-.result-block {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 2px 2px 0;
-}
-
-.result-row {
-  display: flex;
-  justify-content: flex-start;
-  align-items: flex-start;
-}
-
-.result-row__label {
-  width: 52px;
-  flex: none;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
-.result-row__value {
-  font-size: 12px;
-  word-break: break-all;
-  flex: 1;
-}
-
-.result-row__value--mono {
-  font-family: Consolas, 'Courier New', monospace;
-  font-size: 12px;
-}
-
-@media (width <= 1100px) {
-  .google-art-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .status-hero {
-    grid-template-columns: 1fr;
-  }
-}
-</style>
+<style scoped src="@/styles/external-collect.css"></style>

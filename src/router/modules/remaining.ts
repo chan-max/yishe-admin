@@ -552,12 +552,28 @@ const remainingRouter: AppRouteRecordRaw[] = [
         },
       },
       {
-        path: "google-art",
-        component: () => import("@/views/external/google-art/index.vue"),
-        name: "ExternalGoogleArt",
+        path: "data-collect",
+        component: () => import("@/views/external/data-collect/index.vue"),
+        name: "ExternalDataCollect",
         meta: {
-          title: "Google Art",
+          title: "数据采集",
+          icon: "ep:collection",
         },
+      },
+      {
+        path: "google-art",
+        redirect: "/external/data-collect?tab=google-art",
+        meta: { hidden: true },
+      },
+      {
+        path: "pinterest",
+        redirect: "/external/data-collect?tab=pinterest",
+        meta: { hidden: true },
+      },
+      {
+        path: "wikimedia",
+        redirect: "/external/data-collect?tab=wikimedia",
+        meta: { hidden: true },
       },
       {
         path: "client-management",

@@ -1,4 +1,4 @@
-import { weiboIcon, feishuIcon, wecomIcon, douyinIcon, bilibiliIcon, zhihuIcon, toutiaoIcon, doubanIcon, kuaishouIcon, javaScriptIcon, openaiIcon, googleArtsCultureIcon } from '@/assets/icons/apps'
+import { weiboIcon, feishuIcon, wecomIcon, douyinIcon, bilibiliIcon, zhihuIcon, toutiaoIcon, doubanIcon, kuaishouIcon, javaScriptIcon, openaiIcon, googleArtsCultureIcon, pinterestIcon, wikimediaIcon, pexelsIcon, pixabayIcon } from '@/assets/icons/apps'
 
 export type NodeType =
   | 'start'
@@ -16,6 +16,10 @@ export type NodeType =
   | 'message_push_wecom'
   | 'hotsearch_weibo'
   | 'google_arts_culture'
+  | 'pinterest_culture'
+  | 'wikimedia_culture'
+  | 'pexels_search'
+  | 'pixabay_search'
   | 'custom'
 
 export type NodeRequirementType = 'client' | 'client_browser' | 'internet' | 'config'
@@ -490,6 +494,109 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     },
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: false, placeholder: '例如: van gogh, impressionism (留空默认精选素材)' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'images', label: '图片列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'pinterest_culture',
+    name: 'Pinterest 素材采集',
+    category: 'material',
+    iconImage: pinterestIcon,
+    color: '#e60023',
+    badge: '采集',
+    description: '从 Pinterest 搜索图片素材，批量添加到素材库（仅采集图片）。需客户端在线且可访问 Pinterest。',
+    defaultData: {
+      name: 'Pinterest 素材采集',
+      config: { keyword: '', maxCount: 10, scope: 'pins' },
+    },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: interior design, landscape photography' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'images', label: '图片列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'wikimedia_culture',
+    name: 'Wikimedia Commons 素材采集',
+    category: 'material',
+    iconImage: wikimediaIcon,
+    color: '#5f7d8c',
+    badge: '采集',
+    description: '从 Wikimedia Commons 搜索自由版权图片素材，批量添加到素材库（仅采集图片）。需客户端在线且可访问 Wikimedia。',
+    defaultData: {
+      name: 'Wikimedia Commons 素材采集',
+      config: { keyword: '', maxCount: 10, type: 'image' },
+    },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: hitler, landscape, interior design' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'images', label: '图片列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'pexels_search',
+    name: 'Pexels 高清摄影采集',
+    category: 'material',
+    iconImage: pexelsIcon,
+    color: '#05a081',
+    badge: '采集',
+    description: '从 Pexels 检索高清摄影大图与素材，批量添加到素材库（仅采集图片）。需客户端在线且可访问 Pexels。',
+    defaultData: {
+      name: 'Pexels 高清摄影采集',
+      config: { keyword: '', maxCount: 10 },
+    },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: cat, nature, interior design' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'images', label: '图片列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'pixabay_search',
+    name: 'Pixabay 采集',
+    category: 'app_integration',
+    description: '通过客户端从 Pixabay 免费图库按关键词搜索并同步上传至素材库',
+    iconImage: pixabayIcon,
+    color: '#02be6e',
+    defaultData: {
+      label: 'Pixabay 采集',
+      config: { keyword: '', maxCount: 10 },
+    },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: hi, cat, nature, background' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
     ],
     outputSchema: [

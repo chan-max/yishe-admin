@@ -8,7 +8,7 @@ export const filterBreadcrumb = (
   const res: AppRouteRecordRaw[] = []
 
   for (const route of routes) {
-    const meta = route?.meta as RouteMeta
+    const meta = (route?.meta || {}) as RouteMeta
     if (meta.hidden && !meta.canTo) {
       continue
     }
