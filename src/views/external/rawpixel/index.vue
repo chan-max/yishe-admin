@@ -75,7 +75,7 @@
             <!-- 图片采集 -->
             <div class="collect-section">
               <div class="collect-search__header">
-                <div class="collect-section__title">Rawpixel 艺术与免版权采集</div>
+                <div class="collect-section__title">图片采集</div>
                 <div class="collect-search__opts">
                   <div class="collect-search__field">
                     <span class="collect-search__label">排序</span>
@@ -101,77 +101,126 @@
                 <el-input
                   v-model="searchKeyword"
                   clearable
-                  placeholder="输入搜索词，如: cat, vintage, art, pattern"
-                  style="max-width: 400px"
+                  placeholder="输入关键词搜索 Rawpixel 素材（如 cat, vintage, art, pattern）"
                   @keyup.enter="handleSearch"
                 />
-                <el-button
-                  type="primary"
-                  :loading="searching"
-                  :disabled="!selectedClient?.isOnline"
-                  @click="handleSearch"
-                >
+                <el-button type="primary" :loading="searchLoading" @click="handleSearch">
                   搜索
-                </el-button>
-                <el-button
-                  type="success"
-                  :loading="batchLoading"
-                  :disabled="!selectedClient?.isOnline"
-                  @click="openBatchModal"
-                >
-                  批量入库
                 </el-button>
               </div>
 
-              <!-- 搜索结果列表 -->
-              <div v-loading="searching" class="search-results__wrap">
-                <div v-if="searchCount > 0" class="search-results__summary">
-                  <span>共找到 {{ searchCount }} 条图片</span>
-                  <span v-if="queryKeyword">，关键词：“{{ queryKeyword }}”</span>
+              <!-- 搜索结果 -->
+              <div v-if="searchResults.length > 0" class="collect-search__results">
+                <!-- 顶部批量操作及状态信息 -->
+                <div class="collect-search__header">
+                  <div class="collect-search__info">
+                    共 {{ searchTotal }} 个结果，第 {{ currentPage }} / {{ totalPages }} 页
+                  </div>
+                  <div class="collect-actions-bar">
+                    <el-checkbox
+                      :model-value="isAllSelected"
+                      :indeterminate="isIndeterminate"
+                      @change="toggleSelectAll"
+                    >
+                      全选
+                    </el-checkbox>
+                    <span class="collect-actions-bar__count">已选 {{ selectedItems.length }} 项</span>
+                    <el-button
+                      type="primary"
+                      size="small"
+                      :disabled="selectedItems.length === 0"
+                      :loading="batchDownloadLoading"
+                      @click="handleBatchDownload"
+                    >
+                      批量入库
+                    </el-button>
+                    <el-button
+                      size="small"
+                      :disabled="selectedItems.length === 0"
+                      @click="copySelectedLinks"
+                    >
+                      复制链接
+                    </el-button>
+                    <el-button size="small" @click="clearSelection">清空</el-button>
+                  </div>
                 </div>
 
-                <div v-if="searchResults.length" class="photo-grid">
-                  <div v-for="item in searchResults" :key="item.id" class="photo-card">
-                    <div class="photo-card__preview" @click="handlePreviewPhoto(item)">
-                      <img :src="item.thumbnail || item.image" :alt="item.title" loading="lazy" />
-                      <div class="photo-card__badge">Rawpixel</div>
-                    </div>
-                    <div class="photo-card__info">
-                      <div class="photo-card__title" :title="item.title">{{ item.title || 'Rawpixel 素材' }}</div>
-                      <div class="photo-card__meta">
-                        <span v-if="item.author" class="photo-card__artist">作者: {{ item.author }}</span>
-                        <span v-if="item.width && item.height" class="photo-card__dim">{{ item.width }}x{{ item.height }}</span>
+                <!-- 列表渲染 -->
+                <div class="collect-list">
+                  <div
+                    v-for="item in searchResults"
+                    :key="item.id"
+                    class="collect-item"
+                    :class="{ 'is-selected': selectedItems.includes(item.id) }"
+                  >
+                    <el-checkbox
+                      :model-value="selectedItems.includes(item.id)"
+                      @change="toggleSelect(item)"
+                    />
+                    <div class="collect-item__thumb" @click="handlePreviewPhoto(item)">
+                      <img
+                        v-if="item.image || item.thumbnail"
+                        :src="item.thumbnail || item.image || ''"
+                        :alt="item.title || 'Rawpixel Photo'"
+                        loading="lazy"
+                      />
+                      <div v-else class="collect-item__thumb-error">
+                        <el-icon><Picture /></el-icon>
                       </div>
                     </div>
-                    <div class="photo-card__actions">
-                      <el-button size="small" type="primary" plain @click="handleSyncSingle(item)">
-                        入库到素材库
+                    <div class="collect-item__info">
+                      <div class="collect-item__title" :title="item.title || 'Rawpixel 素材'">
+                        {{ item.title || 'Rawpixel 素材' }}
+                      </div>
+                      <div class="collect-item__meta">
+                        <span v-if="item.author">📷 {{ item.author }}</span>
+                        <span v-if="item.width" class="collect-item__size">
+                          {{ item.width }} × {{ item.height }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="collect-item__actions">
+                      <el-button
+                        size="small"
+                        @click.stop="copyLink(item.link || item.url || item.image || '')"
+                        title="复制详情页链接"
+                      >
+                        复制链接
                       </el-button>
-                      <el-button size="small" text type="info" @click="openExternalUrl(item.link)">
-                        查看原网页
+                      <el-button
+                        type="primary"
+                        size="small"
+                        :loading="loadingItems.has(item.id)"
+                        :disabled="!item.image && !item.thumbnail"
+                        @click.stop="handleSyncOne(item)"
+                        title="同步到素材库"
+                      >
+                        入库
                       </el-button>
                     </div>
                   </div>
                 </div>
 
-                <el-empty
-                  v-else-if="hasSearched && !searching"
-                  description="未找到匹配的 Rawpixel 图片素材"
-                />
+                <!-- 底部统计与分页 -->
+                <div class="collect-search__footer">
+                  <div class="collect-search__pagination">
+                    <el-pagination
+                      v-model:current-page="currentPage"
+                      v-model:page-size="pageSize"
+                      :page-sizes="[10, 20, 30, 50]"
+                      :total="searchTotal"
+                      layout="total, sizes, prev, pager, next, jumper"
+                      @size-change="handleSizeChange"
+                      @current-change="handlePageChange"
+                    />
+                  </div>
+                </div>
               </div>
 
-              <!-- 分页 -->
-              <div v-if="searchCount > 0" class="pagination-wrap">
-                <el-pagination
-                  v-model:current-page="currentPage"
-                  v-model:page-size="pageSize"
-                  :total="searchCount"
-                  :page-sizes="[10, 20, 30, 50]"
-                  layout="total, sizes, prev, pager, next, jumper"
-                  @size-change="handleSizeChange"
-                  @current-change="handlePageChange"
-                />
-              </div>
+              <el-empty
+                v-else-if="hasSearched && !searchLoading"
+                description="未找到匹配的 Rawpixel 图片素材"
+              />
             </div>
           </div>
           <el-empty v-else description="请先在上方选择客户端节点" />
@@ -197,30 +246,7 @@
         </div>
         <template #footer>
           <el-button @click="previewVisible = false">关闭</el-button>
-          <el-button type="primary" @click="handleSyncSingle(activePhoto)">入库素材库</el-button>
-        </template>
-      </el-dialog>
-
-      <!-- 批量入库弹窗 -->
-      <el-dialog v-model="batchModalVisible" title="批量入库到素材库" width="500px">
-        <el-form label-width="100px">
-          <el-form-item label="关键词">
-            <el-input v-model="batchKeyword" placeholder="输入搜索关键词" />
-          </el-form-item>
-          <el-form-item label="入库数量">
-            <el-input-number v-model="batchMaxCount" :min="1" :max="50" />
-          </el-form-item>
-          <el-form-item label="排序方式">
-            <el-select v-model="batchSort" style="width: 100%">
-              <el-option value="curated" label="精选推荐" />
-              <el-option value="latest" label="最新上线" />
-              <el-option value="popular" label="热门高赞" />
-            </el-select>
-          </el-form-item>
-        </el-form>
-        <template #footer>
-          <el-button @click="batchModalVisible = false">取消</el-button>
-          <el-button type="primary" :loading="batchLoading" @click="handleExecuteBatch">开始入库</el-button>
+          <el-button type="primary" @click="handleSyncOne(activePhoto)">入库素材库</el-button>
         </template>
       </el-dialog>
     </div>
@@ -230,6 +256,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Picture } from '@element-plus/icons-vue'
 import { usePluginClientNodes } from '@/services/clientNodeState'
 import { searchRawpixelAndWait, collectRawpixel, type RawpixelPhoto } from '@/api/external/rawpixel'
 import '@/styles/external-collect.css'
@@ -244,25 +271,22 @@ const {
 } = usePluginClientNodes('rawpixel')
 
 const selectedClientId = ref('')
-const searching = ref(false)
+const searchKeyword = ref('')
+const searchLoading = ref(false)
 const hasSearched = ref(false)
-const searchKeyword = ref('cat')
-const queryKeyword = ref('')
 const sort = ref('curated')
 const currentPage = ref(1)
 const pageSize = ref(20)
-const searchCount = ref(0)
+const searchTotal = ref(0)
 const searchResults = ref<RawpixelPhoto[]>([])
+
+const selectedItems = ref<string[]>([])
+const loadingItems = ref<Set<string>>(new Set())
+const batchDownloadLoading = ref(false)
 
 const actionLoading = reactive({ refreshRuntime: false })
 const activePhoto = ref<RawpixelPhoto | null>(null)
 const previewVisible = ref(false)
-
-const batchModalVisible = ref(false)
-const batchKeyword = ref('cat')
-const batchMaxCount = ref(10)
-const batchSort = ref('curated')
-const batchLoading = ref(false)
 
 const clients = computed(() => {
   return rawClients.value.map((client) => {
@@ -308,9 +332,67 @@ const siteStatusBadge = computed(() => 'www.rawpixel.com 可用')
 const platformText = computed(() => `平台: ${selectedClient.value?.os?.platform || 'Unknown'}`)
 const checkedAtText = computed(() => `检查于: ${new Date().toLocaleTimeString()}`)
 
+const totalPages = computed(() => Math.ceil(searchTotal.value / pageSize.value) || 1)
+
+// ─── 多选逻辑 ──────────────────────────────────────────────
+
+const isAllSelected = computed(() => {
+  if (searchResults.value.length === 0) return false
+  return searchResults.value.every((item) => selectedItems.value.includes(item.id))
+})
+
+const isIndeterminate = computed(() => {
+  if (searchResults.value.length === 0) return false
+  const count = searchResults.value.filter((item) => selectedItems.value.includes(item.id)).length
+  return count > 0 && count < searchResults.value.length
+})
+
+const toggleSelectAll = (val: boolean) => {
+  if (val) {
+    const pageIds = searchResults.value.map((item) => item.id)
+    selectedItems.value = Array.from(new Set([...selectedItems.value, ...pageIds]))
+  } else {
+    const pageIds = new Set(searchResults.value.map((item) => item.id))
+    selectedItems.value = selectedItems.value.filter((id) => !pageIds.has(id))
+  }
+}
+
+const toggleSelect = (item: RawpixelPhoto) => {
+  const index = selectedItems.value.indexOf(item.id)
+  if (index > -1) {
+    selectedItems.value.splice(index, 1)
+  } else {
+    selectedItems.value.push(item.id)
+  }
+}
+
+const clearSelection = () => {
+  selectedItems.value = []
+}
+
+const copyLink = (url: string) => {
+  if (!url) return
+  navigator.clipboard.writeText(url)
+  ElMessage.success('已复制链接到剪贴板')
+}
+
+const copySelectedLinks = () => {
+  const selectedPhotos = searchResults.value.filter((item) => selectedItems.value.includes(item.id))
+  const links = selectedPhotos.map((item) => item.link || item.url || item.image).filter(Boolean)
+  if (links.length === 0) {
+    ElMessage.warning('没有可复制的链接')
+    return
+  }
+  navigator.clipboard.writeText(links.join('\n'))
+  ElMessage.success(`已复制 ${links.length} 个链接到剪贴板`)
+}
+
+// ─── 页面交互 ──────────────────────────────────────────────
+
 const handleSelectClient = () => {
   searchResults.value = []
   hasSearched.value = false
+  clearSelection()
 }
 
 const handleRefreshRuntime = async () => {
@@ -332,19 +414,19 @@ const handleSearch = async () => {
     ElMessage.warning('请选择客户端节点')
     return
   }
-  searching.value = true
+  searchLoading.value = true
   hasSearched.value = true
-  queryKeyword.value = searchKeyword.value.trim()
+  clearSelection()
 
   try {
     const res = await searchRawpixelAndWait(selectedClientId.value, {
-      keyword: queryKeyword.value,
+      keyword: searchKeyword.value.trim(),
       limit: pageSize.value,
       page: currentPage.value,
       sort: sort.value,
     })
     searchResults.value = res?.items || []
-    searchCount.value = res?.total || res?.count || (res?.items || []).length
+    searchTotal.value = res?.total || res?.count || (res?.items || []).length
     if (res?.items?.length) {
       ElMessage.success(`找到 ${res.items.length} 张 Rawpixel 图片`)
     } else {
@@ -353,7 +435,7 @@ const handleSearch = async () => {
   } catch (e: any) {
     ElMessage.error(e?.message || '搜索 Rawpixel 失败')
   } finally {
-    searching.value = false
+    searchLoading.value = false
   }
 }
 
@@ -373,14 +455,15 @@ const handlePreviewPhoto = (photo: RawpixelPhoto) => {
   previewVisible.value = true
 }
 
-const handleSyncSingle = async (photo: RawpixelPhoto | null) => {
+// 单张入库
+const handleSyncOne = async (photo: RawpixelPhoto | null) => {
   if (!photo) return
   if (!selectedClientId.value) {
     ElMessage.warning('请选择客户端节点')
     return
   }
+  loadingItems.value.add(photo.id)
   try {
-    await ElMessageBox.confirm(`确认将图片 "${photo.title}" 同步入库到素材库？`, '提示', { type: 'info' })
     const res = await collectRawpixel(selectedClientId.value, {
       keyword: photo.title || searchKeyword.value,
       maxCount: 1,
@@ -391,136 +474,54 @@ const handleSyncSingle = async (photo: RawpixelPhoto | null) => {
       ElMessage.warning(res?.error || '同步入库失败')
     }
   } catch (e: any) {
-    if (e !== 'cancel') ElMessage.error(e?.message || '同步失败')
+    ElMessage.error(e?.message || '同步失败')
+  } finally {
+    loadingItems.value.delete(photo.id)
   }
 }
 
-const openBatchModal = () => {
-  batchKeyword.value = searchKeyword.value
-  batchModalVisible.value = true
-}
-
-const handleExecuteBatch = async () => {
-  if (!batchKeyword.value.trim()) {
-    ElMessage.warning('请输入批量入库关键词')
+// 批量入库
+const handleBatchDownload = async () => {
+  if (selectedItems.value.length === 0) {
+    ElMessage.warning('请先勾选需要入库的图片')
     return
   }
   if (!selectedClientId.value) {
     ElMessage.warning('请选择客户端节点')
     return
   }
-  batchLoading.value = true
-  try {
-    const res = await collectRawpixel(selectedClientId.value, {
-      keyword: batchKeyword.value.trim(),
-      maxCount: batchMaxCount.value,
-      sort: batchSort.value,
-    })
-    if (res?.successCount > 0) {
-      ElMessage.success(`批量同步完成：成功 ${res.successCount} 个，失败 ${res.failCount || 0} 个`)
-      batchModalVisible.value = false
-    } else {
-      ElMessage.error(res?.error || '批量同步未成功')
-    }
-  } catch (e: any) {
-    ElMessage.error(e?.message || '批量同步触发失败')
-  } finally {
-    batchLoading.value = false
-  }
-}
 
-const openExternalUrl = (url: string) => {
-  if (url) window.open(url, '_blank')
+  const selectedPhotos = searchResults.value.filter((item) => selectedItems.value.includes(item.id))
+  batchDownloadLoading.value = true
+  let successCount = 0
+  let failCount = 0
+
+  for (const photo of selectedPhotos) {
+    loadingItems.value.add(photo.id)
+    try {
+      const res = await collectRawpixel(selectedClientId.value, {
+        keyword: photo.title || searchKeyword.value,
+        maxCount: 1,
+      })
+      if (res?.successCount > 0) {
+        successCount++
+      } else {
+        failCount++
+      }
+    } catch {
+      failCount++
+    } finally {
+      loadingItems.value.delete(photo.id)
+    }
+  }
+
+  batchDownloadLoading.value = false
+  ElMessage.success(`批量入库完成：成功 ${successCount} 个，失败 ${failCount} 个`)
 }
 </script>
 
 <style scoped>
 @import '@/styles/external-collect.css';
-
-.photo-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 16px;
-  margin-top: 16px;
-}
-
-.photo-card {
-  display: flex;
-  flex-direction: column;
-  background: var(--el-bg-color-overlay, #fff);
-  border: 1px solid var(--el-border-color-lighter, #e4e7ed);
-  border-radius: 8px;
-  overflow: hidden;
-  transition: all 0.25s ease;
-}
-
-.photo-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-}
-
-.photo-card__preview {
-  position: relative;
-  width: 100%;
-  height: 180px;
-  background: #111;
-  cursor: pointer;
-  overflow: hidden;
-}
-
-.photo-card__preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.photo-card:hover .photo-card__preview img {
-  transform: scale(1.05);
-}
-
-.photo-card__badge {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  padding: 2px 6px;
-  background: rgba(230, 81, 0, 0.85);
-  color: #fff;
-  font-size: 11px;
-  border-radius: 4px;
-  backdrop-filter: blur(4px);
-}
-
-.photo-card__info {
-  padding: 10px 12px;
-  flex: 1;
-}
-
-.photo-card__title {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.photo-card__meta {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 6px;
-  font-size: 11px;
-  color: var(--el-text-color-secondary);
-}
-
-.photo-card__actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  border-top: 1px solid var(--el-border-color-extra-light, #f2f6fc);
-  background: var(--el-fill-color-blank);
-}
 
 .preview-modal {
   display: flex;
@@ -553,11 +554,5 @@ const openExternalUrl = (url: string) => {
   font-size: 12px;
   line-height: 1.8;
   color: var(--el-text-color-regular);
-}
-
-.pagination-wrap {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 20px;
 }
 </style>
