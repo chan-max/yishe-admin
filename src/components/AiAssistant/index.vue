@@ -1159,6 +1159,7 @@ onUnmounted(() => {
 .sidebar__bottom {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
   flex-shrink: 0;
   padding: 0 8px 8px;
