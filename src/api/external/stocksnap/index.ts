@@ -32,7 +32,7 @@ export interface StockSnapSearchResult {
 
 function waitForServiceCommandResult(
   commandId: string,
-  timeoutMs = 30000,
+  timeoutMs = 60000,
 ): Promise<{ success: boolean; message: string; data?: any }> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
@@ -56,81 +56,71 @@ function waitForServiceCommandResult(
   })
 }
 
-export const searchStockSnap = async (
+export function searchStockSnap(
   clientId: string,
-  params: {
-    keyword: string
+  keyword: string,
+  options: {
     limit?: number
     page?: number
     sort?: string
-  }
-): Promise<StockSnapSearchResult> => {
-  const result = await sendServiceCommand({
+  } = {}
+) {
+  return sendServiceCommand({
     target: { clientId, pluginKey: 'stocksnap' },
     command: {
       name: 'search',
-      payload: params,
+      payload: {
+        keyword,
+        limit: options.limit ?? 20,
+        page: options.page ?? 1,
+        sort: options.sort || 'date',
+      },
     },
     mode: 'production',
   })
-  return (result?.data || result) as StockSnapSearchResult
 }
 
-export const searchStockSnapAndWait = async (
+export async function searchStockSnapAndWait(
   clientId: string,
-  params: {
-    keyword: string
+  keyword: string,
+  options: {
     limit?: number
     page?: number
     sort?: string
-    timeoutMs?: number
+  } = {}
+): Promise<StockSnapSearchResult> {
+  const response = await searchStockSnap(clientId, keyword, options)
+  if (!response?.success || !response.data?.commandId) {
+    throw new Error(response?.message || '搜索命令发送失败')
   }
-): Promise<StockSnapSearchResult> => {
-  const { timeoutMs = 60000, ...payload } = params
-  const commandId = `stocksnap-search-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-  const resultPromise = waitForServiceCommandResult(commandId, timeoutMs)
-
-  await sendServiceCommand({
-    commandId,
-    target: { clientId, pluginKey: 'stocksnap' },
-    command: {
-      name: 'search',
-      payload,
-    },
-    mode: 'production',
-  })
-
-  const result = await resultPromise
+  const result = await waitForServiceCommandResult(response.data.commandId, 60000)
+  if (!result.success) {
+    throw new Error(result.message || '搜索失败')
+  }
   const realData = (result.data && result.data.data ? result.data.data : result.data) || {}
   return realData as StockSnapSearchResult
 }
 
-export const collectStockSnap = async (
+export function collectStockSnap(
   clientId: string,
-  params: {
-    keyword: string
+  keyword: string,
+  options: {
     maxCount?: number
-    page?: number
     sort?: string
-    timeoutMs?: number
-  }
-) => {
-  const { timeoutMs = 120000, ...payload } = params
-  const commandId = `stocksnap-collect-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-  const resultPromise = waitForServiceCommandResult(commandId, timeoutMs)
-
-  await sendServiceCommand({
-    commandId,
+  } = {}
+) {
+  return sendServiceCommand({
     target: { clientId, pluginKey: 'stocksnap' },
     command: {
       name: 'collect',
-      payload,
+      payload: {
+        keyword,
+        maxCount: options.maxCount ?? 10,
+        sort: options.sort || 'date',
+      },
     },
     mode: 'production',
   })
-
-  const result = await resultPromise
-  return result?.data || result
 }
 
 export const getStockSnapStatus = async () => {

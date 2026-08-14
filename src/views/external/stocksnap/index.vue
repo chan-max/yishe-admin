@@ -421,8 +421,7 @@ const handleSearch = async () => {
   clearSelection()
 
   try {
-    const res = await searchStockSnapAndWait(selectedClientId.value, {
-      keyword: searchKeyword.value.trim(),
+    const res = await searchStockSnapAndWait(selectedClientId.value, searchKeyword.value.trim(), {
       limit: pageSize.value,
       page: currentPage.value,
       sort: sort.value,

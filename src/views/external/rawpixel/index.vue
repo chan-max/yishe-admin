@@ -419,8 +419,7 @@ const handleSearch = async () => {
   clearSelection()
 
   try {
-    const res = await searchRawpixelAndWait(selectedClientId.value, {
-      keyword: searchKeyword.value.trim(),
+    const res = await searchRawpixelAndWait(selectedClientId.value, searchKeyword.value.trim(), {
       limit: pageSize.value,
       page: currentPage.value,
       sort: sort.value,

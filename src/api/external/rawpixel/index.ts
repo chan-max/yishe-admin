@@ -32,7 +32,7 @@ export interface RawpixelSearchResult {
 
 function waitForServiceCommandResult(
   commandId: string,
-  timeoutMs = 30000,
+  timeoutMs = 60000,
 ): Promise<{ success: boolean; message: string; data?: any }> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
@@ -56,81 +56,71 @@ function waitForServiceCommandResult(
   })
 }
 
-export const searchRawpixel = async (
+export function searchRawpixel(
   clientId: string,
-  params: {
-    keyword: string
+  keyword: string,
+  options: {
     limit?: number
     page?: number
     sort?: string
-  }
-): Promise<RawpixelSearchResult> => {
-  const result = await sendServiceCommand({
+  } = {}
+) {
+  return sendServiceCommand({
     target: { clientId, pluginKey: 'rawpixel' },
     command: {
       name: 'search',
-      payload: params,
+      payload: {
+        keyword,
+        limit: options.limit ?? 20,
+        page: options.page ?? 1,
+        sort: options.sort || 'curated',
+      },
     },
     mode: 'production',
   })
-  return (result?.data || result) as RawpixelSearchResult
 }
 
-export const searchRawpixelAndWait = async (
+export async function searchRawpixelAndWait(
   clientId: string,
-  params: {
-    keyword: string
+  keyword: string,
+  options: {
     limit?: number
     page?: number
     sort?: string
-    timeoutMs?: number
+  } = {}
+): Promise<RawpixelSearchResult> {
+  const response = await searchRawpixel(clientId, keyword, options)
+  if (!response?.success || !response.data?.commandId) {
+    throw new Error(response?.message || '搜索命令发送失败')
   }
-): Promise<RawpixelSearchResult> => {
-  const { timeoutMs = 60000, ...payload } = params
-  const commandId = `rawpixel-search-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-  const resultPromise = waitForServiceCommandResult(commandId, timeoutMs)
-
-  await sendServiceCommand({
-    commandId,
-    target: { clientId, pluginKey: 'rawpixel' },
-    command: {
-      name: 'search',
-      payload,
-    },
-    mode: 'production',
-  })
-
-  const result = await resultPromise
+  const result = await waitForServiceCommandResult(response.data.commandId, 60000)
+  if (!result.success) {
+    throw new Error(result.message || '搜索失败')
+  }
   const realData = (result.data && result.data.data ? result.data.data : result.data) || {}
   return realData as RawpixelSearchResult
 }
 
-export const collectRawpixel = async (
+export function collectRawpixel(
   clientId: string,
-  params: {
-    keyword: string
+  keyword: string,
+  options: {
     maxCount?: number
-    page?: number
     sort?: string
-    timeoutMs?: number
-  }
-) => {
-  const { timeoutMs = 120000, ...payload } = params
-  const commandId = `rawpixel-collect-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-  const resultPromise = waitForServiceCommandResult(commandId, timeoutMs)
-
-  await sendServiceCommand({
-    commandId,
+  } = {}
+) {
+  return sendServiceCommand({
     target: { clientId, pluginKey: 'rawpixel' },
     command: {
       name: 'collect',
-      payload,
+      payload: {
+        keyword,
+        maxCount: options.maxCount ?? 10,
+        sort: options.sort || 'curated',
+      },
     },
     mode: 'production',
   })
-
-  const result = await resultPromise
-  return result?.data || result
 }
 
 export const getRawpixelStatus = async () => {
