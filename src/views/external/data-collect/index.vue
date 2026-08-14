@@ -38,6 +38,7 @@ import PexelsView from '../pexels/index.vue'
 import PixabayView from '../pixabay/index.vue'
 import RawpixelView from '../rawpixel/index.vue'
 import StockSnapView from '../stocksnap/index.vue'
+import OpenverseView from '../openverse/index.vue'
 
 defineOptions({
   name: 'ExternalDataCollect',
@@ -46,7 +47,7 @@ defineOptions({
 const route = useRoute()
 const router = useRouter()
 
-type TabKey = 'google-art' | 'pinterest' | 'wikimedia' | 'pexels' | 'pixabay' | 'rawpixel' | 'stocksnap'
+type TabKey = 'google-art' | 'pinterest' | 'wikimedia' | 'pexels' | 'pixabay' | 'rawpixel' | 'stocksnap' | 'openverse'
 
 const activeTab = ref<TabKey>('google-art')
 
@@ -85,6 +86,11 @@ const menuItems = [
     key: 'stocksnap' as TabKey,
     name: 'StockSnap 免版权图库',
     component: markRaw(StockSnapView),
+  },
+  {
+    key: 'openverse' as TabKey,
+    name: 'Openverse 开放图库',
+    component: markRaw(OpenverseView),
   },
 ]
 
