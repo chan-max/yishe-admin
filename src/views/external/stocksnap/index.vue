@@ -78,13 +78,6 @@
                 <div class="collect-section__title">图片采集 (CC0 免版权)</div>
                 <div class="collect-search__opts">
                   <div class="collect-search__field">
-                    <span class="collect-search__label">排序</span>
-                    <el-select v-model="sort" size="small" style="width: 110px">
-                      <el-option value="date" label="最新发布" />
-                      <el-option value="popular" label="热门浏览" />
-                    </el-select>
-                  </div>
-                  <div class="collect-search__field">
                     <span class="collect-search__label">每页数量</span>
                     <el-select v-model="pageSize" size="small" style="width: 100px" @change="handleSizeChange">
                       <el-option :value="10" label="10 条" />
