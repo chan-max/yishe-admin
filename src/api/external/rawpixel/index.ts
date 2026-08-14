@@ -56,14 +56,17 @@ function waitForServiceCommandResult(
   })
 }
 
-export const searchRawpixel = async (params: {
-  keyword: string
-  limit?: number
-  page?: number
-  sort?: string
-}): Promise<RawpixelSearchResult> => {
+export const searchRawpixel = async (
+  clientId: string,
+  params: {
+    keyword: string
+    limit?: number
+    page?: number
+    sort?: string
+  }
+): Promise<RawpixelSearchResult> => {
   const result = await sendServiceCommand({
-    target: { pluginKey: 'rawpixel' },
+    target: { clientId, pluginKey: 'rawpixel' },
     command: {
       name: 'search',
       payload: params,
@@ -73,20 +76,23 @@ export const searchRawpixel = async (params: {
   return (result?.data || result) as RawpixelSearchResult
 }
 
-export const searchRawpixelAndWait = async (params: {
-  keyword: string
-  limit?: number
-  page?: number
-  sort?: string
-  timeoutMs?: number
-}): Promise<RawpixelSearchResult> => {
+export const searchRawpixelAndWait = async (
+  clientId: string,
+  params: {
+    keyword: string
+    limit?: number
+    page?: number
+    sort?: string
+    timeoutMs?: number
+  }
+): Promise<RawpixelSearchResult> => {
   const { timeoutMs = 60000, ...payload } = params
   const commandId = `rawpixel-search-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   const resultPromise = waitForServiceCommandResult(commandId, timeoutMs)
 
   await sendServiceCommand({
     commandId,
-    target: { pluginKey: 'rawpixel' },
+    target: { clientId, pluginKey: 'rawpixel' },
     command: {
       name: 'search',
       payload,
@@ -99,20 +105,23 @@ export const searchRawpixelAndWait = async (params: {
   return realData as RawpixelSearchResult
 }
 
-export const collectRawpixel = async (params: {
-  keyword: string
-  maxCount?: number
-  page?: number
-  sort?: string
-  timeoutMs?: number
-}) => {
+export const collectRawpixel = async (
+  clientId: string,
+  params: {
+    keyword: string
+    maxCount?: number
+    page?: number
+    sort?: string
+    timeoutMs?: number
+  }
+) => {
   const { timeoutMs = 120000, ...payload } = params
   const commandId = `rawpixel-collect-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   const resultPromise = waitForServiceCommandResult(commandId, timeoutMs)
 
   await sendServiceCommand({
     commandId,
-    target: { pluginKey: 'rawpixel' },
+    target: { clientId, pluginKey: 'rawpixel' },
     command: {
       name: 'collect',
       payload,

@@ -328,12 +328,16 @@ const handleSearch = async () => {
     ElMessage.warning('请输入搜索关键词')
     return
   }
+  if (!selectedClientId.value) {
+    ElMessage.warning('请选择客户端节点')
+    return
+  }
   searching.value = true
   hasSearched.value = true
   queryKeyword.value = searchKeyword.value.trim()
 
   try {
-    const res = await searchRawpixelAndWait({
+    const res = await searchRawpixelAndWait(selectedClientId.value, {
       keyword: queryKeyword.value,
       limit: pageSize.value,
       page: currentPage.value,
@@ -371,9 +375,13 @@ const handlePreviewPhoto = (photo: RawpixelPhoto) => {
 
 const handleSyncSingle = async (photo: RawpixelPhoto | null) => {
   if (!photo) return
+  if (!selectedClientId.value) {
+    ElMessage.warning('请选择客户端节点')
+    return
+  }
   try {
     await ElMessageBox.confirm(`确认将图片 "${photo.title}" 同步入库到素材库？`, '提示', { type: 'info' })
-    const res = await collectRawpixel({
+    const res = await collectRawpixel(selectedClientId.value, {
       keyword: photo.title || searchKeyword.value,
       maxCount: 1,
     })
@@ -397,9 +405,13 @@ const handleExecuteBatch = async () => {
     ElMessage.warning('请输入批量入库关键词')
     return
   }
+  if (!selectedClientId.value) {
+    ElMessage.warning('请选择客户端节点')
+    return
+  }
   batchLoading.value = true
   try {
-    const res = await collectRawpixel({
+    const res = await collectRawpixel(selectedClientId.value, {
       keyword: batchKeyword.value.trim(),
       maxCount: batchMaxCount.value,
       sort: batchSort.value,
