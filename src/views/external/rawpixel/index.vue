@@ -193,19 +193,17 @@
                   </div>
                 </div>
 
-                <!-- 底部统计与分页 -->
-                <div class="collect-search__footer">
-                  <div class="collect-search__pagination">
-                    <el-pagination
-                      v-model:current-page="currentPage"
-                      v-model:page-size="pageSize"
-                      :page-sizes="[10, 20, 30, 50]"
-                      :total="searchTotal"
-                      layout="total, sizes, prev, pager, next, jumper"
-                      @size-change="handleSizeChange"
-                      @current-change="handlePageChange"
-                    />
-                  </div>
+                <!-- 分页 -->
+                <div v-if="searchResults.length > 0" class="collect-pagination">
+                  <el-pagination
+                    v-model:current-page="currentPage"
+                    v-model:page-size="pageSize"
+                    :total="searchTotal"
+                    layout="prev, pager, next, jumper"
+                    background
+                    @current-change="handlePageChange"
+                    @size-change="handleSizeChange"
+                  />
                 </div>
               </div>
 
