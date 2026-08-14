@@ -1,12 +1,8 @@
 /**
  * Openverse 开放公共领域图库 接口封装
  */
-import request from '@/utils/request'
-import {
-  sendServiceCommand,
-  waitForServiceCommandResult,
-  getOnlineClients,
-} from '@/api/client'
+import { sendServiceCommand } from '@/api/system/websocket'
+import { websocketClient } from '@/services/websocketClient'
 
 export interface OpenversePhoto {
   id: string
@@ -37,6 +33,32 @@ export interface OpenverseSearchResult {
   error?: string
 }
 
+function waitForServiceCommandResult(
+  commandId: string,
+  timeoutMs = 60000,
+): Promise<{ success: boolean; message: string; data?: any }> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      websocketClient.events.off('serviceCommandResult', handler)
+      reject(new Error(`命令执行超时 (${timeoutMs / 1000}s)`))
+    }, timeoutMs)
+
+    const handler = (event: any) => {
+      if (event.commandId === commandId) {
+        clearTimeout(timer)
+        websocketClient.events.off('serviceCommandResult', handler)
+        resolve({
+          success: event.success,
+          message: event.message,
+          data: event.data,
+        })
+      }
+    }
+
+    websocketClient.events.on('serviceCommandResult', handler)
+  })
+}
+
 /**
  * 搜索 Openverse 图库
  */
@@ -50,6 +72,7 @@ export async function searchOpenverse(params: {
   return sendServiceCommand({
     target: { clientId, pluginKey: 'openverse' },
     command: { name: 'search', payload: { keyword, query: keyword, limit, page } },
+    mode: 'production',
   })
 }
 
@@ -68,6 +91,7 @@ export async function searchOpenverseAndWait(params: {
   const response = await sendServiceCommand({
     target: { clientId, pluginKey: 'openverse' },
     command: { name: 'search', payload: { keyword, query: keyword, limit, page } },
+    mode: 'production',
   })
 
   if (!response?.success) {
@@ -100,7 +124,8 @@ export async function searchOpenverseAndWait(params: {
   try {
     const resultEnvelope = await waitForServiceCommandResult(serverCommandId, timeoutMs)
     if (resultEnvelope.success && resultEnvelope.data) {
-      return resultEnvelope.data as OpenverseSearchResult
+      const realData = (resultEnvelope.data && (resultEnvelope.data as any).data ? (resultEnvelope.data as any).data : resultEnvelope.data) || {}
+      return realData as OpenverseSearchResult
     }
     return {
       success: false,
@@ -139,6 +164,7 @@ export async function collectOpenverse(params: {
   return sendServiceCommand({
     target: { clientId, pluginKey: 'openverse' },
     command: { name: 'collect', payload: { keyword, query: keyword, maxCount, syncToMaterial } },
+    mode: 'production',
   })
 }
 
@@ -149,5 +175,6 @@ export async function getOpenverseStatus(clientId?: string) {
   return sendServiceCommand({
     target: { clientId, pluginKey: 'openverse' },
     command: { name: 'health', payload: {} },
+    mode: 'production',
   })
 }
