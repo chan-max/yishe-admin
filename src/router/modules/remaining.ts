@@ -576,6 +576,21 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: { hidden: true },
       },
       {
+        path: "pexels",
+        redirect: "/external/data-collect?tab=pexels",
+        meta: { hidden: true },
+      },
+      {
+        path: "pixabay",
+        redirect: "/external/data-collect?tab=pixabay",
+        meta: { hidden: true },
+      },
+      {
+        path: "rawpixel",
+        redirect: "/external/data-collect?tab=rawpixel",
+        meta: { hidden: true },
+      },
+      {
         path: "client-management",
         component: () => import("@/views/external/client-management/index.vue"),
         name: "ClientManagement",

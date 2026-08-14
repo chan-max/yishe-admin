@@ -36,6 +36,7 @@ import PinterestView from '../pinterest/index.vue'
 import WikimediaView from '../wikimedia/index.vue'
 import PexelsView from '../pexels/index.vue'
 import PixabayView from '../pixabay/index.vue'
+import RawpixelView from '../rawpixel/index.vue'
 
 defineOptions({
   name: 'ExternalDataCollect',
@@ -44,7 +45,7 @@ defineOptions({
 const route = useRoute()
 const router = useRouter()
 
-type TabKey = 'google-art' | 'pinterest' | 'wikimedia' | 'pexels' | 'pixabay'
+type TabKey = 'google-art' | 'pinterest' | 'wikimedia' | 'pexels' | 'pixabay' | 'rawpixel'
 
 const activeTab = ref<TabKey>('google-art')
 
@@ -74,6 +75,11 @@ const menuItems = [
     name: 'Pixabay 免费图库',
     component: markRaw(PixabayView),
   },
+  {
+    key: 'rawpixel' as TabKey,
+    name: 'Rawpixel 艺术图库',
+    component: markRaw(RawpixelView),
+  },
 ]
 
 const activeComponent = computed(() => {
@@ -83,7 +89,7 @@ const activeComponent = computed(() => {
 
 const initTabFromRoute = () => {
   const tab = route.query.tab as TabKey
-  if (tab && ['google-art', 'pinterest', 'wikimedia', 'pexels'].includes(tab)) {
+  if (tab && ['google-art', 'pinterest', 'wikimedia', 'pexels', 'pixabay', 'rawpixel'].includes(tab)) {
     activeTab.value = tab
   }
 }

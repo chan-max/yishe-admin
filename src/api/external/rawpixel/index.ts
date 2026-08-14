@@ -1,0 +1,102 @@
+import request from '@/config/axios'
+import { sendServiceCommand, waitForServiceCommandResult } from '@/api/system/websocket'
+
+export interface RawpixelPhoto {
+  id: string
+  title: string
+  description: string
+  image: string
+  thumbnail: string
+  link: string
+  url: string
+  width?: number
+  height?: number
+  author?: string
+  license?: string
+  isFree?: boolean
+  tags?: string
+}
+
+export interface RawpixelSearchResult {
+  success: boolean
+  query: string
+  count: number
+  total?: number
+  items: RawpixelPhoto[]
+  links: string[]
+  page: number
+  nextPage: number | null
+  error?: string
+}
+
+export const searchRawpixel = async (params: {
+  keyword: string
+  limit?: number
+  page?: number
+  sort?: string
+}): Promise<RawpixelSearchResult> => {
+  const result = await sendServiceCommand({
+    target: { pluginKey: 'rawpixel' },
+    command: {
+      name: 'search',
+      payload: params,
+    },
+    mode: 'production',
+  })
+  return (result?.data || result) as RawpixelSearchResult
+}
+
+export const searchRawpixelAndWait = async (params: {
+  keyword: string
+  limit?: number
+  page?: number
+  sort?: string
+  timeoutMs?: number
+}): Promise<RawpixelSearchResult> => {
+  const { timeoutMs = 60000, ...payload } = params
+  const commandId = `rawpixel-search-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  const resultPromise = waitForServiceCommandResult(commandId, { timeoutMs })
+
+  await sendServiceCommand({
+    commandId,
+    target: { pluginKey: 'rawpixel' },
+    command: {
+      name: 'search',
+      payload,
+    },
+    mode: 'production',
+  })
+
+  const result = await resultPromise
+  const realData = (result.data && result.data.data ? result.data.data : result.data) || {}
+  return realData as RawpixelSearchResult
+}
+
+export const collectRawpixel = async (params: {
+  keyword: string
+  maxCount?: number
+  page?: number
+  sort?: string
+  timeoutMs?: number
+}) => {
+  const { timeoutMs = 120000, ...payload } = params
+  const commandId = `rawpixel-collect-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  const resultPromise = waitForServiceCommandResult(commandId, { timeoutMs })
+
+  await sendServiceCommand({
+    commandId,
+    target: { pluginKey: 'rawpixel' },
+    command: {
+      name: 'collect',
+      payload,
+    },
+    mode: 'production',
+  })
+
+  const result = await resultPromise
+  return result?.data || result
+}
+
+export const getRawpixelStatus = async () => {
+  return request.get({ url: '/external/rawpixel/status' })
+}

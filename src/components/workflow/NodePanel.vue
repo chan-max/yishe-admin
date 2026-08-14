@@ -35,6 +35,7 @@ const NODE_GROUPS: Array<{ title: string; items: Array<{ type: string; label: st
       { type: 'wikimedia_culture', label: 'Wikimedia 采集', color: '#5f7d8c' },
       { type: 'pexels_search', label: 'Pexels 采集', color: '#05a081' },
       { type: 'pixabay_search', label: 'Pixabay 采集', color: '#02be6e' },
+      { type: 'rawpixel_search', label: 'Rawpixel 采集', color: '#e65100' },
     ],
   },
 ]

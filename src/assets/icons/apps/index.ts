@@ -18,3 +18,5 @@ export { default as pinterestIcon } from './pinterest.svg'
 export { default as wikimediaIcon } from './wikimedia.svg'
 export { default as pexelsIcon } from './pexels.png'
 export { default as pixabayIcon } from './pixabay.svg'
+export { default as rawpixelIcon } from './rawpixel.svg'
+
