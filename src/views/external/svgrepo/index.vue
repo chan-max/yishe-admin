@@ -48,7 +48,7 @@
             <!-- 状态卡片 -->
             <div class="status-hero">
               <div class="hero-main" :class="`is-${availabilityTone}`">
-                <div class="hero-eyebrow">SVGRepo (500k+ Free SVG Vectors)</div>
+                <div class="hero-eyebrow">SVGRepo (500,000+ Free SVG Vectors)</div>
                 <div class="hero-value">{{ availabilityText }}</div>
                 <div class="hero-subtitle">
                   {{ selectedClient.machine?.code || selectedClient.clientId }}
@@ -59,89 +59,141 @@
                   <span class="status-pill__dot" />
                   <span>{{ clientStatusText }}</span>
                 </div>
-                <div class="status-pill is-info">
-                  <span>{{ svgrepoRuntime.message || '50万+开源商用矢量图库' }}</span>
+                <div class="status-pill" :class="`is-${siteTone}`">
+                  <span class="status-pill__dot" />
+                  <span>{{ siteStatusBadge }}</span>
+                </div>
+                <div class="status-pill is-neutral">
+                  <span>{{ platformText }}</span>
+                </div>
+                <div class="status-pill is-neutral">
+                  <span>{{ checkedAtText }}</span>
                 </div>
               </div>
             </div>
 
-            <!-- 搜索与采集面板 -->
-            <div class="collect-card">
-              <div class="card-header">
-                <span class="card-title">🔍 矢量素材搜索与批量入库</span>
+            <!-- 矢量采集 -->
+            <div class="collect-section">
+              <div class="collect-search__header">
+                <div class="collect-section__title">矢量素材采集 (50万+ 高清矢量原图)</div>
+                <div class="collect-search__opts">
+                  <div class="collect-search__field">
+                    <span class="collect-search__label">风格类型</span>
+                    <el-select v-model="selectedStyle" size="small" style="width: 120px" @change="handleSearch">
+                      <el-option value="all" label="全部风格" />
+                      <el-option value="monotone" label="单色图标" />
+                      <el-option value="multicolor" label="多色插画" />
+                      <el-option value="duotone" label="双色渐变" />
+                      <el-option value="outlined" label="线性轮廓" />
+                      <el-option value="filled" label="实心填充" />
+                    </el-select>
+                  </div>
+                  <div class="collect-search__field">
+                    <span class="collect-search__label">每页数量</span>
+                    <el-select v-model="pageSize" size="small" style="width: 100px" @change="handleSizeChange">
+                      <el-option :value="12" label="12 条" />
+                      <el-option :value="24" label="24 条" />
+                      <el-option :value="36" label="36 条" />
+                      <el-option :value="48" label="48 条" />
+                    </el-select>
+                  </div>
+                </div>
               </div>
-              <div class="search-bar">
+
+              <div class="collect-inline">
                 <el-input
-                  v-model="searchForm.keyword"
-                  placeholder="输入搜索关键词（如 cat, animal, tech, arrow, shopping, nature）"
+                  v-model="searchKeyword"
                   clearable
-                  style="flex: 1; min-width: 240px;"
+                  placeholder="输入英文关键词搜索 SVGRepo 矢量素材（如 cat, animal, tech, arrow, shopping, nature）"
                   @keyup.enter="handleSearch"
                 />
-                <el-select v-model="searchForm.style" placeholder="风格类型" style="width: 140px;">
-                  <el-option label="全部风格" value="all" />
-                  <el-option label="单色图标" value="monotone" />
-                  <el-option label="多色插画" value="multicolor" />
-                  <el-option label="双色渐变" value="duotone" />
-                  <el-option label="线性轮廓" value="outlined" />
-                  <el-option label="实心填充" value="filled" />
-                </el-select>
-                <el-button
-                  type="primary"
-                  :loading="actionLoading.search"
-                  :disabled="!selectedClient?.isOnline"
-                  @click="handleSearch"
-                >
+                <el-button type="primary" :loading="searchLoading" @click="handleSearch">
                   搜索
-                </el-button>
-                <el-button
-                  type="success"
-                  :loading="actionLoading.batchCollect"
-                  :disabled="!selectedClient?.isOnline || selectedItems.length === 0"
-                  @click="handleBatchCollect"
-                >
-                  批量存入素材库 ({{ selectedItems.length }})
                 </el-button>
               </div>
 
-              <!-- 搜索结果列表 -->
-              <div v-if="searchResult.items.length > 0" class="results-section">
-                <div class="results-meta">
-                  <span>找到 {{ searchResult.total || searchResult.items.length }} 个矢量素材</span>
-                  <el-checkbox
-                    v-model="isAllSelected"
-                    :indeterminate="isIndeterminate"
-                    @change="handleSelectAll"
-                  >
-                    全选当前页
-                  </el-checkbox>
+              <!-- 搜索结果 -->
+              <div v-if="searchResults.length > 0" class="collect-search__results">
+                <!-- 顶部批量操作及状态信息 -->
+                <div class="collect-search__header">
+                  <div class="collect-search__info">
+                    共 {{ searchTotal }} 个矢量素材，第 {{ currentPage }} / {{ totalPages }} 页
+                  </div>
+                  <div class="collect-actions-bar">
+                    <el-checkbox
+                      :model-value="isAllSelected"
+                      :indeterminate="isIndeterminate"
+                      @change="toggleSelectAll"
+                    >
+                      全选
+                    </el-checkbox>
+                    <span class="collect-actions-bar__count">已选 {{ selectedItems.length }} 项</span>
+                    <el-button
+                      type="primary"
+                      size="small"
+                      :disabled="selectedItems.length === 0"
+                      :loading="batchDownloadLoading"
+                      @click="handleBatchDownload"
+                    >
+                      批量入库
+                    </el-button>
+                    <el-button
+                      size="small"
+                      :disabled="selectedItems.length === 0"
+                      @click="copySelectedLinks"
+                    >
+                      复制链接
+                    </el-button>
+                    <el-button size="small" @click="clearSelection">清空</el-button>
+                  </div>
                 </div>
 
-                <div class="vector-grid">
+                <!-- 统一列表渲染 -->
+                <div class="collect-list">
                   <div
-                    v-for="item in searchResult.items"
+                    v-for="item in searchResults"
                     :key="item.id"
-                    class="vector-card"
-                    :class="{ 'is-selected': isItemSelected(item) }"
-                    @click="toggleSelectItem(item)"
+                    class="collect-item"
+                    :class="{ 'is-selected': selectedItems.includes(item.id) }"
                   >
-                    <div class="vector-preview">
-                      <img :src="item.image || item.svgUrl" :alt="item.title" loading="lazy" />
-                      <div class="card-select-mask" v-if="isItemSelected(item)">
-                        <el-icon><Check /></el-icon>
+                    <el-checkbox
+                      :model-value="selectedItems.includes(item.id)"
+                      @change="toggleSelect(item)"
+                    />
+                    <div class="collect-item__thumb" @click="handlePreviewPhoto(item)">
+                      <img
+                        v-if="item.image || item.svgUrl"
+                        :src="item.svgUrl || item.image || ''"
+                        :alt="item.title || 'SVGRepo Vector'"
+                        loading="lazy"
+                      />
+                      <div v-else class="collect-item__thumb-error">
+                        <el-icon><Picture /></el-icon>
                       </div>
                     </div>
-                    <div class="vector-info">
-                      <div class="vector-title" :title="item.title">{{ item.title }}</div>
-                      <div class="vector-tags" v-if="item.license">
-                        <el-tag size="small" type="info">{{ item.license }}</el-tag>
+                    <div class="collect-item__info">
+                      <div class="collect-item__title" :title="item.title || 'SVGRepo 矢量素材'">
+                        {{ item.title || 'SVGRepo 矢量素材' }}
+                      </div>
+                      <div class="collect-item__meta">
+                        <span v-if="item.style">🎨 {{ item.style }}</span>
+                        <span class="collect-item__size">{{ item.license || 'Free for Commercial' }}</span>
                       </div>
                     </div>
-                    <div class="vector-actions" @click.stop>
-                      <el-button size="small" link type="primary" @click="handleDownloadSingle(item)">
-                        下载SVG
+                    <div class="collect-item__actions">
+                      <el-button
+                        size="small"
+                        @click.stop="copyLink(item.svgUrl || item.image)"
+                      >
+                        复制
                       </el-button>
-                      <el-button size="small" type="primary" plain @click="handleCollectSingle(item)">
+                      <el-button
+                        type="primary"
+                        size="small"
+                        :loading="loadingItems.has(item.id)"
+                        :disabled="!selectedClientId || !selectedClient?.isOnline"
+                        @click.stop="handleSyncOne(item)"
+                      >
                         入库
                       </el-button>
                     </div>
@@ -149,31 +201,71 @@
                 </div>
 
                 <!-- 分页 -->
-                <div class="pagination-bar">
+                <div class="collect-pagination">
                   <el-pagination
-                    v-model:current-page="searchForm.page"
-                    :page-size="searchForm.limit"
-                    :total="searchResult.total"
-                    layout="prev, pager, next, total"
+                    v-model:current-page="currentPage"
+                    :page-size="pageSize"
+                    :total="searchTotal"
+                    layout="total, prev, pager, next"
+                    background
                     @current-change="handlePageChange"
                   />
                 </div>
               </div>
-              <el-empty v-else-if="hasSearched" description="未找到相关矢量素材" />
+
+              <!-- 空状态 -->
+              <el-empty
+                v-else-if="!searchLoading && searchKeyword"
+                description="未找到相关矢量素材，请尝试其他关键词"
+              />
             </div>
           </div>
-          <el-empty v-else description="请选择或配置客户端节点" />
+
+          <el-empty v-else description="请先在上方选择客户端节点" />
         </section>
       </div>
     </div>
+
+    <!-- 矢量预览对话框 -->
+    <el-dialog v-model="previewVisible" title="SVGRepo 矢量原图预览" width="700px" destroy-on-close align-center>
+      <div v-if="previewItem" class="collect-preview">
+        <img
+          :src="previewItem.svgUrl || previewItem.image"
+          :alt="previewItem.title || 'Preview'"
+          style="max-width: 100%; max-height: 480px; display: block; margin: 0 auto; border-radius: 8px; background: #fafafa; padding: 24px;"
+        />
+        <div style="margin-top: 16px;">
+          <h4>{{ previewItem.title || 'SVGRepo 矢量素材' }}</h4>
+          <p v-if="previewItem.description" style="color: #666; font-size: 13px; margin-top: 4px;">{{ previewItem.description }}</p>
+          <div style="margin-top: 8px; font-size: 13px; color: #888; display: flex; flex-direction: column; gap: 4px;">
+            <span v-if="previewItem.style"><strong>风格:</strong> {{ previewItem.style }}</span>
+            <span><strong>授权协议:</strong> {{ previewItem.license || 'CC0 / MIT (免费商用)' }}</span>
+            <span><strong>矢量 SVG 直链:</strong> <a :href="previewItem.svgUrl || previewItem.image" target="_blank" style="color: #409eff;">{{ previewItem.svgUrl || previewItem.image }}</a></span>
+            <span v-if="previewItem.url"><strong>详情页:</strong> <a :href="previewItem.url" target="_blank" style="color: #409eff;">{{ previewItem.url }}</a></span>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="previewVisible = false">关闭</el-button>
+        <el-button
+          v-if="previewItem"
+          type="primary"
+          :loading="loadingItems.has(previewItem.id)"
+          :disabled="!selectedClientId || !selectedClient?.isOnline"
+          @click="handleSyncOne(previewItem)"
+        >
+          保存到贴纸素材库 (SVG)
+        </el-button>
+      </template>
+    </el-dialog>
   </ContentWrap>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, watch } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Check } from '@element-plus/icons-vue'
-import { usePluginClientNodes } from '@/services/clientNodeState'
+import { ref, computed, watch, reactive, onMounted } from 'vue';
+import { ElMessage } from 'element-plus';
+import { Picture } from '@element-plus/icons-vue';
+import { usePluginClientNodes } from '@/services/clientNodeState';
 import {
   searchSvgrepoAndWait,
   syncSvgrepoToMaterialLibraryAndWait,
@@ -181,502 +273,427 @@ import {
   type SvgrepoPhoto,
   type SvgrepoClientVO,
   type SvgrepoServiceStatus,
-} from '@/api/external/svgrepo'
-import { uploadMaterialFile } from '@/api/material'
+} from '@/api/external/svgrepo';
+import { uploadMaterialFile } from '@/api/material';
+import '@/styles/external-collect.css';
 
-defineOptions({ name: 'ExternalSvgrepo' })
+defineOptions({ name: 'ExternalSvgrepo' });
 
-const PLUGIN_KEY = 'svgrepo'
+const selectedStyle = ref<string>('all');
+const actionLoading = reactive({
+  refreshRuntime: false,
+});
+
+// ─── 客户端节点 ──────────────────────────────────────────────
+
 const {
   clients: rawClients,
   loading,
   refresh: refreshClientNodes,
   getServiceRuntime,
-} = usePluginClientNodes(PLUGIN_KEY)
+} = usePluginClientNodes('svgrepo');
 
-const selectedClientId = ref('')
-const actionLoading = reactive({
-  refreshRuntime: false,
-  search: false,
-  batchCollect: false,
-})
+const selectedClientId = ref('');
 
 const clients = computed<SvgrepoClientVO[]>(() => {
   return rawClients.value.map((c: any) => {
-    const rawService = getServiceRuntime(c) as SvgrepoServiceStatus | null
+    const rawService = getServiceRuntime(c) as SvgrepoServiceStatus | null;
+    const runtimeService: SvgrepoServiceStatus | null = rawService
+      ? {
+          key: rawService.key,
+          pluginKey: rawService.pluginKey,
+          label: rawService.label,
+          connected: rawService.connected,
+          available: rawService.available,
+          status: rawService.status,
+          state: rawService.state,
+          busy: rawService.busy,
+          message: rawService.message,
+          version: rawService.version,
+          endpoint: rawService.endpoint,
+          lastCheckedAt: rawService.lastCheckedAt,
+          currentTaskId: rawService.currentTaskId,
+          lastError: rawService.lastError,
+          supportedCommands: rawService.supportedCommands,
+          details: rawService.details,
+        }
+      : null;
+
     return {
       clientId: c.id,
       isOnline: c.isOnline,
       nodeStatus: c.nodeStatus,
       connectedAt: c.connectedAt,
       lastOnlineAt: c.lastOnlineAt,
+      appVersion: c.clientInfo?.appVersion || null,
+      workspaceDirectory: c.clientInfo?.workspaceDirectory || null,
       machine: c.clientInfo?.machine || null,
       location: c.clientInfo?.location || null,
-      svgrepo: rawService,
-    }
-  })
-})
+      svgrepo: runtimeService,
+    };
+  });
+});
 
-// 自动选中首个在线设备
 watch(
   clients,
   (list) => {
-    if (list && list.length > 0 && !selectedClientId.value) {
-      const online = list.find((c) => c.isOnline)
-      selectedClientId.value = online ? online.clientId : list[0].clientId
+    if (list.length > 0 && !selectedClientId.value) {
+      const onlineClient = list.find((c) => c.isOnline);
+      selectedClientId.value = onlineClient ? onlineClient.clientId : list[0].clientId;
     }
   },
   { immediate: true },
-)
+);
 
 const selectedClient = computed(() => {
-  return clients.value.find((item) => item.clientId === selectedClientId.value) || null
-})
+  return clients.value.find((item) => item.clientId === selectedClientId.value) || null;
+});
 
-const svgrepoRuntime = computed(() => {
-  return selectedClient.value?.svgrepo || {}
-})
+const selectedService = computed<SvgrepoServiceStatus | null>(() => {
+  return selectedClient.value?.svgrepo || null;
+});
 
-const isOnline = computed(() => selectedClient.value?.isOnline ?? false)
-const clientTone = computed(() => (isOnline.value ? 'success' : 'danger'))
-const clientStatusText = computed(() => (isOnline.value ? '在线' : '离线'))
-const isAvailable = computed(() => isOnline.value && (svgrepoRuntime.value as any)?.available !== false)
-const availabilityTone = computed(() => (isAvailable.value ? 'success' : 'danger'))
-const availabilityText = computed(() => (isAvailable.value ? '服务正常' : '不可用'))
+// ─── 状态卡片计算属性 ────────────────────────────────────────
 
-function handleSelectClient(val: string) {
-  selectedClientId.value = val
-}
+const isClientOnline = computed(() => !!selectedClient.value?.isOnline);
+const isServiceAvailable = computed(() => {
+  if (!isClientOnline.value) return false;
+  const s = selectedService.value;
+  if (!s) return false;
+  return !!(s.available || s.connected || s.status === 'connected');
+});
 
-const loadClients = () => refreshClientNodes()
+const availabilityTone = computed<'success' | 'warning' | 'danger' | 'neutral'>(() => {
+  if (!selectedClient.value) return 'neutral';
+  if (!isClientOnline.value) return 'danger';
+  if (isServiceAvailable.value) return 'success';
+  return 'warning';
+});
 
-async function handleRefreshRuntime() {
-  if (!selectedClientId.value) return
-  actionLoading.refreshRuntime = true
+const availabilityText = computed(() => {
+  if (!selectedClient.value) return '未选择节点';
+  if (!isClientOnline.value) return '节点离线';
+  if (isServiceAvailable.value) return '服务就绪';
+  return selectedService.value?.message || '服务异常';
+});
+
+const clientTone = computed<'success' | 'danger'>(() => {
+  return isClientOnline.value ? 'success' : 'danger';
+});
+
+const clientStatusText = computed(() => {
+  return isClientOnline.value ? '客户端在线' : '客户端离线';
+});
+
+const siteTone = computed<'success' | 'warning' | 'danger'>(() => {
+  if (!isClientOnline.value) return 'danger';
+  return isServiceAvailable.value ? 'success' : 'warning';
+});
+
+const siteStatusBadge = computed(() => {
+  if (!isClientOnline.value) return '不可用';
+  return isServiceAvailable.value ? 'SVGRepo 正常' : 'SVGRepo 异常';
+});
+
+const platformText = computed(() => {
+  const p = selectedClient.value?.machine?.platform || '';
+  return p ? `平台: ${p}` : '平台: 本地桌面端';
+});
+
+const checkedAtText = computed(() => {
+  const t = selectedService.value?.lastCheckedAt;
+  if (!t) return '检测: --';
+  const d = new Date(t);
+  return `检测: ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`;
+});
+
+const loadClients = () => {
+  refreshClientNodes();
+};
+
+const handleSelectClient = () => {
+  // Client selection handled by v-model
+};
+
+const handleRefreshRuntime = async () => {
+  if (!selectedClientId.value) return;
+  actionLoading.refreshRuntime = true;
   try {
-    const res = await refreshSvgrepoStatus(selectedClientId.value)
-    ElMessage.success(res.success ? '已发送刷新指令' : (res.message || '刷新失败'))
-    if (res.success) await refreshClientNodes()
-  } catch (err: any) {
-    ElMessage.error(err?.message || '刷新失败')
+    const res = await refreshSvgrepoStatus(selectedClientId.value);
+    if (res.success) {
+      ElMessage.success('已发送状态刷新指令');
+      await refreshClientNodes();
+    } else {
+      ElMessage.error(res.message || '刷新失败');
+    }
+  } catch (error: any) {
+    ElMessage.error(error.message || '刷新失败');
   } finally {
-    actionLoading.refreshRuntime = false
+    actionLoading.refreshRuntime = false;
   }
-}
+};
 
-// 搜索表单
-const searchForm = reactive({
-  keyword: 'cat',
-  page: 1,
-  limit: 24,
-  style: 'all',
-})
+// ─── 搜索与采集 ──────────────────────────────────────────────
 
-const searchResult = reactive<{
-  total: number
-  items: SvgrepoPhoto[]
-}>({
-  total: 0,
-  items: [],
-})
+const searchKeyword = ref('cat');
+const searchLoading = ref(false);
+const searchResults = ref<SvgrepoPhoto[]>([]);
+const searchTotal = ref(0);
+const currentPage = ref(1);
+const pageSize = ref(24);
+const totalPages = ref(1);
 
-const hasSearched = ref(false)
-const selectedItems = ref<SvgrepoPhoto[]>([])
-
-function isItemSelected(item: SvgrepoPhoto) {
-  return selectedItems.value.some((i) => i.id === item.id)
-}
-
-function toggleSelectItem(item: SvgrepoPhoto) {
-  const idx = selectedItems.value.findIndex((i) => i.id === item.id)
-  if (idx >= 0) {
-    selectedItems.value.splice(idx, 1)
-  } else {
-    selectedItems.value.push(item)
-  }
-}
+const selectedItems = ref<string[]>([]);
+const batchDownloadLoading = ref(false);
+const loadingItems = ref<Set<string>>(new Set());
 
 const isAllSelected = computed(() => {
-  if (!searchResult.items.length) return false
-  return searchResult.items.every((item) => isItemSelected(item))
-})
+  return searchResults.value.length > 0 && selectedItems.value.length === searchResults.value.length;
+});
 
 const isIndeterminate = computed(() => {
-  const count = searchResult.items.filter((item) => isItemSelected(item)).length
-  return count > 0 && count < searchResult.items.length
-})
+  return selectedItems.value.length > 0 && selectedItems.value.length < searchResults.value.length;
+});
 
-function handleSelectAll(val: boolean) {
-  if (val) {
-    searchResult.items.forEach((item) => {
-      if (!isItemSelected(item)) {
-        selectedItems.value.push(item)
-      }
-    })
+const toggleSelect = (item: SvgrepoPhoto) => {
+  const idx = selectedItems.value.indexOf(item.id);
+  if (idx > -1) {
+    selectedItems.value.splice(idx, 1);
   } else {
-    const pageIds = new Set(searchResult.items.map((i) => i.id))
-    selectedItems.value = selectedItems.value.filter((i) => !pageIds.has(i.id))
+    selectedItems.value.push(item.id);
   }
-}
+};
 
-async function handleSearch() {
-  if (!searchForm.keyword.trim()) {
-    ElMessage.warning('请输入搜索关键词')
-    return
+const toggleSelectAll = () => {
+  if (isAllSelected.value) {
+    selectedItems.value = [];
+  } else {
+    selectedItems.value = searchResults.value.map((item) => item.id);
   }
-  if (!selectedClientId.value) {
-    ElMessage.warning('请选择客户端节点')
-    return
-  }
+};
 
-  hasSearched.value = true
-  selectedItems.value = []
-  actionLoading.search = true
+const clearSelection = () => {
+  selectedItems.value = [];
+};
 
+const getItemById = (id: string): SvgrepoPhoto | undefined => {
+  return searchResults.value.find((item) => item.id === id);
+};
+
+const copyLink = async (text: string) => {
+  if (!text) return;
   try {
-    const res = await searchSvgrepoAndWait(selectedClientId.value, searchForm.keyword.trim(), {
-      page: searchForm.page,
-      limit: searchForm.limit,
-      style: searchForm.style,
+    await navigator.clipboard.writeText(text);
+    ElMessage.success('直连已复制到剪贴板');
+  } catch {
+    ElMessage.error('复制失败');
+  }
+};
+
+const copySelectedLinks = () => {
+  const links = selectedItems.value
+    .map((id) => {
+      const item = getItemById(id);
+      if (!item) return '';
+      return item.svgUrl || item.image;
     })
+    .filter(Boolean);
+  if (links.length === 0) return;
+  copyLink(links.join('\n'));
+};
 
-    if (res.success) {
-      searchResult.items = res.items || []
-      searchResult.total = res.total || searchResult.items.length
-      ElMessage.success(`检索到 ${searchResult.items.length} 个矢量素材`)
-    } else {
-      ElMessage.error(res.error || '搜索失败')
-    }
-  } catch (err: any) {
-    ElMessage.error(err?.message || '搜索失败')
-  } finally {
-    actionLoading.search = false
-  }
-}
+const handlePreviewPhoto = (item: SvgrepoPhoto) => {
+  previewItem.value = item;
+  previewVisible.value = true;
+};
 
-function handlePageChange(newPage: number) {
-  searchForm.page = newPage
-  handleSearch()
-}
-
-async function handleDownloadSingle(item: SvgrepoPhoto) {
-  const url = item.svgUrl || item.image
-  if (!url) return
-  window.open(url, '_blank')
-}
-
-async function handleCollectSingle(item: SvgrepoPhoto) {
+const handleSyncOne = async (item: SvgrepoPhoto) => {
   if (!selectedClientId.value) {
-    ElMessage.warning('请先选择客户端节点')
-    return
-  }
-  const targetUrl = item.svgUrl || item.image
-  if (!targetUrl) {
-    ElMessage.warning('没有可同步的图片')
-    return
+    ElMessage.warning('请先选择客户端节点');
+    return;
   }
 
+  const targetUrl = item.svgUrl || item.image;
+  if (!targetUrl) {
+    ElMessage.warning('该内容没有可同步的图片');
+    return;
+  }
+
+  loadingItems.value.add(item.id);
   try {
     const result = await syncSvgrepoToMaterialLibraryAndWait(selectedClientId.value, {
       imageUrl: targetUrl,
-      metadata: { title: item.title, id: item.id },
-    })
+      metadata: {
+        title: item.title || 'SVGRepo 矢量素材',
+        url: item.url || item.link,
+        author: item.author,
+        id: item.id,
+        style: item.style,
+        format: 'svg',
+      },
+    });
 
     if (result.success) {
-      const d = result.data?.data || result.data || {}
-      if (d.cosUrl) {
-        await uploadMaterialFile({
-          url: d.cosUrl,
-          originUrl: item.url || targetUrl,
-          title: item.title || `svgrepo_${item.id}`,
-          category: 'sticker',
-          suffix: 'svg',
-          meta: item,
-        })
+      const resultData = result.data?.data || result.data || {};
+      if (!resultData.cosUrl) {
+        ElMessage.error('图片未成功上传至个人 COS 存储，入库取消');
+        return;
       }
-      ElMessage.success(`已成功保存至个人素材库: ${item.title}`)
+
+      await uploadMaterialFile({
+        url: resultData.cosUrl,
+        originUrl: item.url || targetUrl,
+        title: item.title || `svgrepo_${item.id}`,
+        category: 'sticker',
+        suffix: 'svg',
+        meta: item,
+      });
+
+      ElMessage.success(`已成功保存到贴纸素材库: ${item.title || item.id}`);
     } else {
-      ElMessage.error(result.message || '保存至素材库失败')
+      ElMessage.error(`入库失败: ${result.message || '未知错误'}`);
     }
-  } catch (err: any) {
-    ElMessage.error(err?.message || '保存至素材库失败')
+  } catch (error: any) {
+    ElMessage.error(`同步出错: ${error.message || '网络或服务端错误'}`);
+  } finally {
+    loadingItems.value.delete(item.id);
   }
-}
+};
 
-async function handleBatchCollect() {
-  if (!selectedItems.value.length) return
-  if (!selectedClientId.value) {
-    ElMessage.warning('请先选择客户端节点')
-    return
-  }
+const handleBatchDownload = async () => {
+  if (!selectedClientId.value || selectedItems.value.length === 0) return;
+  batchDownloadLoading.value = true;
+  let successCount = 0;
+  let failCount = 0;
 
-  actionLoading.batchCollect = true
-  let succ = 0
-  let fail = 0
+  try {
+    for (const id of selectedItems.value) {
+      const item = getItemById(id);
+      if (!item) continue;
+      const targetUrl = item.svgUrl || item.image;
+      if (!targetUrl) continue;
 
-  for (const item of selectedItems.value) {
-    const targetUrl = item.svgUrl || item.image
-    if (!targetUrl) continue
-    try {
-      const result = await syncSvgrepoToMaterialLibraryAndWait(selectedClientId.value, {
-        imageUrl: targetUrl,
-        metadata: { title: item.title, id: item.id },
-      })
-      if (result.success) {
-        const d = result.data?.data || result.data || {}
-        if (d.cosUrl) {
+      try {
+        const res = await syncSvgrepoToMaterialLibraryAndWait(selectedClientId.value, {
+          imageUrl: targetUrl,
+          metadata: {
+            title: item.title || 'SVGRepo 矢量素材',
+            url: item.url || item.link,
+            author: item.author,
+            id: item.id,
+            style: item.style,
+            format: 'svg',
+          },
+        });
+
+        if (res.success) {
+          const resultData = res.data?.data || res.data || {};
+          if (!resultData.cosUrl) {
+            failCount++;
+            continue;
+          }
           await uploadMaterialFile({
-            url: d.cosUrl,
+            url: resultData.cosUrl,
             originUrl: item.url || targetUrl,
             title: item.title || `svgrepo_${item.id}`,
             category: 'sticker',
             suffix: 'svg',
             meta: item,
-          })
+          });
+          successCount++;
+        } else {
+          failCount++;
         }
-        succ++
-      } else {
-        fail++
+      } catch {
+        failCount++;
       }
-    } catch {
-      fail++
     }
+
+    if (failCount === 0) {
+      ElMessage.success(`批量保存到贴纸素材库成功 (${successCount} 个)`);
+    } else {
+      ElMessage.warning(`批量完成：成功 ${successCount}，失败 ${failCount}`);
+    }
+  } finally {
+    batchDownloadLoading.value = false;
+  }
+};
+
+// ─── 动作响应函数 ──────────────────────────────────────────
+
+const doSearch = async (page = 1) => {
+  if (!selectedClientId.value) {
+    ElMessage.warning('请先选择客户端节点');
+    return;
+  }
+  if (!searchKeyword.value.trim()) {
+    ElMessage.warning('请输入搜索关键词');
+    return;
   }
 
-  actionLoading.batchCollect = false
-  ElMessage.success(`批量入库完成: 成功 ${succ} 个, 失败 ${fail} 个`)
-  selectedItems.value = []
-}
+  searchLoading.value = true;
+  selectedItems.value = [];
+  try {
+    const result = await searchSvgrepoAndWait(selectedClientId.value, searchKeyword.value.trim(), {
+      limit: pageSize.value,
+      page,
+      style: selectedStyle.value,
+    });
+    searchResults.value = result.items || [];
+    if (result.total) {
+      searchTotal.value = result.total;
+    } else if (result.items && result.items.length > 0) {
+      searchTotal.value = currentPage.value * pageSize.value + 1;
+    } else {
+      searchTotal.value = 0;
+    }
+    totalPages.value = result.totalPages || Math.ceil(searchTotal.value / pageSize.value) || 1;
+    currentPage.value = page;
+  } catch (error: any) {
+    ElMessage.error(error.message || '搜索失败');
+  } finally {
+    searchLoading.value = false;
+  }
+};
+
+const handleSearch = () => {
+  currentPage.value = 1;
+  doSearch(1);
+};
+
+const handleSizeChange = (val: number) => {
+  pageSize.value = val;
+  if (searchResults.value.length > 0) {
+    handleSearch();
+  }
+};
+
+const handlePageChange = (page: number) => {
+  doSearch(page);
+};
+
+// ─── 大图预览 modal ──────────────────────────────────────────
+const previewVisible = ref(false);
+const previewItem = ref<SvgrepoPhoto | null>(null);
+
+// ─── 监听与初始化 ──────────────────────────────────────────
+
+onMounted(() => {
+  loadClients();
+});
+
+watch(
+  clients,
+  (newList) => {
+    if (!selectedClientId.value && newList.length > 0) {
+      const onlineClient = newList.find((c) => c.isOnline && c.svgrepo?.available);
+      if (onlineClient) {
+        selectedClientId.value = onlineClient.clientId;
+      } else if (newList[0]) {
+        selectedClientId.value = newList[0].clientId;
+      }
+    }
+  },
+  { immediate: true },
+);
 </script>
-
-<style scoped>
-.collect-page {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 16px;
-  background: var(--el-bg-color-page);
-  min-height: 100vh;
-}
-
-.collect-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 20px;
-  background: var(--el-bg-color);
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.collect-toolbar__left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.collect-toolbar__title {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--el-text-color-primary);
-}
-
-.status-hero {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 24px;
-  background: var(--el-bg-color);
-  border-radius: 12px;
-  margin-bottom: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.hero-eyebrow {
-  font-size: 13px;
-  color: var(--el-text-color-secondary);
-  margin-bottom: 4px;
-}
-
-.hero-value {
-  font-size: 24px;
-  font-weight: 800;
-  color: #10b981;
-}
-
-.hero-main.is-danger .hero-value {
-  color: #ef4444;
-}
-
-.hero-subtitle {
-  font-size: 12px;
-  color: var(--el-text-color-placeholder);
-  margin-top: 4px;
-}
-
-.status-pills {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-  background: var(--el-fill-color-light);
-}
-
-.status-pill.is-success {
-  background: rgba(16, 185, 129, 0.1);
-  color: #10b981;
-}
-
-.status-pill.is-danger {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-}
-
-.status-pill__dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-}
-
-.collect-card {
-  padding: 20px;
-  background: var(--el-bg-color);
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.card-header {
-  margin-bottom: 16px;
-}
-
-.card-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--el-text-color-primary);
-}
-
-.search-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.results-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 14px;
-  font-size: 13px;
-  color: var(--el-text-color-secondary);
-}
-
-.vector-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 16px;
-}
-
-.vector-card {
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 10px;
-  padding: 12px;
-  background: var(--el-bg-color);
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-}
-
-.vector-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-  border-color: var(--el-color-primary);
-}
-
-.vector-card.is-selected {
-  border-color: var(--el-color-primary);
-  background: var(--el-color-primary-light-9);
-}
-
-.vector-preview {
-  width: 100%;
-  height: 120px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--el-fill-color-lighter);
-  border-radius: 8px;
-  margin-bottom: 10px;
-  position: relative;
-  overflow: hidden;
-}
-
-.vector-preview img {
-  max-width: 85%;
-  max-height: 85%;
-  object-fit: contain;
-  transition: transform 0.2s ease;
-}
-
-.vector-card:hover .vector-preview img {
-  transform: scale(1.08);
-}
-
-.card-select-mask {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  background: var(--el-color-primary);
-  color: #fff;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-}
-
-.vector-info {
-  width: 100%;
-  text-align: center;
-  margin-bottom: 8px;
-}
-
-.vector-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.vector-actions {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-top: 1px solid var(--el-border-color-extra-light);
-  padding-top: 8px;
-}
-
-.pagination-bar {
-  display: flex;
-  justify-content: center;
-  margin-top: 24px;
-}
-</style>
