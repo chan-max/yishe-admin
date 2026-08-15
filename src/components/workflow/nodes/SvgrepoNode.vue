@@ -42,10 +42,11 @@ const style = computed(() => props.data.config?.style || 'all')
   }
 
   .wf-node__icon {
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
     flex-shrink: 0;
-    object-fit: contain;
+    object-fit: cover;
   }
 
   .wf-node__title {

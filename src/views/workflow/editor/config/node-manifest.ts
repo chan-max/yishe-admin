@@ -30,6 +30,7 @@ import {
   kaboompicsIcon,
   v2exIcon,
   thirtySixKrIcon,
+  ithomeIcon,
 } from '@/assets/icons/apps'
 
 export type NodeType =
@@ -465,7 +466,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     type: 'hotsearch_ithome',
     name: 'IT之家热门采集',
     category: 'integration',
-    icon: "ep:connection",
+    iconImage: ithomeIcon,
     color: '#c8102e',
     badge: '热搜',
     description: '通过已登录客户端采集IT之家热门数据。',
@@ -928,7 +929,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     category: 'material',
     description: '通过客户端从 SVGRepo 检索 50万+ 高清矢量图标与插画素材并同步上传至素材库',
     iconImage: svgrepoIcon,
-    color: '#EB3654',
+    color: '#6b9bd2',
     defaultData: { label: 'SVGRepo 矢量采集', config: { keyword: '', maxCount: 12, style: 'all' } },
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: cat, animal, tech, arrow, shopping' },
