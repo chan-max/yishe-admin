@@ -201,184 +201,121 @@
                 </div>
               </div>
 
-              <!-- 分辨率选择对话框 -->
-              <el-dialog
-                v-model="zoomDialogVisible"
-                title="选择分辨率"
-                width="480px"
-                align-center
-              >
-                <div v-if="zoomDialogItem" class="zoom-dialog">
-                  <div class="zoom-dialog__preview">
-                    <img
-                      v-if="zoomDialogItem.thumbnail"
-                      :src="zoomDialogItem.thumbnail"
-                      :alt="zoomDialogItem.title"
-                    />
-                    <div class="zoom-dialog__info">
-                      <div class="zoom-dialog__title">{{ zoomDialogItem.title }}</div>
-                      <div class="zoom-dialog__meta">
-                        <span v-if="zoomDialogItem.artist">{{ zoomDialogItem.artist }}</span>
-                        <span v-if="zoomDialogItem.institution">{{ zoomDialogItem.institution }}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="zoom-dialog__options">
-                    <div class="zoom-dialog__label">选择分辨率（越大越清晰，文件也越大）</div>
-                    <el-radio-group v-model="selectedZoomLevel" class="zoom-options">
-                      <el-radio
-                        v-for="zoom in zoomDialogOptions"
-                        :key="zoom.idx"
-                        :value="zoom.idx"
-                        class="zoom-option"
-                      >
-                        <span class="zoom-option__size">{{ zoom.width }} × {{ zoom.height }}</span>
-                        <span class="zoom-option__label">{{ zoom.label }}</span>
-                        <span class="zoom-option__tiles">{{ zoom.tiles }} tiles</span>
-                      </el-radio>
-                    </el-radio-group>
-                  </div>
+                <!-- 分页 -->
+                <div class="collect-pagination">
+                  <el-pagination
+                    v-model:current-page="currentPage"
+                    v-model:page-size="pageSize"
+                    :total="searchTotal"
+                    layout="total, prev, pager, next"
+                    background
+                    @current-change="handlePageChange"
+                    @size-change="handleSizeChange"
+                  />
                 </div>
-                <template #footer>
-                  <el-button @click="zoomDialogVisible = false">取消</el-button>
-                  <el-button type="primary" :loading="zoomDialogLoading" @click="confirmDownload">
-                    确认入库
-                  </el-button>
-                </template>
-              </el-dialog>
+              </div>
 
-              <!-- 分页 -->
-              <div class="collect-pagination">
-                <el-pagination
-                  v-model:current-page="currentPage"
-                  v-model:page-size="pageSize"
-                  :total="searchTotal"
-                  layout="total, prev, pager, next"
-                  background
-                  @current-change="handlePageChange"
-                  @size-change="handleSizeChange"
-                />
+              <!-- 单链接下载（兼容模式） -->
+              <div class="collect-section">
+                <div class="collect-section__title">单链接下载</div>
+                <div class="collect-inline">
+                  <el-input
+                    v-model="artUrl"
+                    clearable
+                    placeholder="https://artsandculture.google.com/asset/..."
+                    @keyup.enter="handleFetchZooms"
+                  />
+                  <el-button
+                    type="primary"
+                    :disabled="!canOperate || !artUrl.trim()"
+                    :loading="actionLoading.getZooms"
+                    @click="handleFetchZooms"
+                  >
+                    获取分辨率
+                  </el-button>
+                </div>
+
+                <div v-if="zoomOptions.length" class="collect-field">
+                  <div class="collect-field__label">分辨率</div>
+                  <el-radio-group v-model="selectedZoom" class="zoom-group">
+                    <el-radio-button v-for="item in zoomOptions" :key="item.idx" :value="item.idx" :label="item.idx">
+                      {{ item.width }} × {{ item.height }}
+                    </el-radio-button>
+                  </el-radio-group>
+                </div>
+
+                <div class="collect-actions" v-if="zoomOptions.length">
+                  <el-button
+                    type="primary"
+                    :disabled="!canOperate || !artUrl.trim() || selectedZoom === null"
+                    :loading="actionLoading.sync"
+                    @click="handleSync"
+                  >
+                    同步到素材库
+                  </el-button>
+                </div>
               </div>
             </div>
 
-            <!-- 单链接下载（兼容旧模式） -->
-            <div class="collect-section">
-              <div class="collect-section__title">单链接下载</div>
-              <div class="collect-inline">
-                <el-input
-                  v-model="artUrl"
-                  clearable
-                  placeholder="https://artsandculture.google.com/asset/..."
-                  @keyup.enter="handleFetchZooms"
-                />
-                <el-button
-                  type="primary"
-                  :disabled="!canOperate || !artUrl.trim()"
-                  :loading="actionLoading.getZooms"
-                  @click="handleFetchZooms"
-                >
-                  获取分辨率
-                </el-button>
-              </div>
+            <div v-else class="collect-panel collect-panel--empty">
+              <el-empty description="请选择客户端节点" />
+            </div>
+          </section>
 
-              <div v-if="zoomOptions.length" class="collect-field">
-                <div class="collect-field__label">分辨率</div>
-                <el-radio-group v-model="selectedZoom" class="zoom-group">
-                  <el-radio-button v-for="item in zoomOptions" :key="item.idx" :label="item.idx">
-                    {{ item.width }} × {{ item.height }}
-                  </el-radio-button>
+          <!-- 分辨率选择对话框 -->
+          <el-dialog
+            v-model="zoomDialogVisible"
+            title="选择分辨率"
+            width="480px"
+            destroy-on-close
+            align-center
+          >
+            <div v-if="zoomDialogItem" class="zoom-dialog">
+              <div class="zoom-dialog__preview">
+                <img
+                  v-if="zoomDialogItem.thumbnail"
+                  :src="zoomDialogItem.thumbnail"
+                  :alt="zoomDialogItem.title"
+                />
+                <div class="zoom-dialog__info">
+                  <div class="zoom-dialog__title">{{ zoomDialogItem.title }}</div>
+                  <div class="zoom-dialog__meta">
+                    <span v-if="zoomDialogItem.artist">{{ zoomDialogItem.artist }}</span>
+                    <span v-if="zoomDialogItem.institution">{{ zoomDialogItem.institution }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="zoom-dialog__options">
+                <div class="zoom-dialog__label">选择分辨率（越大越清晰，文件也越大）</div>
+                <el-radio-group v-model="selectedZoomLevel" class="zoom-options">
+                  <el-radio
+                    v-for="zoom in zoomDialogOptions"
+                    :key="zoom.idx"
+                    :value="zoom.idx"
+                    :label="zoom.idx"
+                    class="zoom-option"
+                  >
+                    <span class="zoom-option__size">{{ zoom.width }} × {{ zoom.height }} px</span>
+                    <span class="zoom-option__label">{{ zoom.label }}</span>
+                    <span class="zoom-option__tiles">{{ zoom.tiles }} tiles</span>
+                  </el-radio>
                 </el-radio-group>
               </div>
-
-              <div class="collect-actions">
-                <el-button
-                  type="primary"
-                  :disabled="!canOperate || !artUrl.trim() || selectedZoom === null"
-                  :loading="actionLoading.sync"
-                  @click="handleSync"
-                >
-                  同步到素材库
-                </el-button>
-              </div>
             </div>
-
-            <!-- 执行结果 -->
-            <div class="collect-section">
-              <div class="collect-section__title">执行结果</div>
-              <el-empty v-if="!lastResult" description="暂无执行结果" />
-              <div v-else class="result-block">
-                <div class="result-row">
-                  <span class="result-row__label">结果</span>
-                  <span class="result-row__value">{{ lastResult.message }}</span>
-                </div>
-                <div class="result-row" v-if="lastResult.data?.filePath">
-                  <span class="result-row__label">文件路径</span>
-                  <span class="result-row__value result-row__value--mono">{{
-                    lastResult.data.filePath
-                  }}</span>
-                </div>
-                <div class="result-row" v-if="lastResult.data?.fileSize">
-                  <span class="result-row__label">文件大小</span>
-                  <span class="result-row__value">{{
-                    formatFileSize(lastResult.data.fileSize)
-                  }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div v-else class="collect-panel collect-panel--empty">
-            <el-empty description="请选择客户端节点" />
-          </div>
-        </section>
-
-        <!-- 分辨率选择对话框 -->
-        <el-dialog
-          v-model="zoomDialogVisible"
-          title="选择分辨率"
-          width="480px"
-          align-center
-        >
-          <div v-if="zoomDialogItem" class="zoom-dialog">
-            <div class="zoom-dialog__preview">
-              <img
-                v-if="zoomDialogItem.thumbnail"
-                :src="zoomDialogItem.thumbnail"
-                :alt="zoomDialogItem.title"
-              />
-              <div class="zoom-dialog__info">
-                <div class="zoom-dialog__title">{{ zoomDialogItem.title }}</div>
-                <div class="zoom-dialog__meta">
-                  <span v-if="zoomDialogItem.artist">{{ zoomDialogItem.artist }}</span>
-                  <span v-if="zoomDialogItem.institution">{{ zoomDialogItem.institution }}</span>
-                </div>
-              </div>
-            </div>
-            <div class="zoom-dialog__options">
-              <div class="zoom-dialog__label">选择分辨率（越大越清晰，文件也越大）</div>
-              <el-radio-group v-model="selectedZoomLevel" class="zoom-options">
-                <el-radio
-                  v-for="zoom in zoomDialogOptions"
-                  :key="zoom.idx"
-                  :value="zoom.idx"
-                  class="zoom-option"
-                >
-                  <span class="zoom-option__size">{{ zoom.width }} × {{ zoom.height }}</span>
-                  <span class="zoom-option__label">{{ zoom.label }}</span>
-                  <span class="zoom-option__tiles">{{ zoom.tiles }} tiles</span>
-                </el-radio>
-              </el-radio-group>
-            </div>
-          </div>
-          <template #footer>
-            <el-button @click="zoomDialogVisible = false">取消</el-button>
-            <el-button type="primary" :loading="zoomDialogLoading" @click="confirmDownload">
-              确认入库
-            </el-button>
-          </template>
-        </el-dialog>
+            <template #footer>
+              <el-button @click="zoomDialogVisible = false">取消</el-button>
+              <el-button
+                type="primary"
+                :loading="zoomDialogLoading"
+                :disabled="selectedZoomLevel === null || selectedZoomLevel === undefined"
+                @click="confirmDownload"
+              >
+                确认入库
+              </el-button>
+            </template>
+          </el-dialog>
+        </div>
       </div>
-    </div>
   </ContentWrap>
 </template>
 
@@ -718,21 +655,32 @@ const openZoomDialog = async (item: GoogleArtAsset) => {
 }
 
 const confirmDownload = async () => {
-  if (!zoomDialogItem.value || !selectedZoomLevel.value || !selectedClientId.value) return
+  if (!selectedClientId.value) {
+    ElMessage.warning('请先选择客户端节点')
+    return
+  }
+  if (!zoomDialogItem.value || !zoomDialogItem.value.url) {
+    ElMessage.warning('缺少素材链接')
+    return
+  }
+  if (selectedZoomLevel.value === null || selectedZoomLevel.value === undefined) {
+    ElMessage.warning('请先选择分辨率')
+    return
+  }
   zoomDialogLoading.value = true
   try {
     const syncResult = await syncGoogleArtToMaterialLibraryAndWait(selectedClientId.value, {
       url: zoomDialogItem.value.url,
-      zoomLevel: selectedZoomLevel.value,
+      zoomLevel: Number(selectedZoomLevel.value),
     })
     if (syncResult.success) {
-      ElMessage.success(`已入库: ${zoomDialogItem.value.title}`)
+      ElMessage.success(`已入库: ${zoomDialogItem.value.title || 'Google Art 素材'}`)
       zoomDialogVisible.value = false
     } else {
-      ElMessage.error(`入库失败: ${syncResult.message}`)
+      ElMessage.error(`入库失败: ${syncResult.message || '未知错误'}`)
     }
   } catch (error: any) {
-    ElMessage.error(`入库异常: ${error?.message}`)
+    ElMessage.error(`入库异常: ${error?.message || '网络或客户端执行错误'}`)
   } finally {
     zoomDialogLoading.value = false
   }
