@@ -1322,6 +1322,7 @@ $prefix-cls: #{$namespace}-menu;
     background: var(--left-menu-hover-color);
   }
 
+  &__section--active > .#{$prefix-cls}__section-head .#{$prefix-cls}__section-icon,
   &__section--active > .#{$prefix-cls}__section-head .#{$prefix-cls}__section-title {
     color: var(--left-menu-text-active-color) !important;
   }

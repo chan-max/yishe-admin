@@ -27,6 +27,7 @@ import {
   googleIconsIcon,
   emojipediaIcon,
   svgrepoIcon,
+  kaboompicsIcon,
 } from '@/assets/icons/apps'
 
 export type NodeType =
@@ -61,6 +62,7 @@ export type NodeType =
   | 'googleicons_search'
   | 'emojipedia_search'
   | 'svgrepo_search'
+  | 'kaboompics_search'
   | 'custom'
 
 export type NodeRequirementType = 'client' | 'client_browser' | 'internet' | 'config'
@@ -930,6 +932,28 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: cat, animal, tech, arrow, shopping' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 12, description: '每次最多采集数量 (1-50)' },
       { field: 'style', label: '矢量风格', type: 'select', defaultValue: 'all', options: [{ label: '全部风格 (All)', value: 'all' }, { label: '单色图标 (Monotone)', value: 'monotone' }, { label: '多色插画 (Multicolor)', value: 'multicolor' }, { label: '双色渐变 (Duotone)', value: 'duotone' }, { label: '线性轮廓 (Outlined)', value: 'outlined' }, { label: '实心填充 (Filled)', value: 'filled' }] },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'images', label: '图片列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'kaboompics_search',
+    name: 'Kaboompics 高清摄影采集',
+    category: 'material',
+    description: '通过客户端从 Kaboompics 检索精品生活美学与商业高清摄影大图并同步上传至素材库',
+    iconImage: kaboompicsIcon,
+    color: '#C4704B',
+    defaultData: { label: 'Kaboompics 摄影采集', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: coffee, interior, nature, lifestyle' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
     ],
     outputSchema: [
       { field: 'successCount', label: '成功数量', type: 'number' },
