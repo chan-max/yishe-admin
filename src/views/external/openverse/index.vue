@@ -257,7 +257,7 @@ import { usePluginClientNodes } from '@/services/clientNodeState'
 import { searchOpenverseAndWait, type OpenversePhoto } from '@/api/external/openverse'
 import { sendServiceCommand } from '@/api/system/websocket'
 import { websocketClient } from '@/services/websocketClient'
-import { CrawlerMaterialApi } from '@/api/crawler-material'
+import { uploadMaterialFile } from '@/api/material'
 import '@/styles/external-collect.css'
 
 defineOptions({ name: 'ExternalOpenverse' })
@@ -481,7 +481,7 @@ const handleSyncOne = async (item: OpenversePhoto | null) => {
       if (resultEnvelope.success) {
         const resultData = resultEnvelope.data?.data || resultEnvelope.data || {}
         const cosUrl = resultData.cosUrl || resultData.localFilePath || item.image
-        await CrawlerMaterialApi.addCrawlerMaterial({
+        await uploadMaterialFile({
           url: cosUrl,
           originUrl: item.url || item.link || item.image,
           name: item.title || 'Openverse 素材',
@@ -491,7 +491,7 @@ const handleSyncOne = async (item: OpenversePhoto | null) => {
           suffix: 'jpg',
           meta: item,
         })
-        ElMessage.success(`《${item.title || item.id}》已成功保存入库！`)
+        ElMessage.success(`《${item.title || item.id}》已成功保存到贴纸素材库！`)
         return
       }
     }
@@ -537,7 +537,7 @@ const handleBatchDownload = async () => {
         if (resultEnvelope.success) {
           const resultData = resultEnvelope.data?.data || resultEnvelope.data || {}
           const cosUrl = resultData.cosUrl || resultData.localFilePath || item.image
-          await CrawlerMaterialApi.addCrawlerMaterial({
+          await uploadMaterialFile({
             url: cosUrl,
             originUrl: item.url || item.link || item.image,
             name: item.title || 'Openverse 素材',
@@ -558,7 +558,7 @@ const handleBatchDownload = async () => {
   }
 
   batchDownloadLoading.value = false
-  ElMessage.success(`批量入库成功：${successCount} 个，失败 ${failCount} 个`)
+  ElMessage.success(`批量入库素材库成功：${successCount} 个，失败 ${failCount} 个`)
 }
 
 onMounted(() => {
