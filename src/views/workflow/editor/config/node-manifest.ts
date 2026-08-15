@@ -1,4 +1,32 @@
-import { weiboIcon, feishuIcon, wecomIcon, douyinIcon, bilibiliIcon, zhihuIcon, toutiaoIcon, doubanIcon, kuaishouIcon, javaScriptIcon, openaiIcon, googleArtsCultureIcon, pinterestIcon, wikimediaIcon, pexelsIcon, pixabayIcon, rawpixelIcon, stocksnapIcon, openverseIcon, openclipartIcon, undrawIcon, iconifyIcon, nounprojectIcon } from '@/assets/icons/apps'
+import {
+  weiboIcon,
+  feishuIcon,
+  wecomIcon,
+  douyinIcon,
+  bilibiliIcon,
+  zhihuIcon,
+  toutiaoIcon,
+  doubanIcon,
+  kuaishouIcon,
+  javaScriptIcon,
+  openaiIcon,
+  googleArtsCultureIcon,
+  pinterestIcon,
+  wikimediaIcon,
+  pexelsIcon,
+  pixabayIcon,
+  rawpixelIcon,
+  stocksnapIcon,
+  openverseIcon,
+  openclipartIcon,
+  undrawIcon,
+  iconifyIcon,
+  nounprojectIcon,
+  vecteezyIcon,
+  openmojiIcon,
+  googleIconsIcon,
+  emojipediaIcon,
+} from '@/assets/icons/apps'
 
 export type NodeType =
   | 'start'
@@ -598,7 +626,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   {
     type: 'pixabay_search',
     name: 'Pixabay 采集',
-    category: 'app_integration',
+    category: 'material',
     description: '通过客户端从 Pixabay 免费图库按关键词搜索并同步上传至素材库',
     iconImage: pixabayIcon,
     color: '#02be6e',
@@ -623,7 +651,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   {
     type: 'rawpixel_search',
     name: 'Rawpixel 采集',
-    category: 'app_integration',
+    category: 'material',
     description: '通过客户端从 Rawpixel 艺术与免版权图库按关键词搜索并同步上传至素材库',
     iconImage: rawpixelIcon,
     color: '#e65100',
@@ -649,7 +677,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   {
     type: 'stocksnap_search',
     name: 'StockSnap 采集',
-    category: 'app_integration',
+    category: 'material',
     description: '通过客户端从 StockSnap CC0 免版权高清图库按关键词搜索并同步上传至素材库',
     iconImage: stocksnapIcon,
     color: '#E91E63',
@@ -675,7 +703,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   {
     type: 'openverse_search',
     name: 'Openverse 采集',
-    category: 'app_integration',
+    category: 'material',
     description: '通过客户端从 Openverse 6 亿+ CC/CC0 共享图库按关键词搜索并同步上传至素材库',
     iconImage: openverseIcon,
     color: '#B23A22',
@@ -699,13 +727,13 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'openclipart_search',
-    name: 'Openclipart 采集',
-    category: 'app_integration',
+    name: 'Openclipart 矢量采集',
+    category: 'material',
     description: '通过客户端从 Openclipart 100% CC0 免费矢量插画图库按关键词搜索并同步上传至素材库',
     iconImage: openclipartIcon,
     color: '#D35400',
     defaultData: {
-      label: 'Openclipart 采集',
+      label: 'Openclipart 矢量采集',
       config: { keyword: '', maxCount: 10, formatPreference: 'png' },
     },
     inputSchema: [
@@ -725,13 +753,13 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'undraw_search',
-    name: 'undraw 采集',
-    category: 'app_integration',
+    name: 'undraw 开源插画采集',
+    category: 'material',
     description: '通过客户端从 undraw 开源插画图库按关键词搜索，支持自定义主题色，同步上传至素材库',
     iconImage: undrawIcon,
     color: '#6C63FF',
     defaultData: {
-      label: 'undraw 采集',
+      label: 'undraw 插画采集',
       config: { keyword: '', maxCount: 10, color: '#6C63FF' },
     },
     inputSchema: [
@@ -751,12 +779,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'iconify_search',
-    name: 'Iconify 采集',
-    category: 'app_integration',
+    name: 'Iconify 图标采集',
+    category: 'material',
     description: '通过客户端从 Iconify 200,000+ 开源图标库按关键词搜索并同步上传至素材库',
     iconImage: iconifyIcon,
     color: '#6C63FF',
-    defaultData: { label: 'Iconify 采集', config: { keyword: '', maxCount: 10, prefix: '', color: '#000000' } },
+    defaultData: { label: 'Iconify 图标采集', config: { keyword: '', maxCount: 10, prefix: '', color: '#000000' } },
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: cat, heart, home, user' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
@@ -772,10 +800,11 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
       { type: 'client', label: '需客户端在线' },
       { type: 'internet', label: '需外网' },
     ],
-  },  {
+  },
+  {
     type: 'nounproject_search',
     name: 'Noun Project 采集',
-    category: 'app_integration',
+    category: 'material',
     description: '通过客户端从 The Noun Project 搜索开源图标或摄影图片并同步上传至素材库',
     iconImage: nounprojectIcon,
     color: '#1A1A1A',
@@ -786,15 +815,108 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
       { field: 'mediaType', label: '素材类型', type: 'select', defaultValue: 'icons', options: [{ label: '矢量图标 (Icons)', value: 'icons' }, { label: '摄影图片 (Photos)', value: 'photos' }] },
     ],
     outputSchema: [
-      { field: 'successCount', label: '成功数量', type: 'number', },
-      { field: 'failCount', label: '失败数量', type: 'number', },
-      { field: 'images', label: '图片列表', type: 'array', },
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'images', label: '图片列表', type: 'array' },
     ],
     requirements: [
       { type: 'client', label: '需客户端在线' },
       { type: 'internet', label: '需外网' },
     ],
-  },]
+  },
+  {
+    type: 'vecteezy_search',
+    name: 'Vecteezy 素材采集',
+    category: 'material',
+    description: '通过客户端从 Vecteezy 检索免版税摄影图片、透明 PNG 或矢量素材并同步上传至素材库',
+    iconImage: vecteezyIcon,
+    color: '#FF6D00',
+    defaultData: { label: 'Vecteezy 采集', config: { keyword: '', maxCount: 10, mediaType: 'photos' } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: cat, nature, business, technology' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
+      { field: 'mediaType', label: '素材类型', type: 'select', defaultValue: 'photos', options: [{ label: '摄影图片 (Photos)', value: 'photos' }, { label: '透明 PNG (PNG)', value: 'png' }, { label: '矢量插画 (Vector)', value: 'vector' }] },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'images', label: '图片列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'openmoji_search',
+    name: 'OpenMoji Emoji 采集',
+    category: 'material',
+    description: '通过客户端从 OpenMoji 开源项目检索 4500+ 高清 Emoji 矢量/彩色/黑白素材并同步上传至素材库',
+    iconImage: openmojiIcon,
+    color: '#000000',
+    defaultData: { label: 'OpenMoji 采集', config: { keyword: '', maxCount: 10, colorMode: 'color' } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: cat, heart, smile, star' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
+      { field: 'colorMode', label: '颜色模式', type: 'select', defaultValue: 'color', options: [{ label: '彩色矢量 (Color SVG)', value: 'color' }, { label: '黑白线条 (Black SVG)', value: 'black' }] },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'images', label: '图片列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'googleicons_search',
+    name: 'Google Material Icons 采集',
+    category: 'material',
+    description: '通过客户端从 Google 官方 Material Symbols/Icons 检索 2000+ 矢量图标并同步上传至素材库',
+    iconImage: googleIconsIcon,
+    color: '#4285F4',
+    defaultData: { label: 'Google Icons 采集', config: { keyword: '', maxCount: 10, style: 'outlined' } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: home, search, settings, person' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
+      { field: 'style', label: '图标风格', type: 'select', defaultValue: 'outlined', options: [{ label: '线性轮廓 (Outlined)', value: 'outlined' }, { label: '实心填充 (Filled)', value: 'filled' }, { label: '圆角风格 (Rounded)', value: 'rounded' }, { label: '直角尖锐 (Sharp)', value: 'sharp' }] },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'images', label: '图片列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'emojipedia_search',
+    name: 'Emojipedia 贴纸采集',
+    category: 'material',
+    description: '通过客户端从 Emojipedia 检索 Apple 3D 原生高清 Emoji 与贴纸素材并同步上传至素材库',
+    iconImage: emojipediaIcon,
+    color: '#FF8C00',
+    defaultData: { label: 'Emojipedia 贴纸采集', config: { keyword: '', maxCount: 10, category: 'stickers' } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: cat, fire, laugh, rocket' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
+      { field: 'category', label: '检索分类', type: 'select', defaultValue: 'stickers', options: [{ label: '高清贴纸 (Stickers)', value: 'stickers' }, { label: '标准 Emoji (Emojis)', value: 'emojis' }] },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'images', label: '图片列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+]
 
 export function getManifestByType(type: string): NodeManifest | undefined {
   return NODE_MANIFEST_REGISTRY.find((m) => m.type === type)
