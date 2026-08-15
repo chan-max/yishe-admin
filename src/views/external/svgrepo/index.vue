@@ -173,22 +173,48 @@
 import { ref, computed, reactive, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Check } from '@element-plus/icons-vue'
-import { usePluginClientNodes } from '@/hooks/web/usePluginClientNodes'
+import { usePluginClientNodes } from '@/services/clientNodeState'
+import {
+  searchSvgrepoAndWait,
+  syncSvgrepoToMaterialLibraryAndWait,
+  refreshSvgrepoStatus,
+  type SvgrepoPhoto,
+  type SvgrepoClientVO,
+  type SvgrepoServiceStatus,
+} from '@/api/external/svgrepo'
+import { uploadMaterialFile } from '@/api/material'
+
+defineOptions({ name: 'ExternalSvgrepo' })
 
 const PLUGIN_KEY = 'svgrepo'
 const {
-  clients,
-  selectedClientId,
-  selectedClient,
+  clients: rawClients,
   loading,
-  actionLoading,
-  loadClients,
-  executeCommand,
+  refresh: refreshClientNodes,
   getServiceRuntime,
 } = usePluginClientNodes(PLUGIN_KEY)
 
-const svgrepoRuntime = computed(() => {
-  return getServiceRuntime(selectedClient.value, PLUGIN_KEY) || {}
+const selectedClientId = ref('')
+const actionLoading = reactive({
+  refreshRuntime: false,
+  search: false,
+  batchCollect: false,
+})
+
+const clients = computed<SvgrepoClientVO[]>(() => {
+  return rawClients.value.map((c: any) => {
+    const rawService = getServiceRuntime(c) as SvgrepoServiceStatus | null
+    return {
+      clientId: c.id,
+      isOnline: c.isOnline,
+      nodeStatus: c.nodeStatus,
+      connectedAt: c.connectedAt,
+      lastOnlineAt: c.lastOnlineAt,
+      machine: c.clientInfo?.machine || null,
+      location: c.clientInfo?.location || null,
+      svgrepo: rawService,
+    }
+  })
 })
 
 // 自动选中首个在线设备
@@ -197,20 +223,24 @@ watch(
   (list) => {
     if (list && list.length > 0 && !selectedClientId.value) {
       const online = list.find((c) => c.isOnline)
-      if (online) {
-        selectedClientId.value = online.clientId
-      } else {
-        selectedClientId.value = list[0].clientId
-      }
+      selectedClientId.value = online ? online.clientId : list[0].clientId
     }
   },
   { immediate: true },
 )
 
+const selectedClient = computed(() => {
+  return clients.value.find((item) => item.clientId === selectedClientId.value) || null
+})
+
+const svgrepoRuntime = computed(() => {
+  return selectedClient.value?.svgrepo || {}
+})
+
 const isOnline = computed(() => selectedClient.value?.isOnline ?? false)
 const clientTone = computed(() => (isOnline.value ? 'success' : 'danger'))
 const clientStatusText = computed(() => (isOnline.value ? '在线' : '离线'))
-const isAvailable = computed(() => isOnline.value && svgrepoRuntime.value?.available !== false)
+const isAvailable = computed(() => isOnline.value && (svgrepoRuntime.value as any)?.available !== false)
 const availabilityTone = computed(() => (isAvailable.value ? 'success' : 'danger'))
 const availabilityText = computed(() => (isAvailable.value ? '服务正常' : '不可用'))
 
@@ -218,9 +248,20 @@ function handleSelectClient(val: string) {
   selectedClientId.value = val
 }
 
+const loadClients = () => refreshClientNodes()
+
 async function handleRefreshRuntime() {
-  await executeCommand('refreshRuntime', {}, { loadingKey: 'refreshRuntime' })
-  ElMessage.success('已刷新状态')
+  if (!selectedClientId.value) return
+  actionLoading.refreshRuntime = true
+  try {
+    const res = await refreshSvgrepoStatus(selectedClientId.value)
+    ElMessage.success(res.success ? '已发送刷新指令' : (res.message || '刷新失败'))
+    if (res.success) await refreshClientNodes()
+  } catch (err: any) {
+    ElMessage.error(err?.message || '刷新失败')
+  } finally {
+    actionLoading.refreshRuntime = false
+  }
 }
 
 // 搜索表单
@@ -233,20 +274,20 @@ const searchForm = reactive({
 
 const searchResult = reactive<{
   total: number
-  items: any[]
+  items: SvgrepoPhoto[]
 }>({
   total: 0,
   items: [],
 })
 
 const hasSearched = ref(false)
-const selectedItems = ref<any[]>([])
+const selectedItems = ref<SvgrepoPhoto[]>([])
 
-function isItemSelected(item: any) {
+function isItemSelected(item: SvgrepoPhoto) {
   return selectedItems.value.some((i) => i.id === item.id)
 }
 
-function toggleSelectItem(item: any) {
+function toggleSelectItem(item: SvgrepoPhoto) {
   const idx = selectedItems.value.findIndex((i) => i.id === item.id)
   if (idx >= 0) {
     selectedItems.value.splice(idx, 1)
@@ -283,29 +324,33 @@ async function handleSearch() {
     ElMessage.warning('请输入搜索关键词')
     return
   }
+  if (!selectedClientId.value) {
+    ElMessage.warning('请选择客户端节点')
+    return
+  }
 
   hasSearched.value = true
   selectedItems.value = []
+  actionLoading.search = true
 
   try {
-    const res = await executeCommand(
-      'search',
-      {
-        keyword: searchForm.keyword.trim(),
-        query: searchForm.keyword.trim(),
-        page: searchForm.page,
-        limit: searchForm.limit,
-        style: searchForm.style,
-      },
-      { loadingKey: 'search' },
-    )
+    const res = await searchSvgrepoAndWait(selectedClientId.value, searchForm.keyword.trim(), {
+      page: searchForm.page,
+      limit: searchForm.limit,
+      style: searchForm.style,
+    })
 
-    const data = (res?.data || res) as any
-    searchResult.items = data?.items || []
-    searchResult.total = data?.total || searchResult.items.length
-    ElMessage.success(`检索到 ${searchResult.items.length} 个矢量素材`)
+    if (res.success) {
+      searchResult.items = res.items || []
+      searchResult.total = res.total || searchResult.items.length
+      ElMessage.success(`检索到 ${searchResult.items.length} 个矢量素材`)
+    } else {
+      ElMessage.error(res.error || '搜索失败')
+    }
   } catch (err: any) {
     ElMessage.error(err?.message || '搜索失败')
+  } finally {
+    actionLoading.search = false
   }
 }
 
@@ -314,31 +359,45 @@ function handlePageChange(newPage: number) {
   handleSearch()
 }
 
-async function handleDownloadSingle(item: any) {
-  try {
-    await executeCommand('download', {
-      imageUrl: item.svgUrl || item.image,
-      filename: item.name || item.title,
-    })
-    ElMessage.success(`已下载 SVG: ${item.title}`)
-  } catch (err: any) {
-    ElMessage.error(err?.message || '下载失败')
-  }
+async function handleDownloadSingle(item: SvgrepoPhoto) {
+  const url = item.svgUrl || item.image
+  if (!url) return
+  window.open(url, '_blank')
 }
 
-async function handleCollectSingle(item: any) {
+async function handleCollectSingle(item: SvgrepoPhoto) {
+  if (!selectedClientId.value) {
+    ElMessage.warning('请先选择客户端节点')
+    return
+  }
+  const targetUrl = item.svgUrl || item.image
+  if (!targetUrl) {
+    ElMessage.warning('没有可同步的图片')
+    return
+  }
+
   try {
-    await executeCommand('collect', {
-      imageUrl: item.svgUrl || item.image,
-      title: item.title,
-      metadata: {
-        id: item.id,
-        source: 'svgrepo',
-        title: item.title,
-        style: item.style,
-      },
+    const result = await syncSvgrepoToMaterialLibraryAndWait(selectedClientId.value, {
+      imageUrl: targetUrl,
+      metadata: { title: item.title, id: item.id },
     })
-    ElMessage.success(`已成功保存至个人素材库: ${item.title}`)
+
+    if (result.success) {
+      const d = result.data?.data || result.data || {}
+      if (d.cosUrl) {
+        await uploadMaterialFile({
+          url: d.cosUrl,
+          originUrl: item.url || targetUrl,
+          title: item.title || `svgrepo_${item.id}`,
+          category: 'sticker',
+          suffix: 'svg',
+          meta: item,
+        })
+      }
+      ElMessage.success(`已成功保存至个人素材库: ${item.title}`)
+    } else {
+      ElMessage.error(result.message || '保存至素材库失败')
+    }
   } catch (err: any) {
     ElMessage.error(err?.message || '保存至素材库失败')
   }
@@ -346,23 +405,39 @@ async function handleCollectSingle(item: any) {
 
 async function handleBatchCollect() {
   if (!selectedItems.value.length) return
+  if (!selectedClientId.value) {
+    ElMessage.warning('请先选择客户端节点')
+    return
+  }
 
   actionLoading.batchCollect = true
   let succ = 0
   let fail = 0
 
   for (const item of selectedItems.value) {
+    const targetUrl = item.svgUrl || item.image
+    if (!targetUrl) continue
     try {
-      await executeCommand('collect', {
-        imageUrl: item.svgUrl || item.image,
-        title: item.title,
-        metadata: {
-          id: item.id,
-          source: 'svgrepo',
-          title: item.title,
-        },
+      const result = await syncSvgrepoToMaterialLibraryAndWait(selectedClientId.value, {
+        imageUrl: targetUrl,
+        metadata: { title: item.title, id: item.id },
       })
-      succ++
+      if (result.success) {
+        const d = result.data?.data || result.data || {}
+        if (d.cosUrl) {
+          await uploadMaterialFile({
+            url: d.cosUrl,
+            originUrl: item.url || targetUrl,
+            title: item.title || `svgrepo_${item.id}`,
+            category: 'sticker',
+            suffix: 'svg',
+            meta: item,
+          })
+        }
+        succ++
+      } else {
+        fail++
+      }
     } catch {
       fail++
     }
