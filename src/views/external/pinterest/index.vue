@@ -280,6 +280,7 @@ import {
   type PinterestServiceStatus,
 } from "@/api/external/pinterest";
 import { websocketClient, type ServiceCommandResultEvent } from "@/services/websocketClient";
+import { uploadMaterialFile } from "@/api/material";
 import { usePluginClientNodes } from "@/services/clientNodeState";
 import { formatDate } from "@/utils/formatTime";
 import ExternalClientSidebar, {
@@ -578,7 +579,19 @@ const handleSyncOne = async (item: PinterestPin) => {
       },
     });
     if (result.success) {
-      ElMessage.success(`已入库: ${item.title || item.id}`);
+      const resultData = result.data?.data || result.data || {};
+      const cosUrl = resultData.cosUrl || resultData.localFilePath || item.image;
+      await uploadMaterialFile({
+        url: cosUrl,
+        originUrl: item.link || item.image,
+        name: item.title || "Pinterest 素材",
+        keywords: searchKeyword.value || "pinterest",
+        description: item.description || "",
+        source: "pinterest",
+        suffix: "jpg",
+        meta: item,
+      });
+      ElMessage.success(`已保存到贴纸素材库: ${item.title || item.id}`);
     } else {
       ElMessage.error(`入库失败: ${result.message || "未知错误"}`);
     }
@@ -625,6 +638,18 @@ const handleBatchDownload = async () => {
         },
       });
       if (result.success) {
+        const resultData = result.data?.data || result.data || {};
+        const cosUrl = resultData.cosUrl || resultData.localFilePath || item.image;
+        await uploadMaterialFile({
+          url: cosUrl,
+          originUrl: item.link || item.image,
+          name: item.title || "Pinterest 素材",
+          keywords: searchKeyword.value || "pinterest",
+          description: item.description || "",
+          source: "pinterest",
+          suffix: "jpg",
+          meta: item,
+        });
         successCount++;
       } else {
         failCount++;
@@ -637,7 +662,7 @@ const handleBatchDownload = async () => {
   batchDownloadLoading.value = false;
 
   ElNotification({
-    title: "批量入库完成",
+    title: "批量保存到贴纸素材库完成",
     message: `成功 ${successCount} 个，失败 ${failCount} 个`,
     type: failCount === 0 ? "success" : "warning",
     duration: 5000,

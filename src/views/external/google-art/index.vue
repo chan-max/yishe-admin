@@ -400,6 +400,7 @@ import {
   type GoogleArtZoomLevel,
 } from '@/api/external/googleArt'
 import { websocketClient, type ServiceCommandResultEvent } from '@/services/websocketClient'
+import { uploadMaterialFile } from '@/api/material'
 import { usePluginClientNodes } from '@/services/clientNodeState'
 import { formatDate } from '@/utils/formatTime'
 import ExternalClientSidebar, {
@@ -955,13 +956,25 @@ const downloadOne = async (item: GoogleArtAsset) => {
     const maxZoom = zooms[zooms.length - 1]
 
     // 下载
-    const syncResult = await syncGoogleArtToMaterialLibrary(selectedClientId.value, {
+    const syncResult = await syncGoogleArtToMaterialLibraryAndWait(selectedClientId.value, {
       url: item.url,
       zoomLevel: maxZoom.idx,
     })
 
     if (syncResult.success) {
-      ElMessage.success(`已入库: ${item.title}`)
+      const resultData = syncResult.data?.data || syncResult.data || {}
+      const cosUrl = resultData.cosUrl || resultData.localFilePath || item.image
+      await uploadMaterialFile({
+        url: cosUrl,
+        originUrl: item.url || item.image,
+        name: item.title || 'Google Arts 素材',
+        keywords: searchKeyword.value || 'google-art',
+        description: item.artist || '',
+        source: 'google-art',
+        suffix: 'jpg',
+        meta: item,
+      })
+      ElMessage.success(`已成功保存到贴纸素材库: ${item.title}`)
     } else {
       ElMessage.error(`入库失败: ${syncResult.message}`)
     }

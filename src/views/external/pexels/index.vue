@@ -264,6 +264,7 @@ import {
   type PexelsClientVO,
   type PexelsServiceStatus,
 } from '@/api/external/pexels';
+import { uploadMaterialFile } from '@/api/material';
 import '@/styles/external-collect.css';
 
 defineOptions({ name: 'ExternalPexels' });
@@ -470,7 +471,18 @@ const handleSyncOne = async (item: PexelsPhoto) => {
       },
     });
     if (result.success) {
-      ElMessage.success(`已入库: ${item.title || item.id}`);
+      const resultData = result.data?.data || result.data || {};
+      const cosUrl = resultData.cosUrl || resultData.localFilePath || item.image;
+      await uploadMaterialFile({
+        url: cosUrl,
+        originUrl: item.url || item.image,
+        name: item.title || item.alt || 'Pexels 素材',
+        keywords: searchKeyword.value || 'pexels',
+        source: 'pexels',
+        suffix: 'jpg',
+        meta: item,
+      });
+      ElMessage.success(`已成功保存到贴纸素材库: ${item.title || item.id}`);
     } else {
       ElMessage.error(`入库失败: ${result.message || '未知错误'}`);
     }
@@ -504,8 +516,22 @@ const handleBatchDownload = async () => {
             id: item.id,
           },
         });
-        if (res.success) successCount++;
-        else failCount++;
+        if (res.success) {
+          const resultData = res.data?.data || res.data || {};
+          const cosUrl = resultData.cosUrl || resultData.localFilePath || item.image;
+          await uploadMaterialFile({
+            url: cosUrl,
+            originUrl: item.url || item.image,
+            name: item.title || item.alt || 'Pexels 素材',
+            keywords: searchKeyword.value || 'pexels',
+            source: 'pexels',
+            suffix: 'jpg',
+            meta: item,
+          });
+          successCount++;
+        } else {
+          failCount++;
+        }
       } catch {
         failCount++;
       }
@@ -516,7 +542,7 @@ const handleBatchDownload = async () => {
       data: { successCount, failCount },
     };
     if (failCount === 0) {
-      ElMessage.success(`批量入库成功 (${successCount} 个)`);
+      ElMessage.success(`批量保存到贴纸素材库成功 (${successCount} 个)`);
     } else {
       ElMessage.warning(`批量完成：成功 ${successCount}，失败 ${failCount}`);
     }
