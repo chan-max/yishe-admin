@@ -1076,6 +1076,35 @@ export function sendMessage(event: string, data: any) {
   socket.emit(event, data);
 }
 
+/**
+ * 等待服务指令执行结果
+ */
+export function waitForServiceCommandResult(
+  commandId: string,
+  timeoutMs = 60000,
+): Promise<{ success: boolean; message: string; data?: any }> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      emitter.off('serviceCommandResult', handler);
+      reject(new Error(`命令执行超时 (${timeoutMs / 1000}s)`));
+    }, timeoutMs);
+
+    const handler = (event: any) => {
+      if (event && event.commandId === commandId) {
+        clearTimeout(timer);
+        emitter.off('serviceCommandResult', handler);
+        resolve({
+          success: event.success,
+          message: event.message,
+          data: event.data,
+        });
+      }
+    };
+
+    emitter.on('serviceCommandResult', handler);
+  });
+}
+
 export const websocketClient = {
   state: wsState,
   profile: clientInfo,
@@ -1086,5 +1115,6 @@ export const websocketClient = {
   updateClientInfo,
   checkMyClientStatus,
   sendMessage,
+  waitForServiceCommandResult,
   events: emitter,
 };
