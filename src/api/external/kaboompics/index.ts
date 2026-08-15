@@ -36,13 +36,16 @@ export interface KaboompicsSearchResult {
 }
 
 export interface KaboompicsClientVO {
-  id: string
-  clientDeviceId: string
-  deviceName: string
-  ip: string
-  status: string
-  serviceStatus: string
-  lastHeartbeat: string
+  clientId: string
+  isOnline?: boolean
+  nodeStatus?: string | null
+  connectedAt?: string | null
+  lastOnlineAt?: string | null
+  appVersion?: string | null
+  workspaceDirectory?: string | null
+  machine?: any
+  location?: any
+  kaboompics?: KaboompicsServiceStatus | null
 }
 
 export interface KaboompicsServiceStatus {

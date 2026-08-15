@@ -1,214 +1,274 @@
 <template>
-  <div class="collect-page">
-    <!-- 顶部 Toolbar -->
-    <header class="collect-toolbar">
-      <div class="collect-toolbar__title">
-        <h1 class="collect-toolbar__name">Kaboompics 免费高清图库</h1>
-        <span class="collect-toolbar__subtitle">全量全尺寸高清原图素材采集（无损/原图级下载）</span>
-      </div>
-      <div class="collect-toolbar__actions">
-        <div class="client-select-wrapper">
-          <span class="client-select-label">客户端节点:</span>
+  <ContentWrap :plain="true">
+    <div class="collect-page">
+      <!-- 工具栏 -->
+      <div class="collect-toolbar">
+        <div class="collect-toolbar__left">
+          <div class="collect-toolbar__title">Kaboompics 控制台</div>
           <el-select
             v-model="selectedClientId"
-            placeholder="请选择在线客户端节点"
+            placeholder="选择客户端节点"
             size="default"
-            class="client-select"
-            :loading="clientLoading"
+            style="width: 220px;"
+            @change="handleSelectClient"
           >
             <el-option
-              v-for="item in clientOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-              :disabled="item.disabled"
-            />
+              v-for="item in clients"
+              :key="item.clientId"
+              :label="item.machine?.code || item.clientId"
+              :value="item.clientId"
+            >
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                <span>{{ item.machine?.code || item.clientId }}</span>
+                <el-tag :type="item.isOnline ? 'success' : 'info'" size="small">
+                  {{ item.isOnline ? '在线' : '离线' }}
+                </el-tag>
+              </div>
+            </el-option>
           </el-select>
         </div>
-      </div>
-    </header>
-
-    <!-- 主体区域 -->
-    <div class="collect-main">
-      <!-- 英雄连 / 运行状态 -->
-      <div class="status-hero" :class="`status-hero--${serviceStatus.state}`">
-        <div class="status-hero__icon">
-          <el-icon :size="24">
-            <Picture />
-          </el-icon>
-        </div>
-        <div class="status-hero__content">
-          <div class="status-hero__title">
-            <span>Kaboompics 高清图库引擎</span>
-            <el-tag :type="statusTagType" size="small" effect="dark">
-              {{ serviceStatus.label }}
-            </el-tag>
-          </div>
-          <p class="status-hero__desc">
-            {{ serviceStatus.message }}
-          </p>
-        </div>
-        <div class="status-hero__meta">
+        <div class="collect-toolbar__actions">
+          <el-button @click="loadClients">刷新节点</el-button>
           <el-button
             type="primary"
-            plain
-            size="small"
+            :disabled="!selectedClientId || !selectedClient?.isOnline"
             :loading="actionLoading.refreshRuntime"
             @click="handleRefreshRuntime"
           >
-            刷新节点状态
+            刷新状态
           </el-button>
         </div>
       </div>
 
-      <!-- 操作栏: 搜索与批量入库 -->
-      <div class="collect-actions-bar">
-        <div class="collect-search-box">
-          <el-input
-            v-model="searchKeyword"
-            placeholder="输入英文搜索关键词 (如: cat, coffee, nature, office)"
-            clearable
-            size="large"
-            @keyup.enter="handleSearch(1)"
-          >
-            <template #append>
-              <el-button type="primary" :loading="searchLoading" @click="handleSearch(1)">
-                搜索高清原图
-              </el-button>
-            </template>
-          </el-input>
-        </div>
-
-        <div class="collect-batch-ops">
-          <el-button
-            type="success"
-            size="default"
-            :disabled="!selectedItems.length || !selectedClientId"
-            :loading="batchDownloadLoading"
-            @click="handleBatchDownload"
-          >
-            批量保存到贴纸素材库 ({{ selectedItems.length }})
-          </el-button>
-          <el-button
-            v-if="selectedItems.length"
-            type="info"
-            plain
-            size="default"
-            @click="clearSelection"
-          >
-            取消选择
-          </el-button>
-        </div>
-      </div>
-
-      <!-- 标签筛选 / 快捷推荐 -->
-      <div class="quick-tags-bar">
-        <span class="quick-tags-label">热门推荐:</span>
-        <el-tag
-          v-for="tag in quickTags"
-          :key="tag"
-          class="quick-tag-item"
-          effect="plain"
-          size="default"
-          @click="quickSearch(tag)"
-        >
-          {{ tag }}
-        </el-tag>
-      </div>
-
-      <!-- 搜索结果列表 -->
-      <div v-loading="searchLoading" class="collect-list-wrapper">
-        <el-empty v-if="!searchResults.length && !searchLoading" description="暂无搜索结果，请输入关键词检索" />
-
-        <div v-else class="collect-list">
-          <div
-            v-for="item in searchResults"
-            :key="item.id"
-            class="collect-item"
-            :class="{ 'is-selected': selectedItems.includes(item.id) }"
-          >
-            <!-- 勾选复选框 -->
-            <div class="collect-item__checkbox" @click.stop="toggleSelect(item)">
-              <el-checkbox :model-value="selectedItems.includes(item.id)" />
-            </div>
-
-            <!-- 图片容器 -->
-            <div class="collect-item__image-box" @click="openPreview(item)">
-              <img :src="item.thumbnail || item.image" :alt="item.title" class="collect-item__img" loading="lazy" />
-              <div class="collect-item__badge-hd">HD 原图</div>
-              <div class="collect-item__overlay">
-                <span class="view-btn">查看大图</span>
+      <!-- 客户端节点区域 -->
+      <div class="collect-layout" v-loading="loading">
+        <!-- 主区域 -->
+        <section class="collect-main">
+          <div v-if="selectedClient" class="collect-panel">
+            <!-- 状态卡片 -->
+            <div class="status-hero">
+              <div class="hero-main" :class="`is-${availabilityTone}`">
+                <div class="hero-eyebrow">Kaboompics (高清原图图库)</div>
+                <div class="hero-value">{{ availabilityText }}</div>
+                <div class="hero-subtitle">
+                  {{ selectedClient.machine?.code || selectedClient.clientId }}
+                </div>
+              </div>
+              <div class="status-pills">
+                <div class="status-pill" :class="`is-${clientTone}`">
+                  <span class="status-pill__dot" />
+                  <span>{{ clientStatusText }}</span>
+                </div>
+                <div class="status-pill" :class="`is-${siteTone}`">
+                  <span class="status-pill__dot" />
+                  <span>{{ siteStatusBadge }}</span>
+                </div>
+                <div class="status-pill is-neutral">
+                  <span>{{ platformText }}</span>
+                </div>
+                <div class="status-pill is-neutral">
+                  <span>{{ checkedAtText }}</span>
+                </div>
               </div>
             </div>
 
-            <!-- 素材信息 -->
-            <div class="collect-item__info">
-              <h4 class="collect-item__title" :title="item.title">{{ item.title || 'Kaboompics 高清摄影' }}</h4>
-              <div class="collect-item__meta-row">
-                <span v-if="item.width && item.height" class="collect-item__meta-tag">
-                  {{ item.width }} × {{ item.height }} px
-                </span>
-                <span v-if="item.author" class="collect-item__author" :title="item.author">
-                  📷 {{ item.author }}
-                </span>
+            <!-- 图片采集 -->
+            <div class="collect-section">
+              <div class="collect-search__header">
+                <div class="collect-section__title">图片采集 (全量全尺寸高清原图)</div>
+                <div class="collect-search__opts">
+                  <div class="collect-search__field">
+                    <span class="collect-search__label">类型</span>
+                    <el-select v-model="type" size="small" style="width: 110px" aria-label="采集类型">
+                      <el-option value="image" label="图片" />
+                    </el-select>
+                  </div>
+                  <div class="collect-search__field">
+                    <span class="collect-search__label">每页数量</span>
+                    <el-select v-model="pageSize" size="small" style="width: 100px" @change="handleSizeChange">
+                      <el-option :value="10" label="10 条" />
+                      <el-option :value="20" label="20 条" />
+                      <el-option :value="30" label="30 条" />
+                      <el-option :value="50" label="50 条" />
+                    </el-select>
+                  </div>
+                </div>
               </div>
-            </div>
 
-            <!-- 卡片底部操作按钮 -->
-            <div class="collect-item__actions">
-              <el-button
-                type="primary"
-                size="small"
-                :loading="loadingItems.has(item.id)"
-                :disabled="!selectedClientId"
-                @click.stop="handleSyncOne(item)"
-              >
-                保存到贴纸素材库
-              </el-button>
-              <el-button
-                type="info"
-                plain
-                size="small"
-                tag="a"
-                :href="item.url || item.link"
-                target="_blank"
-                @click.stop
-              >
-                原网页
-              </el-button>
+              <div class="collect-inline">
+                <el-input
+                  v-model="searchKeyword"
+                  clearable
+                  placeholder="输入英文关键词搜索 Kaboompics 免费素材（如 coffee, workspace, nature, business）"
+                  @keyup.enter="handleSearch"
+                />
+                <el-button type="primary" :loading="searchLoading" @click="handleSearch">
+                  搜索
+                </el-button>
+              </div>
+
+              <!-- 搜索结果 -->
+              <div v-if="searchResults.length > 0" class="collect-search__results">
+                <!-- 顶部批量操作及状态信息 -->
+                <div class="collect-search__header">
+                  <div class="collect-search__info">
+                    共 {{ searchTotal }} 个结果，第 {{ currentPage }} / {{ totalPages }} 页
+                  </div>
+                  <div class="collect-actions-bar">
+                    <el-checkbox
+                      :model-value="isAllSelected"
+                      :indeterminate="isIndeterminate"
+                      @change="toggleSelectAll"
+                    >
+                      全选
+                    </el-checkbox>
+                    <span class="collect-actions-bar__count">已选 {{ selectedItems.length }} 项</span>
+                    <el-button
+                      type="primary"
+                      size="small"
+                      :disabled="selectedItems.length === 0"
+                      :loading="batchDownloadLoading"
+                      @click="handleBatchDownload"
+                    >
+                      批量入库
+                    </el-button>
+                    <el-button
+                      size="small"
+                      :disabled="selectedItems.length === 0"
+                      @click="copySelectedLinks"
+                    >
+                      复制链接
+                    </el-button>
+                    <el-button size="small" @click="clearSelection">清空</el-button>
+                  </div>
+                </div>
+
+                <!-- 统一列表渲染 -->
+                <div class="collect-list">
+                  <div
+                    v-for="item in searchResults"
+                    :key="item.id"
+                    class="collect-item"
+                    :class="{ 'is-selected': selectedItems.includes(item.id) }"
+                  >
+                    <el-checkbox
+                      :model-value="selectedItems.includes(item.id)"
+                      @change="toggleSelect(item)"
+                    />
+                    <div class="collect-item__thumb" @click="handlePreviewPhoto(item)">
+                      <img
+                        v-if="item.image || item.thumbnail"
+                        :src="item.thumbnail || item.image || ''"
+                        :alt="item.title || 'Kaboompics Photo'"
+                        loading="lazy"
+                      />
+                      <div v-else class="collect-item__thumb-error">
+                        <el-icon><Picture /></el-icon>
+                      </div>
+                    </div>
+                    <div class="collect-item__info">
+                      <div class="collect-item__title" :title="item.title || 'Kaboompics 素材'">
+                        {{ item.title || 'Kaboompics 素材' }}
+                      </div>
+                      <div class="collect-item__meta">
+                        <span v-if="item.author">📷 {{ item.author }}</span>
+                        <span v-if="item.width && item.height" class="collect-item__size">
+                          {{ item.width }} × {{ item.height }}
+                        </span>
+                        <span v-if="item.license" class="collect-item__size">
+                          {{ item.license }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="collect-item__actions">
+                      <el-button
+                        size="small"
+                        @click.stop="copyLink(item.link || item.url || item.image || '')"
+                      >
+                        复制
+                      </el-button>
+                      <el-button
+                        type="primary"
+                        size="small"
+                        :loading="loadingItems.has(item.id)"
+                        :disabled="!selectedClientId || !selectedClient?.isOnline"
+                        @click.stop="handleSyncOne(item)"
+                      >
+                        入库
+                      </el-button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 分页 -->
+                <div class="collect-pagination">
+                  <el-pagination
+                    v-model:current-page="currentPage"
+                    :page-size="pageSize"
+                    :total="searchTotal"
+                    layout="total, prev, pager, next, jumper"
+                    @current-change="handlePageChange"
+                  />
+                </div>
+              </div>
+
+              <!-- 空状态 -->
+              <el-empty
+                v-else-if="!searchLoading && searchKeyword"
+                description="未找到相关图片，请尝试其他英文关键词"
+              />
+
+              <!-- 最近执行结果 -->
+              <div v-if="lastResult" class="collect-result">
+                <div class="collect-result__header">
+                  <div class="collect-result__title">最近操作结果</div>
+                  <el-tag :type="lastResult.success ? 'success' : 'danger'" size="small">
+                    {{ lastResult.success ? '成功' : '失败' }}
+                  </el-tag>
+                </div>
+                <div class="result-row">
+                  <span class="result-row__label">执行消息</span>
+                  <span class="result-row__value">{{ lastResult.message }}</span>
+                </div>
+                <div
+                  class="result-row"
+                  v-if="
+                    lastResult.data &&
+                    (lastResult.data.successCount !== undefined || lastResult.data.images)
+                  "
+                >
+                  <span class="result-row__label">采集统计</span>
+                  <span class="result-row__value">
+                    成功 {{ lastResult.data.successCount ?? 0 }} 个，失败
+                    {{ lastResult.data.failCount ?? 0 }} 个
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- 统一底层分页器 -->
-        <div v-if="searchResults.length" class="collect-pagination">
-          <el-pagination
-            v-model:current-page="currentPage"
-            :page-size="pageSize"
-            :total="totalResults"
-            layout="prev, pager, next, jumper"
-            background
-            @current-change="handleSearch"
-          />
-        </div>
+          <el-empty v-else description="请先在上方选择客户端节点" />
+        </section>
       </div>
     </div>
 
-    <!-- 大图预览 Dialog -->
-    <el-dialog v-model="previewVisible" title="素材高清原图预览" width="700px" destroy-on-close align-center>
-      <div v-if="previewItem" class="preview-modal">
-        <div class="preview-modal__img-box">
-          <img :src="previewItem.image || previewItem.thumbnail" :alt="previewItem.title" class="preview-modal__img" />
-        </div>
-        <div class="preview-modal__details">
-          <h3>{{ previewItem.title }}</h3>
-          <p v-if="previewItem.description" class="preview-desc">{{ previewItem.description }}</p>
-          <div class="preview-specs">
-            <p><strong>原图尺寸:</strong> {{ previewItem.width }} × {{ previewItem.height }} px</p>
-            <p><strong>摄影师:</strong> {{ previewItem.author || 'Kaboompics' }}</p>
-            <p><strong>授权协议:</strong> {{ previewItem.license || 'Kaboompics License (Free for Commercial)' }}</p>
-            <p v-if="previewItem.tags"><strong>标签:</strong> {{ previewItem.tags }}</p>
-            <p><strong>原图链接:</strong> <a :href="previewItem.image" target="_blank" class="link-url">{{ previewItem.image }}</a></p>
+    <!-- 图片预览对话框 -->
+    <el-dialog v-model="previewVisible" title="Kaboompics 高清原图预览" width="700px" destroy-on-close align-center>
+      <div v-if="previewItem" class="collect-preview">
+        <img
+          :src="previewItem.image || previewItem.thumbnail"
+          :alt="previewItem.title || 'Preview'"
+          style="max-width: 100%; max-height: 500px; display: block; margin: 0 auto; border-radius: 8px;"
+        />
+        <div style="margin-top: 16px;">
+          <h4>{{ previewItem.title || 'Kaboompics 高清素材' }}</h4>
+          <p v-if="previewItem.description" style="color: #666; font-size: 13px; margin-top: 4px;">{{ previewItem.description }}</p>
+          <div style="margin-top: 8px; font-size: 13px; color: #888; display: flex; flex-direction: column; gap: 4px;">
+            <span v-if="previewItem.author"><strong>摄影师:</strong> {{ previewItem.author }}</span>
+            <span v-if="previewItem.width && previewItem.height"><strong>原图分辨率:</strong> {{ previewItem.width }} × {{ previewItem.height }} px</span>
+            <span v-if="previewItem.license"><strong>授权协议:</strong> {{ previewItem.license }}</span>
+            <span v-if="previewItem.tags"><strong>标签:</strong> {{ previewItem.tags }}</span>
+            <span><strong>原图直链:</strong> <a :href="previewItem.image" target="_blank" style="color: #409eff; word-break: break-all;">{{ previewItem.image }}</a></span>
           </div>
         </div>
       </div>
@@ -218,19 +278,19 @@
           v-if="previewItem"
           type="primary"
           :loading="loadingItems.has(previewItem.id)"
-          :disabled="!selectedClientId"
+          :disabled="!selectedClientId || !selectedClient?.isOnline"
           @click="handleSyncOne(previewItem)"
         >
           保存到贴纸素材库
         </el-button>
       </template>
     </el-dialog>
-  </div>
+  </ContentWrap>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, reactive, onMounted } from 'vue';
-import { ElMessage, ElNotification } from 'element-plus';
+import { ElMessage } from 'element-plus';
 import { Picture } from '@element-plus/icons-vue';
 import { usePluginClientNodes } from '@/services/clientNodeState';
 import {
@@ -246,133 +306,174 @@ import '@/styles/external-collect.css';
 
 defineOptions({ name: 'ExternalKaboompics' });
 
-// ─── 客户端节点管理 ──────────────────────────────────────────
-const {
-  clients: rawClients,
-  loading: clientLoading,
-  refresh: refreshClientNodes,
-} = usePluginClientNodes('kaboompics');
-
-const selectedClientId = ref<string>('');
-
-const clientOptions = computed(() => {
-  return rawClients.value.map((c) => ({
-    label: `${c.deviceName || '客户端'} (${c.ip || '在线'})`,
-    value: c.id,
-    disabled: c.status !== 'online',
-  }));
-});
-
-// 默认自动选中第一个在线节点
-watch(
-  clientOptions,
-  (options) => {
-    if (!selectedClientId.value && options.length > 0) {
-      const firstOnline = options.find((o) => !o.disabled);
-      if (firstOnline) {
-        selectedClientId.value = firstOnline.value;
-      }
-    }
-  },
-  { immediate: true },
-);
-
-// ─── 状态 Hero 描述 ──────────────────────────────────────────
-const serviceStatus = reactive<{
-  state: 'idle' | 'running' | 'error';
-  label: string;
-  message: string;
-}>({
-  state: 'idle',
-  label: '就绪',
-  message: 'Kaboompics 免费高清图库采集服务已就绪，全量下载均为 100% 原始分辨率大图。',
-});
-
-const statusTagType = computed(() => {
-  if (serviceStatus.state === 'running') return 'success';
-  if (serviceStatus.state === 'error') return 'danger';
-  return 'info';
-});
-
+const type = ref('image');
 const actionLoading = reactive({
   refreshRuntime: false,
 });
 
-const handleRefreshRuntime = async () => {
-  if (!selectedClientId.value) {
-    ElMessage.warning('请先选择在线客户端节点');
-    return;
+// ─── 客户端节点 ──────────────────────────────────────────────
+
+const {
+  clients: rawClients,
+  loading,
+  refresh: refreshClientNodes,
+  getServiceRuntime,
+} = usePluginClientNodes('kaboompics');
+
+const selectedClientId = ref('');
+const lastResult = ref<{
+  success: boolean;
+  message: string;
+  data?: Record<string, any> | null;
+} | null>(null);
+
+// ─── 搜索 ────────────────────────────────────────────────────
+
+const searchKeyword = ref('');
+const searchLoading = ref(false);
+const pageSize = ref(10);
+const searchResults = ref<KaboompicsPhoto[]>([]);
+const searchTotal = ref(0);
+const currentPage = ref(1);
+const totalPages = ref(0);
+const selectedItems = ref<string[]>([]);
+const loadingItems = ref<Set<string>>(new Set());
+const batchDownloadLoading = ref(false);
+
+const previewVisible = ref(false);
+const previewItem = ref<KaboompicsPhoto | null>(null);
+
+const clients = computed<KaboompicsClientVO[]>(() => {
+  return rawClients.value.map((client) => {
+    const kaboompics = (getServiceRuntime(client) as KaboompicsServiceStatus | null) || null;
+    return {
+      clientId: client.id,
+      isOnline: client.isOnline,
+      nodeStatus: client.nodeStatus,
+      connectedAt: client.connectedAt,
+      lastOnlineAt: client.lastOnlineAt,
+      appVersion: client.clientInfo?.appVersion || null,
+      workspaceDirectory: client.clientInfo?.workspaceDirectory || null,
+      machine: client.clientInfo?.machine || null,
+      location: client.clientInfo?.location || null,
+      kaboompics,
+    };
+  });
+});
+
+const selectedClient = computed<KaboompicsClientVO | null>(() => {
+  if (!selectedClientId.value) return null;
+  return clients.value.find((c) => c.clientId === selectedClientId.value) || null;
+});
+
+const kaboompicsService = computed<KaboompicsServiceStatus | null>(
+  () => selectedClient.value?.kaboompics || null,
+);
+
+// ─── 状态计算属性 ──────────────────────────────────────────
+
+const isOnline = computed(() => !!selectedClient.value?.isOnline);
+const isServiceConnected = computed(() => !!kaboompicsService.value?.connected);
+const isAvailable = computed(
+  () => isOnline.value && (isServiceConnected.value || kaboompicsService.value?.available),
+);
+
+const availabilityTone = computed(() => (isAvailable.value ? 'success' : 'danger'));
+const availabilityText = computed(() => (isAvailable.value ? '服务就绪' : '不可用'));
+
+const clientTone = computed(() => (isOnline.value ? 'success' : 'danger'));
+const clientStatusText = computed(() => (isOnline.value ? '客户端在线' : '客户端离线'));
+
+const siteTone = computed(() => (isServiceConnected.value ? 'success' : 'warning'));
+const siteStatusBadge = computed(() =>
+  isServiceConnected.value ? 'Kaboompics 已连接' : 'Kaboompics 未连接',
+);
+
+const platformText = computed(() => {
+  const p = selectedClient.value?.machine?.platform;
+  if (!p) return '未知平台';
+  return p === 'darwin' ? 'macOS' : p === 'win32' ? 'Windows' : p;
+});
+
+const checkedAtText = computed(() => {
+  const t = kaboompicsService.value?.lastCheckedAt;
+  if (!t) return '未检测';
+  try {
+    return new Date(t).toLocaleTimeString();
+  } catch {
+    return t;
   }
+});
+
+// 批量选择计算属性
+const isAllSelected = computed(() => {
+  return searchResults.value.length > 0 && selectedItems.value.length === searchResults.value.length;
+});
+
+const isIndeterminate = computed(() => {
+  return selectedItems.value.length > 0 && selectedItems.value.length < searchResults.value.length;
+});
+
+// ─── 列表操作 ──────────────────────────────────────────────
+
+const loadClients = async () => {
+  await refreshClientNodes();
+};
+
+const handleSelectClient = () => {
+  searchResults.value = [];
+  selectedItems.value = [];
+};
+
+const handleRefreshRuntime = async () => {
+  if (!selectedClientId.value) return;
   actionLoading.refreshRuntime = true;
   try {
-    const res = await refreshKaboompicsStatus(selectedClientId.value);
-    if (res.success) {
-      ElMessage.success('已发送刷新节点状态指令');
-    } else {
-      ElMessage.error(res.message || '刷新指令发送失败');
-    }
-  } catch (err: any) {
-    ElMessage.error(err.message || '网络请求错误');
+    await refreshKaboompicsStatus(selectedClientId.value);
+    await refreshClientNodes();
+    ElMessage.success('运行状态刷新请求已发送');
+  } catch (error: any) {
+    ElMessage.error(error?.message || '刷新运行状态失败');
   } finally {
     actionLoading.refreshRuntime = false;
   }
 };
 
-// ─── 搜索与分页 ──────────────────────────────────────────────
-const searchKeyword = ref('cat');
-const searchLoading = ref(false);
-const currentPage = ref(1);
-const pageSize = ref(20);
-const totalResults = ref(0);
-const searchResults = ref<KaboompicsPhoto[]>([]);
-
-const quickTags = ['cat', 'coffee', 'nature', 'office', 'flower', 'lifestyle', 'travel', 'food'];
-
-const quickSearch = (tag: string) => {
-  searchKeyword.value = tag;
-  handleSearch(1);
+const handlePreviewPhoto = (item: KaboompicsPhoto) => {
+  previewItem.value = item;
+  previewVisible.value = true;
 };
 
-const handleSearch = async (page = 1) => {
-  if (!selectedClientId.value) {
-    ElMessage.warning('请先选择在线客户端节点');
-    return;
-  }
-  if (!searchKeyword.value.trim()) {
-    ElMessage.warning('请输入搜索关键词');
-    return;
-  }
-
-  currentPage.value = page;
-  searchLoading.value = true;
-  selectedItems.value = [];
-
+const copyLink = async (url: string) => {
   try {
-    const res = await searchKaboompicsAndWait(selectedClientId.value, searchKeyword.value.trim(), {
-      page: currentPage.value,
-      limit: pageSize.value,
-    });
-
-    if (res.success) {
-      searchResults.value = res.items || [];
-      totalResults.value = res.total || res.count || searchResults.value.length;
-      ElMessage.success(`检索到 ${searchResults.value.length} 张 Kaboompics 高清原图`);
-    } else {
-      searchResults.value = [];
-      ElMessage.error(res.error || '搜索失败');
-    }
-  } catch (error: any) {
-    searchResults.value = [];
-    ElMessage.error(error.message || '搜索请求发生错误');
-  } finally {
-    searchLoading.value = false;
+    await navigator.clipboard.writeText(url);
+    ElMessage.success('链接已复制');
+  } catch {
+    ElMessage.error('复制失败');
   }
 };
 
-// ─── 多选与保存到贴纸素材库 (`sticker` 主表) ────────────────────
-const selectedItems = ref<string[]>([]);
-const loadingItems = ref<Set<string>>(new Set());
-const batchDownloadLoading = ref(false);
+const copySelectedLinks = async () => {
+  if (selectedItems.value.length === 0) return;
+  const links = selectedItems.value
+    .map((id) => getItemById(id))
+    .map((item) => item?.url || item?.image || '')
+    .filter(Boolean);
+  try {
+    await navigator.clipboard.writeText(links.join('\n'));
+    ElMessage.success(`已复制 ${links.length} 个链接`);
+  } catch {
+    ElMessage.error('复制失败');
+  }
+};
+
+const toggleSelectAll = (val: boolean) => {
+  if (val) {
+    selectedItems.value = searchResults.value.map((item) => item.id);
+  } else {
+    selectedItems.value = [];
+  }
+};
 
 const toggleSelect = (item: KaboompicsPhoto) => {
   const idx = selectedItems.value.indexOf(item.id);
@@ -389,35 +490,30 @@ const clearSelection = () => {
 
 const getItemById = (id: string) => searchResults.value.find((item) => item.id === id);
 
-/** 单张保存到贴纸素材库 */
 const handleSyncOne = async (item: KaboompicsPhoto) => {
-  if (!selectedClientId.value || !item.image) {
-    ElMessage.warning('该内容没有可同步的原图链接');
+  if (!selectedClientId.value || (!item.image && !item.thumbnail)) {
+    ElMessage.warning('该内容没有可同步的图片');
     return;
   }
-
   loadingItems.value.add(item.id);
   try {
-    // 1. 客户端下载原图并上传 COS
     const result = await syncKaboompicsToMaterialLibraryAndWait(selectedClientId.value, {
-      imageUrl: item.image, // 全尺寸原图 URL
+      imageUrl: item.image || item.thumbnail || '',
       metadata: {
-        title: item.title,
-        id: item.id,
+        title: item.title || 'Kaboompics 摄影作品',
+        url: item.url || item.link,
         author: item.author,
         width: item.width,
         height: item.height,
+        id: item.id,
       },
     });
-
     if (result.success) {
       const resultData = result.data?.data || result.data || {};
       if (!resultData.cosUrl) {
         ElMessage.error('图片未成功上传至个人 COS 存储，入库取消');
         return;
       }
-
-      // 2. 直接持久化写入 sticker 核心主表
       await uploadMaterialFile({
         url: resultData.cosUrl,
         originUrl: item.url || item.image,
@@ -428,52 +524,45 @@ const handleSyncOne = async (item: KaboompicsPhoto) => {
         suffix: 'jpg',
         meta: item,
       });
-
-      ElMessage.success(`已成功保存原图到贴纸素材库: ${item.title}`);
+      ElMessage.success(`已成功保存到贴纸素材库: ${item.title || item.id}`);
     } else {
       ElMessage.error(`入库失败: ${result.message || '未知错误'}`);
     }
   } catch (error: any) {
-    ElMessage.error(`入库异常: ${error.message || '网络或服务端错误'}`);
+    ElMessage.error(`同步出错: ${error.message || '网络或服务端错误'}`);
   } finally {
     loadingItems.value.delete(item.id);
   }
 };
 
-/** 批量保存到贴纸素材库 */
 const handleBatchDownload = async () => {
   if (!selectedClientId.value || selectedItems.value.length === 0) return;
   batchDownloadLoading.value = true;
   let successCount = 0;
   let failCount = 0;
 
-  ElNotification.info({
-    title: '批量保存高清原图',
-    message: `开始处理 ${selectedItems.value.length} 个素材原图...`,
-    duration: 3000,
-  });
-
   try {
     for (const id of selectedItems.value) {
       const item = getItemById(id);
-      if (!item || !item.image) continue;
-
+      if (!item || (!item.image && !item.thumbnail)) continue;
       try {
         const res = await syncKaboompicsToMaterialLibraryAndWait(selectedClientId.value, {
-          imageUrl: item.image,
+          imageUrl: item.image || item.thumbnail || '',
           metadata: {
-            title: item.title,
+            title: item.title || 'Kaboompics 摄影作品',
+            url: item.url || item.link,
+            author: item.author,
+            width: item.width,
+            height: item.height,
             id: item.id,
           },
         });
-
         if (res.success) {
           const resultData = res.data?.data || res.data || {};
           if (!resultData.cosUrl) {
             failCount++;
             continue;
           }
-
           await uploadMaterialFile({
             url: resultData.cosUrl,
             originUrl: item.url || item.image,
@@ -484,7 +573,6 @@ const handleBatchDownload = async () => {
             suffix: 'jpg',
             meta: item,
           });
-
           successCount++;
         } else {
           failCount++;
@@ -493,90 +581,101 @@ const handleBatchDownload = async () => {
         failCount++;
       }
     }
-
+    lastResult.value = {
+      success: failCount === 0,
+      message: `批量同步完成: 成功 ${successCount} 个, 失败 ${failCount} 个`,
+      data: { successCount, failCount },
+    };
     if (failCount === 0) {
-      ElMessage.success(`批量保存高清原图成功 (${successCount} 个)`);
+      ElMessage.success(`批量保存到贴纸素材库成功 (${successCount} 个)`);
     } else {
-      ElMessage.warning(`批量完成: 成功 ${successCount} 个, 失败 ${failCount} 个`);
+      ElMessage.warning(`批量完成：成功 ${successCount}，失败 ${failCount}`);
     }
   } finally {
     batchDownloadLoading.value = false;
-    clearSelection();
   }
 };
 
-// ─── 大图预览 modal ──────────────────────────────────────────
-const previewVisible = ref(false);
-const previewItem = ref<KaboompicsPhoto | null>(null);
+// ─── 动作响应函数 ──────────────────────────────────────────
 
-const openPreview = (item: KaboompicsPhoto) => {
-  previewItem.value = item;
-  previewVisible.value = true;
+const doSearch = async (page = 1) => {
+  if (!selectedClientId.value) {
+    ElMessage.warning('请先选择客户端节点');
+    return;
+  }
+  if (!searchKeyword.value.trim()) {
+    ElMessage.warning('请输入搜索关键词');
+    return;
+  }
+
+  searchLoading.value = true;
+  selectedItems.value = [];
+  try {
+    const result = await searchKaboompicsAndWait(selectedClientId.value, searchKeyword.value.trim(), {
+      limit: pageSize.value,
+      page,
+    });
+    searchResults.value = result.items || [];
+    if (result.total) {
+      searchTotal.value = result.total;
+    } else if (result.items && result.items.length > 0) {
+      searchTotal.value = currentPage.value * pageSize.value + 1;
+    } else {
+      searchTotal.value = 0;
+    }
+    totalPages.value = Math.ceil(searchTotal.value / pageSize.value) || 1;
+    currentPage.value = page;
+
+    lastResult.value = {
+      success: true,
+      message: `搜索成功，获取到 ${searchResults.value.length} 个 Kaboompics 原图结果`,
+      data: { count: searchResults.value.length },
+    };
+  } catch (error: any) {
+    lastResult.value = {
+      success: false,
+      message: error.message || '搜索失败',
+    };
+    ElMessage.error(error.message || '搜索失败');
+  } finally {
+    searchLoading.value = false;
+  }
 };
 
-onMounted(() => {
-  refreshClientNodes();
-});
-</script>
+const handleSearch = () => {
+  currentPage.value = 1;
+  doSearch(1);
+};
 
-<style scoped>
-.quick-tags-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-}
-.quick-tags-label {
-  font-size: 13px;
-  color: #606266;
-  font-weight: 500;
-}
-.quick-tag-item {
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.quick-tag-item:hover {
-  transform: translateY(-1px);
-  border-color: #409eff;
-}
-.collect-item__badge-hd {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: rgba(0, 0, 0, 0.75);
-  color: #00f2fe;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 4px;
-  backdrop-filter: blur(4px);
-  z-index: 2;
-}
-.preview-modal__img-box {
-  text-align: center;
-  max-height: 450px;
-  overflow: hidden;
-  border-radius: 8px;
-  background: #f5f7fa;
-  margin-bottom: 16px;
-}
-.preview-modal__img {
-  max-height: 450px;
-  max-width: 100%;
-  object-fit: contain;
-}
-.preview-specs {
-  background: #f8f9fa;
-  padding: 12px 16px;
-  border-radius: 6px;
-  margin-top: 12px;
-  font-size: 13px;
-  line-height: 1.8;
-  color: #475569;
-}
-.link-url {
-  color: #409eff;
-  word-break: break-all;
-}
-</style>
+const handleSizeChange = (val: number) => {
+  pageSize.value = val;
+  if (searchResults.value.length > 0) {
+    handleSearch();
+  }
+};
+
+const handlePageChange = (page: number) => {
+  doSearch(page);
+};
+
+// ─── 监听与初始化 ──────────────────────────────────────────
+
+onMounted(() => {
+  loadClients();
+});
+
+watch(
+  clients,
+  (newList) => {
+    if (!selectedClientId.value && newList.length > 0) {
+      const onlineClient = newList.find((c) => c.isOnline && c.kaboompics?.available);
+      if (onlineClient) {
+        selectedClientId.value = onlineClient.clientId;
+      } else if (newList[0]) {
+        selectedClientId.value = newList[0].clientId;
+      }
+    }
+  },
+  { immediate: true },
+);
+</script>
