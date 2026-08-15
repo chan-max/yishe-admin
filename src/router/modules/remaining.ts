@@ -591,8 +591,13 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: { hidden: true },
       },
       {
-        path: "stocksnap",
-        redirect: "/external/data-collect?tab=stocksnap",
+        path: "openverse",
+        redirect: "/external/data-collect?tab=openverse",
+        meta: { hidden: true },
+      },
+      {
+        path: "kaboompics",
+        redirect: "/external/data-collect?tab=kaboompics",
         meta: { hidden: true },
       },
       {

@@ -39,6 +39,7 @@ import PixabayView from '../pixabay/index.vue'
 import RawpixelView from '../rawpixel/index.vue'
 import StockSnapView from '../stocksnap/index.vue'
 import OpenverseView from '../openverse/index.vue'
+import KaboompicsView from '../kaboompics/index.vue'
 
 defineOptions({
   name: 'ExternalDataCollect',
@@ -47,7 +48,7 @@ defineOptions({
 const route = useRoute()
 const router = useRouter()
 
-type TabKey = 'google-art' | 'pinterest' | 'wikimedia' | 'pexels' | 'pixabay' | 'rawpixel' | 'stocksnap' | 'openverse'
+type TabKey = 'google-art' | 'pinterest' | 'wikimedia' | 'pexels' | 'pixabay' | 'rawpixel' | 'stocksnap' | 'openverse' | 'kaboompics'
 
 const activeTab = ref<TabKey>('google-art')
 
@@ -91,6 +92,11 @@ const menuItems = [
     key: 'openverse' as TabKey,
     name: 'Openverse 开放图库',
     component: markRaw(OpenverseView),
+  },
+  {
+    key: 'kaboompics' as TabKey,
+    name: 'Kaboompics 免费高清图库',
+    component: markRaw(KaboompicsView),
   },
 ]
 
