@@ -11,42 +11,34 @@ const emit = defineEmits<{
 
 const NODE_GROUPS: Array<{ title: string; items: Array<{ type: string; label: string; color: string }> }> = [
   {
-    title: '基础',
+    title: '基础流程',
     items: [
       { type: 'start', label: '开始', color: '#22c55e' },
       { type: 'end', label: '结束', color: '#ef4444' },
+      { type: 'webhook_trigger', label: 'Webhook 触发', color: '#8b5cf6' },
       { type: 'default', label: '普通节点', color: '#3b82f6' },
+    ],
+  },
+  {
+    title: 'AI & 智能',
+    items: [
       { type: 'ai_call', label: 'AI 调用', color: '#6366f1' },
+    ],
+  },
+  {
+    title: '逻辑控制',
+    items: [
       { type: 'condition', label: '条件分支', color: '#f59e0b' },
+      { type: 'switch', label: '多路切换', color: '#eab308' },
+      { type: 'loop', label: 'For 循环', color: '#10b981' },
+      { type: 'while_loop', label: 'While 循环', color: '#14b8a6' },
     ],
   },
   {
-    title: '集成',
+    title: '网络与代码',
     items: [
-      { type: 'http', label: 'HTTP', color: '#06b6d4' },
-      { type: 'code', label: '代码', color: '#f97316' },
-    ],
-  },
-  {
-    title: '素材',
-    items: [
-      { type: 'google_arts_culture', label: 'Google 艺术', color: '#4285f4' },
-      { type: 'pinterest_culture', label: 'Pinterest 采集', color: '#e60023' },
-      { type: 'wikimedia_culture', label: 'Wikimedia 采集', color: '#5f7d8c' },
-      { type: 'pexels_search', label: 'Pexels 采集', color: '#05a081' },
-      { type: 'pixabay_search', label: 'Pixabay 采集', color: '#02be6e' },
-      { type: 'rawpixel_search', label: 'Rawpixel 采集', color: '#e65100' },
-      { type: 'stocksnap_search', label: 'StockSnap 采集', color: '#E91E63' },
-      { type: 'openverse_search', label: 'Openverse 采集', color: '#B23A22' },
-      { type: 'openclipart_search', label: 'Openclipart 采集', color: '#D35400' },
-      { type: 'undraw_search', label: 'undraw 采集', color: '#6C63FF' },
-      { type: 'iconify_search', label: 'Iconify 采集', color: '#6C63FF' },
-      { type: 'nounproject_search', label: 'Noun Project 采集', color: '#1A1A1A' },
-      { type: 'vecteezy_search', label: 'Vecteezy 采集', color: '#FF6D00' },
-      { type: 'openmoji_search', label: 'OpenMoji 采集', color: '#000000' },
-      { type: 'googleicons_search', label: 'Google Icons 采集', color: '#4285F4' },
-      { type: 'emojipedia_search', label: 'Emojipedia 采集', color: '#FF8C00' },
-      { type: 'svgrepo_search', label: 'SVGRepo 矢量采集', color: '#EB3654' },
+      { type: 'http', label: 'HTTP 请求', color: '#06b6d4' },
+      { type: 'js_code', label: 'JS 代码', color: '#f97316' },
     ],
   },
 ]
