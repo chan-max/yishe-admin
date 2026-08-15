@@ -123,6 +123,34 @@ export function collectStockSnap(
   })
 }
 
+export function syncStockSnapToMaterialLibrary(
+  clientId: string,
+  data: { imageUrl: string; metadata?: Record<string, any> }
+) {
+  return sendServiceCommand({
+    target: { clientId, pluginKey: 'stocksnap' },
+    command: {
+      name: 'sync',
+      payload: {
+        imageUrl: data.imageUrl,
+        metadata: data.metadata || {},
+      },
+    },
+    mode: 'production',
+  })
+}
+
+export async function syncStockSnapToMaterialLibraryAndWait(
+  clientId: string,
+  data: { imageUrl: string; metadata?: Record<string, any> }
+): Promise<{ success: boolean; message: string; data?: any }> {
+  const response = await syncStockSnapToMaterialLibrary(clientId, data)
+  if (!response?.success || !response.data?.commandId) {
+    throw new Error(response?.message || '同步命令发送失败')
+  }
+  return waitForServiceCommandResult(response.data.commandId, 60000)
+}
+
 export const getStockSnapStatus = async () => {
   return request.get({ url: '/external/stocksnap/status' })
 }

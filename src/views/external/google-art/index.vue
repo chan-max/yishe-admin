@@ -963,9 +963,12 @@ const downloadOne = async (item: GoogleArtAsset) => {
 
     if (syncResult.success) {
       const resultData = syncResult.data?.data || syncResult.data || {}
-      const cosUrl = resultData.cosUrl || resultData.localFilePath || item.image
+      if (!resultData.cosUrl) {
+        ElMessage.error('图片未成功上传至个人 COS 存储，入库取消')
+        return
+      }
       await uploadMaterialFile({
-        url: cosUrl,
+        url: resultData.cosUrl,
         originUrl: item.url || item.image,
         name: item.title || 'Google Arts 素材',
         keywords: searchKeyword.value || 'google-art',

@@ -472,9 +472,12 @@ const handleSyncOne = async (item: PexelsPhoto) => {
     });
     if (result.success) {
       const resultData = result.data?.data || result.data || {};
-      const cosUrl = resultData.cosUrl || resultData.localFilePath || item.image;
+      if (!resultData.cosUrl) {
+        ElMessage.error('图片未成功上传至个人 COS 存储，入库取消');
+        return;
+      }
       await uploadMaterialFile({
-        url: cosUrl,
+        url: resultData.cosUrl,
         originUrl: item.url || item.image,
         name: item.title || item.alt || 'Pexels 素材',
         keywords: searchKeyword.value || 'pexels',
@@ -518,9 +521,12 @@ const handleBatchDownload = async () => {
         });
         if (res.success) {
           const resultData = res.data?.data || res.data || {};
-          const cosUrl = resultData.cosUrl || resultData.localFilePath || item.image;
+          if (!resultData.cosUrl) {
+            failCount++;
+            continue;
+          }
           await uploadMaterialFile({
-            url: cosUrl,
+            url: resultData.cosUrl,
             originUrl: item.url || item.image,
             name: item.title || item.alt || 'Pexels 素材',
             keywords: searchKeyword.value || 'pexels',

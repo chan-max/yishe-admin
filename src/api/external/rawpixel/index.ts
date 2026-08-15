@@ -123,6 +123,34 @@ export function collectRawpixel(
   })
 }
 
+export function syncRawpixelToMaterialLibrary(
+  clientId: string,
+  data: { imageUrl: string; metadata?: Record<string, any> }
+) {
+  return sendServiceCommand({
+    target: { clientId, pluginKey: 'rawpixel' },
+    command: {
+      name: 'sync',
+      payload: {
+        imageUrl: data.imageUrl,
+        metadata: data.metadata || {},
+      },
+    },
+    mode: 'production',
+  })
+}
+
+export async function syncRawpixelToMaterialLibraryAndWait(
+  clientId: string,
+  data: { imageUrl: string; metadata?: Record<string, any> }
+): Promise<{ success: boolean; message: string; data?: any }> {
+  const response = await syncRawpixelToMaterialLibrary(clientId, data)
+  if (!response?.success || !response.data?.commandId) {
+    throw new Error(response?.message || '同步命令发送失败')
+  }
+  return waitForServiceCommandResult(response.data.commandId, 60000)
+}
+
 export const getRawpixelStatus = async () => {
   return request.get({ url: '/external/rawpixel/status' })
 }

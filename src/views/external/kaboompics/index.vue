@@ -412,11 +412,14 @@ const handleSyncOne = async (item: KaboompicsPhoto) => {
 
     if (result.success) {
       const resultData = result.data?.data || result.data || {};
-      const cosUrl = resultData.cosUrl || resultData.localFilePath || item.image;
+      if (!resultData.cosUrl) {
+        ElMessage.error('图片未成功上传至个人 COS 存储，入库取消');
+        return;
+      }
 
       // 2. 直接持久化写入 sticker 核心主表
       await uploadMaterialFile({
-        url: cosUrl,
+        url: resultData.cosUrl,
         originUrl: item.url || item.image,
         name: item.title || 'Kaboompics 高清原图',
         keywords: item.tags || searchKeyword.value || 'kaboompics',
@@ -466,10 +469,13 @@ const handleBatchDownload = async () => {
 
         if (res.success) {
           const resultData = res.data?.data || res.data || {};
-          const cosUrl = resultData.cosUrl || resultData.localFilePath || item.image;
+          if (!resultData.cosUrl) {
+            failCount++;
+            continue;
+          }
 
           await uploadMaterialFile({
-            url: cosUrl,
+            url: resultData.cosUrl,
             originUrl: item.url || item.image,
             name: item.title || 'Kaboompics 高清原图',
             keywords: item.tags || searchKeyword.value || 'kaboompics',

@@ -250,9 +250,12 @@ import { ref, computed, watch, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Picture } from '@element-plus/icons-vue'
 import { usePluginClientNodes } from '@/services/clientNodeState'
-import { searchStockSnapAndWait, collectStockSnap, type StockSnapPhoto } from '@/api/external/stocksnap'
-import { sendServiceCommand } from '@/api/system/websocket'
-import { websocketClient } from '@/services/websocketClient'
+import {
+  searchStockSnapAndWait,
+  syncStockSnapToMaterialLibraryAndWait,
+  collectStockSnap,
+  type StockSnapPhoto,
+} from '@/api/external/stocksnap'
 import { uploadMaterialFile } from '@/api/material'
 import '@/styles/external-collect.css'
 
@@ -453,45 +456,37 @@ const handleSyncOne = async (item: StockSnapPhoto | null) => {
   if (!item || !selectedClientId.value) return
   loadingItems.value.add(item.id)
   try {
-    const response = await sendServiceCommand({
-      target: { clientId: selectedClientId.value, pluginKey: 'stocksnap' },
-      command: {
-        name: 'sync',
-        payload: {
-          imageUrl: item.image,
-          metadata: {
-            title: item.title,
-            url: item.url,
-            author: item.author,
-            width: item.width,
-            height: item.height,
-            id: item.id,
-          },
-        },
+    const result = await syncStockSnapToMaterialLibraryAndWait(selectedClientId.value, {
+      imageUrl: item.image,
+      metadata: {
+        title: item.title,
+        url: item.url,
+        author: item.author,
+        width: item.width,
+        height: item.height,
+        id: item.id,
       },
-      mode: 'production',
     })
-
-    if (response?.success && response.data?.commandId) {
-      const resultEnvelope = await websocketClient.waitForServiceCommandResult(response.data.commandId, 60000)
-      if (resultEnvelope.success) {
-        const resultData = resultEnvelope.data?.data || resultEnvelope.data || {}
-        const cosUrl = resultData.cosUrl || resultData.localFilePath || item.image
-        await uploadMaterialFile({
-          url: cosUrl,
-          originUrl: item.url || item.link || item.image,
-          name: item.title || 'StockSnap 素材',
-          keywords: item.tags || searchKeyword.value || 'stocksnap',
-          description: item.description || '',
-          source: 'stocksnap',
-          suffix: 'jpg',
-          meta: item,
-        })
-        ElMessage.success(`《${item.title || item.id}》已成功保存到贴纸素材库！`)
+    if (result.success) {
+      const resultData = result.data?.data || result.data || {}
+      if (!resultData.cosUrl) {
+        ElMessage.error('图片未成功上传至个人 COS 存储，入库取消')
         return
       }
+      await uploadMaterialFile({
+        url: resultData.cosUrl,
+        originUrl: item.url || item.link || item.image,
+        name: item.title || 'StockSnap 素材',
+        keywords: item.tags || searchKeyword.value || 'stocksnap',
+        description: item.description || '',
+        source: 'stocksnap',
+        suffix: 'jpg',
+        meta: item,
+      })
+      ElMessage.success(`《${item.title || item.id}》已成功保存到贴纸素材库！`)
+    } else {
+      ElMessage.error(`入库失败: ${result.message || '未知错误'}`)
     }
-    ElMessage.success(`已发起同步: ${item.title || item.id}`)
   } catch (e: any) {
     ElMessage.error(e?.message || '同步失败')
   } finally {
@@ -509,52 +504,48 @@ const handleBatchDownload = async () => {
 
   for (const item of selectedPhotos) {
     try {
-      const response = await sendServiceCommand({
-        target: { clientId: selectedClientId.value, pluginKey: 'stocksnap' },
-        command: {
-          name: 'sync',
-          payload: {
-            imageUrl: item.image,
-            metadata: {
-              title: item.title,
-              url: item.url,
-              author: item.author,
-              width: item.width,
-              height: item.height,
-              id: item.id,
-            },
-          },
+      const result = await syncStockSnapToMaterialLibraryAndWait(selectedClientId.value, {
+        imageUrl: item.image,
+        metadata: {
+          title: item.title,
+          url: item.url,
+          author: item.author,
+          width: item.width,
+          height: item.height,
+          id: item.id,
         },
-        mode: 'production',
       })
-
-      if (response?.success && response.data?.commandId) {
-        const resultEnvelope = await websocketClient.waitForServiceCommandResult(response.data.commandId, 60000)
-        if (resultEnvelope.success) {
-          const resultData = resultEnvelope.data?.data || resultEnvelope.data || {}
-          const cosUrl = resultData.cosUrl || resultData.localFilePath || item.image
-          await uploadMaterialFile({
-            url: cosUrl,
-            originUrl: item.url || item.link || item.image,
-            name: item.title || 'StockSnap 素材',
-            keywords: item.tags || searchKeyword.value || 'stocksnap',
-            description: item.description || '',
-            source: 'stocksnap',
-            suffix: 'jpg',
-            meta: item,
-          })
-          successCount++
+      if (result.success) {
+        const resultData = result.data?.data || result.data || {}
+        if (!resultData.cosUrl) {
+          failCount++
           continue
         }
+        await uploadMaterialFile({
+          url: resultData.cosUrl,
+          originUrl: item.url || item.link || item.image,
+          name: item.title || 'StockSnap 素材',
+          keywords: item.tags || searchKeyword.value || 'stocksnap',
+          description: item.description || '',
+          source: 'stocksnap',
+          suffix: 'jpg',
+          meta: item,
+        })
+        successCount++
+      } else {
+        failCount++
       }
-      failCount++
     } catch {
       failCount++
     }
   }
 
   batchDownloadLoading.value = false
-  ElMessage.success(`批量入库素材库成功：${successCount} 个，失败 ${failCount} 个`)
+  if (failCount === 0) {
+    ElMessage.success(`批量入库成功：${successCount} 个`)
+  } else {
+    ElMessage.warning(`批量入库完成：成功 ${successCount} 个，失败 ${failCount} 个`)
+  }
 }
 
 onMounted(() => {
