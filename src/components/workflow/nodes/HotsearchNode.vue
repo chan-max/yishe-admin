@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Handle, Position } from '@vue-flow/core'
-import { weiboIcon, douyinIcon, bilibiliIcon, zhihuIcon, toutiaoIcon, doubanIcon, kuaishouIcon, v2exIcon } from '@/assets/icons/apps'
+import { weiboIcon, douyinIcon, bilibiliIcon, zhihuIcon, toutiaoIcon, doubanIcon, kuaishouIcon, v2exIcon, thirtySixKrIcon } from '@/assets/icons/apps'
 
 const props = defineProps<{ data: { label?: string; config?: any; platform?: string } }>()
 
@@ -13,7 +13,7 @@ const platformConfig: Record<string, { name: string; color: string; icon?: strin
   douban: { name: '豆瓣', color: '#007722', icon: doubanIcon },
   kuaishou: { name: '快手', color: '#ff6600', icon: kuaishouIcon },
   v2ex: { name: 'V2EX', color: '#2b2b2b', icon: v2exIcon },
-  '36kr': { name: '36氪', color: '#0052d9' },
+  '36kr': { name: '36氪', color: '#0052d9', icon: thirtySixKrIcon },
   ithome: { name: 'IT之家', color: '#c8102e' },
 }
 

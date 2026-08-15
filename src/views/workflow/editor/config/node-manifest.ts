@@ -29,6 +29,7 @@ import {
   svgrepoIcon,
   kaboompicsIcon,
   v2exIcon,
+  thirtySixKrIcon,
 } from '@/assets/icons/apps'
 
 export type NodeType =
@@ -444,7 +445,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     type: 'hotsearch_36kr',
     name: '36氪热门采集',
     category: 'integration',
-    icon: "ep:connection",
+    iconImage: thirtySixKrIcon,
     color: '#0052d9',
     badge: '热搜',
     description: '通过已登录客户端采集36氪热门数据。',
