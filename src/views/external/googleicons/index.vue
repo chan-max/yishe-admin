@@ -125,10 +125,28 @@ const iconStyle = ref<'outlined' | 'rounded' | 'sharp' | 'two-tone'>('outlined')
 const actionLoading = reactive({ refreshRuntime: false });
 const { clients: rawClients, loading, refresh: refreshClientNodes, getServiceRuntime } = usePluginClientNodes('google-icons');
 const selectedClientId = ref('');
-const clients = computed<GoogleIconsClientVO[]>(() => rawClients.value.map((c) => {
-  const s = getServiceRuntime(c.clientId) as GoogleIconsServiceStatus | null;
-  return { clientId: c.clientId, isOnline: c.isOnline, nodeStatus: c.nodeStatus, machine: c.machine, location: c.location, 'google-icons': s ? { ...s } : null };
+const clients = computed<GoogleIconsClientVO[]>(() => rawClients.value.map((c: any) => {
+  const s = getServiceRuntime(c) as GoogleIconsServiceStatus | null;
+  return {
+    clientId: c.id,
+    isOnline: c.isOnline,
+    nodeStatus: c.nodeStatus,
+    machine: c.clientInfo?.machine || null,
+    location: c.clientInfo?.location || null,
+    'google-icons': s ? { ...s } : null,
+  };
 }));
+
+watch(
+  clients,
+  (list) => {
+    if (list.length > 0 && !selectedClientId.value) {
+      const onlineClient = list.find((c) => c.isOnline);
+      selectedClientId.value = onlineClient ? onlineClient.clientId : list[0].clientId;
+    }
+  },
+  { immediate: true },
+);
 const selectedClient = computed(() => clients.value.find((c) => c.clientId === selectedClientId.value) || null);
 const selectedService = computed<GoogleIconsServiceStatus | null>(() => selectedClient.value?.['google-icons'] || null);
 const isClientOnline = computed(() => !!selectedClient.value?.isOnline);

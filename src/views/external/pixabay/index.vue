@@ -291,6 +291,17 @@ const clients = computed<PixabayClientVO[]>(() => {
   });
 });
 
+watch(
+  clients,
+  (list) => {
+    if (list.length > 0 && !selectedClientId.value) {
+      const onlineClient = list.find((c) => c.isOnline);
+      selectedClientId.value = onlineClient ? onlineClient.clientId : list[0].clientId;
+    }
+  },
+  { immediate: true },
+);
+
 const selectedClient = computed<PixabayClientVO | null>(() => {
   if (!selectedClientId.value) return null;
   return clients.value.find((c) => c.clientId === selectedClientId.value) || null;

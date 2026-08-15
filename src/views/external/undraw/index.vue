@@ -291,8 +291,8 @@ const {
 const selectedClientId = ref('');
 
 const clients = computed<UndrawClientVO[]>(() => {
-  return rawClients.value.map((c) => {
-    const rawService = getServiceRuntime(c.clientId) as UndrawServiceStatus | null;
+  return rawClients.value.map((c: any) => {
+    const rawService = getServiceRuntime(c) as UndrawServiceStatus | null;
     const runtimeService: UndrawServiceStatus | null = rawService
       ? {
           key: rawService.key,
@@ -315,19 +315,30 @@ const clients = computed<UndrawClientVO[]>(() => {
       : null;
 
     return {
-      clientId: c.clientId,
+      clientId: c.id,
       isOnline: c.isOnline,
       nodeStatus: c.nodeStatus,
       connectedAt: c.connectedAt,
       lastOnlineAt: c.lastOnlineAt,
-      appVersion: c.appVersion,
-      workspaceDirectory: c.workspaceDirectory,
-      machine: c.machine,
-      location: c.location,
+      appVersion: c.clientInfo?.appVersion || null,
+      workspaceDirectory: c.clientInfo?.workspaceDirectory || null,
+      machine: c.clientInfo?.machine || null,
+      location: c.clientInfo?.location || null,
       undraw: runtimeService,
     };
   });
 });
+
+watch(
+  clients,
+  (list) => {
+    if (list.length > 0 && !selectedClientId.value) {
+      const onlineClient = list.find((c) => c.isOnline);
+      selectedClientId.value = onlineClient ? onlineClient.clientId : list[0].clientId;
+    }
+  },
+  { immediate: true },
+);
 
 const selectedClient = computed(() => {
   return clients.value.find((item) => item.clientId === selectedClientId.value) || null;

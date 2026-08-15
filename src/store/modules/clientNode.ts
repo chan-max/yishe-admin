@@ -23,9 +23,10 @@ export type ClientPluginKey =
   | "wikimedia"
   | "pexels"
   | "pixabay"
-  | "image-processing"
-  | "video-template"
-  | "file-download"
+  | "rawpixel"
+  | "stocksnap"
+  | "openverse"
+  | "kaboompics"
   | "openclipart"
   | "undraw"
   | "iconify"
@@ -33,7 +34,11 @@ export type ClientPluginKey =
   | "vecteezy"
   | "openmoji"
   | "google-icons"
-  | "emojipedia";
+  | "emojipedia"
+  | "svgrepo"
+  | "image-processing"
+  | "video-template"
+  | "file-download";
 export type ClientPluginSummary = "available" | "offline";
 type ClientNodeRefreshOptions = { summary?: boolean };
 
@@ -44,6 +49,8 @@ const SERVICE_ALIAS_MAP: Partial<Record<ClientPluginKey, string[]>> = {
   "browser-automation": ["uploader", "browser"],
   "ps-automation": ["photoshop"],
   "file-download": ["file-download"],
+  "google-icons": ["googleicons", "google_icons", "google-icons"],
+  "google-art": ["googleart", "google_art", "google-art"],
 };
 
 const resolveConnectionViews = (response: unknown): WebsocketConnectionVO[] => {
