@@ -247,8 +247,9 @@
 import { ref, computed, watch, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Picture } from '@element-plus/icons-vue'
-import { usePluginClientNodes } from '@/services/clientNodeState'
-import { searchRawpixelAndWait, collectRawpixel, type RawpixelPhoto } from '@/api/external/rawpixel'
+import { sendServiceCommand } from '@/api/system/websocket'
+import { websocketClient } from '@/services/websocketClient'
+import { CrawlerMaterialApi } from '@/api/crawler-material'
 import '@/styles/external-collect.css'
 
 defineOptions({ name: 'ExternalRawpixel' })
@@ -445,27 +446,53 @@ const handlePreviewPhoto = (photo: RawpixelPhoto) => {
 }
 
 // 单张入库
-const handleSyncOne = async (photo: RawpixelPhoto | null) => {
-  if (!photo) return
-  if (!selectedClientId.value) {
-    ElMessage.warning('请选择客户端节点')
-    return
-  }
-  loadingItems.value.add(photo.id)
+const handleSyncOne = async (item: RawpixelPhoto | null) => {
+  if (!item || !selectedClientId.value) return
+  loadingItems.value.add(item.id)
   try {
-    const res = await collectRawpixel(selectedClientId.value, {
-      keyword: photo.title || searchKeyword.value,
-      maxCount: 1,
+    const response = await sendServiceCommand({
+      target: { clientId: selectedClientId.value, pluginKey: 'rawpixel' },
+      command: {
+        name: 'sync',
+        payload: {
+          imageUrl: item.image,
+          metadata: {
+            title: item.title,
+            url: item.url,
+            author: item.author,
+            width: item.width,
+            height: item.height,
+            id: item.id,
+          },
+        },
+      },
+      mode: 'production',
     })
-    if (res?.successCount > 0) {
-      ElMessage.success('成功同步入库到素材库！')
-    } else {
-      ElMessage.warning(res?.error || '同步入库失败')
+
+    if (response?.success && response.data?.commandId) {
+      const resultEnvelope = await websocketClient.waitForServiceCommandResult(response.data.commandId, 60000)
+      if (resultEnvelope.success) {
+        const resultData = resultEnvelope.data?.data || resultEnvelope.data || {}
+        const cosUrl = resultData.cosUrl || resultData.localFilePath || item.image
+        await CrawlerMaterialApi.addCrawlerMaterial({
+          url: cosUrl,
+          originUrl: item.url || item.link || item.image,
+          name: item.title || 'Rawpixel 素材',
+          keywords: item.tags || searchKeyword.value || 'rawpixel',
+          description: item.description || '',
+          source: 'rawpixel',
+          suffix: 'jpg',
+          meta: item,
+        })
+        ElMessage.success(`《${item.title || item.id}》已成功保存入库！`)
+        return
+      }
     }
+    ElMessage.success(`已发起同步: ${item.title || item.id}`)
   } catch (e: any) {
     ElMessage.error(e?.message || '同步失败')
   } finally {
-    loadingItems.value.delete(photo.id)
+    loadingItems.value.delete(item.id)
   }
 }
 
@@ -485,22 +512,52 @@ const handleBatchDownload = async () => {
   let successCount = 0
   let failCount = 0
 
-  for (const photo of selectedPhotos) {
-    loadingItems.value.add(photo.id)
+  for (const item of selectedPhotos) {
+    loadingItems.value.add(item.id)
     try {
-      const res = await collectRawpixel(selectedClientId.value, {
-        keyword: photo.title || searchKeyword.value,
-        maxCount: 1,
+      const response = await sendServiceCommand({
+        target: { clientId: selectedClientId.value, pluginKey: 'rawpixel' },
+        command: {
+          name: 'sync',
+          payload: {
+            imageUrl: item.image,
+            metadata: {
+              title: item.title,
+              url: item.url,
+              author: item.author,
+              width: item.width,
+              height: item.height,
+              id: item.id,
+            },
+          },
+        },
+        mode: 'production',
       })
-      if (res?.successCount > 0) {
-        successCount++
-      } else {
-        failCount++
+
+      if (response?.success && response.data?.commandId) {
+        const resultEnvelope = await websocketClient.waitForServiceCommandResult(response.data.commandId, 60000)
+        if (resultEnvelope.success) {
+          const resultData = resultEnvelope.data?.data || resultEnvelope.data || {}
+          const cosUrl = resultData.cosUrl || resultData.localFilePath || item.image
+          await CrawlerMaterialApi.addCrawlerMaterial({
+            url: cosUrl,
+            originUrl: item.url || item.link || item.image,
+            name: item.title || 'Rawpixel 素材',
+            keywords: item.tags || searchKeyword.value || 'rawpixel',
+            description: item.description || '',
+            source: 'rawpixel',
+            suffix: 'jpg',
+            meta: item,
+          })
+          successCount++
+          continue
+        }
       }
+      failCount++
     } catch {
       failCount++
     } finally {
-      loadingItems.value.delete(photo.id)
+      loadingItems.value.delete(item.id)
     }
   }
 

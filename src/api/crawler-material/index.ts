@@ -35,6 +35,20 @@ export interface CrawlerMaterialImportTaskResponse {
 
 // 爬图素材 API
 export const CrawlerMaterialApi = {
+  // 新增素材入库
+  addCrawlerMaterial: async (data: {
+    url: string
+    originUrl?: string
+    name?: string
+    keywords?: string
+    description?: string
+    source?: string
+    suffix?: string
+    meta?: any
+  }) => {
+    return await request.post({ url: `/crawler/material/add`, data })
+  },
+
   // 分页获取爬图素材
   getCrawlerMaterialPage: async (data: any) => {
     return await request.post({ url: `/crawler/material/page`, data })

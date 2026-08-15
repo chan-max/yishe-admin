@@ -252,6 +252,8 @@ import { Picture } from '@element-plus/icons-vue'
 import { usePluginClientNodes } from '@/services/clientNodeState'
 import { searchStockSnapAndWait, collectStockSnap, type StockSnapPhoto } from '@/api/external/stocksnap'
 import { sendServiceCommand } from '@/api/system/websocket'
+import { websocketClient } from '@/services/websocketClient'
+import { CrawlerMaterialApi } from '@/api/crawler-material'
 import '@/styles/external-collect.css'
 
 defineOptions({ name: 'ExternalStockSnap' })
@@ -451,7 +453,7 @@ const handleSyncOne = async (item: StockSnapPhoto | null) => {
   if (!item || !selectedClientId.value) return
   loadingItems.value.add(item.id)
   try {
-    await sendServiceCommand({
+    const response = await sendServiceCommand({
       target: { clientId: selectedClientId.value, pluginKey: 'stocksnap' },
       command: {
         name: 'sync',
@@ -469,6 +471,26 @@ const handleSyncOne = async (item: StockSnapPhoto | null) => {
       },
       mode: 'production',
     })
+
+    if (response?.success && response.data?.commandId) {
+      const resultEnvelope = await websocketClient.waitForServiceCommandResult(response.data.commandId, 60000)
+      if (resultEnvelope.success) {
+        const resultData = resultEnvelope.data?.data || resultEnvelope.data || {}
+        const cosUrl = resultData.cosUrl || resultData.localFilePath || item.image
+        await CrawlerMaterialApi.addCrawlerMaterial({
+          url: cosUrl,
+          originUrl: item.url || item.link || item.image,
+          name: item.title || 'StockSnap 素材',
+          keywords: item.tags || searchKeyword.value || 'stocksnap',
+          description: item.description || '',
+          source: 'stocksnap',
+          suffix: 'jpg',
+          meta: item,
+        })
+        ElMessage.success(`《${item.title || item.id}》已成功保存入库！`)
+        return
+      }
+    }
     ElMessage.success(`已发起同步: ${item.title || item.id}`)
   } catch (e: any) {
     ElMessage.error(e?.message || '同步失败')
@@ -487,7 +509,7 @@ const handleBatchDownload = async () => {
 
   for (const item of selectedPhotos) {
     try {
-      await sendServiceCommand({
+      const response = await sendServiceCommand({
         target: { clientId: selectedClientId.value, pluginKey: 'stocksnap' },
         command: {
           name: 'sync',
@@ -505,14 +527,34 @@ const handleBatchDownload = async () => {
         },
         mode: 'production',
       })
-      successCount++
+
+      if (response?.success && response.data?.commandId) {
+        const resultEnvelope = await websocketClient.waitForServiceCommandResult(response.data.commandId, 60000)
+        if (resultEnvelope.success) {
+          const resultData = resultEnvelope.data?.data || resultEnvelope.data || {}
+          const cosUrl = resultData.cosUrl || resultData.localFilePath || item.image
+          await CrawlerMaterialApi.addCrawlerMaterial({
+            url: cosUrl,
+            originUrl: item.url || item.link || item.image,
+            name: item.title || 'StockSnap 素材',
+            keywords: item.tags || searchKeyword.value || 'stocksnap',
+            description: item.description || '',
+            source: 'stocksnap',
+            suffix: 'jpg',
+            meta: item,
+          })
+          successCount++
+          continue
+        }
+      }
+      failCount++
     } catch {
       failCount++
     }
   }
 
   batchDownloadLoading.value = false
-  ElMessage.success(`批量入库指令已发送：成功 ${successCount} 个，失败 ${failCount} 个`)
+  ElMessage.success(`批量入库成功：${successCount} 个，失败 ${failCount} 个`)
 }
 
 onMounted(() => {
