@@ -28,14 +28,14 @@ const maxCount = computed(() => props.data.config?.maxCount || props.data.config
   min-width: 120px;
   padding: 6px 10px;
   background: var(--app-content-surface-color);
-  border: 1px solid #C4704B40;
+  border: 1px solid rgba(0, 0, 0, 0.15);
   border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(196, 112, 75, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   transition: all 0.15s ease;
 }
 
 .wf-node--kaboompics:hover {
-  box-shadow: 0 2px 6px rgba(196, 112, 75, 0.2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
 }
 
 .wf-node__header {
@@ -47,7 +47,7 @@ const maxCount = computed(() => props.data.config?.maxCount || props.data.config
 .wf-node__icon {
   width: 20px;
   height: 20px;
-  border-radius: 4px;
+  border-radius: 50%;
   flex-shrink: 0;
   object-fit: cover;
 }
@@ -72,8 +72,8 @@ const maxCount = computed(() => props.data.config?.maxCount || props.data.config
 
 .wf-node__badge {
   font-size: 9px;
-  color: #C4704B;
-  background: #C4704B15;
+  color: var(--el-text-color-regular);
+  background: var(--el-fill-color-light);
   padding: 1px 4px;
   border-radius: 3px;
   margin-top: 3px;
