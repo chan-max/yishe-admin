@@ -28,6 +28,7 @@ import {
   emojipediaIcon,
   svgrepoIcon,
   kaboompicsIcon,
+  v2exIcon,
 } from '@/assets/icons/apps'
 
 export type NodeType =
@@ -423,7 +424,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     type: 'hotsearch_v2ex',
     name: 'V2EX热门采集',
     category: 'integration',
-    icon: "ep:connection",
+    iconImage: v2exIcon,
     color: '#2b2b2b',
     badge: '热搜',
     description: '通过已登录客户端采集V2EX热门数据。',
