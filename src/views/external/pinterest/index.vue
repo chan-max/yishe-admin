@@ -214,45 +214,11 @@
                   v-model:current-page="currentPage"
                   v-model:page-size="pageSize"
                   :total="searchTotal"
-                  layout="prev, pager, next, jumper"
+                  layout="total, prev, pager, next"
                   background
                   @current-change="handlePageChange"
                   @size-change="handleSizeChange"
                 />
-              </div>
-            </div>
-
-            <!-- 执行结果 -->
-            <div class="collect-section">
-              <div class="collect-section__title">执行结果</div>
-              <el-empty v-if="!lastResult" description="暂无执行结果" />
-              <div v-else class="result-block">
-                <div class="result-row">
-                  <span class="result-row__label">结果</span>
-                  <span class="result-row__value">{{ lastResult.message }}</span>
-                </div>
-                <div class="result-row" v-if="lastResult.data?.filePath">
-                  <span class="result-row__label">文件路径</span>
-                  <span class="result-row__value result-row__value--mono">{{
-                    lastResult.data.filePath
-                  }}</span>
-                </div>
-                <div class="result-row" v-if="lastResult.data?.fileSize">
-                  <span class="result-row__label">文件大小</span>
-                  <span class="result-row__value">{{
-                    formatFileSize(lastResult.data.fileSize)
-                  }}</span>
-                </div>
-                <div
-                  class="result-row"
-                  v-if="lastResult.data && (lastResult.data.successCount !== undefined || lastResult.data.images)"
-                >
-                  <span class="result-row__label">采集统计</span>
-                  <span class="result-row__value">
-                    成功 {{ lastResult.data.successCount ?? 0 }} 个，失败
-                    {{ lastResult.data.failCount ?? 0 }} 个
-                  </span>
-                </div>
               </div>
             </div>
           </div>

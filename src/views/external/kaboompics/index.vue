@@ -206,7 +206,8 @@
                     v-model:current-page="currentPage"
                     :page-size="pageSize"
                     :total="searchTotal"
-                    layout="total, prev, pager, next, jumper"
+                    layout="total, prev, pager, next"
+                    background
                     @current-change="handlePageChange"
                   />
                 </div>
@@ -217,33 +218,6 @@
                 v-else-if="!searchLoading && searchKeyword"
                 description="未找到相关图片，请尝试其他英文关键词"
               />
-
-              <!-- 最近执行结果 -->
-              <div v-if="lastResult" class="collect-result">
-                <div class="collect-result__header">
-                  <div class="collect-result__title">最近操作结果</div>
-                  <el-tag :type="lastResult.success ? 'success' : 'danger'" size="small">
-                    {{ lastResult.success ? '成功' : '失败' }}
-                  </el-tag>
-                </div>
-                <div class="result-row">
-                  <span class="result-row__label">执行消息</span>
-                  <span class="result-row__value">{{ lastResult.message }}</span>
-                </div>
-                <div
-                  class="result-row"
-                  v-if="
-                    lastResult.data &&
-                    (lastResult.data.successCount !== undefined || lastResult.data.images)
-                  "
-                >
-                  <span class="result-row__label">采集统计</span>
-                  <span class="result-row__value">
-                    成功 {{ lastResult.data.successCount ?? 0 }} 个，失败
-                    {{ lastResult.data.failCount ?? 0 }} 个
-                  </span>
-                </div>
-              </div>
             </div>
           </div>
 

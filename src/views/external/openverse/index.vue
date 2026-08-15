@@ -202,7 +202,7 @@
                     v-model:current-page="currentPage"
                     v-model:page-size="pageSize"
                     :total="searchTotal"
-                    layout="prev, pager, next, jumper"
+                    layout="total, prev, pager, next"
                     background
                     @current-change="handlePageChange"
                     @size-change="handleSizeChange"
