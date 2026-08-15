@@ -606,6 +606,41 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: { hidden: true },
       },
       {
+        path: "undraw",
+        redirect: "/external/data-collect?tab=undraw",
+        meta: { hidden: true },
+      },
+      {
+        path: "iconify",
+        redirect: "/external/data-collect?tab=iconify",
+        meta: { hidden: true },
+      },
+      {
+        path: "nounproject",
+        redirect: "/external/data-collect?tab=nounproject",
+        meta: { hidden: true },
+      },
+      {
+        path: "vecteezy",
+        redirect: "/external/data-collect?tab=vecteezy",
+        meta: { hidden: true },
+      },
+      {
+        path: "openmoji",
+        redirect: "/external/data-collect?tab=openmoji",
+        meta: { hidden: true },
+      },
+      {
+        path: "googleicons",
+        redirect: "/external/data-collect?tab=googleicons",
+        meta: { hidden: true },
+      },
+      {
+        path: "emojipedia",
+        redirect: "/external/data-collect?tab=emojipedia",
+        meta: { hidden: true },
+      },
+      {
         path: "client-management",
         component: () => import("@/views/external/client-management/index.vue"),
         name: "ClientManagement",

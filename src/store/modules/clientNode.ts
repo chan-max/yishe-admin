@@ -25,7 +25,15 @@ export type ClientPluginKey =
   | "pixabay"
   | "image-processing"
   | "video-template"
-  | "file-download";
+  | "file-download"
+  | "openclipart"
+  | "undraw"
+  | "iconify"
+  | "nounproject"
+  | "vecteezy"
+  | "openmoji"
+  | "google-icons"
+  | "emojipedia";
 export type ClientPluginSummary = "available" | "offline";
 type ClientNodeRefreshOptions = { summary?: boolean };
 
@@ -282,6 +290,24 @@ export const getClientServiceRuntime = (
   if (pluginKey === "pexels") {
     return services["pexels"] || null;
   }
+  if (pluginKey === "nounproject") {
+    return services["nounproject"] || null;
+  }
+  if (pluginKey === "iconify") {
+    return services["iconify"] || null;
+  }
+  if (pluginKey === "vecteezy") {
+    return services["vecteezy"] || null;
+  }
+  if (pluginKey === "openmoji") {
+    return services["openmoji"] || null;
+  }
+  if (pluginKey === "google-icons") {
+    return services["google-icons"] || null;
+  }
+  if (pluginKey === "emojipedia") {
+    return services["emojipedia"] || null;
+  }
   return services["google-art"] || services.googleArt || null;
 };
 
@@ -331,9 +357,18 @@ export const useClientNodeStore = defineStore("client-node", () => {
       "pinterest": "offline",
       "wikimedia": "offline",
       "pexels": "offline",
+      "pixabay": "offline",
       "image-processing": "offline",
       "video-template": "offline",
       "file-download": "offline",
+      "openclipart": "offline",
+      "undraw": "offline",
+      "iconify": "offline",
+      "nounproject": "offline",
+      "vecteezy": "offline",
+      "openmoji": "offline",
+      "google-icons": "offline",
+      "emojipedia": "offline",
     };
 
     (
@@ -344,9 +379,18 @@ export const useClientNodeStore = defineStore("client-node", () => {
         "pinterest",
         "wikimedia",
         "pexels",
+        "pixabay",
         "image-processing",
         "video-template",
         "file-download",
+        "openclipart",
+        "undraw",
+        "iconify",
+        "nounproject",
+        "vecteezy",
+        "openmoji",
+        "google-icons",
+        "emojipedia",
       ] as ClientPluginKey[]
     ).forEach(
       (pluginKey) => {

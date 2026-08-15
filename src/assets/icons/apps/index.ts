@@ -22,6 +22,10 @@ export { default as rawpixelIcon } from './rawpixel.svg'
 export { default as stocksnapIcon } from './stocksnap.svg'
 export { default as openverseIcon } from './openverse.jpg'
 export { default as openclipartIcon } from './openclipart.svg'
-
-
-
+export { default as undrawIcon } from './undraw.svg'
+export { default as iconifyIcon } from './iconify.svg'
+export { default as nounprojectIcon } from './nounproject.svg'
+export { default as vecteezyIcon } from './vecteezy.svg'
+export { default as openmojiIcon } from './openmoji.svg'
+export { default as googleIconsIcon } from './googleicons.svg'
+export { default as emojipediaIcon } from './emojipedia.svg'

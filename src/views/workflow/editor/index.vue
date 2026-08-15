@@ -48,6 +48,13 @@ import RawpixelNode from '@/components/workflow/nodes/RawpixelNode.vue'
 import StockSnapNode from '@/components/workflow/nodes/StockSnapNode.vue'
 import OpenverseNode from '@/components/workflow/nodes/OpenverseNode.vue'
 import OpenClipartNode from '@/components/workflow/nodes/OpenClipartNode.vue'
+import UndrawNode from '@/components/workflow/nodes/UndrawNode.vue'
+import IconifyNode from '@/components/workflow/nodes/IconifyNode.vue'
+import NounProjectNode from '@/components/workflow/nodes/NounProjectNode.vue'
+import VecteezyNode from '@/components/workflow/nodes/VecteezyNode.vue'
+import OpenMojiNode from '@/components/workflow/nodes/OpenMojiNode.vue'
+import GoogleIconsNode from '@/components/workflow/nodes/GoogleIconsNode.vue'
+import EmojipediaNode from '@/components/workflow/nodes/EmojipediaNode.vue'
 
 import NodePanel from '@/components/workflow/NodePanel.vue'
 import ConfigPanel from '@/components/workflow/ConfigPanel.vue'
@@ -196,6 +203,13 @@ const nodeTypes = {
   stocksnap_search: markRaw(StockSnapNode),
   openverse_search: markRaw(OpenverseNode),
   openclipart_search: markRaw(OpenClipartNode),
+  undraw_search: markRaw(UndrawNode),
+  iconify_search: markRaw(IconifyNode),
+  nounproject_search: markRaw(NounProjectNode),
+  vecteezy_search: markRaw(VecteezyNode),
+  openmoji_search: markRaw(OpenMojiNode),
+  googleicons_search: markRaw(GoogleIconsNode),
+  emojipedia_search: markRaw(EmojipediaNode),
 }
 
 // ─── 撤销/重做历史 ─────────────────────────────────────────────

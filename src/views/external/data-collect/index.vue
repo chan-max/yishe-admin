@@ -41,6 +41,13 @@ import StockSnapView from '../stocksnap/index.vue'
 import OpenverseView from '../openverse/index.vue'
 import KaboompicsView from '../kaboompics/index.vue'
 import OpenclipartView from '../openclipart/index.vue'
+import UndrawView from '../undraw/index.vue'
+import IconifyView from '../iconify/index.vue'
+import NounProjectView from '../nounproject/index.vue'
+import VecteezyView from '../vecteezy/index.vue'
+import OpenMojiView from '../openmoji/index.vue'
+import GoogleIconsView from '../googleicons/index.vue'
+import EmojipediaView from '../emojipedia/index.vue'
 
 defineOptions({
   name: 'ExternalDataCollect',
@@ -49,7 +56,7 @@ defineOptions({
 const route = useRoute()
 const router = useRouter()
 
-type TabKey = 'google-art' | 'pinterest' | 'wikimedia' | 'pexels' | 'pixabay' | 'rawpixel' | 'stocksnap' | 'openverse' | 'kaboompics' | 'openclipart'
+type TabKey = 'google-art' | 'pinterest' | 'wikimedia' | 'pexels' | 'pixabay' | 'rawpixel' | 'stocksnap' | 'openverse' | 'kaboompics' | 'openclipart' | 'undraw' | 'iconify' | 'nounproject' | 'vecteezy' | 'openmoji' | 'googleicons' | 'emojipedia' | 'iconify' | 'nounproject'
 
 const activeTab = ref<TabKey>('google-art')
 
@@ -103,6 +110,41 @@ const menuItems = [
     key: 'openclipart' as TabKey,
     name: 'Openclipart 免费矢量插画',
     component: markRaw(OpenclipartView),
+  },
+  {
+    key: 'undraw' as TabKey,
+    name: 'undraw 开源插画',
+    component: markRaw(UndrawView),
+  },
+  {
+    key: 'iconify' as TabKey,
+    name: 'Iconify 开源图标',
+    component: markRaw(IconifyView),
+  },
+  {
+    key: 'nounproject' as TabKey,
+    name: 'Noun Project 图标/图片',
+    component: markRaw(NounProjectView),
+  },
+  {
+    key: 'vecteezy' as TabKey,
+    name: 'Vecteezy 免版税素材',
+    component: markRaw(VecteezyView),
+  },
+  {
+    key: 'openmoji' as TabKey,
+    name: 'OpenMoji 开源 Emoji',
+    component: markRaw(OpenMojiView),
+  },
+  {
+    key: 'googleicons' as TabKey,
+    name: 'Google Material Icons',
+    component: markRaw(GoogleIconsView),
+  },
+  {
+    key: 'emojipedia' as TabKey,
+    name: 'Emojipedia Emoji/Sticker',
+    component: markRaw(EmojipediaView),
   },
 ]
 

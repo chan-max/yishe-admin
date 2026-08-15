@@ -1,4 +1,4 @@
-import { weiboIcon, feishuIcon, wecomIcon, douyinIcon, bilibiliIcon, zhihuIcon, toutiaoIcon, doubanIcon, kuaishouIcon, javaScriptIcon, openaiIcon, googleArtsCultureIcon, pinterestIcon, wikimediaIcon, pexelsIcon, pixabayIcon, rawpixelIcon, stocksnapIcon, openverseIcon, openclipartIcon } from '@/assets/icons/apps'
+import { weiboIcon, feishuIcon, wecomIcon, douyinIcon, bilibiliIcon, zhihuIcon, toutiaoIcon, doubanIcon, kuaishouIcon, javaScriptIcon, openaiIcon, googleArtsCultureIcon, pinterestIcon, wikimediaIcon, pexelsIcon, pixabayIcon, rawpixelIcon, stocksnapIcon, openverseIcon, openclipartIcon, undrawIcon, iconifyIcon, nounprojectIcon } from '@/assets/icons/apps'
 
 export type NodeType =
   | 'start'
@@ -24,6 +24,13 @@ export type NodeType =
   | 'stocksnap_search'
   | 'openverse_search'
   | 'openclipart_search'
+  | 'undraw_search'
+  | 'iconify_search'
+  | 'nounproject_search'
+  | 'vecteezy_search'
+  | 'openmoji_search'
+  | 'googleicons_search'
+  | 'emojipedia_search'
   | 'custom'
 
 export type NodeRequirementType = 'client' | 'client_browser' | 'internet' | 'config'
@@ -716,7 +723,78 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
       { type: 'internet', label: '需外网' },
     ],
   },
-]
+  {
+    type: 'undraw_search',
+    name: 'undraw 采集',
+    category: 'app_integration',
+    description: '通过客户端从 undraw 开源插画图库按关键词搜索，支持自定义主题色，同步上传至素材库',
+    iconImage: undrawIcon,
+    color: '#6C63FF',
+    defaultData: {
+      label: 'undraw 采集',
+      config: { keyword: '', maxCount: 10, color: '#6C63FF' },
+    },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: cat, robot, flower, banner' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
+      { field: 'color', label: '主题色', type: 'select', defaultValue: '#6C63FF', options: [{ label: '经典紫 (#6C63FF)', value: '#6C63FF' }, { label: '热情红 (#E74C3C)', value: '#E74C3C' }, { label: '海洋蓝 (#3498DB)', value: '#3498DB' }, { label: '自然绿 (#2ECC71)', value: '#2ECC71' }, { label: '暖橙 (#F39C12)', value: '#F39C12' }, { label: '深色 (#2C3E50)', value: '#2C3E50' }] },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'images', label: '图片列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'iconify_search',
+    name: 'Iconify 采集',
+    category: 'app_integration',
+    description: '通过客户端从 Iconify 200,000+ 开源图标库按关键词搜索并同步上传至素材库',
+    iconImage: iconifyIcon,
+    color: '#6C63FF',
+    defaultData: { label: 'Iconify 采集', config: { keyword: '', maxCount: 10, prefix: '', color: '#000000' } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: cat, heart, home, user' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
+      { field: 'prefix', label: '图标集', type: 'select', defaultValue: '', options: [{ label: '全部图标集', value: '' }, { label: 'Material Design (mdi)', value: 'mdi' }, { label: 'Font Awesome (fa)', value: 'fa' }, { label: 'Heroicons', value: 'heroicons' }, { label: 'Feather', value: 'feather' }, { label: 'Lucide', value: 'lucide' }, { label: 'Tabler', value: 'tabler' }] },
+      { field: 'color', label: '图标颜色', type: 'select', defaultValue: '#000000', options: [{ label: '黑色 (#000000)', value: '#000000' }, { label: '白色 (#FFFFFF)', value: '#FFFFFF' }, { label: '紫色 (#6C63FF)', value: '#6C63FF' }, { label: '红色 (#E74C3C)', value: '#E74C3C' }, { label: '蓝色 (#3498DB)', value: '#3498DB' }, { label: '绿色 (#2ECC71)', value: '#2ECC71' }] },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'images', label: '图片列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },  {
+    type: 'nounproject_search',
+    name: 'Noun Project 采集',
+    category: 'app_integration',
+    description: '通过客户端从 The Noun Project 搜索开源图标或摄影图片并同步上传至素材库',
+    iconImage: nounprojectIcon,
+    color: '#1A1A1A',
+    defaultData: { label: 'Noun Project 采集', config: { keyword: '', maxCount: 10, mediaType: 'icons' } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: cat, nature, business, technology' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
+      { field: 'mediaType', label: '素材类型', type: 'select', defaultValue: 'icons', options: [{ label: '矢量图标 (Icons)', value: 'icons' }, { label: '摄影图片 (Photos)', value: 'photos' }] },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number', },
+      { field: 'failCount', label: '失败数量', type: 'number', },
+      { field: 'images', label: '图片列表', type: 'array', },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },]
 
 export function getManifestByType(type: string): NodeManifest | undefined {
   return NODE_MANIFEST_REGISTRY.find((m) => m.type === type)
