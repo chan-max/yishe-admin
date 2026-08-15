@@ -1,19 +1,24 @@
 /**
  * Kaboompics 免费高清图库 接口封装
  */
-import { sendServiceCommand } from '@/api/system/websocket'
+import {
+  getMyOnlineRuntimeConnectionViews,
+  sendServiceCommand,
+  type ServiceCommandDTO,
+  type WebsocketConnectionVO,
+} from '@/api/system/websocket'
 import { websocketClient } from '@/services/websocketClient'
 
 export interface KaboompicsPhoto {
   id: string
-  name: string
+  name?: string
   title: string
-  description: string
+  description?: string
   image: string // 高清原图直连 (Full Original)
   thumbnail: string
-  downloadUrl: string
-  link: string
-  url: string
+  downloadUrl?: string
+  link?: string
+  url?: string
   width?: number | null
   height?: number | null
   author?: string
@@ -35,6 +40,25 @@ export interface KaboompicsSearchResult {
   error?: string
 }
 
+export interface KaboompicsServiceStatus {
+  key?: string
+  pluginKey?: string
+  label?: string
+  connected?: boolean
+  available?: boolean
+  status?: 'connected' | 'disconnected' | 'error' | 'unknown'
+  state?: 'idle' | 'busy' | 'offline' | 'error'
+  busy?: boolean
+  message?: string
+  version?: string
+  endpoint?: string
+  lastCheckedAt?: string
+  currentTaskId?: string | null
+  lastError?: string | null
+  supportedCommands?: string[]
+  details?: Record<string, any>
+}
+
 export interface KaboompicsClientVO {
   clientId: string
   isOnline?: boolean
@@ -43,22 +67,55 @@ export interface KaboompicsClientVO {
   lastOnlineAt?: string | null
   appVersion?: string | null
   workspaceDirectory?: string | null
-  machine?: any
-  location?: any
+  machine?: {
+    code?: string
+    platform?: string
+    createdAt?: string
+  } | null
+  location?: {
+    ip?: string
+    city?: string
+    region?: string
+    country?: string
+    org?: string
+    fetchedAt?: string
+    source?: string
+  } | null
   kaboompics?: KaboompicsServiceStatus | null
 }
 
-export interface KaboompicsServiceStatus {
-  key: string
-  pluginKey: string
-  label: string
-  connected: boolean
-  available: boolean
-  status: string
-  state: string
+export interface KaboompicsCommandResponse {
+  success: boolean
   message: string
-  lastCheckedAt: string
-  supportedCommands: string[]
+  data?: {
+    commandId?: string
+    clientId?: string
+    pluginKey?: string
+    service?: string
+    action?: string
+    mode?: string
+    payload?: any
+  }
+}
+
+function sendKaboompicsCommand(
+  clientId: string,
+  commandName: string,
+  payload?: Record<string, any>,
+) {
+  const data: ServiceCommandDTO = {
+    target: {
+      clientId,
+      pluginKey: 'kaboompics',
+    },
+    command: {
+      name: commandName,
+      payload: payload || {},
+    },
+    mode: 'production',
+  }
+
+  return sendServiceCommand(data) as Promise<KaboompicsCommandResponse>
 }
 
 function waitForServiceCommandResult(
@@ -87,50 +144,35 @@ function waitForServiceCommandResult(
   })
 }
 
-export async function searchKaboompics(
+export function refreshKaboompicsStatus(clientId: string) {
+  return sendKaboompicsCommand(clientId, 'refreshRuntime')
+}
+
+export function searchKaboompics(
   clientId: string,
-  query: string,
+  keyword: string,
   options: { page?: number; limit?: number } = {},
 ) {
-  return sendServiceCommand(clientId, {
-    serviceName: 'kaboompics',
-    command: 'search',
-    payload: {
-      query,
-      page: options.page || 1,
-      limit: options.limit || 20,
-    },
+  return sendKaboompicsCommand(clientId, 'search', {
+    keyword,
+    query: keyword,
+    page: options.page || 1,
+    limit: options.limit || 20,
   })
 }
 
-export async function syncKaboompicsToMaterialLibrary(
+export function syncKaboompicsToMaterialLibrary(
   clientId: string,
   data: { imageUrl: string; metadata?: Record<string, any> },
 ) {
-  return sendServiceCommand(clientId, {
-    serviceName: 'kaboompics',
-    command: 'sync',
-    payload: data,
-  })
+  return sendKaboompicsCommand(clientId, 'sync', data)
 }
 
-export async function downloadKaboompicsImage(
+export function downloadKaboompicsImage(
   clientId: string,
   data: { imageUrl: string; filename?: string },
 ) {
-  return sendServiceCommand(clientId, {
-    serviceName: 'kaboompics',
-    command: 'download',
-    payload: data,
-  })
-}
-
-export async function refreshKaboompicsStatus(clientId: string) {
-  return sendServiceCommand(clientId, {
-    serviceName: 'kaboompics',
-    command: 'status',
-    payload: {},
-  })
+  return sendKaboompicsCommand(clientId, 'download', data)
 }
 
 export async function searchKaboompicsAndWait(
@@ -139,10 +181,11 @@ export async function searchKaboompicsAndWait(
   options: { page?: number; limit?: number } = {},
 ): Promise<KaboompicsSearchResult> {
   const response = await searchKaboompics(clientId, keyword, options)
-  if (!response.success || !response.data?.commandId) {
+  const commandId = response.data?.commandId || (response as any).commandId
+  if (!response.success || !commandId) {
     throw new Error(response.message || '搜索命令发送失败')
   }
-  const result = await waitForServiceCommandResult(response.data.commandId, 60000)
+  const result = await waitForServiceCommandResult(commandId, 60000)
   if (!result.success) {
     throw new Error(result.message || '搜索失败')
   }
@@ -155,8 +198,9 @@ export async function syncKaboompicsToMaterialLibraryAndWait(
   data: { imageUrl: string; metadata?: Record<string, any> },
 ): Promise<{ success: boolean; message: string; data?: any }> {
   const response = await syncKaboompicsToMaterialLibrary(clientId, data)
-  if (!response.success || !response.data?.commandId) {
+  const commandId = response.data?.commandId || (response as any).commandId
+  if (!response.success || !commandId) {
     throw new Error(response.message || '同步命令发送失败')
   }
-  return waitForServiceCommandResult(response.data.commandId, 60000)
+  return waitForServiceCommandResult(commandId, 60000)
 }
