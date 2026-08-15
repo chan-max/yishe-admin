@@ -48,6 +48,7 @@ import VecteezyView from '../vecteezy/index.vue'
 import OpenMojiView from '../openmoji/index.vue'
 import GoogleIconsView from '../googleicons/index.vue'
 import EmojipediaView from '../emojipedia/index.vue'
+import SvgRepoView from '../svgrepo/index.vue'
 
 defineOptions({
   name: 'ExternalDataCollect',
@@ -56,7 +57,25 @@ defineOptions({
 const route = useRoute()
 const router = useRouter()
 
-type TabKey = 'google-art' | 'pinterest' | 'wikimedia' | 'pexels' | 'pixabay' | 'rawpixel' | 'stocksnap' | 'openverse' | 'kaboompics' | 'openclipart' | 'undraw' | 'iconify' | 'nounproject' | 'vecteezy' | 'openmoji' | 'googleicons' | 'emojipedia' | 'iconify' | 'nounproject'
+type TabKey =
+  | 'google-art'
+  | 'pinterest'
+  | 'wikimedia'
+  | 'pexels'
+  | 'pixabay'
+  | 'rawpixel'
+  | 'stocksnap'
+  | 'openverse'
+  | 'kaboompics'
+  | 'openclipart'
+  | 'undraw'
+  | 'iconify'
+  | 'nounproject'
+  | 'vecteezy'
+  | 'openmoji'
+  | 'googleicons'
+  | 'emojipedia'
+  | 'svgrepo'
 
 const activeTab = ref<TabKey>('google-art')
 
@@ -145,6 +164,11 @@ const menuItems = [
     key: 'emojipedia' as TabKey,
     name: 'Emojipedia Emoji/Sticker',
     component: markRaw(EmojipediaView),
+  },
+  {
+    key: 'svgrepo' as TabKey,
+    name: 'SVGRepo 50万+开源矢量',
+    component: markRaw(SvgRepoView),
   },
 ]
 

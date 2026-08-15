@@ -27,7 +27,7 @@ html.light {
   --left-menu-border-color: #d9e1ec;
   --left-menu-divider-color: rgba(110, 129, 158, 0.16);
   --left-menu-hover-color: #eef3fa;
-  --left-menu-icon-color: var(--el-color-primary);
+  --left-menu-icon-color: #4a5568;
   --left-menu-title-color: #0f172a;
   --left-menu-arrow-color: #8090a6;
   --left-menu-link-text-color: #1e293b;
@@ -446,7 +446,7 @@ html.dark {
   --left-menu-border-color: #242424;
   --left-menu-divider-color: rgba(255, 255, 255, 0.08);
   --left-menu-hover-color: #171717;
-  --left-menu-icon-color: var(--el-color-primary);
+  --left-menu-icon-color: #8e97a7;
   --left-menu-title-color: #c8ccd4;
   --left-menu-arrow-color: #7f8796;
   --left-menu-link-text-color: rgba(255, 255, 255, 0.64);

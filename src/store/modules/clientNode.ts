@@ -376,6 +376,7 @@ export const useClientNodeStore = defineStore("client-node", () => {
       "openmoji": "offline",
       "google-icons": "offline",
       "emojipedia": "offline",
+      "svgrepo": "offline",
     };
 
     (
@@ -398,6 +399,7 @@ export const useClientNodeStore = defineStore("client-node", () => {
         "openmoji",
         "google-icons",
         "emojipedia",
+        "svgrepo",
       ] as ClientPluginKey[]
     ).forEach(
       (pluginKey) => {

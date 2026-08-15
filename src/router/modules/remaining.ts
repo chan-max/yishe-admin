@@ -641,6 +641,11 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: { hidden: true },
       },
       {
+        path: "svgrepo",
+        redirect: "/external/data-collect?tab=svgrepo",
+        meta: { hidden: true },
+      },
+      {
         path: "client-management",
         component: () => import("@/views/external/client-management/index.vue"),
         name: "ClientManagement",

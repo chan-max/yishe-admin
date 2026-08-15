@@ -55,6 +55,7 @@ import VecteezyNode from '@/components/workflow/nodes/VecteezyNode.vue'
 import OpenMojiNode from '@/components/workflow/nodes/OpenMojiNode.vue'
 import GoogleIconsNode from '@/components/workflow/nodes/GoogleIconsNode.vue'
 import EmojipediaNode from '@/components/workflow/nodes/EmojipediaNode.vue'
+import SvgrepoNode from '@/components/workflow/nodes/SvgrepoNode.vue'
 
 import NodePanel from '@/components/workflow/NodePanel.vue'
 import ConfigPanel from '@/components/workflow/ConfigPanel.vue'
@@ -210,6 +211,7 @@ const nodeTypes = {
   openmoji_search: markRaw(OpenMojiNode),
   googleicons_search: markRaw(GoogleIconsNode),
   emojipedia_search: markRaw(EmojipediaNode),
+  svgrepo_search: markRaw(SvgrepoNode),
 }
 
 // ─── 撤销/重做历史 ─────────────────────────────────────────────

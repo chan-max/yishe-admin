@@ -46,6 +46,7 @@ const NODE_GROUPS: Array<{ title: string; items: Array<{ type: string; label: st
       { type: 'openmoji_search', label: 'OpenMoji 采集', color: '#000000' },
       { type: 'googleicons_search', label: 'Google Icons 采集', color: '#4285F4' },
       { type: 'emojipedia_search', label: 'Emojipedia 采集', color: '#FF8C00' },
+      { type: 'svgrepo_search', label: 'SVGRepo 矢量采集', color: '#EB3654' },
     ],
   },
 ]
