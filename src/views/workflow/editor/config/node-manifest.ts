@@ -1,4 +1,4 @@
-import { weiboIcon, feishuIcon, wecomIcon, douyinIcon, bilibiliIcon, zhihuIcon, toutiaoIcon, doubanIcon, kuaishouIcon, javaScriptIcon, openaiIcon, googleArtsCultureIcon, pinterestIcon, wikimediaIcon, pexelsIcon, pixabayIcon, rawpixelIcon, stocksnapIcon, openverseIcon } from '@/assets/icons/apps'
+import { weiboIcon, feishuIcon, wecomIcon, douyinIcon, bilibiliIcon, zhihuIcon, toutiaoIcon, doubanIcon, kuaishouIcon, javaScriptIcon, openaiIcon, googleArtsCultureIcon, pinterestIcon, wikimediaIcon, pexelsIcon, pixabayIcon, rawpixelIcon, stocksnapIcon, openverseIcon, openclipartIcon } from '@/assets/icons/apps'
 
 export type NodeType =
   | 'start'
@@ -23,6 +23,7 @@ export type NodeType =
   | 'rawpixel_search'
   | 'stocksnap_search'
   | 'openverse_search'
+  | 'openclipart_search'
   | 'custom'
 
 export type NodeRequirementType = 'client' | 'client_browser' | 'internet' | 'config'
@@ -678,6 +679,32 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: cat, vintage, nature' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'images', label: '图片列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'openclipart_search',
+    name: 'Openclipart 采集',
+    category: 'app_integration',
+    description: '通过客户端从 Openclipart 100% CC0 免费矢量插画图库按关键词搜索并同步上传至素材库',
+    iconImage: openclipartIcon,
+    color: '#D35400',
+    defaultData: {
+      label: 'Openclipart 采集',
+      config: { keyword: '', maxCount: 10, formatPreference: 'png' },
+    },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: cat, robot, flower, banner' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
+      { field: 'formatPreference', label: '格式偏好', type: 'select', defaultValue: 'png', options: [{ label: '超清位图 (PNG)', value: 'png' }, { label: '矢量原图 (SVG)', value: 'svg' }] },
     ],
     outputSchema: [
       { field: 'successCount', label: '成功数量', type: 'number' },

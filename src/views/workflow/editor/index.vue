@@ -47,6 +47,7 @@ import PixabayNode from '@/components/workflow/nodes/PixabayNode.vue'
 import RawpixelNode from '@/components/workflow/nodes/RawpixelNode.vue'
 import StockSnapNode from '@/components/workflow/nodes/StockSnapNode.vue'
 import OpenverseNode from '@/components/workflow/nodes/OpenverseNode.vue'
+import OpenClipartNode from '@/components/workflow/nodes/OpenClipartNode.vue'
 
 import NodePanel from '@/components/workflow/NodePanel.vue'
 import ConfigPanel from '@/components/workflow/ConfigPanel.vue'
@@ -194,6 +195,7 @@ const nodeTypes = {
   rawpixel_search: markRaw(RawpixelNode),
   stocksnap_search: markRaw(StockSnapNode),
   openverse_search: markRaw(OpenverseNode),
+  openclipart_search: markRaw(OpenClipartNode),
 }
 
 // ─── 撤销/重做历史 ─────────────────────────────────────────────

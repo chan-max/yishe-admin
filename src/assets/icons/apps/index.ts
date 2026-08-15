@@ -21,6 +21,7 @@ export { default as pixabayIcon } from './pixabay.svg'
 export { default as rawpixelIcon } from './rawpixel.svg'
 export { default as stocksnapIcon } from './stocksnap.svg'
 export { default as openverseIcon } from './openverse.jpg'
+export { default as openclipartIcon } from './openclipart.svg'
 
 
 
