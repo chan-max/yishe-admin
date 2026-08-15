@@ -47,7 +47,9 @@ const maxCount = computed(() => props.data.config?.maxCount || props.data.config
 .wf-node__icon {
   width: 20px;
   height: 20px;
+  border-radius: 4px;
   flex-shrink: 0;
+  object-fit: cover;
 }
 
 .wf-node__title {
