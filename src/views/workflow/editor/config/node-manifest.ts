@@ -33,6 +33,33 @@ import {
   ithomeIcon,
 } from '@/assets/icons/apps'
 
+import {
+  hackernewsIcon, arxivIcon, githubIcon, gdeltIcon, googlenewsIcon,
+  redditIcon, producthuntIcon, theguardianIcon, bbcnewsIcon, nprIcon,
+  techcrunchIcon, thevergeIcon, arstechnicaIcon, mittechreviewIcon,
+  reutersIcon, chinadailyIcon, govcnIcon, xinhuanetIcon,
+  thepaperIcon, thirtySixKrNewsIcon, huxiuIcon,
+} from '@/assets/icons/news'
+
+import {
+  openmeteoIcon,
+  wttrIcon,
+  coingeckoIcon,
+  frankfurterIcon,
+  dictionaryIcon,
+  jokeIcon,
+  ipifyIcon,
+  sunrisesunsetIcon,
+  timeapiIcon,
+  zippopotamIcon,
+  countryisIcon,
+  erapiIcon,
+  fawazahmedIcon,
+  colorapiIcon,
+  shopifyIcon,
+} from '@/assets/icons/utility'
+
+
 export type NodeType =
   | 'start'
   | 'end'
@@ -67,6 +94,42 @@ export type NodeType =
   | 'svgrepo_search'
   | 'kaboompics_search'
   | 'custom'
+  | 'openmeteo_search'
+  | 'wttr_search'
+  | 'coingecko_search'
+  | 'frankfurter_search'
+  | 'dictionary_search'
+  | 'joke_search'
+  | 'ipify_search'
+  | 'sunrisesunset_search'
+  | 'timeapi_search'
+  | 'zippopotam_search'
+  | 'countryis_search'
+  | 'erapi_search'
+  | 'fawazahmed_search'
+  | 'colorapi_search'
+  | 'shopify_search'
+  | 'hackernews_search'
+  | 'arxiv_search'
+  | 'github_search'
+  | 'gdelt_search'
+  | 'googlenews_search'
+  | 'reddit_search'
+  | 'producthunt_search'
+  | 'theguardian_search'
+  | 'bbcnews_search'
+  | 'npr_search'
+  | 'reuters_search'
+  | 'techcrunch_search'
+  | 'theverge_search'
+  | 'arstechnica_search'
+  | 'mittechreview_search'
+  | 'chinadaily_search'
+  | 'govcn_search'
+  | 'xinhuanet_search'
+  | 'thepaper_search'
+  | '36kr_search'
+  | 'huxiu_search'
 
 export type NodeRequirementType = 'client' | 'client_browser' | 'internet' | 'config'
 
@@ -918,11 +981,470 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
       { field: 'failCount', label: '失败数量', type: 'number' },
       { field: 'images', label: '图片列表', type: 'array' },
     ],
+  },
+  {
+    type: 'hackernews_search',
+    name: 'Hacker News 热帖',
+    category: 'news_data',
+    description: '从 Hacker News 获取热门技术文章、讨论和创业动态',
+    iconImage: hackernewsIcon,
+    color: '#FF6600',
+    defaultData: { label: 'Hacker News 热帖', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: AI, startup, programming' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'items', label: '数据列表', type: 'array' },
+    ],
     requirements: [
       { type: 'client', label: '需客户端在线' },
       { type: 'internet', label: '需外网' },
     ],
   },
+  {
+    type: 'arxiv_search',
+    name: 'arXiv 学术论文',
+    category: 'news_data',
+    description: '从 arXiv 搜索 AI/ML/CS 等前沿科研论文',
+    iconImage: arxivIcon,
+    color: '#B31B1B',
+    defaultData: { label: 'arXiv 学术论文', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: transformer, LLM, diffusion model' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'items', label: '数据列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'github_search',
+    name: 'GitHub 趋势仓库',
+    category: 'news_data',
+    description: '搜索 GitHub 热门开源项目、开发趋势和代码仓库',
+    iconImage: githubIcon,
+    color: '#333333',
+    defaultData: { label: 'GitHub 趋势仓库', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: llm, chatgpt, stable-diffusion' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'items', label: '数据列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'gdelt_search',
+    name: 'GDELT 全球事件',
+    category: 'news_data',
+    description: '全球新闻事件监测、舆情分析和地理编码数据',
+    iconImage: gdeltIcon,
+    color: '#1A73E8',
+    defaultData: { label: 'GDELT 全球事件', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: election, protest, climate' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'items', label: '数据列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'googlenews_search',
+    name: 'Google News',
+    category: 'news_data',
+    description: '综合新闻聚合搜索，支持多语言和地区',
+    iconImage: googlenewsIcon,
+    color: '#4285F4',
+    defaultData: { label: 'Google News', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: AI, technology, business' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'items', label: '数据列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'reddit_search',
+    name: 'Reddit 社区热帖',
+    category: 'news_data',
+    description: '获取 Reddit 社区热门讨论、行业热点和用户观点',
+    iconImage: redditIcon,
+    color: '#FF4500',
+    defaultData: { label: 'Reddit 社区热帖', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: MachineLearning, technology' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'items', label: '数据列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'producthunt_search',
+    name: 'Product Hunt',
+    category: 'news_data',
+    description: '发现最新 AI 产品、软件工具和创业项目',
+    iconImage: producthuntIcon,
+    color: '#DA552F',
+    defaultData: { label: 'Product Hunt', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: AI, productivity, developer tools' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'items', label: '数据列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'theguardian_search',
+    name: 'The Guardian',
+    category: 'news_data',
+    description: '获取卫报深度报道、国际新闻和科技资讯',
+    iconImage: theguardianIcon,
+    color: '#052962',
+    defaultData: { label: 'The Guardian', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: AI, climate, technology' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'items', label: '数据列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'bbcnews_search',
+    name: 'BBC News',
+    category: 'news_data',
+    description: '获取 BBC 国际新闻、科技和健康资讯',
+    iconImage: bbcnewsIcon,
+    color: '#BB1919',
+    defaultData: { label: 'BBC News', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: technology, science, AI' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'items', label: '数据列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'npr_search',
+    name: 'NPR 新闻',
+    category: 'news_data',
+    description: '获取美国国家公共广播电台新闻、科技和文化报道',
+    iconImage: nprIcon,
+    color: '#000000',
+    defaultData: { label: 'NPR 新闻', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: technology, science, AI' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'items', label: '数据列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'techcrunch_search',
+    name: 'TechCrunch',
+    category: 'news_data',
+    description: '获取 TechCrunch 科技创业、AI 公司和投资新闻',
+    iconImage: techcrunchIcon,
+    color: '#0A9E01',
+    defaultData: { label: 'TechCrunch', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: AI, startup, funding' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'items', label: '数据列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'theverge_search',
+    name: 'The Verge',
+    category: 'news_data',
+    description: '获取 The Verge 科技评测、AI 和消费电子资讯',
+    iconImage: thevergeIcon,
+    color: '#E2127A',
+    defaultData: { label: 'The Verge', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: AI, review, tech' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'items', label: '数据列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'arstechnica_search',
+    name: 'Ars Technica',
+    category: 'news_data',
+    description: '获取 Ars Technica 深度技术、科学和安全报道',
+    iconImage: arstechnicaIcon,
+    color: '#FF4500',
+    defaultData: { label: 'Ars Technica', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: AI, security, science' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'items', label: '数据列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'mittechreview_search',
+    name: 'MIT Tech Review',
+    category: 'news_data',
+    description: '获取 MIT 科技评论前沿科技、AI 和创新深度分析',
+    iconImage: mittechreviewIcon,
+    color: '#000000',
+    defaultData: { label: 'MIT Tech Review', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: AI, innovation, future' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'items', label: '数据列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'reuters_search',
+    name: 'Reuters 路透社',
+    category: 'news_data',
+    description: '获取路透社国际新闻、财经和市场资讯',
+    iconImage: reutersIcon,
+    color: '#FF8000',
+    defaultData: { label: 'Reuters 路透社', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: markets, technology, world' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'items', label: '数据列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'chinadaily_search',
+    name: '中国日报',
+    category: 'news_data',
+    description: '获取中国日报国内外新闻、商业和科技报道',
+    iconImage: chinadailyIcon,
+    color: '#CE1126',
+    defaultData: { label: '中国日报', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: China, technology, business' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'items', label: '数据列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'govcn_search',
+    name: '中国政府网',
+    category: 'news_data',
+    description: '获取政府最新政策、法规和公告信息',
+    iconImage: govcnIcon,
+    color: '#DE2910',
+    defaultData: { label: '中国政府网', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: 政策, 法规, 公告' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'items', label: '数据列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'xinhuanet_search',
+    name: '新华网',
+    category: 'news_data',
+    description: '获取新华网国内国际新闻、财经和科技资讯',
+    iconImage: xinhuanetIcon,
+    color: '#003DA5',
+    defaultData: { label: '新华网', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: 科技, 财经, 国际' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'items', label: '数据列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'thepaper_search',
+    name: '澎湃新闻',
+    category: 'news_data',
+    description: '获取澎湃新闻社会、财经、科技深度报道与时事评论',
+    iconImage: thepaperIcon,
+    color: '#000000',
+    defaultData: { label: '澎湃新闻', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: 财经, 科技, 评论' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'items', label: '数据列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: '36kr_search',
+    name: '36氪',
+    category: 'news_data',
+    description: '获取 36氪 前沿科技、创投、商业热点与快讯',
+    iconImage: thirtySixKrNewsIcon,
+    color: '#0052D9',
+    defaultData: { label: '36氪', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: AI, 创业, 商业' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'items', label: '数据列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'huxiu_search',
+    name: '虎嗅',
+    category: 'news_data',
+    description: '获取虎嗅科技、商业、创投深度分析与精选文章',
+    iconImage: huxiuIcon,
+    color: '#F44336',
+    defaultData: { label: '虎嗅', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: 商业, 科技, 创投' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'items', label: '数据列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+
   {
     type: 'svgrepo_search',
     name: 'SVGRepo 矢量图库采集',
@@ -968,7 +1490,202 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
       { type: 'internet', label: '需外网' },
     ],
   },
+  // ══════════════════════════════════════════════════════
+  // 工具类节点 (15 utilities)
+  // ══════════════════════════════════════════════════════
+  {
+    type: 'openmeteo_search',
+    name: 'Open-Meteo 天气',
+    category: 'utility',
+    description: '全球实时天气预报',
+    iconImage: openmeteoIcon,
+    color: '#0066CC',
+    defaultData: { label: 'Open-Meteo 天气', config: { latitude: 39.9, longitude: 116.4 } },
+    inputSchema: [
+      { field: 'latitude', label: '纬度', type: 'number', required: true },
+      { field: 'longitude', label: '经度', type: 'number', required: true },
+    ],
+    outputSchema: [ { field: 'temperature', label: '温度', type: 'number' } ],
+    requirements: [ { type: 'client', label: '需客户端在线' }, { type: 'internet', label: '需外网' } ],
+  },
+  {
+    type: 'coingecko_search',
+    name: 'CoinGecko 币价',
+    category: 'utility',
+    description: '加密货币实时价格',
+    iconImage: coingeckoIcon,
+    color: '#8DC647',
+    defaultData: { label: 'CoinGecko 币价', config: { ids: 'bitcoin,ethereum' } },
+    inputSchema: [ { field: 'ids', label: '币种ID', type: 'string', defaultValue: 'bitcoin,ethereum' } ],
+    outputSchema: [ { field: 'prices', label: '价格', type: 'json' } ],
+    requirements: [ { type: 'client', label: '需客户端在线' }, { type: 'internet', label: '需外网' } ],
+  },
+  {
+    type: 'frankfurter_search',
+    name: 'Frankfurter 汇率',
+    category: 'utility',
+    description: '实时/历史汇率',
+    iconImage: frankfurterIcon,
+    color: '#003399',
+    defaultData: { label: 'Frankfurter 汇率', config: { from: 'USD', to: 'CNY,EUR' } },
+    inputSchema: [ { field: 'from', label: '基准货币', type: 'string', defaultValue: 'USD' }, { field: 'to', label: '目标货币', type: 'string', defaultValue: 'CNY,EUR' } ],
+    outputSchema: [ { field: 'rates', label: '汇率', type: 'json' } ],
+    requirements: [ { type: 'client', label: '需客户端在线' }, { type: 'internet', label: '需外网' } ],
+  },
+  {
+    type: 'dictionary_search',
+    name: 'Free Dictionary',
+    category: 'utility',
+    description: '英语词典查询',
+    iconImage: dictionaryIcon,
+    color: '#6B46C1',
+    defaultData: { label: 'Free Dictionary', config: { word: 'hello' } },
+    inputSchema: [ { field: 'word', label: '查询单词', type: 'string', required: true } ],
+    outputSchema: [ { field: 'definition', label: '释义', type: 'string' } ],
+    requirements: [ { type: 'client', label: '需客户端在线' }, { type: 'internet', label: '需外网' } ],
+  },
+  {
+    type: 'sunrisesunset_search',
+    name: 'Sunrise-Sunset 日出日落',
+    category: 'utility',
+    description: '日出日落、日照时长',
+    iconImage: sunrisesunsetIcon,
+    color: '#FF8C00',
+    defaultData: { label: '日出日落', config: { lat: 39.9, lng: 116.4 } },
+    inputSchema: [ { field: 'lat', label: '纬度', type: 'number', required: true }, { field: 'lng', label: '经度', type: 'number', required: true } ],
+    outputSchema: [ { field: 'sunrise', label: '日出', type: 'string' }, { field: 'sunset', label: '日落', type: 'string' } ],
+    requirements: [ { type: 'client', label: '需客户端在线' }, { type: 'internet', label: '需外网' } ],
+  },
+  {
+    type: 'timeapi_search',
+    name: 'timeapi.io 时区时间',
+    category: 'utility',
+    description: '指定时区当前时间',
+    iconImage: timeapiIcon,
+    color: '#4A90D9',
+    defaultData: { label: '时区时间', config: { timezone: 'Asia/Shanghai' } },
+    inputSchema: [ { field: 'timezone', label: '时区', type: 'string', required: true } ],
+    outputSchema: [ { field: 'dateTime', label: '时间', type: 'string' } ],
+    requirements: [ { type: 'client', label: '需客户端在线' }, { type: 'internet', label: '需外网' } ],
+  },
+  {
+    type: 'zippopotam_search',
+    name: 'Zippopotam 邮编查询',
+    category: 'utility',
+    description: '邮编查询城市/经纬度',
+    iconImage: zippopotamIcon,
+    color: '#2E8B57',
+    defaultData: { label: '邮编查询', config: { countryCode: 'us', zipCode: '90210' } },
+    inputSchema: [ { field: 'countryCode', label: '国家代码', type: 'string', defaultValue: 'us' }, { field: 'zipCode', label: '邮编', type: 'string', required: true } ],
+    outputSchema: [ { field: 'city', label: '城市', type: 'string' } ],
+    requirements: [ { type: 'client', label: '需客户端在线' }, { type: 'internet', label: '需外网' } ],
+  },
+  {
+    type: 'countryis_search',
+    name: 'country.is IP归属',
+    category: 'utility',
+    description: 'IP地址归属国家',
+    iconImage: countryisIcon,
+    color: '#8B4513',
+    defaultData: { label: 'IP归属', config: { ip: '8.8.8.8' } },
+    inputSchema: [ { field: 'ip', label: 'IP地址', type: 'string', required: true } ],
+    outputSchema: [ { field: 'country', label: '国家', type: 'string' } ],
+    requirements: [ { type: 'client', label: '需客户端在线' }, { type: 'internet', label: '需外网' } ],
+  },
+  {
+    type: 'erapi_search',
+    name: 'open.er-api 汇率',
+    category: 'utility',
+    description: '多币种实时汇率',
+    iconImage: erapiIcon,
+    color: '#228B22',
+    defaultData: { label: '汇率查询', config: { base: 'USD' } },
+    inputSchema: [ { field: 'base', label: '基准货币', type: 'string', defaultValue: 'USD' } ],
+    outputSchema: [ { field: 'rates', label: '汇率', type: 'json' } ],
+    requirements: [ { type: 'client', label: '需客户端在线' }, { type: 'internet', label: '需外网' } ],
+  },
+  {
+    type: 'fawazahmed_search',
+    name: 'fawazahmed 汇率',
+    category: 'utility',
+    description: 'CDN 全币种汇率',
+    iconImage: fawazahmedIcon,
+    color: '#FF6347',
+    defaultData: { label: '汇率数据', config: { base: 'usd' } },
+    inputSchema: [ { field: 'base', label: '基准货币', type: 'string', defaultValue: 'usd' } ],
+    outputSchema: [ { field: 'currencies', label: '汇率数据', type: 'json' } ],
+    requirements: [ { type: 'client', label: '需客户端在线' }, { type: 'internet', label: '需外网' } ],
+  },
+  {
+    type: 'colorapi_search',
+    name: 'The Color API',
+    category: 'utility',
+    description: 'HEX颜色查询（RGB/HSL/名称）',
+    iconImage: colorapiIcon,
+    color: '#24B1E0',
+    defaultData: { label: '颜色查询', config: { hex: '24B1E0' } },
+    inputSchema: [ { field: 'hex', label: 'HEX颜色', type: 'string', required: true } ],
+    outputSchema: [ { field: 'name', label: '颜色名称', type: 'string' } ],
+    requirements: [ { type: 'client', label: '需客户端在线' }, { type: 'internet', label: '需外网' } ],
+  },
+  {
+    type: 'wttr_search',
+    name: 'wttr.in 终端天气',
+    category: 'utility',
+    description: '全球城市天气与预报',
+    iconImage: wttrIcon,
+    color: '#2563EB',
+    defaultData: { label: 'wttr 天气', config: { city: 'Beijing' } },
+    inputSchema: [ { field: 'city', label: '城市名称', type: 'string', defaultValue: 'Beijing' } ],
+    outputSchema: [ { field: 'data', label: '天气详情', type: 'json' } ],
+    requirements: [ { type: 'client', label: '需客户端在线' }, { type: 'internet', label: '需外网' } ],
+  },
+
+  {
+    type: 'joke_search',
+    name: 'JokeAPI 编程/趣味笑话',
+    category: 'utility',
+    description: '趣味笑话与搞笑段子',
+    iconImage: jokeIcon,
+    color: '#F59E0B',
+    defaultData: { label: 'Joke 笑话', config: { category: 'Programming' } },
+    inputSchema: [ { field: 'category', label: '笑话类型', type: 'string', defaultValue: 'Programming' } ],
+    outputSchema: [ { field: 'joke', label: '笑话内容', type: 'string' } ],
+    requirements: [ { type: 'client', label: '需客户端在线' }, { type: 'internet', label: '需外网' } ],
+  },
+  {
+    type: 'ipify_search',
+    name: 'ipify 公网IP查询',
+    category: 'utility',
+    description: '获取客户端当前公网IP',
+    iconImage: ipifyIcon,
+    color: '#10B981',
+    defaultData: { label: '公网IP', config: {} },
+    inputSchema: [],
+    outputSchema: [ { field: 'ip', label: 'IP地址', type: 'string' } ],
+    requirements: [ { type: 'client', label: '需客户端在线' }, { type: 'internet', label: '需外网' } ],
+  },
+  {
+    type: 'shopify_search',
+    name: 'Shopify 独立站商品',
+    category: 'ecommerce',
+    description: '检索 Shopify 店铺公开商品清单',
+    iconImage: shopifyIcon,
+    color: '#96BF48',
+    defaultData: { label: 'Shopify 商品', config: { storeUrl: '', limit: 20 } },
+    inputSchema: [
+      { field: 'storeUrl', label: '店铺域名/URL', type: 'string', required: true, placeholder: 'example.myshopify.com' },
+      { field: 'keyword', label: '筛选关键词', type: 'string' },
+      { field: 'limit', label: '最多获取数', type: 'number', defaultValue: 20 },
+    ],
+    outputSchema: [
+      { field: 'count', label: '商品数量', type: 'number' },
+      { field: 'items', label: '商品列表', type: 'array' },
+    ],
+    requirements: [ { type: 'client', label: '需客户端在线' }, { type: 'internet', label: '需外网' } ],
+  },
 ]
+
 
 export function getManifestByType(type: string): NodeManifest | undefined {
   return NODE_MANIFEST_REGISTRY.find((m) => m.type === type)

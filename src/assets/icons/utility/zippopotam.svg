@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <rect width="48" height="48" rx="8" fill="#2E8B57"/>
+  <rect x="14" y="16" width="20" height="16" rx="2" fill="#FFFFFF"/>
+  <text x="24" y="28" text-anchor="middle" fill="#2E8B57" font-size="8" font-weight="bold">ZIP</text>
+</svg>

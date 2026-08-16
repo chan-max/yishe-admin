@@ -26,8 +26,8 @@ const remainingRouter: AppRouteRecordRaw[] = [
     name: 'Workflow',
     redirect: '/workflow/index',
     meta: {
-      title: '工作流',
-      icon: 'material-symbols:account-tree-rounded',
+      title: "router.workflow",
+      icon: 'lucide:workflow',
       order: 10,
       alwaysShow: true,
     },
@@ -37,7 +37,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import('@/views/workflow/index/index.vue'),
         name: 'WorkflowIndex',
         meta: {
-          title: '我的工作流',
+          title: "router.myWorkflow",
           noCache: true,
         },
       },
@@ -46,7 +46,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import('@/views/workflow/editor/index.vue'),
         name: 'WorkflowEditor',
         meta: {
-          title: '工作流编辑器',
+          title: "router.workflowEditor",
           hidden: true,
           noCache: true,
           activeMenu: '/workflow/index',
@@ -88,8 +88,8 @@ const remainingRouter: AppRouteRecordRaw[] = [
     name: "Home",
     redirect: "/home/index",
     meta: {
-      title: "工作台",
-      icon: "material-symbols:dashboard-rounded",
+      title: "router.workplace",
+      icon: "lucide:layout-dashboard",
       order: 1,
       alwaysShow: true,
     },
@@ -99,7 +99,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/Home/Index.vue"),
         name: "Index",
         meta: {
-          title: "首页",
+          title: "router.home",
           noCache: false,
           affix: true,
         },
@@ -109,7 +109,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/Home/HotSearch.vue"),
         name: "HotSearch",
         meta: {
-          title: "热搜",
+          title: "router.hotSearch",
         },
       },
       {
@@ -117,7 +117,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/Home/Tools/Index.vue"),
         name: "ToolsIndex",
         meta: {
-          title: "工具",
+          title: "router.tools",
         },
       },
       {
@@ -125,7 +125,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/Home/Statistics/index.vue"),
         name: "Statistics",
         meta: {
-          title: "数据统计",
+          title: "router.statistics",
         },
       },
       {
@@ -133,7 +133,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/vector-search/Index.vue"),
         name: "VectorSearch",
         meta: {
-          title: "向量库",
+          title: "router.vectorSearch",
           menuKey: "home.vector-search",
         },
       },
@@ -142,7 +142,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/design-knowledge/index.vue"),
         name: "DesignKnowledge",
         meta: {
-          title: "设计知识库",
+          title: "router.designKnowledge",
           menuKey: "home.design-knowledge",
         },
       },
@@ -151,7 +151,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/design-prompt/index.vue"),
         name: "DesignPrompt",
         meta: {
-          title: "设计提示词",
+          title: "router.designPrompt",
           menuKey: "home.design-prompt",
         },
       },
@@ -205,8 +205,8 @@ const remainingRouter: AppRouteRecordRaw[] = [
     redirect: "/resource/material",
     meta: {
       hidden: false,
-      title: "资源中心",
-      icon: "material-symbols:folder-rounded",
+      title: "router.resourceCenter",
+      icon: "lucide:folder-open",
       noCache: false,
       affix: false,
       order: 2,
@@ -221,7 +221,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: "采集素材",
+          title: "router.crawlerMaterial",
         },
       },
       {
@@ -232,7 +232,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: "图片素材",
+          title: "router.imageMaterial",
         },
       },
       {
@@ -243,7 +243,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: "文件资源",
+          title: "router.fileResource",
         },
       },
       {
@@ -254,7 +254,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: "3D资源",
+          title: "router.asset3d",
         },
       },
       {
@@ -265,7 +265,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: "字体",
+          title: "router.font",
         },
       },
       {
@@ -276,7 +276,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: "PSD模板",
+          title: "router.psdTemplate",
         },
       },
       {
@@ -287,7 +287,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: "故事脚本",
+          title: "router.storyScript",
         },
       },
       {
@@ -298,7 +298,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: "文案管理",
+          title: "router.sentence",
         },
       },
       {
@@ -309,7 +309,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: "文档库",
+          title: "router.textDocument",
         },
       },
       {
@@ -320,7 +320,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: "网址管理",
+          title: "router.commonUrl",
         },
       },
       {
@@ -331,7 +331,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: "设计灵感",
+          title: "router.designInspiration",
           menuKey: "resource.design-inspiration",
         },
       },
@@ -344,8 +344,8 @@ const remainingRouter: AppRouteRecordRaw[] = [
     name: "AiService",
     redirect: "/ai/assistant",
     meta: {
-      title: "AI创作",
-      icon: "material-symbols:auto-awesome-rounded",
+      title: "router.aiCreation",
+      icon: "lucide:sparkles",
       order: 3,
       alwaysShow: true,
     },
@@ -355,7 +355,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/ai/assistant/index.vue"),
         name: "AiAssistant",
         meta: {
-          title: "智能助手",
+          title: "router.aiAssistant",
         },
       },
       {
@@ -363,7 +363,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/ai/skills/index.vue"),
         name: "AiSkills",
         meta: {
-          title: "Skills",
+          title: "router.aiSkills",
         },
       },
       {
@@ -371,7 +371,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/ai/mcp/index.vue"),
         name: "McpConsole",
         meta: {
-          title: "MCP 管理",
+          title: "router.mcpManagement",
           serviceStatusKey: "mcp",
         },
       },
@@ -380,7 +380,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/ai/tti.vue"),
         name: "AiTti",
         meta: {
-          title: "AI文字生成图片",
+          title: "router.aiTextToImage",
         },
       },
       {
@@ -388,7 +388,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/ai/tts.vue"),
         name: "AiTts",
         meta: {
-          title: "AI文字转语音",
+          title: "router.aiTextToSpeech",
         },
       },
       {
@@ -399,7 +399,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: "AI提示词管理",
+          title: "router.aiPromptManagement",
         },
       },
       {
@@ -407,7 +407,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/ai/model-service/index.vue"),
         name: "AiModelService",
         meta: {
-          title: "模型服务",
+          title: "router.modelService",
           serviceStatusKey: "modelService",
         },
       },
@@ -416,7 +416,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/ai/image-analysis/index.vue"),
         name: "AiImageAnalysis",
         meta: {
-          title: "AI图片分析",
+          title: "router.aiImageAnalysis",
         },
       },
     ],
@@ -428,8 +428,8 @@ const remainingRouter: AppRouteRecordRaw[] = [
     name: "Content",
     redirect: "/content/code-script",
     meta: {
-      title: "内容与自动化",
-      icon: "material-symbols:smart-toy-rounded",
+      title: "router.contentAutomation",
+      icon: "lucide:cpu",
       order: 4,
       alwaysShow: true,
     },
@@ -442,7 +442,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: "代码脚本",
+          title: "router.codeScript",
           serviceStatusKey: "sandbox",
         },
       },
@@ -454,7 +454,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: "脚本调度",
+          title: "router.scriptSchedule",
         },
       },
       {
@@ -465,7 +465,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: "沙箱服务",
+          title: "router.sandbox",
         },
       },
       {
@@ -476,7 +476,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: "视频模板",
+          title: "router.videoTemplate",
           serviceStatusKey: "videoTemplate",
         },
       },
@@ -488,7 +488,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: "图片处理",
+          title: "router.imageProcessing",
           serviceStatusKey: "images",
         },
       },
@@ -501,8 +501,8 @@ const remainingRouter: AppRouteRecordRaw[] = [
     name: "ExternalFeature",
     redirect: "/external/browser-automation",
     meta: {
-      title: "客户端功能",
-      icon: "material-symbols:desktop-windows-rounded",
+      title: "router.clientFunction",
+      icon: "lucide:monitor",
       order: 5,
       alwaysShow: true,
     },
@@ -532,7 +532,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/external/browser-automation/index.vue"),
         name: "ExternalBrowserAutomation",
         meta: {
-          title: "浏览器自动化",
+          title: "router.browserAutomation",
         },
       },
       {
@@ -540,7 +540,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/external/browser-plugin/index.vue"),
         name: "ExternalBrowserPlugin",
         meta: {
-          title: "浏览器插件",
+          title: "router.browserPlugin",
         },
       },
       {
@@ -548,7 +548,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/system/ps-console/index.vue"),
         name: "ExternalPsAutomation",
         meta: {
-          title: "PS 自动化",
+          title: "router.psAutomation",
         },
       },
       {
@@ -556,8 +556,8 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/external/data-collect/index.vue"),
         name: "ExternalDataCollect",
         meta: {
-          title: "数据采集",
-          icon: "ep:collection",
+          title: "router.dataCollection",
+          icon: "lucide:database-zap",
         },
       },
       {
@@ -641,6 +641,11 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: { hidden: true },
       },
       {
+        path: "news",
+        redirect: "/external/news",
+        meta: { hidden: true },
+      },
+      {
         path: "svgrepo",
         redirect: "/external/data-collect?tab=svgrepo",
         meta: { hidden: true },
@@ -650,7 +655,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/external/client-management/index.vue"),
         name: "ClientManagement",
         meta: {
-          title: "客户端管理",
+          title: "router.clientManagement",
         },
       },
       {
@@ -658,7 +663,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/external/design-tool/index.vue"),
         name: "DesignToolConnection",
         meta: {
-          title: "设计工具连接",
+          title: "router.designToolConnection",
         },
       },
     ],
@@ -670,8 +675,8 @@ const remainingRouter: AppRouteRecordRaw[] = [
     name: "OperationToolkitRoot",
     redirect: "/operation/toolkit/temu",
     meta: {
-      title: "工具集",
-      icon: "material-symbols:build-rounded",
+      title: "router.toolkit",
+      icon: "lucide:wrench",
       order: 6,
       alwaysShow: true,
     },
@@ -681,7 +686,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/external/toolkit/index.vue"),
         name: "OperationToolkitTemu",
         meta: {
-          title: "Temu",
+          title: "router.toolkitTemu",
           toolkitPlatform: "temu",
         },
       },
@@ -690,7 +695,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/external/toolkit/doudian/index.vue"),
         name: "OperationToolkitDoudian",
         meta: {
-          title: "抖店",
+          title: "router.toolkitDoudian",
           toolkitPlatform: "doudian",
         },
       },
@@ -699,7 +704,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/external/toolkit/pdd/index.vue"),
         name: "OperationToolkitPdd",
         meta: {
-          title: "拼多多",
+          title: "router.toolkitPdd",
           toolkitPlatform: "pdd",
         },
       },
@@ -708,7 +713,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/external/toolkit/kuaishou-shop/index.vue"),
         name: "OperationToolkitKuaishouShop",
         meta: {
-          title: "快手小店",
+          title: "router.toolkitKuaishou",
           toolkitPlatform: "kuaishou_shop",
         },
       },
@@ -717,7 +722,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/external/toolkit/qianniu/index.vue"),
         name: "OperationToolkitQianniu",
         meta: {
-          title: "千牛",
+          title: "router.toolkitQianniu",
           toolkitPlatform: "qianniu",
         },
       },
@@ -726,7 +731,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/external/toolkit/alibaba-1688/index.vue"),
         name: "OperationToolkitAlibaba1688",
         meta: {
-          title: "1688",
+          title: "router.toolkit1688",
           toolkitPlatform: "alibaba_1688",
         },
       },
@@ -735,7 +740,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/external/toolkit/amazon/index.vue"),
         name: "OperationToolkitAmazon",
         meta: {
-          title: "卖家精灵（亚马逊）",
+          title: "router.toolkitAmazon",
           toolkitPlatform: "amazon",
         },
       },
@@ -748,8 +753,8 @@ const remainingRouter: AppRouteRecordRaw[] = [
     name: "IndependentSite",
     redirect: "/independent-site/product",
     meta: {
-      title: "独立站",
-      icon: "material-symbols:storefront-rounded",
+      title: "router.independentSite",
+      icon: "lucide:store",
       order: 7,
       alwaysShow: true,
     },
@@ -759,7 +764,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/product/category/index.vue"),
         name: "ProductCategory",
         meta: {
-          title: "商品分类",
+          title: "router.productCategory",
           order: 0.5,
         },
       },
@@ -768,7 +773,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/product/index/index.vue"),
         name: "ProductIndex",
         meta: {
-          title: "商品模块",
+          title: "router.productModule",
           order: 1,
         },
       },
@@ -777,7 +782,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/product/generation-template/index.vue"),
         name: "ProductGenerationTemplate",
         meta: {
-          title: "商品生成模板",
+          title: "router.productGenTemplate",
           order: 2,
         },
       },
@@ -786,7 +791,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/material/designRequest/index.vue"),
         name: "DesignRequest",
         meta: {
-          title: "设计请求",
+          title: "router.designRequest",
           order: 3,
         },
       },
@@ -795,7 +800,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/system/public-user/index.vue"),
         name: "PublicUser",
         meta: {
-          title: "开放用户管理",
+          title: "router.openUserManagement",
           requiresAdmin: true,
           order: 4,
         },
@@ -805,7 +810,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/independent-site/open-docs/index.vue"),
         name: "IndependentSiteOpenDocs",
         meta: {
-          title: "开放文档",
+          title: "router.openDocs",
           order: 5,
         },
       },
@@ -814,7 +819,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/independent-site/user-behavior-log/index.vue"),
         name: "IndependentSiteUserBehaviorLog",
         meta: {
-          title: "开放用户行为日志",
+          title: "router.openUserLogs",
           order: 6,
         },
       },
@@ -823,7 +828,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/independent-site/comment/index.vue"),
         name: "IndependentSiteComment",
         meta: {
-          title: "独立站商品评论",
+          title: "router.independentSiteReviews",
           order: 7,
         },
       },
@@ -836,8 +841,8 @@ const remainingRouter: AppRouteRecordRaw[] = [
     name: "ProductPublishGroup",
     redirect: "/product-publish/psd-set",
     meta: {
-      title: "商品发布",
-      icon: "material-symbols:shopping-cart-rounded",
+      title: "router.productPublish",
+      icon: "lucide:shopping-bag",
       order: 9,
       alwaysShow: true,
     },
@@ -850,7 +855,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: "套图",
+          title: "router.psdSet",
           order: 2,
         },
       },
@@ -859,7 +864,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/product/binding-records/index.vue"),
         name: "PublishBindingRecords",
         meta: {
-          title: "发布绑定记录",
+          title: "router.publishBindingRecords",
           order: 3.5,
         },
       },
@@ -868,7 +873,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/product/publish-config/index.vue"),
         name: "PublishConfig",
         meta: {
-          title: "任务配置",
+          title: "router.publishTaskConfig",
           order: 4,
         },
       },
@@ -877,7 +882,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/system/queue/index.vue"),
         name: "SystemQueue",
         meta: {
-          title: "平台任务",
+          title: "router.platformTask",
           order: 5,
         },
       },
@@ -890,8 +895,8 @@ const remainingRouter: AppRouteRecordRaw[] = [
     name: "EcomPlatformCollectRoot",
     redirect: "/ecom-platform-collect/tasks",
     meta: {
-      title: "电商数据链路",
-      icon: "material-symbols:analytics-rounded",
+      title: "router.ecommerceDataPipeline",
+      icon: "lucide:line-chart",
       order: 10,
       alwaysShow: true,
     },
@@ -901,7 +906,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/operation/ecom-platform-collect/capabilities.vue"),
         name: "EcomPlatformCollectCapabilityPage",
         meta: {
-          title: "平台能力",
+          title: "router.platformCapability",
           order: 1,
         },
       },
@@ -910,7 +915,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/operation/ecom-platform-collect/index.vue"),
         name: "EcomPlatformCollectTaskPage",
         meta: {
-          title: "采集任务",
+          title: "router.collectionTask",
           order: 2,
         },
       },
@@ -919,7 +924,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/operation/ecom-platform-collect/runs.vue"),
         name: "EcomPlatformCollectRunPage",
         meta: {
-          title: "采集运行",
+          title: "router.collectionRun",
           order: 3,
         },
       },
@@ -928,7 +933,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/operation/ecom-platform-collect/raw-records.vue"),
         name: "EcomPlatformCollectRawPage",
         meta: {
-          title: "原始数据",
+          title: "router.rawData",
           order: 4,
         },
       },
@@ -937,7 +942,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/operation/ecom-selection-analysis/index.vue"),
         name: "EcomSelectionAnalysisTaskPage",
         meta: {
-          title: "选品分析任务",
+          title: "router.selectionAnalysisTask",
           order: 5,
         },
       },
@@ -946,7 +951,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/operation/ecom-selection-analysis/runs.vue"),
         name: "EcomSelectionAnalysisRunPage",
         meta: {
-          title: "选品分析运行",
+          title: "router.selectionAnalysisRun",
           order: 6,
         },
       },
@@ -955,7 +960,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/operation/ecom-selection-analysis/results.vue"),
         name: "EcomSelectionAnalysisResultPage",
         meta: {
-          title: "选品分析结果",
+          title: "router.selectionAnalysisResult",
           order: 7,
         },
       },
@@ -964,7 +969,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/operation/ecom-selection-supply-match/index.vue"),
         name: "EcomSelectionSupplyMatchTaskPage",
         meta: {
-          title: "找同款任务",
+          title: "router.supplyMatchTask",
           order: 8,
         },
       },
@@ -973,7 +978,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/operation/ecom-selection-supply-match/runs.vue"),
         name: "EcomSelectionSupplyMatchRunPage",
         meta: {
-          title: "找同款运行",
+          title: "router.supplyMatchRun",
           order: 9,
         },
       },
@@ -982,7 +987,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/operation/ecom-selection-supply-match/items.vue"),
         name: "EcomSelectionSupplyMatchItemPage",
         meta: {
-          title: "找同款结果",
+          title: "router.supplyMatchResult",
           order: 10,
         },
       },
@@ -991,7 +996,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/operation/extension-collect/index.vue"),
         name: "ExtensionCollectIndex",
         meta: {
-          title: "插件采集",
+          title: "router.extensionCollect",
           order: 11,
         },
       },
@@ -1004,8 +1009,8 @@ const remainingRouter: AppRouteRecordRaw[] = [
     name: "Operation",
     redirect: "/operation/link-navigation",
     meta: {
-      title: "运营支持",
-      icon: "material-symbols:business-center-rounded",
+      title: "router.operationSupport",
+      icon: "lucide:briefcase",
       order: 11,
       alwaysShow: true,
     },
@@ -1015,7 +1020,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/operation/link-navigation/index.vue"),
         name: "OperationLinkNavigation",
         meta: {
-          title: "链接导航",
+          title: "router.commonNavigation",
         },
       },
       {
@@ -1023,7 +1028,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/shop/index.vue"),
         name: "ShopIndex",
         meta: {
-          title: "店铺列表",
+          title: "router.shopList",
         },
       },
       {
@@ -1031,7 +1036,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/vendor/index.vue"),
         name: "VendorIndex",
         meta: {
-          title: "供应商管理",
+          title: "router.vendorManagement",
         },
       },
       {
@@ -1039,7 +1044,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/vendor-product/index.vue"),
         name: "VendorProductIndex",
         meta: {
-          title: "供应商商品",
+          title: "router.vendorProduct",
         },
       },
     ],
@@ -1051,8 +1056,8 @@ const remainingRouter: AppRouteRecordRaw[] = [
     name: "Personal",
     redirect: "/personal/settings",
     meta: {
-      title: "个人设置",
-      icon: "material-symbols:person-rounded",
+      title: "router.personalProfile",
+      icon: "lucide:user",
       order: 12,
       alwaysShow: true,
     },
@@ -1062,7 +1067,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/Profile/Index.vue"),
         name: "PersonalSettings",
         meta: {
-          title: "个人设置",
+          title: "router.personalProfile",
         },
       },
       {
@@ -1070,7 +1075,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/system/notify-message/index.vue"),
         name: "MyNotifyMessage",
         meta: {
-          title: "我的消息",
+          title: "router.myMessages",
         },
       },
     ],
@@ -1082,8 +1087,8 @@ const remainingRouter: AppRouteRecordRaw[] = [
     name: "System",
     redirect: "/system/user",
     meta: {
-      title: "系统管理",
-      icon: "material-symbols:settings-rounded",
+      title: "router.systemManagement",
+      icon: "lucide:settings",
       order: 13,
       alwaysShow: true,
     },
@@ -1093,7 +1098,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/system/ai-api-key/index.vue"),
         name: "SystemAiApiKeyIndex",
         meta: {
-          title: "AI API Key",
+          title: "router.aiApiKey",
           order: 1,
         },
       },
@@ -1102,7 +1107,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/message-push/index.vue"),
         name: "MessagePushIndex",
         meta: {
-          title: "消息推送",
+          title: "router.messagePush",
           order: 2,
         },
       },
@@ -1112,7 +1117,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/system/user/index.vue"),
         name: "User",
         meta: {
-          title: "用户管理",
+          title: "router.userManagement",
           requiresAdmin: true,
           order: 3,
         },
@@ -1122,7 +1127,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/system/company/index.vue"),
         name: "Company",
         meta: {
-          title: "公司管理",
+          title: "router.companyManagement",
           requiresAdmin: true,
           order: 4,
         },
@@ -1132,7 +1137,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/system/websocket/index.vue"),
         name: "SystemWebsocketConnections",
         meta: {
-          title: "远程连接",
+          title: "router.remoteConnection",
           requiresAdmin: true,
           order: 5,
         },
@@ -1142,7 +1147,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/system/service-file-cache/index.vue"),
         name: "SystemServiceFileCache",
         meta: {
-          title: "服务缓存文件",
+          title: "router.serviceCache",
           requiresAdmin: true,
           order: 6,
         },
@@ -1152,7 +1157,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/system/operatelog/index.vue"),
         name: "SystemOperateLog",
         meta: {
-          title: "操作日志",
+          title: "router.operateLog",
           requiresAdmin: true,
           order: 7,
         },
@@ -1162,7 +1167,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/system/file-log/index.vue"),
         name: "SystemFileLog",
         meta: {
-          title: "系统日志",
+          title: "router.systemLog",
           requiresAdmin: true,
           order: 8,
         },
@@ -1172,7 +1177,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       //   component: () => import("@/views/system/public-user-behavior-log/index.vue"),
       //   name: "PublicUserBehaviorLog",
       //   meta: {
-      //     title: "开放用户行为日志",
+      //     title: "router.openUserLogs",
       //     order: 9,
       //   },
       // },

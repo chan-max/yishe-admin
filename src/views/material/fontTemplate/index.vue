@@ -13,7 +13,7 @@
                   <el-input
                     v-model="queryParams.searchKeyword"
                     size="small"
-                    :placeholder="t('materialFontTemplate.searchPlaceholder')"
+                    :placeholder="t('fontTemplate.searchPlaceholder')"
                     clearable
                     @keyup.enter="handleSearch"
                     @clear="handleSearch"
@@ -25,7 +25,7 @@
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="8" :lg="6">
-                <el-form-item :label="t('materialFontTemplate.timeRange')">
+                <el-form-item :label="t('fontTemplate.timeRange')">
                   <DateRangePicker
                     @change="
                       (val) => {
@@ -49,7 +49,7 @@
               >
               <el-button size="small" :disabled="loading" @click="handleReset">{{ t('common.reset') }}</el-button>
               <el-button size="small" type="primary" @click="handleAdd" :icon="Plus">
-                {{ t('materialFontTemplate.addFont') }}
+                {{ t('fontTemplate.addFont') }}
               </el-button>
               <el-dropdown
                 v-if="isAdmin"
@@ -63,24 +63,24 @@
                   :loading="batchGenerateThumbnailLoading"
                 >
                   <template v-if="batchGenerateThumbnailLoading">
-                    {{ t('materialFontTemplate.generating') }} {{
+                    {{ t('fontTemplate.generating') }} {{
                       batchGenerateThumbnailProgress.processed
                     }}/{{ batchGenerateThumbnailProgress.total }}
                   </template>
                   <template v-else>
-                    {{ t('materialFontTemplate.batchGenerate') }} {{ ids.length ? `(${ids.length})` : "" }}
+                    {{ t('fontTemplate.batchGenerate') }} {{ ids.length ? `(${ids.length})` : "" }}
                   </template>
                   <el-icon class="el-icon--right"><ArrowDown /></el-icon>
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item command="thumbnail-only">{{ t('materialFontTemplate.thumbnailOnly') }}</el-dropdown-item>
-                    <el-dropdown-item command="thumbnail-skip-existing">{{ t('materialFontTemplate.thumbnailSkipExisting') }}</el-dropdown-item>
+                    <el-dropdown-item command="thumbnail-only">{{ t('fontTemplate.thumbnailOnly') }}</el-dropdown-item>
+                    <el-dropdown-item command="thumbnail-skip-existing">{{ t('fontTemplate.thumbnailSkipExisting') }}</el-dropdown-item>
                     <el-dropdown-item command="thumbnail-ai">
-                      {{ t('materialFontTemplate.thumbnailAi') }}
+                      {{ t('fontTemplate.thumbnailAi') }}
                     </el-dropdown-item>
                     <el-dropdown-item command="ai-only" :disabled="!ids.length">
-                      {{ t('materialFontTemplate.aiOnly') }}
+                      {{ t('fontTemplate.aiOnly') }}
                     </el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
@@ -91,7 +91,7 @@
                 type="warning"
                 @click="cancelBatchGenerateThumbnail"
               >
-                {{ t('materialFontTemplate.cancelGenerate') }}
+                {{ t('fontTemplate.cancelGenerate') }}
               </el-button>
               <el-button
                 size="small"
@@ -107,22 +107,22 @@
                 @command="handleBatchActionCommand"
               >
                 <el-button size="small" type="success" :disabled="!ids.length">
-                  {{ t('materialFontTemplate.share') }} ({{ ids.length }})
+                  {{ t('fontTemplate.share') }} ({{ ids.length }})
                   <el-icon class="el-icon--right"><ArrowDown /></el-icon>
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item command="share-to-user">
                       <el-icon><Share /></el-icon>
-                      <span>{{ t('materialFontTemplate.shareToUser') }}</span>
+                      <span>{{ t('fontTemplate.shareToUser') }}</span>
                     </el-dropdown-item>
                     <el-dropdown-item command="copy-to-user">
                       <el-icon><DocumentCopy /></el-icon>
-                      <span>{{ t('materialFontTemplate.copyToUser') }}</span>
+                      <span>{{ t('fontTemplate.copyToUser') }}</span>
                     </el-dropdown-item>
                     <el-dropdown-item command="move-to-user">
                       <el-icon><TopRight /></el-icon>
-                      <span>{{ t('materialFontTemplate.moveToUser') }}</span>
+                      <span>{{ t('fontTemplate.moveToUser') }}</span>
                     </el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
@@ -220,17 +220,17 @@
                   <template #shareTypeSlot="{ row }">
                     <el-tooltip
                       v-if="row.shareType === 'shared'"
-                      :content="t('materialFontTemplate.sharedRefTooltip')"
+                      :content="t('fontTemplate.sharedRefTooltip')"
                       placement="top"
                     >
                       <el-tag type="warning" size="small" effect="light" style="cursor: help">
-                        {{ t('materialFontTemplate.sharedByUser', { user: row.sourceUser?.name || row.sourceUser?.account || (t('materialFontTemplate.userPrefix') + row.sourceUserId) }) }}
+                        {{ t('fontTemplate.sharedByUser', { user: row.sourceUser?.name || row.sourceUser?.account || (t('fontTemplate.userPrefix') + row.sourceUserId) }) }}
                       </el-tag>
                     </el-tooltip>
                     <el-tag v-else-if="row.shareType === 'copy' || (row.sourceUserId && row.sourceUserId !== row.userId)" type="success" size="small" effect="light">
-                      {{ t('materialFontTemplate.copiedByUser', { user: row.sourceUser?.name || row.sourceUser?.account || (t('materialFontTemplate.userPrefix') + row.sourceUserId) }) }}
+                      {{ t('fontTemplate.copiedByUser', { user: row.sourceUser?.name || row.sourceUser?.account || (t('fontTemplate.userPrefix') + row.sourceUserId) }) }}
                     </el-tag>
-                    <el-tag v-else type="info" size="small" effect="plain">{{ t('materialFontTemplate.mine') }}</el-tag>
+                    <el-tag v-else type="info" size="small" effect="plain">{{ t('fontTemplate.mine') }}</el-tag>
                   </template>
 
                   <template #languagesSlot="{ row }">
@@ -256,7 +256,7 @@
                       <span
                         v-if="!row.languages || row.languages.length === 0"
                         class="text-gray-400 text-xs"
-                        >{{ t('materialFontTemplate.notSet') }}</span
+                        >{{ t('fontTemplate.notSet') }}</span
                       >
                     </div>
                   </template>
@@ -283,47 +283,47 @@
                               <el-icon>
                                 <Picture />
                               </el-icon>
-                              <span>{{ t('materialFontTemplate.generateThumbnail') }}</span>
+                              <span>{{ t('fontTemplate.generateThumbnail') }}</span>
                             </el-dropdown-item>
                             <el-dropdown-item command="download">
                               <el-icon>
                                 <Download />
                               </el-icon>
-                              <span>{{ t('materialFontTemplate.downloadSource') }}</span>
+                              <span>{{ t('fontTemplate.downloadSource') }}</span>
                             </el-dropdown-item>
                             <el-dropdown-item command="copy-url">
                               <el-icon>
                                 <DocumentCopy />
                               </el-icon>
-                              <span>{{ t('materialFontTemplate.copySourceUrl') }}</span>
+                              <span>{{ t('fontTemplate.copySourceUrl') }}</span>
                             </el-dropdown-item>
                             <el-dropdown-item v-if="isAdmin" command="ai-generate">
                               <el-icon>
                                 <MagicStick />
                               </el-icon>
-                              <span>{{ t('materialFontTemplate.aiGenerateContent') }}</span>
+                              <span>{{ t('fontTemplate.aiGenerateContent') }}</span>
                             </el-dropdown-item>
                             <el-dropdown-item command="share-to-user">
                               <el-icon>
                                 <Share />
                               </el-icon>
-                              <span>{{ t('materialFontTemplate.shareToUser') }}</span>
+                              <span>{{ t('fontTemplate.shareToUser') }}</span>
                             </el-dropdown-item>
                             <el-dropdown-item command="copy-to-user">
                               <el-icon>
                                 <DocumentCopy />
                               </el-icon>
-                              <span>{{ t('materialFontTemplate.copyToUser') }}</span>
+                              <span>{{ t('fontTemplate.copyToUser') }}</span>
                             </el-dropdown-item>
                             <el-dropdown-item v-if="isAdmin" command="move-to-user">
                               <el-icon>
                                 <TopRight />
                               </el-icon>
-                              <span>{{ t('materialFontTemplate.moveToUser') }}</span>
+                              <span>{{ t('fontTemplate.moveToUser') }}</span>
                             </el-dropdown-item>
                             <el-dropdown-item command="view-shared">
                               <el-icon><Connection /></el-icon>
-                              <span>{{ t('materialFontTemplate.viewShared') }}</span>
+                              <span>{{ t('fontTemplate.viewShared') }}</span>
                             </el-dropdown-item>
                             <el-dropdown-item
                               command="delete"
@@ -391,8 +391,8 @@
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
         <el-row>
           <el-col :span="24">
-            <el-form-item :label="t('materialFontTemplate.templateName')" prop="name">
-              <el-input v-model="form.name" :placeholder="t('materialFontTemplate.templateNamePlaceholder')" />
+            <el-form-item :label="t('fontTemplate.templateName')" prop="name">
+              <el-input v-model="form.name" :placeholder="t('fontTemplate.templateNamePlaceholder')" />
             </el-form-item>
           </el-col>
 
@@ -402,14 +402,14 @@
                 v-model="form.description"
                 type="textarea"
                 :rows="3"
-                :placeholder="t('materialFontTemplate.descriptionPlaceholder')"
+                :placeholder="t('fontTemplate.descriptionPlaceholder')"
               />
             </el-form-item>
           </el-col>
 
           <el-col :span="24">
-            <el-form-item :label="t('materialFontTemplate.keywords')" prop="keywords">
-              <el-input v-model="form.keywords" :placeholder="t('materialFontTemplate.keywordsPlaceholder')" />
+            <el-form-item :label="t('fontTemplate.keywords')" prop="keywords">
+              <el-input v-model="form.keywords" :placeholder="t('fontTemplate.keywordsPlaceholder')" />
             </el-form-item>
           </el-col>
 

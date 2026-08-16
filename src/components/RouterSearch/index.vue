@@ -48,6 +48,9 @@ defineProps({
   }
 })
 
+import { useI18n } from '@/hooks/web/useI18n'
+
+const { t } = useI18n()
 const router = useRouter() // 路由对象
 const showSearch = ref(false) // 是否显示弹框
 const showTopSearch = ref(false) // 是否显示顶部搜索框
@@ -59,14 +62,24 @@ const options = computed(() => {
   if (!value.value) {
     return []
   }
+  const searchVal = value.value.toLowerCase()
   const list = routers.filter((item: any) => {
-    if (item.meta.title?.indexOf(value.value) > -1 || item.path.indexOf(value.value) > -1) {
+    const rawTitle = item.meta?.title || ''
+    const translatedTitle = t(rawTitle)
+    if (
+      translatedTitle.toLowerCase().indexOf(searchVal) > -1 ||
+      rawTitle.toLowerCase().indexOf(searchVal) > -1 ||
+      item.path.toLowerCase().indexOf(searchVal) > -1
+    ) {
       return true
     }
+    return false
   })
-  return list.map((item) => {
+  return list.map((item: any) => {
+    const rawTitle = item.meta?.title || ''
+    const displayTitle = t(rawTitle)
     return {
-      label: `${item.meta.title}${item.path}`,
+      label: `${displayTitle} (${item.path})`,
       value: item.path
     }
   })

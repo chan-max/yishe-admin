@@ -67,10 +67,13 @@ export default defineComponent({
         .trim()
         .toLowerCase();
     const menuSearchText = computed(() => normalizeMenuText(menuKeyword.value));
-    const getRouteSearchText = (route: AppRouteRecordRaw, routePath: string) =>
-      normalizeMenuText(
-        [route.meta?.title, route.name, route.path, routePath].filter(Boolean).join(" "),
+    const getRouteSearchText = (route: AppRouteRecordRaw, routePath: string) => {
+      const rawTitle = (route.meta?.title as string) || '';
+      const translatedTitle = t(rawTitle);
+      return normalizeMenuText(
+        [translatedTitle, rawTitle, route.name, route.path, routePath].filter(Boolean).join(" "),
       );
+    };
     const filterMenuRoutes = (
       routeList: AppRouteRecordRaw[],
       keyword: string,
@@ -753,7 +756,7 @@ export default defineComponent({
                         {route.meta?.icon ? (
                           <Icon class={`${prefixCls}__section-icon`} icon={route.meta.icon} />
                         ) : undefined}
-                        <span class={`${prefixCls}__section-title`}>{route.meta?.title}</span>
+                        <span class={`${prefixCls}__section-title`}>{t(route.meta?.title as string)}</span>
                       </div>
                       {renderMessagePushBadge(routePath) ||
                         renderServiceHealthDot(route, routePath)}
@@ -779,7 +782,7 @@ export default defineComponent({
                       {route.meta?.icon ? (
                         <Icon class={`${prefixCls}__section-icon`} icon={route.meta.icon} />
                       ) : undefined}
-                      <span class={`${prefixCls}__section-title`}>{route.meta?.title}</span>
+                      <span class={`${prefixCls}__section-title`}>{t(route.meta?.title as string)}</span>
                     </div>
                     <Icon
                       class={`${prefixCls}__section-arrow`}
@@ -795,7 +798,7 @@ export default defineComponent({
                           <button
                             type="button"
                             key={childPath}
-                            title={String(child.meta?.title ?? "")}
+                            title={t(String(child.meta?.title ?? ""))}
                             class={[
                               `${prefixCls}__link`,
                               {
@@ -816,7 +819,7 @@ export default defineComponent({
                             ]}
                             onClick={() => selectMenu(childPath)}
                           >
-                            <span class={`${prefixCls}__link-text`}>{child.meta?.title}</span>
+                            <span class={`${prefixCls}__link-text`}>{t(child.meta?.title as string)}</span>
                             {renderDesignToolRuntimeBadge(childPath) ||
                               renderAiAssistantRuntimeBadge(childPath) ||
                               renderAiConfigBadge(childPath) ||

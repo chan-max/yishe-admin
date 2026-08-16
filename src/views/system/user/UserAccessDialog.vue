@@ -71,7 +71,7 @@
               :key="group.label"
               class="access-dialog__group"
             >
-              <div class="access-dialog__group-title">{{ group.label }}</div>
+              <div class="access-dialog__group-title">{{ t(group.label) }}</div>
               <el-checkbox-group v-model="form.menuKeys" class="access-dialog__checkboxes">
                 <el-checkbox
                   v-for="option in group.options"
@@ -80,7 +80,7 @@
                   :disabled="isOptionDisabled(option)"
                   border
                 >
-                  {{ option.label }}<span v-if="option.adminOnly">（仅管理员）</span>
+                  {{ t(option.label) }}<span v-if="option.adminOnly">（仅管理员）</span>
                 </el-checkbox>
               </el-checkbox-group>
             </div>
@@ -101,6 +101,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from "vue";
 import { ElMessage } from "element-plus";
+import { useI18n } from "@/hooks/web/useI18n";
 import {
   getUserAccessSetting,
   updateUserAccessSetting,
@@ -112,6 +113,8 @@ import {
   MENU_ACCESS_OPTIONS,
   normalizeMenuAccessKeys,
 } from "@/router/menu-access-options";
+
+const { t } = useI18n();
 
 const props = defineProps<{
   modelValue: boolean;

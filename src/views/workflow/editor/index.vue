@@ -52,11 +52,48 @@ import UndrawNode from '@/components/workflow/nodes/UndrawNode.vue'
 import IconifyNode from '@/components/workflow/nodes/IconifyNode.vue'
 import NounProjectNode from '@/components/workflow/nodes/NounProjectNode.vue'
 import VecteezyNode from '@/components/workflow/nodes/VecteezyNode.vue'
+import OpenmeteoNode from '@/components/workflow/nodes/OpenmeteoNode.vue'
+import WttrNode from '@/components/workflow/nodes/WttrNode.vue'
+import CoingeckoNode from '@/components/workflow/nodes/CoingeckoNode.vue'
+import FrankfurterNode from '@/components/workflow/nodes/FrankfurterNode.vue'
+import DictionaryNode from '@/components/workflow/nodes/DictionaryNode.vue'
+import JokeNode from '@/components/workflow/nodes/JokeNode.vue'
+import IpifyNode from '@/components/workflow/nodes/IpifyNode.vue'
+import SunrisesunsetNode from '@/components/workflow/nodes/SunrisesunsetNode.vue'
+import TimeapiNode from '@/components/workflow/nodes/TimeapiNode.vue'
+import ZippopotamNode from '@/components/workflow/nodes/ZippopotamNode.vue'
+import CountryisNode from '@/components/workflow/nodes/CountryisNode.vue'
+import ErapiNode from '@/components/workflow/nodes/ErapiNode.vue'
+import FawazahmedNode from '@/components/workflow/nodes/FawazahmedNode.vue'
+import ColorapiNode from '@/components/workflow/nodes/ColorapiNode.vue'
+import ShopifyNode from '@/components/workflow/nodes/ShopifyNode.vue'
 import OpenMojiNode from '@/components/workflow/nodes/OpenMojiNode.vue'
 import GoogleIconsNode from '@/components/workflow/nodes/GoogleIconsNode.vue'
 import EmojipediaNode from '@/components/workflow/nodes/EmojipediaNode.vue'
+import HackernewsNode from '@/components/workflow/nodes/HackernewsNode.vue'
+import ArxivNode from '@/components/workflow/nodes/ArxivNode.vue'
+import GithubNode from '@/components/workflow/nodes/GithubNode.vue'
+import GdeltNode from '@/components/workflow/nodes/GdeltNode.vue'
+import GooglenewsNode from '@/components/workflow/nodes/GooglenewsNode.vue'
+import RedditNode from '@/components/workflow/nodes/RedditNode.vue'
+import ProducthuntNode from '@/components/workflow/nodes/ProducthuntNode.vue'
+import TheguardianNode from '@/components/workflow/nodes/TheguardianNode.vue'
+import BbcnewsNode from '@/components/workflow/nodes/BbcnewsNode.vue'
+import NprNode from '@/components/workflow/nodes/NprNode.vue'
+import TechcrunchNode from '@/components/workflow/nodes/TechcrunchNode.vue'
+import ThevergeNode from '@/components/workflow/nodes/ThevergeNode.vue'
+import ArstechnicaNode from '@/components/workflow/nodes/ArstechnicaNode.vue'
+import MittechreviewNode from '@/components/workflow/nodes/MittechreviewNode.vue'
+import ReutersNode from '@/components/workflow/nodes/ReutersNode.vue'
+import ChinadailyNode from '@/components/workflow/nodes/ChinadailyNode.vue'
+import GovcnNode from '@/components/workflow/nodes/GovcnNode.vue'
+import XinhuanetNode from '@/components/workflow/nodes/XinhuanetNode.vue'
+import ThepaperNode from '@/components/workflow/nodes/ThepaperNode.vue'
+import ThirtySixKrNewsNode from '@/components/workflow/nodes/ThirtySixKrNewsNode.vue'
+import HuxiuNode from '@/components/workflow/nodes/HuxiuNode.vue'
 import SvgrepoNode from '@/components/workflow/nodes/SvgrepoNode.vue'
 import KaboompicsNode from '@/components/workflow/nodes/KaboompicsNode.vue'
+
 
 import NodePanel from '@/components/workflow/NodePanel.vue'
 import ConfigPanel from '@/components/workflow/ConfigPanel.vue'
@@ -209,11 +246,48 @@ const nodeTypes = {
   iconify_search: markRaw(IconifyNode),
   nounproject_search: markRaw(NounProjectNode),
   vecteezy_search: markRaw(VecteezyNode),
+  openmeteo_search: markRaw(OpenmeteoNode),
+  wttr_search: markRaw(WttrNode),
+  coingecko_search: markRaw(CoingeckoNode),
+  frankfurter_search: markRaw(FrankfurterNode),
+  dictionary_search: markRaw(DictionaryNode),
+  joke_search: markRaw(JokeNode),
+  ipify_search: markRaw(IpifyNode),
+  sunrisesunset_search: markRaw(SunrisesunsetNode),
+  timeapi_search: markRaw(TimeapiNode),
+  zippopotam_search: markRaw(ZippopotamNode),
+  countryis_search: markRaw(CountryisNode),
+  erapi_search: markRaw(ErapiNode),
+  fawazahmed_search: markRaw(FawazahmedNode),
+  colorapi_search: markRaw(ColorapiNode),
+  shopify_search: markRaw(ShopifyNode),
   openmoji_search: markRaw(OpenMojiNode),
   googleicons_search: markRaw(GoogleIconsNode),
   emojipedia_search: markRaw(EmojipediaNode),
+  hackernews_search: markRaw(HackernewsNode),
+  arxiv_search: markRaw(ArxivNode),
+  github_search: markRaw(GithubNode),
+  gdelt_search: markRaw(GdeltNode),
+  googlenews_search: markRaw(GooglenewsNode),
+  reddit_search: markRaw(RedditNode),
+  producthunt_search: markRaw(ProducthuntNode),
+  theguardian_search: markRaw(TheguardianNode),
+  bbcnews_search: markRaw(BbcnewsNode),
+  npr_search: markRaw(NprNode),
+  techcrunch_search: markRaw(TechcrunchNode),
+  theverge_search: markRaw(ThevergeNode),
+  arstechnica_search: markRaw(ArstechnicaNode),
+  mittechreview_search: markRaw(MittechreviewNode),
+  reuters_search: markRaw(ReutersNode),
+  chinadaily_search: markRaw(ChinadailyNode),
+  govcn_search: markRaw(GovcnNode),
+  xinhuanet_search: markRaw(XinhuanetNode),
+  thepaper_search: markRaw(ThepaperNode),
+  '36kr_search': markRaw(ThirtySixKrNewsNode),
+  huxiu_search: markRaw(HuxiuNode),
   svgrepo_search: markRaw(SvgrepoNode),
   kaboompics_search: markRaw(KaboompicsNode),
+
 }
 
 // ─── 撤销/重做历史 ─────────────────────────────────────────────

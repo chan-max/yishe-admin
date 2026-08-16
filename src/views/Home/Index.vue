@@ -14,23 +14,19 @@
     <!-- 快捷入口 -->
     <section class="home-section">
       <div class="home-section__title">{{ t('home.shortcuts') }}</div>
-      <div class="home-grid home-grid--shortcuts">
-        <button
+      <nav class="home-shortcuts">
+        <a
           v-for="item in shortcuts"
           :key="item.key"
-          type="button"
-          class="home-shortcut"
-          @click="goTo(item.route)"
+          class="home-shortcuts__item"
+          @click.prevent="goTo(item.route)"
         >
-          <span class="home-shortcut__icon">
-            <Icon :icon="item.icon" />
-          </span>
-          <div class="home-shortcut__body">
-            <div class="home-shortcut__title">{{ t(item.title) }}</div>
-            <div class="home-shortcut__desc">{{ t(item.description) }}</div>
-          </div>
-        </button>
-      </div>
+          <Icon :icon="item.icon" class="home-shortcuts__icon" />
+          <span class="home-shortcuts__label">{{ t(item.title) }}</span>
+          <span class="home-shortcuts__desc">{{ t(item.description) }}</span>
+          <Icon icon="ep:arrow-right" class="home-shortcuts__arrow" />
+        </a>
+      </nav>
     </section>
 
   </div>
@@ -166,27 +162,60 @@ const shortcuts: ShortcutItem[] = [
   color: var(--el-text-color-primary);
 }
 
-/* ── 快捷入口网格 ────────────────────────── */
-.home-grid {
-  display: grid;
+/* ── 快捷入口（扁平简洁） ────────────────── */
+.home-shortcuts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.home-shortcuts__item {
+  display: flex;
+  align-items: center;
   gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--el-text-color-regular);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.home-grid--shortcuts {
-  grid-template-columns: repeat(4, 1fr);
+.home-shortcuts__item:hover {
+  background-color: var(--el-fill-color-light);
+  color: var(--el-text-color-primary);
 }
 
-
-/* ── 响应式 ──────────────────────────────── */
-@media (width <= 1180px) {
-  .home-grid--shortcuts {
-    grid-template-columns: repeat(2, 1fr);
-  }
+.home-shortcuts__item:hover .home-shortcuts__arrow {
+  opacity: 1;
+  transform: translateX(0);
 }
 
-@media (width <= 767px) {
-  .home-grid--shortcuts {
-    grid-template-columns: 1fr;
-  }
+.home-shortcuts__icon {
+  flex: none;
+  font-size: 18px;
+  color: var(--el-text-color-secondary);
+}
+
+.home-shortcuts__label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--el-text-color-primary);
+}
+
+.home-shortcuts__desc {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  white-space: nowrap;
+}
+
+.home-shortcuts__arrow {
+  flex: none;
+  margin-left: auto;
+  font-size: 14px;
+  color: var(--el-text-color-secondary);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
 }
 </style>
