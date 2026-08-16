@@ -754,7 +754,7 @@ export default defineComponent({
                     <div class={`${prefixCls}__section-head`}>
                       <div class={`${prefixCls}__section-label`}>
                         {route.meta?.icon ? (
-                          <Icon class={`${prefixCls}__section-icon`} icon={route.meta.icon} />
+                          <Icon class={`${prefixCls}__section-icon`} icon={route.meta.icon} size={11} />
                         ) : undefined}
                         <span class={`${prefixCls}__section-title`}>{t(route.meta?.title as string)}</span>
                       </div>
@@ -780,7 +780,7 @@ export default defineComponent({
                   >
                     <div class={`${prefixCls}__section-label`}>
                       {route.meta?.icon ? (
-                        <Icon class={`${prefixCls}__section-icon`} icon={route.meta.icon} />
+                        <Icon class={`${prefixCls}__section-icon`} icon={route.meta.icon} size={11} />
                       ) : undefined}
                       <span class={`${prefixCls}__section-title`}>{t(route.meta?.title as string)}</span>
                     </div>
@@ -1299,8 +1299,20 @@ $prefix-cls: #{$namespace}-menu;
 
   &__section-icon {
     flex: none;
-    font-size: var(--left-menu-section-icon-size);
+    font-size: var(--left-menu-section-icon-size, 11px) !important;
+    width: var(--left-menu-section-icon-size, 11px) !important;
+    height: var(--left-menu-section-icon-size, 11px) !important;
     color: var(--left-menu-icon-color);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    :deep(svg),
+    :deep(.iconify) {
+      width: 100% !important;
+      height: 100% !important;
+      font-size: inherit !important;
+    }
   }
 
   &__section-title {
