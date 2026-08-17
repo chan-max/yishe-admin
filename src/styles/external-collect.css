@@ -275,10 +275,24 @@
 /* ─── 分页 ─── */
 .collect-pagination {
   display: flex;
+  align-items: center;
   justify-content: center;
+  gap: 12px;
   margin-top: 16px;
   padding-top: 12px;
   border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.collect-pagination__current {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  white-space: nowrap;
+}
+
+.collect-pagination__hint {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 /* ─── 搜索结果表头及批量操作栏 ─── */

@@ -450,10 +450,13 @@ onUnmounted(() => {
     width: 30px;
     height: 30px;
     font-size: 16px;
-    color: var(--el-color-primary);
-    background: var(--el-color-primary-light-9);
+    color: var(--el-text-color-secondary);
+    background: color-mix(in srgb, var(--el-text-color-secondary) 8%, transparent);
     border-radius: 8px;
     flex-shrink: 0;
+    transition:
+      background-color 0.18s ease,
+      color 0.18s ease;
   }
 
   &__title {
@@ -497,15 +500,23 @@ onUnmounted(() => {
   justify-content: space-between;
   gap: 10px;
   padding: 14px 16px;
-  background: var(--el-bg-color-overlay);
-  border: 1px solid var(--el-border-color-lighter);
+  background: var(--app-content-surface-color);
+  border: 1px solid var(--app-content-border-color);
   border-radius: 12px;
-  box-shadow: 0 4px 18px -6px rgba(0, 0, 0, 0.04);
-  transition: all 0.22s ease-in-out;
+  box-shadow: 0 2px 10px -4px rgba(0, 0, 0, 0.03);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 22px -6px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+    border-color: color-mix(
+      in srgb,
+      var(--el-color-primary) 32%,
+      var(--app-content-border-color)
+    );
+    box-shadow: 0 8px 20px -6px color-mix(in srgb, var(--el-text-color) 10%, transparent);
   }
 
   &__top {
@@ -533,6 +544,11 @@ onUnmounted(() => {
     font-size: 14px;
     border-radius: 7px;
     flex-shrink: 0;
+    color: var(--el-text-color-secondary);
+    background: color-mix(in srgb, var(--el-text-color-secondary) 8%, transparent);
+    transition:
+      background-color 0.18s ease,
+      color 0.18s ease;
   }
 
   &__main {
@@ -566,32 +582,24 @@ onUnmounted(() => {
     font-size: 11px;
     font-weight: 600;
     border-radius: 4px;
+    border: 1px solid transparent;
 
     &--online {
-      color: #10b981;
-      background: rgba(16, 185, 129, 0.1);
+      color: var(--ep-cover-feedback-success-text);
+      background: var(--ep-cover-feedback-success-bg);
+      border-color: var(--ep-cover-feedback-success-border);
     }
 
     &--offline {
-      color: #ef4444;
-      background: rgba(239, 68, 68, 0.1);
+      color: var(--ep-cover-feedback-error-text);
+      background: var(--ep-cover-feedback-error-bg);
+      border-color: var(--ep-cover-feedback-error-border);
     }
   }
 
-  &--client {
-    .conn-card__icon { color: #0ea5e9; background: rgba(14, 165, 233, 0.1); }
-  }
-  &--ps {
-    .conn-card__icon { color: #f43f5e; background: rgba(244, 63, 94, 0.1); }
-  }
-  &--browser {
-    .conn-card__icon { color: #8b5cf6; background: rgba(139, 92, 246, 0.1); }
-  }
-  &--admin {
-    .conn-card__icon { color: #6366f1; background: rgba(99, 102, 241, 0.1); }
-  }
-  &--total {
-    .conn-card__icon { color: #10b981; background: rgba(16, 185, 129, 0.1); }
+  &:hover .conn-card__icon {
+    color: var(--el-color-primary);
+    background: color-mix(in srgb, var(--el-color-primary) 12%, transparent);
   }
 }
 
@@ -615,22 +623,34 @@ onUnmounted(() => {
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  background: var(--el-bg-color-overlay);
-  border: 1px solid var(--el-border-color-lighter);
+  background: var(--app-content-surface-color);
+  border: 1px solid var(--app-content-border-color);
   border-radius: 10px;
   cursor: pointer;
-  box-shadow: 0 2px 10px -4px rgba(0, 0, 0, 0.03);
-  transition: all 0.22s ease-in-out;
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
 
   &:hover {
-    transform: translateY(-2px);
-    border-color: var(--el-color-primary-light-5);
-    background: var(--el-color-primary-light-9);
-    box-shadow: 0 6px 18px -4px rgba(0, 0, 0, 0.06);
+    transform: translateY(-1px);
+    border-color: color-mix(
+      in srgb,
+      var(--el-color-primary) 32%,
+      var(--app-content-border-color)
+    );
+    background: color-mix(in srgb, var(--el-color-primary) 5%, var(--app-content-surface-color));
+    box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--el-text-color) 9%, transparent);
+
+    .shortcut-card__icon-box {
+      color: var(--el-color-primary);
+      background: color-mix(in srgb, var(--el-color-primary) 12%, transparent);
+    }
 
     .shortcut-card__arrow {
       opacity: 1;
-      transform: translate(2px, -2px);
+      transform: translate(1px, -1px);
       color: var(--el-color-primary);
     }
   }
@@ -643,15 +663,11 @@ onUnmounted(() => {
     height: 38px;
     border-radius: 9px;
     flex-shrink: 0;
-
-    &--blue { color: #0ea5e9; background: rgba(14, 165, 233, 0.1); }
-    &--emerald { color: #10b981; background: rgba(16, 185, 129, 0.1); }
-    &--violet { color: #8b5cf6; background: rgba(139, 92, 246, 0.1); }
-    &--amber { color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
-    &--rose { color: #f43f5e; background: rgba(244, 63, 94, 0.1); }
-    &--indigo { color: #6366f1; background: rgba(99, 102, 241, 0.1); }
-    &--cyan { color: #06b6d4; background: rgba(6, 182, 212, 0.1); }
-    &--orange { color: #f97316; background: rgba(249, 115, 22, 0.1); }
+    color: var(--el-text-color-secondary);
+    background: color-mix(in srgb, var(--el-text-color-secondary) 8%, transparent);
+    transition:
+      background-color 0.18s ease,
+      color 0.18s ease;
   }
 
   &__icon {
@@ -683,9 +699,9 @@ onUnmounted(() => {
 
   &__arrow {
     font-size: 14px;
-    color: var(--el-text-color-placeholder);
+    color: var(--el-text-color-secondary);
     opacity: 0.4;
-    transition: all 0.2s ease;
+    transition: all 0.18s ease;
   }
 }
 
@@ -708,9 +724,9 @@ onUnmounted(() => {
 
 .gallery-card {
   padding: 8px 4px 0;
-  background: var(--el-bg-color-overlay);
-  border: 1px solid var(--el-border-color-lighter);
+  background: var(--app-content-surface-color);
+  border: 1px solid var(--app-content-border-color);
   border-radius: 12px;
-  box-shadow: 0 4px 20px -8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 10px -4px rgba(0, 0, 0, 0.03);
 }
 </style>

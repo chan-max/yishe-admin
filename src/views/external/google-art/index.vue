@@ -78,12 +78,12 @@
                 <div class="collect-section__title">作品搜索</div>
                 <div class="collect-search__opts">
                   <div class="collect-search__field">
-                    <span class="collect-search__label">每页数量</span>
+                    <span class="collect-search__label">每页条数</span>
                     <el-select v-model="pageSize" size="small" style="width: 100px" @change="handleSizeChange">
-                      <el-option :value="10" label="10 条" />
                       <el-option :value="20" label="20 条" />
                       <el-option :value="30" label="30 条" />
-                      <el-option :value="50" label="50 条" />
+                      <el-option :value="48" label="48 条" />
+                      <el-option :value="64" label="64 条" />
                     </el-select>
                   </div>
                 </div>
@@ -109,7 +109,12 @@
                 <!-- 顶部批量操作及状态信息 -->
                 <div class="collect-search__header">
                   <div class="collect-search__info">
-                    共 {{ searchTotal }} 个结果，第 {{ currentPage }} / {{ totalPages }} 页
+                    <template v-if="searchTotal > 0">
+                      共 {{ searchTotal }} 个结果 · 第 {{ currentPage }} 页（第 {{ paginationStart }} - {{ paginationEnd }} 条）
+                    </template>
+                    <template v-else>
+                      共 {{ searchResults.length }} 个结果
+                    </template>
                   </div>
                   <div class="collect-actions-bar">
                     <el-checkbox
@@ -204,16 +209,17 @@
                 <!-- 分页 -->
                 <div class="collect-pagination">
                   <el-pagination
-                    v-model:current-page="currentPage"
-                    v-model:page-size="pageSize"
+                    :current-page="currentPage"
                     :total="searchTotal"
+                    :page-size="pageSize"
                     layout="total, prev, pager, next"
                     background
+                    :pager-count="5"
                     @current-change="handlePageChange"
                     @size-change="handleSizeChange"
                   />
                 </div>
-              </div>
+            </div>
 
               <!-- 单链接下载（兼容模式） -->
               <div class="collect-section">
@@ -379,16 +385,15 @@ const pendingCommandIds = reactive<Record<string, 'refreshRuntime' | 'getZooms' 
 
 const searchKeyword = ref('')
 const searchLoading = ref(false)
-const pageSize = ref(10)
+const pageSize = ref(20)
 const searchResults = ref<GoogleArtAsset[]>([])
-const searchTotal = ref(0)
-const currentPage = ref(1)
-const totalPages = ref(0)
-const nextCursor = ref<string | null>(null)
-const cursorHistory = ref<string[]>([])
 const selectedItems = ref<string[]>([])
 const imageErrorSet = ref<Set<string>>(new Set())
 const loadingItems = ref<Set<string>>(new Set())
+const searchTotal = ref(0)
+const currentPage = ref(1)
+const nextCursor = ref<string | null>(null)
+const cursorHistory = ref<string[]>([])
 
 // ─── 分辨率选择对话框 ───
 const zoomDialogVisible = ref(false)
@@ -523,13 +528,14 @@ const handleSearch = async () => {
   }
 
   searchLoading.value = true
-  currentPage.value = 1
   selectedItems.value = []
   imageErrorSet.value.clear()
+  currentPage.value = 1
+  nextCursor.value = null
   cursorHistory.value = []
 
   try {
-    const result = await searchGoogleArtsAndWait(selectedClientId.value, searchKeyword.value.trim(), 1, 'en', pageSize.value)
+    const result = await searchGoogleArtsAndWait(selectedClientId.value, searchKeyword.value.trim(), 1, 'en', pageSize.value, null)
 
     if (!result || !result.items) {
       ElMessage.error('搜索返回数据异常')
@@ -537,17 +543,9 @@ const handleSearch = async () => {
       return
     }
     searchResults.value = result.items || []
-    if (result.total) {
-      searchTotal.value = result.total;
-    } else if (result.data && result.data.length > 0) {
-      // 伪造 total 以支持分页组件的“下一页”功能
-      searchTotal.value = currentPage.value * pageSize.value + 1;
-    } else {
-      searchTotal.value = 0;
-    }
-    totalPages.value = Math.ceil(searchTotal.value / pageSize.value)
+    searchTotal.value = result.total ?? 0
     nextCursor.value = result.nextCursor || null
-    cursorHistory.value.push(nextCursor.value || '')
+    cursorHistory.value = [null]
 
     if (searchResults.value.length === 0) {
       ElMessage.info('未找到匹配的作品')
@@ -558,6 +556,94 @@ const handleSearch = async () => {
     searchLoading.value = false
   }
 }
+
+const handlePageChange = async (newPage: number) => {
+  if (!newPage || newPage < 1) return
+  if (newPage === currentPage.value) return
+  if (!selectedClientId.value || !searchKeyword.value.trim()) return
+
+  // 上一页优先用本地缓存游标回退，不发请求
+  if (newPage < currentPage.value) {
+    const cachedCursor = cursorHistory.value[newPage - 1] ?? null
+    if (cachedCursor || newPage === 1) {
+      const current = currentPage.value
+      currentPage.value = newPage
+      const ok = cachedCursor
+        ? await loadPage(newPage, cachedCursor)
+        : await loadPage(newPage, null)
+      if (!ok) currentPage.value = current
+      return
+    }
+  }
+
+  // 下一页/任意页：用页码直查（客户端从首页游标走到目标页）
+  const current = currentPage.value
+  currentPage.value = newPage
+  const ok = await loadPage(newPage, null)
+  if (!ok) currentPage.value = current
+}
+
+const handleNextPage = async () => {
+  if (!nextCursor.value || !selectedClientId.value || !searchKeyword.value.trim()) return
+  const current = currentPage.value
+  const nextPage = current + 1
+  currentPage.value = nextPage
+  const ok = await loadPage(nextPage, null)
+  if (!ok) currentPage.value = current
+}
+
+const handlePrevPage = async () => {
+  if (currentPage.value <= 1) return
+  const targetPage = currentPage.value - 1
+  const cachedCursor = cursorHistory.value[targetPage - 1] ?? null
+  const current = currentPage.value
+  currentPage.value = targetPage
+  const ok = cachedCursor ? await loadPage(targetPage, cachedCursor) : await loadPage(targetPage, null)
+  if (!ok) currentPage.value = current
+}
+
+const loadPage = async (targetPage: number, cursor: string | null): Promise<boolean> => {
+  if (!selectedClientId.value || !searchKeyword.value.trim()) return false
+
+  searchLoading.value = true
+  selectedItems.value = []
+  imageErrorSet.value.clear()
+
+  try {
+    const result = await searchGoogleArtsAndWait(selectedClientId.value, searchKeyword.value.trim(), targetPage, 'en', pageSize.value, cursor)
+
+    if (!result || !result.items) {
+      ElMessage.error('加载页面数据异常')
+      return false
+    }
+    searchResults.value = result.items || []
+    searchTotal.value = result.total ?? searchTotal.value
+    if (targetPage >= currentPage.value) {
+      cursorHistory.value[targetPage - 1] = cursor
+      nextCursor.value = result.nextCursor || null
+      if (searchResults.value.length === 0) {
+        ElMessage.info('没有更多结果了')
+        nextCursor.value = null
+      }
+    }
+    return true
+  } catch (error: any) {
+    ElMessage.error(error?.message || '加载页面失败')
+    return false
+  } finally {
+    searchLoading.value = false
+  }
+}
+
+const paginationStart = computed(() => {
+  if (searchResults.value.length === 0) return 0
+  return (currentPage.value - 1) * pageSize.value + 1
+})
+
+const paginationEnd = computed(() => {
+  if (searchResults.value.length === 0) return 0
+  return paginationStart.value + searchResults.value.length - 1
+})
 
 const toggleSelect = (item: GoogleArtAsset) => {
   const index = selectedItems.value.indexOf(item.url)
@@ -686,36 +772,11 @@ const confirmDownload = async () => {
   }
 }
 
-const handlePageChange = async (page: number) => {
-  if (!searchKeyword.value.trim() || !selectedClientId.value) return
-  searchLoading.value = true
-  selectedItems.value = []
-  try {
-    let cursor: string | null = null
-    if (page > 1) {
-      const prevPageIndex = page - 2
-      if (prevPageIndex < cursorHistory.value.length) {
-        cursor = cursorHistory.value[prevPageIndex]
-      }
-    }
-    const result = await searchGoogleArtsAndWait(selectedClientId.value, searchKeyword.value.trim(), page, 'en', pageSize.value, cursor)
-    searchResults.value = result.items || []
-    nextCursor.value = result.nextCursor || null
-    currentPage.value = page
-    if (nextCursor.value) {
-      cursorHistory.value[page - 1] = nextCursor.value
-    }
-  } catch (error: any) {
-    ElMessage.error(error?.message || '加载失败')
-  } finally {
-    searchLoading.value = false
-  }
-}
-
 const handleSizeChange = (newSize: number) => {
   pageSize.value = newSize
-  currentPage.value = 1
-  handleSearch()
+  if (searchKeyword.value.trim() && selectedClientId.value) {
+    handleSearch()
+  }
 }
 
 // ─── 单链接下载 ──────────────────────────────────────────────
