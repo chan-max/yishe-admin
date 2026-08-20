@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { Handle, Position } from '@vue-flow/core'
-import { openaiIcon } from '@/assets/icons/apps'
+import NodeParameterSummary from "./NodeParameterSummary.vue";
+import { Handle, Position } from "@vue-flow/core";
+import { openaiIcon } from "@/assets/icons/apps";
 
-defineProps<{ data: { label?: string; config?: any } }>()
+defineProps<{ data: { label?: string; config?: any } }>();
 </script>
 
 <template>
@@ -10,12 +11,13 @@ defineProps<{ data: { label?: string; config?: any } }>()
     <Handle type="target" :position="Position.Top" />
     <div class="wf-node__header">
       <img :src="openaiIcon" class="wf-node__icon" />
-      <span class="wf-node__title">{{ data.label || 'AI 调用' }}</span>
+      <span class="wf-node__title">{{ data.label || "AI 调用" }}</span>
     </div>
     <div class="wf-node__ai-preview">
       <span v-if="data.config?.userPrompt">{{ data.config.userPrompt.slice(0, 30) }}...</span>
       <span v-else class="wf-node__ai-placeholder">点击配置提示词</span>
     </div>
+    <NodeParameterSummary :data="data" />
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>
@@ -36,11 +38,24 @@ defineProps<{ data: { label?: string; config?: any } }>()
   box-shadow: 0 0 0 2px color-mix(in srgb, #6366f1 20%, transparent);
 }
 
-.wf-node__header { display: flex; align-items: center; gap: 5px; margin-bottom: 4px; }
+.wf-node__header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 4px;
+}
 
-.wf-node__icon { width: 16px; height: 16px; flex-shrink: 0; }
+.wf-node__icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
 
-.wf-node__title { font-size: 12px; font-weight: 600; color: var(--el-text-color-primary); }
+.wf-node__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
 
 .wf-node__ai-preview {
   font-size: 9px;

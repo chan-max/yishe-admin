@@ -1,71 +1,111 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { Search, Close } from '@element-plus/icons-vue'
+import { ref, computed, onMounted } from "vue";
+import { Search, Close } from "@element-plus/icons-vue";
 import {
   SYSTEM_NODE_REGISTRY,
   NODE_CATEGORIES,
   NODE_REQUIREMENTS,
   type SystemNodeCapability,
-} from '@/views/workflow/editor/config/nodeRegistry'
+} from "@/views/workflow/editor/config/nodeRegistry";
+import {
+  useWorkflowNodeManifest,
+  UNAVAILABLE_WORKFLOW_NODE_TYPES,
+} from "@/composables/useWorkflowNodeManifest";
 
 const props = defineProps<{
-  modelValue: boolean
-}>()
+  modelValue: boolean;
+}>();
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', val: boolean): void
-  (e: 'select', capability: SystemNodeCapability): void
-}>()
+  (e: "update:modelValue", val: boolean): void;
+  (e: "select", capability: SystemNodeCapability): void;
+}>();
 
-const searchQuery = ref('')
-const activeCategory = ref('all')
+const searchQuery = ref("");
+const activeCategory = ref("all");
+const { byType, load: loadServerManifest } = useWorkflowNodeManifest();
+onMounted(() => {
+  loadServerManifest();
+});
+
+const availableCapabilities = computed(() =>
+  SYSTEM_NODE_REGISTRY.filter(
+    (item) =>
+      !UNAVAILABLE_WORKFLOW_NODE_TYPES.has(item.type) &&
+      (!byType.value.get(item.type) || byType.value.get(item.type)?.executable !== false),
+  ).map((item) => {
+    const remote = byType.value.get(item.type);
+    return remote
+      ? {
+          ...item,
+          name: remote.name || item.name,
+          description: remote.description || item.description,
+          inputSchema: remote.inputSchema || item.inputSchema,
+          outputSchema: remote.outputSchema || item.outputSchema,
+        }
+      : item;
+  }),
+);
 
 const filteredCapabilities = computed(() => {
-  return SYSTEM_NODE_REGISTRY.filter((item) => {
-    const matchCategory = activeCategory.value === 'all' || item.category === activeCategory.value
-    const query = searchQuery.value.trim().toLowerCase()
-    if (!query) return matchCategory
-    return matchCategory && (
-      item.name.toLowerCase().includes(query) ||
-      item.description.toLowerCase().includes(query) ||
-      item.type.toLowerCase().includes(query) ||
-      (item.badge?.toLowerCase().includes(query) ?? false)
-    )
-  })
-})
+  return availableCapabilities.value.filter((item) => {
+    const matchCategory = activeCategory.value === "all" || item.category === activeCategory.value;
+    const query = searchQuery.value.trim().toLowerCase();
+    if (!query) return matchCategory;
+    return (
+      matchCategory &&
+      (item.name.toLowerCase().includes(query) ||
+        item.description.toLowerCase().includes(query) ||
+        item.type.toLowerCase().includes(query) ||
+        (item.badge?.toLowerCase().includes(query) ?? false))
+    );
+  });
+});
 
 const getCategoryCount = (key: string) => {
-  if (key === 'all') return SYSTEM_NODE_REGISTRY.length
-  return SYSTEM_NODE_REGISTRY.filter(n => n.category === key).length
-}
+  if (key === "all") return availableCapabilities.value.length;
+  return availableCapabilities.value.filter((n) => n.category === key).length;
+};
 
 const handleSelect = (cap: SystemNodeCapability) => {
-  emit('select', cap)
-  emit('update:modelValue', false)
-  searchQuery.value = ''
-  activeCategory.value = 'all'
-}
+  emit("select", cap);
+  emit("update:modelValue", false);
+  searchQuery.value = "";
+  activeCategory.value = "all";
+};
 
 const getReqStyle = (type: string) => {
-  const color = NODE_REQUIREMENTS[type].color
-  return { color, background: `color-mix(in srgb, ${color} 12%, transparent)` }
-}
+  const color = NODE_REQUIREMENTS[type].color;
+  return { color, background: `color-mix(in srgb, ${color} 12%, transparent)` };
+};
 
 const handleClose = () => {
-  emit('update:modelValue', false)
-  searchQuery.value = ''
-  activeCategory.value = 'all'
-}
+  emit("update:modelValue", false);
+  searchQuery.value = "";
+  activeCategory.value = "all";
+};
 </script>
 
 <template>
-  <el-dialog :model-value="modelValue" :show-close="false" fullscreen class="node-picker-dialog" @close="handleClose">
+  <el-dialog
+    :model-value="modelValue"
+    :show-close="false"
+    fullscreen
+    class="node-picker-dialog"
+    @close="handleClose"
+  >
     <div class="np-layout">
       <!-- 顶部栏 -->
       <div class="np-header">
-
         <div class="np-header__center">
-          <el-input v-model="searchQuery" placeholder="搜索节点..." size="default" clearable autofocus class="np-search">
+          <el-input
+            v-model="searchQuery"
+            placeholder="搜索节点..."
+            size="default"
+            clearable
+            autofocus
+            class="np-search"
+          >
             <template #prefix>
               <el-icon>
                 <Search />
@@ -82,8 +122,13 @@ const handleClose = () => {
       <div class="np-body">
         <!-- 左侧分类 -->
         <div class="np-sidebar">
-          <div v-for="cat in NODE_CATEGORIES" :key="cat.key" class="np-sidebar__item"
-            :class="{ 'is-active': activeCategory === cat.key }" @click="activeCategory = cat.key">
+          <div
+            v-for="cat in NODE_CATEGORIES"
+            :key="cat.key"
+            class="np-sidebar__item"
+            :class="{ 'is-active': activeCategory === cat.key }"
+            @click="activeCategory = cat.key"
+          >
             <span class="np-sidebar__label">{{ cat.label }}</span>
             <span class="np-sidebar__count">{{ getCategoryCount(cat.key) }}</span>
           </div>
@@ -101,12 +146,18 @@ const handleClose = () => {
             <p class="np-empty__desc">尝试更换搜索词或切换分类</p>
           </div>
           <div v-else class="np-grid">
-            <div v-for="cap in filteredCapabilities" :key="cap.type" class="np-card" @click="handleSelect(cap)">
+            <div
+              v-for="cap in filteredCapabilities"
+              :key="cap.type"
+              class="np-card"
+              @click="handleSelect(cap)"
+            >
               <div class="np-card__media">
                 <div class="np-card__icon-wrap">
                   <img v-if="cap.iconImage" :src="cap.iconImage" class="np-card__icon-img" />
-                  <span v-else class="np-card__icon-text" :style="{ color: cap.color }">{{ cap.name?.charAt(0) || '?' }}</span>
-                  
+                  <span v-else class="np-card__icon-text" :style="{ color: cap.color }">{{
+                    cap.name?.charAt(0) || "?"
+                  }}</span>
                 </div>
               </div>
               <div class="np-card__content">
@@ -327,7 +378,9 @@ html.dark .np-card {
 
   &:hover {
     border-color: color-mix(in srgb, var(--el-color-primary) 30%, transparent);
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4), 0 0 0 1px color-mix(in srgb, var(--el-color-primary) 15%, transparent);
+    box-shadow:
+      0 3px 12px rgba(0, 0, 0, 0.4),
+      0 0 0 1px color-mix(in srgb, var(--el-color-primary) 15%, transparent);
     transform: translateY(-1px);
   }
 }
@@ -396,8 +449,6 @@ html.dark .np-card {
   color: var(--el-text-color-primary);
   line-height: 1.4;
 }
-
-
 
 .np-card__desc {
   display: -webkit-box;

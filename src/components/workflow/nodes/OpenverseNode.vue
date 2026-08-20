@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Handle, Position } from '@vue-flow/core'
-import { openverseIcon } from '@/assets/icons/apps'
+import NodeParameterSummary from "./NodeParameterSummary.vue";
+import { computed } from "vue";
+import { Handle, Position } from "@vue-flow/core";
+import { openverseIcon } from "@/assets/icons/apps";
 
-const props = defineProps<{ data: { label?: string; config?: any } }>()
+const props = defineProps<{ data: { label?: string; config?: any } }>();
 
-const keyword = computed(() => props.data.config?.keyword || props.data.config?.query || '')
-const maxCount = computed(() => props.data.config?.maxCount || props.data.config?.limit || 10)
+const keyword = computed(() => props.data.config?.keyword || props.data.config?.query || "");
+const maxCount = computed(() => props.data.config?.maxCount || props.data.config?.limit || 10);
 </script>
 
 <template>
@@ -14,11 +15,11 @@ const maxCount = computed(() => props.data.config?.maxCount || props.data.config
     <Handle type="target" :position="Position.Top" />
     <div class="wf-node__header">
       <img :src="openverseIcon" class="wf-node__icon" />
-      <span class="wf-node__title">{{ data.label || 'Openverse 采集' }}</span>
+      <span class="wf-node__title">{{ data.label || "Openverse 采集" }}</span>
     </div>
     <div v-if="keyword" class="wf-node__subtitle">{{ keyword }}</div>
-    <div v-if="maxCount" class="wf-node__badge">Limit: {{ maxCount }}</div>
     <div class="wf-node__type">6 亿+ CC/CC0 共享图库</div>
+    <NodeParameterSummary :data="data" />
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>
@@ -52,8 +53,8 @@ const maxCount = computed(() => props.data.config?.maxCount || props.data.config
 
   .wf-node__subtitle {
     font-size: 11px;
-    color: #B23A22;
-    background: #FBE9E7;
+    color: #b23a22;
+    background: #fbe9e7;
     padding: 2px 6px;
     border-radius: 4px;
     margin: 4px 0;

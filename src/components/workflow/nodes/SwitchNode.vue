@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Handle, Position } from '@vue-flow/core'
+import { computed } from "vue";
+import { Handle, Position } from "@vue-flow/core";
 
-const props = defineProps<{ data: { label?: string; config?: any } }>()
+const props = defineProps<{ data: { label?: string; config?: any } }>();
 
 // 输出端口：根据 cases 动态生成 + 默认
 const outputs = computed(() => {
-  const cases = props.data?.config?.cases || []
+  const cases = props.data?.config?.cases || [];
   const result = cases.map((c: any, i: number) => ({
     id: `case-${i}`,
     label: c.label || c.value || `情况${i + 1}`,
-    color: '#64748b',
-  }))
-  result.push({ id: 'default', label: '默认', color: '#94a3b8' })
-  return result
-})
+    color: "#64748b",
+  }));
+  result.push({ id: "default", label: "默认", color: "#94a3b8" });
+  return result;
+});
 </script>
 
 <template>
@@ -22,7 +22,7 @@ const outputs = computed(() => {
     <Handle type="target" :position="Position.Top" />
     <div class="wf-node__header">
       <span class="wf-node__dot" style="background: #06b6d4" />
-      <span class="wf-node__title">{{ data.label || '多路切换' }}</span>
+      <span class="wf-node__title">{{ data.label || "多路切换" }}</span>
     </div>
     <div class="wf-node__handles">
       <div
@@ -32,7 +32,12 @@ const outputs = computed(() => {
         :style="{ color: out.color }"
       >
         <span>{{ out.label }}</span>
-        <Handle :id="out.id" type="source" :position="Position.Bottom" class="wf-node__handle-dot" />
+        <Handle
+          :id="out.id"
+          type="source"
+          :position="Position.Bottom"
+          class="wf-node__handle-dot"
+        />
       </div>
     </div>
   </div>
@@ -54,11 +59,25 @@ const outputs = computed(() => {
   box-shadow: 0 0 0 2px color-mix(in srgb, #06b6d4 20%, transparent);
 }
 
-.wf-node__header { display: flex; align-items: center; gap: 5px; margin-bottom: 4px; }
+.wf-node__header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 4px;
+}
 
-.wf-node__dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.wf-node__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
 
-.wf-node__title { font-size: 12px; font-weight: 600; color: var(--el-text-color-primary); }
+.wf-node__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
 
 .wf-node__handles {
   display: flex;

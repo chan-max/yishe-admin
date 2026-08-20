@@ -38,7 +38,63 @@ export type ClientPluginKey =
   | "svgrepo"
   | "image-processing"
   | "video-template"
-  | "file-download";
+  | "file-download"
+  // 新闻资讯源 (client local services)
+  | "hackernews"
+  | "arxiv"
+  | "github"
+  | "producthunt"
+  | "gdelt"
+  | "googlenews"
+  | "reddit"
+  | "theguardian"
+  | "bbcnews"
+  | "npr"
+  | "reuters"
+  | "techcrunch"
+  | "theverge"
+  | "arstechnica"
+  | "mittechreview"
+  | "chinadaily"
+  | "govcn"
+  | "xinhuanet"
+  | "thepaper"
+  | "36kr"
+  | "huxiu"
+  // 数据工具 (client local services)
+  | "openmeteo"
+  | "wttr"
+  | "coingecko"
+  | "frankfurter"
+  | "dictionary"
+  | "joke"
+  | "ipify"
+  | "sunrisesunset"
+  | "timeapi"
+  | "zippopotam"
+  | "countryis"
+  | "erapi"
+  | "fawazahmed"
+  | "colorapi"
+  // 热搜采集 (client local services)
+  | "weibo"
+  | "douyin"
+  | "bilibili"
+  | "zhihu"
+  | "toutiao"
+  | "douban"
+  | "kuaishou"
+  | "v2ex"
+  | "ithome"
+  | "google_trends"
+  | "wikipedia"
+  | "bbc_news"
+  | "cnn"
+  | "nytimes"
+  | "aljazeera"
+  | "devto"
+  | "ebay_trending"
+  | "shopify_trending";
 export type ClientPluginSummary = "available" | "offline";
 type ClientNodeRefreshOptions = { summary?: boolean };
 
@@ -315,6 +371,64 @@ export const getClientServiceRuntime = (
   if (pluginKey === "emojipedia") {
     return services["emojipedia"] || null;
   }
+  const directServiceKeys: string[] = [
+    "hackernews",
+    "arxiv",
+    "github",
+    "producthunt",
+    "gdelt",
+    "googlenews",
+    "reddit",
+    "theguardian",
+    "bbcnews",
+    "npr",
+    "reuters",
+    "techcrunch",
+    "theverge",
+    "arstechnica",
+    "mittechreview",
+    "chinadaily",
+    "govcn",
+    "xinhuanet",
+    "thepaper",
+    "36kr",
+    "huxiu",
+    "openmeteo",
+    "wttr",
+    "coingecko",
+    "frankfurter",
+    "dictionary",
+    "joke",
+    "ipify",
+    "sunrisesunset",
+    "timeapi",
+    "zippopotam",
+    "countryis",
+    "erapi",
+    "fawazahmed",
+    "colorapi",
+    "weibo",
+    "douyin",
+    "bilibili",
+    "zhihu",
+    "toutiao",
+    "douban",
+    "kuaishou",
+    "v2ex",
+    "36kr",
+    "ithome",
+    "google_trends",
+    "wikipedia",
+    "bbc_news",
+    "nytimes",
+    "aljazeera",
+    "devto",
+    "ebay_trending",
+    "shopify_trending",
+  ];
+  if (directServiceKeys.includes(pluginKey)) {
+    return services[pluginKey] || null;
+  }
   return services["google-art"] || services.googleArt || null;
 };
 
@@ -377,6 +491,63 @@ export const useClientNodeStore = defineStore("client-node", () => {
       "google-icons": "offline",
       "emojipedia": "offline",
       "svgrepo": "offline",
+      "rawpixel": "offline",
+      "stocksnap": "offline",
+      "openverse": "offline",
+      "kaboompics": "offline",
+      "hackernews": "offline",
+      "arxiv": "offline",
+      "github": "offline",
+      "producthunt": "offline",
+      "gdelt": "offline",
+      "googlenews": "offline",
+      "reddit": "offline",
+      "theguardian": "offline",
+      "bbcnews": "offline",
+      "npr": "offline",
+      "reuters": "offline",
+      "techcrunch": "offline",
+      "theverge": "offline",
+      "arstechnica": "offline",
+      "mittechreview": "offline",
+      "chinadaily": "offline",
+      "govcn": "offline",
+      "xinhuanet": "offline",
+      "thepaper": "offline",
+      "36kr": "offline",
+      "huxiu": "offline",
+      "openmeteo": "offline",
+      "wttr": "offline",
+      "coingecko": "offline",
+      "frankfurter": "offline",
+      "dictionary": "offline",
+      "joke": "offline",
+      "ipify": "offline",
+      "sunrisesunset": "offline",
+      "timeapi": "offline",
+      "zippopotam": "offline",
+      "countryis": "offline",
+      "erapi": "offline",
+      "fawazahmed": "offline",
+      "colorapi": "offline",
+      "weibo": "offline",
+      "douyin": "offline",
+      "bilibili": "offline",
+      "zhihu": "offline",
+      "toutiao": "offline",
+      "douban": "offline",
+      "kuaishou": "offline",
+      "v2ex": "offline",
+      "ithome": "offline",
+      "google_trends": "offline",
+      "wikipedia": "offline",
+      "bbc_news": "offline",
+      "cnn": "offline",
+      "nytimes": "offline",
+      "aljazeera": "offline",
+      "devto": "offline",
+      "ebay_trending": "offline",
+      "shopify_trending": "offline",
     };
 
     (
@@ -400,6 +571,63 @@ export const useClientNodeStore = defineStore("client-node", () => {
         "google-icons",
         "emojipedia",
         "svgrepo",
+        "rawpixel",
+        "stocksnap",
+        "openverse",
+        "kaboompics",
+        "hackernews",
+        "arxiv",
+        "github",
+        "producthunt",
+        "gdelt",
+        "googlenews",
+        "reddit",
+        "theguardian",
+        "bbcnews",
+        "npr",
+        "reuters",
+        "techcrunch",
+        "theverge",
+        "arstechnica",
+        "mittechreview",
+        "chinadaily",
+        "govcn",
+        "xinhuanet",
+        "thepaper",
+        "36kr",
+        "huxiu",
+        "openmeteo",
+        "wttr",
+        "coingecko",
+        "frankfurter",
+        "dictionary",
+        "joke",
+        "ipify",
+        "sunrisesunset",
+        "timeapi",
+        "zippopotam",
+        "countryis",
+        "erapi",
+        "fawazahmed",
+        "colorapi",
+        "weibo",
+        "douyin",
+        "bilibili",
+        "zhihu",
+        "toutiao",
+        "douban",
+        "kuaishou",
+        "v2ex",
+        "ithome",
+        "google_trends",
+        "wikipedia",
+        "bbc_news",
+        "cnn",
+        "nytimes",
+        "aljazeera",
+        "devto",
+        "ebay_trending",
+        "shopify_trending",
       ] as ClientPluginKey[]
     ).forEach(
       (pluginKey) => {

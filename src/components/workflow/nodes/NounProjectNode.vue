@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Handle, Position } from '@vue-flow/core'
-import { nounprojectIcon } from '@/assets/icons/apps'
+import NodeParameterSummary from "./NodeParameterSummary.vue";
+import { computed } from "vue";
+import { Handle, Position } from "@vue-flow/core";
+import { nounprojectIcon } from "@/assets/icons/apps";
 
-const props = defineProps<{ data: { label?: string; config?: any } }>()
+const props = defineProps<{ data: { label?: string; config?: any } }>();
 
-const keyword = computed(() => props.data.config?.keyword || props.data.config?.query || '')
-const maxCount = computed(() => props.data.config?.maxCount || props.data.config?.limit || 10)
-const mediaType = computed(() => props.data.config?.mediaType || 'icons')
+const keyword = computed(() => props.data.config?.keyword || props.data.config?.query || "");
+const maxCount = computed(() => props.data.config?.maxCount || props.data.config?.limit || 10);
+const mediaType = computed(() => props.data.config?.mediaType || "icons");
 </script>
 
 <template>
@@ -15,11 +16,11 @@ const mediaType = computed(() => props.data.config?.mediaType || 'icons')
     <Handle type="target" :position="Position.Top" />
     <div class="wf-node__header">
       <img :src="nounprojectIcon" class="wf-node__icon" />
-      <span class="wf-node__title">{{ data.label || 'Noun Project 采集' }}</span>
+      <span class="wf-node__title">{{ data.label || "Noun Project 采集" }}</span>
     </div>
     <div v-if="keyword" class="wf-node__subtitle">{{ keyword }}</div>
-    <div v-if="maxCount" class="wf-node__badge">Limit: {{ maxCount }} ({{ mediaType === 'icons' ? 'Icons' : 'Photos' }})</div>
     <div class="wf-node__type">全球图标/摄影图库</div>
+    <NodeParameterSummary :data="data" />
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>
@@ -53,8 +54,8 @@ const mediaType = computed(() => props.data.config?.mediaType || 'icons')
 
   .wf-node__subtitle {
     font-size: 11px;
-    color: #1A1A1A;
-    background: #F5F5F5;
+    color: #1a1a1a;
+    background: #f5f5f5;
     padding: 2px 6px;
     border-radius: 4px;
     margin: 4px 0;

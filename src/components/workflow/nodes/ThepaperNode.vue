@@ -1,10 +1,18 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Handle, Position } from '@vue-flow/core'
-import { thepaperIcon } from '@/assets/icons/news'
+import NodeParameterSummary from "./NodeParameterSummary.vue";
+import { computed } from "vue";
+import { Handle, Position } from "@vue-flow/core";
+import { thepaperIcon } from "@/assets/icons/news";
 
-const props = defineProps<{ data: { label?: string; config?: any } }>()
-const keyword = computed(() => props.data.config?.keyword || props.data.config?.query || props.data.config?.category || props.data.config?.type || '')
+const props = defineProps<{ data: { label?: string; config?: any } }>();
+const keyword = computed(
+  () =>
+    props.data.config?.keyword ||
+    props.data.config?.query ||
+    props.data.config?.category ||
+    props.data.config?.type ||
+    "",
+);
 </script>
 
 <template>
@@ -12,10 +20,11 @@ const keyword = computed(() => props.data.config?.keyword || props.data.config?.
     <Handle type="target" :position="Position.Top" />
     <div class="wf-node__header">
       <img :src="thepaperIcon" class="wf-node__icon" />
-      <span class="wf-node__title">{{ data.label || '澎湃新闻' }}</span>
+      <span class="wf-node__title">{{ data.label || "澎湃新闻" }}</span>
     </div>
     <div v-if="keyword" class="wf-node__subtitle">{{ keyword }}</div>
     <div class="wf-node__type">新闻数据</div>
+    <NodeParameterSummary :data="data" />
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>
@@ -47,7 +56,7 @@ const keyword = computed(() => props.data.config?.keyword || props.data.config?.
 .wf-node--thepaper .wf-node__subtitle {
   font-size: 11px;
   color: #005bac;
-  background: #E6F0F8;
+  background: #e6f0f8;
   padding: 2px 6px;
   border-radius: 4px;
   margin: 4px 0;

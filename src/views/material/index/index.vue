@@ -1963,42 +1963,25 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="uploadModalVisible" :title="t('material.materialUpload')" width="calc(100vw - 32px)" top="16px" :footer="false"
+    <el-dialog v-model="uploadModalVisible" :title="t('material.materialUpload')" fullscreen :footer="false"
       :destroy-on-close="false" class="material-upload-dialog" @close="uploadModalClose">
-      <template #header="{ titleId, titleClass }">
-        <div class="material-upload-dialog__header">
-          <span :id="titleId" :class="titleClass">{{ t('material.materialUpload') }}</span>
-          <el-button size="small" type="danger" plain @click="clearUploadDialogState">
-            {{ t('material.clear') }}
-          </el-button>
-        </div>
-      </template>
       <div class="material-upload-dialog__content">
-        <list-upload ref="uploadListRef" :current-upload-info="currentUploadInfo"
-          @single-file-uploaded="singleFileUploaded" />
+        <list-upload :current-upload-info="currentUploadInfo" @single-file-uploaded="singleFileUploaded" />
       </div>
     </el-dialog>
 
     <!-- URL上传弹窗 -->
-    <el-dialog v-model="urlUploadModalVisible" :title="t('material.urlUploadMaterial')" width="500px" align-center :destroy-on-close="true"
-      @close="resetUrlUploadForm">
-      <el-form ref="urlUploadFormRef" :model="urlUploadForm" :rules="urlUploadFormRules" label-width="80px">
+    <el-dialog v-model="urlUploadModalVisible" :title="t('material.urlUploadMaterial')" width="480px" align-center class="url-upload-dialog"
+      :destroy-on-close="true" @close="resetUrlUploadForm">
+      <el-form ref="urlUploadFormRef" :model="urlUploadForm" :rules="urlUploadFormRules" label-position="top">
         <el-form-item :label="t('material.imageUrl')" prop="url">
-          <el-input v-model="urlUploadForm.url" :placeholder="t('material.enterFullImageUrl')" style="width: 100%" clearable />
+          <el-input v-model="urlUploadForm.url" :placeholder="t('material.enterFullImageUrl')" clearable />
         </el-form-item>
         <el-form-item :label="t('material.fileName')" prop="name">
-          <el-input v-model="urlUploadForm.name" :placeholder="t('material.enterFileName')" style="width: 100%" clearable />
+          <el-input v-model="urlUploadForm.name" :placeholder="t('material.enterFileName')" clearable />
         </el-form-item>
         <el-form-item :label="t('material.aiGenerate')">
           <el-switch v-model="urlUploadForm.useAiGenerate" :active-text="t('material.useAiAutoGenerate')" />
-        </el-form-item>
-        <el-form-item :label="t('material.folder')">
-          <el-select v-model="urlUploadForm.folderId" :placeholder="t('material.selectFolderPlaceholder')" clearable filterable
-            style="width: 100%">
-            <el-option :label="t('material.rootDirectory')" :value="null" />
-            <el-option v-for="folder in stickerFolderSelectOptions" :key="folder.value || 'root'" :label="folder.label"
-              :value="folder.value" />
-          </el-select>
         </el-form-item>
       </el-form>
 
@@ -2013,14 +1996,13 @@
           </div>
         </div>
         <div v-else-if="urlUploadForm.url && !urlPreviewVisible" class="preview-error">
-          <el-icon size="32" color="#f56c6c">
+          <el-icon size="28" color="#f56c6c">
             <PictureFilled />
           </el-icon>
           <p>{{ t('material.previewLoadFailed') }}</p>
-          <p class="error-text">{{ t('material.checkUrl') }}</p>
         </div>
         <div v-else class="preview-placeholder">
-          <el-icon size="32" color="#c0c4cc">
+          <el-icon size="28" color="#c0c4cc">
             <PictureFilled />
           </el-icon>
           <p>{{ t('material.enterUrlForPreview') }}</p>
@@ -4273,11 +4255,6 @@ const psdSetDialogTitle = computed(() =>
 // 处理上传
 
 const uploadModalVisible = ref(false);
-const uploadListRef = ref<InstanceType<typeof listUpload> | null>(null);
-
-function clearUploadDialogState() {
-  uploadListRef.value?.clearUploadState?.();
-}
 
 function uploadModalClose() {
   // 关闭时更新 currentUploadInfo，确保下次打开时使用当前选中的文件夹
@@ -4821,36 +4798,6 @@ function getStickerFolderFilterForQuery(folderId: string | null | undefined) {
   }
   return folderId;
 }
-
-// 文件夹选择选项（用于下拉框）
-const stickerFolderSelectOptions = computed(() => {
-  const options: Array<{ label: string; value: string | null; path: string }> = [
-    { label: t("material.rootDirectory"), value: null, path: "" },
-  ];
-
-  // 递归构建文件夹选项
-  const buildOptions = (folders: any[], prefix = "") => {
-    folders.forEach((folder) => {
-      const label = prefix ? `${prefix} / ${folder.name}` : folder.name;
-      options.push({
-        label,
-        value: folder.id,
-        path: folder.path || "",
-      });
-      if (folder.children && folder.children.length > 0) {
-        buildOptions(folder.children, label);
-      }
-    });
-  };
-
-  buildOptions(
-    stickerFolderTreeData.value.filter(
-      (folder) => folder.id !== FOLDER_FILTER.ALL && folder.id !== FOLDER_FILTER.NOT_GROUP,
-    ),
-  );
-
-  return options;
-});
 
 // 加载文件夹树
 async function loadStickerFolderTree() {
@@ -7079,8 +7026,6 @@ const urlUploadForm = reactive({
   isCustom: false,
   isInfringement: false,
   useAiGenerate: false, // 是否使用AI生成补全内容
-  folderId: null as string | null, // 文件夹ID
-  folderPath: "", // 展示路径
 });
 
 const urlUploadFormRules = {
@@ -7107,8 +7052,6 @@ function resetUrlUploadForm() {
   urlUploadForm.isCustom = false;
   urlUploadForm.isInfringement = false;
   urlUploadForm.useAiGenerate = false;
-  urlUploadForm.folderId = getSelectedStickerFolderTargetId();
-  urlUploadForm.folderPath = selectedStickerFolderPath.value || "";
   urlPreviewVisible.value = false;
   imageInfo.value = null;
 }
@@ -7459,7 +7402,6 @@ async function handleUrlUpload() {
       aspectRatio,
       userId: userStore.user?.id,
       useAiGenerate: urlUploadForm.useAiGenerate, // 是否使用AI生成补全内容
-      folderId: urlUploadForm.folderId ?? null,
     });
 
     ElNotification.success(t("material.imageUploadSuccess"));
@@ -8936,6 +8878,41 @@ h1 {
   font-size: 14px;
 }
 
+/* URL上传弹窗：扁平简洁 */
+:global(.url-upload-dialog .el-form-item) {
+  margin-bottom: 14px;
+}
+
+:global(.url-upload-dialog .preview-section) {
+  margin-top: 4px;
+}
+
+:global(.url-upload-dialog .preview-label) {
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+}
+
+:global(.url-upload-dialog .image-preview),
+:global(.url-upload-dialog .preview-placeholder),
+:global(.url-upload-dialog .preview-error) {
+  min-height: 150px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
+
+:global(.url-upload-dialog .preview-image) {
+  max-height: 180px;
+  box-shadow: none;
+}
+
+:global(.url-upload-dialog .preview-placeholder p),
+:global(.url-upload-dialog .preview-error p) {
+  font-size: 13px;
+}
+
 /* SVG转PNG弹窗样式 */
 .svg-to-png-form {
   padding: 16px 0;
@@ -9414,22 +9391,22 @@ h1 {
   }
 
   .material-upload-dialog :deep(.el-dialog) {
-    width: calc(100vw - 12px) !important;
-    height: calc(100vh - 12px);
-    max-width: calc(100vw - 12px);
-    max-height: calc(100vh - 12px);
-    margin: 6px auto !important;
-    border-radius: 14px;
+    width: 100% !important;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    margin: 0 auto !important;
+    border-radius: 0;
   }
 
   :global(.material-upload-dialog.el-dialog) {
-    width: calc(100vw - 12px) !important;
-    height: calc(100vh - 12px);
-    max-width: calc(100vw - 12px);
-    max-height: calc(100vh - 12px);
-    margin-top: 6px !important;
-    margin-bottom: 6px !important;
-    border-radius: 14px;
+    width: 100% !important;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    border-radius: 0;
   }
 
   :global(.material-upload-dialog.el-dialog .el-dialog__header) {
@@ -9639,26 +9616,26 @@ h1 {
 
 .material-upload-dialog :deep(.el-dialog) {
   display: flex;
-  width: calc(100vw - 32px) !important;
-  height: calc(100vh - 32px);
-  max-width: calc(100vw - 32px);
-  max-height: calc(100vh - 32px);
-  margin: 16px auto !important;
+  width: 100% !important;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0 !important;
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: 0;
   flex-direction: column;
 }
 
 :global(.material-upload-dialog.el-dialog) {
   display: flex;
-  width: calc(100vw - 32px) !important;
-  height: calc(100vh - 32px);
-  max-width: calc(100vw - 32px);
-  max-height: calc(100vh - 32px);
-  margin-top: 16px !important;
-  margin-bottom: 16px !important;
+  width: 100% !important;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: 0;
   flex-direction: column;
 }
 
@@ -9676,14 +9653,6 @@ h1 {
   padding: 12px 14px 14px;
   overflow: hidden;
   background: var(--el-bg-color-page);
-}
-
-.material-upload-dialog__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding-right: 36px;
 }
 
 .material-upload-dialog :deep(.el-dialog__header) {

@@ -83,6 +83,18 @@ export const getCOS = () => {
 }
 
 /**
+ * 上传成功后异步登记文件资产；登记失败不影响原有上传结果。
+ */
+const registerFileAssetBestEffort = (payload: Record<string, any>) => {
+  void request.post({
+    url: "/file-asset/register",
+    data: { provider: "tencent-cos", sourceApp: "yishe-admin", ...payload },
+  }).catch((error: any) => {
+    console.warn("[file-asset] 登记失败，不影响 COS 上传", error?.message || error)
+  })
+}
+
+/**
  * 上传文件到 COS
  * @param file 文件对象
  * @param key 文件在 COS 中的存储路径（可选，如果提供则直接使用）
@@ -160,10 +172,20 @@ export async function uploadToCOS({
       Bucket: bucket || cos.options.Bucket,
       Region: region || cos.options.Region
     })
-    return {
-      url: `https://${res.Location}`,
-      key: finalKey
-    }
+    const url = `https://${res.Location}`
+    registerFileAssetBestEffort({
+      bucket: bucket || cos.options.Bucket || "",
+      region: region || cos.options.Region || "",
+      objectKey: String(finalKey),
+      url,
+      fileName: file.name || "file",
+      contentType: file.type || "",
+      size: file.size,
+      sourceModule: category || "uncategorized",
+      category: category || "uncategorized",
+      metadata: { uploadMode: "browser-direct" },
+    })
+    return { url, key: finalKey }
   } catch (e: any) {
     const errorMessage = e?.message || e?.toString() || '未知错误'
     throw new Error(`COS上传失败: ${errorMessage}`)

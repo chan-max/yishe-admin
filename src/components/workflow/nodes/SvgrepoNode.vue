@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Handle, Position } from '@vue-flow/core'
-import { svgrepoIcon } from '@/assets/icons/apps'
+import NodeParameterSummary from "./NodeParameterSummary.vue";
+import { computed } from "vue";
+import { Handle, Position } from "@vue-flow/core";
+import { svgrepoIcon } from "@/assets/icons/apps";
 
-const props = defineProps<{ data: { label?: string; config?: any } }>()
+const props = defineProps<{ data: { label?: string; config?: any } }>();
 
-const keyword = computed(() => props.data.config?.keyword || props.data.config?.query || '')
-const maxCount = computed(() => props.data.config?.maxCount || props.data.config?.limit || 12)
-const style = computed(() => props.data.config?.style || 'all')
+const keyword = computed(() => props.data.config?.keyword || props.data.config?.query || "");
+const maxCount = computed(() => props.data.config?.maxCount || props.data.config?.limit || 12);
+const style = computed(() => props.data.config?.style || "all");
 </script>
 
 <template>
@@ -15,12 +16,13 @@ const style = computed(() => props.data.config?.style || 'all')
     <Handle type="target" :position="Position.Top" />
     <div class="wf-node__header">
       <img :src="svgrepoIcon" class="wf-node__icon" />
-      <span class="wf-node__title">{{ data.label || 'SVGRepo 采集' }}</span>
+      <span class="wf-node__title">{{ data.label || "SVGRepo 采集" }}</span>
     </div>
     <div v-if="keyword" class="wf-node__subtitle">{{ keyword }}</div>
     <div v-if="maxCount" class="wf-node__badge">数量: {{ maxCount }}</div>
     <div v-if="style && style !== 'all'" class="wf-node__tag">{{ style }}</div>
     <div class="wf-node__type">50万+开源矢量图库</div>
+    <NodeParameterSummary :data="data" />
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>
@@ -79,7 +81,7 @@ const style = computed(() => props.data.config?.style || 'all')
   .wf-node__tag {
     display: inline-block;
     font-size: 10px;
-    color: #EB3654;
+    color: #eb3654;
     background: rgba(235, 54, 84, 0.1);
     border-radius: 4px;
     padding: 1px 4px;

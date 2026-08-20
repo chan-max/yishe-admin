@@ -532,7 +532,7 @@ function buildPageContext() {
     routePath: route.path,
     fullPath: route.fullPath,
     routeName: String(route.name || ""),
-    routeTitle: t(String(route.meta?.title || "")),
+    routeTitle: String(route.meta?.title || ""),
     query: route.query,
     params: route.params,
   };

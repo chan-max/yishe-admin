@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { Handle, Position } from '@vue-flow/core'
+import NodeParameterSummary from "./NodeParameterSummary.vue";
+import { Handle, Position } from "@vue-flow/core";
 
-defineProps<{ data: { label?: string; config?: any } }>()
+defineProps<{ data: { label?: string; config?: any } }>();
 </script>
 
 <template>
@@ -9,8 +10,9 @@ defineProps<{ data: { label?: string; config?: any } }>()
     <Handle type="target" :position="Position.Top" />
     <div class="wf-node__header">
       <span class="wf-node__dot" />
-      <span class="wf-node__title">{{ data.label || '代码脚本' }}</span>
+      <span class="wf-node__title">{{ data.label || "代码脚本" }}</span>
     </div>
+    <NodeParameterSummary :data="data" />
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>
@@ -46,5 +48,9 @@ defineProps<{ data: { label?: string; config?: any } }>()
   flex-shrink: 0;
 }
 
-.wf-node__title { font-size: 12px; font-weight: 600; color: var(--el-text-color-primary); }
+.wf-node__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
 </style>

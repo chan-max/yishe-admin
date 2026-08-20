@@ -1,201 +1,208 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { Pointer, Plus } from '@element-plus/icons-vue'
-import type { Node } from '@vue-flow/core'
-import AdvancedCronDialog from './AdvancedCronDialog.vue'
-import VariableSelector from './VariableSelector.vue'
+import { ref, computed, watch } from "vue";
+import { Pointer, Plus } from "@element-plus/icons-vue";
+import type { Node } from "@vue-flow/core";
+import AdvancedCronDialog from "./AdvancedCronDialog.vue";
+import VariableSelector from "./VariableSelector.vue";
 import {
   NODE_MANIFEST_REGISTRY,
   type NodeManifest,
-  type NodeIOSchemaField
-} from '@/views/workflow/editor/config/node-manifest'
-import { getMessagePushList, type MessagePushConfig } from '@/api/messagePush'
+  type NodeIOSchemaField,
+} from "@/views/workflow/editor/config/node-manifest";
+import { getMessagePushList, type MessagePushConfig } from "@/api/messagePush";
+import { useWorkflowNodeManifest } from "@/composables/useWorkflowNodeManifest";
+import { getWorkflowVariableKey } from "@/views/workflow/editor/config/workflowVariableKey";
 
 const props = defineProps<{
-  node: Node | null
-  workflowId?: string
-  allNodes?: Node[]
-  allEdges?: any[]
-  selectedEdge?: any | null
-}>()
+  node: Node | null;
+  workflowId?: string;
+  allNodes?: Node[];
+  allEdges?: any[];
+  selectedEdge?: any | null;
+}>();
 
 const emit = defineEmits<{
-  (e: 'update', node: Node): void
-  (e: 'delete', nodeId: string): void
-  (e: 'updateEdge', edge: any): void
-}>()
+  (e: "update", node: Node): void;
+  (e: "delete", nodeId: string): void;
+  (e: "updateEdge", edge: any): void;
+}>();
 
-const form = ref({ label: '', config: {} as any })
-const advancedCronVisible = ref(false)
-const edgeCondition = ref('')
+const form = ref({ label: "", config: {} as any });
+const advancedCronVisible = ref(false);
+const edgeCondition = ref("");
+const { byType, load: loadServerManifest } = useWorkflowNodeManifest();
+loadServerManifest();
 
 // 变量选择器
-const variableSelectorVisible = ref(false)
-const activeFieldForVariable = ref('')
+const variableSelectorVisible = ref(false);
+const activeFieldForVariable = ref("");
 
 const openVariableSelector = (fieldName: string) => {
-  activeFieldForVariable.value = fieldName
-  variableSelectorVisible.value = true
-}
+  activeFieldForVariable.value = fieldName;
+  variableSelectorVisible.value = true;
+};
 
 const handleVariableSelect = (variablePath: string, _label: string) => {
-  if (!props.node) return
-  const fieldName = activeFieldForVariable.value
-  if (!fieldName) return
-  const currentVal = form.value.config[fieldName] || ''
-  form.value.config[fieldName] = currentVal + `{{ ${variablePath} }}`
-  handleDataChange()
-  variableSelectorVisible.value = false
-}
+  if (!props.node) return;
+  const fieldName = activeFieldForVariable.value;
+  if (!fieldName) return;
+  const currentVal = form.value.config[fieldName] || "";
+  form.value.config[fieldName] = currentVal + `{{ ${variablePath} }}`;
+  handleDataChange();
+  variableSelectorVisible.value = false;
+};
 
 // 输出变量点击复制
-const copiedField = ref('')
+const copiedField = ref("");
 const copyVariable = async (nodeId: string, fieldName: string) => {
-  const text = `{{ ${nodeId}.${fieldName} }}`
+  const variableKey = props.node
+    ? getWorkflowVariableKey(props.node, props.allNodes || [])
+    : nodeId;
+  const text = `{{ ${variableKey}.${fieldName} }}`;
   try {
-    await navigator.clipboard.writeText(text)
-    copiedField.value = fieldName
-    setTimeout(() => { copiedField.value = '' }, 1500)
+    await navigator.clipboard.writeText(text);
+    copiedField.value = fieldName;
+    setTimeout(() => {
+      copiedField.value = "";
+    }, 1500);
   } catch {
-    const ta = document.createElement('textarea')
-    ta.value = text
-    document.body.appendChild(ta)
-    ta.select()
-    document.execCommand('copy')
-    document.body.removeChild(ta)
-    copiedField.value = fieldName
-    setTimeout(() => { copiedField.value = '' }, 1500)
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    copiedField.value = fieldName;
+    setTimeout(() => {
+      copiedField.value = "";
+    }, 1500);
   }
-}
+};
 
 // 监听选中 edge，同步 condition
 watch(
   () => props.selectedEdge,
   (edge) => {
-    edgeCondition.value = edge?.data?.condition || edge?.condition || ''
+    edgeCondition.value = edge?.data?.condition || edge?.condition || "";
   },
-  { immediate: true }
-)
+  { immediate: true },
+);
 
 const handleUpdateEdgeCondition = () => {
-  if (!props.selectedEdge) return
-  const edge = { ...props.selectedEdge }
-  if (!edge.data) edge.data = {}
-  edge.data.condition = edgeCondition.value
-  edge.condition = edgeCondition.value
-  emit('updateEdge', edge)
-}
+  if (!props.selectedEdge) return;
+  const edge = { ...props.selectedEdge };
+  if (!edge.data) edge.data = {};
+  edge.data.condition = edgeCondition.value;
+  edge.condition = edgeCondition.value;
+  emit("updateEdge", edge);
+};
 
 // 消息推送渠道列表（动态从 API 加载）
-const messagePushChannels = ref<MessagePushConfig[]>([])
-const channelsLoaded = ref(false)
+const messagePushChannels = ref<MessagePushConfig[]>([]);
+const channelsLoaded = ref(false);
 
 const loadMessagePushChannels = async () => {
-  if (channelsLoaded.value) return
+  if (channelsLoaded.value) return;
   try {
-    const list = await getMessagePushList()
-    const enabledChannels = Array.isArray(list) ? list.filter((c) => c.enabled) : []
+    const list = await getMessagePushList();
+    const enabledChannels = Array.isArray(list) ? list.filter((c) => c.enabled) : [];
 
     // 根据节点类型对应的平台过滤渠道
-    const platform = currentCapability.value?.platform
+    const platform = currentCapability.value?.platform;
     if (platform) {
-      messagePushChannels.value = enabledChannels.filter((c) => c.platform === platform)
+      messagePushChannels.value = enabledChannels.filter((c) => c.platform === platform);
     } else {
-      messagePushChannels.value = enabledChannels
+      messagePushChannels.value = enabledChannels;
     }
 
-    channelsLoaded.value = true
+    channelsLoaded.value = true;
   } catch (e) {
-    messagePushChannels.value = []
+    messagePushChannels.value = [];
   }
-}
+};
 
 // 当前节点对应的能力库元数据
 const currentCapability = computed<NodeManifest | undefined>(() => {
-  if (!props.node) return undefined
-  const capType = props.node.data?.capabilityType || props.node.type
-  return NODE_MANIFEST_REGISTRY.find((item) => item.type === capType)
-})
+  if (!props.node) return undefined;
+  const capType = props.node.data?.capabilityType || props.node.type;
+  const local = NODE_MANIFEST_REGISTRY.find((item) => item.type === capType);
+  const remote = byType.value.get(capType);
+  return remote ? ({ ...local, ...remote, type: capType } as NodeManifest) : local;
+});
 
 // 是否是消息推送类节点
-const isNotifyNode = computed(() => currentCapability.value?.category === 'notify')
+const isNotifyNode = computed(() => currentCapability.value?.category === "notify");
 
 // 动态注入渠道 options 进 inputSchema
 const resolvedInputSchema = computed<NodeIOSchemaField[]>(() => {
-  const schema = currentCapability.value?.inputSchema || []
-  if (!isNotifyNode.value) return schema
+  const schema = currentCapability.value?.inputSchema || [];
+  if (!isNotifyNode.value) return schema;
 
   return schema.map((field) => {
-    if (field.field === 'channelId') {
+    if (field.field === "channelId") {
       return {
         ...field,
         options: messagePushChannels.value.map((ch) => ({
-          label: `${ch.name} (${ch.platform === 'feishu' ? '飞书' : '企业微信'})`,
+          label: `${ch.name} (${ch.platform === "feishu" ? "飞书" : "企业微信"})`,
           value: ch.id,
         })),
-      }
+      };
     }
-    return field
-  })
-})
+    return field;
+  });
+});
 
 watch(
   () => props.node,
   (n) => {
     if (n) {
-      form.value.label = n.data?.label || ''
-      form.value.config = { ...(n.data?.config || {}) }
+      form.value.label = n.data?.label || "";
+      form.value.config = { ...(n.data?.config || {}) };
     }
     if (isNotifyNode.value) {
-      loadMessagePushChannels()
+      loadMessagePushChannels();
     }
   },
-  { immediate: true }
-)
+  { immediate: true },
+);
 
 const handleDataChange = (fieldName?: string, selectedLabel?: string) => {
-  if (!props.node) return
+  if (!props.node) return;
 
-  const config = { ...form.value.config }
+  const config = { ...form.value.config };
   if (fieldName && selectedLabel) {
-    const nameKey = fieldName === 'channelId' ? 'channelName' : `${fieldName}Name`
-    config[nameKey] = selectedLabel
+    const nameKey = fieldName === "channelId" ? "channelName" : `${fieldName}Name`;
+    config[nameKey] = selectedLabel;
   }
 
-  emit('update', {
+  emit("update", {
     ...props.node,
     data: {
       ...props.node.data,
       label: form.value.label,
-      config
-    }
-  })
-}
+      config,
+    },
+  });
+};
 
 const handleDelete = () => {
-  if (props.node) emit('delete', props.node.id)
-}
+  if (props.node) emit("delete", props.node.id);
+};
 
 const addInputParam = () => {
   if (!form.value.config.inputParams) {
-    form.value.config.inputParams = []
+    form.value.config.inputParams = [];
   }
-  form.value.config.inputParams.push({ key: '', type: 'string' })
-  handleDataChange()
-}
+  form.value.config.inputParams.push({ key: "", type: "string" });
+  handleDataChange();
+};
 
 const removeInputParam = (index: number) => {
   if (Array.isArray(form.value.config.inputParams)) {
-    form.value.config.inputParams.splice(index, 1)
-    handleDataChange()
+    form.value.config.inputParams.splice(index, 1);
+    handleDataChange();
   }
-}
-
-// 快捷键提示
-const getShortcutLabel = (win: string, mac: string) => {
-  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
-  return isMac ? mac : win
-}
+};
 </script>
 
 <template>
@@ -248,8 +255,19 @@ const getShortcutLabel = (win: string, mac: string) => {
           </span>
         </div>
         <el-button type="danger" text size="small" @click="handleDelete">
-          <svg class="config-panel__delete-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M4 7h16M10 11v6M14 11v6M5 7l1 13a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-13M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+          <svg
+            class="config-panel__delete-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M4 7h16M10 11v6M14 11v6M5 7l1 13a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-13M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
         </el-button>
       </div>
@@ -258,17 +276,17 @@ const getShortcutLabel = (win: string, mac: string) => {
         <el-form label-position="top" size="small">
           <!-- 基础信息 -->
           <el-form-item label="节点显示名称">
-            <el-input
-              v-model="form.label"
-              placeholder="输入节点名称"
-              @input="handleDataChange"
-            />
+            <el-input v-model="form.label" placeholder="输入节点名称" @input="handleDataChange" />
           </el-form-item>
 
           <!-- 1. 开始节点专属配置 -->
           <template v-if="node.type === 'start'">
             <el-form-item label="触发类型">
-              <el-select v-model="form.config.triggerType" placeholder="选择类型" @change="handleDataChange">
+              <el-select
+                v-model="form.config.triggerType"
+                placeholder="选择类型"
+                @change="() => handleDataChange()"
+              >
                 <el-option label="手动触发 / API" value="manual" />
                 <el-option label="定时触发" value="cron" />
               </el-select>
@@ -279,7 +297,7 @@ const getShortcutLabel = (win: string, mac: string) => {
                 size="small"
                 type="primary"
                 plain
-                style="width: 100%; margin-bottom: 12px;"
+                style="width: 100%; margin-bottom: 12px"
                 @click="advancedCronVisible = true"
               >
                 设置定时与预设模板
@@ -289,7 +307,7 @@ const getShortcutLabel = (win: string, mac: string) => {
             <el-form-item label="输入变量定义">
               <div class="wf-param-list">
                 <div
-                  v-for="(param, idx) in (form.config.inputParams || [])"
+                  v-for="(param, idx) in form.config.inputParams || []"
                   :key="idx"
                   class="wf-param-item"
                 >
@@ -304,20 +322,43 @@ const getShortcutLabel = (win: string, mac: string) => {
                     v-model="param.type"
                     size="small"
                     style="width: 70px"
-                    @change="handleDataChange"
+                    @change="() => handleDataChange()"
                   >
                     <el-option label="string" value="string" />
                     <el-option label="number" value="number" />
                     <el-option label="boolean" value="boolean" />
                     <el-option label="json" value="json" />
                   </el-select>
-                  <el-button type="danger" text circle size="small" @click="removeInputParam(idx)">
-                    <svg class="config-panel__delete-icon config-panel__delete-icon--sm" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M4 7h16M10 11v6M14 11v6M5 7l1 13a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-13M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                  <el-button
+                    type="danger"
+                    text
+                    circle
+                    size="small"
+                    @click="removeInputParam(Number(idx))"
+                  >
+                    <svg
+                      class="config-panel__delete-icon config-panel__delete-icon--sm"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M4 7h16M10 11v6M14 11v6M5 7l1 13a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-13M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"
+                        stroke="currentColor"
+                        stroke-width="1.75"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
                     </svg>
                   </el-button>
                 </div>
-                <el-button size="small" type="primary" plain style="width: 100%; margin-top: 4px;" @click="addInputParam">
+                <el-button
+                  size="small"
+                  type="primary"
+                  plain
+                  style="width: 100%; margin-top: 4px"
+                  @click="addInputParam"
+                >
                   + 添加输入变量
                 </el-button>
               </div>
@@ -333,14 +374,17 @@ const getShortcutLabel = (win: string, mac: string) => {
                 @input="handleDataChange"
               >
                 <template #prefix>
-                  <span class="http-method-tag" :class="`http-method--${(form.config.method || 'GET').toLowerCase()}`">
-                    {{ form.config.method || 'GET' }}
+                  <span
+                    class="http-method-tag"
+                    :class="`http-method--${(form.config.method || 'GET').toLowerCase()}`"
+                  >
+                    {{ form.config.method || "GET" }}
                   </span>
                 </template>
               </el-input>
             </el-form-item>
             <el-form-item label="请求方法">
-              <el-select v-model="form.config.method" @change="handleDataChange">
+              <el-select v-model="form.config.method" @change="() => handleDataChange()">
                 <el-option label="GET" value="GET" />
                 <el-option label="POST" value="POST" />
                 <el-option label="PUT" value="PUT" />
@@ -348,84 +392,122 @@ const getShortcutLabel = (win: string, mac: string) => {
               </el-select>
             </el-form-item>
             <el-form-item label="超时时间 (ms)">
-              <el-input-number v-model="form.config.timeout" :min="1000" :max="60000" :step="1000" @change="handleDataChange" />
+              <el-input-number
+                v-model="form.config.timeout"
+                :min="1000"
+                :max="60000"
+                :step="1000"
+                @change="() => handleDataChange()"
+              />
             </el-form-item>
             <el-form-item label="请求头 (JSON)">
-              <el-input v-model="form.config.headers" type="textarea" :rows="2" placeholder='{"Content-Type": "application/json"}' @input="handleDataChange" />
+              <el-input
+                v-model="form.config.headers"
+                type="textarea"
+                :rows="2"
+                placeholder='{"Content-Type": "application/json"}'
+                @input="handleDataChange"
+              />
             </el-form-item>
             <el-form-item label="请求体 (JSON)">
-              <el-input v-model="form.config.body" type="textarea" :rows="2" placeholder='{"key": "value"}' @input="handleDataChange" />
+              <el-input
+                v-model="form.config.body"
+                type="textarea"
+                :rows="2"
+                placeholder='{"key": "value"}'
+                @input="handleDataChange"
+              />
             </el-form-item>
-            <div class="wf-config-info-box">
-              <div class="wf-config-info-title">📌 输出变量</div>
-              <div class="wf-config-info-item"><code>{{node.id}}.status</code> - HTTP 状态码</div>
-              <div class="wf-config-info-item"><code>{{node.id}}.body</code> - 响应体</div>
-              <div class="wf-config-info-item"><code>{{node.id}}.headers</code> - 响应头</div>
-            </div>
           </template>
 
           <!-- 3. AI 调用节点专属配置 -->
           <template v-if="node.type === 'ai_call'">
             <el-form-item label="系统提示词">
-              <el-input v-model="form.config.systemPrompt" type="textarea" :rows="2" placeholder="定义 AI 的角色和行为" @input="handleDataChange" />
+              <el-input
+                v-model="form.config.systemPrompt"
+                type="textarea"
+                :rows="2"
+                placeholder="定义 AI 的角色和行为"
+                @input="handleDataChange"
+              />
             </el-form-item>
             <el-form-item label="用户提示词" required>
-              <el-input v-model="form.config.userPrompt" type="textarea" :rows="4" placeholder="支持 {{节点ID.字段}} 变量引用" @input="handleDataChange" />
+              <el-input
+                v-model="form.config.userPrompt"
+                type="textarea"
+                :rows="4"
+                placeholder="支持 {{节点ID.字段}} 变量引用"
+                @input="handleDataChange"
+              />
             </el-form-item>
             <el-form-item label="温度">
-              <el-slider v-model="form.config.temperature" :min="0" :max="2" :step="0.1" @change="handleDataChange" />
+              <el-slider
+                v-model="form.config.temperature"
+                :min="0"
+                :max="2"
+                :step="0.1"
+                @change="() => handleDataChange()"
+              />
             </el-form-item>
             <el-form-item label="最大 Token">
-              <el-input-number v-model="form.config.maxTokens" :min="100" :max="8000" :step="100" @change="handleDataChange" />
+              <el-input-number
+                v-model="form.config.maxTokens"
+                :min="100"
+                :max="8000"
+                :step="100"
+                @change="() => handleDataChange()"
+              />
             </el-form-item>
             <el-form-item label="输出格式">
-              <el-select v-model="form.config.outputFormat" @change="handleDataChange">
+              <el-select v-model="form.config.outputFormat" @change="() => handleDataChange()">
                 <el-option label="文本" value="text" />
                 <el-option label="JSON" value="json" />
               </el-select>
             </el-form-item>
-            <div class="wf-config-info-box">
-              <div class="wf-config-info-title">📌 输出变量</div>
-              <div class="wf-config-info-item"><code>{{node.id}}.content</code> - 生成内容</div>
-              <div class="wf-config-info-item"><code>{{node.id}}.tokens</code> - Token 用量</div>
-              <div class="wf-config-info-item"><code>{{node.id}}.model</code> - 使用模型</div>
-            </div>
           </template>
 
           <!-- 4. 消息推送节点专属配置 -->
-          <template v-if="node.type === 'message_push_feishu' || node.type === 'message_push_wecom'">
+          <template
+            v-if="node.type === 'message_push_feishu' || node.type === 'message_push_wecom'"
+          >
             <el-form-item label="推送渠道" required>
-              <el-select v-model="form.config.channelId" @change="handleDataChange">
-                <el-option v-for="ch in messagePushChannels" :key="ch.id" :label="`${ch.name} (${ch.platform === 'feishu' ? '飞书' : '企微'})`" :value="ch.id" />
+              <el-select v-model="form.config.channelId" @change="() => handleDataChange()">
+                <el-option
+                  v-for="ch in messagePushChannels"
+                  :key="ch.id"
+                  :label="`${ch.name} (${ch.platform === 'feishu' ? '飞书' : '企微'})`"
+                  :value="ch.id"
+                />
               </el-select>
             </el-form-item>
             <el-form-item label="消息标题">
-              <el-input v-model="form.config.title" placeholder="支持 {{变量引用}}" @input="handleDataChange" />
+              <el-input
+                v-model="form.config.title"
+                placeholder="支持 {{变量引用}}"
+                @input="handleDataChange"
+              />
             </el-form-item>
             <el-form-item label="消息内容" required>
-              <el-input v-model="form.config.content" type="textarea" :rows="4" placeholder="支持 {{变量引用}}" @input="handleDataChange" />
+              <el-input
+                v-model="form.config.content"
+                type="textarea"
+                :rows="4"
+                placeholder="支持 {{变量引用}}"
+                @input="handleDataChange"
+              />
             </el-form-item>
-            <div class="wf-config-info-box">
-              <div class="wf-config-info-title">📌 输出变量</div>
-              <div class="wf-config-info-item"><code>{{node.id}}.sent</code> - 是否成功</div>
-              <div class="wf-config-info-item"><code>{{node.id}}.channelName</code> - 渠道名称</div>
-            </div>
           </template>
 
           <!-- 5. 热搜采集节点专属配置 -->
           <template v-if="node.type && node.type.startsWith('hotsearch_')">
             <el-form-item label="平台">
-              <span class="hotsearch-platform-badge" :data-platform="form.config.platform || node.type.replace('hotsearch_', '')">
-                {{ (form.config.platform || node.type.replace('hotsearch_', '')).toUpperCase() }}
+              <span
+                class="hotsearch-platform-badge"
+                :data-platform="form.config.platform || node.type.replace('hotsearch_', '')"
+              >
+                {{ (form.config.platform || node.type.replace("hotsearch_", "")).toUpperCase() }}
               </span>
             </el-form-item>
-            <div class="wf-config-info-box">
-              <div class="wf-config-info-title">📌 输出变量</div>
-              <div class="wf-config-info-item"><code>{{node.id}}.platform</code> - 平台标识</div>
-              <div class="wf-config-info-item"><code>{{node.id}}.name</code> - 平台名称</div>
-              <div class="wf-config-info-item"><code>{{node.id}}.itemCount</code> - 条目数</div>
-              <div class="wf-config-info-item"><code>{{node.id}}.items</code> - 热搜条目数组</div>
-            </div>
           </template>
 
           <!-- 2. 基于 Schema 动态渲染输入表单 -->
@@ -442,10 +524,12 @@ const getShortcutLabel = (win: string, mac: string) => {
                     v-model="form.config[field.field]"
                     :placeholder="field.placeholder || '请选择'"
                     style="width: 100%"
-                    @change="(val) => {
-                      const opt = field.options?.find(o => String(o.value) === String(val))
-                      handleDataChange(field.field, opt?.label)
-                    }"
+                    @change="
+                      (val) => {
+                        const opt = field.options?.find((o) => String(o.value) === String(val));
+                        handleDataChange(field.field, opt?.label);
+                      }
+                    "
                   >
                     <el-option
                       v-for="opt in field.options || []"
@@ -465,7 +549,11 @@ const getShortcutLabel = (win: string, mac: string) => {
                       :placeholder="field.placeholder || '支持 {{ node_id.variable }}'"
                       @input="handleDataChange"
                     />
-                    <button class="config-panel__insert-var-icon--textarea" @click="openVariableSelector(field.field)" title="插入变量">
+                    <button
+                      class="config-panel__insert-var-icon--textarea"
+                      @click="openVariableSelector(field.field)"
+                      title="插入变量"
+                    >
                       <el-icon :size="14"><Plus /></el-icon>
                     </button>
                   </div>
@@ -476,14 +564,14 @@ const getShortcutLabel = (win: string, mac: string) => {
                     v-model="form.config[field.field]"
                     size="small"
                     style="width: 100%"
-                    @change="handleDataChange"
+                    @change="() => handleDataChange()"
                   />
                 </template>
 
                 <template v-else-if="field.type === 'boolean'">
                   <el-switch
                     v-model="form.config[field.field]"
-                    @change="handleDataChange"
+                    @change="() => handleDataChange()"
                   />
                 </template>
 
@@ -494,7 +582,11 @@ const getShortcutLabel = (win: string, mac: string) => {
                     @input="handleDataChange"
                   >
                     <template #suffix>
-                      <button class="config-panel__insert-var-icon" @click="openVariableSelector(field.field)" title="插入变量">
+                      <button
+                        class="config-panel__insert-var-icon"
+                        @click="openVariableSelector(field.field)"
+                        title="插入变量"
+                      >
                         <el-icon :size="14"><Plus /></el-icon>
                       </button>
                     </template>
@@ -511,19 +603,27 @@ const getShortcutLabel = (win: string, mac: string) => {
 
           <!-- 3. 输出变量 Schema 预览 -->
           <template v-if="currentCapability?.outputSchema?.length">
-            <div class="config-panel__section-title">输出变量 (供下游引用)</div>
+            <div class="config-panel__section-title">下游可用数据</div>
             <div class="config-panel__output-variables">
               <div
                 v-for="out in currentCapability.outputSchema"
                 :key="out.field"
-                class="config-panel__output-tag"
-                @click="copyVariable(node.id, out.field)"
-                :title="`点击复制 {{ ${node.id}.${out.field} }}`"
+                class="config-panel__output-row"
+                :title="`复制变量：{{ ${getWorkflowVariableKey(node, allNodes || [])}.${out.field} }}`"
               >
-                <span class="config-panel__output-name">{{ out.field }}</span>
-                <span class="config-panel__output-type">{{ out.type }}</span>
-                <span class="config-panel__output-label">{{ out.label }}</span>
-                <span v-if="copiedField === out.field" class="config-panel__output-copied">已复制</span>
+                <span class="config-panel__output-main">
+                  <span class="config-panel__output-label">{{ out.label || out.field }}</span>
+                  <code class="config-panel__output-path"
+                    >{{ getWorkflowVariableKey(node, allNodes || []) }}.{{ out.field }}</code
+                  >
+                </span>
+                <button
+                  type="button"
+                  class="config-panel__output-copy"
+                  @click="copyVariable(node.id, out.field)"
+                >
+                  {{ copiedField === out.field ? "已复制" : "复制" }}
+                </button>
               </div>
             </div>
           </template>
@@ -536,7 +636,9 @@ const getShortcutLabel = (win: string, mac: string) => {
             </div>
             <div class="config-panel__meta-row">
               <span class="config-panel__meta-label">坐标:</span>
-              <span class="config-panel__meta-val">({{ Math.round(node.position.x) }}, {{ Math.round(node.position.y) }})</span>
+              <span class="config-panel__meta-val"
+                >({{ Math.round(node.position.x) }}, {{ Math.round(node.position.y) }})</span
+              >
             </div>
           </div>
         </el-form>
@@ -649,56 +751,61 @@ const getShortcutLabel = (win: string, mac: string) => {
   gap: 4px;
 }
 
-.config-panel__output-tag {
+.config-panel__output-row {
   display: flex;
-  padding: 4px 6px;
-  overflow: hidden;
-  font-size: 10px;
-  color: var(--el-color-primary);
-  background: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
-  border: 1px solid color-mix(in srgb, var(--el-color-primary) 20%, transparent);
-  border-radius: 4px;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-
-  &:hover {
-    border-color: var(--el-color-primary);
-    background: color-mix(in srgb, var(--el-color-primary) 15%, transparent);
-  }
-}
-
-.config-panel__output-name {
   min-width: 0;
-  overflow: hidden;
-  font-family: monospace;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex-shrink: 1;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid color-mix(in srgb, var(--el-color-primary) 18%, var(--app-content-border-color));
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--el-color-primary) 5%, transparent);
 }
 
-.config-panel__output-type {
-  font-size: 9px;
-  padding: 1px 5px;
-  border-radius: 3px;
-  background: color-mix(in srgb, var(--el-text-color-secondary) 12%, transparent);
-  color: var(--el-text-color-secondary);
-  flex-shrink: 0;
+.config-panel__output-main {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
 }
 
 .config-panel__output-label {
-  font-size: 9px;
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--el-text-color-regular);
+  font-size: 10px;
+  font-weight: 600;
+  text-overflow: ellipsis;
   white-space: nowrap;
-  opacity: 0.7;
   flex-shrink: 0;
 }
 
-.config-panel__output-copied {
+.config-panel__output-path {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--el-color-primary);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.config-panel__output-copy {
+  padding: 2px 5px;
+  border: 0;
+  border-radius: 3px;
+  color: var(--el-color-primary);
+  background: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
+  cursor: pointer;
   font-size: 9px;
-  color: var(--el-color-success);
   flex-shrink: 0;
+}
+
+.config-panel__output-copy:hover {
+  background: color-mix(in srgb, var(--el-color-primary) 18%, transparent);
 }
 
 .config-panel__meta-box {
@@ -826,36 +933,36 @@ const getShortcutLabel = (win: string, mac: string) => {
 }
 
 .config-panel__code-wrapper {
-    position: relative;
-    width: 100%;
-  }
+  position: relative;
+  width: 100%;
+}
 
-  .config-panel__code-editor {
-    width: 100%;
-    padding: 8px 10px;
-    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-    font-size: 11px;
-    line-height: 1.5;
-    color: var(--el-text-color-primary);
-    background: var(--el-bg-color-page);
-    border: 1px solid var(--el-border-color-lighter);
-    border-radius: 4px;
-    outline: none;
-    resize: vertical;
-    tab-size: 2;
-    white-space: pre;
-    overflow: auto;
-  }
+.config-panel__code-editor {
+  width: 100%;
+  padding: 8px 10px;
+  font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--el-text-color-primary);
+  background: var(--el-bg-color-page);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 4px;
+  outline: none;
+  resize: vertical;
+  tab-size: 2;
+  white-space: pre;
+  overflow: auto;
+}
 
-  .config-panel__code-editor:focus {
-    border-color: var(--el-color-primary);
-  }
+.config-panel__code-editor:focus {
+  border-color: var(--el-color-primary);
+}
 
-  .config-panel__code-editor::placeholder {
-    color: var(--el-text-color-placeholder);
-  }
+.config-panel__code-editor::placeholder {
+  color: var(--el-text-color-placeholder);
+}
 
-  .config-panel__insert-var-icon--textarea {
+.config-panel__insert-var-icon--textarea {
   position: absolute;
   right: 6px;
   bottom: 6px;
@@ -893,10 +1000,22 @@ const getShortcutLabel = (win: string, mac: string) => {
   border-radius: 3px;
   margin-right: 4px;
 }
-.http-method--get { background: #e8f5e9; color: #2e7d32; }
-.http-method--post { background: #e3f2fd; color: #1565c0; }
-.http-method--put { background: #fff3e0; color: #e65100; }
-.http-method--delete { background: #ffebee; color: #c62828; }
+.http-method--get {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+.http-method--post {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+.http-method--put {
+  background: #fff3e0;
+  color: #e65100;
+}
+.http-method--delete {
+  background: #ffebee;
+  color: #c62828;
+}
 
 .hotsearch-platform-badge {
   display: inline-block;
@@ -936,5 +1055,4 @@ const getShortcutLabel = (win: string, mac: string) => {
   font-family: monospace;
   color: var(--el-color-primary);
 }
-
 </style>

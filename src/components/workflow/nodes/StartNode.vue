@@ -1,26 +1,28 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Handle, Position } from '@vue-flow/core'
+import NodeParameterSummary from "./NodeParameterSummary.vue";
+import { computed } from "vue";
+import { Handle, Position } from "@vue-flow/core";
 
-const props = defineProps<{ data: { label?: string; config?: any } }>()
+const props = defineProps<{ data: { label?: string; config?: any } }>();
 
 const triggerLabel = computed(() => {
-  return props.data.config?.triggerType === 'cron' ? '定时' : '手动'
-})
+  return props.data.config?.triggerType === "cron" ? "定时" : "手动";
+});
 
 const paramCount = computed(() => {
-  const params = props.data.config?.inputParams
-  return Array.isArray(params) ? params.length : 0
-})
+  const params = props.data.config?.inputParams;
+  return Array.isArray(params) ? params.length : 0;
+});
 </script>
 
 <template>
   <div class="wf-node wf-node--start">
-    <div class="wf-start-title">{{ data.label || '开始' }}</div>
+    <div class="wf-start-title">{{ data.label || "开始" }}</div>
     <div class="wf-start-badge">
       <span>{{ triggerLabel }}</span>
       <span v-if="paramCount > 0" class="wf-param-tag">{{ paramCount }}个变量</span>
     </div>
+    <NodeParameterSummary :data="data" />
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>
@@ -40,15 +42,21 @@ const paramCount = computed(() => {
   gap: 2px;
 }
 
-.wf-start-title { font-weight: 600; }
+.wf-start-title {
+  font-weight: 600;
+}
 
 .wf-start-badge {
-  display: flex; align-items: center; gap: 4px;
-  font-size: 10px; opacity: 0.9;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  opacity: 0.9;
 }
 
 .wf-param-tag {
   padding: 0 4px;
-  background: rgb(255 255 255 / 25%); border-radius: 3px;
+  background: rgb(255 255 255 / 25%);
+  border-radius: 3px;
 }
 </style>

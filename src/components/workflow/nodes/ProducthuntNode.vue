@@ -1,10 +1,18 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Handle, Position } from '@vue-flow/core'
-import { producthuntIcon } from '@/assets/icons/news'
+import NodeParameterSummary from "./NodeParameterSummary.vue";
+import { computed } from "vue";
+import { Handle, Position } from "@vue-flow/core";
+import { producthuntIcon } from "@/assets/icons/news";
 
-const props = defineProps<{ data: { label?: string; config?: any } }>()
-const keyword = computed(() => props.data.config?.keyword || props.data.config?.query || props.data.config?.category || props.data.config?.type || '')
+const props = defineProps<{ data: { label?: string; config?: any } }>();
+const keyword = computed(
+  () =>
+    props.data.config?.keyword ||
+    props.data.config?.query ||
+    props.data.config?.category ||
+    props.data.config?.type ||
+    "",
+);
 </script>
 
 <template>
@@ -12,10 +20,11 @@ const keyword = computed(() => props.data.config?.keyword || props.data.config?.
     <Handle type="target" :position="Position.Top" />
     <div class="wf-node__header">
       <img :src="producthuntIcon" class="wf-node__icon" />
-      <span class="wf-node__title">{{ data.label || 'Product Hunt' }}</span>
+      <span class="wf-node__title">{{ data.label || "Product Hunt" }}</span>
     </div>
     <div v-if="keyword" class="wf-node__subtitle">{{ keyword }}</div>
     <div class="wf-node__type">新闻数据</div>
+    <NodeParameterSummary :data="data" />
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>
@@ -46,8 +55,8 @@ const keyword = computed(() => props.data.config?.keyword || props.data.config?.
 }
 .wf-node--producthunt .wf-node__subtitle {
   font-size: 11px;
-  color: #DA552F;
-  background: #FDEEE9;
+  color: #da552f;
+  background: #fdeee9;
   padding: 2px 6px;
   border-radius: 4px;
   margin: 4px 0;

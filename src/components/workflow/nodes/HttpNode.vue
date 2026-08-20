@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { Handle, Position } from '@vue-flow/core'
+import NodeParameterSummary from "./NodeParameterSummary.vue";
+import { Handle, Position } from "@vue-flow/core";
 
-defineProps<{ data: { label?: string; config?: any } }>()
+defineProps<{ data: { label?: string; config?: any } }>();
 </script>
 
 <template>
@@ -9,9 +10,10 @@ defineProps<{ data: { label?: string; config?: any } }>()
     <Handle type="target" :position="Position.Top" />
     <div class="wf-node__header">
       <span class="wf-node__dot" />
-      <span class="wf-node__title">{{ data.label || 'HTTP 请求' }}</span>
-      <span class="wf-node__method">{{ data.config?.method || 'POST' }}</span>
+      <span class="wf-node__title">{{ data.label || "HTTP 请求" }}</span>
+      <span class="wf-node__method">{{ data.config?.method || "POST" }}</span>
     </div>
+    <NodeParameterSummary :data="data" />
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>
@@ -33,15 +35,33 @@ defineProps<{ data: { label?: string; config?: any } }>()
   box-shadow: 0 0 0 2px color-mix(in srgb, #06b6d4 25%, transparent);
 }
 
-.wf-node__header { display: flex; align-items: center; gap: 5px; }
+.wf-node__header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
 
-.wf-node__dot { width: 6px; height: 6px; background: #06b6d4; border-radius: 50%; flex-shrink: 0; }
+.wf-node__dot {
+  width: 6px;
+  height: 6px;
+  background: #06b6d4;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
 
-.wf-node__title { font-size: 12px; font-weight: 600; color: var(--el-text-color-primary); }
+.wf-node__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
 
 .wf-node__method {
-  padding: 1px 4px; margin-left: auto;
-  font-size: 10px; font-weight: 700; color: #06b6d4;
-  background: color-mix(in srgb, #06b6d4 12%, transparent); border-radius: 3px;
+  padding: 1px 4px;
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  color: #06b6d4;
+  background: color-mix(in srgb, #06b6d4 12%, transparent);
+  border-radius: 3px;
 }
 </style>

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { MoreFilled, Clock } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
+import { useUserStore } from '@/store/modules/user'
 import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
 import ExecutionHistory from '@/components/workflow/ExecutionHistory.vue'
 import {
@@ -15,11 +16,17 @@ import {
   getWorkflowExecutionsApi,
   deleteWorkflowExecutionApi,
   clearWorkflowExecutionsApi,
-  type WorkflowItem
+  getWorkflowLibraryPageApi,
+  importWorkflowFromLibraryApi,
+  publishWorkflowToLibraryApi,
+  type WorkflowItem,
+  type WorkflowLibraryItem
 } from '@/api/workflow'
 
 const router = useRouter()
 const { t } = useI18n()
+const userStore = useUserStore()
+const isAdmin = computed(() => userStore.user?.isAdmin === true)
 
 const loading = ref(false)
 const list = ref<WorkflowItem[]>([])
@@ -41,6 +48,39 @@ const fetchList = async () => {
   }
 }
 
+const libraryVisible = ref(false)
+const libraryLoading = ref(false)
+const libraryList = ref<WorkflowLibraryItem[]>([])
+const libraryTotal = ref(0)
+
+const fetchLibrary = async () => {
+  libraryLoading.value = true
+  try {
+    const res: any = await getWorkflowLibraryPageApi({ currentPage: 1, pageSize: 50 })
+    libraryList.value = res?.list || []
+    libraryTotal.value = res?.total || 0
+  } finally {
+    libraryLoading.value = false
+  }
+}
+
+const openLibrary = async () => {
+  libraryVisible.value = true
+  await fetchLibrary()
+}
+
+const handleImportLibrary = async (item: WorkflowLibraryItem) => {
+  try {
+    await ElMessageBox.confirm(`导入“${item.name}”吗？导入后会生成你自己的独立工作流。`, '导入工作流', { confirmButtonText: '导入', cancelButtonText: '取消' })
+    const result: any = await importWorkflowFromLibraryApi(item.id)
+    ElMessage.success('工作流已导入')
+    await fetchList()
+    if (result?.id) router.push(`/workflow/editor/${result.id}`)
+  } catch (error: any) {
+    if (error !== 'cancel' && error !== 'close') ElMessage.error(error?.message || '导入工作流失败')
+  }
+}
+
 onMounted(fetchList)
 
 const handleSearch = () => { params.currentPage = 1; fetchList() }
@@ -59,6 +99,21 @@ const handleCreate = async () => {
 }
 
 const openEditor = (row: WorkflowItem) => { router.push(`/workflow/editor/${row.id}`) }
+
+const handlePublishToLibrary = async (row: WorkflowItem) => {
+  if (!isAdmin.value) return
+  try {
+    const category = await ElMessageBox.prompt('请输入工作流库分类', '发布到工作流库', {
+      inputValue: '其他',
+      confirmButtonText: '发布',
+      cancelButtonText: '取消'
+    })
+    await publishWorkflowToLibraryApi(row.id, { category: category.value || '其他' })
+    ElMessage.success('已发布到工作流库')
+  } catch (error: any) {
+    if (error !== 'cancel' && error !== 'close') ElMessage.error(error?.message || '发布到工作流库失败')
+  }
+}
 
 const handleDelete = async (row: WorkflowItem) => {
   await ElMessageBox.confirm(`${t('workflow.deleteConfirm', { name: row.name })}`, t('common.tip'), { confirmButtonText: t('workflow.delete'), cancelButtonText: t('common.cancel'), type: 'warning', confirmButtonClass: 'el-button--danger' })
@@ -173,16 +228,23 @@ const handleClearHistory = async () => {
 <template>
   <ContentWrap :plain="true">
     <div class="wf-page">
-      <!-- 页头 -->
+      <!-- 页头：搜索与操作保持同一行，并分列到两侧 -->
       <div class="wf-page__header">
-        <h1 class="wf-page__title">{{ t('workflow.title') }}</h1>
-        <el-button type="primary" size="small" @click="createVisible = true">{{ t('workflow.create') }}</el-button>
-      </div>
-
-      <!-- 搜索 -->
-      <div class="wf-page__search">
-        <el-input v-model="params.name" :placeholder="t('workflow.search')" size="small" clearable style="width: 200px"
-          @keyup.enter="handleSearch" @clear="handleSearch" />
+        <div class="wf-page__header-left">
+          <el-input
+            v-model="params.name"
+            class="wf-page__search-input"
+            :placeholder="t('workflow.search')"
+            size="small"
+            clearable
+            @keyup.enter="handleSearch"
+            @clear="handleSearch"
+          />
+        </div>
+        <div class="wf-page__header-actions">
+          <el-button size="small" @click="openLibrary">工作流库</el-button>
+          <el-button type="primary" size="small" @click="createVisible = true">{{ t('workflow.create') }}</el-button>
+        </div>
       </div>
 
       <!-- 卡片网格 -->
@@ -245,6 +307,7 @@ const handleClearHistory = async () => {
                   <el-dropdown-item @click="handleShowHistory(item)">{{ t('workflow.executionHistory')
                   }}</el-dropdown-item>
                   <el-dropdown-item divided @click="openEditor(item)">{{ t('workflow.edit') }}</el-dropdown-item>
+                  <el-dropdown-item v-if="isAdmin" @click="handlePublishToLibrary(item)">发布到工作流库</el-dropdown-item>
                   <el-dropdown-item :disabled="item.isRunning" @click="handleToggleEnabled(item)">{{ item.isEnabled ?
                     t('workflow.disable') : t('workflow.enable') }}</el-dropdown-item>
                   <el-dropdown-item type="danger" divided @click="handleDelete(item)">{{ t('workflow.delete')
@@ -269,6 +332,25 @@ const handleClearHistory = async () => {
         <ExecutionHistory :executions="executions" :loading="loadingHistory" :show-delete="true"
           @refresh="historyWorkflow && loadExecutions(historyWorkflow.id)" @delete="handleDeleteExecution"
           @clear="handleClearHistory" />
+      </el-dialog>
+
+      <!-- 工作流库 -->
+      <el-dialog v-model="libraryVisible" title="工作流库" fullscreen class="wf-library-dialog">
+        <div v-loading="libraryLoading" class="wf-library-grid">
+          <el-empty v-if="!libraryList.length" description="工作流库暂无已发布模板" />
+          <div v-for="item in libraryList" :key="item.id" class="wf-library-card">
+            <div class="wf-library-card__top">
+              <span class="wf-library-card__category">{{ item.category }}</span>
+            </div>
+            <div class="wf-library-card__body">
+              <h3 class="wf-library-card__title" :title="item.name">{{ item.name }}</h3>
+              <p class="wf-library-card__description">{{ item.description || '暂无描述' }}</p>
+            </div>
+            <div class="wf-library-card__footer">
+              <el-button type="primary" size="small" @click="handleImportLibrary(item)">添加到我的工作流</el-button>
+            </div>
+          </div>
+        </div>
       </el-dialog>
 
       <!-- 创建 -->
@@ -351,20 +433,29 @@ const handleClearHistory = async () => {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 16px;
+    min-height: 32px;
     margin-bottom: 16px;
   }
 
-  &__title {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--el-text-color-primary);
-  }
-
-  &__search {
+  &__header-left,
+  &__header-actions {
     display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
+    align-items: center;
+    gap: 10px;
+  }
+
+  &__header-left {
+    min-width: 0;
+    flex: 1;
+  }
+
+  &__header-actions {
+    flex-shrink: 0;
+  }
+
+  &__search-input {
+    width: 240px;
   }
 
   &__pagination {
@@ -707,5 +798,106 @@ const handleClearHistory = async () => {
       background: color-mix(in srgb, #4ade80 12%, transparent);
     }
   }
+}
+</style>
+
+<style scoped>
+/* 工作流库沿用工作流卡片的轻量视觉，避免额外装饰和过大的留白。 */
+.wf-library-dialog :deep(.el-dialog__body) {
+  padding: 16px;
+  overflow: auto;
+}
+
+.wf-library-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  width: 100%;
+  min-height: 180px;
+  padding: 4px;
+  box-sizing: border-box;
+}
+
+.wf-library-card {
+  display: flex;
+  min-height: 180px;
+  padding: 16px;
+  background: var(--app-content-surface-color);
+  border: 1px solid var(--app-content-border-color);
+  border-radius: 8px;
+  box-shadow: 8px 8px 24px color-mix(in srgb, var(--el-text-color-primary) 8%, transparent);
+  flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wf-library-card:hover {
+  box-shadow: 12px 12px 30px color-mix(in srgb, var(--el-text-color-primary) 12%, transparent);
+  transform: translateY(-3px);
+}
+
+.wf-library-card__top,
+.wf-library-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.wf-library-card__top {
+  color: var(--el-text-color-placeholder);
+  font-size: 12px;
+}
+
+.wf-library-card__category {
+  max-width: 120px;
+  overflow: hidden;
+  color: var(--el-color-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wf-library-card__body {
+  min-width: 0;
+  padding: 18px 0 14px;
+  flex: 1;
+}
+
+.wf-library-card__title {
+  margin: 0 0 8px;
+  overflow: hidden;
+  color: var(--el-text-color-primary);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wf-library-card__description {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.wf-library-card__footer {
+  justify-content: flex-end;
+  padding-top: 10px;
+}
+
+.wf-library-card__footer :deep(.el-button) {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .wf-library-dialog :deep(.el-dialog__body) { padding: 12px; }
+  .wf-library-grid { grid-template-columns: 1fr; gap: 12px; }
 }
 </style>

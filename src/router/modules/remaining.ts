@@ -247,6 +247,17 @@ const remainingRouter: AppRouteRecordRaw[] = [
         },
       },
       {
+        path: "file-asset",
+        component: () => import("@/views/system/file-asset/index.vue"),
+        name: "FileAsset",
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: "router.fileAsset",
+        },
+      },
+      {
         path: "asset-3d",
         component: () => import("@/views/material/asset3d/index.vue"),
         name: "Asset3d",
@@ -642,13 +653,27 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: "news",
-        redirect: "/external/news",
-        meta: { hidden: true },
+        component: () => import("@/views/external/news/index.vue"),
+        name: "ExternalNewsCollect",
+        meta: {
+          title: "router.newsCollect",
+        },
       },
       {
-        path: "svgrepo",
-        redirect: "/external/data-collect?tab=svgrepo",
-        meta: { hidden: true },
+        path: "hotsearch",
+        component: () => import("@/views/external/hotsearch/index.vue"),
+        name: "ExternalHotsearchCollect",
+        meta: {
+          title: "router.hotsearchCollect",
+        },
+      },
+{
+        path: "data-tools",
+        component: () => import("@/views/external/data-tools/index.vue"),
+        name: "ExternalDataToolsCollect",
+        meta: {
+          title: "router.dataToolsCollect",
+        },
       },
       {
         path: "client-management",

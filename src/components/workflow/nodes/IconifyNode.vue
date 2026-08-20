@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Handle, Position } from '@vue-flow/core'
-import { iconifyIcon } from '@/assets/icons/apps'
+import NodeParameterSummary from "./NodeParameterSummary.vue";
+import { computed } from "vue";
+import { Handle, Position } from "@vue-flow/core";
+import { iconifyIcon } from "@/assets/icons/apps";
 
-const props = defineProps<{ data: { label?: string; config?: any } }>()
+const props = defineProps<{ data: { label?: string; config?: any } }>();
 
-const keyword = computed(() => props.data.config?.keyword || props.data.config?.query || '')
-const maxCount = computed(() => props.data.config?.maxCount || props.data.config?.limit || 10)
-const prefix = computed(() => props.data.config?.prefix || '')
-const color = computed(() => props.data.config?.color || '#000000')
+const keyword = computed(() => props.data.config?.keyword || props.data.config?.query || "");
+const maxCount = computed(() => props.data.config?.maxCount || props.data.config?.limit || 10);
+const prefix = computed(() => props.data.config?.prefix || "");
+const color = computed(() => props.data.config?.color || "#000000");
 </script>
 
 <template>
@@ -16,12 +17,12 @@ const color = computed(() => props.data.config?.color || '#000000')
     <Handle type="target" :position="Position.Top" />
     <div class="wf-node__header">
       <img :src="iconifyIcon" class="wf-node__icon" />
-      <span class="wf-node__title">{{ data.label || 'Iconify 采集' }}</span>
+      <span class="wf-node__title">{{ data.label || "Iconify 采集" }}</span>
     </div>
     <div v-if="keyword" class="wf-node__subtitle">{{ keyword }}</div>
-    <div v-if="maxCount" class="wf-node__badge">Limit: {{ maxCount }}<span v-if="prefix"> · {{ prefix }}</span></div>
     <div v-if="color" class="wf-node__color-dot" :style="{ backgroundColor: color }" />
     <div class="wf-node__type">200,000+ 开源图标聚合</div>
+    <NodeParameterSummary :data="data" />
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>
@@ -55,8 +56,8 @@ const color = computed(() => props.data.config?.color || '#000000')
 
   .wf-node__subtitle {
     font-size: 11px;
-    color: #6C63FF;
-    background: #EDE9FE;
+    color: #6c63ff;
+    background: #ede9fe;
     padding: 2px 6px;
     border-radius: 4px;
     margin: 4px 0;

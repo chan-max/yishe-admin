@@ -2,6 +2,7 @@ import * as FileApi from '@/api/infra/file'
 import CryptoJS from 'crypto-js'
 import { UploadRawFile, UploadRequestOptions } from 'element-plus/es/components/upload/src/upload'
 import axios from 'axios'
+import { registerFileAssetBestEffort } from '@/api/file-asset'
 
 /**
  * 获得上传 URL
@@ -33,6 +34,23 @@ export const useUpload = () => {
         .then(() => {
           // 1.4. 记录文件信息到后端（异步）
           createFile(presignedInfo, fileName, options.file)
+          // 兼容 MinIO/S3 等预签名直传：登记成功对象，但不影响旧上传流程。
+          let provider = "s3-compatible"
+          try {
+            const hostname = new URL(presignedInfo.url).hostname
+            if (/\.cos\./i.test(hostname) || /myqcloud/i.test(hostname)) provider = "tencent-cos"
+          } catch {}
+          registerFileAssetBestEffort({
+            provider,
+            objectKey: fileName,
+            url: presignedInfo.url,
+            fileName: options.file.name,
+            contentType: options.file.type,
+            size: options.file.size,
+            sourceApp: "yishe-admin",
+            sourceModule: "generic-upload",
+            metadata: { uploadMode: "presigned-direct", configId: presignedInfo.configId },
+          })
           // 通知成功，数据格式保持与后端上传的返回结果一致
           return { data: presignedInfo.url }
         })

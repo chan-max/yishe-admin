@@ -1,19 +1,21 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Handle, Position } from '@vue-flow/core'
-import { shopifyIcon } from '@/assets/icons/utility'
-const props = defineProps<{ data: { label?: string; config?: any } }>()
-const storeUrl = computed(() => props.data.config?.storeUrl || props.data.config?.keyword || '')
+import NodeParameterSummary from "./NodeParameterSummary.vue";
+import { computed } from "vue";
+import { Handle, Position } from "@vue-flow/core";
+import { shopifyIcon } from "@/assets/icons/utility";
+const props = defineProps<{ data: { label?: string; config?: any } }>();
+const storeUrl = computed(() => props.data.config?.storeUrl || props.data.config?.keyword || "");
 </script>
 <template>
   <div class="wf-node wf-node--shopify">
     <Handle type="target" :position="Position.Top" />
     <div class="wf-node__header">
       <img :src="shopifyIcon" class="wf-node__icon" />
-      <span class="wf-node__title">{{ data.label || 'Shopify 独立站' }}</span>
+      <span class="wf-node__title">{{ data.label || "Shopify 独立站" }}</span>
     </div>
     <div v-if="storeUrl" class="wf-node__subtitle">{{ storeUrl }}</div>
     <div class="wf-node__type">电商</div>
+    <NodeParameterSummary :data="data" />
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>

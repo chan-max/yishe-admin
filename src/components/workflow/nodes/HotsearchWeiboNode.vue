@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { Handle, Position } from '@vue-flow/core'
-import { weiboIcon } from '@/assets/icons/apps'
+import NodeParameterSummary from "./NodeParameterSummary.vue";
+import { Handle, Position } from "@vue-flow/core";
+import { weiboIcon } from "@/assets/icons/apps";
 
-const props = defineProps<{ data: { label?: string; config?: any } }>()
+const props = defineProps<{ data: { label?: string; config?: any } }>();
 </script>
 
 <template>
@@ -10,8 +11,9 @@ const props = defineProps<{ data: { label?: string; config?: any } }>()
     <Handle type="target" :position="Position.Top" />
     <div class="wf-node__header">
       <img :src="weiboIcon" class="wf-node__icon" />
-      <span class="wf-node__title">{{ data.label || '微博热搜采集' }}</span>
+      <span class="wf-node__title">{{ data.label || "微博热搜采集" }}</span>
     </div>
+    <NodeParameterSummary :data="data" />
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>
@@ -45,5 +47,9 @@ const props = defineProps<{ data: { label?: string; config?: any } }>()
   flex-shrink: 0;
 }
 
-.wf-node__title { font-size: 12px; font-weight: 600; color: var(--el-text-color-primary); }
+.wf-node__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
 </style>

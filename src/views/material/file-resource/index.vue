@@ -487,8 +487,7 @@
     <el-dialog
       v-model="uploadModalVisible"
       :title="t('fileResource.uploadTitle')"
-      width="calc(100vw - 32px)"
-      top="16px"
+      fullscreen
       :footer="false"
       :destroy-on-close="true"
       class="file-resource-upload-dialog"
@@ -1478,13 +1477,13 @@ function handleOperationCommand(command: string, row: any) {
 :deep(.file-resource-upload-dialog) {
   .el-dialog {
     display: flex;
-    width: calc(100vw - 32px) !important;
-    max-width: calc(100vw - 32px);
-    height: calc(100vh - 32px);
-    max-height: calc(100vh - 32px);
+    width: 100% !important;
+    max-width: none;
+    height: 100%;
+    max-height: none;
     flex-direction: column;
-    margin: 16px auto !important;
-    border-radius: 18px;
+    margin: 0 auto !important;
+    border-radius: 0;
     overflow: hidden;
   }
 
@@ -1512,14 +1511,14 @@ function handleOperationCommand(command: string, row: any) {
 
 :global(.file-resource-upload-dialog.el-dialog) {
   display: flex;
-  width: calc(100vw - 32px) !important;
-  max-width: calc(100vw - 32px);
-  height: calc(100vh - 32px);
-  max-height: calc(100vh - 32px);
+  width: 100% !important;
+  max-width: none;
+  height: 100%;
+  max-height: none;
   flex-direction: column;
-  margin-top: 16px !important;
-  margin-bottom: 16px !important;
-  border-radius: 18px;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  border-radius: 0;
   overflow: hidden;
 }
 
@@ -1712,12 +1711,12 @@ function handleOperationCommand(command: string, row: any) {
 @media (max-width: 1024px) {
   :deep(.file-resource-upload-dialog) {
     .el-dialog {
-      width: calc(100vw - 12px) !important;
-      max-width: calc(100vw - 12px);
-      height: calc(100vh - 12px);
-      max-height: calc(100vh - 12px);
-      margin: 6px auto !important;
-      border-radius: 14px;
+      width: 100% !important;
+      max-width: 100%;
+      height: 100%;
+      max-height: 100%;
+      margin: 0 auto !important;
+      border-radius: 0;
     }
 
     .el-dialog__header {
@@ -1730,13 +1729,13 @@ function handleOperationCommand(command: string, row: any) {
   }
 
   :global(.file-resource-upload-dialog.el-dialog) {
-    width: calc(100vw - 12px) !important;
-    max-width: calc(100vw - 12px);
-    height: calc(100vh - 12px);
-    max-height: calc(100vh - 12px);
-    margin-top: 6px !important;
-    margin-bottom: 6px !important;
-    border-radius: 14px;
+    width: 100% !important;
+    max-width: 100%;
+    height: 100%;
+    max-height: 100%;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    border-radius: 0;
   }
 
   :global(.file-resource-upload-dialog.el-dialog .el-dialog__header) {

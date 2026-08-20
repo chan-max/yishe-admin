@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { Handle, Position } from '@vue-flow/core'
+import { Handle, Position } from "@vue-flow/core";
 
-defineProps<{ data: { label?: string; config?: any } }>()
+defineProps<{ data: { label?: string; config?: any } }>();
 </script>
 
 <template>
   <div class="wf-node wf-node--end">
     <Handle type="target" :position="Position.Top" />
-    <span>{{ data.label || '结束' }}</span>
+    <span>{{ data.label || "结束" }}</span>
   </div>
 </template>
 

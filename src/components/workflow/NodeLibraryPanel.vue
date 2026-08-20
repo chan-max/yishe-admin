@@ -1,55 +1,86 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { Search, Plus } from '@element-plus/icons-vue'
+import { ref, computed, onMounted } from "vue";
+import { Search, Plus } from "@element-plus/icons-vue";
 import {
   SYSTEM_NODE_REGISTRY,
   NODE_CATEGORIES,
-  type SystemNodeCapability
-} from '@/views/workflow/editor/config/nodeRegistry'
+  type SystemNodeCapability,
+} from "@/views/workflow/editor/config/nodeRegistry";
+import {
+  useWorkflowNodeManifest,
+  UNAVAILABLE_WORKFLOW_NODE_TYPES,
+} from "@/composables/useWorkflowNodeManifest";
 
 const emit = defineEmits<{
-  (e: 'add-node', nodeCapability: SystemNodeCapability): void
-}>()
+  (e: "add-node", nodeCapability: SystemNodeCapability): void;
+}>();
 
-const searchQuery = ref('')
-const activeCategory = ref<string>('all')
+const searchQuery = ref("");
+const activeCategory = ref<string>("all");
+const { byType, load: loadServerManifest } = useWorkflowNodeManifest();
+
+onMounted(() => {
+  loadServerManifest();
+});
+
+const availableCapabilities = computed(() =>
+  SYSTEM_NODE_REGISTRY.filter((item) => {
+    const remote = byType.value.get(item.type);
+    return (
+      !UNAVAILABLE_WORKFLOW_NODE_TYPES.has(item.type) && (!remote || remote.executable !== false)
+    );
+  }).map((item) => {
+    const remote = byType.value.get(item.type);
+    return remote
+      ? {
+          ...item,
+          name: remote.name || item.name,
+          description: remote.description || item.description,
+          inputSchema: remote.inputSchema || item.inputSchema,
+          outputSchema: remote.outputSchema || item.outputSchema,
+        }
+      : item;
+  }),
+);
 
 const filteredCapabilities = computed(() => {
-  return SYSTEM_NODE_REGISTRY.filter((item) => {
+  return availableCapabilities.value.filter((item) => {
     // 1. 分类匹配
-    const matchCategory =
-      activeCategory.value === 'all' || item.category === activeCategory.value
+    const matchCategory = activeCategory.value === "all" || item.category === activeCategory.value;
 
     // 2. 检索关键字匹配
-    const query = searchQuery.value.trim().toLowerCase()
-    if (!query) return matchCategory
+    const query = searchQuery.value.trim().toLowerCase();
+    if (!query) return matchCategory;
 
-    const matchName = item.name.toLowerCase().includes(query)
-    const matchDesc = item.description.toLowerCase().includes(query)
-    const matchType = item.type.toLowerCase().includes(query)
-    const matchBadge = item.badge?.toLowerCase().includes(query)
+    const matchName = item.name.toLowerCase().includes(query);
+    const matchDesc = item.description.toLowerCase().includes(query);
+    const matchType = item.type.toLowerCase().includes(query);
+    const matchBadge = item.badge?.toLowerCase().includes(query);
 
-    return matchCategory && (matchName || matchDesc || matchType || matchBadge)
-  })
-})
+    return matchCategory && (matchName || matchDesc || matchType || matchBadge);
+  });
+});
 
 const getCategoryCount = (categoryKey: string) => {
-  if (categoryKey === 'all') return SYSTEM_NODE_REGISTRY.length
-  return SYSTEM_NODE_REGISTRY.filter((item) => item.category === categoryKey).length
-}
+  if (categoryKey === "all") return availableCapabilities.value.length;
+  return availableCapabilities.value.filter((item) => item.category === categoryKey).length;
+};
 
 const onDragStart = (event: DragEvent, capability: SystemNodeCapability) => {
   if (event.dataTransfer) {
-    event.dataTransfer.setData('application/vueflow-node-type', capability.type)
-    event.dataTransfer.setData('application/vueflow-node-label', capability.name)
-    event.dataTransfer.setData('application/vueflow-node-data', JSON.stringify(capability.defaultData))
-    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData("application/vueflow-node-type", capability.type);
+    event.dataTransfer.setData("application/vueflow-node-label", capability.name);
+    event.dataTransfer.setData(
+      "application/vueflow-node-data",
+      JSON.stringify(capability.defaultData),
+    );
+    event.dataTransfer.effectAllowed = "move";
   }
-}
+};
 
 const handleQuickAdd = (capability: SystemNodeCapability) => {
-  emit('add-node', capability)
-}
+  emit("add-node", capability);
+};
 </script>
 
 <template>
@@ -97,14 +128,23 @@ const handleQuickAdd = (capability: SystemNodeCapability) => {
         @dragstart="onDragStart($event, cap)"
       >
         <div class="node-library-card__icon-box" :style="{ background: cap.color }">
-          <img v-if="cap.iconImage" :src="cap.iconImage" class="node-library-card__icon-img" style="width: 20px; height: 20px; object-fit: contain;" />
+          <img
+            v-if="cap.iconImage"
+            :src="cap.iconImage"
+            class="node-library-card__icon-img"
+            style="width: 20px; height: 20px; object-fit: contain"
+          />
           <Icon v-else :icon="cap.icon" class="node-library-card__icon" />
         </div>
 
         <div class="node-library-card__content">
           <div class="node-library-card__title-row">
             <span class="node-library-card__name">{{ cap.name }}</span>
-            <span v-if="cap.badge" class="node-library-card__badge" :style="{ borderColor: cap.color, color: cap.color }">
+            <span
+              v-if="cap.badge"
+              class="node-library-card__badge"
+              :style="{ borderColor: cap.color, color: cap.color }"
+            >
               {{ cap.badge }}
             </span>
           </div>
@@ -260,7 +300,9 @@ html.dark .node-library-card {
 
   &:hover {
     border-color: color-mix(in srgb, var(--el-color-primary) 30%, transparent);
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4), 0 0 0 1px color-mix(in srgb, var(--el-color-primary) 15%, transparent);
+    box-shadow:
+      0 3px 12px rgba(0, 0, 0, 0.4),
+      0 0 0 1px color-mix(in srgb, var(--el-color-primary) 15%, transparent);
     transform: translateY(-1px);
   }
 

@@ -66,27 +66,19 @@
   <!-- Contact Admin Dialog -->
   <el-dialog
     v-model="showContactDialog"
-    width="370px"
+    title="获取账号"
+    width="340px"
     align-center
-    :show-close="true"
     :close-on-click-modal="true"
-    :close-on-press-escape="true"
   >
-    <template #header>
-      <div style="display: flex; align-items: center; gap: 10px">
-        <el-icon size="22"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></el-icon>
-        <span style="font-size: 19px; font-weight: bold; letter-spacing: 1px">获取账号</span>
-      </div>
-    </template>
-    <div style="padding: 18px 0 10px; text-align: center">
-      <div style="margin-bottom: 8px; font-size: 17px; font-weight: 500">请联系系统管理员获取账号</div>
-      <div style="margin-bottom: 6px; font-size: 12px; font-weight: bold; letter-spacing: 1px">
-        <span>TEL</span> & <span>WECHAT</span>：18742539196
-      </div>
-      <el-tag type="success" effect="plain" style="margin-top: 4px">24小时在线</el-tag>
-    </div>
+    <p style="margin: 0 0 8px; font-size: 14px; color: var(--el-text-color-regular)">
+      请联系系统管理员获取账号
+    </p>
+    <p style="margin: 0; font-size: 13px; color: var(--el-text-color-secondary)">
+      TEL / WECHAT：18742539196
+    </p>
     <template #footer>
-      <el-button type="primary" style="width: 100%; font-size: 12px" @click="showContactDialog = false">
+      <el-button type="primary" style="width: 100%" @click="showContactDialog = false">
         我知道了
       </el-button>
     </template>
@@ -234,7 +226,7 @@ onMounted(() => {
   &__welcome {
     margin: 0;
     font-size: 12px;
-    color: #666;
+    color: var(--el-text-color-secondary);
     font-weight: 400;
   }
 
@@ -242,7 +234,7 @@ onMounted(() => {
     margin: 4px 0 0;
     font-size: 16px;
     font-weight: 700;
-    color: #635BFF;
+    color: var(--el-color-primary);
     letter-spacing: -0.02em;
   }
 
@@ -262,24 +254,33 @@ onMounted(() => {
   &__label {
     font-size: 11px;
     font-weight: 600;
-    color: #777;
+    color: var(--el-text-color-secondary);
     text-transform: uppercase;
     letter-spacing: 0.03em;
   }
 
   &__input {
     :deep(.el-input__wrapper) {
-      background: #F5F5FA;
-      border: none;
+      padding: 0 12px;
+      background: var(--el-fill-color-light);
+      border: 1px solid var(--el-border-color-lighter);
       border-radius: 6px;
       box-shadow: none !important;
-      padding: 0 12px;
+      transition: border-color 0.2s;
+    }
+
+    :deep(.el-input__wrapper:hover) {
+      border-color: var(--el-border-color);
+    }
+
+    :deep(.el-input__wrapper.is-focus) {
+      border-color: var(--el-color-primary);
     }
 
     :deep(.el-input__inner) {
       height: 32px;
       font-size: 12px;
-      color: #1a1a2e;
+      color: var(--el-text-color-primary);
     }
   }
 
@@ -294,7 +295,7 @@ onMounted(() => {
   &__checkbox {
     :deep(.el-checkbox__label) {
       font-size: 12px;
-      color: #555;
+      color: var(--el-text-color-secondary);
     }
   }
 
@@ -302,30 +303,30 @@ onMounted(() => {
     padding: 0;
     font-size: 12px;
     font-weight: 500;
-    color: #635BFF;
+    color: var(--el-color-primary);
+    cursor: pointer;
     background: transparent;
     border: none;
-    cursor: pointer;
     transition: color 0.15s ease;
 
     &:hover {
-      color: #5146E5;
+      color: var(--el-color-primary-light-3);
     }
   }
 
   &__submit {
     width: 100%;
     height: 32px;
+    margin-top: 0;
     font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.02em;
-    background: #635BFF;
+    background: var(--el-color-primary);
     border: none;
     border-radius: 6px;
-    margin-top: 0;
 
     &:hover {
-      background: #5146E5;
+      background: var(--el-color-primary-light-3);
     }
   }
 
@@ -336,56 +337,15 @@ onMounted(() => {
   }
 }
 
-// Dark mode
-:global(html.dark) {
-  .ds-form {
-    &__welcome {
-      color: #9ca3af;
-    }
-
-    &__title {
-      color: #a5b4fc;
-    }
-
-    &__label {
-      color: #9ca3af;
-    }
-
-    &__input {
-      :deep(.el-input__wrapper) {
-        background: #2a2a3e;
-      }
-
-      :deep(.el-input__inner) {
-        color: #f0f0f5;
-      }
-    }
-
-    &__checkbox {
-      :deep(.el-checkbox__label) {
-        color: #9ca3af;
-      }
-    }
-
-    &__submit {
-      background: #635BFF;
-
-      &:hover {
-        background: #5146E5;
-      }
-    }
-  }
-}
-
 // Tablet
-@media (max-width: 1200px) {
+@media (width <= 1200px) {
   .ds-form {
     padding: 16px;
   }
 }
 
 // Mobile
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .ds-form {
     padding: 18px;
 

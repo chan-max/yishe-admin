@@ -1,19 +1,21 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Handle, Position } from '@vue-flow/core'
-import { jokeIcon } from '@/assets/icons/utility'
-const props = defineProps<{ data: { label?: string; config?: any } }>()
-const category = computed(() => props.data.config?.category || 'Any')
+import NodeParameterSummary from "./NodeParameterSummary.vue";
+import { computed } from "vue";
+import { Handle, Position } from "@vue-flow/core";
+import { jokeIcon } from "@/assets/icons/utility";
+const props = defineProps<{ data: { label?: string; config?: any } }>();
+const category = computed(() => props.data.config?.category || "Any");
 </script>
 <template>
   <div class="wf-node wf-node--joke">
     <Handle type="target" :position="Position.Top" />
     <div class="wf-node__header">
       <img :src="jokeIcon" class="wf-node__icon" />
-      <span class="wf-node__title">{{ data.label || 'JokeAPI 笑话' }}</span>
+      <span class="wf-node__title">{{ data.label || "JokeAPI 笑话" }}</span>
     </div>
     <div v-if="category" class="wf-node__subtitle">{{ category }}</div>
     <div class="wf-node__type">工具</div>
+    <NodeParameterSummary :data="data" />
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>

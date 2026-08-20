@@ -194,7 +194,7 @@ const { t } = useI18n()
 }
 
 .login-heading {
-  margin: 0 0 clamp(28px, 5vh, 52px);
+  margin: 0 0 16px;
   color: var(--el-text-color-regular);
   font-size: clamp(22px, 1.65vw, 27px);
   font-weight: 700;

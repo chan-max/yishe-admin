@@ -1,19 +1,21 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Handle, Position } from '@vue-flow/core'
-import { wttrIcon } from '@/assets/icons/utility'
-const props = defineProps<{ data: { label?: string; config?: any } }>()
-const city = computed(() => props.data.config?.city || 'Beijing')
+import NodeParameterSummary from "./NodeParameterSummary.vue";
+import { computed } from "vue";
+import { Handle, Position } from "@vue-flow/core";
+import { wttrIcon } from "@/assets/icons/utility";
+const props = defineProps<{ data: { label?: string; config?: any } }>();
+const city = computed(() => props.data.config?.city || "Beijing");
 </script>
 <template>
   <div class="wf-node wf-node--wttr">
     <Handle type="target" :position="Position.Top" />
     <div class="wf-node__header">
       <img :src="wttrIcon" class="wf-node__icon" />
-      <span class="wf-node__title">{{ data.label || 'wttr.in 天气' }}</span>
+      <span class="wf-node__title">{{ data.label || "wttr.in 天气" }}</span>
     </div>
     <div v-if="city" class="wf-node__subtitle">{{ city }}</div>
     <div class="wf-node__type">工具</div>
+    <NodeParameterSummary :data="data" />
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>

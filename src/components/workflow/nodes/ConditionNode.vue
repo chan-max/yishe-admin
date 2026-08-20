@@ -1,24 +1,24 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Handle, Position } from '@vue-flow/core'
+import { computed } from "vue";
+import { Handle, Position } from "@vue-flow/core";
 
-const props = defineProps<{ data: { label?: string; config?: any } }>()
+const props = defineProps<{ data: { label?: string; config?: any } }>();
 
 // 输出端口：根据配置动态生成，默认 True/False
 const outputs = computed(() => {
-  const conditions = props.data?.config?.conditions || []
+  const conditions = props.data?.config?.conditions || [];
   if (conditions.length > 0) {
     return conditions.map((c: any, i: number) => ({
       id: c.handleId || `condition-${i}`,
       label: c.label || `条件${i + 1}`,
-      color: c.color || '#f59e0b',
-    }))
+      color: c.color || "#f59e0b",
+    }));
   }
   return [
-    { id: 'true', label: 'True', color: '#22c55e' },
-    { id: 'false', label: 'False', color: '#ef4444' },
-  ]
-})
+    { id: "true", label: "满足", color: "#22c55e" },
+    { id: "false", label: "不满足", color: "#ef4444" },
+  ];
+});
 </script>
 
 <template>
@@ -26,7 +26,7 @@ const outputs = computed(() => {
     <Handle type="target" :position="Position.Top" />
     <div class="wf-node__header">
       <span class="wf-node__dot" style="background: #f59e0b" />
-      <span class="wf-node__title">{{ data.label || '条件分支' }}</span>
+      <span class="wf-node__title">{{ data.label || "条件分支" }}</span>
     </div>
     <div class="wf-node__handles">
       <div
@@ -36,7 +36,12 @@ const outputs = computed(() => {
         :style="{ color: out.color }"
       >
         <span>{{ out.label }}</span>
-        <Handle :id="out.id" type="source" :position="Position.Bottom" class="wf-node__handle-dot" />
+        <Handle
+          :id="out.id"
+          type="source"
+          :position="Position.Bottom"
+          class="wf-node__handle-dot"
+        />
       </div>
     </div>
   </div>
@@ -58,11 +63,25 @@ const outputs = computed(() => {
   box-shadow: 0 0 0 2px color-mix(in srgb, #f59e0b 20%, transparent);
 }
 
-.wf-node__header { display: flex; align-items: center; gap: 5px; margin-bottom: 4px; }
+.wf-node__header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 4px;
+}
 
-.wf-node__dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.wf-node__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
 
-.wf-node__title { font-size: 12px; font-weight: 600; color: var(--el-text-color-primary); }
+.wf-node__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
 
 .wf-node__handles {
   display: flex;

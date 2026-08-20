@@ -1368,7 +1368,7 @@ onBeforeUnmount(() => {
   }
 
   .cp-right {
-    border-top: 1px solid var(--el-border-color-lighter);
+    border-top: none;
     border-left: none;
   }
 
@@ -1426,7 +1426,6 @@ onBeforeUnmount(() => {
   min-height: 54px;
   padding: 7px 10px;
   background: var(--el-bg-color);
-  border-bottom: 1px solid var(--el-border-color-lighter);
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -1460,7 +1459,6 @@ onBeforeUnmount(() => {
   min-width: 0;
   padding: 6px 10px;
   background: var(--el-bg-color);
-  border-bottom: 1px solid var(--el-border-color-lighter);
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
@@ -1512,7 +1510,6 @@ onBeforeUnmount(() => {
 .cp-input {
   display: flex;
   padding: 8px 12px;
-  border-top: 1px solid var(--el-border-color-lighter);
   flex-shrink: 0;
   flex-direction: column;
   gap: 6px;
@@ -1544,7 +1541,6 @@ onBeforeUnmount(() => {
   display: flex;
   overflow: hidden;
   background: #000;
-  border-left: 1px solid var(--el-border-color-lighter);
   flex-shrink: 0;
   flex-direction: column;
 }
@@ -1555,7 +1551,6 @@ onBeforeUnmount(() => {
   gap: 8px;
   padding: 6px 10px;
   background: var(--el-bg-color);
-  border-bottom: 1px solid var(--el-border-color-lighter);
   flex-shrink: 0;
 }
 
@@ -1684,7 +1679,6 @@ onBeforeUnmount(() => {
 
 /* ── Table ── */
 :deep(.dt-table.el-table) {
-  border: 1px solid var(--el-border-color-lighter);
   border-radius: 6px;
 }
 
@@ -1719,7 +1713,7 @@ onBeforeUnmount(() => {
 
 .cell-instance__name { font-size: 13px; font-weight: 600; color: var(--el-text-color-primary); }
 
-.cell-instance__stream { margin-left: 4px; font-size: 11px; color: #52c41a; white-space: nowrap; }
+.cell-instance__stream { margin-left: 4px; font-size: 11px; color: var(--el-color-success); white-space: nowrap; }
 
 .cell-instance__ver { font-size: 11px; color: var(--el-text-color-secondary); }
 
@@ -1783,7 +1777,7 @@ onBeforeUnmount(() => {
 
 .cell-status { font-size: 12px; white-space: nowrap; }
 
-.cell-status--active { color: #52c41a; }
+.cell-status--active { color: var(--el-color-success); }
 
 .cell-status--idle { color: var(--el-text-color-placeholder); }
 
@@ -1909,12 +1903,12 @@ onBeforeUnmount(() => {
 }
 
 .conv-msg--user {
-  background: var(--el-color-primary-light-9);
+  background: var(--el-fill-color);
   border-left-color: var(--el-color-primary);
 }
 
 .conv-msg--assistant {
-  background: var(--el-fill-color-lighter);
+  background: var(--el-fill-color-light);
   border-left-color: var(--el-color-success);
 }
 
@@ -1941,7 +1935,7 @@ onBeforeUnmount(() => {
   padding: 0 4px;
   font-size: 10px;
   color: var(--el-color-primary);
-  background: var(--el-color-primary-light-8);
+  background: var(--el-fill-color);
   border-radius: 2px;
 }
 
@@ -1990,8 +1984,7 @@ onBeforeUnmount(() => {
   color: var(--el-text-color-regular);
   word-break: break-all;
   white-space: pre-wrap;
-  background: var(--el-bg-color);
-  border: 1px solid var(--el-border-color-lighter);
+  background: var(--el-fill-color);
   border-radius: 3px;
 }
 

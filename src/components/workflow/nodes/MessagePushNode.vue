@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Handle, Position } from '@vue-flow/core'
-import { feishuIcon, wecomIcon } from '@/assets/icons/apps'
+import NodeParameterSummary from "./NodeParameterSummary.vue";
+import { computed } from "vue";
+import { Handle, Position } from "@vue-flow/core";
+import { feishuIcon, wecomIcon } from "@/assets/icons/apps";
 
-const props = defineProps<{ data: { label?: string; config?: any } }>()
+const props = defineProps<{ data: { label?: string; config?: any } }>();
 
 // 根据渠道名称检测平台类型
 const platformIcon = computed(() => {
-  const name = props.data.config?.channelName || ''
-  return name.includes('飞书') ? feishuIcon : wecomIcon
-})
+  const name = props.data.config?.channelName || "";
+  return name.includes("飞书") ? feishuIcon : wecomIcon;
+});
 </script>
 
 <template>
@@ -17,9 +18,10 @@ const platformIcon = computed(() => {
     <Handle type="target" :position="Position.Top" />
     <div class="wf-node__header">
       <img :src="platformIcon" class="wf-node__platform-icon" />
-      <span class="wf-node__title">{{ data.label || '消息推送' }}</span>
+      <span class="wf-node__title">{{ data.label || "消息推送" }}</span>
     </div>
-    <div class="wf-node__badge">{{ data.config?.channelName || '未选择渠道' }}</div>
+    <div class="wf-node__badge">{{ data.config?.channelName || "未选择渠道" }}</div>
+    <NodeParameterSummary :data="data" />
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>
@@ -54,7 +56,11 @@ const platformIcon = computed(() => {
   flex-shrink: 0;
 }
 
-.wf-node__title { font-size: 12px; font-weight: 600; color: var(--el-text-color-primary); }
+.wf-node__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
 
 .wf-node__badge {
   display: inline-block;

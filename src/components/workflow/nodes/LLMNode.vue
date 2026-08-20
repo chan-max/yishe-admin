@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { Handle, Position } from '@vue-flow/core'
+import NodeParameterSummary from "./NodeParameterSummary.vue";
+import { Handle, Position } from "@vue-flow/core";
 
-defineProps<{ data: { label?: string; config?: any } }>()
+defineProps<{ data: { label?: string; config?: any } }>();
 </script>
 
 <template>
@@ -9,9 +10,10 @@ defineProps<{ data: { label?: string; config?: any } }>()
     <Handle type="target" :position="Position.Top" />
     <div class="wf-node__header">
       <span class="wf-node__dot" />
-      <span class="wf-node__title">{{ data.label || 'AI 大模型' }}</span>
+      <span class="wf-node__title">{{ data.label || "AI 大模型" }}</span>
     </div>
-    <div class="wf-node__badge">{{ data.config?.model || 'DeepSeek-R1' }}</div>
+    <div class="wf-node__badge">{{ data.config?.model || "DeepSeek-R1" }}</div>
+    <NodeParameterSummary :data="data" />
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>
@@ -48,7 +50,11 @@ defineProps<{ data: { label?: string; config?: any } }>()
   flex-shrink: 0;
 }
 
-.wf-node__title { font-size: 12px; font-weight: 600; color: var(--el-text-color-primary); }
+.wf-node__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
 
 .wf-node__badge {
   display: inline-block;

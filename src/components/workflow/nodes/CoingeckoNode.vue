@@ -1,19 +1,23 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Handle, Position } from '@vue-flow/core'
-import { coingeckoIcon } from '@/assets/icons/utility'
-const props = defineProps<{ data: { label?: string; config?: any } }>()
-const keyword = computed(() => props.data.config?.keyword || props.data.config?.query || props.data.config?.type || '')
+import NodeParameterSummary from "./NodeParameterSummary.vue";
+import { computed } from "vue";
+import { Handle, Position } from "@vue-flow/core";
+import { coingeckoIcon } from "@/assets/icons/utility";
+const props = defineProps<{ data: { label?: string; config?: any } }>();
+const keyword = computed(
+  () => props.data.config?.keyword || props.data.config?.query || props.data.config?.type || "",
+);
 </script>
 <template>
   <div class="wf-node wf-node--coingecko">
     <Handle type="target" :position="Position.Top" />
     <div class="wf-node__header">
       <img :src="coingeckoIcon" class="wf-node__icon" />
-      <span class="wf-node__title">{{ data.label || 'CoinGecko' }}</span>
+      <span class="wf-node__title">{{ data.label || "CoinGecko" }}</span>
     </div>
     <div v-if="keyword" class="wf-node__subtitle">{{ keyword }}</div>
     <div class="wf-node__type">工具</div>
+    <NodeParameterSummary :data="data" />
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>
@@ -43,8 +47,8 @@ const keyword = computed(() => props.data.config?.keyword || props.data.config?.
 }
 .wf-node--coingecko .wf-node__subtitle {
   font-size: 11px;
-  color: #0066CC;
-  background: #E6F2FF;
+  color: #0066cc;
+  background: #e6f2ff;
   padding: 2px 6px;
   border-radius: 4px;
   margin: 4px 0;

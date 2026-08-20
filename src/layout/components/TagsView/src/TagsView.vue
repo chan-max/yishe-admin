@@ -124,7 +124,7 @@ const closeRightTags = () => {
 const moveToCurrentTag = async () => {
   await nextTick();
   for (const v of unref(visitedViews)) {
-    if (v.fullPath === unref(currentRoute).fullPath) {
+    if (v.path === unref(currentRoute).path) {
       moveToTarget(v);
       break;
     }
@@ -144,7 +144,7 @@ const moveToTarget = (currentTag: RouteLocationNormalizedLoaded) => {
     firstTag = tagList[0];
     lastTag = tagList[tagList.length - 1];
   }
-  if ((firstTag?.to as RouteLocationNormalizedLoaded).fullPath === currentTag.fullPath) {
+  if ((firstTag?.to as RouteLocationNormalizedLoaded).path === currentTag.path) {
     // 直接滚动到0的位置
     const { start } = useScrollTo({
       el: wrap$!,
@@ -153,7 +153,7 @@ const moveToTarget = (currentTag: RouteLocationNormalizedLoaded) => {
       duration: 500,
     });
     start();
-  } else if ((lastTag?.to as RouteLocationNormalizedLoaded).fullPath === currentTag.fullPath) {
+  } else if ((lastTag?.to as RouteLocationNormalizedLoaded).path === currentTag.path) {
     // 滚动到最后的位置
     const { start } = useScrollTo({
       el: wrap$!,
@@ -165,7 +165,7 @@ const moveToTarget = (currentTag: RouteLocationNormalizedLoaded) => {
   } else {
     // find preTag and nextTag
     const currentIndex: number = tagList.findIndex(
-      (item) => (item?.to as RouteLocationNormalizedLoaded).fullPath === currentTag.fullPath,
+      (item) => (item?.to as RouteLocationNormalizedLoaded).path === currentTag.path,
     );
     const tgsRefs = document.getElementsByClassName(`${prefixCls}__item`);
 
@@ -200,7 +200,7 @@ const moveToTarget = (currentTag: RouteLocationNormalizedLoaded) => {
 
 // 是否是当前tag
 const isActive = (route: RouteLocationNormalizedLoaded): boolean => {
-  return route.fullPath === unref(currentRoute).fullPath;
+  return route.path === unref(currentRoute).path;
 };
 
 // 所有右键菜单组件的元素
@@ -211,7 +211,7 @@ const visibleChange = (visible: boolean, tagItem: RouteLocationNormalizedLoaded)
   if (visible) {
     for (const v of unref(itemRefs)) {
       const elDropdownMenuRef = v.elDropdownMenuRef;
-      if (tagItem.fullPath !== v.tagItem.fullPath) {
+      if (tagItem.path !== v.tagItem.path) {
         elDropdownMenuRef?.handleClose();
         setSelectTag(tagItem);
       }
@@ -266,7 +266,7 @@ watch(
     <div class="flex-1 overflow-hidden">
       <ElScrollbar ref="scrollbarRef" class="h-full" @scroll="scroll">
         <div class="h-[var(--tags-view-height)] flex">
-          <ContextMenu v-for="item in visitedViews" :key="item.fullPath" :ref="itemRefs.set" :class="[
+          <ContextMenu v-for="item in visitedViews" :key="item.path" :ref="itemRefs.set" :class="[
             `${prefixCls}__item`,
             tagsViewImmerse ? `${prefixCls}__item--immerse` : '',
             item?.meta?.affix ? `${prefixCls}__item--affix` : '',
@@ -277,7 +277,7 @@ watch(
             {
               icon: 'ep:refresh',
               label: t('common.reload'),
-              disabled: selectedTag?.fullPath !== item.fullPath,
+              disabled: selectedTag?.path !== item.path,
               command: () => {
                 refreshSelectedTag(item);
               },
@@ -296,8 +296,8 @@ watch(
               label: t('common.closeTheLeftTab'),
               disabled:
                 !!visitedViews?.length &&
-                (item.fullPath === visitedViews[0].fullPath ||
-                  selectedTag?.fullPath !== item.fullPath),
+                (item.path === visitedViews[0].path ||
+                  selectedTag?.path !== item.path),
               command: () => {
                 closeLeftTags();
               },
@@ -307,8 +307,8 @@ watch(
               label: t('common.closeTheRightTab'),
               disabled:
                 !!visitedViews?.length &&
-                (item.fullPath === visitedViews[visitedViews.length - 1].fullPath ||
-                  selectedTag?.fullPath !== item.fullPath),
+                (item.path === visitedViews[visitedViews.length - 1].path ||
+                  selectedTag?.path !== item.path),
               command: () => {
                 closeRightTags();
               },
@@ -317,7 +317,7 @@ watch(
               divided: true,
               icon: 'ep:discount',
               label: t('common.closeOther'),
-              disabled: selectedTag?.fullPath !== item.fullPath,
+              disabled: selectedTag?.path !== item.path,
               command: () => {
                 closeOthersTags();
               },
@@ -381,7 +381,7 @@ watch(
         divided: true,
         icon: 'ep:d-arrow-left',
         label: t('common.closeTheLeftTab'),
-        disabled: !!visitedViews?.length && selectedTag?.fullPath === visitedViews[0].fullPath,
+        disabled: !!visitedViews?.length && selectedTag?.path === visitedViews[0].path,
         command: () => {
           closeLeftTags();
         },
@@ -391,7 +391,7 @@ watch(
         label: t('common.closeTheRightTab'),
         disabled:
           !!visitedViews?.length &&
-          selectedTag?.fullPath === visitedViews[visitedViews.length - 1].fullPath,
+          selectedTag?.path === visitedViews[visitedViews.length - 1].path,
         command: () => {
           closeRightTags();
         },

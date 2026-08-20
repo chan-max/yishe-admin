@@ -39,7 +39,8 @@ export const useTagsViewStore = defineStore("tagsView", {
     },
     // 新增tag
     addVisitedView(view: RouteLocationNormalizedLoaded) {
-      if (this.visitedViews.some((v) => v.fullPath === view.fullPath)) return;
+      // 使用 path（不含 query）判断，同一页面的不同 ?参数 不重复生成 Tab
+      if (this.visitedViews.some((v) => v.path === view.path)) return;
       if (view.meta?.noTagsView) return;
       const visitedView = Object.assign({}, view, { title: view.meta?.title || "no-name" });
 
@@ -87,7 +88,7 @@ export const useTagsViewStore = defineStore("tagsView", {
     // 删除tag
     delVisitedView(view: RouteLocationNormalizedLoaded) {
       for (const [i, v] of this.visitedViews.entries()) {
-        if (v.fullPath === view.fullPath) {
+        if (v.path === view.path) {
           this.visitedViews.splice(i, 1);
           break;
         }
@@ -126,18 +127,18 @@ export const useTagsViewStore = defineStore("tagsView", {
     // 删除其他tag
     delOthersVisitedViews(view: RouteLocationNormalizedLoaded) {
       this.visitedViews = this.visitedViews.filter((v) => {
-        return v?.meta?.affix || v.fullPath === view.fullPath;
+        return v?.meta?.affix || v.path === view.path;
       });
     },
     // 删除左侧
     delLeftViews(view: RouteLocationNormalizedLoaded) {
       const index = findIndex<RouteLocationNormalizedLoaded>(
         this.visitedViews,
-        (v) => v.fullPath === view.fullPath,
+        (v) => v.path === view.path,
       );
       if (index > -1) {
         this.visitedViews = this.visitedViews.filter((v, i) => {
-          return v?.meta?.affix || v.fullPath === view.fullPath || i > index;
+          return v?.meta?.affix || v.path === view.path || i > index;
         });
         this.addCachedView();
       }
@@ -146,11 +147,11 @@ export const useTagsViewStore = defineStore("tagsView", {
     delRightViews(view: RouteLocationNormalizedLoaded) {
       const index = findIndex<RouteLocationNormalizedLoaded>(
         this.visitedViews,
-        (v) => v.fullPath === view.fullPath,
+        (v) => v.path === view.path,
       );
       if (index > -1) {
         this.visitedViews = this.visitedViews.filter((v, i) => {
-          return v?.meta?.affix || v.fullPath === view.fullPath || i < index;
+          return v?.meta?.affix || v.path === view.path || i < index;
         });
         this.addCachedView();
       }
@@ -164,7 +165,7 @@ export const useTagsViewStore = defineStore("tagsView", {
 
     updateVisitedView(view: RouteLocationNormalizedLoaded) {
       for (let v of this.visitedViews) {
-        if (v.fullPath === view.fullPath) {
+        if (v.path === view.path) {
           v = Object.assign(v, view);
           break;
         }

@@ -29,8 +29,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, markRaw } from 'vue'
+import { ref, computed, watch, markRaw, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useTagsView } from '@/hooks/web/useTagsView'
 import GoogleArtView from '../google-art/index.vue'
 import PinterestView from '../pinterest/index.vue'
 import WikimediaView from '../wikimedia/index.vue'
@@ -56,6 +57,7 @@ defineOptions({
 
 const route = useRoute()
 const router = useRouter()
+const { setTitle } = useTagsView()
 
 type TabKey =
   | 'google-art'
@@ -177,6 +179,19 @@ const activeComponent = computed(() => {
   return target ? target.component : GoogleArtView
 })
 
+// 根据当前 tab 获取对应的菜单名称
+const getTabName = (key: TabKey): string => {
+  const item = menuItems.find((m) => m.key === key)
+  return item ? item.name : '数据采集'
+}
+
+// 更新 TagsView 的 Tab 标题（使用 nextTick 确保 visitedViews 已添加）
+const updateTabTitle = (key: TabKey) => {
+  nextTick(() => {
+    setTitle(getTabName(key), route.path)
+  })
+}
+
 const switchTab = (key: TabKey) => {
   if (activeTab.value === key) return
   activeTab.value = key
@@ -186,6 +201,8 @@ const switchTab = (key: TabKey) => {
       tab: key,
     },
   })
+  // 动态更新 TagsView 的 Tab 标题
+  updateTabTitle(key)
 }
 
 watch(
@@ -195,6 +212,8 @@ watch(
       if (activeTab.value !== newTab) {
         activeTab.value = newTab as TabKey
       }
+      // 动态更新 TagsView 的 Tab 标题
+      updateTabTitle(newTab as TabKey)
     }
   },
   { immediate: true }
@@ -215,7 +234,7 @@ watch(
 
 /* 左侧极简菜单 */
 .collect-menu {
-  width: 160px;
+  width: 210px;
   flex-shrink: 0;
   background: var(--el-bg-color, #ffffff);
   border: 1px solid var(--el-border-color-lighter, #e5e7eb);
@@ -260,6 +279,13 @@ watch(
   background: var(--el-fill-color, #f3f4f6);
   color: var(--el-color-primary, #4f46e5);
   font-weight: 600;
+}
+
+.menu-item-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 右侧内容容器 */

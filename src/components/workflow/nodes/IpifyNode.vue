@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import { Handle, Position } from '@vue-flow/core'
-import { ipifyIcon } from '@/assets/icons/utility'
-defineProps<{ data: { label?: string; config?: any } }>()
+import NodeParameterSummary from "./NodeParameterSummary.vue";
+import { Handle, Position } from "@vue-flow/core";
+import { ipifyIcon } from "@/assets/icons/utility";
+defineProps<{ data: { label?: string; config?: any } }>();
 </script>
 <template>
   <div class="wf-node wf-node--ipify">
     <Handle type="target" :position="Position.Top" />
     <div class="wf-node__header">
       <img :src="ipifyIcon" class="wf-node__icon" />
-      <span class="wf-node__title">{{ data.label || 'ipify 公网IP' }}</span>
+      <span class="wf-node__title">{{ data.label || "ipify 公网IP" }}</span>
     </div>
     <div class="wf-node__type">工具</div>
+    <NodeParameterSummary :data="data" />
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>

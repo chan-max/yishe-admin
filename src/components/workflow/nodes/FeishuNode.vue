@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { Handle, Position } from '@vue-flow/core'
-import { feishuIcon } from '@/assets/icons/apps'
+import NodeParameterSummary from "./NodeParameterSummary.vue";
+import { Handle, Position } from "@vue-flow/core";
+import { feishuIcon } from "@/assets/icons/apps";
 
-const props = defineProps<{ data: { label?: string; config?: any } }>()
+const props = defineProps<{ data: { label?: string; config?: any } }>();
 </script>
 
 <template>
@@ -10,9 +11,10 @@ const props = defineProps<{ data: { label?: string; config?: any } }>()
     <Handle type="target" :position="Position.Top" />
     <div class="wf-node__header">
       <img :src="feishuIcon" class="wf-node__icon" />
-      <span class="wf-node__title">{{ props.data.label || '飞书推送' }}</span>
+      <span class="wf-node__title">{{ props.data.label || "飞书推送" }}</span>
     </div>
-    <div class="wf-node__badge">{{ props.data.config?.channelName || '未选择渠道' }}</div>
+    <div class="wf-node__badge">{{ props.data.config?.channelName || "未选择渠道" }}</div>
+    <NodeParameterSummary :data="data" />
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>
@@ -42,7 +44,11 @@ const props = defineProps<{ data: { label?: string; config?: any } }>()
   height: 16px;
   flex-shrink: 0;
 }
-.wf-node__title { font-size: 12px; font-weight: 600; color: var(--el-text-color-primary); }
+.wf-node__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
 .wf-node__badge {
   display: inline-block;
   max-width: 100%;

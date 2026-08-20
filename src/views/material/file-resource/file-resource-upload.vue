@@ -156,54 +156,35 @@
       <div class="operation-card">
         <div class="section-title">批量操作</div>
         <div class="action-stack">
-          <div class="local-select">
-            <el-upload
-              action="#"
-              :accept="acceptAllFiles"
-              list-type="text"
-              :auto-upload="false"
-              :on-change="handleFileChange"
-              :show-file-list="false"
-              multiple
-            >
-              <el-button type="primary" plain :icon="UploadFilled">选择文件</el-button>
-            </el-upload>
-            <input
-              ref="folderInputRef"
-              class="folder-input"
-              type="file"
-              multiple
-              webkitdirectory
-              directory
-              @change="handleFolderChange"
-            />
-            <el-button plain :icon="FolderOpened" @click="openFolderPicker">
-              选择文件夹
-            </el-button>
-          </div>
-
-          <div class="action-button-row">
-            <el-button
-              class="w-full"
-              type="primary"
-              :disabled="totalCount === 0"
-              @click="handleUpload"
-            >
-              上传
-            </el-button>
-          </div>
-
-          <div class="action-button-row">
-            <el-button
-              class="w-full"
-              type="danger"
-              plain
-              :disabled="totalCount === 0"
-              @click="handleClear"
-            >
-              清空
-            </el-button>
-          </div>
+          <input
+            ref="folderInputRef"
+            class="folder-input"
+            type="file"
+            multiple
+            webkitdirectory
+            directory
+            @change="handleFolderChange"
+          />
+          <el-upload
+            action="#"
+            :accept="acceptAllFiles"
+            list-type="text"
+            :auto-upload="false"
+            :on-change="handleFileChange"
+            :show-file-list="false"
+            multiple
+          >
+            <el-button class="action-btn" type="primary" plain :icon="UploadFilled">选择文件</el-button>
+          </el-upload>
+          <el-button class="action-btn" plain :icon="FolderOpened" @click="openFolderPicker">
+            选择文件夹
+          </el-button>
+          <el-button class="action-btn" type="primary" :disabled="totalCount === 0" @click="handleUpload">
+            上传
+          </el-button>
+          <el-button class="action-btn" type="danger" plain :disabled="totalCount === 0" @click="handleClear">
+            清空
+          </el-button>
         </div>
       </div>
     </div>
@@ -470,7 +451,7 @@ async function uploadSingleFile(fileItem: FileUploadItem) {
   width: 100%;
   height: 100%;
   min-height: 0;
-  gap: 14px;
+  gap: 12px;
   overflow: hidden;
 }
 
@@ -479,18 +460,10 @@ async function uploadSingleFile(fileItem: FileUploadItem) {
   width: 0;
   min-width: min(100%, 640px);
   min-height: 0;
-  padding: 14px;
+  padding: 12px;
   overflow: hidden;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--el-fill-color-blank) 88%, var(--el-color-primary-light-9) 12%) 0%,
-    var(--el-fill-color-extra-light) 100%
-  );
   border: 1px solid var(--el-border-color-lighter);
-  border-radius: 16px;
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--el-fill-color-blank) 70%, transparent 30%),
-    0 10px 30px rgb(15 23 42 / 5%);
+  border-radius: 10px;
   flex: 1 1 auto;
   flex-direction: column;
 }
@@ -498,45 +471,27 @@ async function uploadSingleFile(fileItem: FileUploadItem) {
 .file-preview-list {
   display: grid;
   min-height: 0;
-  padding-right: 4px;
   overflow-y: auto;
   flex: 1;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px;
   align-content: start;
 }
 
 .file-preview-item {
   position: relative;
   display: flex;
-  min-height: 470px;
   overflow: hidden;
   background: var(--el-bg-color);
-  border: 1px solid color-mix(in srgb, var(--el-border-color) 72%, transparent 28%);
-  border-radius: 16px;
-  box-shadow: 0 12px 28px rgb(15 23 42 / 6%);
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    border-color 0.2s ease;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
   flex-direction: column;
-}
-
-.file-preview-item:hover {
-  border-color: color-mix(in srgb, var(--el-color-primary) 24%, var(--el-border-color) 76%);
-  transform: translateY(-1px);
-  box-shadow: 0 16px 34px rgb(15 23 42 / 8%);
 }
 
 .preview-media {
   position: relative;
-  height: 190px;
+  height: 180px;
   padding: 12px;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--el-fill-color-blank) 94%, transparent 6%) 0%,
-    color-mix(in srgb, var(--el-fill-color-light) 86%, var(--el-fill-color-extra-light) 14%) 100%
-  );
   border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
@@ -546,13 +501,8 @@ async function uploadSingleFile(fileItem: FileUploadItem) {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--el-color-primary-light-9) 44%, var(--el-fill-color-light) 56%) 0%,
-    var(--el-fill-color-lighter) 100%
-  );
-  border: 1px solid color-mix(in srgb, var(--el-border-color) 68%, transparent 32%);
-  border-radius: 12px;
+  background: var(--el-fill-color-lighter);
+  border-radius: 8px;
   object-fit: cover;
 }
 
@@ -562,13 +512,9 @@ async function uploadSingleFile(fileItem: FileUploadItem) {
   height: 100%;
   padding: 18px;
   text-align: center;
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--el-fill-color-light) 78%, transparent 22%) 0%,
-    var(--el-fill-color-lighter) 100%
-  );
-  border: 1px dashed color-mix(in srgb, var(--el-border-color) 84%, transparent 16%);
-  border-radius: 12px;
+  background: var(--el-fill-color-lighter);
+  border: 1px dashed var(--el-border-color-light);
+  border-radius: 8px;
   flex-direction: column;
   gap: 8px;
   align-items: center;
@@ -589,84 +535,75 @@ async function uploadSingleFile(fileItem: FileUploadItem) {
 }
 
 .preview-placeholder__suffix {
-  padding: 4px 10px;
+  padding: 2px 8px;
   font-size: 11px;
   font-weight: 600;
   color: var(--el-text-color-secondary);
-  background: color-mix(in srgb, var(--el-fill-color-blank) 92%, transparent 8%);
+  background: var(--el-fill-color-blank);
   border-radius: 999px;
 }
 
 .actions {
   position: absolute;
-  top: 20px;
-  right: 20px;
+  top: 18px;
+  right: 18px;
   display: flex;
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   color: var(--el-text-color-secondary);
   cursor: pointer;
-  background: color-mix(in srgb, var(--el-fill-color-blank) 92%, transparent 8%);
-  border: 1px solid color-mix(in srgb, var(--el-border-color) 70%, transparent 30%);
+  background: var(--el-fill-color-blank);
+  border: 1px solid var(--el-border-color-light);
   border-radius: 999px;
-  box-shadow: 0 8px 20px rgb(15 23 42 / 8%);
   transition:
-    transform 0.2s ease,
-    color 0.2s ease,
-    background-color 0.2s ease,
-    border-color 0.2s ease;
+    color 0.18s ease,
+    background-color 0.18s ease,
+    border-color 0.18s ease;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(6px);
 }
 
 .actions:hover {
   color: var(--el-color-danger);
-  background: color-mix(in srgb, var(--el-fill-color-blank) 96%, transparent 4%);
-  border-color: color-mix(in srgb, var(--el-color-danger) 20%, var(--el-border-color) 80%);
-  transform: scale(1.04);
+  background: var(--el-color-danger-light-9);
+  border-color: var(--el-color-danger-light-8);
 }
 
 .status {
   position: absolute;
-  right: 20px;
-  bottom: 20px;
-  left: 20px;
+  right: 12px;
+  bottom: 12px;
+  left: 12px;
   display: flex;
-  padding: 8px 12px;
-  font-size: 12px;
-  font-weight: 600;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 700;
   text-align: center;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  box-shadow: 0 8px 20px rgb(15 23 42 / 8%);
+  border-radius: 8px;
   gap: 6px;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 15%);
 }
 
 .uploading {
-  color: var(--el-color-primary);
-  background: color-mix(in srgb, var(--el-color-primary-light-9) 78%, transparent 22%);
-  border-color: color-mix(in srgb, var(--el-color-primary) 18%, transparent 82%);
+  color: #fff;
+  background: var(--el-color-primary);
 }
 
 .fail {
-  color: var(--el-color-danger);
+  color: #fff;
   cursor: pointer;
-  background: color-mix(in srgb, var(--el-color-danger-light-9) 82%, transparent 18%);
-  border-color: color-mix(in srgb, var(--el-color-danger) 20%, transparent 80%);
+  background: var(--el-color-danger);
 }
 
 .fail:hover {
-  background: color-mix(in srgb, var(--el-color-danger-light-8) 88%, transparent 12%);
+  opacity: 0.9;
 }
 
 .success {
-  color: var(--el-color-success);
-  background: color-mix(in srgb, var(--el-color-success-light-9) 84%, transparent 16%);
-  border-color: color-mix(in srgb, var(--el-color-success) 20%, transparent 80%);
+  color: #fff;
+  background: var(--el-color-success);
 }
 
 .loading-icon {
@@ -688,9 +625,8 @@ async function uploadSingleFile(fileItem: FileUploadItem) {
   flex: 1;
   min-height: 0;
   flex-direction: column;
-  gap: 12px;
-  padding: 14px;
-  background: var(--el-bg-color);
+  gap: 10px;
+  padding: 12px;
 }
 
 .preview-fields {
@@ -704,109 +640,80 @@ async function uploadSingleFile(fileItem: FileUploadItem) {
 .preview-fields :deep(.el-input__wrapper),
 .preview-fields :deep(.el-textarea__inner),
 .preview-fields :deep(.el-select__wrapper) {
-  background: var(--el-fill-color-extra-light);
-  border-radius: 10px;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--el-border-color) 84%, transparent 16%) inset;
-  transition:
-    box-shadow 0.2s ease,
-    background-color 0.2s ease;
-}
-
-.preview-fields :deep(.el-input__wrapper:hover),
-.preview-fields :deep(.el-textarea__inner:hover),
-.preview-fields :deep(.el-select__wrapper:hover) {
-  background: var(--el-fill-color-blank);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--el-color-primary) 16%, transparent 84%) inset;
-}
-
-.preview-fields :deep(.el-input__wrapper.is-focus),
-.preview-fields :deep(.el-textarea__inner:focus),
-.preview-fields :deep(.el-select__wrapper.is-focused) {
-  background: var(--el-fill-color-blank);
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--el-color-primary) 34%, transparent 66%) inset,
-    0 0 0 4px color-mix(in srgb, var(--el-color-primary) 10%, transparent 90%);
+  border-radius: 8px;
 }
 
 .preview-fields :deep(.el-input__inner),
 .preview-fields :deep(.el-textarea__inner),
 .preview-fields :deep(.el-select__selected-item) {
   font-size: 12px;
-  color: var(--el-text-color-primary);
 }
 
 .preview-footer {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .file-info-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  padding-top: 12px;
+  gap: 6px;
+  padding-top: 10px;
   border-top: 1px solid var(--el-border-color-lighter);
 }
 
 .file-info-tags :deep(.el-tag) {
   font-weight: 500;
-  border-radius: 999px;
 }
 
 .empty-state {
   display: flex;
-  height: 100%;
-  min-height: 420px;
-  padding: 40px 24px;
-  text-align: center;
-  background: color-mix(in srgb, var(--el-fill-color-blank) 84%, transparent 16%);
-  border: 1px dashed color-mix(in srgb, var(--el-border-color) 78%, transparent 22%);
-  border-radius: 16px;
   flex: 1;
+  min-height: 0;
+  padding: 32px 24px;
+  text-align: center;
+  background: transparent;
+  border: 1px dashed var(--el-border-color-light);
+  border-radius: 10px;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   align-items: center;
   justify-content: center;
 }
 
 .empty-state-icon {
   display: flex;
-  width: 72px;
-  height: 72px;
-  color: var(--el-color-primary);
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--el-color-primary) 12%, transparent 88%) 0%,
-    color-mix(in srgb, var(--el-color-primary) 4%, transparent 96%) 100%
-  );
-  border-radius: 20px;
+  width: 56px;
+  height: 56px;
+  color: var(--el-text-color-secondary);
+  background: var(--el-fill-color-blank);
+  border-radius: 14px;
   align-items: center;
   justify-content: center;
 }
 
 .empty-state-title {
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 600;
   color: var(--el-text-color-primary);
 }
 
 .empty-state-desc {
   max-width: 320px;
-  font-size: 13px;
-  line-height: 1.7;
+  font-size: 12px;
+  line-height: 1.6;
   color: var(--el-text-color-secondary);
 }
 
 .operation-container {
   display: flex;
-  width: clamp(224px, 20vw, 280px);
+  width: clamp(220px, 20vw, 260px);
   max-height: 100%;
   min-width: 0;
   min-height: 0;
-  padding-right: 2px;
   overflow-y: auto;
-  flex: 0 0 clamp(224px, 20vw, 280px);
+  flex: 0 0 clamp(220px, 20vw, 260px);
   flex-shrink: 0;
   flex-direction: column;
   gap: 12px;
@@ -814,35 +721,33 @@ async function uploadSingleFile(fileItem: FileUploadItem) {
 
 .operation-card {
   display: flex;
-  padding: 14px;
+  padding: 12px;
   background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
-  border-radius: 16px;
-  box-shadow: 0 12px 30px rgb(15 23 42 / 5%);
+  border-radius: 10px;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .section-title {
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--el-text-color-primary);
 }
 
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
 }
 
 .stat-item {
   display: flex;
-  padding: 10px 12px;
+  padding: 8px 10px;
   background: var(--el-fill-color-extra-light);
-  border-radius: 14px;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--el-border-color) 84%, transparent 16%);
+  border-radius: 8px;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
 }
 
 .stat-label {
@@ -851,7 +756,7 @@ async function uploadSingleFile(fileItem: FileUploadItem) {
 }
 
 .stat-value {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
   line-height: 1;
 }
@@ -887,6 +792,27 @@ async function uploadSingleFile(fileItem: FileUploadItem) {
   align-items: stretch;
 }
 
+.folder-input {
+  display: none;
+}
+
+.action-stack :deep(.el-upload) {
+  display: block;
+  width: 100%;
+}
+
+.action-stack :deep(.el-upload .el-button) {
+  width: 100%;
+  justify-content: center;
+  margin-left: 0;
+}
+
+.action-btn {
+  width: 100%;
+  justify-content: center;
+  margin-left: 0 !important;
+}
+
 .action-stack > * {
   width: 100%;
 }
@@ -904,7 +830,7 @@ async function uploadSingleFile(fileItem: FileUploadItem) {
 .local-select {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
 }
 
@@ -934,7 +860,6 @@ async function uploadSingleFile(fileItem: FileUploadItem) {
     width: 100%;
     max-height: none;
     min-width: 0;
-    padding-right: 0;
     overflow: visible;
     flex-basis: auto;
   }
@@ -960,12 +885,11 @@ async function uploadSingleFile(fileItem: FileUploadItem) {
   .file-preview-container,
   .operation-card {
     padding: 10px;
-    border-radius: 12px;
+    border-radius: 8px;
   }
 
   .file-preview-list {
     grid-template-columns: 1fr;
-    padding-right: 0;
   }
 
   .stats-grid {
@@ -973,8 +897,8 @@ async function uploadSingleFile(fileItem: FileUploadItem) {
   }
 
   .empty-state {
-    min-height: 280px;
-    padding: 28px 16px;
+    min-height: 220px;
+    padding: 24px 16px;
   }
 }
 </style>

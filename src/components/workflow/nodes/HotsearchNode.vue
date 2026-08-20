@@ -1,24 +1,36 @@
 <script setup lang="ts">
-import { Handle, Position } from '@vue-flow/core'
-import { weiboIcon, douyinIcon, bilibiliIcon, zhihuIcon, toutiaoIcon, doubanIcon, kuaishouIcon, v2exIcon, thirtySixKrIcon, ithomeIcon } from '@/assets/icons/apps'
+import NodeParameterSummary from "./NodeParameterSummary.vue";
+import { Handle, Position } from "@vue-flow/core";
+import {
+  weiboIcon,
+  douyinIcon,
+  bilibiliIcon,
+  zhihuIcon,
+  toutiaoIcon,
+  doubanIcon,
+  kuaishouIcon,
+  v2exIcon,
+  thirtySixKrIcon,
+  ithomeIcon,
+} from "@/assets/icons/apps";
 
-const props = defineProps<{ data: { label?: string; config?: any; platform?: string } }>()
+const props = defineProps<{ data: { label?: string; config?: any; platform?: string } }>();
 
 const platformConfig: Record<string, { name: string; color: string; icon?: string }> = {
-  weibo: { name: '微博', color: '#e6162d', icon: weiboIcon },
-  douyin: { name: '抖音', color: '#000000', icon: douyinIcon },
-  bilibili: { name: 'B站', color: '#00a1d6', icon: bilibiliIcon },
-  zhihu: { name: '知乎', color: '#0084ff', icon: zhihuIcon },
-  toutiao: { name: '头条', color: '#f5222d', icon: toutiaoIcon },
-  douban: { name: '豆瓣', color: '#007722', icon: doubanIcon },
-  kuaishou: { name: '快手', color: '#ff6600', icon: kuaishouIcon },
-  v2ex: { name: 'V2EX', color: '#2b2b2b', icon: v2exIcon },
-  '36kr': { name: '36氪', color: '#0052d9', icon: thirtySixKrIcon },
-  ithome: { name: 'IT之家', color: '#c8102e', icon: ithomeIcon },
-}
+  weibo: { name: "微博", color: "#e6162d", icon: weiboIcon },
+  douyin: { name: "抖音", color: "#000000", icon: douyinIcon },
+  bilibili: { name: "B站", color: "#00a1d6", icon: bilibiliIcon },
+  zhihu: { name: "知乎", color: "#0084ff", icon: zhihuIcon },
+  toutiao: { name: "头条", color: "#f5222d", icon: toutiaoIcon },
+  douban: { name: "豆瓣", color: "#007722", icon: doubanIcon },
+  kuaishou: { name: "快手", color: "#ff6600", icon: kuaishouIcon },
+  v2ex: { name: "V2EX", color: "#2b2b2b", icon: v2exIcon },
+  "36kr": { name: "36氪", color: "#0052d9", icon: thirtySixKrIcon },
+  ithome: { name: "IT之家", color: "#c8102e", icon: ithomeIcon },
+};
 
-const platform = props.data?.platform || 'weibo'
-const config = platformConfig[platform] || { name: platform, color: '#64748b' }
+const platform = props.data?.platform || "weibo";
+const config = platformConfig[platform] || { name: platform, color: "#64748b" };
 </script>
 
 <template>
@@ -27,8 +39,9 @@ const config = platformConfig[platform] || { name: platform, color: '#64748b' }
     <div class="wf-node__header">
       <img v-if="config.icon" :src="config.icon" class="wf-node__icon" />
       <span v-else class="wf-node__text" :style="{ color: config.color }">{{ config.name }}</span>
-      <span class="wf-node__title">{{ data.label || config.name + '热搜' }}</span>
+      <span class="wf-node__title">{{ data.label || config.name + "热搜" }}</span>
     </div>
+    <NodeParameterSummary :data="data" />
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>

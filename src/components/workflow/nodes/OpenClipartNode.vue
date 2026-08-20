@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Handle, Position } from '@vue-flow/core'
-import { openclipartIcon } from '@/assets/icons/apps'
+import NodeParameterSummary from "./NodeParameterSummary.vue";
+import { computed } from "vue";
+import { Handle, Position } from "@vue-flow/core";
+import { openclipartIcon } from "@/assets/icons/apps";
 
-const props = defineProps<{ data: { label?: string; config?: any } }>()
+const props = defineProps<{ data: { label?: string; config?: any } }>();
 
-const keyword = computed(() => props.data.config?.keyword || props.data.config?.query || '')
-const maxCount = computed(() => props.data.config?.maxCount || props.data.config?.limit || 10)
-const formatPreference = computed(() => props.data.config?.formatPreference || 'png')
+const keyword = computed(() => props.data.config?.keyword || props.data.config?.query || "");
+const maxCount = computed(() => props.data.config?.maxCount || props.data.config?.limit || 10);
+const formatPreference = computed(() => props.data.config?.formatPreference || "png");
 </script>
 
 <template>
@@ -15,11 +16,11 @@ const formatPreference = computed(() => props.data.config?.formatPreference || '
     <Handle type="target" :position="Position.Top" />
     <div class="wf-node__header">
       <img :src="openclipartIcon" class="wf-node__icon" />
-      <span class="wf-node__title">{{ data.label || 'Openclipart 采集' }}</span>
+      <span class="wf-node__title">{{ data.label || "Openclipart 采集" }}</span>
     </div>
     <div v-if="keyword" class="wf-node__subtitle">{{ keyword }}</div>
-    <div v-if="maxCount" class="wf-node__badge">Limit: {{ maxCount }} ({{ formatPreference.toUpperCase() }})</div>
     <div class="wf-node__type">CC0 免费矢量插画图库</div>
+    <NodeParameterSummary :data="data" />
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>
@@ -53,8 +54,8 @@ const formatPreference = computed(() => props.data.config?.formatPreference || '
 
   .wf-node__subtitle {
     font-size: 11px;
-    color: #D35400;
-    background: #FBEEE6;
+    color: #d35400;
+    background: #fbeee6;
     padding: 2px 6px;
     border-radius: 4px;
     margin: 4px 0;

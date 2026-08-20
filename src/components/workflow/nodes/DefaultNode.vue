@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { Handle, Position } from '@vue-flow/core'
+import { Handle, Position } from "@vue-flow/core";
+import NodeParameterSummary from "./NodeParameterSummary.vue";
 
-defineProps<{ data: { label?: string; config?: any; selected?: boolean } }>()
+defineProps<{ data: { label?: string; config?: any; selected?: boolean } }>();
 </script>
 
 <template>
   <div class="wf-node wf-node--default">
     <Handle type="target" :position="Position.Top" />
-    <div class="wf-node__label">{{ data.label || '节点' }}</div>
+    <div class="wf-node__label">{{ data.label || "节点" }}</div>
+    <NodeParameterSummary :data="data" />
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>
@@ -30,5 +32,9 @@ defineProps<{ data: { label?: string; config?: any; selected?: boolean } }>()
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--el-color-primary) 30%, transparent);
 }
 
-.wf-node__label { font-size: 12px; font-weight: 500; color: var(--el-text-color-primary); }
+.wf-node__label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--el-text-color-primary);
+}
 </style>

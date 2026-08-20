@@ -1,62 +1,60 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import type { Node } from '@vue-flow/core'
+import { ref, computed } from "vue";
+import type { Node } from "@vue-flow/core";
 import {
   getNodeLabel,
   getNodeColor,
   getNodeOutputSchema,
-} from '@/views/workflow/editor/config/node-manifest'
+} from "@/views/workflow/editor/config/node-manifest";
+import { getWorkflowVariableKey } from "@/views/workflow/editor/config/workflowVariableKey";
 
 const props = defineProps<{
-  visible: boolean
-  currentNodeId: string
-  allNodes: Node[]
-  allEdges: any[]
-}>()
+  visible: boolean;
+  currentNodeId: string;
+  allNodes: Node[];
+  allEdges: any[];
+}>();
 
 const emit = defineEmits<{
-  (e: 'update:visible', val: boolean): void
-  (e: 'select', variablePath: string, label: string): void
-}>()
+  (e: "update:visible", val: boolean): void;
+  (e: "select", variablePath: string, label: string): void;
+}>();
 
-const searchKeyword = ref('')
+const searchKeyword = ref("");
 
 /** 上游节点：有连线连接到当前节点的节点 */
 const upstreamNodes = computed(() => {
   const upstreamIds = new Set(
-    props.allEdges
-      .filter((e) => e.target === props.currentNodeId)
-      .map((e) => e.source)
-  )
-  return props.allNodes.filter((n) => upstreamIds.has(n.id))
-})
+    props.allEdges.filter((e) => e.target === props.currentNodeId).map((e) => e.source),
+  );
+  return props.allNodes.filter((n) => upstreamIds.has(n.id));
+});
 
 /** 过滤后的节点列表（按搜索词过滤） */
 const filteredNodes = computed(() => {
-  if (!searchKeyword.value.trim()) return upstreamNodes.value
-  const kw = searchKeyword.value.trim().toLowerCase()
+  if (!searchKeyword.value.trim()) return upstreamNodes.value;
+  const kw = searchKeyword.value.trim().toLowerCase();
   return upstreamNodes.value.filter((n) => {
-    const label = getNodeLabel(n).toLowerCase()
-    const outputs = getNodeOutputSchema(n)
+    const label = getNodeLabel(n).toLowerCase();
+    const outputs = getNodeOutputSchema(n);
     const fieldMatch = outputs.some(
-      (o: any) =>
-        o.field.toLowerCase().includes(kw) ||
-        o.label.toLowerCase().includes(kw),
-    )
-    return label.includes(kw) || fieldMatch
-  })
-})
+      (o: any) => o.field.toLowerCase().includes(kw) || o.label.toLowerCase().includes(kw),
+    );
+    return label.includes(kw) || fieldMatch;
+  });
+});
 
-const handleSelect = (nodeId: string, field: any) => {
-  const path = `${nodeId}.${field.field}`
-  const label = field.label || field.field
-  emit('select', path, label)
-  emit('update:visible', false)
-}
+const handleSelect = (node: Node, field: any) => {
+  const variableKey = getWorkflowVariableKey(node, props.allNodes);
+  const path = `${variableKey}.${field.field}`;
+  const label = field.label || field.field;
+  emit("select", path, label);
+  emit("update:visible", false);
+};
 
 const handleClose = () => {
-  emit('update:visible', false)
-}
+  emit("update:visible", false);
+};
 </script>
 
 <template>
@@ -93,24 +91,17 @@ const handleClose = () => {
 
         <!-- 变量列表 -->
         <div v-else class="vs__list">
-          <div
-            v-for="node in filteredNodes"
-            :key="node.id"
-            class="vs__group"
-          >
+          <div v-for="node in filteredNodes" :key="node.id" class="vs__group">
             <div class="vs__group-header">
-              <span
-                class="vs__group-dot"
-                :style="{ background: getNodeColor(node) }"
-              />
+              <span class="vs__group-dot" :style="{ background: getNodeColor(node) }" />
               <span class="vs__group-name">{{ getNodeLabel(node) }}</span>
-              <span class="vs__group-id">{{ node.id }}</span>
+              <span class="vs__group-id">{{ getWorkflowVariableKey(node, allNodes) }}</span>
             </div>
             <div
               v-for="field in getNodeOutputSchema(node)"
               :key="field.field"
               class="vs__field"
-              @click="handleSelect(node.id, field)"
+              @click="handleSelect(node, field)"
             >
               <div class="vs__field-main">
                 <span class="vs__field-name">{{ field.field }}</span>
