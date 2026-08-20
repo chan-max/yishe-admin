@@ -83,7 +83,7 @@ export const getCOS = () => {
 }
 
 /**
- * 上传成功后异步登记文件资产；登记失败不影响原有上传结果。
+ * 上传成功后异步登记文件存储记录；登记失败不影响原有上传结果。
  */
 const registerFileAssetBestEffort = (payload: Record<string, any>) => {
   void request.post({
@@ -133,18 +133,18 @@ export async function uploadToCOS({
       throw new Error('COS未初始化，无法上传文件')
     }
   }
-  
+
   const cos = getCOS()
-  
+
   // 验证文件对象
   if (!file) {
     throw new Error('文件对象不能为空')
   }
-  
+
   if (typeof file !== 'object' || typeof (file as Blob).size !== 'number') {
     throw new Error('文件对象类型不正确')
   }
-  
+
   // 如果没有提供 key，且提供了 category，则生成新格式的 key
   let finalKey = key
   if (!finalKey && category) {
@@ -164,7 +164,7 @@ export async function uploadToCOS({
       userId,
     })
   }
-  
+
   try {
     const res = await cos.uploadFile({
       Key: String(finalKey),

@@ -223,7 +223,7 @@ export default {
     crawlerMaterial: '采集素材',
     imageMaterial: '图片素材',
     fileResource: '文件资源',
-    fileAsset: '文件资产',
+    fileAsset: '文件存储记录',
     asset3d: '3D资源',
     font: '字体',
     psdTemplate: 'PSD模板',
@@ -1046,7 +1046,8 @@ export default {
       browserAutomation: { title: '浏览器自动化', desc: '环境管理与调试' },
       queue: { title: '任务中心', desc: '发布任务与执行日志' },
       psdSet: {
- title: '套图制作', desc: 'PS 自动制作流程' },
+        title: '套图制作', desc: 'PS 自动制作流程'
+      },
       aiApiKey: { title: 'AI API Key', desc: '平台密钥管理' },
       statistics: { title: '数据统计', desc: '模块数据趋势' },
       hotSearch: { title: '热搜管理', desc: '多平台热搜采集分析' },
@@ -5607,7 +5608,7 @@ export default {
     transfer: '移交所有人',
     filter: '筛选',
     fileResource: '文件资源',
-    fileAsset: '文件资产',
+    fileAsset: '文件存储记录',
     imageFile: '图片文件',
     audioFile: '音频文件',
     pdfFile: 'PDF 文件',
