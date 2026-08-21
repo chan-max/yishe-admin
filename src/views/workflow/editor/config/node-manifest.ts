@@ -246,6 +246,7 @@ export interface NodeIOSchemaField {
   placeholder?: string
   description?: string
   options?: { label: string; value: string | number }[]
+  isSensitive?: boolean
 }
 
 export interface NodeRuntime {
@@ -933,7 +934,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     platform: 'feishu',
     defaultData: { name: '飞书推送', channelId: null, title: '工作流执行完成', content: '工作流已完成执行。' },
     inputSchema: [
-      { field: 'channelId', label: '飞书渠道', type: 'select', required: true, placeholder: '选择已配置的飞书渠道', description: '在「消息推送」模块中配置的飞书机器人', options: [] },
+      { field: 'channelId', label: '飞书渠道', type: 'select', required: true, isSensitive: true, placeholder: '选择已配置的飞书渠道', description: '在「消息推送」模块中配置的飞书机器人', options: [] },
       { field: 'title', label: '消息标题', type: 'string', defaultValue: '工作流执行通知', placeholder: '例如：商品渲染任务完成', description: '支持 {{ node_id.variable }} 变量引用' },
       { field: 'content', label: '消息正文', type: 'textarea', defaultValue: '工作流已完成执行。', placeholder: '支持 {{ node_id.variable }} 变量引用', description: '飞书 Markdown 格式' },
     ],
@@ -955,7 +956,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     platform: 'wecom',
     defaultData: { name: '企微推送', channelId: null, title: '工作流执行完成', content: '工作流已完成执行。' },
     inputSchema: [
-      { field: 'channelId', label: '企微渠道', type: 'select', required: true, placeholder: '选择已配置的企微渠道', description: '在「消息推送」模块中配置的企业微信', options: [] },
+      { field: 'channelId', label: '企微渠道', type: 'select', required: true, isSensitive: true, placeholder: '选择已配置的企微渠道', description: '在「消息推送」模块中配置的企业微信', options: [] },
       { field: 'title', label: '消息标题', type: 'string', defaultValue: '工作流执行通知', placeholder: '例如：商品渲染任务完成', description: '支持 {{ node_id.variable }} 变量引用' },
       { field: 'content', label: '消息正文', type: 'textarea', defaultValue: '工作流已完成执行。', placeholder: '支持 {{ node_id.variable }} 变量引用', description: '企微 Markdown 格式' },
     ],

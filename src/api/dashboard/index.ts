@@ -91,11 +91,15 @@ function isPluginOnline(connection: WebsocketConnectionVO): boolean {
 }
 
 export const getDashboardStatsApi = async (): Promise<DashboardStats> => {
-  const connections = await request.post<WebsocketConnectionVO[]>({
-    url: "/websocket/runtime-connections-view",
-  })
-
-  const list = Array.isArray(connections) ? connections : connections?.data || []
+  let list: WebsocketConnectionVO[] = []
+  try {
+    const connections = await request.post<WebsocketConnectionVO[]>({
+      url: "/websocket/runtime-connections-view",
+    })
+    list = Array.isArray(connections) ? connections : connections?.data || []
+  } catch (error) {
+    list = []
+  }
 
   let clientOnline = 0
   let clientTotal = 0

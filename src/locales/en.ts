@@ -208,6 +208,7 @@ export default {
   router: {
     workflow: 'Workflow',
     myWorkflow: 'My Workflows',
+    workflowLibrary: 'Workflow Library',
     workflowEditor: 'Workflow Editor',
     workplace: 'Workspace',
     home: 'Home',

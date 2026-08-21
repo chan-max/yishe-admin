@@ -42,6 +42,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
         },
       },
       {
+        path: 'library',
+        component: () => import('@/views/workflow/library/index.vue'),
+        name: 'WorkflowLibrary',
+        meta: {
+          title: "router.workflowLibrary",
+          noCache: true,
+        },
+      },
+      {
         path: 'editor/:id',
         component: () => import('@/views/workflow/editor/index.vue'),
         name: 'WorkflowEditor',

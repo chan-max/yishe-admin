@@ -11,7 +11,6 @@
           </div>
         </div>
         <ElButton plain size="small" :loading="loading" @click="loadEndpointStatus">
-          <Icon icon="lucide:refresh-cw" class="mr-1.5 text-13px" :class="{ 'animate-spin': loading }" />
           {{ t('home.dashboard.refreshData') }}
         </ElButton>
       </div>

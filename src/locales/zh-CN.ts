@@ -210,6 +210,7 @@ export default {
   router: {
     workflow: '工作流',
     myWorkflow: '我的工作流',
+    workflowLibrary: '工作流库',
     workflowEditor: '工作流编辑器',
     workplace: '工作台',
     home: '首页',

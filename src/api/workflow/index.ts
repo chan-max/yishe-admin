@@ -144,6 +144,7 @@ export interface WorkflowLibraryItem {
   status: "published" | "archived";
   publishedAt?: string | null;
   importCount: number;
+  nodeTypes?: string[];
   createTime: string;
   updateTime: string;
   definition?: Record<string, any>;
