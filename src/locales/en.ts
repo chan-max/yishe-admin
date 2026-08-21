@@ -301,6 +301,7 @@ export default {
     messagePush: 'Push Notifications',
     userManagement: 'User Management',
     companyManagement: 'Company Management',
+    roleManagement: 'Role Management',
     remoteConnection: 'Remote Connections',
     serviceCache: 'Service Cache',
     operateLog: 'Operation Logs',

@@ -90,48 +90,45 @@
               <el-button size="small" type="danger" @click="handleBatchDelete">
                 {{ t('psdSet.batchDelete', { count: selectedIds.length }) }}
               </el-button>
-              <div class="psd-set-page__auto-dispatch-row">
-                <div class="psd-set-page__auto-dispatch">
-                  <div class="psd-set-page__auto-dispatch-head">
-                    <div class="psd-set-page__auto-dispatch-runtime" :class="`is-${psdSetSchedulerIndicator.tone}`">
-                      <span class="psd-set-page__auto-dispatch-runtime-dot" />
-                      <span>{{ psdSetSchedulerIndicator.text }}</span>
-                    </div>
-                  </div>
-                  <div class="psd-set-page__auto-dispatch-work">
-                    <template v-if="autoDispatchProcessingRows.length">
-                      <div v-for="item in autoDispatchProcessingRows" :key="item.key"
-                        class="psd-set-page__auto-dispatch-work-item">
-                        <span class="psd-set-page__auto-dispatch-client">{{ item.clientLabel }}</span>
-                        <span class="psd-set-page__auto-dispatch-action">{{ t('psdSet.processing') }}</span>
-                        <span class="psd-set-page__auto-dispatch-task">
-                          <span class="psd-set-page__auto-dispatch-task-id">{{ item.taskId }}</span>
-                          <span v-if="item.taskName" class="psd-set-page__auto-dispatch-task-name">{{ item.taskName }}</span>
-                        </span>
-                        <span v-if="item.stepLabel" class="psd-set-page__auto-dispatch-step">{{ item.stepLabel }}</span>
-                      </div>
-                    </template>
-                    <div v-else class="psd-set-page__auto-dispatch-empty">
-                      <span>{{ psdSetAutoDispatchTargetLabel || t('psdSet.noTargetClient') }}</span>
-                      <span>{{ psdSetSchedulerRuntimeSummary }}</span>
-                      <span>{{ t('psdSet.pendingCount', { count: schedulerClientStats.pending }) }}</span>
-                    </div>
-                  </div>
-                  <div class="psd-set-page__auto-dispatch-side">
-                    <span class="psd-set-page__auto-dispatch-status"
-                      :class="userAutoSchedulingEnabled ? 'is-success' : 'is-info'">
-                      <span class="psd-set-page__auto-dispatch-dot" />
-                      <span>{{ userAutoSchedulingEnabled ? t('psdSet.enabled') : t('psdSet.disabled') }}</span>
+
+              <div class="psd-set-page__auto-dispatch-bar">
+                <div class="psd-set-page__auto-dispatch-indicator" :class="`is-${psdSetSchedulerIndicator.tone}`">
+                  <span class="psd-set-page__auto-dispatch-dot" />
+                  <span class="psd-set-page__auto-dispatch-indicator-text">{{ psdSetSchedulerIndicator.text }}</span>
+                </div>
+
+                <div class="psd-set-page__auto-dispatch-content">
+                  <template v-if="autoDispatchProcessingRows.length">
+                    <span v-for="item in autoDispatchProcessingRows" :key="item.key"
+                      class="psd-set-page__auto-dispatch-task-chip">
+                      <span class="psd-set-page__chip-client">{{ item.clientLabel }}</span>
+                      <span class="psd-set-page__chip-task-id">{{ item.taskId }}</span>
+                      <span v-if="item.stepLabel" class="psd-set-page__chip-step">{{ item.stepLabel }}</span>
                     </span>
-                    <el-button size="small" :type="userAutoSchedulingEnabled ? 'danger' : 'success'"
-                      :loading="userAutoSchedulingLoading"
-                      @click="handleToggleUserAutoScheduling(!userAutoSchedulingEnabled)">
-                      {{ userAutoSchedulingEnabled ? t('psdSet.disableAutoProduction') : t('psdSet.enableAutoProduction') }}
-                    </el-button>
-                    <el-button size="small" :loading="resettingPsRuntime" @click="handleResetAllPsAutomationRuntime">
-                      {{ t('psdSet.resetStatus') }}
-                    </el-button>
-                  </div>
+                  </template>
+                  <template v-else>
+                    <span v-if="psdSetAutoDispatchTargetLabel" class="psd-set-page__auto-dispatch-target" :title="psdSetAutoDispatchTargetLabel">
+                      {{ psdSetAutoDispatchTargetLabel }}
+                    </span>
+                    <span v-if="psdSetSchedulerRuntimeSummary" class="psd-set-page__auto-dispatch-interval">
+                      {{ psdSetSchedulerRuntimeSummary }}
+                    </span>
+                    <span class="psd-set-page__auto-dispatch-pending">
+                      {{ t('psdSet.pendingCount', { count: schedulerClientStats.pending }) }}
+                    </span>
+                  </template>
+                </div>
+
+                <div class="psd-set-page__auto-dispatch-actions">
+                  <el-button size="small" :type="userAutoSchedulingEnabled ? 'danger' : 'success'"
+                    :loading="userAutoSchedulingLoading"
+                    plain
+                    @click="handleToggleUserAutoScheduling(!userAutoSchedulingEnabled)">
+                    {{ userAutoSchedulingEnabled ? t('psdSet.disableAutoProduction') : t('psdSet.enableAutoProduction') }}
+                  </el-button>
+                  <el-button size="small" :loading="resettingPsRuntime" @click="handleResetAllPsAutomationRuntime">
+                    {{ t('psdSet.resetStatus') }}
+                  </el-button>
                 </div>
               </div>
             </div>
@@ -189,44 +186,68 @@
               </template>
               <!-- 关联信息插槽：合并显示贴纸详情和PSD模板详情 -->
               <template #operationSlot="{ row }">
-                <el-dropdown class="operation-dropdown" placement="bottom-end">
-                  <el-button type="primary" link size="small" class="operation-trigger-button">{{ t('common.operation') }}</el-button>
-                  <template #dropdown>
-                    <el-dropdown-menu class="operation-menu-compact">
-                      <el-dropdown-item @click="() => handleViewDetail(row)">{{ t('psdSet.viewDetail') }}</el-dropdown-item>
-                      <el-dropdown-item @click="() => handleEditConfigDirectly(row)">{{ t('psdSet.editConfig') }}</el-dropdown-item>
-                      <el-dropdown-item
-                        divided
-                        :disabled="!isClientConnected || startingProductionId === row.id"
-                        @click="() => handleStartProduction(row)"
-                      >
-                        {{ t('psdSet.startProduction') }}
-                      </el-dropdown-item>
-                      <el-dropdown-item divided @click="() => updateRowStatus(row, 'pending')">{{ t('psdSet.markPending') }}</el-dropdown-item>
-                      <el-dropdown-item @click="() => updateRowStatus(row, 'processing')">{{ t('psdSet.markProcessing') }}</el-dropdown-item>
-                      <el-dropdown-item @click="() => updateRowStatus(row, 'completed')">{{ t('psdSet.markCompleted') }}</el-dropdown-item>
-                      <el-dropdown-item @click="() => updateRowStatus(row, 'failed')">{{ t('psdSet.markFailed') }}</el-dropdown-item>
-                      <el-dropdown-item
-                        divided
-                        :disabled="generatingProductId === row.id"
-                        @click="() => handleToProduct(row)"
-                      >
-                        {{ t('psdSet.generateProduct') }}
-                      </el-dropdown-item>
-                      <el-dropdown-item @click="() => handleCreatePublishTask(row)">{{ t('psdSet.generatePublishTask') }}</el-dropdown-item>
-                      <el-dropdown-item @click="() => handleViewPublishTasks(row)">{{ t('psdSet.viewPublishTasks') }}</el-dropdown-item>
-                      <el-dropdown-item @click="() => handleViewProducts(row)">{{ t('psdSet.viewProducts') }}</el-dropdown-item>
-                      <el-dropdown-item @click="() => handleViewPublishUsageRecords(row)">{{ t('psdSet.viewPublishUsageRecords') }}</el-dropdown-item>
-                      <el-dropdown-item
-                        divided
-                        class="operation-menu-item--danger"
-                        @click="() => handleDelete(row)"
-                      >
-                        {{ t('common.delete') }}
-                      </el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
+                <div class="psd-set-row-actions">
+                  <el-button
+                    type="success"
+                    link
+                    size="small"
+                    class="psd-set-action-btn psd-set-action-btn--product"
+                    :loading="generatingProductId === row.id"
+                    :disabled="generatingProductId === row.id"
+                    @click="() => handleToProduct(row)"
+                  >
+                    {{ t('psdSet.generateProduct') }}
+                  </el-button>
+                  <el-button
+                    type="primary"
+                    link
+                    size="small"
+                    class="psd-set-action-btn psd-set-action-btn--publish"
+                    @click="() => handleCreatePublishTask(row)"
+                  >
+                    {{ t('psdSet.generatePublishTask') }}
+                  </el-button>
+                  <el-dropdown class="operation-dropdown" placement="bottom-end">
+                    <el-button type="info" link size="small" class="operation-trigger-button">
+                      {{ t('common.more') || '更多' }}
+                    </el-button>
+                    <template #dropdown>
+                      <el-dropdown-menu class="operation-menu-compact">
+                        <el-dropdown-item @click="() => handleViewDetail(row)">{{ t('psdSet.viewDetail') }}</el-dropdown-item>
+                        <el-dropdown-item @click="() => handleEditConfigDirectly(row)">{{ t('psdSet.editConfig') }}</el-dropdown-item>
+                        <el-dropdown-item
+                          divided
+                          :disabled="!isClientConnected || startingProductionId === row.id"
+                          @click="() => handleStartProduction(row)"
+                        >
+                          {{ t('psdSet.startProduction') }}
+                        </el-dropdown-item>
+                        <el-dropdown-item divided @click="() => updateRowStatus(row, 'pending')">{{ t('psdSet.markPending') }}</el-dropdown-item>
+                        <el-dropdown-item @click="() => updateRowStatus(row, 'processing')">{{ t('psdSet.markProcessing') }}</el-dropdown-item>
+                        <el-dropdown-item @click="() => updateRowStatus(row, 'completed')">{{ t('psdSet.markCompleted') }}</el-dropdown-item>
+                        <el-dropdown-item @click="() => updateRowStatus(row, 'failed')">{{ t('psdSet.markFailed') }}</el-dropdown-item>
+                        <el-dropdown-item
+                          divided
+                          :disabled="generatingProductId === row.id"
+                          @click="() => handleToProduct(row)"
+                        >
+                          {{ t('psdSet.generateProduct') }}
+                        </el-dropdown-item>
+                        <el-dropdown-item @click="() => handleCreatePublishTask(row)">{{ t('psdSet.generatePublishTask') }}</el-dropdown-item>
+                        <el-dropdown-item divided @click="() => handleViewProducts(row)">{{ t('psdSet.viewProducts') }}</el-dropdown-item>
+                        <el-dropdown-item @click="() => handleViewPublishTasks(row)">{{ t('psdSet.viewPublishTasks') }}</el-dropdown-item>
+                        <el-dropdown-item @click="() => handleViewPublishUsageRecords(row)">{{ t('psdSet.viewPublishUsageRecords') }}</el-dropdown-item>
+                        <el-dropdown-item
+                          divided
+                          class="operation-menu-item--danger"
+                          @click="() => handleDelete(row)"
+                        >
+                          {{ t('common.delete') }}
+                        </el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
+                </div>
               </template>
             </vxe-grid>
           </div>
@@ -349,103 +370,141 @@
         </section>
 
         <section class="psd-set-detail-middle">
+          <!-- 关联素材图片信息 -->
           <div class="psd-set-detail-panel psd-set-detail-panel--balanced">
             <div class="detail-header">
-              <span class="detail-label">{{ t('psdSet.imageInfo') }}</span>
-              <span class="detail-count">{{ t('psdSet.itemCount', { count: detailStickers.length }) }}</span>
-            </div>
-            <div class="psd-set-detail-meta-list psd-set-detail-meta-list--inline">
-              <div>
-                <span class="info-label">{{ t('psdSet.sourceStickerId') }}</span>
-                <span class="info-value break-all">{{ detailStickerIdsText }}</span>
+              <div class="detail-header__left">
+                <span class="detail-label">{{ t('psdSet.imageInfo') }}</span>
+                <span class="detail-count">{{ t('psdSet.itemCount', { count: detailStickers.length }) }}</span>
               </div>
-              <div>
-                <span class="info-label">{{ t('psdSet.autoAction') }}</span>
-                <span class="info-value">{{ detailAutomationText }}</span>
-              </div>
-              <div>
-                <span class="info-label">{{ t('psdSet.publishTask') }}</span>
-                <span class="info-value">{{
-                  detailPublishTaskCount ? t('psdSet.records', { count: detailPublishTaskCount }) : t('psdSet.none')
-                  }}</span>
+              <div class="detail-header__right" v-if="detailStickers.length > 1">
+                <el-tag size="small" type="primary" effect="plain">{{ t('psdSet.multiMaterials') }}</el-tag>
               </div>
             </div>
-            <div v-if="detailStickers.length" class="detail-sticker-list">
-              <div v-for="sticker in detailStickers" :key="sticker.id" class="detail-sticker-card">
-                <el-image v-if="sticker.url" :src="sticker.url"
-                  :preview-src-list="detailStickers.map((s) => s.url).filter(Boolean)"
-                  :initial-index="detailStickers.findIndex((s) => s.id === sticker.id)" :preview-teleported="true"
-                  :hide-on-click-modal="false" fit="contain" class="detail-thumb-image" />
-                <span v-else class="text-gray-400 text-xs">{{ t('psdSet.noImage') }}</span>
-                <div class="detail-sticker-meta">
-                  <div v-if="sticker.id" class="detail-sticker-id cursor-pointer" @click="copyId(sticker.id)">
-                    ID: {{ sticker.id }}
-                    <el-icon class="copy-icon">
-                      <DocumentCopy />
-                    </el-icon>
+
+            <div v-if="detailStickers.length" class="detail-entity-list">
+              <div v-for="sticker in detailStickers" :key="sticker.id" class="detail-entity-card">
+                <div class="detail-entity-card__thumb">
+                  <el-image v-if="sticker.url" :src="sticker.url"
+                    :preview-src-list="detailStickers.map((s) => s.url).filter(Boolean)"
+                    :initial-index="detailStickers.findIndex((s) => s.id === sticker.id)"
+                    :preview-teleported="true"
+                    :hide-on-click-modal="false" fit="contain" class="detail-entity-card__image" />
+                  <span v-else class="detail-entity-card__empty-thumb">{{ t('psdSet.noImage') }}</span>
+                </div>
+
+                <div class="detail-entity-card__main">
+                  <div class="detail-entity-card__head">
+                    <span class="detail-entity-card__name" :title="sticker.name">{{ sticker.name || t('psdSet.unnamedSticker') }}</span>
+                    <el-tag v-if="sticker.category" size="small" type="info" effect="light">{{ sticker.category }}</el-tag>
                   </div>
-                  <div v-if="sticker.code" class="detail-sticker-code">
-                    Code: {{ sticker.code }}
+
+                  <div class="detail-entity-grid">
+                    <div class="detail-entity-grid__item">
+                      <span class="detail-field-label">ID:</span>
+                      <span class="detail-field-value detail-field-value--code cursor-pointer" @click="copyId(sticker.id)" :title="'点击复制 ID: ' + sticker.id">
+                        {{ sticker.id || '-' }}
+                        <el-icon class="copy-icon"><DocumentCopy /></el-icon>
+                      </span>
+                    </div>
+
+                    <div v-if="sticker.code" class="detail-entity-grid__item">
+                      <span class="detail-field-label">编码:</span>
+                      <span class="detail-field-value detail-field-value--code">{{ sticker.code }}</span>
+                    </div>
+
+                    <div class="detail-entity-grid__item detail-entity-grid__item--full">
+                      <span class="detail-field-label">关键词:</span>
+                      <span class="detail-field-value" :title="sticker.keywords">{{ sticker.keywords || '-' }}</span>
+                    </div>
+
+                    <div class="detail-entity-grid__item detail-entity-grid__item--full">
+                      <span class="detail-field-label">描述:</span>
+                      <span class="detail-field-value" :title="sticker.description">{{ sticker.description || '-' }}</span>
+                    </div>
                   </div>
-                  <div class="detail-sticker-name">{{ sticker.name || t('psdSet.unnamedSticker') }}</div>
-                  <div class="detail-sticker-desc">{{ sticker.description || "-" }}</div>
-                  <div class="detail-sticker-keywords">{{ sticker.keywords || "-" }}</div>
                 </div>
               </div>
             </div>
             <el-empty v-else :description="t('psdSet.noSourceMaterials')" :image-size="72" />
           </div>
 
+          <!-- 关联 PSD 模版信息 -->
           <div class="psd-set-detail-panel psd-set-detail-panel--balanced">
             <div class="detail-header">
-              <span class="detail-label">{{ t('psdSet.psdTemplateInfo') }}</span>
-            </div>
-            <div v-if="detailData.psdTemplate" class="psd-set-detail-side-card">
-              <div class="psd-set-detail-meta-list psd-set-detail-meta-list--inline">
-                <div>
-                  <span class="info-label">{{ t('psdSet.templateId') }}</span>
-                  <span class="info-value cursor-pointer break-all" @click="copyId(detailData.psdTemplate.id)">
-                    {{ detailData.psdTemplate.id || "-" }}
-                  </span>
-                </div>
-                <div>
-                  <span class="info-label">{{ t('psdSet.templateName') }}</span>
-                  <span class="info-value">{{ detailData.psdTemplate.name || t('psdSet.unnamedTemplate') }}</span>
-                </div>
-                <div>
-                  <span class="info-label">{{ t('psdSet.keyword') }}</span>
-                  <span class="info-value">{{ detailData.psdTemplate.keywords || "-" }}</span>
-                </div>
+              <div class="detail-header__left">
+                <span class="detail-label">{{ t('psdSet.psdTemplateInfo') }}</span>
               </div>
-              <div class="detail-template-card detail-template-card--unified">
-                <el-image v-if="detailData.psdTemplate.thumbnail" :src="getPreviewImageUrl(detailData.psdTemplate.thumbnail, {
-                  width: 360,
-                  quality: 80,
-                  format: 'webp',
-                })
-                  " :preview-src-list="[detailData.psdTemplate.thumbnail]" :preview-teleported="true"
-                  :hide-on-click-modal="false" fit="contain" class="detail-thumb-image detail-thumb-image--template" />
-                <span v-else class="text-gray-400 text-xs">{{ t('psdSet.noImage') }}</span>
-                <div class="detail-sticker-meta">
-                  <div class="detail-sticker-id cursor-pointer" @click="copyId(detailData.psdTemplate.id)">
-                    ID: {{ detailData.psdTemplate.id || "-" }}
-                    <el-icon class="copy-icon">
-                      <DocumentCopy />
-                    </el-icon>
-                  </div>
-                  <div class="detail-sticker-name">
+              <div class="detail-header__right" v-if="detailData.psdTemplate">
+                <el-tag v-if="detailData.psdTemplate.cropMode" size="small" type="warning" effect="plain">
+                  {{ detailData.psdTemplate.cropMode }}
+                </el-tag>
+              </div>
+            </div>
+
+            <div v-if="detailData.psdTemplate" class="detail-entity-card detail-entity-card--template">
+              <div class="detail-entity-card__thumb">
+                <el-image v-if="detailData.psdTemplate.thumbnail"
+                  :src="getPreviewImageUrl(detailData.psdTemplate.thumbnail, { width: 360, quality: 80, format: 'webp' })"
+                  :preview-src-list="[detailData.psdTemplate.thumbnail]"
+                  :preview-teleported="true"
+                  :hide-on-click-modal="false" fit="contain" class="detail-entity-card__image" />
+                <span v-else class="detail-entity-card__empty-thumb">{{ t('psdSet.noImage') }}</span>
+              </div>
+
+              <div class="detail-entity-card__main">
+                <div class="detail-entity-card__head">
+                  <span class="detail-entity-card__name" :title="detailData.psdTemplate.name">
                     {{ detailData.psdTemplate.name || t('psdSet.unnamedTemplate') }}
+                  </span>
+                  <el-tag v-if="detailData.psdTemplate.category" size="small" type="info" effect="light">
+                    {{ detailData.psdTemplate.category }}
+                  </el-tag>
+                </div>
+
+                <div class="detail-entity-grid">
+                  <div class="detail-entity-grid__item detail-entity-grid__item--full">
+                    <span class="detail-field-label">模版 ID:</span>
+                    <span class="detail-field-value detail-field-value--code cursor-pointer" @click="copyId(detailData.psdTemplate.id)" :title="'点击复制 ID: ' + detailData.psdTemplate.id">
+                      {{ detailData.psdTemplate.id || '-' }}
+                      <el-icon class="copy-icon"><DocumentCopy /></el-icon>
+                    </span>
                   </div>
-                  <div class="detail-sticker-desc">{{ detailData.psdTemplate.description || "-" }}</div>
-                  <div class="detail-sticker-keywords">{{ detailData.psdTemplate.keywords || "-" }}</div>
-                  <div class="detail-sticker-path break-all">{{ t('psdSet.cloudResource', { value: detailData.psdTemplate.url || "-" }) }}</div>
-                  <div class="detail-sticker-path break-all">
-                    {{ t('psdSet.localPath', { value: detailData.psdTemplate.windowsLocalPath || "-" }) }}
+
+                  <div v-if="detailData.psdTemplate.suitableSizes" class="detail-entity-grid__item detail-entity-grid__item--full">
+                    <span class="detail-field-label">适用尺寸:</span>
+                    <span class="detail-field-value">{{ detailData.psdTemplate.suitableSizes }}</span>
+                  </div>
+
+                  <div class="detail-entity-grid__item detail-entity-grid__item--full">
+                    <span class="detail-field-label">关键词:</span>
+                    <span class="detail-field-value" :title="detailData.psdTemplate.keywords">{{ detailData.psdTemplate.keywords || '-' }}</span>
+                  </div>
+
+                  <div class="detail-entity-grid__item detail-entity-grid__item--full">
+                    <span class="detail-field-label">描述:</span>
+                    <span class="detail-field-value" :title="detailData.psdTemplate.description">{{ detailData.psdTemplate.description || '-' }}</span>
+                  </div>
+
+                  <div v-if="detailData.psdTemplate.url" class="detail-entity-grid__item detail-entity-grid__item--full">
+                    <span class="detail-field-label">云端资源:</span>
+                    <span class="detail-field-value detail-field-value--path cursor-pointer" @click="copyText(detailData.psdTemplate.url, '云端路径已复制')" :title="detailData.psdTemplate.url">
+                      {{ detailData.psdTemplate.url }}
+                      <el-icon class="copy-icon"><DocumentCopy /></el-icon>
+                    </span>
+                  </div>
+
+                  <div v-if="detailData.psdTemplate.windowsLocalPath" class="detail-entity-grid__item detail-entity-grid__item--full">
+                    <span class="detail-field-label">本地路径:</span>
+                    <span class="detail-field-value detail-field-value--path cursor-pointer" @click="copyText(detailData.psdTemplate.windowsLocalPath, '本地路径已复制')" :title="detailData.psdTemplate.windowsLocalPath">
+                      {{ detailData.psdTemplate.windowsLocalPath }}
+                      <el-icon class="copy-icon"><DocumentCopy /></el-icon>
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
-            <span v-else class="text-gray-400 text-sm">{{ t('psdSet.noTemplate') }}</span>
+            <el-empty v-else :description="t('psdSet.noTemplate')" :image-size="72" />
           </div>
         </section>
 
@@ -1239,6 +1298,8 @@ const productsDialogPageSize = ref(20);
 const currentProductsPsdSetId = ref<string>("");
 let psdSetMenuRuntimeSyncTimer: ReturnType<typeof setTimeout> | null = null;
 let psdSetListRequestSeq = 0;
+let pendingNonSilentRequests = 0;
+let pendingNonSilentDetailRequests = 0;
 
 // 客户端连接状态（参考 header 中的状态检测方式）
 const isClientConnected = computed(() => isLocalConnected.value);
@@ -1995,7 +2056,7 @@ function getColumns() {
     },
   ];
 
-  const operationColumn = [buildOperationColumn("operationSlot")];
+  const operationColumn = [buildOperationColumn("operationSlot", 200)];
 
   return [...baseColumns, ...operationColumn];
 }
@@ -2040,6 +2101,7 @@ watchEffect(() => {
 async function getList(silent = false) {
   const requestSeq = ++psdSetListRequestSeq;
   if (!silent) {
+    pendingNonSilentRequests++;
     loading.value = true;
   }
   try {
@@ -2066,8 +2128,16 @@ async function getList(silent = false) {
       : [];
     dataSource.value = normalizedList;
     total.value = res.total || 0;
+  } catch (error) {
+    if (!silent) {
+      console.error("加载 PSD 套图列表失败:", error);
+    }
   } finally {
-    if (!silent && requestSeq === psdSetListRequestSeq) {
+    if (!silent) {
+      pendingNonSilentRequests = Math.max(0, pendingNonSilentRequests - 1);
+    }
+    // 只要没有在途的前台非静默请求，或者当前完成的是最新请求，必须安全重置 loading 状态
+    if (pendingNonSilentRequests === 0 || requestSeq === psdSetListRequestSeq) {
       loading.value = false;
     }
   }
@@ -2100,16 +2170,35 @@ function handlePsdTemplateIdChange(val: string) {
 function formatProcessingTime(seconds: any): string {
   const s = Number(seconds);
   if (isNaN(s) || s <= 0) return "-";
-  if (s < 60) return t("psdSet.secondsShort", { count: s.toFixed(2) });
+  if (s < 60) {
+    const formatted = s % 1 === 0 ? String(s) : s.toFixed(2).replace(/\.?0+$/, "");
+    return t("psdSet.secondsShort", { s: formatted, count: formatted });
+  }
   if (s < 3600) {
     const minutes = Math.floor(s / 60);
-    const secs = s % 60;
-    return t("psdSet.minutesSeconds", { minutes, seconds: secs.toFixed(2) });
+    const rawSecs = s % 60;
+    const secs = rawSecs % 1 === 0 ? String(rawSecs) : rawSecs.toFixed(2).replace(/\.?0+$/, "");
+    return t("psdSet.minutesSeconds", {
+      m: minutes,
+      s: secs,
+      minutes,
+      seconds: secs,
+      count: s,
+    });
   }
   const hours = Math.floor(s / 3600);
   const minutes = Math.floor((s % 3600) / 60);
-  const secs = s % 60;
-  return t("psdSet.hoursMinutesSeconds", { hours, minutes, seconds: secs.toFixed(2) });
+  const rawSecs = s % 60;
+  const secs = rawSecs % 1 === 0 ? String(rawSecs) : rawSecs.toFixed(2).replace(/\.?0+$/, "");
+  return t("psdSet.hoursMinutesSeconds", {
+    h: hours,
+    m: minutes,
+    s: secs,
+    hours,
+    minutes,
+    seconds: secs,
+    count: s,
+  });
 }
 
 function getPreviewImageList(row: any): string[] {
@@ -2868,6 +2957,7 @@ async function loadPsdSetDetailById(psdSetId: unknown, silent = false) {
   }
 
   if (!silent) {
+    pendingNonSilentDetailRequests++;
     detailLoading.value = true;
   }
 
@@ -2884,6 +2974,9 @@ async function loadPsdSetDetailById(psdSetId: unknown, silent = false) {
     }
   } finally {
     if (!silent) {
+      pendingNonSilentDetailRequests = Math.max(0, pendingNonSilentDetailRequests - 1);
+    }
+    if (pendingNonSilentDetailRequests === 0) {
       detailLoading.value = false;
     }
   }
@@ -3015,6 +3108,23 @@ async function copyId(id: string) {
     document.execCommand("copy");
     document.body.removeChild(textarea);
     ElMessage.success(t("psdSet.idCopied"));
+  }
+}
+
+// 复制通用文本
+async function copyText(text: string, successMsg?: string) {
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    ElMessage.success(successMsg || t("common.copySuccess") || "已复制到剪贴板");
+  } catch (e) {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textarea);
+    ElMessage.success(successMsg || t("common.copySuccess") || "已复制到剪贴板");
   }
 }
 
@@ -4388,36 +4498,11 @@ getList();
 }
 
 @media (width <= 768px) {
-  .psd-set-page__auto-dispatch {
-    grid-template-columns: 1fr;
-    flex-basis: 100%;
+  .psd-set-page__auto-dispatch-bar {
     width: 100%;
+    flex-wrap: wrap;
     height: auto;
-    min-height: 86px;
     padding: 6px;
-  }
-
-  .psd-set-page__auto-dispatch-head {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-  }
-
-  .psd-set-page__auto-dispatch-work {
-    width: 100%;
-    height: auto;
-    overflow-x: auto;
-  }
-
-  .psd-set-page__auto-dispatch-work-item,
-  .psd-set-page__auto-dispatch-empty {
-    min-width: max-content;
-  }
-
-  .psd-set-page__auto-dispatch-side {
-    grid-template-columns: 64px 1fr 62px;
-    width: 100%;
   }
 
   .production-dispatch-dialog__table :deep(.el-table) {
@@ -4444,6 +4529,20 @@ getList();
   }
 }
 
+.psd-set-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.psd-set-action-btn {
+  font-size: 12px;
+  padding: 0 2px;
+  font-weight: 500;
+}
+
 .psd-set-page {
   padding-top: 8px;
 }
@@ -4464,268 +4563,140 @@ getList();
 .psd-set-page__actions {
   max-width: 100%;
   min-width: 0;
-  justify-content: flex-start;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.psd-set-page__auto-dispatch-row {
   display: flex;
-  width: 100%;
-  min-width: 0;
-  flex: 0 0 100%;
-  justify-content: flex-start;
-}
-
-.psd-set-page__auto-dispatch {
-  display: grid;
-  width: 100%;
-  min-width: 0;
-  min-height: 38px;
-  padding: 5px 6px 5px 8px;
-  overflow: hidden;
-  background: var(--el-bg-color);
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 6px;
-  box-shadow: none;
-  grid-template-columns: 104px minmax(0, 1fr) 226px;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
 }
 
-.psd-set-page__auto-dispatch-head {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  min-width: 0;
-}
-
-.psd-set-page__auto-dispatch-title {
-  min-width: 0;
+.psd-set-page__auto-dispatch-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  padding: 2px 8px;
+  background: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 4px;
   font-size: 12px;
-  font-weight: 600;
   line-height: 1;
-  color: var(--el-text-color-primary);
-  white-space: nowrap;
-}
-
-.psd-set-page__auto-dispatch-runtime {
-  display: inline-flex;
-  height: 16px;
-  min-width: 0;
-  overflow: hidden;
-  font-size: 11px;
-  line-height: 1;
-  color: var(--el-text-color-secondary);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  align-items: center;
-  gap: 6px;
-}
-
-.psd-set-page__auto-dispatch-runtime.is-success {
-  color: #67c23a;
-}
-
-.psd-set-page__auto-dispatch-runtime.is-warning {
-  color: #f97316;
-}
-
-.psd-set-page__auto-dispatch-runtime.is-danger {
-  color: #f56c6c;
-}
-
-.psd-set-page__auto-dispatch-runtime.is-info {
-  color: #909399;
-}
-
-.psd-set-page__auto-dispatch-runtime-dot {
-  width: 6px;
-  height: 6px;
-  background: currentcolor;
-  border-radius: 999px;
-  flex: 0 0 auto;
-}
-
-.psd-set-page__auto-dispatch-runtime.is-success .psd-set-page__auto-dispatch-runtime-dot {
-  box-shadow: 0 0 0 0 rgb(103 194 58 / 24%);
-  animation: status-breath-success 1.8s infinite ease-in-out;
-}
-
-.psd-set-page__auto-dispatch-runtime.is-warning .psd-set-page__auto-dispatch-runtime-dot {
-  box-shadow: 0 0 0 0 rgb(249 115 22 / 22%);
-  animation: status-breath-warning 1.8s infinite ease-in-out;
-}
-
-.psd-set-page__auto-dispatch-work {
-  display: flex;
-  height: 28px;
-  min-width: 0;
-  overflow: hidden;
-  align-items: center;
-  gap: 6px;
-}
-
-.psd-set-page__auto-dispatch-work-item,
-.psd-set-page__auto-dispatch-empty {
-  display: inline-grid;
-  height: 28px;
-  min-width: 0;
-  padding: 0;
-  font-size: 11px;
-  line-height: 18px;
-  color: var(--el-text-color-secondary);
-  white-space: nowrap;
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  align-items: center;
-  grid-auto-flow: column;
-  grid-auto-columns: max-content;
-}
-
-.psd-set-page__auto-dispatch-work-item {
-  gap: 8px;
-  width: max-content;
-  max-width: none;
-}
-
-.psd-set-page__auto-dispatch-empty {
-  gap: 10px;
-  width: 100%;
-}
-
-.psd-set-page__auto-dispatch-client,
-.psd-set-page__auto-dispatch-step,
-.psd-set-page__auto-dispatch-empty span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.psd-set-page__auto-dispatch-client {
-  width: max-content;
-  height: 20px;
-  max-width: 160px;
-  padding: 0;
-  font-weight: 600;
-  line-height: 20px;
-  color: var(--el-text-color-primary);
-  background: transparent;
-  border-radius: 0;
-}
-
-.psd-set-page__auto-dispatch-action {
-  min-width: max-content;
   color: var(--el-text-color-regular);
+  flex-wrap: wrap;
 }
 
-.psd-set-page__auto-dispatch-task {
+.psd-set-page__auto-dispatch-indicator {
   display: inline-flex;
-  max-width: 100%;
-  min-width: 0;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-  align-items: center;
-  gap: 8px;
-}
-
-.psd-set-page__auto-dispatch-task-id {
-  flex: 0 0 auto;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--el-text-color-primary);
-}
-
-.psd-set-page__auto-dispatch-task-name {
-  max-width: min(560px, 32vw);
-  overflow: hidden;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--el-text-color-secondary);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 0 1 auto;
-}
-
-.psd-set-page__auto-dispatch-step {
-  max-width: none;
-  min-width: max-content;
-  padding-left: 8px;
-  font-size: 11px;
-  line-height: 18px;
-  color: var(--el-text-color-secondary);
-  border-left: 1px solid var(--el-border-color-light);
-}
-
-.psd-set-page__auto-dispatch-empty span:first-child {
-  font-weight: 600;
-  color: var(--el-text-color-regular);
-}
-
-.psd-set-page__auto-dispatch-side {
-  display: inline-grid;
-  grid-template-columns: 64px 92px 62px;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-
-.psd-set-page__auto-dispatch-side .el-button {
-  width: 100%;
-  padding-right: 6px;
-  padding-left: 6px;
-  margin-left: 0;
-}
-
-.psd-set-page__auto-dispatch-status {
-  display: inline-flex;
-  height: 22px;
-  min-width: 0;
-  padding: 0 6px;
-  overflow: hidden;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--el-text-color-secondary);
-  background: transparent;
-  border: 0;
-  border-radius: 0;
   align-items: center;
   gap: 5px;
-  justify-content: center;
-}
-
-.psd-set-page__auto-dispatch-status.is-success {
-  color: #67c23a;
-}
-
-.psd-set-page__auto-dispatch-status.is-info {
-  color: #909399;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .psd-set-page__auto-dispatch-dot {
   width: 6px;
   height: 6px;
+  border-radius: 50%;
   background: currentcolor;
-  border-radius: 999px;
+  flex-shrink: 0;
 }
 
-.psd-set-page__auto-dispatch-status.is-success .psd-set-page__auto-dispatch-dot {
-  box-shadow: none;
-  animation: none;
+.psd-set-page__auto-dispatch-indicator.is-success {
+  color: #67c23a;
+}
+
+.psd-set-page__auto-dispatch-indicator.is-success .psd-set-page__auto-dispatch-dot {
+  box-shadow: 0 0 0 0 rgb(103 194 58 / 24%);
+  animation: status-breath-success 1.8s infinite ease-in-out;
+}
+
+.psd-set-page__auto-dispatch-indicator.is-warning {
+  color: #f97316;
+}
+
+.psd-set-page__auto-dispatch-indicator.is-warning .psd-set-page__auto-dispatch-dot {
+  box-shadow: 0 0 0 0 rgb(249 115 22 / 22%);
+  animation: status-breath-warning 1.8s infinite ease-in-out;
+}
+
+.psd-set-page__auto-dispatch-indicator.is-danger {
+  color: #f56c6c;
+}
+
+.psd-set-page__auto-dispatch-indicator.is-info {
+  color: #909399;
+}
+
+.psd-set-page__auto-dispatch-indicator-text {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.psd-set-page__auto-dispatch-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  white-space: nowrap;
+  padding: 0 6px;
+  border-left: 1px solid var(--el-border-color-lighter);
+  border-right: 1px solid var(--el-border-color-lighter);
+}
+
+.psd-set-page__auto-dispatch-target {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  color: var(--el-text-color-primary);
+}
+
+.psd-set-page__auto-dispatch-interval {
+  white-space: nowrap;
+}
+
+.psd-set-page__auto-dispatch-pending {
+  color: #f97316;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.psd-set-page__auto-dispatch-task-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.psd-set-page__chip-client {
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.psd-set-page__chip-task-id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+}
+
+.psd-set-page__chip-step {
+  padding-left: 4px;
+  border-left: 1px solid var(--el-border-color-lighter);
+  color: var(--el-text-color-placeholder);
+}
+
+.psd-set-page__auto-dispatch-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.psd-set-page__auto-dispatch-actions .el-button {
+  margin-left: 0;
 }
 
 .psd-set-page__table-body {
   padding: 0;
-}
-
-.psd-set-page__auto-dispatch-status span:last-child {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .psd-set-page :deep(.list-page-filter--flat) {
@@ -4899,8 +4870,8 @@ getList();
 
 .psd-set-detail-middle {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
   align-items: start;
 }
 
@@ -4994,158 +4965,166 @@ getList();
   box-shadow: 0 1px 4px rgb(15 23 42 / 8%);
 }
 
-.psd-set-detail-side-card {
+.detail-entity-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
   flex: 1;
-  min-width: 0;
+  min-height: 0;
 }
 
-.psd-set-detail-template-image {
-  width: 100%;
-  height: 190px;
-  background: var(--el-bg-color-page);
-  border-radius: 6px;
-}
-
-.psd-set-detail-meta-list {
+.detail-entity-card {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.psd-set-detail-meta-list--inline {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin-bottom: 8px;
-}
-
-.psd-set-detail-meta-list>div {
-  display: flex;
-  min-width: 0;
-  padding: 8px 10px;
+  gap: 12px;
+  padding: 10px 12px;
   background: var(--el-fill-color-extra-light);
-  border-radius: 6px;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.detail-sticker-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 8px;
-  flex: 1;
-  align-content: start;
-}
-
-.detail-info-row {
-  display: grid;
-  padding: 16px;
-  background: var(--el-fill-color-lighter);
   border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
+  border-radius: 6px;
+  align-items: flex-start;
+  transition: all 0.2s ease;
 }
 
-.detail-info-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.detail-entity-card:hover {
+  border-color: var(--el-color-primary-light-5);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 4%);
 }
 
-.info-label {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
+.detail-entity-card--template {
+  background: var(--el-fill-color-extra-light);
 }
 
-.info-value {
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 1.45;
-  color: var(--el-text-color-primary);
-}
-
-.info-value--muted {
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--el-text-color-secondary);
-}
-
-.detail-sticker-card {
-  display: flex;
-  padding: 8px;
+.detail-entity-card__thumb {
+  width: 92px;
+  height: 92px;
+  flex: 0 0 92px;
   background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-light);
   border-radius: 6px;
-  align-items: flex-start;
-  gap: 10px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.detail-sticker-meta {
+.detail-entity-card__image {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+}
+
+.detail-entity-card__empty-thumb {
+  font-size: 12px;
+  color: var(--el-text-color-placeholder);
+}
+
+.detail-entity-card__main {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+}
+
+.detail-entity-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   min-width: 0;
 }
 
-.detail-sticker-name,
-.detail-sticker-desc,
-.detail-sticker-keywords,
-.detail-sticker-code {
-  word-break: break-word;
-}
-
-.detail-sticker-name {
+.detail-entity-card__name {
   font-size: 13px;
   font-weight: 600;
   color: var(--el-text-color-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.detail-sticker-desc,
-.detail-sticker-keywords,
-.detail-sticker-path,
-.detail-sticker-code {
+.detail-entity-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 12px;
+}
+
+.detail-entity-grid__item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
   font-size: 12px;
-  line-height: 1.45;
-  color: var(--el-text-color-secondary);
+  min-width: 0;
 }
 
-.detail-sticker-code {
-  font-family: "Courier New", Consolas, monospace;
-  font-weight: 600;
+.detail-entity-grid__item--full {
+  grid-column: 1 / -1;
+}
+
+.detail-field-label {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  flex-shrink: 0;
+  font-weight: 500;
+}
+
+.detail-field-value {
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail-field-value--code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  color: var(--el-text-color-primary);
+  font-weight: 500;
+}
+
+.detail-field-value--path {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  max-width: 100%;
+}
+
+.detail-field-value.cursor-pointer {
+  cursor: pointer;
+}
+
+.detail-field-value.cursor-pointer:hover {
   color: var(--el-color-primary);
 }
 
-.detail-sticker-id {
+.detail-field-value.cursor-pointer .copy-icon {
+  font-size: 12px;
+  margin-left: 4px;
+  vertical-align: -1px;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.detail-field-value.cursor-pointer:hover .copy-icon {
+  opacity: 1;
+}
+
+.detail-header__left {
   display: flex;
-  font-family: "Courier New", Consolas, monospace;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--el-text-color-secondary);
-  transition: color 0.2s;
+  align-items: center;
+  gap: 8px;
+}
+
+.detail-header__right {
+  display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.detail-sticker-id.cursor-pointer {
-  cursor: pointer;
-  user-select: none;
-}
-
-.detail-sticker-id.cursor-pointer:hover {
-  color: var(--el-color-primary);
-}
-
-.detail-sticker-id .copy-icon {
-  font-size: 12px;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.detail-sticker-id.cursor-pointer:hover .copy-icon {
-  opacity: 1;
+@media (width <= 1024px) {
+  .psd-set-detail-middle {
+    grid-template-columns: 1fr;
+  }
 }
 
 .detail-header {

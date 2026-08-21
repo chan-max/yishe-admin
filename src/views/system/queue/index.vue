@@ -4034,7 +4034,7 @@ onUnmounted(() => {
   websocketClient.events.off("serviceCommandResult", applyPublishTaskCommandResultEvent);
 });
 </script>
-<style lang="less">
+<style lang="less" scoped>
 .queue-page.list-page-layout {
   gap: 10px;
   padding: 8px 0 0;

@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { MoreFilled, Clock } from '@element-plus/icons-vue'
+import { Icon } from '@/components/Icon'
+import { getManifestByType } from '@/views/workflow/editor/config/node-manifest'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/store/modules/user'
 import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
@@ -19,6 +21,7 @@ import {
   getWorkflowLibraryPageApi,
   importWorkflowFromLibraryApi,
   publishWorkflowToLibraryApi,
+  unpublishWorkflowLibraryApi,
   type WorkflowItem,
   type WorkflowLibraryItem
 } from '@/api/workflow'
@@ -37,14 +40,19 @@ const createVisible = ref(false)
 const creating = ref(false)
 const createForm = reactive({ name: '', description: '' })
 
-const fetchList = async () => {
-  loading.value = true
+const listRefreshing = ref(false)
+
+const fetchList = async (options: { silent?: boolean } = {}) => {
+  if (listRefreshing.value) return
+  listRefreshing.value = true
+  if (!options.silent) loading.value = true
   try {
     const res: any = await getWorkflowPageApi({ ...params })
     list.value = res.list || []
     total.value = res.total || 0
   } finally {
-    loading.value = false
+    listRefreshing.value = false
+    if (!options.silent) loading.value = false
   }
 }
 
@@ -69,6 +77,25 @@ const openLibrary = async () => {
   await fetchLibrary()
 }
 
+const canDeleteLibraryItem = (item: WorkflowLibraryItem) =>
+  isAdmin.value && String(item.publisherUserId || "") === String(userStore.user?.id || "")
+
+const handleDeleteLibrary = async (item: WorkflowLibraryItem) => {
+  if (!canDeleteLibraryItem(item)) return
+  try {
+    await ElMessageBox.confirm(`确定删除“${item.name}”吗？只会下架工作流库模板，不会影响已导入的用户工作流。`, "删除工作流库模板", {
+      confirmButtonText: "删除",
+      cancelButtonText: "取消",
+      type: "warning",
+    })
+    await unpublishWorkflowLibraryApi(item.id)
+    ElMessage.success("已删除工作流库模板")
+    await fetchLibrary()
+  } catch (error: any) {
+    if (error !== "cancel" && error !== "close") ElMessage.error(error?.message || "删除工作流库模板失败")
+  }
+}
+
 const handleImportLibrary = async (item: WorkflowLibraryItem) => {
   try {
     await ElMessageBox.confirm(`导入“${item.name}”吗？导入后会生成你自己的独立工作流。`, '导入工作流', { confirmButtonText: '导入', cancelButtonText: '取消' })
@@ -81,7 +108,24 @@ const handleImportLibrary = async (item: WorkflowLibraryItem) => {
   }
 }
 
-onMounted(fetchList)
+let runningRefreshTimer: ReturnType<typeof setInterval> | null = null
+
+const refreshRunningWorkflows = async () => {
+  if (loading.value || !list.value.some((item) => item.isRunning)) return
+  await fetchList({ silent: true })
+}
+
+onMounted(async () => {
+  await fetchList()
+  runningRefreshTimer = setInterval(refreshRunningWorkflows, 2500)
+})
+
+onBeforeUnmount(() => {
+  if (runningRefreshTimer) {
+    clearInterval(runningRefreshTimer)
+    runningRefreshTimer = null
+  }
+})
 
 const handleSearch = () => { params.currentPage = 1; fetchList() }
 
@@ -123,6 +167,9 @@ const handleDelete = async (row: WorkflowItem) => {
 }
 
 const hasCronTrigger = (item: WorkflowItem) => item.triggers?.some((t) => t.type === 'cron' && t.enabled)
+
+const getNodeManifests = (item: WorkflowItem) =>
+  (item.nodeTypes || []).map((type) => getManifestByType(type)).filter(Boolean).slice(0, 8)
 
 const getCronText = (item: WorkflowItem) => {
   const trigger = item.triggers?.find((t) => t.type === 'cron' && t.enabled)
@@ -171,13 +218,44 @@ const historyWorkflow = ref<WorkflowItem | null>(null)
 const executions = ref<any[]>([])
 const loadingHistory = ref(false)
 
+const terminalExecutionStatuses = new Set(['success', 'failed', 'cancelled', 'paused'])
+const monitoredExecutionIds = new Set<string>()
+
+/** 手动执行后精确轮询该条执行记录，终态落库后立即同步卡片。 */
+const monitorExecutionCompletion = async (workflowId: string, executionId: string) => {
+  if (!executionId || monitoredExecutionIds.has(executionId)) return
+  monitoredExecutionIds.add(executionId)
+  try {
+    for (let attempt = 0; attempt < 450; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 800))
+      const res: any = await getWorkflowExecutionsApi(workflowId, { currentPage: 1, pageSize: 20 })
+      const records = res?.list ?? res?.data?.list ?? []
+      const execution = records.find((item: any) => item.id === executionId)
+      if (execution && terminalExecutionStatuses.has(execution.status)) {
+        await fetchList()
+        return
+      }
+    }
+  } catch (error) {
+    // 网络短暂异常由列表兜底轮询继续同步。
+    console.warn('工作流执行状态同步失败', error)
+  } finally {
+    monitoredExecutionIds.delete(executionId)
+  }
+}
+
 const handleRunWorkflow = async (row: WorkflowItem) => {
   if (!row.isEnabled || row.isRunning) return
   try {
     const res: any = await runWorkflowApi(row.id)
-    ElMessage.success(`${t('workflow.triggeredWithId', { id: res?.executionId || 'OK' })}`)
+    const executionId = String(res?.executionId || '')
+    row.isRunning = true
+    ElMessage.success(`${t('workflow.triggeredWithId', { id: executionId || 'OK' })}`)
+    void monitorExecutionCompletion(row.id, executionId)
+    await fetchList()
   } catch (err: any) {
     ElMessage.error(err.message || t('workflow.executeFailed'))
+    await fetchList()
   }
 }
 
@@ -262,25 +340,45 @@ const handleClearHistory = async () => {
           { 'wf-card--running': item.isRunning },
           { 'wf-card--disabled': !item.isEnabled }
         ]" @click="openEditor(item)">
-          <div v-if="hasCronTrigger(item) && item.isEnabled" class="wf-card__blob"></div>
+          <!-- 动态边框只表达实时执行状态；定时配置由“定时中”标签表达。 -->
+          <div v-if="item.isRunning" class="wf-card__blob wf-card__blob--running"></div>
           <div class="wf-card__bg"></div>
           <div class="wf-card__hero">
             <header class="wf-card__hero-header">
               <span
-                :class="['wf-card__badge', item.isRunning ? 'wf-card__badge--running' : item.isEnabled ? 'wf-card__badge--on' : 'wf-card__badge--off']">
-                <span class="wf-card__badge-dot"></span>{{ item.isRunning ? t('workflow.running') : item.isEnabled ?
-                  t('workflow.enabled') : t('workflow.disabled') }}
+                :class="[
+                  'wf-card__badge',
+                  item.isRunning
+                    ? 'wf-card__badge--running'
+                    : hasCronTrigger(item) && item.isEnabled
+                      ? 'wf-card__badge--scheduled'
+                      : item.isEnabled
+                        ? 'wf-card__badge--on'
+                        : 'wf-card__badge--off'
+                ]">
+                <span class="wf-card__badge-dot"></span>{{ item.isRunning
+                  ? t('workflow.running')
+                  : hasCronTrigger(item) && item.isEnabled
+                    ? '定时中'
+                    : item.isEnabled
+                      ? t('workflow.enabled')
+                      : t('workflow.disabled') }}
               </span>
-              <div class="wf-card__icon">
-                <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                  <path
-                    d="M853.333333 320a42.666667 42.666667 0 1 0-85.333333 0 42.666667 42.666667 0 0 0 85.333333 0z m-42.666666-128a128 128 0 1 1 0 256 128 128 0 0 1 0-256zM853.333333 725.333333a42.666667 42.666667 0 1 0-85.333333 0 42.666667 42.666667 0 0 0 85.333333 0z m-42.666666-128a128 128 0 1 1 0 256 128 128 0 0 1 0-256zM256 320a42.666667 42.666667 0 1 0-85.333333 0 42.666667 42.666667 0 0 0 85.333333 0z m-42.666667-128a128 128 0 1 1 0 256 128 128 0 0 1 0-256z" />
-                  <path
-                    d="M704 277.333333l0 85.333334-211.626667 0c17.692444 31.175111 34.929778 70.542222 51.768889 109.056l14.791111 33.564444c22.698667 50.631111 45.511111 96.995556 71.68 130.446222 26.168889 33.450667 49.777778 46.933333 73.386667 46.933334l0 85.333333c-61.724444 0-107.406222-37.205333-140.629333-79.758222-33.223111-42.496-59.676444-97.507556-82.318223-148.138667l-16.497777-37.319111c-16.497778-37.717333-31.288889-71.338667-46.648889-98.304-9.955556-17.578667-18.602667-29.240889-25.884445-36.067556-4.778667-4.551111-7.395556-5.575111-8.135111-5.745777l-74.524444 0 0-85.333334L704 277.333333z" />
-                </svg>
-              </div>
             </header>
             <h3 class="wf-card__title">{{ item.name }}</h3>
+            <div v-if="getNodeManifests(item).length" class="wf-card__node-icons" title="工作流节点">
+              <span
+                v-for="manifest in getNodeManifests(item)"
+                :key="manifest!.type"
+                class="wf-card__node-icon"
+                :style="{ color: manifest!.color }"
+                :title="manifest!.name"
+              >
+                <img v-if="manifest!.iconImage" :src="manifest!.iconImage" :alt="manifest!.name" />
+                <Icon v-else-if="manifest!.icon" :icon="manifest!.icon" :size="18" />
+                <span v-else>{{ manifest!.name.slice(0, 1) }}</span>
+              </span>
+            </div>
             <p v-if="hasCronTrigger(item)" class="wf-card__cron">
               <el-icon>
                 <Clock />
@@ -348,6 +446,13 @@ const handleClearHistory = async () => {
             </div>
             <div class="wf-library-card__footer">
               <el-button type="primary" size="small" @click="handleImportLibrary(item)">添加到我的工作流</el-button>
+              <el-button
+                v-if="canDeleteLibraryItem(item)"
+                type="danger"
+                text
+                size="small"
+                @click="handleDeleteLibrary(item)"
+              >删除</el-button>
             </div>
           </div>
         </div>
@@ -427,7 +532,7 @@ const handleClearHistory = async () => {
 
 .wf-page {
   min-height: 100%;
-  padding: 0;
+  padding: 10px 0 0;
 
   &__header {
     display: flex;
@@ -524,6 +629,10 @@ const handleClearHistory = async () => {
     pointer-events: none;
   }
 
+  .wf-card__blob--running {
+    background-color: color-mix(in srgb, #22c55e 68%, transparent);
+  }
+
   /* Inner bg layer: covers center, leaves 5px border gap */
   &__bg {
     position: absolute;
@@ -588,9 +697,14 @@ const handleClearHistory = async () => {
       background: var(--app-content-surface-muted-color);
     }
 
+    &--scheduled {
+      color: #b45309;
+      background: color-mix(in srgb, #f59e0b 14%, transparent);
+    }
+
     &--running {
-      color: #2563eb;
-      background: color-mix(in srgb, #3b82f6 12%, transparent);
+      color: #15803d;
+      background: color-mix(in srgb, #22c55e 14%, transparent);
 
       .wf-card__badge-dot {
         animation: wf-pulse 1.4s ease-in-out infinite;
@@ -603,6 +717,30 @@ const handleClearHistory = async () => {
     height: 20px;
     color: var(--el-color-primary);
     opacity: 0.8;
+  }
+
+  &__node-icons {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    padding: 9px 0 2px;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  &__node-icon {
+    display: inline-flex;
+    width: 22px;
+    height: 22px;
+    align-items: center;
+    justify-content: center;
+    color: var(--el-color-primary);
+  }
+
+  &__node-icon img {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
   }
 
   &__title {
@@ -691,15 +829,9 @@ const handleClearHistory = async () => {
 }
 
 /* Status variants */
-.wf-card--scheduled {
-  .wf-card__blob {
-    background-color: color-mix(in srgb, var(--el-color-primary) 60%, transparent);
-  }
-}
-
 .wf-card--running {
   box-shadow:
-    0 0 15px color-mix(in srgb, var(--el-color-primary) 30%, transparent),
+    0 0 15px color-mix(in srgb, #22c55e 30%, transparent),
     8px 8px 24px color-mix(in srgb, var(--el-text-color-primary) 10%, transparent),
     -4px -4px 16px color-mix(in srgb, #ffffff, transparent);
 }
@@ -775,10 +907,10 @@ const handleClearHistory = async () => {
   }
 
   .wf-card--running {
-    border-color: color-mix(in srgb, #60a5fa 30%, var(--app-content-border-color));
+    border-color: color-mix(in srgb, #22c55e 30%, var(--app-content-border-color));
 
     &:hover {
-      border-color: color-mix(in srgb, #60a5fa 50%, var(--app-content-border-color));
+      border-color: color-mix(in srgb, #22c55e 50%, var(--app-content-border-color));
     }
   }
 
@@ -789,8 +921,8 @@ const handleClearHistory = async () => {
     }
 
     &--running {
-      color: #93c5fd;
-      background: color-mix(in srgb, #60a5fa 12%, transparent);
+      color: #86efac;
+      background: color-mix(in srgb, #4ade80 12%, transparent);
     }
 
     &--on {

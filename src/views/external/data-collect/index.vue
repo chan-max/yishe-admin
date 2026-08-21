@@ -229,7 +229,7 @@ watch(
 .data-collect-layout {
   display: flex;
   gap: 16px;
-  min-height: calc(100vh - 110px);
+  min-height: calc(100vh - var(--top-tool-height) - var(--tags-view-height));
 }
 
 /* 左侧极简菜单 */

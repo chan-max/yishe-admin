@@ -15,8 +15,7 @@ defineOptions({
 <style scoped>
 .ai-assistant-page {
   --ai-assistant-page-height: calc(
-    100vh - var(--top-tool-height) - var(--tags-view-height) - var(--app-content-padding) -
-      var(--app-content-padding)
+    100vh - var(--top-tool-height) - var(--tags-view-height)
   );
 
   display: flex;
@@ -24,9 +23,6 @@ defineOptions({
   height: var(--ai-assistant-page-height);
   min-height: 0;
   overflow: hidden;
-  /* 仅抵消父级 AppView 的左右 padding */
-  margin-inline: calc(-1 * var(--app-content-padding));
-  width: calc(100% + 2 * var(--app-content-padding));
 }
 
 .ai-assistant-page > * {
@@ -38,7 +34,7 @@ defineOptions({
 @media (width <= 768px) {
   .ai-assistant-page {
     --ai-assistant-page-height: calc(
-      100vh - var(--top-tool-height) - var(--app-content-padding) - var(--app-content-padding)
+      100vh - var(--top-tool-height)
     );
   }
 }

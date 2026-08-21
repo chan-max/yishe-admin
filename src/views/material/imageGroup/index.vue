@@ -54,16 +54,24 @@
               <el-button size="small" type="success" :icon="Plus" @click="handleCreateGroup">
                 新建组图
               </el-button>
-              <el-button
-                size="small"
-                type="warning"
-                plain
-                :icon="MagicStick"
-                :disabled="!selectedIds.length"
-                @click="handleCreatePsdSets"
-              >
-                多图套图 ({{ selectedIds.length }})
-              </el-button>
+              <el-dropdown trigger="click" popper-class="material-tool-dropdown" :disabled="loading || !selectedIds.length">
+                <el-button size="small" type="primary" :disabled="loading || !selectedIds.length">
+                  工具 ({{ selectedIds.length }})
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item @click="handleCreatePsdSets">
+                      <span>多图套图制作</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item @click="handlePublishConfigSets">
+                      <span>选择发布配置</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item @click="handleProductConfigSets">
+                      <span>生成独立站商品</span>
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
               <el-button
                 size="small"
                 type="danger"
@@ -328,6 +336,8 @@ import TableRowDragHandle from "@/components/TableRowDragHandle/index.vue";
 const emit = defineEmits<{
   addStickers: [group: ImageGroupItem];
   createPsdSets: [groups: ImageGroupItem[]];
+  createPublishConfigSets: [groups: ImageGroupItem[]];
+  createProductConfigSets: [groups: ImageGroupItem[]];
 }>();
 
 const IMAGE_GROUP_FOLDER_CATEGORY = "imagegroup";
@@ -522,6 +532,40 @@ function handleCreatePsdSets() {
   }
 
   emit("createPsdSets", groups);
+}
+
+function handlePublishConfigSets() {
+  const selectedIdSet = new Set(selectedIds.value.map(String));
+  const groups = dataSource.value.filter((group) => selectedIdSet.has(String(group.id)));
+  if (!groups.length) {
+    ElMessage.warning("请选择要关联发布配置的组图");
+    return;
+  }
+
+  const emptyGroups = groups.filter((group) => !group.stickers?.length);
+  if (emptyGroups.length) {
+    ElMessage.warning(`组图“${emptyGroups.map((group) => group.name).join("、")}”没有图片成员`);
+    return;
+  }
+
+  emit("createPublishConfigSets", groups);
+}
+
+function handleProductConfigSets() {
+  const selectedIdSet = new Set(selectedIds.value.map(String));
+  const groups = dataSource.value.filter((group) => selectedIdSet.has(String(group.id)));
+  if (!groups.length) {
+    ElMessage.warning("请选择要生成独立站商品的组图");
+    return;
+  }
+
+  const emptyGroups = groups.filter((group) => !group.stickers?.length);
+  if (emptyGroups.length) {
+    ElMessage.warning(`组图“${emptyGroups.map((group) => group.name).join("、")}”没有图片成员`);
+    return;
+  }
+
+  emit("createProductConfigSets", groups);
 }
 
 async function loadGroups() {

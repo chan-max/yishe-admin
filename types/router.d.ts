@@ -47,6 +47,7 @@ declare module "vue-router" {
     affix?: boolean;
     activeMenu?: string;
     noTagsView?: boolean;
+    noAppViewPadding?: boolean;
     followAuth?: string;
     canTo?: boolean;
     requiresAdmin?: boolean;

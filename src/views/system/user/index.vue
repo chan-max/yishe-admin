@@ -1,6 +1,6 @@
 <template>
   <ContentWrap :plain="true">
-    <ListPageLayout class="user-page">
+    <ListPageLayout>
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
           <el-form :model="queryParams" label-position="top" class="list-page-search-form">
@@ -301,6 +301,20 @@
         </el-row>
       </div>
 
+      <!-- 角色分配 -->
+      <div class="list-page-dialog-section">
+        <div class="list-page-dialog-section__title">角色分配</div>
+        <el-row :gutter="12">
+          <el-col :span="24">
+            <el-form-item label="角色" prop="roleKeys" class="user-form-item--sm">
+              <el-select v-model="formData.roleKeys" multiple filterable size="small" placeholder="请选择角色（可多选）" class="!w-full">
+                <el-option v-for="role in roleList" :key="role.roleKey" :label="role.roleName" :value="role.roleKey" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </div>
+
       <!-- 登录密码 (仅新增时显示) -->
       <div v-if="!formData.id" class="list-page-dialog-section">
         <div class="list-page-dialog-section__title">{{ t('systemUser.securitySettings') }}</div>
@@ -390,6 +404,7 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { Search, Delete, Refresh, Plus, User } from "@element-plus/icons-vue";
 import { useI18n } from '@/hooks/web/useI18n';
 import { getUserList, createUser, updateUser, deleteUser, updateUserPassword } from "@/api/user";
+import { getAllRoles } from "@/api/role";
 import { useUserStore } from "@/store/modules/user";
 import { getCompanyList } from "@/api/company";
 import Pagination from "@/components/Pagination/index.vue";
@@ -429,6 +444,7 @@ const userStore = useUserStore();
 
 const gridRef = ref();
 const companyList = ref([]); // 公司列表
+const roleList = ref<{ id: number; roleKey: string; roleName: string }[]>([]); // 角色列表
 
 // 获取公司列表
 async function getCompanyListData() {
@@ -546,6 +562,7 @@ const formData = reactive<Record<string, any>>({
   password: "",
   companyId: "", // 新增公司ID字段
   expireTime: "", // 过期时间
+  roleKeys: [], // 角色标识列表
 });
 
 const formRules = {
@@ -646,7 +663,7 @@ function handleAdd() {
 function handleEdit(row) {
   dialogTitle.value = t('systemUser.editUser');
   dialogVisible.value = true;
-  Object.assign(formData, row);
+  Object.assign(formData, row, { roleKeys: row.roleKeys ?? [] });
 }
 
 // 重置密码
@@ -809,6 +826,7 @@ function resetForm() {
     password: "",
     companyId: "", // 重置公司ID
     expireTime: "", // 重置过期时间
+    roleKeys: [], // 重置角色
   });
   formRef.value?.clearValidate();
 }
@@ -816,27 +834,20 @@ function resetForm() {
 // 初始化
 getList();
 getCompanyListData();
+
+// 加载角色列表
+async function initRoleList() {
+  try {
+    roleList.value = await getAllRoles();
+  } catch {
+    roleList.value = [];
+  }
+}
+
+initRoleList();
 </script>
 
 <style scoped>
-:deep(.user-page) {
-  gap: 10px;
-  padding: 8px 0 0;
-}
-
-:deep(.user-page .list-page-layout__main) {
-  gap: 10px;
-}
-
-:deep(.user-page .list-page-filter--flat) {
-  gap: 10px;
-  padding-bottom: 10px;
-}
-
-:deep(.user-page .list-page-table-panel__pagination--flat) {
-  padding-top: 10px;
-}
-
 .user-dialog-form :deep(.el-form-item__label) {
   display: flex;
   align-self: stretch;
@@ -862,5 +873,18 @@ getCompanyListData();
 .user-dialog-form :deep(.user-dialog-form__date-picker .el-input__wrapper) {
   min-height: var(--ep-cover-control-height-lg, 38px);
   align-items: center;
+}
+
+.user-dialog-form :deep(.user-form-item--sm .el-form-item__label) {
+  min-height: 32px;
+  font-size: 13px;
+}
+
+.user-dialog-form :deep(.user-form-item--sm .el-form-item__content) {
+  min-height: 32px;
+}
+
+.user-dialog-form :deep(.user-form-item--sm .el-select__wrapper) {
+  min-height: 32px;
 }
 </style>

@@ -6,7 +6,10 @@ import { Handle, Position } from "@vue-flow/core";
 const props = defineProps<{ data: { label?: string; config?: any } }>();
 
 const triggerLabel = computed(() => {
-  return props.data.config?.triggerType === "cron" ? "定时" : "手动";
+  const triggerType = props.data.config?.triggerType;
+  if (triggerType === "cron") return "定时";
+  if (triggerType === "webhook") return "Webhook";
+  return "手动";
 });
 
 const paramCount = computed(() => {

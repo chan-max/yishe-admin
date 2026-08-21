@@ -25,6 +25,7 @@ export interface WorkflowEdge {
 export interface WorkflowItem {
   id: string;
   name: string;
+  publisherUserId?: number | null;
   description?: string;
   status: "draft" | "published" | "archived";
   isEnabled: boolean;
@@ -35,6 +36,9 @@ export interface WorkflowItem {
   updateTime: string;
   /** 触发器列表（定时/手动/webhook） */
   triggers?: WorkflowTrigger[];
+  /** 画布中实际使用的节点类型，供工作流卡片展示图标。 */
+  nodeTypes?: string[];
+  nodeCount?: number;
 }
 
 export interface WorkflowTrigger {

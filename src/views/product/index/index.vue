@@ -5190,7 +5190,7 @@ function getPublishTaskType(platform: string) {
 }
 </script>
 
-<style lang="less">
+<style lang="less" scoped>
 .product-page.list-page-layout {
   gap: 10px;
   padding: 8px 0 0;

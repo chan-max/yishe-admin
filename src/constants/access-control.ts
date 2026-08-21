@@ -16,6 +16,7 @@ export interface MenuAccessGroup {
 export const ADMIN_ONLY_MENU_KEYS = new Set([
   "system.user",
   "system.company",
+  "system.role",
   "system.websocket",
   "system.service-file-cache",
   "system.operatelog",
@@ -97,6 +98,7 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   User: "system.user",
   Company: "system.company",
   PublicUser: "system.public-user",
+  Role: "system.role",
   // PublicUserBehaviorLog: "system.public-user-behavior-log",
   IndependentSiteDesignRequest: "independent-site.design-request",
   IndependentSiteOpenDocs: "independent-site.open-docs",

@@ -410,28 +410,28 @@ async function handleDetail(row) {
 }
 </script>
 
-<style lang="less">
-.platform-detail-dialog {
+<style lang="less" scoped>
+:deep(.platform-detail-dialog) {
   .el-dialog__body {
     height: calc(100% - 40px);
   }
 }
 
-.shop-template-page {
+:deep(.shop-template-page) {
   gap: 10px;
   padding: 8px 0 0;
 }
 
-.shop-template-page .list-page-layout__main {
+:deep(.shop-template-page .list-page-layout__main) {
   gap: 10px;
 }
 
-.shop-template-page .list-page-filter--flat {
+:deep(.shop-template-page .list-page-filter--flat) {
   gap: 10px;
   padding-bottom: 10px;
 }
 
-.shop-template-page .list-page-table-panel__pagination--flat {
+:deep(.shop-template-page .list-page-table-panel__pagination--flat) {
   padding-top: 10px;
 }
 </style>

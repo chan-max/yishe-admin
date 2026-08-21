@@ -2,7 +2,7 @@
   <el-dialog
     v-model="dialogVisible"
     title="分配权限"
-    width="760px"
+    fullscreen
     destroy-on-close
     @open="handleOpen"
   >
@@ -43,7 +43,7 @@
                   {{
                     targetUserIsAdmin
                       ? "管理员默认拥有全部菜单权限，这里展示当前生效范围。"
-                      : "管理员专属菜单仅管理员用户可分配"
+                      : "管理员专属菜单仅管理员用户可分配；此处勾选为「个人权限」，角色已授予的菜单已计入生效范围。"
                   }}
                 </div>
               </div>
@@ -85,6 +85,33 @@
               </el-checkbox-group>
             </div>
           </div>
+
+          <div class="access-dialog__section access-dialog__section--roles">
+            <div class="access-dialog__title">角色</div>
+            <div class="access-dialog__desc">
+              用户生效权限 = 所有角色权限 ∪ 上方单独勾选的个人权限。
+            </div>
+            <div v-loading="roleLoading" class="access-dialog__roles">
+              <el-checkbox-group v-model="form.roleKeys" class="access-dialog__role-checkboxes">
+                <el-checkbox
+                  v-for="role in roles"
+                  :key="role.roleKey"
+                  :label="role.roleKey"
+                  size="small"
+                >
+                  {{ role.roleName }}
+                  <span class="access-dialog__role-keys">
+                    @{{ role.roleKey }} · {{ Array.isArray(role.menuKeys) ? role.menuKeys.length : 0 }} 项
+                  </span>
+                </el-checkbox>
+              </el-checkbox-group>
+              <el-empty
+                v-if="!roleLoading && !roles.length"
+                :image-size="48"
+                description="暂无可分配角色，请先在「角色管理」中创建"
+              />
+            </div>
+          </div>
         </div>
       </template>
     </el-skeleton>
@@ -102,6 +129,7 @@
 import { computed, reactive, ref } from "vue";
 import { ElMessage } from "element-plus";
 import { useI18n } from "@/hooks/web/useI18n";
+import { getAllRoles, type RoleItem } from "@/api/role";
 import {
   getUserAccessSetting,
   updateUserAccessSetting,
@@ -135,8 +163,11 @@ const dialogVisible = computed({
 
 const loading = ref(false);
 const submitLoading = ref(false);
+const roleLoading = ref(false);
+const roles = ref<RoleItem[]>([]);
 const form = reactive<UserAccessControlSetting>({
   menuKeys: [],
+  roleKeys: [],
   aiAccessEnabled: false,
 });
 
@@ -159,6 +190,7 @@ function isOptionDisabled(option: MenuAccessOption) {
 
 function resetForm() {
   form.menuKeys = [];
+  form.roleKeys = [];
   form.aiAccessEnabled = false;
 }
 
@@ -177,12 +209,17 @@ async function handleOpen() {
   }
 
   loading.value = true;
+  roleLoading.value = true;
   resetForm();
+
   try {
     const accessControl = await getUserAccessSetting({ userId: props.userId });
     form.menuKeys = targetUserIsAdmin.value
       ? [...selectableMenuKeys.value]
       : sanitizeMenuKeys(Array.isArray(accessControl?.menuKeys) ? accessControl.menuKeys : []);
+    form.roleKeys = Array.isArray(accessControl?.roleKeys)
+      ? [...accessControl.roleKeys]
+      : [];
     form.aiAccessEnabled = targetUserIsAdmin.value
       ? true
       : !!accessControl?.aiAccessEnabled;
@@ -190,6 +227,15 @@ async function handleOpen() {
     ElMessage.error("加载权限配置失败");
   } finally {
     loading.value = false;
+  }
+
+  try {
+    roles.value = (await getAllRoles()) || [];
+  } catch (error) {
+    ElMessage.error("加载角色列表失败");
+    roles.value = [];
+  } finally {
+    roleLoading.value = false;
   }
 }
 
@@ -203,16 +249,19 @@ async function handleSubmit() {
     const menuKeys = targetUserIsAdmin.value
       ? [...selectableMenuKeys.value]
       : sanitizeMenuKeys(form.menuKeys);
+    const roleKeys = [...form.roleKeys];
     const aiAccessEnabled = targetUserIsAdmin.value ? true : !!form.aiAccessEnabled;
-    await updateUserAccessSetting({
+    const result = await updateUserAccessSetting({
       userId: props.userId,
       accessControl: {
         menuKeys,
+        roleKeys,
         aiAccessEnabled,
       },
     });
-    form.menuKeys = menuKeys;
-    form.aiAccessEnabled = aiAccessEnabled;
+    form.menuKeys = result?.menuKeys ?? menuKeys;
+    form.roleKeys = result?.roleKeys ?? roleKeys;
+    form.aiAccessEnabled = result?.aiAccessEnabled ?? aiAccessEnabled;
     ElMessage.success("权限配置已保存");
     emit("success");
     dialogVisible.value = false;
@@ -274,6 +323,15 @@ async function handleSubmit() {
   gap: 12px;
 }
 
+.access-dialog__roles {
+  min-height: 40px;
+}
+
+.access-dialog__role-keys {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
 .access-dialog__ai-text {
   font-size: 13px;
   color: var(--el-text-color-regular);
@@ -293,6 +351,36 @@ async function handleSubmit() {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.access-dialog__section--roles {
+  padding-top: 16px;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.access-dialog__section--roles .access-dialog__title {
+  font-size: 14px;
+}
+
+.access-dialog__section--roles .access-dialog__desc {
+  font-size: 12px;
+}
+
+.access-dialog__role-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.access-dialog__role-checkboxes .el-checkbox {
+  margin-right: 0;
+  --el-checkbox-font-size: 12px;
+  --el-checkbox-height: 28px;
+}
+
+.access-dialog__role-keys {
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
 }
 
 .access-dialog__footer {

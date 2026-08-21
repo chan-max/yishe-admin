@@ -167,7 +167,9 @@ export function getUserAccessSetting(data: { userId: string }) {
 
 export interface UserAccessControlSetting {
   menuKeys: string[];
+  roleKeys: string[];
   aiAccessEnabled: boolean;
+  effectiveMenuKeys?: string[];
 }
 
 export function updateUserAccessSetting(data: {

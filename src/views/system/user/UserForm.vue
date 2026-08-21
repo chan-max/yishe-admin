@@ -82,7 +82,30 @@
         </el-col>
       </el-row>
       <el-row>
-        <el-col :span="24">
+        <el-col :span="12">
+          <el-form-item label="角色">
+            <el-select
+              v-model="formData.roleIds"
+              multiple
+              filterable
+              placeholder="请选择角色"
+              style="width: 100%"
+            >
+              <el-option
+                v-for="role in roleList"
+                :key="role.id"
+                :label="role.roleName"
+                :value="role.id"
+              >
+                <span>{{ role.roleName }}</span>
+                <span style="color: var(--el-text-color-secondary); font-size: 12px; margin-left: 8px">
+                  @{{ role.roleKey }}
+                </span>
+              </el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
           <el-form-item label="备注">
             <el-input v-model="formData.remark" placeholder="请输入内容" type="textarea" />
           </el-form-item>
@@ -102,6 +125,7 @@ import { defaultProps, handleTree } from '@/utils/tree'
 import * as PostApi from '@/api/system/post'
 import * as DeptApi from '@/api/system/dept'
 import * as UserApi from '@/api/system/user'
+import { getAllRoles } from '@/api/role'
 import { FormRules } from 'element-plus'
 
 defineOptions({ name: 'SystemUserForm' })
@@ -149,6 +173,7 @@ const formRules = reactive<FormRules>({
 const formRef = ref() // 表单 Ref
 const deptList = ref<Tree[]>([]) // 树形结构
 const postList = ref([] as PostApi.PostVO[]) // 岗位列表
+const roleList = ref<{ id: number; roleKey: string; roleName: string }[]>([]) // 角色列表
 
 /** 打开弹窗 */
 const open = async (type: string, id?: number) => {
@@ -160,7 +185,12 @@ const open = async (type: string, id?: number) => {
   if (id) {
     formLoading.value = true
     try {
-      formData.value = await UserApi.getUser(id)
+      const userData = await UserApi.getUser(id)
+      formData.value = {
+        ...formData.value,
+        ...userData,
+        roleIds: userData.roleIds ?? []
+      }
     } finally {
       formLoading.value = false
     }
@@ -169,6 +199,8 @@ const open = async (type: string, id?: number) => {
   deptList.value = handleTree(await DeptApi.getSimpleDeptList())
   // 加载岗位列表
   postList.value = await PostApi.getSimplePostList()
+  // 加载角色列表
+  roleList.value = await getAllRoles()
 }
 defineExpose({ open }) // 提供 open 方法，用于打开弹窗
 

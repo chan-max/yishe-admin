@@ -87,7 +87,7 @@ watch(
 .collect-layout {
   display: flex;
   gap: 16px;
-  min-height: calc(100vh - 110px);
+  min-height: calc(100vh - var(--top-tool-height) - var(--tags-view-height));
 }
 
 .collect-menu {
@@ -98,7 +98,7 @@ watch(
   border-radius: 8px;
   padding: 14px 8px;
   overflow: auto;
-  max-height: calc(100vh - 130px);
+  max-height: calc(100vh - var(--top-tool-height) - var(--tags-view-height) - 20px);
 }
 
 .menu-header {

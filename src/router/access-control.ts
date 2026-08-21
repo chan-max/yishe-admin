@@ -14,11 +14,13 @@ function readConfiguredMenuKeys(setting: any) {
       ? setting.accessControl
       : null;
   const configured = !!rawMenuAccess || !!rawAccessControl;
-  const keys = Array.isArray(rawMenuAccess?.keys)
-    ? rawMenuAccess.keys
-    : Array.isArray(rawAccessControl?.menuKeys)
-      ? rawAccessControl.menuKeys
-      : [];
+  const keys = Array.isArray(rawAccessControl?.effectiveMenuKeys)
+    ? rawAccessControl.effectiveMenuKeys
+    : Array.isArray(rawMenuAccess?.keys)
+      ? rawMenuAccess.keys
+      : Array.isArray(rawAccessControl?.menuKeys)
+        ? rawAccessControl.menuKeys
+        : [];
 
   return {
     configured,

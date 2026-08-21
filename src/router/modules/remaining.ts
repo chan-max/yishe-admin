@@ -49,6 +49,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: "router.workflowEditor",
           hidden: true,
           noCache: true,
+          noAppViewPadding: true,
           activeMenu: '/workflow/index',
         },
       },
@@ -367,6 +368,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "AiAssistant",
         meta: {
           title: "router.aiAssistant",
+          noAppViewPadding: true,
         },
       },
       {
@@ -667,7 +669,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: "router.hotsearchCollect",
         },
       },
-{
+      {
         path: "data-tools",
         component: () => import("@/views/external/data-tools/index.vue"),
         name: "ExternalDataToolsCollect",
@@ -1155,6 +1157,16 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: "router.companyManagement",
           requiresAdmin: true,
           order: 4,
+        },
+      },
+      {
+        path: "role",
+        component: () => import("@/views/system/role/index.vue"),
+        name: "Role",
+        meta: {
+          title: "router.roleManagement",
+          requiresAdmin: true,
+          order: 4.5,
         },
       },
       {

@@ -15,7 +15,6 @@ const NODE_GROUPS: Array<{ title: string; items: Array<{ type: string; label: st
     items: [
       { type: 'start', label: '开始', color: '#22c55e' },
       { type: 'end', label: '结束', color: '#ef4444' },
-      { type: 'webhook_trigger', label: 'Webhook 触发', color: '#8b5cf6' },
       { type: 'default', label: '普通节点', color: '#3b82f6' },
     ],
   },

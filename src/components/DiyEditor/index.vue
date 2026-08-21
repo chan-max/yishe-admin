@@ -445,7 +445,6 @@ $toolbar-height: 42px;
 .editor {
   display: flex;
   height: 100%;
-  margin: calc(0px - var(--app-content-padding));
   flex-direction: column;
 
   /* 顶部：工具栏 */

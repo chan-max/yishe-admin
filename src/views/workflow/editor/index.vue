@@ -23,7 +23,6 @@ import { useSmartSave } from "@/composables/useSmartSave";
 
 // 自定义节点
 import StartNode from "@/components/workflow/nodes/StartNode.vue";
-import WebhookTriggerNode from "@/components/workflow/nodes/WebhookTriggerNode.vue";
 import DefaultNode from "@/components/workflow/nodes/DefaultNode.vue";
 import EndNode from "@/components/workflow/nodes/EndNode.vue";
 import ConditionNode from "@/components/workflow/nodes/ConditionNode.vue";
@@ -211,7 +210,6 @@ const edgeType = ref<"default" | "smoothstep" | "straight">("default");
 // 自定义节点类型映射 (使用 markRaw 避免 Vue 响应式代理警告)
 const nodeTypes = {
   start: markRaw(StartNode),
-  webhook_trigger: markRaw(WebhookTriggerNode),
   default: markRaw(DefaultNode),
   end: markRaw(EndNode),
   condition: markRaw(ConditionNode),
@@ -1145,7 +1143,6 @@ const statusText = computed(() => {
 .workflow-editor {
   display: flex;
   height: calc(100vh - var(--top-tool-height) - var(--tags-view-height));
-  margin: calc(0px - var(--app-content-padding));
   overflow: hidden;
   background: var(--app-content-bg-color);
   flex-direction: column;

@@ -3,6 +3,7 @@ import { useAppStore } from "@/store/modules/app";
 import { useTagsViewStore } from "@/store/modules/tagsView";
 import { Icon } from "@/components/Icon";
 import { useFullscreen } from "@vueuse/core";
+import { useRoute } from "vue-router";
 
 defineOptions({ name: "AppView" });
 
@@ -10,6 +11,7 @@ const { t } = useI18n();
 
 const appStore = useAppStore();
 const tagsViewStore = useTagsViewStore();
+const route = useRoute();
 
 const footer = computed(() => appStore.getFooter);
 const keepAliveMax = Number(import.meta.env.VITE_APP_KEEP_ALIVE_MAX || 12);
@@ -95,6 +97,7 @@ provide("reload", reload);
     :id="'app-view-main'"
     :class="[
       'p-[var(--app-content-padding)] w-full bg-[var(--app-content-bg-color)] relative',
+      { 'app-view-no-padding': route.meta?.noAppViewPadding === true },
       {
         '!min-h-[calc(100vh-var(--top-tool-height)-var(--tags-view-height)-var(--app-footer-height))] pb-0':
           footer,
@@ -129,6 +132,10 @@ provide("reload", reload);
 </template>
 
 <style lang="scss" scoped>
+#app-view-main.app-view-no-padding {
+  padding: 0;
+}
+
 #app-view-main:fullscreen,
 #app-view-main.is-app-view-fullscreen,
 #app-view-main:full-screen,

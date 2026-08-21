@@ -24,7 +24,7 @@ const { push, back } = router
 <style scoped lang="scss">
 .error-404-page {
   display: flex;
-  min-height: calc(100vh - 120px);
+  min-height: calc(100vh - var(--top-tool-height) - var(--tags-view-height));
   align-items: center;
   justify-content: center;
   padding: 32px 20px;

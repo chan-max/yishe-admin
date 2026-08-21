@@ -132,6 +132,16 @@ const currentCapability = computed<NodeManifest | undefined>(() => {
 
 // 是否是消息推送类节点
 const isNotifyNode = computed(() => currentCapability.value?.category === "notify");
+const isStartNode = computed(() => props.node?.type === "start");
+const isProtectedBoundaryNode = computed(
+  () => props.node?.type === "start" || props.node?.type === "end",
+);
+
+// 开始节点已有专属的触发器和输入变量设置，不能再由 Schema 重复渲染。
+const shouldRenderSchemaForm = computed(() => !isStartNode.value);
+const shouldShowOutputVariables = computed(
+  () => !isStartNode.value && Boolean(currentCapability.value?.outputSchema?.length),
+);
 
 // 动态注入渠道 options 进 inputSchema
 const resolvedInputSchema = computed<NodeIOSchemaField[]>(() => {
@@ -254,7 +264,13 @@ const removeInputParam = (index: number) => {
             {{ currentCapability?.name || node.data?.label || node.type }}
           </span>
         </div>
-        <el-button type="danger" text size="small" @click="handleDelete">
+        <el-button
+          v-if="!isProtectedBoundaryNode"
+          type="danger"
+          text
+          size="small"
+          @click="handleDelete"
+        >
           <svg
             class="config-panel__delete-icon"
             viewBox="0 0 24 24"
@@ -274,13 +290,14 @@ const removeInputParam = (index: number) => {
 
       <div class="config-panel__body">
         <el-form label-position="top" size="small">
-          <!-- 基础信息 -->
-          <el-form-item label="节点显示名称">
+          <!-- 基础信息：边界节点名称固定，避免与“开始”语义重复配置。 -->
+          <el-form-item v-if="!isProtectedBoundaryNode" label="节点显示名称">
             <el-input v-model="form.label" placeholder="输入节点名称" @input="handleDataChange" />
           </el-form-item>
 
           <!-- 1. 开始节点专属配置 -->
           <template v-if="node.type === 'start'">
+            <div class="config-panel__section-title config-panel__section-title--first">启动配置</div>
             <el-form-item label="触发类型">
               <el-select
                 v-model="form.config.triggerType"
@@ -289,6 +306,7 @@ const removeInputParam = (index: number) => {
               >
                 <el-option label="手动触发 / API" value="manual" />
                 <el-option label="定时触发" value="cron" />
+                <el-option label="Webhook 触发" value="webhook" />
               </el-select>
             </el-form-item>
 
@@ -304,7 +322,12 @@ const removeInputParam = (index: number) => {
               </el-button>
             </template>
 
-            <el-form-item label="输入变量定义">
+            <div v-if="form.config.triggerType === 'webhook'" class="config-panel__field-desc config-panel__start-note">
+              Webhook 地址和启用状态请在顶部“设置”的“Webhook 触发”中配置。
+            </div>
+
+            <div class="config-panel__section-title">输入变量</div>
+            <el-form-item label="变量定义">
               <div class="wf-param-list">
                 <div
                   v-for="(param, idx) in form.config.inputParams || []"
@@ -420,52 +443,7 @@ const removeInputParam = (index: number) => {
             </el-form-item>
           </template>
 
-          <!-- 3. AI 调用节点专属配置 -->
-          <template v-if="node.type === 'ai_call'">
-            <el-form-item label="系统提示词">
-              <el-input
-                v-model="form.config.systemPrompt"
-                type="textarea"
-                :rows="2"
-                placeholder="定义 AI 的角色和行为"
-                @input="handleDataChange"
-              />
-            </el-form-item>
-            <el-form-item label="用户提示词" required>
-              <el-input
-                v-model="form.config.userPrompt"
-                type="textarea"
-                :rows="4"
-                placeholder="支持 {{节点ID.字段}} 变量引用"
-                @input="handleDataChange"
-              />
-            </el-form-item>
-            <el-form-item label="温度">
-              <el-slider
-                v-model="form.config.temperature"
-                :min="0"
-                :max="2"
-                :step="0.1"
-                @change="() => handleDataChange()"
-              />
-            </el-form-item>
-            <el-form-item label="最大 Token">
-              <el-input-number
-                v-model="form.config.maxTokens"
-                :min="100"
-                :max="8000"
-                :step="100"
-                @change="() => handleDataChange()"
-              />
-            </el-form-item>
-            <el-form-item label="输出格式">
-              <el-select v-model="form.config.outputFormat" @change="() => handleDataChange()">
-                <el-option label="文本" value="text" />
-                <el-option label="JSON" value="json" />
-              </el-select>
-            </el-form-item>
-          </template>
-
+          <!-- AI 调用节点统一使用下方能力清单渲染，避免专属表单与 Schema 重复展示 -->
           <!-- 4. 消息推送节点专属配置 -->
           <template
             v-if="node.type === 'message_push_feishu' || node.type === 'message_push_wecom'"
@@ -511,7 +489,7 @@ const removeInputParam = (index: number) => {
           </template>
 
           <!-- 2. 基于 Schema 动态渲染输入表单 -->
-          <template v-if="resolvedInputSchema.length">
+          <template v-if="shouldRenderSchemaForm && resolvedInputSchema.length">
             <div class="config-panel__section-title">节点入参配置</div>
             <div
               v-for="field in resolvedInputSchema"
@@ -602,7 +580,7 @@ const removeInputParam = (index: number) => {
           </template>
 
           <!-- 3. 输出变量 Schema 预览 -->
-          <template v-if="currentCapability?.outputSchema?.length">
+          <template v-if="shouldShowOutputVariables">
             <div class="config-panel__section-title">下游可用数据</div>
             <div class="config-panel__output-variables">
               <div
@@ -628,8 +606,8 @@ const removeInputParam = (index: number) => {
             </div>
           </template>
 
-          <!-- 元数据信息 -->
-          <div class="config-panel__meta-box">
+          <!-- 元数据只在可编辑功能节点展示，开始/结束节点无需暴露内部 ID 与坐标。 -->
+          <div v-if="!isProtectedBoundaryNode" class="config-panel__meta-box">
             <div class="config-panel__meta-row">
               <span class="config-panel__meta-label">节点 ID:</span>
               <span class="config-panel__meta-val">{{ node.id }}</span>
@@ -732,6 +710,14 @@ const removeInputParam = (index: number) => {
   font-weight: 700;
   color: var(--el-text-color-primary);
   border-bottom: 1px dashed var(--app-content-border-color, rgb(255 255 255 / 10%));
+}
+
+.config-panel__section-title--first {
+  margin-top: 0;
+}
+
+.config-panel__start-note {
+  margin: -4px 0 10px;
 }
 
 .wf-param-list {
@@ -1054,5 +1040,13 @@ const removeInputParam = (index: number) => {
   border-radius: 3px;
   font-family: monospace;
   color: var(--el-color-primary);
+}
+
+
+.config-panel__start-note {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--el-text-color-secondary);
 }
 </style>

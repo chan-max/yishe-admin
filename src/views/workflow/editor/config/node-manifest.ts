@@ -312,28 +312,6 @@ export function getNodeOutputSchema(node: any): NodeIOSchemaField[] {
 }
 
 export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
-  // ─── Webhook 触发 ────────────────────────────────────────
-  {
-    type: 'webhook_trigger',
-    name: 'Webhook 触发',
-    category: 'trigger',
-    icon: 'ep:link',
-    color: '#8b5cf6',
-    badge: '触发',
-    description: '通过 HTTP Webhook 请求远程触发工作流。支持开发环境(localhost)和线上环境(api.1s.design)自动切换。',
-    defaultData: { name: 'Webhook 触发', config: { method: 'POST', path: '' } },
-    inputSchema: [
-      { field: 'method', label: '请求方法', type: 'select', defaultValue: 'POST', options: [{ label: 'POST', value: 'POST' }, { label: 'GET', value: 'GET' }, { label: 'PUT', value: 'PUT' }] },
-      { field: 'path', label: '路径标识', type: 'string', placeholder: '自动生成或自定义' },
-    ],
-    outputSchema: [
-      { field: 'body', label: '请求体', type: 'json' },
-      { field: 'headers', label: '请求头', type: 'json' },
-      { field: 'query', label: '查询参数', type: 'json' },
-    ],
-    requirements: [],
-  },
-
   // ─── 条件分支 ────────────────────────────────────────────
   {
     type: 'condition',

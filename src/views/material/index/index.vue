@@ -7,7 +7,9 @@
 
     <KeepAlive>
       <ImageGroupView v-if="materialViewMode === 'group'" @add-stickers="handleGroupAddStickers"
-        @create-psd-sets="openImageGroupPsdSetDialog" />
+        @create-psd-sets="openImageGroupPsdSetDialog"
+        @create-publish-config-sets="openImageGroupPublishConfigDialog"
+        @create-product-config-sets="openImageGroupProductConfigDialog" />
     </KeepAlive>
 
     <ListPageLayout v-show="materialViewMode === 'single'" class="material-index-page"
@@ -601,7 +603,7 @@
             <div class="material-publish-config-dialog__footer">
               <div class="material-publish-config-dialog__footer-info">
                 <span class="material-publish-config-dialog__footer-chip">
-                  {{ t('material.materialCount', { count: ids.length }) }}
+                  {{ isImageGroupPsdSet ? t('material.groupCount', { count: psdSetImageGroups.length }) : t('material.materialCount', { count: ids.length }) }}
                 </span>
                 <span class="material-publish-config-dialog__footer-chip">
                   {{ t('material.publishConfigCount', { count: materialPublishConfigSelectedIds.length }) }}
@@ -619,7 +621,7 @@
               </div>
               <div class="material-publish-config-dialog__footer-actions">
                 <el-button @click="handleCloseMaterialPublishConfigDialog">{{ t('material.cancel') }}</el-button>
-                <el-button type="primary" :loading="materialPublishConfigSubmitting" :disabled="!ids.length ||
+                <el-button type="primary" :loading="materialPublishConfigSubmitting" :disabled="!(isImageGroupPsdSet ? psdSetImageGroups.length : ids.length) ||
                   !materialPublishConfigSelectedIds.length ||
                   hasInvalidFormatMaterials
                   " @click="handleCreatePsdSetsByPublishConfig">
@@ -765,7 +767,7 @@
             <div class="material-publish-config-dialog__footer">
               <div class="material-publish-config-dialog__footer-info">
                 <span class="material-publish-config-dialog__footer-chip">
-                  {{ t('material.materialCount', { count: ids.length }) }}
+                  {{ isImageGroupPsdSet ? t('material.groupCount', { count: psdSetImageGroups.length }) : t('material.materialCount', { count: ids.length }) }}
                 </span>
                 <span class="material-publish-config-dialog__footer-chip">
                   {{ t('material.productConfigCount', { count: materialProductConfigSelectedIds.length }) }}
@@ -783,7 +785,7 @@
               </div>
               <div class="material-publish-config-dialog__footer-actions">
                 <el-button @click="handleCloseMaterialProductConfigDialog">{{ t('material.cancel') }}</el-button>
-                <el-button type="primary" :loading="materialProductConfigSubmitting" :disabled="!ids.length ||
+                <el-button type="primary" :loading="materialProductConfigSubmitting" :disabled="!(isImageGroupPsdSet ? psdSetImageGroups.length : ids.length) ||
                   !materialProductConfigSelectedIds.length ||
                   hasInvalidFormatMaterials
                   " @click="handleCreatePsdSetsByProductConfig">
@@ -3968,8 +3970,16 @@ function cacheSelectedMaterialRows(rows: any[] = []) {
   });
 }
 
-const selectedMaterialsForPublishConfig = computed(() =>
-  ids.value
+const selectedMaterialsForPublishConfig = computed(() => {
+  if (isImageGroupPsdSet.value) {
+    return psdSetImageGroups.value.flatMap((group) =>
+      (group.stickers || []).map((s: any) => ({
+        ...s,
+        groupName: group.name,
+      })),
+    );
+  }
+  return ids.value
     .map(
       (id) =>
         getMaterialById(id) || {
@@ -3979,8 +3989,8 @@ const selectedMaterialsForPublishConfig = computed(() =>
           suffix: "",
         },
     )
-    .filter(Boolean),
-);
+    .filter(Boolean);
+});
 const materialPublishConfigMissingPreviewIds = computed(() =>
   selectedMaterialsForPublishConfig.value
     .filter((material: any) => !getMaterialPreviewSource(material))
@@ -4018,8 +4028,10 @@ const materialPublishConfigDataSource = computed(() => {
   const end = start + materialPublishConfigPageSize.value;
   return filteredMaterialPublishConfigs.value.slice(start, end);
 });
-const materialPublishConfigTaskCount = computed(
-  () => ids.value.length * materialPublishConfigSelectedIds.value.length,
+const materialPublishConfigTaskCount = computed(() =>
+  isImageGroupPsdSet.value
+    ? psdSetImageGroups.value.length * materialPublishConfigSelectedIds.value.length
+    : ids.value.length * materialPublishConfigSelectedIds.value.length,
 );
 const materialPublishConfigUsableCount = computed(
   () =>
@@ -4040,26 +4052,57 @@ const materialPublishConfigGridOptions = computed(() => ({
     checkMethod: ({ row }: any) => isMaterialPublishConfigUsable(row),
   },
   columns: [
-    { type: "checkbox" as any, width: 60, align: "center" as any },
     {
+      type: "checkbox",
+      width: 50,
+      align: "center",
+      headerAlign: "center",
+    },
+    {
+      title: t('material.taskConfigName'),
+      field: "name",
+      minWidth: 200,
+      showOverflow: true,
+      slots: {
+        default: "nameSlot",
+      },
+    },
+    {
+      title: t('material.platform'),
+      field: "platform",
+      width: 120,
+      align: "center",
+      headerAlign: "center",
+      slots: {
+        default: "platformSlot",
+      },
+    },
+    {
+      title: t('material.boundPsdTemplate'),
+      field: "templateBinding",
+      minWidth: 220,
+      showOverflow: true,
+      slots: {
+        default: "templateBindingSlot",
+      },
+    },
+    {
+      title: t('material.taskType'),
       field: "taskType",
-      title: t("material.taskType"),
-      width: 180,
-      formatter: ({ row }: any) =>
-        getTaskTypeLabel(
-          row?.taskType || derivePublishTaskTypeByPlatform(row?.platform),
-          row?.platform,
-        ),
+      width: 130,
+      align: "center",
+      headerAlign: "center",
+      slots: {
+        default: "taskTypeSlot",
+      },
     },
-    { field: "name", title: t("material.configName"), minWidth: 180, showOverflow: true },
     {
-      field: "templateBindingStatus",
-      title: t("material.status"),
-      width: 150,
-      formatter: ({ row }: any) =>
-        isMaterialPublishConfigUsable(row) ? t("material.usable") : t("material.notConfiguredPsdTemplate"),
+      title: t('material.configDescription'),
+      field: "description",
+      minWidth: 160,
+      showOverflow: true,
+      formatter: ({ cellValue }) => cellValue || "-",
     },
-    { field: "description", title: t("material.remark"), minWidth: 220, showOverflow: true },
   ],
 }));
 const filteredMaterialProductConfigs = computed(() => {
@@ -5472,11 +5515,38 @@ async function openMaterialPublishConfigDialog() {
     return;
   }
 
+  isImageGroupPsdSet.value = false;
   clearMaterialPublishConfigSelection();
   materialPublishConfigDialogVisible.value = true;
   materialPublishConfigSearchText.value = "";
   materialPublishConfigCurrentPage.value = 1;
   await ensureSelectedMaterialPreviews();
+  await loadPublishConfigsForMaterialPublishDialog();
+}
+
+async function openImageGroupPublishConfigDialog(groups: ImageGroupItem[]) {
+  const selectedGroups = Array.isArray(groups)
+    ? groups.filter((group) => group?.id && group.stickers?.length)
+    : [];
+  if (!selectedGroups.length) {
+    ElMessage.warning(t("material.selectGroupWithImages"));
+    return;
+  }
+
+  psdSetImageGroups.value = selectedGroups.map((group) => ({
+    ...group,
+    stickers: [...(group.stickers || [])].sort(
+      (a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0),
+    ),
+  }));
+  cacheSelectedMaterialRows(
+    psdSetImageGroups.value.flatMap((group) => group.stickers || []),
+  );
+  isImageGroupPsdSet.value = true;
+  clearMaterialPublishConfigSelection();
+  materialPublishConfigDialogVisible.value = true;
+  materialPublishConfigSearchText.value = "";
+  materialPublishConfigCurrentPage.value = 1;
   await loadPublishConfigsForMaterialPublishDialog();
 }
 
@@ -5486,11 +5556,38 @@ async function openMaterialProductConfigDialog() {
     return;
   }
 
+  isImageGroupPsdSet.value = false;
   clearMaterialProductConfigSelection();
   materialProductConfigDialogVisible.value = true;
   materialProductConfigSearchText.value = "";
   materialProductConfigCurrentPage.value = 1;
   await ensureSelectedMaterialPreviews();
+  await loadProductConfigsForMaterialDialog();
+}
+
+async function openImageGroupProductConfigDialog(groups: ImageGroupItem[]) {
+  const selectedGroups = Array.isArray(groups)
+    ? groups.filter((group) => group?.id && group.stickers?.length)
+    : [];
+  if (!selectedGroups.length) {
+    ElMessage.warning(t("material.selectGroupWithImages"));
+    return;
+  }
+
+  psdSetImageGroups.value = selectedGroups.map((group) => ({
+    ...group,
+    stickers: [...(group.stickers || [])].sort(
+      (a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0),
+    ),
+  }));
+  cacheSelectedMaterialRows(
+    psdSetImageGroups.value.flatMap((group) => group.stickers || []),
+  );
+  isImageGroupPsdSet.value = true;
+  clearMaterialProductConfigSelection();
+  materialProductConfigDialogVisible.value = true;
+  materialProductConfigSearchText.value = "";
+  materialProductConfigCurrentPage.value = 1;
   await loadProductConfigsForMaterialDialog();
 }
 
@@ -5631,8 +5728,11 @@ function handlePsdSetAutomationListCheckboxChange(action: any, fieldKey: string,
 }
 
 async function handleCreatePsdSetsByPublishConfig() {
-  if (!ids.value.length) {
-    return ElMessage.warning(t("material.selectMaterialsFirst"));
+  const hasItems = isImageGroupPsdSet.value
+    ? psdSetImageGroups.value.length > 0
+    : ids.value.length > 0;
+  if (!hasItems) {
+    return ElMessage.warning(isImageGroupPsdSet.value ? t("material.selectGroupWithImages") : t("material.selectMaterialsFirst"));
   }
   if (!materialPublishConfigSelectedIds.value.length) {
     return ElMessage.warning(t("material.selectPublishConfig"));
@@ -5646,16 +5746,23 @@ async function handleCreatePsdSetsByPublishConfig() {
 
   materialPublishConfigSubmitting.value = true;
   try {
-    const res: any = await stickerPsdSetApi.batchCreateByPublishConfig({
-      stickerIds: ids.value.map((id) => String(id)),
-      publishConfigIds: [...materialPublishConfigSelectedIds.value],
-    });
+    const res: any = isImageGroupPsdSet.value
+      ? await stickerPsdSetApi.batchCreateByPublishConfig({
+          imageGroupIds: psdSetImageGroups.value.map((group) => String(group.id)),
+          publishConfigIds: [...materialPublishConfigSelectedIds.value],
+        })
+      : await stickerPsdSetApi.batchCreateByPublishConfig({
+          stickerIds: ids.value.map((id) => String(id)),
+          publishConfigIds: [...materialPublishConfigSelectedIds.value],
+        });
     const createdCount = Array.isArray(res?.list)
       ? res.list.length
       : Number(res?.total || materialPublishConfigTaskCount.value);
     ElMessage.success(t("material.psdTasksCreated", { count: createdCount }));
     handleCloseMaterialPublishConfigDialog();
-    resetCheckStatus(ids);
+    if (!isImageGroupPsdSet.value) {
+      resetCheckStatus(ids);
+    }
   } catch (error: any) {
     console.error("按发布配置创建套图失败:", error);
     ElMessage.error(error?.message || t("material.psdCreateByConfigFailed"));
@@ -5665,8 +5772,11 @@ async function handleCreatePsdSetsByPublishConfig() {
 }
 
 async function handleCreatePsdSetsByProductConfig() {
-  if (!ids.value.length) {
-    return ElMessage.warning(t("material.selectMaterialsFirst"));
+  const hasItems = isImageGroupPsdSet.value
+    ? psdSetImageGroups.value.length > 0
+    : ids.value.length > 0;
+  if (!hasItems) {
+    return ElMessage.warning(isImageGroupPsdSet.value ? t("material.selectGroupWithImages") : t("material.selectMaterialsFirst"));
   }
   if (!materialProductConfigSelectedIds.value.length) {
     return ElMessage.warning(t("material.selectProductConfig"));
@@ -5680,15 +5790,22 @@ async function handleCreatePsdSetsByProductConfig() {
 
   materialProductConfigSubmitting.value = true;
   try {
-    const res: any = await stickerPsdSetApi.batchCreateByProductGenerationTemplate({
-      stickerIds: ids.value.map((id) => String(id)),
-      productGenerationTemplateIds: [...materialProductConfigSelectedIds.value],
-    });
+    const res: any = isImageGroupPsdSet.value
+      ? await stickerPsdSetApi.batchCreateByProductGenerationTemplate({
+          imageGroupIds: psdSetImageGroups.value.map((group) => String(group.id)),
+          productGenerationTemplateIds: [...materialProductConfigSelectedIds.value],
+        })
+      : await stickerPsdSetApi.batchCreateByProductGenerationTemplate({
+          stickerIds: ids.value.map((id) => String(id)),
+          productGenerationTemplateIds: [...materialProductConfigSelectedIds.value],
+        });
     const productTotal = Number(res?.productTotal || materialProductConfigTaskCount.value);
     const psdSetTotal = Array.isArray(res?.list) ? res.list.length : Number(res?.total || 0);
     ElMessage.success(t("material.productTasksCreated", { psdSetTotal, productTotal }));
     handleCloseMaterialProductConfigDialog();
-    resetCheckStatus(ids);
+    if (!isImageGroupPsdSet.value) {
+      resetCheckStatus(ids);
+    }
   } catch (error: any) {
     console.error("按独立站商品配置创建套图失败:", error);
     ElMessage.error(error?.message || t("material.productTaskCreateFailed"));

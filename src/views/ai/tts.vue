@@ -1023,7 +1023,7 @@ onMounted(() => {
   background-color: transparent;
 }
 
-.list-page-layout {
+.tts-page.list-page-layout {
   display: flex;
   flex-direction: column;
   height: 100%;

@@ -18,13 +18,6 @@
         </div>
       </div>
 
-      <CompactNotice
-        type="info"
-        :title="t('operation.howToReadThisPage')"
-        :description="t('operation.capabilityNoticeDesc')"
-        class="capability-page__notice"
-      />
-
       <div class="capability-page__filters">
         <el-form :model="filters" label-position="top" class="capability-filter-form">
           <el-row :gutter="12">
@@ -421,7 +414,6 @@
 import { computed, onActivated, onMounted, reactive, ref } from "vue";
 import { useI18n } from 'vue-i18n';
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
-import CompactNotice from "@/components/CompactNotice/index.vue";
 import {
   getEcomPlatformCollectFeatures,
   type EcomCollectFeatureSchema,
@@ -692,12 +684,10 @@ onActivated(() => {
 
 .capability-page__hero {
   display: flex;
-  padding: 24px;
-  background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--el-color-primary) 18%, transparent), transparent 36%),
-    linear-gradient(135deg, #fffaf2 0%, #f6faff 100%);
-  border: 1px solid rgb(148 163 184 / 22%);
-  border-radius: 18px;
+  padding: 20px;
+  background: var(--app-content-surface-color);
+  border: 1px solid var(--app-content-border-color);
+  border-radius: 16px;
   justify-content: space-between;
   gap: 16px;
 }
@@ -705,11 +695,11 @@ onActivated(() => {
 .capability-page__hero-main {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .capability-page__eyebrow {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--el-color-primary);
@@ -717,25 +707,25 @@ onActivated(() => {
 }
 
 .capability-page__title {
-  font-size: 28px;
+  font-size: 18px;
   font-weight: 700;
-  line-height: 1.2;
-  color: #0f172a;
+  line-height: 1.3;
+  color: var(--el-text-color-primary);
 }
 
 .capability-page__desc {
-  max-width: 980px;
-  font-size: 14px;
-  line-height: 1.8;
-  color: #475569;
+  max-width: 720px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--el-text-color-secondary);
 }
 
 .capability-page__meta {
   display: flex;
-  font-size: 12px;
-  color: #64748b;
+  font-size: 11px;
+  color: var(--el-text-color-placeholder);
   flex-wrap: wrap;
-  gap: 10px 18px;
+  gap: 6px 16px;
 }
 
 .capability-page__hero-actions {
@@ -743,7 +733,6 @@ onActivated(() => {
   align-items: flex-start;
 }
 
-.capability-page__notice,
 .capability-page__filters {
   padding: 0;
 }
@@ -756,31 +745,31 @@ onActivated(() => {
 
 .stat-card {
   display: flex;
-  padding: 16px 18px;
-  background: #fff;
-  border: 1px solid rgb(148 163 184 / 20%);
-  border-radius: 14px;
+  padding: 14px 16px;
+  background: var(--app-content-surface-color);
+  border: 1px solid var(--app-content-border-color);
+  border-radius: 12px;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .stat-card span {
-  font-size: 12px;
-  color: #64748b;
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
 }
 
 .stat-card strong {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--el-text-color-primary);
 }
 
 .feature-panel {
   display: flex;
-  padding: 18px;
-  background: #fff;
-  border: 1px solid rgb(148 163 184 / 20%);
-  border-radius: 14px;
+  padding: 16px;
+  background: var(--app-content-surface-color);
+  border: 1px solid var(--app-content-border-color);
+  border-radius: 12px;
   flex-direction: column;
   gap: 12px;
 }
@@ -793,39 +782,39 @@ onActivated(() => {
 }
 
 .feature-panel__title {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--el-text-color-primary);
 }
 
 .feature-panel__desc {
   margin-top: 4px;
-  font-size: 12px;
-  line-height: 1.7;
-  color: #64748b;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--el-text-color-secondary);
 }
 
 .feature-name-cell {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .feature-name-cell strong {
-  font-size: 13px;
-  color: #0f172a;
+  font-size: 12px;
+  color: var(--el-text-color-primary);
 }
 
 .feature-name-cell code {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--el-color-primary);
 }
 
 .feature-table__desc {
   display: inline-block;
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.6;
-  color: #64748b;
+  color: var(--el-text-color-secondary);
 }
 
 .platform-card-list {
@@ -835,11 +824,10 @@ onActivated(() => {
 }
 
 .platform-card {
-  padding: 18px;
-  background: #fff;
-  border: 1px solid rgb(148 163 184 / 20%);
-  border-radius: 18px;
-  box-shadow: 0 12px 28px rgb(15 23 42 / 4%);
+  padding: 16px;
+  background: var(--app-content-surface-color);
+  border: 1px solid var(--app-content-border-color);
+  border-radius: 16px;
 }
 
 .platform-card__header {
@@ -851,29 +839,29 @@ onActivated(() => {
 .platform-card__title-wrap {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .platform-card__title {
   display: flex;
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--el-text-color-primary);
   align-items: baseline;
-  gap: 10px;
+  gap: 8px;
 }
 
 .platform-card__code,
 .task-card__code {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
-  color: #64748b;
+  color: var(--el-text-color-placeholder);
 }
 
 .platform-card__summary {
-  font-size: 13px;
-  line-height: 1.7;
-  color: #475569;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--el-text-color-secondary);
 }
 
 .platform-card__tags,
@@ -881,38 +869,38 @@ onActivated(() => {
 .task-card__tag-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .platform-card__metrics {
   display: flex;
-  margin-top: 12px;
-  font-size: 12px;
-  color: #64748b;
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--el-text-color-placeholder);
   flex-wrap: wrap;
-  gap: 10px 16px;
+  gap: 6px 14px;
 }
 
 .platform-card__notes {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-top: 12px;
+  gap: 4px;
+  margin-top: 10px;
 }
 
 .platform-card__note {
-  font-size: 13px;
-  line-height: 1.7;
-  color: #475569;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--el-text-color-secondary);
 }
 
 .platform-card__collapse {
-  margin-top: 14px;
-  border-top: 1px solid rgb(148 163 184 / 16%);
+  margin-top: 12px;
+  border-top: 1px solid var(--app-content-border-color);
 }
 
 :deep(.platform-card__collapse .el-collapse-item__header) {
-  min-height: 72px;
+  min-height: 56px;
   align-items: center;
 }
 
@@ -927,28 +915,28 @@ onActivated(() => {
 .task-card__title-wrap {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .task-card__title {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--el-text-color-primary);
 }
 
 .task-card__body {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding-bottom: 8px;
+  gap: 14px;
+  padding-bottom: 6px;
 }
 
 .task-card__overview {
   display: flex;
-  padding: 16px;
-  background: linear-gradient(180deg, #f8fafc 0%, #fff 100%);
-  border: 1px solid rgb(148 163 184 / 16%);
-  border-radius: 14px;
+  padding: 14px;
+  background: var(--el-fill-color-light);
+  border: 1px solid var(--app-content-border-color);
+  border-radius: 12px;
   justify-content: space-between;
   gap: 16px;
 }
@@ -956,77 +944,77 @@ onActivated(() => {
 .task-card__overview-main {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .task-card__overview-text,
 .task-card__use-hint {
-  font-size: 13px;
-  line-height: 1.8;
-  color: #475569;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--el-text-color-secondary);
 }
 
 .task-card__overview-stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 92px));
-  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 80px));
+  gap: 6px;
 }
 
 .task-mini-stat {
   display: flex;
-  padding: 10px 12px;
-  background: #fff;
-  border: 1px solid rgb(148 163 184 / 16%);
-  border-radius: 12px;
+  padding: 8px 10px;
+  background: var(--app-content-surface-color);
+  border: 1px solid var(--app-content-border-color);
+  border-radius: 10px;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .task-mini-stat span {
-  font-size: 11px;
-  color: #64748b;
+  font-size: 10px;
+  color: var(--el-text-color-placeholder);
 }
 
 .task-mini-stat strong {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--el-text-color-primary);
 }
 
 .task-card__section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .task-card__section-title {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--el-text-color-primary);
 }
 
 .task-card__list {
-  padding-left: 18px;
+  padding-left: 16px;
   margin: 0;
-  font-size: 13px;
-  line-height: 1.8;
-  color: #475569;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--el-text-color-secondary);
 }
 
 .field-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
 }
 
 .field-card {
   display: flex;
-  padding: 14px;
-  background: #fff;
-  border: 1px solid rgb(148 163 184 / 16%);
-  border-radius: 14px;
+  padding: 12px;
+  background: var(--el-fill-color-light);
+  border: 1px solid var(--app-content-border-color);
+  border-radius: 10px;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .field-card__head {
@@ -1037,36 +1025,36 @@ onActivated(() => {
 }
 
 .field-card__label {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--el-text-color-primary);
 }
 
 .field-card__meta,
 .field-card__desc,
 .task-card__example-desc {
-  font-size: 12px;
-  line-height: 1.7;
-  color: #64748b;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--el-text-color-placeholder);
 }
 
 .task-card__examples {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .task-card__example {
-  padding: 12px 14px;
-  background: #f8fafc;
-  border: 1px solid rgb(148 163 184 / 16%);
-  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--el-fill-color-light);
+  border: 1px solid var(--app-content-border-color);
+  border-radius: 10px;
 }
 
 .task-card__example-title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--el-text-color-primary);
 }
 
 @media (width <= 1080px) {
@@ -1088,11 +1076,11 @@ onActivated(() => {
 
 @media (width <= 768px) {
   .capability-page__hero {
-    padding: 18px;
+    padding: 14px;
   }
 
   .capability-page__title {
-    font-size: 24px;
+    font-size: 16px;
   }
 
   .capability-page__stats,

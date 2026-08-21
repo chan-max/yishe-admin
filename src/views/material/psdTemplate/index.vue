@@ -210,6 +210,14 @@
                   <template #dragHandleSlot>
                     <TableRowDragHandle />
                   </template>
+                  <template #idSlot="{ row }">
+                    <div class="table-cell-copyable" :title="t('common.copy') || '点击复制'" @click="copyId(row.id)">
+                      <span class="table-cell-id">{{ row.id }}</span>
+                      <el-icon class="copy-icon">
+                        <DocumentCopy />
+                      </el-icon>
+                    </div>
+                  </template>
                   <template #thumbnailSlot="{ row }">
                     <div class="thumbnail-cell">
                       <el-image
@@ -1122,7 +1130,7 @@ import {
   TopRight,
   Connection,
 } from "@element-plus/icons-vue";
-import { useWindowSize, useLocalStorage } from "@vueuse/core";
+import { useWindowSize, useLocalStorage, useClipboard } from "@vueuse/core";
 import type { VxeGridProps } from "vxe-table";
 import { psdTemplateApi } from "@/api/psdTemplate";
 import { uploadToCOS } from "@/api/cos";
@@ -1275,7 +1283,15 @@ const gridOptions = ref<VxeGridProps<any>>({
         default: "psdFileInfoSlot",
       },
     },
-    { title: t('common.id'), field: "id", width: 140, showOverflow: true },
+    {
+      title: t('common.id'),
+      field: "id",
+      width: 140,
+      showOverflow: false,
+      slots: {
+        default: "idSlot",
+      },
+    },
     {
       title: t('psdTemplate.localPath'),
       field: "windowsLocalPath",
@@ -1368,6 +1384,17 @@ const formRef = ref();
 const dialogTitle = ref("");
 const dialogVisible = ref(false);
 const isEdit = ref(true);
+
+const { copy } = useClipboard();
+async function copyId(id: string) {
+  if (!id) return;
+  try {
+    await copy(id);
+    ElMessage.success(t("common.copySuccess") || "ID 已复制到剪贴板");
+  } catch {
+    ElMessage.error(t("common.copyFailed") || "复制失败");
+  }
+}
 const submitLoading = ref(false);
 type PsdTemplateUserTransferAction = "share" | "copy" | "move";
 type PsdTemplateUserTransferUserOption = {
@@ -3283,6 +3310,41 @@ function handleCutoutModesChange(values: string[]) {
 
   .thumbnail-upload-container {
     flex-direction: column;
+  }
+}
+
+.table-cell-copyable {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  color: var(--el-color-primary, #409eff);
+  font-family: monospace;
+  font-size: 12px;
+  max-width: 100%;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    background-color: var(--el-color-primary-light-9, rgba(64, 158, 255, 0.1));
+    opacity: 0.85;
+
+    .copy-icon {
+      transform: scale(1.15);
+    }
+  }
+
+  .table-cell-id {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .copy-icon {
+    font-size: 13px;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
   }
 }
 </style>
