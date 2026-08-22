@@ -20,7 +20,9 @@ const platformIcon = computed(() => {
       <img :src="platformIcon" class="wf-node__platform-icon" />
       <span class="wf-node__title">{{ data.label || "消息推送" }}</span>
     </div>
-    <div class="wf-node__badge">{{ data.config?.channelName || "未选择渠道" }}</div>
+    <div class="wf-node__badge">
+      {{ data.config?.channelName || (data.config?.channelId ? `渠道 #${data.config?.channelId}` : "未选择渠道") }}
+    </div>
     <NodeParameterSummary :data="data" />
     <Handle type="source" :position="Position.Bottom" />
   </div>

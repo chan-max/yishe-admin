@@ -195,6 +195,15 @@ watch(
   { immediate: true },
 );
 
+const onChannelChange = (channelId: any) => {
+  const matched = messagePushChannels.value.find((ch) => ch.id === channelId);
+  if (matched) {
+    form.value.config.channelName = matched.name;
+    form.value.config.platform = matched.platform;
+  }
+  handleDataChange("channelId", matched?.name);
+};
+
 const handleDataChange = (fieldName?: string, selectedLabel?: string) => {
   if (!props.node) return;
 
@@ -202,6 +211,15 @@ const handleDataChange = (fieldName?: string, selectedLabel?: string) => {
   if (fieldName && selectedLabel) {
     const nameKey = fieldName === "channelId" ? "channelName" : `${fieldName}Name`;
     config[nameKey] = selectedLabel;
+  }
+
+  // 自动根据选中的 channelId 补全渠道名称和平台
+  if (config.channelId && messagePushChannels.value?.length) {
+    const matched = messagePushChannels.value.find((ch) => ch.id === config.channelId);
+    if (matched) {
+      config.channelName = matched.name;
+      config.platform = matched.platform;
+    }
   }
 
   // 开始节点：确保 inputParams 里的 key 与 defaultValue 同步到 config 根对象上
@@ -505,7 +523,7 @@ const removeInputParam = (index: number) => {
             v-if="node.type === 'message_push_feishu' || node.type === 'message_push_wecom'"
           >
             <el-form-item label="推送渠道" required>
-              <el-select v-model="form.config.channelId" @change="() => handleDataChange()">
+              <el-select v-model="form.config.channelId" @change="onChannelChange">
                 <el-option
                   v-for="ch in messagePushChannels"
                   :key="ch.id"

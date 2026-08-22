@@ -13,7 +13,9 @@ const props = defineProps<{ data: { label?: string; config?: any } }>();
       <img :src="feishuIcon" class="wf-node__icon" />
       <span class="wf-node__title">{{ props.data.label || "飞书推送" }}</span>
     </div>
-    <div class="wf-node__badge">{{ props.data.config?.channelName || "未选择渠道" }}</div>
+    <div class="wf-node__badge">
+      {{ props.data.config?.channelName || (props.data.config?.channelId ? `渠道 #${props.data.config?.channelId}` : "未选择渠道") }}
+    </div>
     <NodeParameterSummary :data="data" />
     <Handle type="source" :position="Position.Bottom" />
   </div>
