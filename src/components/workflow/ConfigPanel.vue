@@ -27,7 +27,7 @@ const emit = defineEmits<{
   (e: "updateEdge", edge: any): void;
 }>();
 
-const form = ref({ label: "", config: {} as any });
+const form = ref({ label: "", variableKey: "", config: {} as any });
 const advancedCronVisible = ref(false);
 const edgeCondition = ref("");
 const { byType, load: loadServerManifest } = useWorkflowNodeManifest();
@@ -99,54 +99,49 @@ const handleUpdateEdgeCondition = () => {
 
 // 消息推送渠道列表（动态从 API 加载）
 const messagePushChannels = ref<MessagePushConfig[]>([]);
-const channelsLoaded = ref(false);
+const messagePushLoading = ref(false);
+
+const isNotifyNode = computed(() => {
+  if (!props.node) return false;
+  const t = props.node.type;
+  return t === "message_push" || t === "message_push_feishu" || t === "message_push_wecom";
+});
 
 const loadMessagePushChannels = async () => {
-  if (channelsLoaded.value) return;
   try {
-    const list = await getMessagePushList();
-    const enabledChannels = Array.isArray(list) ? list.filter((c) => c.enabled) : [];
-
-    // 根据节点类型对应的平台过滤渠道
-    const platform = currentCapability.value?.platform;
-    if (platform) {
-      messagePushChannels.value = enabledChannels.filter((c) => c.platform === platform);
-    } else {
-      messagePushChannels.value = enabledChannels;
+    messagePushLoading.value = true;
+    const res = await getMessagePushList();
+    if (res && Array.isArray(res)) {
+      messagePushChannels.value = res.filter((item) => item.enabled);
     }
-
-    channelsLoaded.value = true;
-  } catch (e) {
-    messagePushChannels.value = [];
+  } catch (err) {
+    console.error("加载消息推送渠道失败:", err);
+  } finally {
+    messagePushLoading.value = false;
   }
 };
 
-// 当前节点对应的能力库元数据
-const currentCapability = computed<NodeManifest | undefined>(() => {
-  if (!props.node) return undefined;
-  const capType = props.node.data?.capabilityType || props.node.type;
-  const local = NODE_MANIFEST_REGISTRY.find((item) => item.type === capType);
-  const remote = byType.value.get(capType);
-  return remote ? ({ ...local, ...remote, type: capType } as NodeManifest) : local;
+// 当前节点的 capability 定义
+const currentCapability = computed<NodeManifest | null>(() => {
+  if (!props.node) return null;
+  const type = props.node.data?.capabilityType || props.node.type;
+  return (
+    byType.value[type] ||
+    NODE_MANIFEST_REGISTRY.find((item) => item.type === type) ||
+    null
+  );
 });
 
-// 是否是消息推送类节点
-const isNotifyNode = computed(() => currentCapability.value?.category === "notify");
-const isStartNode = computed(() => props.node?.type === "start");
-const isProtectedBoundaryNode = computed(
-  () => props.node?.type === "start" || props.node?.type === "end",
-);
+// 是否受保护的边界节点（start 不允许删除）
+const isProtectedBoundaryNode = computed(() => {
+  return props.node?.type === "start";
+});
 
-// 开始节点已有专属的触发器和输入变量设置，不能再由 Schema 重复渲染。
-const shouldRenderSchemaForm = computed(() => !isStartNode.value);
-const shouldShowOutputVariables = computed(
-  () => !isStartNode.value && Boolean(currentCapability.value?.outputSchema?.length),
-);
-
-// 动态注入渠道 options 进 inputSchema
-const resolvedInputSchema = computed<NodeIOSchemaField[]>(() => {
-  const schema = currentCapability.value?.inputSchema || [];
-  if (!isNotifyNode.value) return schema;
+// 计算动态输入表单 Schema
+const inputSchema = computed<NodeIOSchemaField[]>(() => {
+  const cap = currentCapability.value;
+  if (!cap?.inputSchema) return [];
+  const schema = Array.isArray(cap.inputSchema) ? cap.inputSchema : [];
 
   return schema.map((field) => {
     if (field.field === "channelId") {
@@ -162,11 +157,20 @@ const resolvedInputSchema = computed<NodeIOSchemaField[]>(() => {
   });
 });
 
+const isStartNode = computed(() => props.node?.type === "start");
+
+// 开始节点已有专属的触发器和输入变量设置，不能再由 Schema 重复渲染。
+const shouldRenderSchemaForm = computed(() => !isStartNode.value);
+const shouldShowOutputVariables = computed(
+  () => !isStartNode.value && Boolean(currentCapability.value?.outputSchema?.length),
+);
+
 watch(
   () => props.node,
   (n) => {
     if (n) {
       form.value.label = n.data?.label || (n.type === "start" ? "开始" : "");
+      form.value.variableKey = n.data?.variableKey || getWorkflowVariableKey(n, props.allNodes || []);
       const cfg = { ...(n.data?.config || {}) };
       if (n.type === "start") {
         if (!Array.isArray(cfg.inputParams)) {
@@ -216,6 +220,7 @@ const handleDataChange = (fieldName?: string, selectedLabel?: string) => {
     data: {
       ...props.node.data,
       label: form.value.label,
+      variableKey: form.value.variableKey,
       config,
     },
   });
@@ -321,6 +326,17 @@ const removeInputParam = (index: number) => {
             <el-input v-model="form.label" placeholder="输入节点名称 (例如: 开始)" @input="handleDataChange" />
           </el-form-item>
 
+          <el-form-item label="节点变量标识 (variableKey)">
+            <el-input
+              v-model="form.variableKey"
+              placeholder="下游引用的变量标识 (例如: start, collect_input)"
+              @input="handleDataChange"
+            />
+            <div class="config-panel__field-desc">
+              下游节点引用的变量前缀：<code>{{ '{' }}{{ '{' }}{{ form.variableKey || 'node' }}.字段名{{ '}' }}{{ '}' }}</code>
+            </div>
+          </el-form-item>
+
           <!-- 1. 开始节点专属配置 -->
           <template v-if="node.type === 'start'">
             <div class="config-panel__section-title config-panel__section-title--first">启动配置</div>
@@ -354,7 +370,7 @@ const removeInputParam = (index: number) => {
 
             <div class="config-panel__section-title">输入变量列表</div>
             <div class="config-panel__field-desc" style="margin-bottom: 8px">
-              下游节点可通过 <code>{{ '{' }}{{ '{' }}start.变量名{{ '}' }}{{ '}' }}</code> 引用此处的输入变量。
+              下游节点可通过 <code>{{ '{' }}{{ '{' }}{{ form.variableKey || 'start' }}.变量名{{ '}' }}{{ '}' }}</code> 引用此处的输入变量。
             </div>
             <el-form-item label="">
               <div class="wf-param-list" style="display: flex; flex-direction: column; gap: 8px">
