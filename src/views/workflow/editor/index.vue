@@ -907,25 +907,13 @@ const statusText = computed(() => {
         <el-button size="small" @click="triggerDialogVisible = true">{{
           t("common.settings")
         }}</el-button>
-        <el-button-group>
-          <el-button
-            size="small"
-            type="success"
-            :loading="runningWorkflow"
-            @click="handleRunWorkflow"
-            >{{ t("workflow.run") }}</el-button
-          >
-          <el-button
-            v-if="runningWorkflow"
-            size="small"
-            type="danger"
-            :loading="resettingWorkflow"
-            @click="handleForceResetWorkflow"
-            title="工作流卡住时点击强制终止并重置状态"
-            >强制终止</el-button
-          >
-        </el-button-group>
-        <el-button size="small" type="warning" plain @click="handleForceResetWorkflow" title="强制终止所有运行中/排队任务并重置状态">重置状态</el-button>
+        <el-button
+          size="small"
+          type="success"
+          :loading="runningWorkflow"
+          @click="handleRunWorkflow"
+          >{{ t("workflow.run") }}</el-button
+        >
         <el-button size="small" @click="exportJson">{{ t("common.export") }}</el-button>
         <el-button v-if="isAdmin" size="small" type="warning" plain @click="handlePublishToLibrary">发布到工作流库</el-button>
         <el-button size="small" @click="triggerImportJson">{{ t("common.import") }}</el-button>
