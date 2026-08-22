@@ -93,6 +93,12 @@ const handleCreate = async () => {
 
 const openEditor = (row: WorkflowItem) => { router.push(`/workflow/editor/${row.id}`) }
 
+const handleViewWorkflowDetail = async (row: WorkflowItem) => {
+  await ElMessageBox.alert(`工作流 ID：\n${row.id}`, '工作流详情', {
+    confirmButtonText: '知道了',
+  })
+}
+
 const handlePublishToLibrary = async (row: WorkflowItem) => {
   if (!isAdmin.value) return
   try {
@@ -132,6 +138,9 @@ const handleResetWorkflow = async (row: WorkflowItem) => {
 }
 
 const hasCronTrigger = (item: WorkflowItem) => item.triggers?.some((t) => t.type === 'cron' && t.enabled)
+const hasLatestExecutionFailure = (item: WorkflowItem) => item.lastExecution?.status === 'failed'
+const getLatestExecutionError = (item: WorkflowItem) =>
+  hasLatestExecutionFailure(item) ? String(item.lastExecution?.errorText || '执行失败，请查看执行记录') : ''
 
 const getNodeManifests = (item: WorkflowItem) =>
   (item.nodeTypes || []).map((type) => getManifestByType(type)).filter(Boolean).slice(0, 8)
@@ -295,26 +304,30 @@ const handleClearHistory = async () => {
         <div v-for="item in list" :key="item.id" :class="[
           'wf-card',
           { 'wf-card--scheduled': hasCronTrigger(item) && item.isEnabled },
-          { 'wf-card--running': item.isRunning },
+          { 'wf-card--running': item.isRunning && !hasLatestExecutionFailure(item) },
           { 'wf-card--disabled': !item.isEnabled }
         ]" @click="openEditor(item)">
           <!-- 动态边框只表达实时执行状态；定时配置由“定时中”标签表达。 -->
-          <div v-if="item.isRunning" class="wf-card__blob wf-card__blob--running"></div>
+          <div v-if="item.isRunning && !hasLatestExecutionFailure(item)" class="wf-card__blob wf-card__blob--running"></div>
           <div class="wf-card__bg"></div>
           <div class="wf-card__hero">
             <header class="wf-card__hero-header">
               <span :class="[
                 'wf-card__badge',
-                item.isRunning
-                  ? 'wf-card__badge--running'
+                hasLatestExecutionFailure(item)
+                    ? 'wf-card__badge--failed'
+                  : item.isRunning
+                    ? 'wf-card__badge--running'
                   : hasCronTrigger(item) && item.isEnabled
                     ? 'wf-card__badge--scheduled'
                     : item.isEnabled
                       ? 'wf-card__badge--on'
                       : 'wf-card__badge--off'
               ]">
-                <span class="wf-card__badge-dot"></span>{{ item.isRunning
-                  ? t('workflow.running')
+                <span class="wf-card__badge-dot"></span>{{ hasLatestExecutionFailure(item)
+                    ? '执行失败'
+                  : item.isRunning
+                    ? t('workflow.running')
                   : hasCronTrigger(item) && item.isEnabled
                     ? '定时中'
                     : item.isEnabled
@@ -339,7 +352,10 @@ const handleClearHistory = async () => {
           </div>
           <footer class="wf-card__footer">
             <div class="wf-card__info">
-              <p v-if="item.description" class="wf-card__desc">{{ item.description }}</p>
+              <p v-if="getLatestExecutionError(item)" class="wf-card__desc wf-card__desc--error" :title="getLatestExecutionError(item)">
+                {{ getLatestExecutionError(item) }}
+              </p>
+              <p v-else-if="item.description" class="wf-card__desc">{{ item.description }}</p>
               <span class="wf-card__date">{{ t('workflow.updatedAt', {
                 date: new
                   Date(item.updateTime).toLocaleDateString('zh-CN')
@@ -359,6 +375,7 @@ const handleClearHistory = async () => {
                   </el-dropdown-item>
                   <el-dropdown-item @click="handleShowHistory(item)">{{ t('workflow.executionHistory')
                     }}</el-dropdown-item>
+                  <el-dropdown-item @click="handleViewWorkflowDetail(item)">查看详情</el-dropdown-item>
                   <el-dropdown-item divided @click="openEditor(item)">{{ t('workflow.edit') }}</el-dropdown-item>
                   <el-dropdown-item v-if="isAdmin" @click="handlePublishToLibrary(item)">发布到工作流库</el-dropdown-item>
                   <el-dropdown-item :disabled="item.isRunning" @click="handleToggleEnabled(item)">{{ item.isEnabled ?
@@ -647,6 +664,11 @@ const handleClearHistory = async () => {
         animation: wf-pulse 1.4s ease-in-out infinite;
       }
     }
+
+    &--failed {
+      color: #dc2626;
+      background: color-mix(in srgb, #ef4444 13%, transparent);
+    }
   }
 
   &__icon {
@@ -733,6 +755,10 @@ const handleClearHistory = async () => {
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+
+    &--error {
+      color: var(--el-color-danger);
+    }
   }
 
   &__date {

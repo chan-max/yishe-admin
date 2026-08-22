@@ -39,6 +39,15 @@ export interface WorkflowItem {
   /** 画布中实际使用的节点类型，供工作流卡片展示图标。 */
   nodeTypes?: string[];
   nodeCount?: number;
+  /** 工作流列表卡片展示的最近一次执行状态与错误摘要。 */
+  lastExecution?: {
+    id: string;
+    status: "queued" | "running" | "success" | "failed" | "cancelled" | "paused" | string;
+    errorText?: string | null;
+    currentNodeId?: string | null;
+    durationMs?: number | null;
+    updateTime?: string;
+  } | null;
 }
 
 export interface WorkflowTrigger {

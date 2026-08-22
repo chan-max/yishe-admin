@@ -2311,7 +2311,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     type: 'svgrepo_search',
     name: 'SVGRepo 矢量图库采集',
     category: 'material',
-    description: '从 SVGRepo 检索 50万+ 高清矢量图标与插画素材并同步上传至素材库。SVGRepo 是全球最大的免费矢量图库，提供海量 SVG 格式的图标和插画，支持全部、单色、多色、双色、线性和实心等多种风格筛选。需客户端在线且可访问外网。输出包含素材URL、名称、风格和授权信息，适用于UI设计、前端开发和品牌视觉素材库搭建。',
+    description: '从 SVGRepo 检索 50万+ 高清矢量图标与插画素材并同步上传至素材库。SVGRepo 是全球最大的免费矢量图库，提供海量 SVG 格式的图标和插画，支持全部、单色、多色、双色、线性和实心等多种风格筛选。需客户端在线、浏览器环境可用且可访问外网。输出包含素材URL、名称、风格和授权信息，适用于UI设计、前端开发和品牌视觉素材库搭建。',
     iconImage: svgrepoIcon,
     color: '#6b9bd2',
     defaultData: { label: 'SVGRepo 矢量采集', config: { keyword: '', maxCount: 12, style: 'all' } },
@@ -2344,6 +2344,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     ],
     requirements: [
       { type: 'client', label: '需客户端在线' },
+      { type: 'client_browser', label: '需浏览器环境' },
       { type: 'internet', label: '需外网' },
     ],
   },
