@@ -378,12 +378,11 @@ const handleClearHistory = async () => {
           layout="total, prev, pager, next" @change="fetchList" />
       </div>
 
-      <!-- 执行记录 - 优雅列表弹窗 -->
+      <!-- 执行记录 - 全屏列表弹窗 -->
       <el-dialog
         v-model="historyDialogVisible"
         :title="`${historyWorkflow?.name || ''} - 执行记录`"
-        width="980px"
-        align-center
+        fullscreen
         destroy-on-close
         class="wf-history-dialog"
       >

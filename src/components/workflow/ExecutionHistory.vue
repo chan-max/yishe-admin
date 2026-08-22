@@ -43,7 +43,7 @@
         border
         size="small"
         style="width: 100%"
-        max-height="460"
+        height="calc(100vh - 150px)"
         empty-text="暂无执行记录"
       >
         <!-- 状态列 -->
