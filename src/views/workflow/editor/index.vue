@@ -17,7 +17,7 @@ import { Controls } from "@vue-flow/controls";
 import { MiniMap } from "@vue-flow/minimap";
 import { useAppStore } from "@/store/modules/app";
 import { useI18n } from "vue-i18n";
-import { getWorkflowDetailApi, updateWorkflowApi, runWorkflowApi } from "@/api/workflow";
+import { getWorkflowDetailApi, updateWorkflowApi, runWorkflowApi, resetWorkflowApi } from "@/api/workflow";
 import { useWorkflowHistory } from "@/composables/useWorkflowHistory";
 import { useSmartSave } from "@/composables/useSmartSave";
 
@@ -200,6 +200,37 @@ const handleRunWorkflow = async () => {
   } catch (err: any) {
     ElMessage.error(err.message || t("workflow.triggerFailed"));
   } finally {
+    runningWorkflow.value = false;
+  }
+};
+
+const resettingWorkflow = ref(false);
+const handleForceResetWorkflow = async () => {
+  if (!workflowId.value) return;
+  try {
+    await ElMessageBox.confirm(
+      "确定强制终止所有正在运行/排队的执行任务，并重置工作流状态吗？",
+      "强制终止与重置",
+      {
+        confirmButtonText: "强制重置",
+        cancelButtonText: "取消",
+        type: "warning",
+        confirmButtonClass: "el-button--danger",
+      },
+    );
+  } catch {
+    return;
+  }
+
+  resettingWorkflow.value = true;
+  try {
+    const res: any = await resetWorkflowApi(workflowId.value);
+    runningWorkflow.value = false;
+    ElMessage.success(res?.message || "工作流状态已强制重置");
+  } catch (err: any) {
+    ElMessage.error(err?.message || "重置工作流状态失败");
+  } finally {
+    resettingWorkflow.value = false;
     runningWorkflow.value = false;
   }
 };
@@ -876,13 +907,25 @@ const statusText = computed(() => {
         <el-button size="small" @click="triggerDialogVisible = true">{{
           t("common.settings")
         }}</el-button>
-        <el-button
-          size="small"
-          type="success"
-          :loading="runningWorkflow"
-          @click="handleRunWorkflow"
-          >{{ t("workflow.run") }}</el-button
-        >
+        <el-button-group>
+          <el-button
+            size="small"
+            type="success"
+            :loading="runningWorkflow"
+            @click="handleRunWorkflow"
+            >{{ t("workflow.run") }}</el-button
+          >
+          <el-button
+            v-if="runningWorkflow"
+            size="small"
+            type="danger"
+            :loading="resettingWorkflow"
+            @click="handleForceResetWorkflow"
+            title="工作流卡住时点击强制终止并重置状态"
+            >强制终止</el-button
+          >
+        </el-button-group>
+        <el-button size="small" type="warning" plain @click="handleForceResetWorkflow" title="强制终止所有运行中/排队任务并重置状态">重置状态</el-button>
         <el-button size="small" @click="exportJson">{{ t("common.export") }}</el-button>
         <el-button v-if="isAdmin" size="small" type="warning" plain @click="handlePublishToLibrary">发布到工作流库</el-button>
         <el-button size="small" @click="triggerImportJson">{{ t("common.import") }}</el-button>

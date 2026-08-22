@@ -19,6 +19,7 @@ import {
   deleteWorkflowExecutionApi,
   clearWorkflowExecutionsApi,
   publishWorkflowToLibraryApi,
+  resetWorkflowApi,
   type WorkflowItem
 } from '@/api/workflow'
 
@@ -112,6 +113,22 @@ const handleDelete = async (row: WorkflowItem) => {
   await deleteWorkflowApi(row.id)
   ElMessage.success(t('workflow.deleted'))
   fetchList()
+}
+
+const handleResetWorkflow = async (row: WorkflowItem) => {
+  try {
+    await ElMessageBox.confirm(`确定强制终止工作流「${row.name}」的所有运行中任务并重置状态吗？`, t('common.tip'), {
+      confirmButtonText: '强制重置',
+      cancelButtonText: t('common.cancel'),
+      type: 'warning',
+      confirmButtonClass: 'el-button--danger',
+    })
+    const res: any = await resetWorkflowApi(row.id)
+    ElMessage.success(res?.message || '工作流状态已重置')
+    fetchList()
+  } catch (error: any) {
+    if (error !== 'cancel' && error !== 'close') ElMessage.error(error?.message || '重置失败')
+  }
 }
 
 const hasCronTrigger = (item: WorkflowItem) => item.triggers?.some((t) => t.type === 'cron' && t.enabled)
@@ -336,6 +353,9 @@ const handleClearHistory = async () => {
                 <el-dropdown-menu>
                   <el-dropdown-item @click="handleRunWorkflow(item)" :disabled="!item.isEnabled || item.isRunning">
                     {{ item.isRunning ? t('workflow.executing') : t('workflow.execute') }}
+                  </el-dropdown-item>
+                  <el-dropdown-item v-if="item.isRunning" type="warning" @click="handleResetWorkflow(item)">
+                    强制终止与重置
                   </el-dropdown-item>
                   <el-dropdown-item @click="handleShowHistory(item)">{{ t('workflow.executionHistory')
                     }}</el-dropdown-item>

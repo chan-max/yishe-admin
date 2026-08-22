@@ -92,6 +92,10 @@ export const toggleEnabledApi = (id: string) =>
 export const runWorkflowApi = (id: string, input?: Record<string, any>) =>
   request.post({ url: `/workflow/${id}/run`, data: { input } });
 
+// 🛑 强制重置工作流运行状态并终止所有运行中任务
+export const resetWorkflowApi = (id: string) =>
+  request.post({ url: `/workflow/workflows/${id}/reset` });
+
 // 取消工作流执行
 export const cancelWorkflowExecutionApi = (executionId: string) =>
   request.post({ url: `/workflow/executions/${executionId}/cancel` });
