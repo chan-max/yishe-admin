@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import NodeParameterSummary from "./NodeParameterSummary.vue";
 import { Handle, Position } from "@vue-flow/core";
+import { getManifestByType } from "@/views/workflow/editor/config/node-manifest";
 import {
   weiboIcon,
   douyinIcon,
@@ -22,57 +23,60 @@ const props = defineProps<{
   data: { label?: string; config?: any; platform?: string; type?: string; name?: string };
 }>();
 
-const platformConfig: Record<string, { name: string; color: string; icon?: string }> = {
-  weibo: { name: "微博", color: "#e6162d", icon: weiboIcon },
-  douyin: { name: "抖音", color: "#000000", icon: douyinIcon },
-  bilibili: { name: "B站", color: "#00a1d6", icon: bilibiliIcon },
-  zhihu: { name: "知乎", color: "#0084ff", icon: zhihuIcon },
-  toutiao: { name: "头条", color: "#f5222d", icon: toutiaoIcon },
-  douban: { name: "豆瓣", color: "#007722", icon: doubanIcon },
-  kuaishou: { name: "快手", color: "#ff6600", icon: kuaishouIcon },
-  v2ex: { name: "V2EX", color: "#2b2b2b", icon: v2exIcon },
-  "36kr": { name: "36氪", color: "#0052d9", icon: thirtySixKrIcon },
-  ithome: { name: "IT之家", color: "#c8102e", icon: ithomeIcon },
-  xiaohongshu: { name: "小红书", color: "#ff2442", icon: xiaohongshuIcon },
-  xiaohongshu_note_detail: { name: "小红书", color: "#ff2442", icon: xiaohongshuIcon },
-  baidu: { name: "百度", color: "#2932e1" },
-  tencent_news: { name: "腾讯新闻", color: "#0052d9" },
-  tencent_tech: { name: "腾讯科技", color: "#0052d9" },
-  google_trends: { name: "Google", color: "#4285f4" },
-  hackernews: { name: "HN", color: "#ff6600" },
-  github: { name: "GitHub", color: "#24292e" },
-  wikipedia: { name: "维基", color: "#636466" },
-  bbc_news: { name: "BBC", color: "#bb1919" },
-  cnn: { name: "CNN", color: "#cc0000" },
-  nytimes: { name: "NYT", color: "#000000" },
-  aljazeera: { name: "半岛", color: "#fa6400" },
-  devto: { name: "Dev.to", color: "#0a0a0a" },
-  lobsters: { name: "Lobsters", color: "#ac1917" },
-  ebay_trending: { name: "eBay", color: "#e53238" },
-  shopify_trending: { name: "Shopify", color: "#96bf48" },
+const platformIcons: Record<string, string> = {
+  weibo: weiboIcon,
+  douyin: douyinIcon,
+  bilibili: bilibiliIcon,
+  zhihu: zhihuIcon,
+  toutiao: toutiaoIcon,
+  douban: doubanIcon,
+  kuaishou: kuaishouIcon,
+  v2ex: v2exIcon,
+  "36kr": thirtySixKrIcon,
+  ithome: ithomeIcon,
+  xiaohongshu: xiaohongshuIcon,
+  xiaohongshu_note_detail: xiaohongshuIcon,
 };
 
-const platformKey = computed(() => {
-  if (props.data?.platform) return props.data.platform;
-  if (props.data?.config?.platform) return props.data.config.platform;
+const resolvedInfo = computed(() => {
   const rawType = props.type || props.data?.type || "";
-  if (rawType.startsWith("hotsearch_")) {
-    return rawType.replace(/^hotsearch_/, "");
-  }
-  if (rawType === "xiaohongshu_note_detail") return "xiaohongshu";
-  return rawType || "weibo";
-});
+  const platform =
+    props.data?.platform ||
+    props.data?.config?.platform ||
+    rawType.replace(/^hotsearch_/, "") ||
+    "weibo";
 
-const config = computed(() => platformConfig[platformKey.value] || { name: platformKey.value, color: "#64748b" });
+  // 1. 优先从全局 manifest 获取官方配置
+  const manifest =
+    getManifestByType(rawType) ||
+    getManifestByType(`hotsearch_${platform}`) ||
+    getManifestByType(platform);
+
+  const icon =
+    platformIcons[platform] ||
+    platformIcons[rawType] ||
+    manifest?.iconImage ||
+    manifest?.icon;
+
+  const color = manifest?.color || "#4f46e5";
+  const name = manifest?.name || props.data?.label || platform;
+
+  return {
+    icon,
+    color,
+    name,
+    label: props.data?.label || name,
+  };
+});
 </script>
 
 <template>
-  <div class="wf-node wf-node--hotsearch" :style="{ borderColor: config.color + '40' }">
+  <div class="wf-node wf-node--hotsearch" :style="{ borderColor: resolvedInfo.color + '40' }">
     <Handle type="target" :position="Position.Top" />
     <div class="wf-node__header">
-      <img v-if="config.icon" :src="config.icon" class="wf-node__icon" />
-      <span v-else class="wf-node__text" :style="{ color: config.color }">{{ config.name }}</span>
-      <span class="wf-node__title">{{ data.label || config.name + "热搜" }}</span>
+      <img v-if="resolvedInfo.icon" :src="resolvedInfo.icon" class="wf-node__icon" />
+      <span v-else class="wf-node__text" :style="{ color: resolvedInfo.color }">{{ resolvedInfo.name }}</span>
+      <span class="wf-node__title">{{ resolvedInfo.label }}</span>
     </div>
     <NodeParameterSummary :data="data" />
     <Handle type="source" :position="Position.Bottom" />
