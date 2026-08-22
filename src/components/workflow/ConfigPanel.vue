@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
-import { Pointer, Plus } from "@element-plus/icons-vue";
+import { ref, computed, watch, nextTick } from "vue";
+import { Pointer, Plus, FullScreen } from "@element-plus/icons-vue";
 import type { Node } from "@vue-flow/core";
 import AdvancedCronDialog from "./AdvancedCronDialog.vue";
 import VariableSelector from "./VariableSelector.vue";
@@ -36,6 +36,41 @@ loadServerManifest();
 // 变量选择器
 const variableSelectorVisible = ref(false);
 const activeFieldForVariable = ref("");
+
+// 代码字段不在窄侧栏中直接编辑：使用草稿缓冲，只有点击“保存代码”才写回工作流节点。
+const codeEditorVisible = ref(false);
+const activeCodeField = ref("");
+const codeEditorDraft = ref("");
+const codeEditorTextarea = ref<HTMLTextAreaElement | null>(null);
+
+const activeCodeFieldLabel = computed(() =>
+  resolvedInputSchema.value.find((field) => field.field === activeCodeField.value)?.label || "代码",
+);
+
+const openCodeEditor = async (field: NodeIOSchemaField) => {
+  activeCodeField.value = field.field;
+  codeEditorDraft.value = String(form.value.config[field.field] ?? "");
+  codeEditorVisible.value = true;
+  await nextTick();
+  codeEditorTextarea.value?.focus();
+};
+
+const saveCodeEditor = () => {
+  if (!activeCodeField.value) return;
+  form.value.config[activeCodeField.value] = codeEditorDraft.value;
+  handleDataChange();
+  codeEditorVisible.value = false;
+};
+
+const insertCodeIndent = (event: KeyboardEvent) => {
+  const textarea = event.target as HTMLTextAreaElement;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  codeEditorDraft.value = `${codeEditorDraft.value.slice(0, start)}  ${codeEditorDraft.value.slice(end)}`;
+  nextTick(() => {
+    textarea.selectionStart = textarea.selectionEnd = start + 2;
+  });
+};
 
 const openVariableSelector = (fieldName: string) => {
   activeFieldForVariable.value = fieldName;
@@ -166,6 +201,7 @@ const shouldShowOutputVariables = computed(
 watch(
   () => props.node,
   (n) => {
+    codeEditorVisible.value = false;
     if (n) {
       form.value.label = n.data?.label || (n.type === "start" ? "开始" : "");
       form.value.variableKey = n.data?.variableKey || getWorkflowVariableKey(n, props.allNodes || []);
@@ -592,6 +628,22 @@ const removeInputParam = (index: number) => {
                   </el-select>
                 </template>
 
+                <template v-else-if="field.type === 'code'">
+                  <button
+                    type="button"
+                    class="config-panel__open-code-editor"
+                    @click="openCodeEditor(field)"
+                  >
+                    <span class="config-panel__open-code-editor-title">
+                      {{ form.config[field.field] ? "已配置代码" : "点击打开代码编辑器" }}
+                    </span>
+                    <code class="config-panel__open-code-editor-preview">
+                      {{ String(form.config[field.field] || field.placeholder || "").split("\n")[0] || "// 点击开始编写 JavaScript" }}
+                    </code>
+                    <el-icon class="config-panel__open-code-editor-icon"><FullScreen /></el-icon>
+                  </button>
+                </template>
+
                 <template v-else-if="field.type === 'textarea'">
                   <div class="config-panel__textarea-wrapper">
                     <el-input
@@ -718,6 +770,32 @@ const removeInputParam = (index: number) => {
       @select="handleVariableSelect"
     />
     <AdvancedCronDialog v-model="advancedCronVisible" :workflow-id="workflowId || ''" />
+
+    <el-dialog
+      v-model="codeEditorVisible"
+      :title="`${activeCodeFieldLabel}编辑器`"
+      width="min(920px, 92vw)"
+      top="5vh"
+      append-to-body
+      class="workflow-code-dialog"
+      :close-on-click-modal="false"
+    >
+      <div class="workflow-code-dialog__hint">
+        使用 Tab 插入两个空格；保存后才会更新当前工作流节点。
+      </div>
+      <textarea
+        ref="codeEditorTextarea"
+        v-model="codeEditorDraft"
+        class="workflow-code-dialog__textarea"
+        :placeholder="'// $params 包含上游节点输出\n// return { ok: true };'"
+        spellcheck="false"
+        @keydown.tab.prevent="insertCodeIndent"
+      ></textarea>
+      <template #footer>
+        <el-button @click="codeEditorVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveCodeEditor">保存代码</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -1019,6 +1097,94 @@ const removeInputParam = (index: number) => {
 }
 
 .config-panel__code-editor::placeholder {
+  color: var(--el-text-color-placeholder);
+}
+
+.config-panel__open-code-editor {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  width: 100%;
+  padding: 9px 10px;
+  overflow: hidden;
+  color: var(--el-text-color-regular);
+  text-align: left;
+  cursor: pointer;
+  background: color-mix(in srgb, var(--el-bg-color-page) 88%, var(--el-color-primary) 12%);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 5px;
+  gap: 3px 8px;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.config-panel__open-code-editor:hover {
+  background: color-mix(in srgb, var(--el-bg-color-page) 78%, var(--el-color-primary) 22%);
+  border-color: var(--el-color-primary);
+}
+
+.config-panel__open-code-editor-title {
+  min-width: 0;
+  color: var(--el-text-color-primary);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.config-panel__open-code-editor-preview {
+  grid-column: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+  font-size: 10px;
+  line-height: 1.45;
+  color: var(--el-text-color-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.config-panel__open-code-editor-icon {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  align-self: center;
+  color: var(--el-color-primary);
+  font-size: 16px;
+}
+
+:deep(.workflow-code-dialog .el-dialog__body) {
+  padding-top: 12px;
+}
+
+.workflow-code-dialog__hint {
+  margin-bottom: 8px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.workflow-code-dialog__textarea {
+  display: block;
+  width: 100%;
+  min-height: min(64vh, 620px);
+  padding: 14px 16px;
+  overflow: auto;
+  box-sizing: border-box;
+  font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--el-text-color-primary);
+  tab-size: 2;
+  resize: vertical;
+  background: var(--el-bg-color-page);
+  border: 1px solid var(--el-border-color);
+  border-radius: 6px;
+  outline: none;
+  white-space: pre;
+}
+
+.workflow-code-dialog__textarea:focus {
+  border-color: var(--el-color-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--el-color-primary) 16%, transparent);
+}
+
+.workflow-code-dialog__textarea::placeholder {
   color: var(--el-text-color-placeholder);
 }
 

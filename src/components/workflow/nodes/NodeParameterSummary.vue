@@ -45,6 +45,9 @@ const LABELS: Record<string, string> = {
 
 const VALUE_LABELS: Record<string, string> = {
   all: "全部",
+  monocolor: "单色",
+  multicolor: "多色",
+  duotone: "双色",
   technology: "科技",
   business: "商业",
   world: "国际",
@@ -102,15 +105,21 @@ const entries = computed(() =>
         : typeof value === "object"
           ? "{…}"
           : VALUE_LABELS[String(value)] || String(value);
+      const fullText = text;
       if (text.length > 28) text = `${text.slice(0, 25)}…`;
-      return { key: LABELS[key] || key, value: text };
+      return { key: LABELS[key] || key, value: text, fullText };
     }),
 );
 </script>
 
 <template>
   <div v-if="entries.length" class="wf-node-params">
-    <span v-for="item in entries" :key="item.key" class="wf-node-param">
+    <span
+      v-for="item in entries"
+      :key="item.key"
+      class="wf-node-param"
+      :title="`${item.key}: ${item.fullText}`"
+    >
       <b>{{ item.key }}</b
       ><span>{{ item.value }}</span>
     </span>
@@ -119,17 +128,19 @@ const entries = computed(() =>
 
 <style scoped>
 .wf-node-params {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px 5px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
   margin-top: 5px;
   max-width: 230px;
 }
 .wf-node-param {
   display: inline-flex;
   align-items: center;
+  flex-wrap: nowrap;
   gap: 3px;
-  max-width: 110px;
+  width: 100%;
+  max-width: none;
   padding: 2px 5px;
   border: 1px solid color-mix(in srgb, var(--app-content-border-color) 70%, transparent);
   border-radius: 4px;
@@ -137,12 +148,18 @@ const entries = computed(() =>
   color: var(--el-text-color-secondary);
   font-size: 9px;
   line-height: 1.2;
+  white-space: nowrap;
+  word-break: keep-all;
 }
 .wf-node-param b {
+  flex: 0 0 auto;
+  min-width: 34px;
   color: var(--el-text-color-regular);
   font-weight: 600;
+  white-space: nowrap;
 }
 .wf-node-param span {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

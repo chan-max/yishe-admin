@@ -2318,7 +2318,24 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: cat, animal, tech, arrow, shopping' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 12, description: '每次最多采集数量 (1-50)' },
-      { field: 'style', label: '矢量风格', type: 'select', defaultValue: 'all', options: [{ label: '全部风格 (All)', value: 'all' }, { label: '单色图标 (Monotone)', value: 'monotone' }, { label: '多色插画 (Multicolor)', value: 'multicolor' }, { label: '双色渐变 (Duotone)', value: 'duotone' }, { label: '线性轮廓 (Outlined)', value: 'outlined' }, { label: '实心填充 (Filled)', value: 'filled' }] },
+      {
+        field: 'style',
+        label: '矢量风格',
+        type: 'select',
+        defaultValue: 'all',
+        options: [
+          { label: '全部风格 (All Styles)', value: 'all' },
+          { label: '单色 (Monocolor)', value: 'monocolor' },
+          { label: '多色 (Multicolor)', value: 'multicolor' },
+          { label: '双色 (Duotone)', value: 'duotone' },
+          { label: '轮廓 (Outlined)', value: 'outlined' },
+          { label: '填充 (Filled)', value: 'filled' },
+          { label: '图标 (Icon)', value: 'icon' },
+          { label: '字形 (Glyph)', value: 'glyph' },
+          { label: '圆角 (Rounded)', value: 'rounded' },
+          { label: '锐角 (Sharp)', value: 'sharp' },
+        ],
+      },
     ],
     outputSchema: [
       { field: 'successCount', label: '成功数量', type: 'number' },

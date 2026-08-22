@@ -413,7 +413,7 @@ const onDrop = (event: DragEvent) => {
   if (rawData) {
     try {
       defaultData = JSON.parse(rawData);
-    } catch (e) {}
+    } catch (e) { }
   }
 
   const bounds = canvasRef.value.getBoundingClientRect();
@@ -831,39 +831,33 @@ const statusText = computed(() => {
     <div class="wf-editor-toolbar">
       <div class="wf-editor-toolbar__left">
         <el-button text @click="router.push('/workflow')" class="wf-back-btn">
-          <el-icon><ArrowLeft /></el-icon>
+          <el-icon>
+            <ArrowLeft />
+          </el-icon>
           {{ t("workflow.title") }}
         </el-button>
         <div class="wf-divider" />
         <!-- 可编辑标题 -->
         <div class="wf-title-wrap">
-          <el-popover
-            v-model:visible="popoverVisible"
-            placement="bottom-start"
-            :width="240"
-            :show-arrow="false"
-            trigger="click"
-          >
+          <el-popover v-model:visible="popoverVisible" placement="bottom-start" :width="240" :show-arrow="false"
+            trigger="click">
             <template #reference>
               <span class="wf-title" @click="startEditTitle">
                 <span class="wf-title__text">{{ workflow?.name || "..." }}</span>
-                <el-icon class="wf-title__icon"><EditPen /></el-icon>
+                <el-icon class="wf-title__icon">
+                  <EditPen />
+                </el-icon>
               </span>
             </template>
             <div class="wf-title-edit">
-              <el-input
-                v-model="titleInput"
-                type="textarea"
-                :rows="3"
-                :placeholder="t('workflow.name')"
-              />
+              <el-input v-model="titleInput" type="textarea" :rows="3" :placeholder="t('workflow.name')" />
               <div class="wf-title-edit__actions">
                 <el-button size="small" text @click="cancelEditTitle">{{
                   t("common.cancel")
-                }}</el-button>
+                  }}</el-button>
                 <el-button size="small" type="primary" @click="saveTitle">{{
                   t("common.confirm")
-                }}</el-button>
+                  }}</el-button>
               </div>
             </div>
           </el-popover>
@@ -872,102 +866,57 @@ const statusText = computed(() => {
 
       <div class="wf-editor-toolbar__right">
         <!-- 连线类型 -->
-        <el-select
-          v-model="edgeType"
-          size="small"
-          style="width: 72px"
-          :placeholder="t('workflow.edge')"
-        >
+        <el-select v-model="edgeType" size="small" style="width: 72px" :placeholder="t('workflow.edge')">
           <el-option :label="t('workflow.polyline')" value="smoothstep" />
           <el-option :label="t('workflow.curve')" value="default" />
           <el-option :label="t('workflow.straight')" value="straight" />
         </el-select>
 
         <!-- 撤销/重做 -->
-        <el-button
-          size="small"
-          :disabled="!canUndo()"
-          @click="undo"
-          :title="t('common.undo') + ' (Ctrl+Z)'"
-          >{{ t("common.undo") }}</el-button
-        >
-        <el-button
-          size="small"
-          :disabled="!canRedo()"
-          @click="redo"
-          :title="t('common.redo') + ' (Ctrl+Shift+Z)'"
-          >{{ t("common.redo") }}</el-button
-        >
+        <el-button size="small" :disabled="!canUndo()" @click="undo" :title="t('common.undo') + ' (Ctrl+Z)'">{{
+          t("common.undo") }}</el-button>
+        <el-button size="small" :disabled="!canRedo()" @click="redo" :title="t('common.redo') + ' (Ctrl+Shift+Z)'">{{
+          t("common.redo") }}</el-button>
 
         <!-- 整理与工具按纽 -->
         <el-button size="small" @click="autoLayout">{{ t("workflow.align") }}</el-button>
         <el-button size="small" type="primary" plain @click="nodePickerVisible = true">{{
           t("workflow.featureNode")
-        }}</el-button>
+          }}</el-button>
         <el-button size="small" @click="triggerDialogVisible = true">{{
           t("common.settings")
-        }}</el-button>
-        <el-button
-          size="small"
-          type="success"
-          :loading="runningWorkflow"
-          @click="handleRunWorkflow"
-          >{{ t("workflow.run") }}</el-button
-        >
+          }}</el-button>
+        <el-button size="small" type="success" :loading="runningWorkflow" @click="handleRunWorkflow">{{
+          t("workflow.run")
+          }}</el-button>
         <el-button size="small" @click="exportJson">{{ t("common.export") }}</el-button>
         <el-button v-if="isAdmin" size="small" type="warning" plain @click="handlePublishToLibrary">发布到工作流库</el-button>
         <el-button size="small" @click="triggerImportJson">{{ t("common.import") }}</el-button>
-        <input
-          ref="fileInputRef"
-          type="file"
-          accept=".json"
-          style="display: none"
-          @change="handleImportJson"
-        />
+        <input ref="fileInputRef" type="file" accept=".json" style="display: none" @change="handleImportJson" />
         <el-button size="small" type="danger" text @click="clearCanvas">{{
           t("common.clear")
-        }}</el-button>
+          }}</el-button>
 
         <!-- 快捷键帮助 -->
         <el-button size="small" circle @click="shortcutGuideVisible = true" title="键盘快捷键 (?)">
-          <el-icon><Reading /></el-icon>
+          <el-icon>
+            <Reading />
+          </el-icon>
         </el-button>
 
         <div class="wf-divider" />
 
         <!-- 保存按钮（现代极简扁平化风格） -->
-        <button
-          type="button"
-          :class="['wf-flat-save-btn', `wf-flat-save-btn--${saveStatus}`]"
-          :disabled="saveStatus === 'saving'"
-          title="点击立即保存 (Ctrl+S / ⌘S)"
-          @click="smartSaveNow"
-        >
+        <button type="button" :class="['wf-flat-save-btn', `wf-flat-save-btn--${saveStatus}`]"
+          :disabled="saveStatus === 'saving'" title="点击立即保存 (Ctrl+S / ⌘S)" @click="smartSaveNow">
           <span class="wf-flat-save-btn__indicator">
-            <svg
-              v-if="saveStatus === 'saving'"
-              class="wf-flat-save-btn__spinner"
-              viewBox="0 0 24 24"
-              width="12"
-              height="12"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-            >
+            <svg v-if="saveStatus === 'saving'" class="wf-flat-save-btn__spinner" viewBox="0 0 24 24" width="12"
+              height="12" fill="none" stroke="currentColor" stroke-width="2.5">
               <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="12" stroke-linecap="round" />
             </svg>
-            <svg
-              v-else-if="saveStatus === 'saved'"
-              class="wf-flat-save-btn__icon"
-              viewBox="0 0 24 24"
-              width="12"
-              height="12"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
+            <svg v-else-if="saveStatus === 'saved'" class="wf-flat-save-btn__icon" viewBox="0 0 24 24" width="12"
+              height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+              stroke-linejoin="round">
               <polyline points="20 6 9 17 4 12" />
             </svg>
             <span v-else class="wf-flat-save-btn__dot" />
@@ -980,24 +929,14 @@ const statusText = computed(() => {
     <!-- 编辑器主体 -->
     <div class="wf-editor-body">
       <!-- 左侧基础节点面板 -->
-      <NodePanel
-        :ai-panel-visible="aiPanelVisible"
-        @open-node-picker="handleOpenNodePicker"
-        @toggle-ai-panel="handleToggleAiPanel"
-      />
+      <NodePanel :ai-panel-visible="aiPanelVisible" @open-node-picker="handleOpenNodePicker"
+        @toggle-ai-panel="handleToggleAiPanel" />
 
       <!-- 画布区 -->
       <div ref="canvasRef" class="wf-canvas" @drop="onDrop" @dragover="onDragOver">
-        <VueFlow
-          :node-types="nodeTypes"
-          fit-view-on-init
-          :min-zoom="0.1"
-          :max-zoom="4"
+        <VueFlow :node-types="nodeTypes" fit-view-on-init :min-zoom="0.1" :max-zoom="4"
           :default-edge-options="{ animated: false, style: { stroke: '#94a3b8', strokeWidth: 2 } }"
-          @node-click="onNodeClick"
-          @edge-click="onEdgeClick"
-          @pane-click="onPaneClick"
-        >
+          @node-click="onNodeClick" @edge-click="onEdgeClick" @pane-click="onPaneClick">
           <Background :pattern-color="patternColor" :gap="20" />
           <Controls />
           <MiniMap class="wf-minimap" />
@@ -1008,107 +947,44 @@ const statusText = computed(() => {
       <div v-if="aiPanelVisible" class="wf-editor-ai-panel">
         <div class="wf-editor-ai-panel__header">
           <div class="wf-editor-ai-panel__actions">
-            <button
-              class="wf-editor-ai-panel__toggle"
-              @click="aiStore.createConversation"
-              title="新对话"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                width="14"
-                height="14"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
+            <button class="wf-editor-ai-panel__toggle" @click="aiStore.createConversation" title="新对话">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 5v14M5 12h14" />
               </svg>
             </button>
             <button class="wf-editor-ai-panel__toggle" @click="aiStore.clearMessages" title="清空">
-              <svg
-                viewBox="0 0 24 24"
-                width="14"
-                height="14"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path
-                  d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
-                />
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
               </svg>
             </button>
           </div>
           <button class="wf-editor-ai-panel__toggle" @click="aiPanelVisible = false" title="收起">
-            <svg
-              viewBox="0 0 24 24"
-              width="14"
-              height="14"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-            >
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round">
               <path d="M9 18l6-6-6-6" />
             </svg>
           </button>
         </div>
-        <AssistantChat
-          :messages="aiStore.messages"
-          :loading="aiStore.loading"
-          :pending-interaction="aiStore.pendingInteraction"
-          :thinking-text="aiStore.thinkingText"
-          :can-send="true"
-          input-placeholder="描述你想要的工作流..."
-          @send="aiStore.sendMessage"
-          @interaction-submit="
+        <AssistantChat :messages="aiStore.messages" :loading="aiStore.loading"
+          :pending-interaction="aiStore.pendingInteraction" :thinking-text="aiStore.thinkingText" :can-send="true"
+          input-placeholder="描述你想要的工作流..." @send="aiStore.sendMessage" @interaction-submit="
             (r) => aiStore.resumeInteraction(r.confirmed, r.input, r.reason || '')
-          "
-          @interaction-reject="
+          " @interaction-reject="
             (r) =>
               aiStore.resumeInteraction(
                 false,
                 { ...(aiStore.pendingInteraction?.input || {}), action: 'reject' },
                 r.reason || '',
               )
-          "
-          @new-conversation="aiStore.createConversation"
-          @clear-conversation="aiStore.clearMessages"
-        />
+          " @new-conversation="aiStore.createConversation" @clear-conversation="aiStore.clearMessages" />
       </div>
-      <button
-        v-else
-        class="wf-editor-ai-toggle"
-        @click="aiPanelVisible = true"
-        title="展开 AI 面板"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          width="18"
-          height="18"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-        >
-          <path d="M15 18l-6-6 6-6" />
-        </svg>
-      </button>
+
 
       <!-- 右侧配置面板 -->
-      <ConfigPanel
-        :node="selectedNode"
-        :workflow-id="workflowId"
-        :all-nodes="nodes"
-        :all-edges="edges"
-        :selected-edge="selectedEdge"
-        @update="onNodeUpdate"
-        @delete="onNodeDelete"
-      />
+      <ConfigPanel :node="selectedNode" :workflow-id="workflowId" :all-nodes="nodes" :all-edges="edges"
+        :selected-edge="selectedEdge" @update="onNodeUpdate" @delete="onNodeDelete" />
     </div>
 
     <!-- 触发器与设置对话框 -->
@@ -1125,6 +1001,97 @@ const statusText = computed(() => {
 @import url("@vue-flow/core/dist/theme-default.css");
 @import url("@vue-flow/controls/dist/style.css");
 @import url("@vue-flow/minimap/dist/style.css");
+
+/*
+ * 画布节点的视觉基线：不同采集/工具节点过去各自只有 100~140px 的最小宽度，
+ * 关键词、节点标题和参数会被挤成多行。统一提高可读尺寸，长文本统一省略显示，
+ * 完整内容仍在右侧配置面板编辑，避免画布节点无限增高。
+ */
+.wf-canvas .vue-flow__node .wf-node {
+  box-sizing: border-box;
+  min-width: 190px !important;
+  max-width: 300px;
+  padding: 10px 12px !important;
+  font-size: 13px !important;
+}
+
+.wf-canvas .vue-flow__node .wf-node__header {
+  min-width: 0;
+  gap: 8px !important;
+}
+
+.wf-canvas .vue-flow__node .wf-node__title,
+.wf-canvas .vue-flow__node .wf-node__subtitle,
+.wf-canvas .vue-flow__node .wf-node__type,
+.wf-canvas .vue-flow__node .wf-node__badge,
+.wf-canvas .vue-flow__node .wf-node__scope,
+.wf-canvas .vue-flow__node .wf-node__ai-preview,
+.wf-canvas .vue-flow__node .wf-node__code-preview {
+  min-width: 0;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+
+.wf-canvas .vue-flow__node .wf-node__title {
+  font-size: 13px !important;
+  line-height: 20px;
+}
+
+.wf-canvas .vue-flow__node .wf-node__subtitle {
+  font-size: 12px !important;
+  line-height: 18px;
+}
+
+.wf-canvas .vue-flow__node .wf-node__type,
+.wf-canvas .vue-flow__node .wf-node__badge,
+.wf-canvas .vue-flow__node .wf-node__scope,
+.wf-canvas .vue-flow__node .wf-node__ai-preview,
+.wf-canvas .vue-flow__node .wf-node__code-preview {
+  font-size: 11px !important;
+  line-height: 17px;
+}
+
+.wf-canvas .vue-flow__node .wf-node__icon,
+.wf-canvas .vue-flow__node .wf-node__platform-icon {
+  width: 20px !important;
+  height: 20px !important;
+  flex: 0 0 20px;
+}
+
+.wf-canvas .vue-flow__node .wf-node-params {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  max-width: 276px !important;
+  gap: 5px !important;
+}
+
+.wf-canvas .vue-flow__node .wf-node-param {
+  display: inline-flex;
+  flex-wrap: nowrap !important;
+  min-width: 0;
+  width: 100%;
+  max-width: none !important;
+  padding: 3px 6px !important;
+  font-size: 10px !important;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+}
+
+.wf-canvas .vue-flow__node .wf-node-param b {
+  flex: 0 0 auto;
+  min-width: 38px;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+}
+
+.wf-canvas .vue-flow__node .wf-node-param span {
+  flex: 1 1 auto;
+  min-width: 0;
+}
 
 /* AI 助手侧边面板 */
 .wf-editor-ai-panel {
@@ -1168,31 +1135,6 @@ const statusText = computed(() => {
 .wf-editor-ai-panel__toggle:hover {
   background: var(--app-content-surface-muted-color);
   color: var(--el-text-color-primary);
-}
-
-.wf-editor-ai-toggle {
-  position: absolute;
-  top: 50%;
-  right: 0;
-  transform: translateY(-50%);
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 48px;
-  color: var(--el-text-color-secondary);
-  background: var(--app-content-surface-color);
-  border: 1px solid var(--app-content-border-color);
-  border-right: none;
-  border-radius: 4px 0 0 4px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.wf-editor-ai-toggle:hover {
-  color: var(--el-color-primary);
-  border-color: var(--el-color-primary);
 }
 
 :deep(.wf-editor-ai-panel .assistant-chat) {
@@ -1516,17 +1458,20 @@ html.dark .wf-flat-save-btn {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
 }
 
 @keyframes wf-save-pulse {
+
   0%,
   100% {
     opacity: 1;
     transform: scale(1);
   }
+
   50% {
     opacity: 0.4;
     transform: scale(0.85);
@@ -1621,30 +1566,6 @@ html.dark .wf-flat-save-btn {
   color: var(--el-text-color-primary);
 }
 
-.wf-editor-ai-toggle {
-  position: absolute;
-  top: 50%;
-  right: 0;
-  transform: translateY(-50%);
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 48px;
-  color: var(--el-text-color-secondary);
-  background: var(--app-content-surface-color);
-  border: 1px solid var(--app-content-border-color);
-  border-right: none;
-  border-radius: 4px 0 0 4px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.wf-editor-ai-toggle:hover {
-  color: var(--el-color-primary);
-  border-color: var(--el-color-primary);
-}
 
 :deep(.wf-editor-ai-panel .assistant-chat) {
   height: 100%;
