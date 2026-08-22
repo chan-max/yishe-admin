@@ -1,8 +1,23 @@
 <template>
   <div class="wf-exec-history">
+    <!-- 顶部操作栏 -->
     <div class="wf-exec-history__toolbar">
-      <span class="wf-exec-history__count">共 {{ executions.length }} 条记录</span>
-      <div class="wf-exec-history__actions">
+      <div class="wf-exec-history__toolbar-left">
+        <el-radio-group v-model="statusFilter" size="small">
+          <el-radio-button label="all">全部 ({{ executions.length }})</el-radio-button>
+          <el-radio-button label="success">
+            成功 ({{ countByStatus('success') }})
+          </el-radio-button>
+          <el-radio-button label="failed">
+            失败 ({{ countByStatus('failed') }})
+          </el-radio-button>
+          <el-radio-button label="running" v-if="countByStatus('running') > 0">
+            运行中 ({{ countByStatus('running') }})
+          </el-radio-button>
+        </el-radio-group>
+      </div>
+
+      <div class="wf-exec-history__toolbar-right">
         <el-button
           v-if="showDelete"
           size="small"
@@ -11,75 +26,187 @@
           :disabled="executions.length === 0"
           @click="emit('clear')"
         >
-          清空
+          清空记录
         </el-button>
-        <el-button size="small" type="primary" text :loading="loading" @click="emit('refresh')">
-          刷新
+        <el-button size="small" type="primary" plain :loading="loading" @click="emit('refresh')">
+          <el-icon><Refresh /></el-icon> 刷新
         </el-button>
       </div>
     </div>
 
-    <div class="wf-exec-history__list" v-loading="loading">
-      <div v-if="!loading && executions.length === 0" class="wf-exec-history__empty">
-        <el-icon class="wf-exec-history__empty-icon"><DocumentDelete /></el-icon>
-        <span>暂无执行记录</span>
-      </div>
-
-      <div
-        v-for="item in executions"
-        :key="item.id"
-        class="wf-exec-item"
-        :class="'wf-exec-item--' + item.status"
+    <!-- 表格列表 -->
+    <div class="wf-exec-history__table-wrap">
+      <el-table
+        :data="filteredExecutions"
+        v-loading="loading"
+        stripe
+        border
+        size="small"
+        style="width: 100%"
+        max-height="460"
+        empty-text="暂无执行记录"
       >
-        <div class="wf-exec-item__indicator">
-          <span class="wf-exec-item__dot" :class="'wf-exec-item__dot--' + item.status" />
-          <span v-if="executions.indexOf(item) < executions.length - 1" class="wf-exec-item__line" />
-        </div>
-        <div class="wf-exec-item__content">
-          <div class="wf-exec-item__header">
-            <div class="wf-exec-item__meta">
+        <!-- 状态列 -->
+        <el-table-column label="状态" width="105" align="center">
+          <template #default="{ row }">
+            <el-tag
+              :type="getStatusTagType(row.status)"
+              size="small"
+              effect="light"
+              class="wf-exec-status-tag"
+            >
               <span
-                class="wf-exec-item__status"
-                :class="'wf-exec-item__status--' + item.status"
-              >
-                {{ item.status === 'success' ? '成功' : item.status === 'failed' ? '失败' : '运行中' }}
-              </span>
-              <span class="wf-exec-item__trigger">
-                <el-icon><Clock v-if="item.triggerType === 'cron'" /><Promotion v-else-if="item.triggerType === 'webhook'" /><Mouse v-else /></el-icon>
-                {{ item.triggerType === 'cron' ? '定时触发' : item.triggerType === 'webhook' ? 'Webhook' : '手动触发' }}
-              </span>
-              <span class="wf-exec-item__duration" v-if="item.durationMs">
-                <el-icon><Timer /></el-icon>{{ formatDuration(item.durationMs) }}
-              </span>
-            </div>
-            <div class="wf-exec-item__time">
-              {{ formatDate(item.createTime) }}
-              <el-button
-                v-if="showDelete"
-                class="wf-exec-item__delete"
-                size="small"
-                type="danger"
-                text
-                @click="emit('delete', item.id)"
-              >
-                删除
-              </el-button>
-            </div>
+                v-if="row.status === 'running'"
+                class="wf-exec-status-dot wf-exec-status-dot--running"
+              />
+              {{ getStatusLabel(row.status) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+
+        <!-- 触发来源 -->
+        <el-table-column label="触发方式" width="120" align="center">
+          <template #default="{ row }">
+            <span class="wf-exec-trigger">
+              <el-icon class="wf-exec-trigger__icon">
+                <Clock v-if="row.triggerType === 'cron'" />
+                <Promotion v-else-if="row.triggerType === 'webhook'" />
+                <Mouse v-else />
+              </el-icon>
+              {{ getTriggerLabel(row.triggerType) }}
+            </span>
+          </template>
+        </el-table-column>
+
+        <!-- 执行进度 / 节点数 -->
+        <el-table-column label="节点进度" width="105" align="center">
+          <template #default="{ row }">
+            <span class="wf-exec-progress">
+              {{ row.completedNodes ?? 0 }} / {{ row.totalNodes ?? '-' }}
+            </span>
+          </template>
+        </el-table-column>
+
+        <!-- 运行耗时 -->
+        <el-table-column label="耗时" width="95" align="center">
+          <template #default="{ row }">
+            <span class="wf-exec-duration">
+              {{ row.durationMs ? formatDuration(row.durationMs) : '-' }}
+            </span>
+          </template>
+        </el-table-column>
+
+        <!-- 触发时间 -->
+        <el-table-column label="触发时间" width="165" align="center">
+          <template #default="{ row }">
+            <span class="wf-exec-time">{{ formatDate(row.createTime) }}</span>
+          </template>
+        </el-table-column>
+
+        <!-- 结果摘要 / 异常信息 -->
+        <el-table-column label="执行信息 / 异常日志" min-width="180" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span v-if="row.errorText" class="wf-exec-error-text">
+              <el-icon><WarningFilled /></el-icon>
+              {{ row.errorText }}
+            </span>
+            <span v-else-if="row.status === 'success'" class="wf-exec-success-text">
+              执行完成
+            </span>
+            <span v-else-if="row.status === 'running'" class="wf-exec-running-text">
+              正在执行节点 {{ row.currentNodeId || '' }}...
+            </span>
+            <span v-else class="wf-exec-muted-text">-</span>
+          </template>
+        </el-table-column>
+
+        <!-- 操作 -->
+        <el-table-column label="操作" width="130" align="center" fixed="right">
+          <template #default="{ row }">
+            <el-button type="primary" link size="small" @click="handleViewDetail(row)">
+              详情
+            </el-button>
+            <el-button
+              v-if="showDelete"
+              type="danger"
+              link
+              size="small"
+              @click="emit('delete', row.id)"
+            >
+              删除
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
+
+    <!-- 单条执行详情抽屉/弹窗 -->
+    <el-dialog
+      v-model="detailVisible"
+      title="执行记录详情"
+      width="680px"
+      append-to-body
+      class="wf-detail-dialog"
+    >
+      <div v-if="selectedRow" class="wf-detail-content">
+        <el-descriptions :column="2" border size="small">
+          <el-descriptions-item label="记录 ID">
+            <span class="wf-mono-text">{{ selectedRow.id }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="执行状态">
+            <el-tag :type="getStatusTagType(selectedRow.status)" size="small">
+              {{ getStatusLabel(selectedRow.status) }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="触发方式">
+            {{ getTriggerLabel(selectedRow.triggerType) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="执行耗时">
+            {{ selectedRow.durationMs ? formatDuration(selectedRow.durationMs) : '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="触发时间">
+            {{ formatDate(selectedRow.createTime) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="完成节点数">
+            {{ selectedRow.completedNodes ?? 0 }} / {{ selectedRow.totalNodes ?? 0 }}
+          </el-descriptions-item>
+        </el-descriptions>
+
+        <!-- 异常提示 -->
+        <div v-if="selectedRow.errorText" class="wf-detail-section wf-detail-section--error">
+          <div class="wf-detail-section__title">
+            <el-icon><WarningFilled /></el-icon> 异常原因
           </div>
-          <div class="wf-exec-item__error" v-if="item.errorText">
-            <el-icon><WarningFilled /></el-icon>
-            <span>{{ item.errorText }}</span>
-          </div>
+          <pre class="wf-code-block wf-code-block--error">{{ selectedRow.errorText }}</pre>
+        </div>
+
+        <!-- 输入数据 -->
+        <div v-if="selectedRow.input" class="wf-detail-section">
+          <div class="wf-detail-section__title">输入参数 (Input)</div>
+          <pre class="wf-code-block">{{ formatJson(selectedRow.input) }}</pre>
+        </div>
+
+        <!-- 输出数据 -->
+        <div v-if="selectedRow.output" class="wf-detail-section">
+          <div class="wf-detail-section__title">执行输出 (Output)</div>
+          <pre class="wf-code-block">{{ formatJson(selectedRow.output) }}</pre>
         </div>
       </div>
-    </div>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Clock, Promotion, Mouse, Timer, DocumentDelete, WarningFilled } from '@element-plus/icons-vue'
+import { ref, computed } from 'vue'
+import {
+  Clock,
+  Promotion,
+  Mouse,
+  WarningFilled,
+  Refresh,
+} from '@element-plus/icons-vue'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     executions: any[]
     loading?: boolean
@@ -90,24 +217,98 @@ withDefaults(
 
 const emit = defineEmits(['refresh', 'delete', 'clear'])
 
+const statusFilter = ref<string>('all')
+const detailVisible = ref(false)
+const selectedRow = ref<any>(null)
+
+const countByStatus = (status: string) => {
+  return props.executions.filter((e) => e.status === status).length
+}
+
+const filteredExecutions = computed(() => {
+  if (statusFilter.value === 'all') return props.executions
+  return props.executions.filter((e) => e.status === statusFilter.value)
+})
+
+const getStatusLabel = (status: string) => {
+  switch (status) {
+    case 'success':
+      return '成功'
+    case 'failed':
+      return '失败'
+    case 'running':
+      return '运行中'
+    case 'queued':
+      return '排队中'
+    case 'cancelled':
+      return '已取消'
+    case 'paused':
+      return '已暂停'
+    default:
+      return status || '未知'
+  }
+}
+
+const getStatusTagType = (status: string): any => {
+  switch (status) {
+    case 'success':
+      return 'success'
+    case 'failed':
+      return 'danger'
+    case 'running':
+      return 'primary'
+    case 'queued':
+      return 'warning'
+    case 'paused':
+      return 'warning'
+    case 'cancelled':
+      return 'info'
+    default:
+      return 'info'
+  }
+}
+
+const getTriggerLabel = (type: string) => {
+  switch (type) {
+    case 'cron':
+      return '定时触发'
+    case 'webhook':
+      return 'Webhook'
+    case 'manual':
+      return '手动触发'
+    default:
+      return type || '手动触发'
+  }
+}
+
 const formatDate = (val: string) => {
   if (!val) return '-'
-  return new Date(val).toLocaleString('zh-CN', {
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  })
+  const d = new Date(val)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
 
 const formatDuration = (ms: number) => {
-  if (ms < 1000) return ms + 'ms'
-  const s = Math.round(ms / 1000)
-  if (s < 60) return s + 's'
-  const m = Math.floor(s / 60)
-  const sec = s % 60
-  return `${m}m${sec}s`
+  if (!ms || ms <= 0) return '-'
+  if (ms < 1000) return `${ms}ms`
+  const s = (ms / 1000).toFixed(1)
+  if (Number(s) < 60) return `${s}s`
+  const m = Math.floor(Number(s) / 60)
+  const sec = Math.round(Number(s) % 60)
+  return `${m}m ${sec}s`
+}
+
+const formatJson = (data: any) => {
+  try {
+    return JSON.stringify(data, null, 2)
+  } catch {
+    return String(data)
+  }
+}
+
+const handleViewDetail = (row: any) => {
+  selectedRow.value = row
+  detailVisible.value = true
 }
 </script>
 
@@ -116,160 +317,155 @@ const formatDuration = (ms: number) => {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  height: 100%;
+  min-height: 240px;
 
   &__toolbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    flex-shrink: 0;
-  }
-
-  &__count {
-    font-size: 13px;
-    color: var(--el-text-color-secondary);
-  }
-
-  &__actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  &__list {
-    flex: 1;
-    overflow-y: auto;
-    padding-right: 8px;
-    min-height: 0;
-    max-height: calc(100vh - 140px);
-  }
-
-  &__empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
     gap: 12px;
-    padding: 60px 0;
-    color: var(--el-text-color-placeholder);
-    font-size: 14px;
-  }
-
-  &__empty-icon {
-    font-size: 48px;
-    opacity: 0.4;
-  }
-}
-
-.wf-exec-item {
-  display: flex;
-  gap: 12px;
-  position: relative;
-
-  &__indicator {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex-shrink: 0;
-    width: 14px;
-  }
-
-  &__dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    margin-top: 5px;
-
-    &--success { background: var(--el-color-success); }
-    &--failed { background: var(--el-color-danger); }
-    &--running { background: var(--el-color-warning); animation: wf-exec-pulse 1.4s ease-in-out infinite; }
-  }
-
-  &__line {
-    flex: 1;
-    width: 2px;
-    background: var(--app-content-border-color);
-    margin-top: 4px;
-  }
-
-  &__content {
-    flex: 1;
-    min-width: 0;
-    padding-bottom: 16px;
-  }
-
-  &__header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-  }
-
-  &__meta {
-    display: flex;
-    align-items: center;
-    gap: 10px;
     flex-wrap: wrap;
   }
 
-  &__status {
-    font-size: 13px;
-    font-weight: 600;
-
-    &--success { color: var(--el-color-success); }
-    &--failed { color: var(--el-color-danger); }
-    &--running { color: var(--el-color-warning); }
-  }
-
-  &__trigger,
-  &__duration {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
-  }
-
-  &__time {
+  &__toolbar-right {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 12px;
-    color: var(--el-text-color-placeholder);
-    flex-shrink: 0;
   }
 
-  &__delete {
-    opacity: 0;
-    transition: opacity 0.15s ease;
+  &__table-wrap {
+    border-radius: 6px;
+    overflow: hidden;
   }
+}
 
-  &:hover &__delete {
-    opacity: 1;
+.wf-exec-status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.wf-exec-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+
+  &--running {
+    animation: wf-exec-pulse 1.2s ease-in-out infinite;
   }
+}
 
-  &__error {
+.wf-exec-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+
+  &__icon {
+    font-size: 13px;
+    color: var(--el-color-primary);
+  }
+}
+
+.wf-exec-progress {
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--el-font-family-mono, monospace);
+  color: var(--el-text-color-regular);
+}
+
+.wf-exec-duration {
+  font-size: 12px;
+  font-family: var(--el-font-family-mono, monospace);
+  color: var(--el-text-color-secondary);
+}
+
+.wf-exec-time {
+  font-size: 12px;
+  font-family: var(--el-font-family-mono, monospace);
+  color: var(--el-text-color-secondary);
+}
+
+.wf-exec-error-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--el-color-danger);
+}
+
+.wf-exec-success-text {
+  font-size: 12px;
+  color: var(--el-color-success);
+}
+
+.wf-exec-running-text {
+  font-size: 12px;
+  color: var(--el-color-primary);
+}
+
+.wf-exec-muted-text {
+  font-size: 12px;
+  color: var(--el-text-color-placeholder);
+}
+
+.wf-mono-text {
+  font-family: var(--el-font-family-mono, monospace);
+  font-size: 11px;
+}
+
+.wf-detail-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.wf-detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  &__title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
     display: flex;
-    align-items: flex-start;
-    gap: 6px;
-    margin-top: 6px;
-    padding: 6px 10px;
-    background: color-mix(in srgb, var(--el-color-danger) 8%, transparent);
-    border-radius: 4px;
-    font-size: 12px;
-    color: var(--el-color-danger);
-    line-height: 1.5;
+    align-items: center;
+    gap: 4px;
+  }
 
-    .el-icon {
-      flex-shrink: 0;
-      margin-top: 2px;
-    }
+  &--error &__title {
+    color: var(--el-color-danger);
+  }
+}
+
+.wf-code-block {
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  font-family: var(--el-font-family-mono, monospace);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--el-text-color-primary);
+  max-height: 220px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+
+  &--error {
+    background: color-mix(in srgb, var(--el-color-danger) 6%, transparent);
+    border-color: color-mix(in srgb, var(--el-color-danger) 25%, transparent);
+    color: var(--el-color-danger);
   }
 }
 
 @keyframes wf-exec-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.8); }
+  50% { opacity: 0.3; transform: scale(0.7); }
 }
 </style>

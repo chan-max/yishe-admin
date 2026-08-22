@@ -378,13 +378,23 @@ const handleClearHistory = async () => {
           layout="total, prev, pager, next" @change="fetchList" />
       </div>
 
-      <!-- 执行记录 - 全屏弹窗 -->
-      <el-dialog v-model="historyDialogVisible"
-        :title="`${historyWorkflow?.name || ''} - ${t('workflow.executionHistory')}`" fullscreen
-        class="wf-history-dialog">
-        <ExecutionHistory :executions="executions" :loading="loadingHistory" :show-delete="true"
-          @refresh="historyWorkflow && loadExecutions(historyWorkflow.id)" @delete="handleDeleteExecution"
-          @clear="handleClearHistory" />
+      <!-- 执行记录 - 优雅列表弹窗 -->
+      <el-dialog
+        v-model="historyDialogVisible"
+        :title="`${historyWorkflow?.name || ''} - 执行记录`"
+        width="980px"
+        align-center
+        destroy-on-close
+        class="wf-history-dialog"
+      >
+        <ExecutionHistory
+          :executions="executions"
+          :loading="loadingHistory"
+          :show-delete="true"
+          @refresh="historyWorkflow && loadExecutions(historyWorkflow.id)"
+          @delete="handleDeleteExecution"
+          @clear="handleClearHistory"
+        />
       </el-dialog>
 
       <!-- 创建 -->
