@@ -21,19 +21,6 @@ const router = useRouter()
 const userStore = useUserStore()
 const isAdmin = computed(() => userStore.user?.isAdmin === true)
 
-// 常用分类
-const PRESET_CATEGORIES = [
-  '全部',
-  '图像处理',
-  '电商套图',
-  '独立站商品',
-  '文案创作',
-  '跨平台发布',
-  '自动化采集',
-  '其他',
-]
-
-const currentCategory = ref('全部')
 const searchKeyword = ref('')
 const loading = ref(false)
 const list = ref<WorkflowLibraryItem[]>([])
@@ -47,12 +34,10 @@ const params = reactive({
 const fetchLibraryList = async () => {
   loading.value = true
   try {
-    const categoryParam = currentCategory.value === '全部' ? undefined : currentCategory.value
     const res: any = await getWorkflowLibraryPageApi({
       currentPage: params.currentPage,
       pageSize: params.pageSize,
       keyword: searchKeyword.value.trim() || undefined,
-      category: categoryParam,
     })
     list.value = res?.list || []
     total.value = res?.total || 0
@@ -61,11 +46,6 @@ const fetchLibraryList = async () => {
   } finally {
     loading.value = false
   }
-}
-
-const handleCategoryChange = () => {
-  params.currentPage = 1
-  fetchLibraryList()
 }
 
 const handleSearch = () => {
@@ -133,8 +113,6 @@ const loadingWorkflows = ref(false)
 
 const publishForm = reactive({
   workflowId: '',
-  category: '图像处理',
-  customCategory: '',
   description: '',
   tagsString: '',
 })
@@ -142,8 +120,6 @@ const publishForm = reactive({
 const openPublishDialog = async () => {
   publishDialogVisible.value = true
   publishForm.workflowId = ''
-  publishForm.category = '图像处理'
-  publishForm.customCategory = ''
   publishForm.description = ''
   publishForm.tagsString = ''
 
@@ -168,10 +144,6 @@ const handlePublishSubmit = async () => {
     ElMessage.warning('请选择要发布的工作流')
     return
   }
-  const finalCategory =
-    publishForm.category === '其他' && publishForm.customCategory.trim()
-      ? publishForm.customCategory.trim()
-      : publishForm.category
 
   const tags = publishForm.tagsString
     .split(/[,，\s]+/)
@@ -181,7 +153,7 @@ const handlePublishSubmit = async () => {
   publishSubmitting.value = true
   try {
     await publishWorkflowToLibraryApi(publishForm.workflowId, {
-      category: finalCategory,
+      category: '通用',
       tags,
       description: publishForm.description.trim() || undefined,
     })
@@ -235,20 +207,6 @@ onMounted(() => {
             @keyup.enter="handleSearch"
             @clear="handleSearch"
           />
-          <el-select
-            v-model="currentCategory"
-            placeholder="全部分类"
-            size="small"
-            style="width: 130px"
-            @change="handleCategoryChange"
-          >
-            <el-option
-              v-for="cat in PRESET_CATEGORIES"
-              :key="cat"
-              :label="cat"
-              :value="cat"
-            />
-          </el-select>
         </div>
 
         <div class="wf-page__header-actions">
@@ -293,9 +251,6 @@ onMounted(() => {
           <div class="wf-card__bg"></div>
           <div class="wf-card__hero">
             <header class="wf-card__hero-header">
-              <span class="wf-card__badge wf-card__badge--on">
-                <span class="wf-card__badge-dot"></span>{{ item.category || '通用' }}
-              </span>
               <span class="wf-card__import-count" title="导入引用次数">
                 <el-icon><Download /></el-icon>{{ item.importCount || 0 }}
               </span>
@@ -391,34 +346,6 @@ onMounted(() => {
               :value="wf.id"
             />
           </el-select>
-        </el-form-item>
-
-        <el-form-item label="模板分类" required>
-          <el-select
-            v-model="publishForm.category"
-            placeholder="请选择分类"
-            style="width: 100%"
-          >
-            <el-option
-              v-for="cat in PRESET_CATEGORIES.filter(c => c !== '全部')"
-              :key="cat"
-              :label="cat"
-              :value="cat"
-            />
-          </el-select>
-        </el-form-item>
-
-        <el-form-item
-          v-if="publishForm.category === '其他'"
-          label="自定义分类"
-          required
-        >
-          <el-input
-            v-model="publishForm.customCategory"
-            placeholder="请输入分类名称"
-            maxlength="20"
-            show-word-limit
-          />
         </el-form-item>
 
         <el-form-item label="模板简介">

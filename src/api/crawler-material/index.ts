@@ -69,22 +69,6 @@ export const CrawlerMaterialApi = {
     return await request.post({ url: `/crawler/material/delete`, data })
   },
 
-  copyToUser: async (data: { ids: string[] | string; targetUserId: string }) => {
-    return await request.post({ url: `/crawler/material/copy-to-user`, data })
-  },
-
-  shareToUser: async (data: { ids: string[] | string; targetUserId: string }) => {
-    return await request.post({ url: `/crawler/material/share-to-user`, data })
-  },
-
-  getSharedRecords: async (id: string) => {
-    return await request.get({ url: `/crawler/material/${id}/shared-records` })
-  },
-
-  moveToUser: async (data: { ids: string[] | string; targetUserId: string }) => {
-    return await request.post({ url: `/crawler/material/move-to-user`, data })
-  },
-
   // 批量入库到贴纸
   batchImportToSticker: async (data: { ids: string[], userId?: string }) => {
     return await request.post<CrawlerMaterialImportTaskResponse>({ url: `/crawler/material/import-to-sticker`, data })

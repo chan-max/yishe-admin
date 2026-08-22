@@ -263,6 +263,15 @@
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
+              <el-button
+                  v-if="isAdmin"
+                  size="small"
+                  type="warning"
+                  :disabled="loading || !ids.length"
+                  @click="handleBatchPublishToLibrary"
+                >
+                  发布到库 ({{ ids.length }})
+                </el-button>
               <el-dropdown trigger="click" popper-class="material-tool-dropdown" :disabled="loading || !ids.length">
                 <el-button size="small" type="primary" :disabled="loading || !ids.length">
                   {{ t('material.toolsCount', { count: ids.length }) }}
@@ -2848,6 +2857,7 @@ import {
   searchStickerByText,
   getStickerSharedRecords,
 } from "@/api/material"; // 实际接口导入
+import { ResourceLibraryApi } from "@/api/resource-library";
 
 import { uploadToCOS } from "@/api/cos";
 import { stickerPsdSetApi } from "@/api/stickerPsdSet";
@@ -5201,6 +5211,27 @@ async function openStickerUserTransferDialog(action: StickerUserTransferAction, 
   stickerUserTransferTargetUserId.value = "";
   await loadStickerTransferUserOptions();
   stickerUserTransferDialogVisible.value = true;
+}
+
+async function handleBatchPublishToLibrary() {
+  const targetIds = (Array.isArray(ids.value) ? ids.value : []).map(String).filter(Boolean);
+  if (!targetIds.length) {
+    return ElMessage.warning(t("material.selectMaterialsToOperate"));
+  }
+  try {
+    await ElMessageBox.confirm(`确认将选中的 ${targetIds.length} 项贴纸素材发布到公共资源广场吗？`, "发布提示", {
+      confirmButtonText: "确认发布",
+      cancelButtonText: "取消",
+      type: "info",
+    });
+    await ResourceLibraryApi.batchPublish({
+      resourceType: "sticker",
+      ids: targetIds,
+    });
+    ElMessage.success("已成功发布到公共贴纸素材库");
+  } catch {
+    // cancel
+  }
 }
 
 async function openShareRecordsDialog(row: any) {

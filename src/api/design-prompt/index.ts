@@ -44,3 +44,16 @@ export const favoriteDesignPrompt = (id: string) =>
 // 取消收藏
 export const unfavoriteDesignPrompt = (id: string) =>
   request.post({ url: '/design-prompt/unfavorite', data: { id } })
+
+// 分享给用户
+export const shareDesignPromptToUser = (data: { ids: string[]; targetUserId: number }) =>
+  request.post({ url: '/design-prompt/share-to-user', data })
+
+// 转移给用户
+export const moveDesignPromptToUser = (data: { ids: string[]; targetUserId: number }) =>
+  request.post({ url: '/design-prompt/move-to-user', data })
+
+// 获取分享记录
+export const getDesignPromptSharedRecords = (id: string) =>
+  request.get({ url: `/design-prompt/${id}/shared-records` })
+

@@ -24,26 +24,30 @@ const { push, back } = router
 <style scoped lang="scss">
 .error-404-page {
   display: flex;
-  min-height: calc(100vh - var(--top-tool-height) - var(--tags-view-height));
+  box-sizing: border-box;
+  width: 100%;
+  min-height: calc(100vh - var(--top-tool-height, 0px) - var(--tags-view-height, 0px));
   align-items: center;
   justify-content: center;
-  padding: 32px 20px;
-  background: var(--app-content-bg-color, #f5f7fa);
+  padding: 20px;
+  background: var(--app-content-bg-color, var(--el-bg-color-page, #f5f7fa));
+  overflow: hidden;
 }
 
 .error-404-card {
-  width: min(100%, 480px);
-  padding: 48px 32px 40px;
+  box-sizing: border-box;
+  width: min(100%, 460px);
+  padding: 40px 32px 36px;
   text-align: center;
-  background: var(--el-bg-color, #fff);
+  background: var(--el-bg-color-overlay, var(--el-bg-color, #fff));
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgb(0 0 0 / 4%);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
 }
 
 .error-404-code {
-  margin-bottom: 8px;
-  font-size: clamp(64px, 12vw, 96px);
+  margin-bottom: 6px;
+  font-size: clamp(56px, 10vw, 88px);
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.04em;
@@ -63,7 +67,7 @@ const { push, back } = router
   max-width: 320px;
   margin: 8px auto 0;
   font-size: 14px;
-  line-height: 1.7;
+  line-height: 1.6;
   color: var(--el-text-color-secondary);
 }
 
@@ -71,16 +75,16 @@ const { push, back } = router
   display: flex;
   justify-content: center;
   gap: 12px;
-  margin-top: 32px;
+  margin-top: 28px;
 }
 
-@media (width <= 640px) {
+@media (max-width: 640px) {
   .error-404-page {
-    padding: 20px 16px;
+    padding: 16px;
   }
 
   .error-404-card {
-    padding: 36px 20px 32px;
+    padding: 32px 20px 24px;
     border-radius: 10px;
   }
 

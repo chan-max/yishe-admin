@@ -53,32 +53,23 @@
               <el-button v-if="isAdmin" size="small" type="info" :loading="batchActionLoading" @click="handleBatchUnpublish" :disabled="!ids.length">
                 批量下架({{ ids.length }})
               </el-button>
-              <el-dropdown
-                class="batch-transfer-dropdown ml-2"
+              <el-button
+                size="small"
+                type="success"
                 :disabled="!ids.length"
-                @command="(cmd: SentenceUserTransferAction) => openSentenceUserTransferDialog(cmd)"
+                @click="openSentenceUserTransferDialog('share')"
               >
-                <el-button size="small" type="success" :disabled="!ids.length">
-                  分享 ({{ ids.length }})
-                  <el-icon class="el-icon--right"><ArrowDown /></el-icon>
-                </el-button>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item command="share">
-                      <el-icon><Share /></el-icon>
-                      <span>共享</span>
-                    </el-dropdown-item>
-                    <el-dropdown-item command="copy">
-                      <el-icon><DocumentCopy /></el-icon>
-                      <span>转存副本</span>
-                    </el-dropdown-item>
-                    <el-dropdown-item command="move">
-                      <el-icon><TopRight /></el-icon>
-                      <span>移交所有人</span>
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
+                分享 ({{ ids.length }})
+              </el-button>
+              <el-button
+                v-if="isAdmin"
+                size="small"
+                type="warning"
+                :disabled="!ids.length"
+                @click="handleBatchPublishToPublicLibrary"
+              >
+                发布到库 ({{ ids.length }})
+              </el-button>
               <el-button
                 size="small"
                 type="danger"
@@ -174,11 +165,7 @@
                   </template>
                   <el-dropdown-item v-if="isAdmin" command="share-to-user">
                     <el-icon><Share /></el-icon>
-                    <span>快捷共享</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item v-if="isAdmin" command="copy-to-user">
-                    <el-icon><DocumentCopy /></el-icon>
-                    <span>复制副本</span>
+                    <span>分享给用户</span>
                   </el-dropdown-item>
                   <el-dropdown-item v-if="isAdmin" command="move-to-user">
                     <el-icon><User /></el-icon>
@@ -209,11 +196,8 @@
         </template>
 
         <template #shareTypeSlot="{ row }">
-          <el-tag v-if="row.shareType === 'shared'" type="warning" size="small" effect="light">
-            来自【{{ row.sourceUser?.name || row.sourceUser?.account || ('用户' + row.sourceUserId) }}】快捷共享
-          </el-tag>
-          <el-tag v-else-if="row.shareType === 'copy' || (row.sourceUserId && row.sourceUserId !== row.userId)" type="success" size="small" effect="light">
-            来自【{{ row.sourceUser?.name || row.sourceUser?.account || ('用户' + row.sourceUserId) }}】物理副本
+          <el-tag v-if="row.shareType === 'shared' || row.shareType === 'copy' || (row.sourceUserId && row.sourceUserId !== row.userId)" type="success" size="small" effect="light">
+            来自【{{ row.sourceUser?.name || row.sourceUser?.account || ('用户' + row.sourceUserId) }}】分享
           </el-tag>
           <el-tag v-else type="info" size="small" effect="plain">个人自建</el-tag>
         </template>
@@ -472,6 +456,7 @@ import {
   moveSentenceToUser,
   getSentenceSharedRecords,
 } from "@/api/sentence";
+import { ResourceLibraryApi } from "@/api/resource-library";
 import { formatTimestamp } from "@/common/date";
 import { getUserList } from "@/api/user";
 import { buildOperationColumn, commonGridOptions } from "@/common/table";
@@ -748,6 +733,26 @@ function handleEdit(row) {
   };
 }
 
+async function handleBatchPublishToPublicLibrary() {
+  if (!ids.value.length) {
+    return ElMessage.warning("请选择要发布的数据");
+  }
+  try {
+    await ElMessageBox.confirm(`确认将选中的 ${ids.value.length} 条文案发布到公共资源广场吗？`, "发布提示", {
+      confirmButtonText: "确认发布",
+      cancelButtonText: "取消",
+      type: "info",
+    });
+    await ResourceLibraryApi.batchPublish({
+      resourceType: "sentence",
+      ids: [...ids.value],
+    });
+    ElMessage.success("已成功发布到公共文案库");
+  } catch {
+    // cancel
+  }
+}
+
 function handleDelete(row?) {
   let delIds = null;
   if (row) {
@@ -949,7 +954,7 @@ function handleOperationCommand(command: string, row: any) {
 }
 
 // 资源转移/分享
-type SentenceUserTransferAction = "share" | "copy" | "move";
+type SentenceUserTransferAction = "share" | "move";
 type SentenceUserTransferUserOption = {
   value: number;
   label: string;
@@ -967,14 +972,12 @@ const sentenceUserTransferTargetUserId = ref<number | string>("");
 const sentenceUserTransferUserOptions = ref<SentenceUserTransferUserOption[]>([]);
 
 const sentenceUserTransferDialogTitle = computed(() => {
-  if (sentenceUserTransferAction.value === "share") return "快捷共享例句给用户";
-  if (sentenceUserTransferAction.value === "copy") return "复制副本例句给用户";
+  if (sentenceUserTransferAction.value === "share") return "分享例句给用户";
   return "转移例句给用户";
 });
 
 const sentenceUserTransferSubmitText = computed(() => {
-  if (sentenceUserTransferAction.value === "share") return "确认快捷共享";
-  if (sentenceUserTransferAction.value === "copy") return "确认复制副本";
+  if (sentenceUserTransferAction.value === "share") return "确认分享";
   return "确认转移";
 });
 
@@ -1034,8 +1037,6 @@ async function submitSentenceUserTransfer() {
     let res: any;
     if (sentenceUserTransferAction.value === "share") {
       res = await shareSentenceToUser(payload as any);
-    } else if (sentenceUserTransferAction.value === "copy") {
-      res = await copySentenceToUser(payload as any);
     } else {
       res = await moveSentenceToUser(payload as any);
     }
@@ -1045,13 +1046,12 @@ async function submitSentenceUserTransfer() {
     } else {
       ElMessage.success(
         sentenceUserTransferAction.value === "share"
-          ? "快捷共享成功"
-          : sentenceUserTransferAction.value === "copy"
-          ? "复制副本成功"
+          ? "分享成功"
           : "转移成功"
       );
     }
     sentenceUserTransferDialogVisible.value = false;
+    ids.value = [];
     getList();
   } catch (error: any) {
     ElMessage.error(error?.message || "操作失败");

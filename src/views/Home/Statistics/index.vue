@@ -177,23 +177,25 @@ const getCssColor = (name: string, fallback: string) => {
 }
 
 const buildTrendOptions = (series: ModuleStatisticsItem['series']): EChartsOption => {
-  const axisTextColor = getCssColor('--el-text-color-secondary', appStore.getIsDark ? '#c0c4cc' : '#606266')
-  const splitLineColor = getCssColor('--el-border-color-extra-light', appStore.getIsDark ? '#414243' : '#f0f2f5')
-  const createdColor = getCssColor('--el-color-primary', '#409eff')
-  const updatedColor = getCssColor('--el-color-warning', '#e6a23c')
-  const gridColor = appStore.getIsDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'
+  const axisTextColor = getCssColor('--el-text-color-secondary', appStore.getIsDark ? '#94a3b8' : '#64748b')
+  const splitLineColor = getCssColor('--el-border-color-extra-light', appStore.getIsDark ? '#334155' : '#f1f5f9')
+  const createdColor = '#6366F1'
+  const updatedColor = '#06B6D4'
 
   return {
     color: [createdColor, updatedColor],
     tooltip: {
       trigger: 'axis',
-      backgroundColor: appStore.getIsDark ? '#2a2a2a' : '#fff',
-      borderColor: appStore.getIsDark ? '#444' : '#e5e7eb',
-      textStyle: { color: axisTextColor, fontSize: 12 },
-      axisPointer: { type: 'line', lineStyle: { color: 'rgba(148,163,184,0.3)', type: 'dashed' } },
+      backgroundColor: 'var(--el-bg-color-overlay)',
+      borderColor: 'var(--el-border-color-lighter)',
+      borderWidth: 1,
+      padding: [8, 12],
+      textStyle: { color: 'var(--el-text-color-primary)', fontSize: 12 },
+      extraCssText: 'box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.12); border-radius: 8px;',
+      axisPointer: { type: 'line', lineStyle: { color: 'rgba(99, 102, 241, 0.3)', type: 'dashed' } },
     },
     legend: { show: false },
-    grid: { top: 24, left: 0, right: 8, bottom: 4, containLabel: true },
+    grid: { top: 20, left: 0, right: 6, bottom: 0, containLabel: true },
     xAxis: {
       type: 'category',
       data: series.map((point) => point.date.slice(5)),
@@ -212,27 +214,28 @@ const buildTrendOptions = (series: ModuleStatisticsItem['series']): EChartsOptio
     yAxis: {
       type: 'value',
       minInterval: 1,
-      splitNumber: 4,
+      splitNumber: 3,
       splitLine: { lineStyle: { color: splitLineColor, type: 'dashed' } },
       axisLabel: { color: axisTextColor, fontSize: 10 },
       axisLine: { show: false },
+      axisTick: { show: false },
     },
     series: [
       {
         name: t('home.stat.created'),
         type: 'line',
-        smooth: true,
+        smooth: 0.35,
         symbol: 'circle',
-        symbolSize: 4,
+        symbolSize: 5,
         showSymbol: false,
-        lineStyle: { width: 2 },
-        itemStyle: { color: createdColor },
+        lineStyle: { width: 2, color: createdColor },
+        itemStyle: { color: createdColor, borderColor: '#fff', borderWidth: 1.5 },
         areaStyle: {
           color: {
             type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
             colorStops: [
-              { offset: 0, color: createdColor + '33' },
-              { offset: 1, color: createdColor + '08' },
+              { offset: 0, color: 'rgba(99, 102, 241, 0.22)' },
+              { offset: 1, color: 'rgba(99, 102, 241, 0.01)' },
             ],
           },
         },
@@ -241,18 +244,18 @@ const buildTrendOptions = (series: ModuleStatisticsItem['series']): EChartsOptio
       {
         name: t('home.stat.updated'),
         type: 'line',
-        smooth: true,
+        smooth: 0.35,
         symbol: 'circle',
-        symbolSize: 4,
+        symbolSize: 5,
         showSymbol: false,
-        lineStyle: { width: 2 },
-        itemStyle: { color: updatedColor },
+        lineStyle: { width: 2, color: updatedColor },
+        itemStyle: { color: updatedColor, borderColor: '#fff', borderWidth: 1.5 },
         areaStyle: {
           color: {
             type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
             colorStops: [
-              { offset: 0, color: updatedColor + '33' },
-              { offset: 1, color: updatedColor + '08' },
+              { offset: 0, color: 'rgba(6, 182, 212, 0.18)' },
+              { offset: 1, color: 'rgba(6, 182, 212, 0.01)' },
             ],
           },
         },

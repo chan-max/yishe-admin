@@ -2,59 +2,103 @@
   <el-popover
     v-if="visible"
     placement="bottom-end"
-    :width="260"
+    :width="220"
     :show-arrow="false"
-    :offset="8"
+    :offset="6"
     trigger="click"
     :transition="''"
     popper-class="header-data-scope-popper"
     @show="handleShow"
   >
     <template #reference>
-      <button type="button" class="ads-trigger" :aria-label="t('layout.dataScope.dataScope')">
-        <Icon icon="ep:data-board" class="th-action-icon" :size="18" />
-        <span class="th-action-label">{{ t('layout.dataScope.data') }}</span>
+      <button
+        type="button"
+        class="ads-trigger"
+        :class="{ 'ads-trigger--active': dataScopeStore.mode !== 'self' }"
+        :aria-label="t('layout.dataScope.dataScope')"
+      >
+        <div class="ads-trigger__icon-wrap">
+          <Icon
+            :icon="dataScopeStore.mode === 'all' ? 'ep:data-board' : dataScopeStore.mode === 'user' ? 'ep:avatar' : 'ep:user'"
+            class="th-action-icon"
+            :size="17"
+          />
+          <span v-if="dataScopeStore.mode !== 'self'" class="ads-trigger__dot" />
+        </div>
+        <span class="th-action-label">{{ triggerLabel }}</span>
       </button>
     </template>
 
     <div class="ads-panel">
-      <div class="ads-panel__title">{{ t('layout.dataScope.dataScope') }}</div>
+      <!-- 极简模式切换列表（Linear / macOS 风格） -->
+      <div class="ads-menu">
+        <!-- 1. 我的数据 -->
+        <div
+          class="ads-menu-item"
+          :class="{ 'ads-menu-item--active': dataScopeStore.mode === 'self' && !selectedUserId }"
+          @click="handleModeChange('self')"
+        >
+          <div class="ads-menu-item__left">
+            <Icon icon="ep:user" :size="14" class="ads-menu-item__icon" />
+            <span class="ads-menu-item__text">{{ t('layout.dataScope.myData') }}</span>
+          </div>
+          <Icon
+            v-if="dataScopeStore.mode === 'self' && !selectedUserId"
+            icon="ep:check"
+            :size="14"
+            class="ads-menu-item__check"
+          />
+        </div>
 
-      <el-radio-group
-        v-model="currentMode"
-        :disabled="switching"
-        class="ads-radios"
-        @change="handleModeChange"
-      >
-        <el-radio-button value="self">{{ t('layout.dataScope.myData') }}</el-radio-button>
-        <el-radio-button value="all">{{ t('layout.dataScope.allData') }}</el-radio-button>
-      </el-radio-group>
+        <!-- 2. 全部数据 -->
+        <div
+          class="ads-menu-item"
+          :class="{ 'ads-menu-item--active': dataScopeStore.mode === 'all' }"
+          @click="handleModeChange('all')"
+        >
+          <div class="ads-menu-item__left">
+            <Icon icon="ep:data-board" :size="14" class="ads-menu-item__icon" />
+            <span class="ads-menu-item__text">{{ t('layout.dataScope.allData') }}</span>
+          </div>
+          <Icon
+            v-if="dataScopeStore.mode === 'all'"
+            icon="ep:check"
+            :size="14"
+            class="ads-menu-item__check"
+          />
+        </div>
+      </div>
 
+      <!-- 分隔线与指定成员搜索 -->
       <div class="ads-divider" />
 
-      <el-select
-        v-model="selectedUserId"
-        filterable
-        remote
-        :remote-method="remoteSearch"
-        :loading="loading"
-        :disabled="switching"
-        :placeholder="t('layout.dataScope.selectUserPlaceholder')"
-        class="ads-select"
-        size="small"
-        @change="handleUserChange"
-      >
-        <el-option
-          v-for="item in userOptions"
-          :key="item.value"
-          :label="item.label"
-          :value="item.value"
-        />
-      </el-select>
+      <div class="ads-user-wrap">
+        <el-select
+          v-model="selectedUserId"
+          filterable
+          clearable
+          remote
+          :remote-method="remoteSearch"
+          :loading="loading"
+          :disabled="switching"
+          placeholder="指定成员视角..."
+          class="ads-select"
+          size="small"
+          @change="handleUserChange"
+          @clear="handleClearUser"
+        >
+          <el-option
+            v-for="item in userOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
+        </el-select>
 
-      <div v-if="dataScopeStore.mode === 'user' && dataScopeStore.userLabel" class="ads-current">
-        <span class="ads-current__label">当前查看:</span>
-        <span class="ads-current__value">{{ dataScopeStore.userLabel }}</span>
+        <div v-if="dataScopeStore.mode === 'user' && dataScopeStore.userLabel" class="ads-user-tag">
+          <span class="ads-user-tag__dot" />
+          <span class="ads-user-tag__name" :title="dataScopeStore.userLabel">{{ dataScopeStore.userLabel }}</span>
+        </div>
       </div>
     </div>
   </el-popover>
@@ -89,9 +133,10 @@ const selectedUserId = ref('')
 
 const visible = computed(() => !!userStore.user?.isAdmin)
 
-const currentMode = computed({
-  get: () => dataScopeStore.mode === 'user' ? '' : dataScopeStore.mode,
-  set: () => undefined,
+const triggerLabel = computed(() => {
+  if (dataScopeStore.mode === 'all') return t('layout.dataScope.allData')
+  if (dataScopeStore.mode === 'user') return '成员视角'
+  return t('layout.dataScope.myData')
 })
 
 async function loadUsers(query?: string) {
@@ -122,6 +167,8 @@ async function handleShow() {
   if (!loaded.value) await loadUsers()
   if (dataScopeStore.mode === 'user') {
     selectedUserId.value = dataScopeStore.userId
+  } else {
+    selectedUserId.value = ''
   }
 }
 
@@ -134,13 +181,16 @@ async function refreshCurrentView() {
   }
 }
 
-async function handleModeChange(value: string) {
+async function handleModeChange(value: 'self' | 'all') {
+  if (switching.value) return
   if (value === 'self') {
+    if (dataScopeStore.mode === 'self' && !selectedUserId.value) return
     dataScopeStore.setSelf()
     selectedUserId.value = ''
     ElMessage.success(t('layout.dataScope.switchedToMyData'))
     await refreshCurrentView()
   } else if (value === 'all') {
+    if (dataScopeStore.mode === 'all') return
     dataScopeStore.setAll()
     selectedUserId.value = ''
     ElMessage.success(t('layout.dataScope.switchedToAllData'))
@@ -149,11 +199,21 @@ async function handleModeChange(value: string) {
 }
 
 async function handleUserChange(userId: string) {
-  if (!userId) return
+  if (!userId) {
+    handleClearUser()
+    return
+  }
   const option = userOptions.value.find((u) => u.value === userId)
   if (!option) return
   dataScopeStore.setUser(option.value, option.label)
   ElMessage.success(t('layout.dataScope.switchedToUser', { label: option.label }))
+  await refreshCurrentView()
+}
+
+async function handleClearUser() {
+  selectedUserId.value = ''
+  dataScopeStore.setSelf()
+  ElMessage.success(t('layout.dataScope.switchedToMyData'))
   await refreshCurrentView()
 }
 </script>
@@ -173,13 +233,34 @@ async function handleUserChange(userId: string) {
   cursor: pointer;
   background: transparent;
   border: none;
-  border-radius: 10px;
-  transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+  border-radius: 8px;
+  transition: all 0.16s ease;
+
+  &__icon-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__dot {
+    position: absolute;
+    top: -1px;
+    right: -3px;
+    width: 6px;
+    height: 6px;
+    background-color: var(--el-color-primary);
+    border-radius: 50%;
+    box-shadow: 0 0 0 1.5px var(--el-bg-color);
+  }
+
+  &--active {
+    color: var(--el-color-primary) !important;
+  }
 
   &:hover {
     color: var(--el-color-primary);
     background-color: color-mix(in srgb, var(--top-header-hover-color) 65%, transparent 35%);
-    transform: scale(1.06);
   }
 
   &:active {
@@ -188,65 +269,110 @@ async function handleUserChange(userId: string) {
 }
 
 .ads-panel {
-  padding: 10px;
+  padding: 6px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 4px;
 }
 
-.ads-panel__title {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-  padding: 2px 4px 0;
-}
-
-.ads-radios {
-  width: 100%;
+/* 极简列表项 */
+.ads-menu {
   display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
 
-  :deep(.el-radio-button__inner) {
-    flex: 1;
-    font-size: 12px;
+.ads-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--el-text-color-primary);
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__icon {
+    color: var(--el-text-color-secondary);
+    transition: color 0.15s ease;
+  }
+
+  &__check {
+    color: var(--el-color-primary);
+  }
+
+  &:hover {
+    background-color: var(--el-fill-color-light);
+  }
+
+  &--active {
+    font-weight: 500;
+    color: var(--el-color-primary);
+    background-color: color-mix(in srgb, var(--el-color-primary) 8%, transparent);
+
+    .ads-menu-item__icon {
+      color: var(--el-color-primary);
+    }
   }
 }
 
 .ads-divider {
   height: 1px;
   background: var(--el-border-color-lighter);
-  margin: 2px 0;
+  margin: 4px 2px;
+}
+
+.ads-user-wrap {
+  padding: 2px 2px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .ads-select {
   width: 100%;
 }
 
-.ads-current {
+.ads-user-tag {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 8px;
+  gap: 5px;
+  padding: 3px 6px;
   font-size: 11px;
-  background: color-mix(in srgb, var(--el-color-primary) 8%, transparent);
-  border-radius: 6px;
-}
+  background: color-mix(in srgb, var(--el-color-primary) 6%, transparent);
+  border-radius: 4px;
 
-.ads-current__label {
-  color: var(--el-text-color-secondary);
-}
+  &__dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: var(--el-color-primary);
+    flex-shrink: 0;
+  }
 
-.ads-current__value {
-  color: var(--el-color-primary);
-  font-weight: 500;
+  &__name {
+    color: var(--el-color-primary);
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 </style>
 
 <style lang="scss">
 .header-data-scope-popper {
   padding: 0 !important;
-  border: 1px solid var(--el-border-color-light) !important;
+  border: 1px solid var(--el-border-color-lighter) !important;
   border-radius: 8px !important;
-  box-shadow: 0 4px 16px rgb(0 0 0 / 12%) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
   overflow: hidden;
 }
 </style>

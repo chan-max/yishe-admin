@@ -68,6 +68,15 @@
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
+              <el-button
+                v-if="isAdmin"
+                size="small"
+                type="warning"
+                :disabled="!ids.length"
+                @click="handleBatchPublishToLibrary"
+              >
+                发布到库 ({{ ids.length }})
+              </el-button>
               <el-button v-if="isMobile" size="small" @click="filterDialogVisible = true">筛选</el-button>
             </div>
           </el-form>
@@ -469,6 +478,7 @@ import {
   copyAsset3dToUser,
   moveAsset3dToUser,
 } from "@/api/asset3d";
+import { ResourceLibraryApi } from "@/api/resource-library";
 import { getUserList } from "@/api/user";
 import { uploadToCOS, initCOS } from "@/api/cos";
 import { useUserStore } from "@/store/modules/user";
@@ -628,6 +638,27 @@ function resetAsset3dUserTransferDialog() {
   asset3dUserTransferAction.value = "share";
   asset3dUserTransferIds.value = [];
   asset3dUserTransferTargetUserId.value = "";
+}
+
+async function handleBatchPublishToLibrary() {
+  const targetIds = (Array.isArray(ids.value) ? ids.value : []).map(String).filter(Boolean);
+  if (!targetIds.length) {
+    return ElMessage.warning("请选择要发布的 3D 资源");
+  }
+  try {
+    await ElMessageBox.confirm(`确认将选中的 ${targetIds.length} 项 3D 资产发布到公共资源广场吗？`, "发布提示", {
+      confirmButtonText: "确认发布",
+      cancelButtonText: "取消",
+      type: "info",
+    });
+    await ResourceLibraryApi.batchPublish({
+      resourceType: "asset_3d",
+      ids: targetIds,
+    });
+    ElMessage.success("已成功发布到公共 3D 资产库");
+  } catch {
+    // cancel
+  }
 }
 
 async function openAsset3dUserTransferDialog(

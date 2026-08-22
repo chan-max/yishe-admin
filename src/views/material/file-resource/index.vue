@@ -160,6 +160,15 @@
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
+              <el-button
+                v-if="isAdmin"
+                size="small"
+                type="warning"
+                :disabled="!ids.length"
+                @click="handleBatchPublishToLibrary"
+              >
+                发布到库 ({{ ids.length }})
+              </el-button>
               <el-button v-if="isMobile" size="small" @click="filterDialogVisible = true"
                 >{{ t('fileResource.filter') }}</el-button
               >
@@ -677,6 +686,7 @@ import {
   shareFileResourceToUser,
   moveFileResourceToUser,
 } from "@/api/file-resource";
+import { ResourceLibraryApi } from "@/api/resource-library";
 import { getUserList } from "@/api/user";
 
 import { buildOperationColumn, commonGridOptions } from "@/common/table";
@@ -975,6 +985,27 @@ function resetFileResourceUserTransferDialog() {
   fileResourceUserTransferAction.value = "copy";
   fileResourceUserTransferIds.value = [];
   fileResourceUserTransferTargetUserId.value = "";
+}
+
+async function handleBatchPublishToLibrary() {
+  const targetIds = (Array.isArray(ids.value) ? ids.value : []).map(String).filter(Boolean);
+  if (!targetIds.length) {
+    return ElMessage.warning(t("fileResource.selectResourcesFirst"));
+  }
+  try {
+    await ElMessageBox.confirm(`确认将选中的 ${targetIds.length} 项文件资源发布到公共资源广场吗？`, "发布提示", {
+      confirmButtonText: "确认发布",
+      cancelButtonText: "取消",
+      type: "info",
+    });
+    await ResourceLibraryApi.batchPublish({
+      resourceType: "file_resource",
+      ids: targetIds,
+    });
+    ElMessage.success("已成功发布到公共文件资源库");
+  } catch {
+    // cancel
+  }
 }
 
 async function openFileResourceUserTransferDialog(

@@ -52,3 +52,23 @@ export function batchMovePrompt(data: { ids: number[]; folderId: string | null }
     data,
   });
 }
+
+export function sharePromptToUser(data: { ids: number[]; targetUserId: number }) {
+  return request.post({
+    url: '/prompts/share-to-user',
+    data,
+  });
+}
+
+export function movePromptToUser(data: { ids: number[]; targetUserId: number }) {
+  return request.post({
+    url: '/prompts/move-to-user',
+    data,
+  });
+}
+
+export function getPromptSharedRecords(id: number | string) {
+  return request.get({
+    url: `/prompts/${id}/shared-records`,
+  });
+}

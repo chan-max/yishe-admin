@@ -65,6 +65,110 @@ const remainingRouter: AppRouteRecordRaw[] = [
     ],
   },
   {
+    path: '/resource-library',
+    component: Layout,
+    name: 'ResourceLibraryRoute',
+    redirect: '/resource-library/sticker',
+    meta: {
+      title: "router.resourceLibrary",
+      icon: 'lucide:sparkles',
+      order: 11,
+      alwaysShow: true,
+    },
+    children: [
+      {
+        path: 'sticker',
+        component: () => import('@/views/resource-library/index.vue'),
+        name: 'ResourceLibrarySticker',
+        meta: {
+          title: "router.resourceLibrarySticker",
+          noCache: true,
+          resourceType: 'sticker',
+        },
+      },
+      {
+        path: 'psd-template',
+        component: () => import('@/views/resource-library/index.vue'),
+        name: 'ResourceLibraryPsd',
+        meta: {
+          title: "router.resourceLibraryPsd",
+          noCache: true,
+          resourceType: 'psd_template',
+        },
+      },
+      {
+        path: 'font-template',
+        component: () => import('@/views/resource-library/index.vue'),
+        name: 'ResourceLibraryFont',
+        meta: {
+          title: "router.resourceLibraryFont",
+          noCache: true,
+          resourceType: 'font_template',
+        },
+      },
+      {
+        path: 'asset-3d',
+        component: () => import('@/views/resource-library/index.vue'),
+        name: 'ResourceLibraryAsset3d',
+        meta: {
+          title: "router.resourceLibraryAsset3d",
+          noCache: true,
+          resourceType: 'asset_3d',
+        },
+      },
+      {
+        path: 'file-resource',
+        component: () => import('@/views/resource-library/index.vue'),
+        name: 'ResourceLibraryFile',
+        meta: {
+          title: "router.resourceLibraryFile",
+          noCache: true,
+          resourceType: 'file_resource',
+        },
+      },
+      {
+        path: 'sentence',
+        component: () => import('@/views/resource-library/index.vue'),
+        name: 'ResourceLibrarySentence',
+        meta: {
+          title: "router.resourceLibrarySentence",
+          noCache: true,
+          resourceType: 'sentence',
+        },
+      },
+      {
+        path: 'ai-skill',
+        component: () => import('@/views/resource-library/index.vue'),
+        name: 'ResourceLibraryAiSkill',
+        meta: {
+          title: "router.resourceLibraryAiSkill",
+          noCache: true,
+          resourceType: 'ai_skill',
+        },
+      },
+      {
+        path: 'prompt',
+        component: () => import('@/views/resource-library/index.vue'),
+        name: 'ResourceLibraryPrompt',
+        meta: {
+          title: "router.resourceLibraryPrompt",
+          noCache: true,
+          resourceType: 'prompt',
+        },
+      },
+      {
+        path: 'design-prompt',
+        component: () => import('@/views/resource-library/index.vue'),
+        name: 'ResourceLibraryDesignPrompt',
+        meta: {
+          title: "router.resourceLibraryDesignPrompt",
+          noCache: true,
+          resourceType: 'design_prompt',
+        },
+      },
+    ],
+  },
+  {
     path: "/",
     name: "Root",
     redirect: "/home/index",
@@ -195,6 +299,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       hidden: true,
       title: "404",
       noTagsView: true,
+      noAppViewPadding: true,
     },
   },
   {
@@ -1678,6 +1783,8 @@ const remainingRouter: AppRouteRecordRaw[] = [
       title: "404",
       hidden: true,
       breadcrumb: false,
+      noTagsView: true,
+      noAppViewPadding: true,
     },
   },
 ];

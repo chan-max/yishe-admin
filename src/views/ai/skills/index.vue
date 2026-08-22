@@ -47,22 +47,23 @@
               >
                 批量删除
               </el-button>
-              <el-dropdown
-                trigger="click"
+              <el-button
+                size="small"
+                type="success"
                 :disabled="!selectedIds.length || !isAdmin"
-                @command="handleBatchShareCommand"
+                @click="openTransferDialog('share', [...selectedIds])"
               >
-                <el-button size="small" type="success" :disabled="!selectedIds.length || !isAdmin">
-                  分享 ({{ selectedIds.length }})
-                </el-button>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item command="share-to-user">快捷共享</el-dropdown-item>
-                    <el-dropdown-item command="copy-to-user">转存副本</el-dropdown-item>
-                    <el-dropdown-item command="move-to-user">移交所有人</el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
+                分享 ({{ selectedIds.length }})
+              </el-button>
+              <el-button
+                v-if="isAdmin"
+                size="small"
+                type="warning"
+                :disabled="!selectedIds.length"
+                @click="handleBatchPublishToLibrary"
+              >
+                发布到库 ({{ selectedIds.length }})
+              </el-button>
             </div>
           </el-form>
         </div>
@@ -132,11 +133,8 @@
             <span class="muted">{{ row.triggers?.slice(0, 4).join("、") || "未设置" }}</span>
           </template>
           <template #shareTypeDefaultSlot="{ row }">
-            <el-tag v-if="row.shareType === 'shared'" type="warning" size="small">
-              由【{{ row.sourceUser?.name || row.sourceUser?.account || row.sourceUserId }}】共享
-            </el-tag>
-            <el-tag v-else-if="row.shareType === 'copy'" type="success" size="small">
-              由【{{ row.sourceUser?.name || row.sourceUser?.account || row.sourceUserId }}】转存
+            <el-tag v-if="row.shareType === 'shared' || row.shareType === 'copy' || (row.sourceUserId && row.sourceUserId !== row.userId)" type="success" size="small">
+              由【{{ row.sourceUser?.name || row.sourceUser?.account || row.sourceUserId }}】分享
             </el-tag>
             <span v-else class="muted">-</span>
           </template>
@@ -156,8 +154,7 @@
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item command="edit" :disabled="row.permission?.canEdit === false">编辑</el-dropdown-item>
-                  <el-dropdown-item v-if="isAdmin" divided command="share-to-user">快捷共享</el-dropdown-item>
-                  <el-dropdown-item v-if="isAdmin" command="copy-to-user">转存副本</el-dropdown-item>
+                  <el-dropdown-item v-if="isAdmin" divided command="share-to-user">分享给用户</el-dropdown-item>
                   <el-dropdown-item v-if="isAdmin" command="move-to-user">移交所有人</el-dropdown-item>
                   <el-dropdown-item v-if="isAdmin" divided command="view-shared">查看分享记录</el-dropdown-item>
                   <el-dropdown-item divided command="delete" :disabled="row.permission?.canDelete === false">
@@ -380,6 +377,7 @@ import {
   type AiSkill,
   type AiSkillTarget,
 } from "@/api/ai-skill";
+import { ResourceLibraryApi } from "@/api/resource-library";
 
 const FOLDER_CATEGORY = "skill";
 
@@ -441,7 +439,7 @@ const selectedFolderId = ref<string | null>(null);
 
 // ── 分享/转移状态 ──
 const transferDialogVisible = ref(false);
-const transferAction = ref<"share" | "copy" | "move">("share");
+const transferAction = ref<"share" | "move">("share");
 const transferIds = ref<string[]>([]);
 const transferTargetUserId = ref<number | null>(null);
 const transferLoading = ref(false);
@@ -449,8 +447,7 @@ const userList = ref<any[]>([]);
 const userListLoading = ref(false);
 
 const transferDialogTitle = computed(() => {
-  if (transferAction.value === "share") return "快捷共享 Skill 给用户";
-  if (transferAction.value === "copy") return "复制副本 Skill 给用户";
+  if (transferAction.value === "share") return "分享 Skill 给用户";
   return "转移 Skill 给用户";
 });
 
@@ -762,7 +759,25 @@ function checkboxAllChange({ records }: { records: AiSkill[] }) {
   syncSelectedRows(records);
 }
 
-// ── 分享/转移操作 ──
+// ── 分享/转移/发布操作 ──
+
+async function handleBatchPublishToLibrary() {
+  if (!selectedIds.value.length) return;
+  try {
+    await ElMessageBox.confirm(`确定将选中的 ${selectedIds.value.length} 个技能发布到公共资源广场吗？`, '发布到库', {
+      confirmButtonText: '确定发布',
+      cancelButtonText: '取消',
+      type: 'info',
+    });
+    await ResourceLibraryApi.batchPublish({
+      resourceType: 'ai_skill',
+      ids: [...selectedIds.value],
+    });
+    ElMessage.success('已成功发布到公共 AI 技能库');
+  } catch {
+    // cancel
+  }
+}
 
 function handleBatchShareCommand(command: string) {
   if (!selectedIds.value.length) return;
@@ -777,12 +792,14 @@ function handleRowCommand(command: string, row: AiSkill) {
     removeSkills(row.id ? [row.id] : []);
   } else if (command === "view-shared") {
     openSharedRecordsDialog(row);
-  } else {
-    openTransferDialog(command as "share" | "copy" | "move", [row.id!]);
+  } else if (command === "share-to-user") {
+    openTransferDialog("share", [row.id!]);
+  } else if (command === "move-to-user") {
+    openTransferDialog("move", [row.id!]);
   }
 }
 
-function openTransferDialog(action: "share" | "copy" | "move", ids: string[]) {
+function openTransferDialog(action: "share" | "move", ids: string[]) {
   transferAction.value = action;
   transferIds.value = ids;
   transferTargetUserId.value = null;
@@ -812,10 +829,7 @@ async function submitTransfer() {
     const payload = { ids: transferIds.value, targetUserId: transferTargetUserId.value };
     if (transferAction.value === "share") {
       await shareAiSkillToUser(payload);
-      ElMessage.success("共享成功");
-    } else if (transferAction.value === "copy") {
-      await copyAiSkillToUser(payload);
-      ElMessage.success("复制成功");
+      ElMessage.success("分享成功");
     } else {
       await moveAiSkillToUser(payload);
       ElMessage.success("转移成功");

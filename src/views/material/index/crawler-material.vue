@@ -92,31 +92,6 @@
               <el-button size="small" type="danger" :icon="Delete" @click="handleDelete(null)">
                 批量删除({{ ids.length }})
               </el-button>
-              <el-dropdown
-                trigger="click"
-                @command="(cmd: CrawlerMaterialUserTransferAction) => openCrawlerMaterialUserTransferDialog(cmd)"
-              >
-                <el-button size="small" type="success" :disabled="!ids.length">
-                  分享 ({{ ids.length }})
-                  <el-icon class="el-icon--right"><ArrowDown /></el-icon>
-                </el-button>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item command="share">
-                      <el-icon><Share /></el-icon>
-                      <span>共享</span>
-                    </el-dropdown-item>
-                    <el-dropdown-item command="copy">
-                      <el-icon><DocumentCopy /></el-icon>
-                      <span>转存副本</span>
-                    </el-dropdown-item>
-                    <el-dropdown-item command="move">
-                      <el-icon><TopRight /></el-icon>
-                      <span>移交所有人</span>
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
             </div>
           </el-form>
         </div>
@@ -179,22 +154,6 @@
                       <el-dropdown-item command="import">
                         <el-icon><Upload /></el-icon>
                         <span>入库</span>
-                      </el-dropdown-item>
-                      <el-dropdown-item v-if="isAdmin" command="share-to-user">
-                        <el-icon><Share /></el-icon>
-                        <span>共享</span>
-                      </el-dropdown-item>
-                      <el-dropdown-item v-if="isAdmin" command="copy-to-user">
-                        <el-icon><DocumentCopy /></el-icon>
-                        <span>转存副本</span>
-                      </el-dropdown-item>
-                      <el-dropdown-item v-if="isAdmin" command="move-to-user">
-                        <el-icon><Edit /></el-icon>
-                        <span>移交所有人</span>
-                      </el-dropdown-item>
-                      <el-dropdown-item command="view-shared">
-                        <el-icon><Connection /></el-icon>
-                        <span>查看分享</span>
                       </el-dropdown-item>
                       <el-dropdown-item
                         command="delete"
@@ -397,118 +356,6 @@
         >
       </template>
     </el-dialog>
-
-    <el-dialog
-      v-model="crawlerMaterialUserTransferDialogVisible"
-      :title="crawlerMaterialUserTransferDialogTitle"
-      width="560px"
-      align-center
-      :close-on-click-modal="false"
-      @closed="resetCrawlerMaterialUserTransferDialog"
-    >
-      <div class="sticker-user-transfer-dialog">
-
-
-
-        <el-form label-width="96px" class="sticker-user-transfer-form">
-          <el-form-item label="目标用户" required>
-            <el-select
-              v-model="crawlerMaterialUserTransferTargetUserId"
-              class="sticker-user-transfer-form__select"
-              filterable
-              clearable
-              :loading="crawlerMaterialUserTransferUsersLoading"
-              placeholder="请选择目标用户"
-            >
-              <el-option
-                v-for="item in crawlerMaterialUserTransferUserOptions"
-                :key="item.id"
-                :label="item.label"
-                :value="item.id"
-              >
-                <div class="sticker-user-transfer-option">
-                  <div class="sticker-user-transfer-option__main">
-                    <span>{{ item.name || item.account || `用户 #${item.id}` }}</span>
-                    <el-tag v-if="item.isAdmin" size="small" type="warning">管理员</el-tag>
-                  </div>
-                  <span class="sticker-user-transfer-option__meta">
-                    {{ item.account || `ID ${item.id}` }}
-                  </span>
-                </div>
-              </el-option>
-            </el-select>
-          </el-form-item>
-
-          <el-form-item label="素材数量">
-            <el-tag type="info">{{ crawlerMaterialUserTransferIds.length }}</el-tag>
-          </el-form-item>
-
-          <el-form-item label="选中素材">
-            <div class="sticker-user-transfer-preview">
-              <el-tag
-                v-for="item in crawlerMaterialUserTransferPreviewItems"
-                :key="item.id"
-                size="small"
-                effect="plain"
-              >
-                {{ item.label }}
-              </el-tag>
-              <span
-                v-if="
-                  crawlerMaterialUserTransferIds.length >
-                  crawlerMaterialUserTransferPreviewItems.length
-                "
-                class="sticker-user-transfer-preview__more"
-              >
-                等 {{ crawlerMaterialUserTransferIds.length }} 条
-              </span>
-            </div>
-          </el-form-item>
-        </el-form>
-      </div>
-
-      <template #footer>
-        <el-button @click="crawlerMaterialUserTransferDialogVisible = false">取消</el-button>
-        <el-button
-          type="primary"
-          :loading="crawlerMaterialUserTransferSubmitting"
-          @click="submitCrawlerMaterialUserTransfer"
-        >
-          {{ crawlerMaterialUserTransferSubmitText }}
-        </el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 查看分享记录弹窗 -->
-    <el-dialog
-      v-model="shareRecordsDialogVisible"
-      :title="`分享记录 - ${shareRecordsResourceName}`"
-      width="600px"
-      destroy-on-close
-    >
-      <div v-loading="shareRecordsLoading">
-        <el-empty v-if="!shareRecordsLoading && shareRecordsList.length === 0" description="暂无分享记录" />
-        <el-table v-else :data="shareRecordsList" style="width: 100%">
-          <el-table-column prop="userName" label="分享给" min-width="120">
-            <template #default="{ row }">
-              <span>{{ row.userName || row.userId }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="shareType" label="分享类型" width="120">
-            <template #default="{ row }">
-              <el-tag v-if="row.shareType === 'shared'" type="warning" size="small" effect="light">快捷共享</el-tag>
-              <el-tag v-else-if="row.shareType === 'copy'" type="success" size="small" effect="light">物理副本</el-tag>
-              <el-tag v-else type="info" size="small" effect="plain">{{ row.shareType || '-' }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="createTime" label="分享时间" width="180">
-            <template #default="{ row }">
-              {{ formatTimestamp(row.createTime) }}
-            </template>
-          </el-table-column>
-        </el-table>
-      </div>
-    </el-dialog>
   </ContentWrap>
 </template>
 <script setup lang="tsx">
@@ -524,11 +371,6 @@ import {
   Upload,
   Edit,
   Download,
-  Share,
-  DocumentCopy,
-  ArrowDown,
-  TopRight,
-  Connection,
 } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
 import { downloadImage } from "@/common/download";
@@ -663,50 +505,7 @@ const importConfirmDialogVisible = ref(false);
 const selectedRowsForPreview = ref<any[]>([]);
 const importIds = ref<string[]>([]); // 用于存储要入库的ID列表
 
-// 查看分享记录
-const shareRecordsDialogVisible = ref(false);
-const shareRecordsLoading = ref(false);
-const shareRecordsList = ref<any[]>([]);
-const shareRecordsTotal = ref(0);
-const shareRecordsResourceName = ref('');
 
-type CrawlerMaterialUserTransferAction = "share" | "copy" | "move";
-type CrawlerMaterialUserTransferUserOption = {
-  id: string;
-  name?: string;
-  account?: string;
-  label: string;
-  isAdmin?: boolean;
-};
-const crawlerMaterialUserTransferDialogVisible = ref(false);
-const crawlerMaterialUserTransferSubmitting = ref(false);
-const crawlerMaterialUserTransferUsersLoading = ref(false);
-const crawlerMaterialUserTransferUsersLoaded = ref(false);
-const crawlerMaterialUserTransferAction = ref<CrawlerMaterialUserTransferAction>("share");
-const crawlerMaterialUserTransferIds = ref<string[]>([]);
-const crawlerMaterialUserTransferTargetUserId = ref("");
-const crawlerMaterialUserTransferUserOptions = ref<CrawlerMaterialUserTransferUserOption[]>([]);
-const crawlerMaterialUserTransferDialogTitle = computed(() => {
-  if (crawlerMaterialUserTransferAction.value === "share") return "快捷共享素材给用户";
-  if (crawlerMaterialUserTransferAction.value === "copy") return "复制副本素材给用户";
-  return "转移素材给用户";
-});
-const crawlerMaterialUserTransferSubmitText = computed(() => {
-  if (crawlerMaterialUserTransferAction.value === "share") return "确认快捷共享";
-  if (crawlerMaterialUserTransferAction.value === "copy") return "确认复制副本";
-  return "确认转移";
-});
-const crawlerMaterialUserTransferPreviewItems = computed(() =>
-  crawlerMaterialUserTransferIds.value.slice(0, 5).map((id) => {
-    const row =
-      selectedRowMap.value.get(String(id)) ||
-      dataSource.value.find((item: any) => String(item.id) === String(id));
-    return {
-      id: String(id),
-      label: row?.name || `ID: ${id}`,
-    };
-  }),
-);
 
 // 删除isMobile、filterDialogVisible、onMobileFilterSubmit相关逻辑
 
@@ -723,157 +522,7 @@ function getList() {
     });
 }
 
-function ensureCrawlerMaterialAdminOperation() {
-  if (!isAdmin.value) {
-    ElMessage.warning("仅管理员可执行该操作");
-    return false;
-  }
-  return true;
-}
 
-async function loadCrawlerMaterialTransferUserOptions() {
-  if (
-    crawlerMaterialUserTransferUsersLoaded.value ||
-    crawlerMaterialUserTransferUsersLoading.value
-  ) {
-    return;
-  }
-
-  crawlerMaterialUserTransferUsersLoading.value = true;
-  try {
-    const res = await getUserList({
-      currentPage: 1,
-      pageSize: 1000,
-    });
-    const list = Array.isArray(res?.list) ? res.list : [];
-    crawlerMaterialUserTransferUserOptions.value = list.map((item: any) => ({
-      id: String(item.id),
-      name: item.name || "",
-      account: item.account || "",
-      label: item.name || item.account || `用户 #${item.id}`,
-      isAdmin: !!item.isAdmin,
-    }));
-    crawlerMaterialUserTransferUsersLoaded.value = true;
-  } catch (error: any) {
-    ElMessage.error(error?.message || "加载用户列表失败");
-  } finally {
-    crawlerMaterialUserTransferUsersLoading.value = false;
-  }
-}
-
-function resetCrawlerMaterialUserTransferDialog() {
-  crawlerMaterialUserTransferSubmitting.value = false;
-  crawlerMaterialUserTransferAction.value = "copy";
-  crawlerMaterialUserTransferIds.value = [];
-  crawlerMaterialUserTransferTargetUserId.value = "";
-}
-
-async function openCrawlerMaterialUserTransferDialog(
-  action: CrawlerMaterialUserTransferAction,
-  row?: any,
-) {
-  if (!ensureCrawlerMaterialAdminOperation()) {
-    return;
-  }
-
-  const targetIds = row
-    ? [String(row.id)]
-    : (Array.isArray(ids.value) ? ids.value : []).map((id) => String(id)).filter(Boolean);
-
-  if (!targetIds.length) {
-    ElMessage.warning("请选择要操作的素材");
-    return;
-  }
-
-  crawlerMaterialUserTransferAction.value = action;
-  crawlerMaterialUserTransferIds.value = Array.from(new Set(targetIds));
-  crawlerMaterialUserTransferTargetUserId.value = "";
-  await loadCrawlerMaterialTransferUserOptions();
-  crawlerMaterialUserTransferDialogVisible.value = true;
-}
-
-async function submitCrawlerMaterialUserTransfer() {
-  if (!ensureCrawlerMaterialAdminOperation()) {
-    return;
-  }
-
-  if (!crawlerMaterialUserTransferIds.value.length) {
-    ElMessage.warning("请选择要操作的素材");
-    return;
-  }
-
-  if (!crawlerMaterialUserTransferTargetUserId.value) {
-    ElMessage.warning("请选择目标用户");
-    return;
-  }
-
-  crawlerMaterialUserTransferSubmitting.value = true;
-  const actionLabel =
-    crawlerMaterialUserTransferAction.value === "share"
-      ? "快捷共享"
-      : crawlerMaterialUserTransferAction.value === "copy"
-      ? "复制副本"
-      : "转移";
-
-  try {
-    const payload = {
-      ids: crawlerMaterialUserTransferIds.value,
-      targetUserId: crawlerMaterialUserTransferTargetUserId.value,
-    };
-    const res =
-      crawlerMaterialUserTransferAction.value === "share"
-        ? await CrawlerMaterialApi.shareToUser(payload)
-        : crawlerMaterialUserTransferAction.value === "copy"
-        ? await CrawlerMaterialApi.copyToUser(payload)
-        : await CrawlerMaterialApi.moveToUser(payload);
-    const result = res || {};
-
-    const successCount = Array.isArray(result?.list)
-      ? result.list.length
-      : Number(result?.total || 0);
-    const failedCount = Array.isArray(result?.failed) ? result.failed.length : 0;
-    const warningCount = Array.isArray(result?.warnings) ? result.warnings.length : 0;
-
-    if (successCount > 0) {
-      ElNotification.success(
-        `${actionLabel}成功 ${successCount} 条${failedCount ? `，失败 ${failedCount} 条` : ""}${warningCount ? `，警告 ${warningCount} 条` : ""}`,
-      );
-      crawlerMaterialUserTransferDialogVisible.value = false;
-      clearSelection();
-      getList();
-    } else if (failedCount > 0) {
-      ElMessage.error(`${actionLabel}失败 ${failedCount} 条`);
-    } else {
-      ElMessage.warning("未处理任何素材，请稍后重试");
-    }
-
-    if (failedCount > 0) {
-      ElNotification.warning({
-        title: `${actionLabel}失败详情`,
-        message: result.failed
-          .slice(0, 3)
-          .map((item: any) => `${item.id}: ${item.message}`)
-          .join("；"),
-        duration: 6000,
-      });
-    }
-
-    if (warningCount > 0) {
-      ElNotification.warning({
-        title: `${actionLabel}完成，但有警告`,
-        message: result.warnings
-          .slice(0, 3)
-          .map((item: any) => `${item.id}: ${item.message}`)
-          .join("；"),
-        duration: 6000,
-      });
-    }
-  } catch (error: any) {
-    ElMessage.error(error?.message || `${actionLabel}失败`);
-  } finally {
-    crawlerMaterialUserTransferSubmitting.value = false;
-  }
-}
 
 function syncSelectionState(records: any[], reserves: any[]) {
   const map = new Map<string, any>();
@@ -1099,39 +748,11 @@ function handleOperationCommand(command: string, row: any) {
     case "import":
       handleSingleImport(row);
       break;
-    case "share-to-user":
-      openCrawlerMaterialUserTransferDialog("share", row);
-      break;
-    case "copy-to-user":
-      openCrawlerMaterialUserTransferDialog("copy", row);
-      break;
-    case "move-to-user":
-      openCrawlerMaterialUserTransferDialog("move", row);
-      break;
-    case "view-shared":
-      openShareRecordsDialog(row);
-      break;
     case "delete":
       handleDelete(row);
       break;
     default:
       console.warn("未知的操作命令:", command);
-  }
-}
-
-async function openShareRecordsDialog(row: any) {
-  shareRecordsResourceName.value = row.name || `ID: ${row.id}`;
-  shareRecordsDialogVisible.value = true;
-  shareRecordsLoading.value = true;
-  shareRecordsList.value = [];
-  try {
-    const res = await CrawlerMaterialApi.getSharedRecords(String(row.id));
-    shareRecordsList.value = res?.list || [];
-    shareRecordsTotal.value = res?.total || 0;
-  } catch (e: any) {
-    ElMessage.error(e?.message || '获取分享记录失败');
-  } finally {
-    shareRecordsLoading.value = false;
   }
 }
 

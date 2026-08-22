@@ -127,6 +127,15 @@
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
+              <el-button
+                v-if="isAdmin"
+                size="small"
+                type="warning"
+                :disabled="!ids.length"
+                @click="handleBatchPublishToLibrary"
+              >
+                发布到库 ({{ ids.length }})
+              </el-button>
             </div>
           </el-form>
         </div>
@@ -1006,6 +1015,7 @@ import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import Pagination from "@/components/Pagination/index.vue";
 import { fontTemplateApi } from "@/api/fontTemplate";
+import { ResourceLibraryApi } from "@/api/resource-library";
 import { ImagePreview } from "@/components/ImagePreview";
 import { htmlToPngFile } from "@/utils/htmlToPng";
 import { copyLink } from "@/utils/clipboard";
@@ -2156,6 +2166,27 @@ async function submitFrontendGenerateThumbnail() {
     ElMessage.error(t('fontTemplate.frontendThumbnailFailed'));
   } finally {
     frontendGenerateLoading.value = false;
+  }
+}
+
+async function handleBatchPublishToLibrary() {
+  const targetIds = (Array.isArray(ids.value) ? ids.value : []).map(String).filter(Boolean);
+  if (!targetIds.length) {
+    return ElMessage.warning(t("material.selectMaterialsToOperate"));
+  }
+  try {
+    await ElMessageBox.confirm(`确认将选中的 ${targetIds.length} 项字体发布到公共资源广场吗？`, "发布提示", {
+      confirmButtonText: "确认发布",
+      cancelButtonText: "取消",
+      type: "info",
+    });
+    await ResourceLibraryApi.batchPublish({
+      resourceType: "font_template",
+      ids: targetIds,
+    });
+    ElMessage.success("已成功发布到公共字体库");
+  } catch {
+    // cancel
   }
 }
 

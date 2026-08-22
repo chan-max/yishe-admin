@@ -54,6 +54,15 @@
               >
                 批量删除({{ ids.length }})
               </el-button>
+              <el-button
+                v-if="isAdmin"
+                size="small"
+                type="warning"
+                :disabled="!ids.length"
+                @click="handleBatchPublishToLibrary"
+              >
+                发布到库 ({{ ids.length }})
+              </el-button>
             </div>
           </el-form>
         </div>
@@ -313,6 +322,7 @@ import {
   getPromptList,
   updatePrompt,
 } from "@/api/prompt";
+import { ResourceLibraryApi } from "@/api/resource-library";
 import { getStickerFolderList } from "@/api/material";
 import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import FolderTree from "@/components/material/FolderTree.vue";
@@ -587,6 +597,26 @@ function handleAdd() {
     tags: "",
     folderId: getDefaultFormFolderId(),
   };
+}
+
+async function handleBatchPublishToLibrary() {
+  if (!ids.value.length) {
+    return ElMessage.warning("请选择要发布的提示词");
+  }
+  try {
+    await ElMessageBox.confirm(`确认将选中的 ${ids.value.length} 条提示词发布到公共资源广场吗？`, "发布提示", {
+      confirmButtonText: "确认发布",
+      cancelButtonText: "取消",
+      type: "info",
+    });
+    await ResourceLibraryApi.batchPublish({
+      resourceType: "prompt",
+      ids: ids.value.map(String),
+    });
+    ElMessage.success("已成功发布到公共提示词库");
+  } catch {
+    // cancel
+  }
 }
 
 function checkboxChange(e) {

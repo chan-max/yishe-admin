@@ -153,6 +153,15 @@
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
+              <el-button
+                v-if="isAdmin"
+                size="small"
+                type="warning"
+                :disabled="!ids.length"
+                @click="handleBatchPublishToLibrary"
+              >
+                发布到库 ({{ ids.length }})
+              </el-button>
             </div>
           </el-form>
         </div>
@@ -1133,6 +1142,7 @@ import {
 import { useWindowSize, useLocalStorage, useClipboard } from "@vueuse/core";
 import type { VxeGridProps } from "vxe-table";
 import { psdTemplateApi } from "@/api/psdTemplate";
+import { ResourceLibraryApi } from "@/api/resource-library";
 import { uploadToCOS } from "@/api/cos";
 import { getUserList } from "@/api/user";
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
@@ -2475,6 +2485,27 @@ function handleViewPsdInfo(row: any) {
 function handleViewPsdFileInfo(row: any) {
   currentPsdFileInfoRow.value = row;
   psdFileInfoDialogVisible.value = true;
+}
+
+async function handleBatchPublishToLibrary() {
+  const targetIds = (Array.isArray(ids.value) ? ids.value : []).map(String).filter(Boolean);
+  if (!targetIds.length) {
+    return ElMessage.warning(t("material.selectMaterialsToOperate"));
+  }
+  try {
+    await ElMessageBox.confirm(`确认将选中的 ${targetIds.length} 项 PSD 模板发布到公共资源广场吗？`, "发布提示", {
+      confirmButtonText: "确认发布",
+      cancelButtonText: "取消",
+      type: "info",
+    });
+    await ResourceLibraryApi.batchPublish({
+      resourceType: "psd_template",
+      ids: targetIds,
+    });
+    ElMessage.success("已成功发布到公共 PSD 模板库");
+  } catch {
+    // cancel
+  }
 }
 
 async function openShareRecordsDialog(row: any) {

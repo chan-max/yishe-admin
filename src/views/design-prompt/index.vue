@@ -35,7 +35,15 @@
               <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
               <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
               <el-button type="primary" :icon="Plus" @click="handleAdd">新增</el-button>
-              <el-button type="danger" :icon="Delete" @click="handleDelete(null)">批量删除</el-button>
+              <el-button type="danger" :icon="Delete" :disabled="!ids.length" @click="handleDelete(null)">批量删除 ({{ ids.length }})</el-button>
+              <el-button
+                v-if="isAdmin"
+                type="warning"
+                :disabled="!ids.length"
+                @click="handleBatchPublishToLibrary"
+              >
+                发布到库 ({{ ids.length }})
+              </el-button>
             </div>
           </el-form>
         </div>
@@ -189,6 +197,11 @@ import {
   unfavoriteDesignPrompt,
   type DesignPrompt
 } from '@/api/design-prompt'
+import { ResourceLibraryApi } from '@/api/resource-library'
+import { useUserStore } from '@/store/modules/user'
+
+const userStore = useUserStore()
+const isAdmin = computed(() => userStore.user?.isAdmin ?? false)
 
 // 查询参数
 const queryParams = reactive({
@@ -348,6 +361,26 @@ function handleDelete(id: string | null) {
         ElMessage.error('删除失败')
       }
     })
+}
+
+async function handleBatchPublishToLibrary() {
+  if (!ids.value.length) {
+    return ElMessage.warning('请选择要发布的设计提示词')
+  }
+  try {
+    await ElMessageBox.confirm(`确认将选中的 ${ids.value.length} 条设计提示词发布到公共资源广场吗？`, '发布提示', {
+      confirmButtonText: '确认发布',
+      cancelButtonText: '取消',
+      type: 'info',
+    })
+    await ResourceLibraryApi.batchPublish({
+      resourceType: 'design_prompt',
+      ids: [...ids.value],
+    })
+    ElMessage.success('已成功发布到公共设计提示词库')
+  } catch {
+    // cancel
+  }
 }
 
 // 收藏切换
