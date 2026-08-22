@@ -24,13 +24,12 @@
 
       <main class="collect-body">
         <KeepAlive :max="6">
-          <ServicePanel
+          <HotsearchPlatformPanel
             v-if="activePlatform"
-            :key="activePlatform.key"
+            :key="activeKey"
             :plugin-key="activePlatform.key"
             :title="activePlatform.label"
-            subtitle="客户端热点采集，点击按钮拉取该平台实时热搜"
-            :fields="[]"
+            :subtitle="`${activePlatform.group} · 客户端实时数据采集`"
           />
         </KeepAlive>
       </main>
@@ -41,7 +40,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import ServicePanel from '../components/ServicePanel.vue'
+import HotsearchPlatformPanel from './HotsearchPlatformPanel.vue'
 import { HOTSEARCH_PLATFORMS } from '@/api/external/hotsearch/config'
 
 defineOptions({ name: 'ExternalHotsearchCollect' })
@@ -54,6 +53,7 @@ const activeKey = ref<string>('weibo')
 const activePlatform = computed(() =>
   HOTSEARCH_PLATFORMS.find((p) => p.key === activeKey.value),
 )
+
 
 const menuGroups = [
   { label: '国内热搜', items: HOTSEARCH_PLATFORMS.filter((p) => p.group === '国内热搜') },

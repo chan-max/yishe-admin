@@ -31,6 +31,7 @@ import {
   v2exIcon,
   thirtySixKrIcon,
   ithomeIcon,
+  xiaohongshuIcon,
 } from '@/assets/icons/apps'
 
 import {
@@ -119,6 +120,8 @@ export type NodeType =
   | 'hotsearch_devto'
   | 'hotsearch_ebay_trending'
   | 'hotsearch_shopify_trending'
+  | 'hotsearch_xiaohongshu'
+  | 'xiaohongshu_note_detail'
   | 'hotsearch_baidu'
   | 'hotsearch_lobsters'
   | 'hotsearch_tencent_news'
@@ -561,6 +564,69 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
       { field: 'duration', label: '耗时(ms)', type: 'number' },
     ],
     requirements: [{ type: 'client', label: '需客户端在线' }],
+  },
+  {
+    type: 'hotsearch_xiaohongshu',
+    name: '小红书热门/探索采集',
+    category: 'integration',
+    iconImage: xiaohongshuIcon,
+    color: '#ff2442',
+    badge: '探索',
+    description: '通过纯 HTTP 接口采集小红书探索推荐流热门笔记。无需客户端与登录账号即可提取全网最新爆款图文与视频内容。输出包含笔记标题、封面图片、作者信息、点赞互动数及跳转链接，适用于生活方式趋势分析、灵感搜集与爆款选题。',
+    defaultData: { name: '小红书热门/探索采集', platform: 'xiaohongshu' },
+    inputSchema: [
+      {
+        field: 'maxCount',
+        label: '获取数量',
+        type: 'number',
+        defaultValue: 20,
+      },
+    ],
+    outputSchema: [
+      { field: 'platform', label: '平台标识', type: 'string' },
+      { field: 'name', label: '平台名称', type: 'string' },
+      { field: 'itemCount', label: '条目数', type: 'number' },
+      { field: 'items', label: '笔记条目列表', type: 'array' },
+      { field: 'fetchedAt', label: '采集时间', type: 'string' },
+    ],
+  },
+  {
+    type: 'xiaohongshu_note_detail',
+    name: '小红书笔记详情提取',
+    category: 'integration',
+    iconImage: xiaohongshuIcon,
+    color: '#ff2442',
+    badge: '详情',
+    description: '通过纯 HTTP 接口解析指定小红书笔记链接或 NoteID，提取笔记完整正文长文、高清原图集、视频播放地址、作者信息、点赞/收藏/评论/分享完整互动指标及话题标签。',
+    defaultData: { name: '小红书笔记详情提取' },
+    inputSchema: [
+      {
+        field: 'noteId',
+        label: '笔记ID/链接',
+        type: 'string',
+        required: true,
+        placeholder: '输入笔记 ID 或完整 URL (如 https://www.xiaohongshu.com/explore/...)',
+      },
+      {
+        field: 'xsecToken',
+        label: '安全 Token (xsec_token)',
+        type: 'string',
+        description: '由热门/探索节点输出或 URL 参数中提取的 xsec_token',
+      },
+    ],
+    outputSchema: [
+      { field: 'noteId', label: '笔记ID', type: 'string' },
+      { field: 'xsecToken', label: '安全Token', type: 'string' },
+      { field: 'title', label: '笔记标题', type: 'string' },
+      { field: 'desc', label: '笔记正文全文', type: 'string' },
+      { field: 'noteType', label: '笔记类型', type: 'string' },
+      { field: 'images', label: '高清图片列表', type: 'array' },
+      { field: 'videoUrl', label: '视频播放地址', type: 'string' },
+      { field: 'tags', label: '话题标签列表', type: 'array' },
+      { field: 'interactInfo', label: '互动指标', type: 'json' },
+      { field: 'author', label: '作者信息', type: 'json' },
+      { field: 'fetchedAt', label: '采集时间', type: 'string' },
+    ],
   },
   {
     type: 'hotsearch_v2ex',

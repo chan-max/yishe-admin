@@ -157,7 +157,7 @@ const handleOpenNodePicker = () => {
 const runningWorkflow = ref(false);
 const { setWorkflowContext } = useWorkflowAiContext();
 const aiStore = useAiAssistantStore();
-const aiPanelVisible = ref(true);
+const aiPanelVisible = ref(false);
 
 const handleToggleAiPanel = async () => {
   // 只有在没有当前会话时才创建新会话
@@ -244,6 +244,8 @@ const nodeTypes = {
   hotsearch_devto: markRaw(HotsearchNode),
   hotsearch_ebay_trending: markRaw(HotsearchNode),
   hotsearch_shopify_trending: markRaw(HotsearchNode),
+  hotsearch_xiaohongshu: markRaw(HotsearchNode),
+  xiaohongshu_note_detail: markRaw(HotsearchNode),
   message_push_feishu: markRaw(FeishuNode),
   message_push_wecom: markRaw(WecomNode),
   google_arts_culture: markRaw(GoogleArtsCultureNode),
@@ -902,15 +904,45 @@ const statusText = computed(() => {
 
         <div class="wf-divider" />
 
-        <!-- 保存按钮（状态内置，固定宽度） -->
-        <el-button
-          size="small"
-          :class="['wf-save-btn', `wf-save-btn--${saveStatus}`]"
-          :loading="saveStatus === 'saving'"
+        <!-- 保存按钮（现代极简扁平化风格） -->
+        <button
+          type="button"
+          :class="['wf-flat-save-btn', `wf-flat-save-btn--${saveStatus}`]"
+          :disabled="saveStatus === 'saving'"
+          title="点击立即保存 (Ctrl+S / ⌘S)"
           @click="smartSaveNow"
         >
-          {{ statusText }}
-        </el-button>
+          <span class="wf-flat-save-btn__indicator">
+            <svg
+              v-if="saveStatus === 'saving'"
+              class="wf-flat-save-btn__spinner"
+              viewBox="0 0 24 24"
+              width="12"
+              height="12"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+            >
+              <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="12" stroke-linecap="round" />
+            </svg>
+            <svg
+              v-else-if="saveStatus === 'saved'"
+              class="wf-flat-save-btn__icon"
+              viewBox="0 0 24 24"
+              width="12"
+              height="12"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            <span v-else class="wf-flat-save-btn__dot" />
+          </span>
+          <span class="wf-flat-save-btn__text">{{ statusText }}</span>
+        </button>
       </div>
     </div>
 
@@ -1257,30 +1289,216 @@ const statusText = computed(() => {
   }
 }
 
-.wf-save-btn {
-  display: inline-flex !important;
-  min-width: 100px !important;
-  text-align: center !important;
-  transition: all 0.25s ease;
-  align-items: center !important;
-  justify-content: center !important;
+.wf-flat-save-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 86px;
+  min-width: 86px;
+  max-width: 86px;
+  height: 24px;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 4px;
+  box-sizing: border-box;
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+  letter-spacing: 0.1px;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease,
+    color 0.12s ease;
+  position: relative;
+  overflow: hidden;
 
+  &:active {
+    transform: translateY(0.5px);
+  }
+
+  &__indicator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+  }
+
+  &__icon {
+    stroke: currentColor;
+    flex-shrink: 0;
+  }
+
+  &__spinner {
+    flex-shrink: 0;
+    animation: wf-save-spin 0.7s linear infinite;
+  }
+
+  &__dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background-color: currentColor;
+  }
+
+  &__text {
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  // 1. 已保存（Figma/PS 工业中性灰底，安静沉稳）
   &--saved {
-    color: var(--el-color-success) !important;
-    background-color: color-mix(in srgb, var(--el-color-success) 10%, transparent) !important;
-    border-color: color-mix(in srgb, var(--el-color-success) 30%, transparent) !important;
+    color: #4b5563;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+
+    .wf-flat-save-btn__indicator {
+      color: #10b981;
+    }
+
+    &:hover {
+      background: #e5e7eb;
+      border-color: #9ca3af;
+      color: #1f2937;
+    }
+
+    &:active {
+      background: #d1d5db;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  // 2. 保存中（工业精密加载态）
+  &--saving {
+    color: #6b7280;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    box-shadow: none;
+    cursor: wait;
+
+    .wf-flat-save-btn__indicator {
+      color: #0d99ff;
+    }
+  }
+
+  // 3. 未保存（Figma 经典高对比蓝键 / 醒目操作提示）
+  &--unsaved {
+    color: #ffffff;
+    background: #0d99ff;
+    border: 1px solid #007be5;
+    box-shadow:
+      0 1px 2px rgba(13, 153, 255, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+
+    .wf-flat-save-btn__dot {
+      background-color: #ffffff;
+      box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+      animation: wf-save-pulse 1.4s ease-in-out infinite;
+    }
+
+    &:hover {
+      background: #008ae6;
+      border-color: #006ecf;
+      box-shadow:
+        0 1px 4px rgba(13, 153, 255, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    }
+
+    &:active {
+      background: #0075cc;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+    }
+  }
+}
+
+// 深色模式自动适配（Photoshop / Figma 经典深灰面板 #2c2c2c）
+html.dark .wf-flat-save-btn {
+  &--saved {
+    color: #9ca3af;
+    background: #2c2c2c;
+    border: 1px solid #3e3e3e;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 1px 2px rgba(0, 0, 0, 0.3);
+
+    .wf-flat-save-btn__indicator {
+      color: #34d399;
+    }
+
+    &:hover {
+      background: #363636;
+      border-color: #4f4f4f;
+      color: #e5e7eb;
+    }
+
+    &:active {
+      background: #222222;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+    }
   }
 
   &--saving {
-    color: var(--el-color-primary) !important;
-    background-color: color-mix(in srgb, var(--el-color-primary) 10%, transparent) !important;
-    border-color: color-mix(in srgb, var(--el-color-primary) 30%, transparent) !important;
+    color: #6b7280;
+    background: #222222;
+    border: 1px solid #333333;
+    box-shadow: none;
+
+    .wf-flat-save-btn__indicator {
+      color: #0d99ff;
+    }
   }
 
   &--unsaved {
-    color: var(--el-color-warning) !important;
-    background-color: color-mix(in srgb, var(--el-color-warning) 10%, transparent) !important;
-    border-color: color-mix(in srgb, var(--el-color-warning) 30%, transparent) !important;
+    color: #ffffff;
+    background: #0d99ff;
+    border: 1px solid #0c8ce9;
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25);
+
+    .wf-flat-save-btn__dot {
+      background-color: #ffffff;
+      box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+    }
+
+    &:hover {
+      background: #008ae6;
+      border-color: #007ae0;
+    }
+
+    &:active {
+      background: #0075cc;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+    }
+  }
+}
+
+@keyframes wf-save-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes wf-save-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.85);
   }
 }
 

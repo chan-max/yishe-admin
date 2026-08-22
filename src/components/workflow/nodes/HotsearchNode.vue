@@ -12,6 +12,7 @@ import {
   v2exIcon,
   thirtySixKrIcon,
   ithomeIcon,
+  xiaohongshuIcon,
 } from "@/assets/icons/apps";
 
 const props = defineProps<{ data: { label?: string; config?: any; platform?: string } }>();
@@ -27,6 +28,7 @@ const platformConfig: Record<string, { name: string; color: string; icon?: strin
   v2ex: { name: "V2EX", color: "#2b2b2b", icon: v2exIcon },
   "36kr": { name: "36氪", color: "#0052d9", icon: thirtySixKrIcon },
   ithome: { name: "IT之家", color: "#c8102e", icon: ithomeIcon },
+  xiaohongshu: { name: "小红书", color: "#ff2442", icon: xiaohongshuIcon },
 };
 
 const platform = props.data?.platform || "weibo";

@@ -166,8 +166,25 @@ watch(
   () => props.node,
   (n) => {
     if (n) {
-      form.value.label = n.data?.label || "";
-      form.value.config = { ...(n.data?.config || {}) };
+      form.value.label = n.data?.label || (n.type === "start" ? "开始" : "");
+      const cfg = { ...(n.data?.config || {}) };
+      if (n.type === "start") {
+        if (!Array.isArray(cfg.inputParams)) {
+          cfg.inputParams = [];
+        }
+        // 如果 config 中存在直接定义的 key-value（非系统保留字段），自动补充为 inputParams 保证可见且可编辑
+        const systemKeys = new Set(["triggerType", "cron", "inputParams", "webhook", "path"]);
+        for (const [key, val] of Object.entries(cfg)) {
+          if (!systemKeys.has(key) && !cfg.inputParams.some((p: any) => p.key === key)) {
+            cfg.inputParams.push({
+              key,
+              type: typeof val === "number" ? "number" : typeof val === "boolean" ? "boolean" : typeof val === "object" ? "json" : "string",
+              defaultValue: typeof val === "object" ? JSON.stringify(val) : String(val ?? ""),
+            });
+          }
+        }
+      }
+      form.value.config = cfg;
     }
     if (isNotifyNode.value) {
       loadMessagePushChannels();
@@ -183,6 +200,15 @@ const handleDataChange = (fieldName?: string, selectedLabel?: string) => {
   if (fieldName && selectedLabel) {
     const nameKey = fieldName === "channelId" ? "channelName" : `${fieldName}Name`;
     config[nameKey] = selectedLabel;
+  }
+
+  // 开始节点：确保 inputParams 里的 key 与 defaultValue 同步到 config 根对象上
+  if (props.node.type === "start" && Array.isArray(config.inputParams)) {
+    for (const param of config.inputParams) {
+      if (param.key) {
+        config[param.key] = param.defaultValue ?? config[param.key] ?? "";
+      }
+    }
   }
 
   emit("update", {
@@ -290,9 +316,9 @@ const removeInputParam = (index: number) => {
 
       <div class="config-panel__body">
         <el-form label-position="top" size="small">
-          <!-- 基础信息：边界节点名称固定，避免与“开始”语义重复配置。 -->
-          <el-form-item v-if="!isProtectedBoundaryNode" label="节点显示名称">
-            <el-input v-model="form.label" placeholder="输入节点名称" @input="handleDataChange" />
+          <!-- 基础信息：节点名称支持自由编辑 -->
+          <el-form-item label="节点显示名称">
+            <el-input v-model="form.label" placeholder="输入节点名称 (例如: 开始)" @input="handleDataChange" />
           </el-form-item>
 
           <!-- 1. 开始节点专属配置 -->
@@ -326,54 +352,70 @@ const removeInputParam = (index: number) => {
               Webhook 地址和启用状态请在顶部“设置”的“Webhook 触发”中配置。
             </div>
 
-            <div class="config-panel__section-title">输入变量</div>
-            <el-form-item label="变量定义">
-              <div class="wf-param-list">
+            <div class="config-panel__section-title">输入变量列表</div>
+            <div class="config-panel__field-desc" style="margin-bottom: 8px">
+              下游节点可通过 <code>{{ '{' }}{{ '{' }}start.变量名{{ '}' }}{{ '}' }}</code> 引用此处的输入变量。
+            </div>
+            <el-form-item label="">
+              <div class="wf-param-list" style="display: flex; flex-direction: column; gap: 8px">
                 <div
                   v-for="(param, idx) in form.config.inputParams || []"
                   :key="idx"
-                  class="wf-param-item"
+                  class="wf-param-card"
+                  style="padding: 8px; border: 1px solid var(--el-border-color-lighter); border-radius: 6px; background: var(--el-fill-color-blank); display: flex; flex-direction: column; gap: 6px"
                 >
-                  <el-input
-                    v-model="param.key"
-                    placeholder="变量名"
-                    size="small"
-                    style="width: 80px"
-                    @input="handleDataChange"
-                  />
-                  <el-select
-                    v-model="param.type"
-                    size="small"
-                    style="width: 70px"
-                    @change="() => handleDataChange()"
-                  >
-                    <el-option label="string" value="string" />
-                    <el-option label="number" value="number" />
-                    <el-option label="boolean" value="boolean" />
-                    <el-option label="json" value="json" />
-                  </el-select>
-                  <el-button
-                    type="danger"
-                    text
-                    circle
-                    size="small"
-                    @click="removeInputParam(Number(idx))"
-                  >
-                    <svg
-                      class="config-panel__delete-icon config-panel__delete-icon--sm"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
+                  <div style="display: flex; align-items: center; gap: 6px">
+                    <el-input
+                      v-model="param.key"
+                      placeholder="变量名 (如 title)"
+                      size="small"
+                      style="flex: 1"
+                      @input="handleDataChange"
+                    />
+                    <el-select
+                      v-model="param.type"
+                      size="small"
+                      style="width: 90px"
+                      @change="() => handleDataChange()"
                     >
-                      <path
-                        d="M4 7h16M10 11v6M14 11v6M5 7l1 13a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-13M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"
-                        stroke="currentColor"
-                        stroke-width="1.75"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                    </svg>
-                  </el-button>
+                      <el-option label="string" value="string" />
+                      <el-option label="number" value="number" />
+                      <el-option label="boolean" value="boolean" />
+                      <el-option label="json" value="json" />
+                    </el-select>
+                    <el-button
+                      type="danger"
+                      text
+                      circle
+                      size="small"
+                      @click="removeInputParam(Number(idx))"
+                    >
+                      <svg
+                        class="config-panel__delete-icon config-panel__delete-icon--sm"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M4 7h16M10 11v6M14 11v6M5 7l1 13a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-13M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"
+                          stroke="currentColor"
+                          stroke-width="1.75"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                      </svg>
+                    </el-button>
+                  </div>
+                  <div>
+                    <el-input
+                      v-model="param.defaultValue"
+                      :type="param.type === 'json' ? 'textarea' : 'text'"
+                      :rows="param.type === 'json' ? 2 : 1"
+                      placeholder="默认测试值 / 初始值"
+                      size="small"
+                      @input="() => { form.config[param.key] = param.defaultValue; handleDataChange(); }"
+                    />
+                  </div>
                 </div>
                 <el-button
                   size="small"
