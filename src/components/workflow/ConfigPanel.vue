@@ -125,11 +125,9 @@ const loadMessagePushChannels = async () => {
 const currentCapability = computed<NodeManifest | null>(() => {
   if (!props.node) return null;
   const type = props.node.data?.capabilityType || props.node.type;
-  return (
-    byType.value[type] ||
-    NODE_MANIFEST_REGISTRY.find((item) => item.type === type) ||
-    null
-  );
+  const local = NODE_MANIFEST_REGISTRY.find((item) => item.type === type);
+  const remote = byType.value?.get?.(type);
+  return remote ? ({ ...local, ...remote, type } as NodeManifest) : local || null;
 });
 
 // 是否受保护的边界节点（start 不允许删除）
@@ -138,7 +136,7 @@ const isProtectedBoundaryNode = computed(() => {
 });
 
 // 计算动态输入表单 Schema
-const inputSchema = computed<NodeIOSchemaField[]>(() => {
+const resolvedInputSchema = computed<NodeIOSchemaField[]>(() => {
   const cap = currentCapability.value;
   if (!cap?.inputSchema) return [];
   const schema = Array.isArray(cap.inputSchema) ? cap.inputSchema : [];
