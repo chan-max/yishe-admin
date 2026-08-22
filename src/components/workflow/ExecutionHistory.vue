@@ -140,56 +140,100 @@
       </el-table>
     </div>
 
-    <!-- 单条执行详情抽屉/弹窗 -->
+    <!-- 单条执行详情全屏沉浸式弹窗 -->
     <el-dialog
       v-model="detailVisible"
       title="执行记录详情"
-      width="680px"
+      fullscreen
       append-to-body
-      class="wf-detail-dialog"
+      destroy-on-close
+      class="wf-fullscreen-detail-dialog"
     >
-      <div v-if="selectedRow" class="wf-detail-content">
-        <el-descriptions :column="2" border size="small">
-          <el-descriptions-item label="记录 ID">
-            <span class="wf-mono-text">{{ selectedRow.id }}</span>
-          </el-descriptions-item>
-          <el-descriptions-item label="执行状态">
-            <el-tag :type="getStatusTagType(selectedRow.status)" size="small">
+      <div v-if="selectedRow" class="wf-detail-container">
+        <!-- 顶部无边框沉浸式状态与统计栏 -->
+        <div class="wf-detail-meta-bar">
+          <div class="wf-detail-meta-left">
+            <el-tag
+              :type="getStatusTagType(selectedRow.status)"
+              size="default"
+              effect="dark"
+              class="wf-detail-tag"
+            >
               {{ getStatusLabel(selectedRow.status) }}
             </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="触发方式">
-            {{ getTriggerLabel(selectedRow.triggerType) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="执行耗时">
-            {{ selectedRow.durationMs ? formatDuration(selectedRow.durationMs) : '-' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="触发时间">
-            {{ formatDate(selectedRow.createTime) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="完成节点数">
-            {{ selectedRow.completedNodes ?? 0 }} / {{ selectedRow.totalNodes ?? 0 }}
-          </el-descriptions-item>
-        </el-descriptions>
-
-        <!-- 异常提示 -->
-        <div v-if="selectedRow.errorText" class="wf-detail-section wf-detail-section--error">
-          <div class="wf-detail-section__title">
-            <el-icon><WarningFilled /></el-icon> 异常原因
+            <div class="wf-detail-chip">
+              <span class="wf-detail-chip__label">触发方式</span>
+              <span class="wf-detail-chip__val">{{ getTriggerLabel(selectedRow.triggerType) }}</span>
+            </div>
+            <div class="wf-detail-chip">
+              <span class="wf-detail-chip__label">执行耗时</span>
+              <span class="wf-detail-chip__val">{{ selectedRow.durationMs ? formatDuration(selectedRow.durationMs) : '-' }}</span>
+            </div>
+            <div class="wf-detail-chip">
+              <span class="wf-detail-chip__label">触发时间</span>
+              <span class="wf-detail-chip__val">{{ formatDate(selectedRow.createTime) }}</span>
+            </div>
+            <div class="wf-detail-chip">
+              <span class="wf-detail-chip__label">完成节点</span>
+              <span class="wf-detail-chip__val">{{ selectedRow.completedNodes ?? 0 }} / {{ selectedRow.totalNodes ?? '-' }}</span>
+            </div>
           </div>
-          <pre class="wf-code-block wf-code-block--error">{{ selectedRow.errorText }}</pre>
+
+          <div class="wf-detail-meta-right">
+            <span class="wf-detail-id">ID: {{ selectedRow.id }}</span>
+          </div>
         </div>
 
-        <!-- 输入数据 -->
-        <div v-if="selectedRow.input" class="wf-detail-section">
-          <div class="wf-detail-section__title">输入参数 (Input)</div>
-          <pre class="wf-code-block">{{ formatJson(selectedRow.input) }}</pre>
+        <!-- 异常提示 (轻量 Alert，无多余嵌套边框) -->
+        <div v-if="selectedRow.errorText" class="wf-detail-alert">
+          <el-icon class="wf-detail-alert__icon"><WarningFilled /></el-icon>
+          <div class="wf-detail-alert__content">
+            <div class="wf-detail-alert__title">执行异常日志</div>
+            <div class="wf-detail-alert__msg">{{ selectedRow.errorText }}</div>
+          </div>
         </div>
 
-        <!-- 输出数据 -->
-        <div v-if="selectedRow.output" class="wf-detail-section">
-          <div class="wf-detail-section__title">执行输出 (Output)</div>
-          <pre class="wf-code-block">{{ formatJson(selectedRow.output) }}</pre>
+        <!-- 输入与输出双栏全屏展示 -->
+        <div class="wf-detail-panes">
+          <!-- 输入参数 -->
+          <div class="wf-detail-pane">
+            <div class="wf-detail-pane__header">
+              <span class="wf-detail-pane__title">输入参数 (Input)</span>
+              <el-button
+                v-if="selectedRow.input"
+                size="small"
+                text
+                type="primary"
+                @click="copyText(formatJson(selectedRow.input))"
+              >
+                复制 JSON
+              </el-button>
+            </div>
+            <div class="wf-detail-pane__body">
+              <pre v-if="selectedRow.input" class="wf-clean-code">{{ formatJson(selectedRow.input) }}</pre>
+              <div v-else class="wf-detail-empty">无输入参数</div>
+            </div>
+          </div>
+
+          <!-- 执行输出 -->
+          <div class="wf-detail-pane">
+            <div class="wf-detail-pane__header">
+              <span class="wf-detail-pane__title">执行输出 (Output)</span>
+              <el-button
+                v-if="selectedRow.output"
+                size="small"
+                text
+                type="primary"
+                @click="copyText(formatJson(selectedRow.output))"
+              >
+                复制 JSON
+              </el-button>
+            </div>
+            <div class="wf-detail-pane__body">
+              <pre v-if="selectedRow.output" class="wf-clean-code">{{ formatJson(selectedRow.output) }}</pre>
+              <div v-else class="wf-detail-empty">暂无输出数据</div>
+            </div>
+          </div>
         </div>
       </div>
     </el-dialog>
@@ -198,6 +242,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { ElMessage } from 'element-plus'
 import {
   Clock,
   Promotion,
@@ -310,6 +355,18 @@ const handleViewDetail = (row: any) => {
   selectedRow.value = row
   detailVisible.value = true
 }
+
+const copyText = (text: string) => {
+  if (!text) return
+  if (navigator.clipboard) {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => ElMessage.success('已复制到剪贴板'))
+      .catch(() => ElMessage.error('复制失败'))
+  } else {
+    ElMessage.info('当前环境不支持剪贴板操作')
+  }
+}
 </script>
 
 <style scoped lang="scss">
@@ -412,56 +469,153 @@ const handleViewDetail = (row: any) => {
   color: var(--el-text-color-placeholder);
 }
 
-.wf-mono-text {
-  font-family: var(--el-font-family-mono, monospace);
-  font-size: 11px;
-}
-
-.wf-detail-content {
+/* ─────────────────────────────────────────────────────────────
+   全屏极简详情视图 (Fullscreen Minimalist Detail View)
+   ───────────────────────────────────────────────────────────── */
+.wf-detail-container {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  height: calc(100vh - 120px);
+  padding: 4px 6px;
 }
 
-.wf-detail-section {
+.wf-detail-meta-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 14px;
+  background: var(--el-fill-color-light);
+  border-radius: 8px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.wf-detail-meta-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.wf-detail-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+
+  &__label {
+    color: var(--el-text-color-secondary);
+  }
+
+  &__val {
+    font-weight: 500;
+    color: var(--el-text-color-primary);
+    font-family: var(--el-font-family-mono, monospace);
+  }
+}
+
+.wf-detail-id {
+  font-family: var(--el-font-family-mono, monospace);
+  font-size: 12px;
+  color: var(--el-text-color-placeholder);
+}
+
+.wf-detail-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  background: color-mix(in srgb, var(--el-color-danger) 8%, transparent);
+  border-radius: 8px;
+  color: var(--el-color-danger);
+  flex-shrink: 0;
+
+  &__icon {
+    font-size: 18px;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  &__content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__title {
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 2px;
+  }
+
+  &__msg {
+    font-size: 12px;
+    line-height: 1.6;
+    word-break: break-all;
+    font-family: var(--el-font-family-mono, monospace);
+  }
+}
+
+.wf-detail-panes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+.wf-detail-pane {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  border-radius: 8px;
+  background: var(--el-fill-color-blank);
+  background-color: var(--el-bg-color-overlay);
+  border: 1px solid var(--el-border-color-lighter);
+  overflow: hidden;
+  height: 100%;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: var(--el-fill-color-light);
+    border-bottom: 1px solid var(--el-border-color-lighter);
+    flex-shrink: 0;
+  }
 
   &__title {
     font-size: 13px;
     font-weight: 600;
     color: var(--el-text-color-primary);
-    display: flex;
-    align-items: center;
-    gap: 4px;
   }
 
-  &--error &__title {
-    color: var(--el-color-danger);
+  &__body {
+    flex: 1;
+    overflow: auto;
+    padding: 14px;
   }
 }
 
-.wf-code-block {
+.wf-clean-code {
   margin: 0;
-  padding: 10px 12px;
-  background: var(--el-fill-color-light);
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 6px;
+  padding: 0;
   font-family: var(--el-font-family-mono, monospace);
-  font-size: 12px;
-  line-height: 1.5;
+  font-size: 12.5px;
+  line-height: 1.6;
   color: var(--el-text-color-primary);
-  max-height: 220px;
-  overflow: auto;
   white-space: pre-wrap;
   word-break: break-all;
+}
 
-  &--error {
-    background: color-mix(in srgb, var(--el-color-danger) 6%, transparent);
-    border-color: color-mix(in srgb, var(--el-color-danger) 25%, transparent);
-    color: var(--el-color-danger);
-  }
+.wf-detail-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--el-text-color-placeholder);
+  font-size: 13px;
 }
 
 @keyframes wf-exec-pulse {
