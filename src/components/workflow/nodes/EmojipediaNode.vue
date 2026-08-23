@@ -5,8 +5,6 @@ import { Handle, Position } from "@vue-flow/core";
 import { emojipediaIcon } from "@/assets/icons/apps";
 const props = defineProps<{ data: { label?: string; config?: any } }>();
 const keyword = computed(() => props.data.config?.keyword || props.data.config?.query || "");
-const maxCount = computed(() => props.data.config?.maxCount || props.data.config?.limit || 10);
-const category = computed(() => props.data.config?.category || "stickers");
 </script>
 <template>
   <div class="wf-node wf-node--emojipedia">

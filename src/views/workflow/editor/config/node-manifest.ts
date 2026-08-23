@@ -1410,21 +1410,23 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'emojipedia_search',
-    name: 'Emojipedia 贴纸采集',
+    name: 'Emojipedia 贴纸采集 (Emojipedia Stickers)',
     category: 'material',
-    description: '从 Emojipedia 检索 Apple 3D 原生高清 Emoji 与贴纸素材并同步上传至素材库。Emojipedia 是权威的 Emoji 参考平台，提供 Apple、Google、Samsung 等平台的原生高清 Emoji 贴纸和标准 Emoji 图像。需客户端在线且可访问外网。输出包含 Emoji URL、名称、分类和平台信息，适用于贴纸素材收集、表情包制作和社交媒体内容创作。',
+    description: '【功能】根据关键词从 Emojipedia 检索全量 Apple 原生 3D 高清 Emoji 贴纸大图并自动上传入库至素材库。【用法】配置 keyword 搜索词（如 "cat"、"fire"、"rocket"），无需配置数量，单次全自动采集入库全量匹配的图片贴纸。【场景与输出】需客户端在线且可访问外网。输出全部采集到的图片列表 images 及统计。',
     iconImage: emojipediaIcon,
     color: '#FF8C00',
-    defaultData: { label: 'Emojipedia 贴纸采集', config: { keyword: '', maxCount: 10, category: 'stickers' } },
+    defaultData: { label: 'Emojipedia 贴纸采集', config: { keyword: '' } },
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: cat, fire, laugh, rocket' },
-      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
-      { field: 'category', label: '检索分类', type: 'select', defaultValue: 'stickers', options: [{ label: '高清贴纸 (Stickers)', value: 'stickers' }, { label: '标准 Emoji (Emojis)', value: 'emojis' }] },
     ],
     outputSchema: [
       { field: 'successCount', label: '成功数量', type: 'number' },
       { field: 'failCount', label: '失败数量', type: 'number' },
       { field: 'images', label: '图片列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
     ],
   },
   {

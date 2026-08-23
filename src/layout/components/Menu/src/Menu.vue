@@ -39,6 +39,7 @@ import {
   type ClientPluginKey,
   useClientNodeStore,
 } from "@/store/modules/clientNode";
+import { getWorkflowPageApi } from "@/api/workflow";
 
 const { getPrefixCls } = useDesign();
 const prefixCls = getPrefixCls("menu");
@@ -121,6 +122,30 @@ export default defineComponent({
     } = usePublishTaskRuntimeState();
     const clientNodeStore = useClientNodeStore();
     clientNodeStore.ensureInitialized({ summary: true });
+
+    const runningWorkflowCount = ref(0);
+    const workflowRuntimeLoading = ref(false);
+    let workflowRuntimeTimer: ReturnType<typeof setInterval> | null = null;
+    const refreshWorkflowRuntime = async () => {
+      if (workflowRuntimeLoading.value) return;
+      workflowRuntimeLoading.value = true;
+      try {
+        const response: any = await getWorkflowPageApi({ currentPage: 1, pageSize: 100 });
+        const workflows = response?.list || response?.data?.list || [];
+        runningWorkflowCount.value = workflows.filter((workflow: any) => workflow?.isRunning === true).length;
+      } catch {
+        // 菜单状态是辅助信息，查询失败不影响路由和工作流执行。
+      } finally {
+        workflowRuntimeLoading.value = false;
+      }
+    };
+    onMounted(() => {
+      void refreshWorkflowRuntime();
+      workflowRuntimeTimer = setInterval(() => void refreshWorkflowRuntime(), 5_000);
+    });
+    onBeforeUnmount(() => {
+      if (workflowRuntimeTimer) clearInterval(workflowRuntimeTimer);
+    });
 
     const menuStatusRouteMap: Record<string, string> = {
       "/operation/toolkit": "browser-automation",
@@ -478,6 +503,25 @@ export default defineComponent({
       });
     };
 
+    const renderWorkflowRuntimeBadge = (routePath: string) => {
+      if (routePath !== "/workflow/index") return undefined;
+      if (workflowRuntimeLoading.value && runningWorkflowCount.value === 0) {
+        return renderMenuStatusHint(
+          <span class={`${prefixCls}__status-loader`} />,
+          "正在获取工作流运行状态",
+        );
+      }
+      if (runningWorkflowCount.value <= 0) return undefined;
+      return renderMenuStatusHint(
+        <span class={`${prefixCls}__workflow-running-badge`}>
+          <span class={`${prefixCls}__workflow-running-loader`}>
+            {runningWorkflowCount.value}
+          </span>
+        </span>,
+        `当前有 ${runningWorkflowCount.value} 个工作流正在运行`,
+      );
+    };
+
     const renderAiAssistantRuntimeBadge = (routePath: string) => {
       if (routePath !== "/ai/assistant") {
         return undefined;
@@ -758,7 +802,8 @@ export default defineComponent({
                         ) : undefined}
                         <span class={`${prefixCls}__section-title`}>{t(route.meta?.title as string)}</span>
                       </div>
-                      {renderMessagePushBadge(routePath) ||
+                      {renderWorkflowRuntimeBadge(routePath) ||
+                        renderMessagePushBadge(routePath) ||
                         renderServiceHealthDot(route, routePath)}
                     </div>
                   </button>
@@ -820,7 +865,8 @@ export default defineComponent({
                             onClick={() => selectMenu(childPath)}
                           >
                             <span class={`${prefixCls}__link-text`}>{t(child.meta?.title as string)}</span>
-                            {renderDesignToolRuntimeBadge(childPath) ||
+                            {renderWorkflowRuntimeBadge(childPath) ||
+                              renderDesignToolRuntimeBadge(childPath) ||
                               renderAiAssistantRuntimeBadge(childPath) ||
                               renderAiConfigBadge(childPath) ||
                               renderMessagePushBadge(childPath) ||
@@ -1759,6 +1805,43 @@ $prefix-cls: #{$namespace}-menu;
       content: "";
       animation: status-count-ring 1.5s ease-in-out infinite;
       inset: -2px;
+    }
+  }
+
+  &__workflow-running-badge {
+    display: inline-flex;
+    width: 22px;
+    height: 22px;
+    margin-left: var(--left-menu-status-dot-margin-left);
+    align-items: center;
+    justify-content: center;
+  }
+
+  // 工作流数量直接显示在 loading 圆环中，避免 loading 和数字分离占位。
+  &__workflow-running-loader {
+    position: relative;
+    display: inline-flex;
+    width: 21px;
+    height: 21px;
+    color: #f59e0b;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    background: rgb(245 158 11 / 8%);
+    border: 1px solid rgb(245 158 11 / 20%);
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+
+    &::before {
+      position: absolute;
+      border: 2px solid transparent;
+      border-top-color: #f59e0b;
+      border-right-color: rgb(245 158 11 / 72%);
+      border-radius: 50%;
+      content: "";
+      inset: -2px;
+      animation: status-ring-spin 0.8s linear infinite;
     }
   }
 }

@@ -138,7 +138,10 @@ const handleResetWorkflow = async (row: WorkflowItem) => {
 }
 
 const hasCronTrigger = (item: WorkflowItem) => item.triggers?.some((t) => t.type === 'cron' && t.enabled)
-const hasLatestExecutionFailure = (item: WorkflowItem) => item.lastExecution?.status === 'failed'
+// 运行中的工作流可能还携带上一次失败记录，不能在本次运行结束前继续
+// 把卡片标成失败；否则用户会看到“正在运行”和旧错误同时存在。
+const hasLatestExecutionFailure = (item: WorkflowItem) =>
+  !item.isRunning && item.lastExecution?.status === 'failed'
 const getLatestExecutionError = (item: WorkflowItem) =>
   hasLatestExecutionFailure(item) ? String(item.lastExecution?.errorText || '执行失败，请查看执行记录') : ''
 
