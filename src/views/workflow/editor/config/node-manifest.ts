@@ -1039,19 +1039,20 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     iconImage: googleArtsCultureIcon,
     color: '#4285f4',
     badge: '采集',
-    description: '从 Google Arts & Culture 搜索全球博物馆的高清艺术作品和名画素材，支持关键词搜索和分辨率档位选择，批量添加到素材库。Google Arts & Culture 汇聚了世界各大博物馆的珍贵藏品数字化资源。需客户端在线且可访问外网，必须配置 zoomLevel 分辨率档位。输出包含图片URL、标题、作者和博物馆来源，适用于艺术创作参考、教育内容配图和文化遗产数字化项目。',
+    description: '从 Google Arts & Culture 搜索全球博物馆的艺术作品和名画，并按图片瓦片缩放层级下载后批量入库。分辨率档位 idx 从 0 开始，不是固定像素值：数字越大通常像素尺寸越高、下载切片更多、耗时也更长；若设置值高于某件作品返回的最高 idx，系统会自动采用该作品的最高可用档。需客户端在线且可访问外网。输出包含图片 URL、标题、作者和博物馆来源，适用于艺术创作参考、教育内容配图和文化遗产数字化项目。',
     defaultData: {
       name: 'Google Art 素材采集',
-      config: { keyword: '', maxCount: 10, zoomLevel: null },
+      config: { keyword: '', maxCount: 10, zoomLevel: null, timeoutMs: 300000 },
     },
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: false, placeholder: '例如: van gogh, impressionism (留空默认精选素材)' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
-      { field: 'zoomLevel', label: '分辨率档位', type: 'number', required: true, description: '必须明确配置 googleArt_zoom 返回的 zooms[].idx；工作流不会自动猜测分辨率' },
+      { field: 'zoomLevel', label: '分辨率档位', type: 'number', required: true, description: '从 0 开始填写 googleArt_zoom 返回的 zooms[].idx（不是固定像素）。数字越大通常越清晰、切片更多且下载更慢；超过该作品最高 idx 时自动使用最高可用档。' },
     ],
     outputSchema: [
       { field: 'successCount', label: '成功数量', type: 'number' },
       { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'partialSuccess', label: '是否部分成功', type: 'boolean' },
       { field: 'images', label: '图片列表', type: 'array' },
     ],
     requirements: [
@@ -2311,7 +2312,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     type: 'svgrepo_search',
     name: 'SVGRepo 矢量图库采集',
     category: 'material',
-    description: '从 SVGRepo 检索 50万+ 高清矢量图标与插画素材并同步上传至素材库。SVGRepo 是全球最大的免费矢量图库，提供海量 SVG 格式的图标和插画，支持全部、单色、多色、双色、线性和实心等多种风格筛选。需客户端在线、浏览器环境可用且可访问外网。输出包含素材URL、名称、风格和授权信息，适用于UI设计、前端开发和品牌视觉素材库搭建。',
+    description: '从 SVGRepo 按关键词和风格筛选开源 SVG 矢量图标与矢量插画，并批量同步到素材库。SVG 素材可无限缩放，适用于 UI、网页、品牌视觉与印刷设计；支持全部、单色、多色、双色、轮廓、填充等风格。需客户端在线、浏览器环境可用且可访问外网。输出包含素材 URL、名称、风格和授权信息。',
     iconImage: svgrepoIcon,
     color: '#6b9bd2',
     defaultData: { label: 'SVGRepo 矢量采集', config: { keyword: '', maxCount: 12, style: 'all' } },
@@ -2569,12 +2570,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   // ══════════════════════════════════════════════════════
   {
     type: 'variety_search',
-    name: 'Variety',
+    name: 'Variety 好莱坞影视娱乐 (Variety Entertainment)',
     category: 'news_data',
-    description: '从 Variety 获取影视产业新闻、评论和票房数据，搜索全球知名娱乐媒体的最新报道。Variety 是好莱坞最具权威的娱乐产业媒体，覆盖电影、电视、音乐和数字娱乐等领域。需客户端在线且可访问外网。输出包含新闻标题、分类、发布时间和原文链接，适用于影视产业追踪、娱乐行业动态监控和文化内容分析。',
+    description: '【功能】采集全球顶级娱乐媒体 Variety 的影视产业新闻、票房数据、剧集评论与好莱坞深度报道。【用法】配置 keyword 搜索词（如 "Marvel"、"box office"、"film"）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线且可访问外网。输出包含新闻标题、分类、发布时间及原文链接，适用于娱乐行业情报追踪、影视热点监控与文娱选题分析。',
     iconImage: varietyIcon,
     color: '#8E44AD',
-    defaultData: { label: 'Variety', config: { keyword: '', maxCount: 10 } },
+    defaultData: { label: 'Variety 影视娱乐', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: film, tv, box office' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
@@ -2591,12 +2592,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'hollywood_reporter_search',
-    name: 'Hollywood Reporter',
+    name: 'Hollywood Reporter 好莱坞报道 (The Hollywood Reporter)',
     category: 'news_data',
-    description: '从 Hollywood Reporter 获取好莱坞影视资讯、电影评论和行业动态，搜索好莱坞权威娱乐媒体的报道。The Hollywood Reporter 是好莱坞最具影响力的行业媒体，覆盖电影、电视、娱乐产业新闻。需客户端在线且可访问外网。输出包含新闻标题、分类、发布时间和原文链接，适用于好莱坞影视追踪和行业动态监控。',
+    description: '【功能】采集好莱坞权威媒体 The Hollywood Reporter 的电影资讯、流媒体动态、明星专访与颁奖季分析。【用法】配置 keyword 关键词（如 "Netflix"、"Cannes"、"movie review"）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线且可访问外网。输出包含文章标题、正文摘要、发布时间与原文链接，适用于全球影视动态跟踪、海外文娱资讯聚合与影视评论创作。',
     iconImage: hollywoodReporterIcon,
     color: '#000000',
-    defaultData: { label: 'Hollywood Reporter', config: { keyword: '', maxCount: 10 } },
+    defaultData: { label: '好莱坞报道', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: movies, tv, entertainment' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
@@ -2613,12 +2614,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'deadline_search',
-    name: 'Deadline',
+    name: 'Deadline 好莱坞独家资讯 (Deadline Hollywood)',
     category: 'news_data',
-    description: '从 Deadline 获取娱乐产业新闻、电影发行和行业动态，搜索好莱坞最新娱乐报道。Deadline 是好莱坞知名的娱乐新闻网站，以独家新闻和深度报道见长。需客户端在线且可访问外网。输出包含新闻标题、分类、发布时间和原文链接，适用于娱乐产业追踪和影视行业情报收集。',
+    description: '【功能】采集好莱坞一线独家快讯网站 Deadline 的影视项目开拍、选角签约、档期变更与行业独家爆料。【用法】配置 keyword 关键词（如 "casting"、"box office"、"renewal"）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线且可访问外网。输出包含突发新闻标题、详细快讯、时间与链接，适合影视行业情报速递、第一手独家选题抓取。',
     iconImage: deadlineIcon,
     color: '#D35400',
-    defaultData: { label: 'Deadline', config: { keyword: '', maxCount: 10 } },
+    defaultData: { label: 'Deadline 影视独家', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: film, tv, industry' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
@@ -2635,12 +2636,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'billboard_search',
-    name: 'Billboard',
+    name: 'Billboard 音乐榜单与资讯 (Billboard Charts)',
     category: 'news_data',
-    description: '从 Billboard 获取音乐榜单、音乐资讯和行业动态，搜索全球最权威的音乐排行榜数据。Billboard 是全球最具影响力的音乐排行榜发布机构，以 Hot 100 和 Billboard 200 榜单闻名。需客户端在线且可访问外网。输出包含榜单名称、歌曲/艺人、排名和发布时间，适用于音乐行业追踪、榜单趋势分析和流行文化研究。',
+    description: '【功能】采集全球权威音乐排行榜 Billboard 的 Hot 100、Billboard 200 榜单排名、流行音乐动态与新单专辑资讯。【用法】配置 keyword 关键词（如 "Hot 100"、"Taylor Swift"、"album"）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线且可访问外网。输出包含榜单名称、歌曲/艺人、排名和发布时间，适用于流行音乐趋势分析、榜单盘点与音乐内容创作。',
     iconImage: billboardIcon,
     color: '#E74C3C',
-    defaultData: { label: 'Billboard', config: { keyword: '', maxCount: 10 } },
+    defaultData: { label: 'Billboard 音乐榜单', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: charts, news, reviews' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
@@ -2657,12 +2658,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'tmz_search',
-    name: 'TMZ',
+    name: 'TMZ 名人娱乐八卦 (TMZ Celebrity News)',
     category: 'news_data',
-    description: '从 TMZ 获取娱乐八卦、名人动态和流行文化资讯，搜索全球最知名的娱乐八卦媒体。TMZ 以独家名人新闻和娱乐八卦报道闻名，覆盖电影、电视、音乐等领域。需客户端在线且可访问外网。输出包含新闻标题、分类、发布时间和原文链接，适用于娱乐八卦追踪、名人动态监控和流行文化研究。',
+    description: '【功能】采集全球最大名人娱乐八卦媒体 TMZ 的突发名人事件、独家娱乐八卦、狗仔动态与流行文化热点。【用法】配置 keyword 关键词（如 "celebrity"、"music"、"hollywood"）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线且可访问外网。输出包含爆料标题、事件概要、发布时间与原文链接，适用于娱乐八卦追踪、海外名人动态监控与社交话题热点挖掘。',
     iconImage: tmzIcon,
     color: '#C0392B',
-    defaultData: { label: 'TMZ', config: { keyword: '', maxCount: 10 } },
+    defaultData: { label: 'TMZ 娱乐八卦', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: celebrity, tv, music' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
@@ -2679,12 +2680,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'ign_search',
-    name: 'IGN',
+    name: 'IGN 游戏与影视评测 (IGN Gaming & Entertainment)',
     category: 'news_data',
-    description: '从 IGN 获取游戏评测、影视评论和娱乐资讯，搜索全球知名的游戏与娱乐媒体。IGN 是全球最大的游戏和娱乐媒体平台，覆盖游戏评测、电影评论、电视资讯等领域。需客户端在线且可访问外网。输出包含评测标题、评分、分类和原文链接，适用于游戏行业追踪、影视评论分析和娱乐内容聚合。',
+    description: '【功能】采集全球最大游戏媒体 IGN 的主机/PC/手游评测、权威评分、游戏攻略与科幻影视资讯。【用法】配置 keyword 关键词（如 "PS5"、"GTA"、"review"）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线且可访问外网。输出包含评测标题、IGN评分、游戏分类与文章链接，适用于游戏发售动态监控、专业评测聚合与玩家社区内容建设。',
     iconImage: ignIcon,
     color: '#FF0000',
-    defaultData: { label: 'IGN', config: { keyword: '', maxCount: 10 } },
+    defaultData: { label: 'IGN 游戏评测', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: games, movies, tv' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
@@ -2701,12 +2702,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'polygon_search',
-    name: 'Polygon',
+    name: 'Polygon 游戏文化与资讯 (Polygon Gaming Culture)',
     category: 'news_data',
-    description: '从 Polygon 获取游戏文化、游戏评测和娱乐资讯，搜索知名游戏文化媒体。Polygon 是 Vox Media 旗下的游戏文化媒体，以深度游戏评测和文化评论见长。需客户端在线且可访问外网。输出包含文章标题、分类、发布时间和原文链接，适用于游戏文化追踪、游戏评测分析和娱乐内容聚合。',
+    description: '【功能】采集知名游戏与流行文化媒体 Polygon 的深度游戏评测、独立游戏专题、极客文化与ACG动态。【用法】配置 keyword 关键词（如 "Nintendo"、"Indie"、"anime"）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线且可访问外网。输出包含专题标题、文章导读、分类与原文链接，适用于深度游戏产业观察、文化评论与游戏玩家资讯流构建。',
     iconImage: polygonIcon,
     color: '#8B5CF6',
-    defaultData: { label: 'Polygon', config: { keyword: '', maxCount: 10 } },
+    defaultData: { label: 'Polygon 游戏文化', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: reviews, news, features' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
@@ -2723,9 +2724,9 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'douban_movie_search',
-    name: '豆瓣电影',
+    name: '豆瓣电影评分与热门 (Douban Movie)',
     category: 'news_data',
-    description: '从豆瓣电影获取电影评分、热门电影和影评数据，搜索中国最大的电影社区。豆瓣电影是中国最具影响力的电影评分和推荐平台，覆盖电影评分、影评和热门榜单。需客户端在线。输出包含电影标题、评分、简介和链接，适用于电影推荐、影视选题参考和文化内容分析。',
+    description: '【功能】采集国内权威电影社区“豆瓣电影”的热门上映电影、高分榜单、评分数据与影评摘要。【用法】配置 keyword 关键词（如 "热门"、"最新"、"科幻" 或电影名称）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线。输出包含电影片名、豆瓣评分、演职员信息、电影简介与条目链接，适用于影视推荐榜单制作、口碑分析与电影解说素材收集。',
     iconImage: doubanMovieIcon,
     color: '#007722',
     defaultData: { label: '豆瓣电影', config: { keyword: '', maxCount: 10 } },
@@ -2744,9 +2745,9 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'douban_book_search',
-    name: '豆瓣读书',
+    name: '豆瓣读书评分与书单 (Douban Book)',
     category: 'news_data',
-    description: '从豆瓣读书获取图书推荐、书评和热门图书数据，搜索中国最大的图书社区。豆瓣读书是中国最具影响力的图书评分和推荐平台，覆盖图书评分、书评和热门榜单。需客户端在线。输出包含图书标题、评分、简介和链接，适用于图书推荐、阅读选题参考和文化内容分析。',
+    description: '【功能】采集“豆瓣读书”热门图书、高分书单、图书评分、内容简介与读者书评。【用法】配置 keyword 关键词（如 "哲学"、"心理学"、"小说" 或书名）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线。输出包含书名、作者、豆瓣评分、出版信息与简介，适用于好书推荐、读书笔记生成与文化内容沉淀。',
     iconImage: doubanBookIcon,
     color: '#007722',
     defaultData: { label: '豆瓣读书', config: { keyword: '', maxCount: 10 } },
@@ -2765,12 +2766,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'douban_gallery_search',
-    name: '豆瓣广场',
+    name: '豆瓣广场热门话题 (Douban Gallery Topics)',
     category: 'news_data',
-    description: '从豆瓣广场获取文化讨论、话题动态和日记内容，搜索中国文艺社区的热门讨论。豆瓣广场是豆瓣社区的公共讨论区，覆盖文化、艺术、生活等多元话题。需客户端在线。输出包含话题标题、作者、回复数和链接，适用于文化热点追踪、社区话题分析和文艺内容聚合。',
+    description: '【功能】采集豆瓣社区“豆瓣广场/小组动态”的热门文化讨论、生活话题、广播动态与精华日记。【用法】配置 keyword 关键词（如 "生活"、"书影音"、"旅行"）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线。输出包含话题标题、作者昵称、讨论热度、回复数与原文链接，适用于文艺圈舆情观察、社区热点捕捉与小众文化选题策划。',
     iconImage: doubanGalleryIcon,
     color: '#007722',
-    defaultData: { label: '豆瓣广场', config: { keyword: '', maxCount: 10 } },
+    defaultData: { label: '豆瓣广场话题', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: 话题, 讨论, 日记' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
@@ -2789,12 +2790,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   // ══════════════════════════════════════════════════════
   {
     type: 'medrxiv_search',
-    name: 'medRxiv',
+    name: 'medRxiv 医学预印本论文 (medRxiv Preprint Papers)',
     category: 'news_data',
-    description: '从 medRxiv 获取医学预印本论文，搜索最新发表的医学研究论文标题、作者、摘要和PDF链接。medRxiv 是全球知名的医学预印本平台，覆盖临床医学、公共卫生、生物医学等领域。需客户端在线且可访问外网。输出包含论文标题、作者、摘要、分类和PDF链接，适用于医学研究追踪、文献综述和前沿医学调研。',
+    description: '【功能】采集全球权威医学预印本平台 medRxiv 的最新临床医学、公共卫生、流行病学与生物医药前沿科研论文。【用法】配置 keyword 搜索词（如 "cancer"、"immunology"、"CRISPR"）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线且可访问外网。输出包含论文标题、作者团队、摘要正文、学科分类与PDF下载链接，适用于医学学术调研、医药前沿跟踪与文献速递。',
     iconImage: medrxivIcon,
     color: '#0052CC',
-    defaultData: { label: 'medRxiv', config: { keyword: '', maxCount: 10 } },
+    defaultData: { label: 'medRxiv 医学论文', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: cancer, vaccine, covid' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
@@ -2814,12 +2815,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   // ══════════════════════════════════════════════════════
   {
     type: 'stats_gov_search',
-    name: '国家统计局',
+    name: '国家统计局官方数据 (NBS China Statistics)',
     category: 'news_data',
-    description: '从国家统计局获取公开统计数据、经济指标和社会发展数据，搜索中国国家统计局发布的官方统计数据。国家统计局是国务院直属机构，负责全国统计和国民经济核算工作。需客户端在线。输出包含统计数据标题、指标、数值和发布时间，适用于经济研究、政策分析和数据可视化。',
+    description: '【功能】采集中国国家统计局发布的宏观经济指标、全国人口、物价指数CPI/PPI、工业用电与社会发展统计公报。【用法】配置 keyword 关键词（如 "GDP"、"CPI"、"人口"、"PMI"）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线。输出包含统计报告标题、发布时间、指标数值与官方原文链接，适用于宏观经济研报、政策研究与数据图表可视化。',
     iconImage: statsGovIcon,
     color: '#1A73E8',
-    defaultData: { label: '国家统计局', config: { keyword: '', maxCount: 10 } },
+    defaultData: { label: '国家统计局数据', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: GDP, 人口, 工业' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
@@ -2835,12 +2836,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'sse_search',
-    name: '上交所',
+    name: '上交所行情与公告 (SSE Shanghai Stock Exchange)',
     category: 'news_data',
-    description: '从上海证券交易所获取证券市场信息、股票数据和交易规则，搜索上交所发布的官方信息。上交所是中国大陆两大证券交易所之一，负责证券交易的组织和监管。需客户端在线。输出包含证券信息标题、分类、发布时间和原文链接，适用于证券市场分析、投资研究和金融监管研究。',
+    description: '【功能】采集上海证券交易所（上交所）官方发布的上市公司公告、监管动态、科创板资讯与市场公开交易数据。【用法】配置 keyword 关键词（如 "年报"、"科创板"、"问询函" 或股票代码）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线。输出包含公告标题、证券代码/简称、发布时间与公告详情链接，适用于A股上市公司舆情监控、合规风险预警与证券投资分析。',
     iconImage: sseIcon,
     color: '#003DA5',
-    defaultData: { label: '上交所', config: { keyword: '', maxCount: 10 } },
+    defaultData: { label: '上交所证券公告', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: 股票, 债券, 基金' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
@@ -2856,12 +2857,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'chinamoney_search',
-    name: '中国货币网',
+    name: '中国货币网同业与利率 (ChinaMoney CFETS)',
     category: 'news_data',
-    description: '从中国货币网获取货币市场数据、利率信息和债券行情，搜索中国外汇交易中心发布的官方数据。中国货币网是中国外汇交易中心暨全国银行间同业拆借中心的官方网站，提供货币市场数据和债券信息。需客户端在线。输出包含数据标题、指标、数值和发布时间，适用于货币市场分析和金融数据研究。',
+    description: '【功能】采集中国外汇交易中心（全国银行间同业拆借中心）官方发布的银行间同业拆借利率Shibor、LPR贷款市场报价利率、外汇汇率与债券行情。【用法】配置 keyword 关键词（如 "Shibor"、"LPR"、"汇率"、"国债"）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线。输出包含基准利率名称、最新数值、变动幅度、发布日期与官方链接，适用于固定收益分析、银行资金面监控与金融宏观建模。',
     iconImage: chinamoneyIcon,
     color: '#0066CC',
-    defaultData: { label: '中国货币网', config: { keyword: '', maxCount: 10 } },
+    defaultData: { label: '中国货币网数据', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: 利率, 汇率, 债券' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
@@ -2877,12 +2878,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'worldometers_search',
-    name: 'Worldometers',
+    name: 'Worldometers 全球实时统计 (Worldometers Real-time Stats)',
     category: 'news_data',
-    description: '从 Worldometers 获取全球实时统计数据，搜索世界实时统计的各类数据。Worldometers 提供全球人口、经济、能源、健康等领域的实时统计数据，以动态计数器形式展示。需客户端在线且可访问外网。输出包含统计指标、当前数值和更新时间，适用于全球数据分析、实时统计追踪和信息图表制作。',
+    description: '【功能】采集全球著名实时数据统计平台 Worldometers 的世界人口实时计数、全球经济总量、能源消耗、环境生态与健康统计数据。【用法】配置 keyword 关键词（如 "population"、"health"、"energy"、"economy"）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线且可访问外网。输出包含实时统计指标、当前计数值、日增长量与更新时间，适用于科普内容制作、全球发展态势监测与动态信息图展示。',
     iconImage: worldometersIcon,
     color: '#2C3E50',
-    defaultData: { label: 'Worldometers', config: { keyword: '', maxCount: 10 } },
+    defaultData: { label: 'Worldometers 统计', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: population, economy, energy' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
@@ -2899,9 +2900,9 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'ourworldindata_search',
-    name: 'Our World in Data',
+    name: 'Our World in Data 全球发展数据 (Our World in Data Charts)',
     category: 'news_data',
-    description: '从 Our World in Data 获取全球数据图表、科学可视化和发展趋势数据，搜索牛津大学的全球数据项目。Our World in Data 是牛津大学旗下的全球数据可视化平台，提供健康、能源、教育等领域的数据图表。需客户端在线且可访问外网。输出包含数据标题、指标、数值和图表链接，适用于全球趋势研究、数据可视化和社会科学研究。',
+    description: '【功能】采集牛津大学主导的全球可视化智库 Our World in Data 的科学研究图表、全球贫困、气候变化、公共卫生与技术普及数据。【用法】配置 keyword 搜索词（如 "climate"、"energy"、"poverty"、"vaccination"）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线且可访问外网。输出包含研究主题标题、核心统计数据、交互图表链接与报告全文，适用于深度研究报告、数据新闻写作与科学论证支持。',
     iconImage: ourworldindataIcon,
     color: '#8B5CF6',
     defaultData: { label: 'Our World in Data', config: { keyword: '', maxCount: 10 } },
@@ -2924,12 +2925,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   // ══════════════════════════════════════════════════════
   {
     type: 'lagou_search',
-    name: '拉勾',
+    name: '拉勾互联网招聘 (Lagou Tech Jobs)',
     category: 'news_data',
-    description: '从拉勾获取互联网招聘信息，搜索中国知名的互联网招聘平台职位。拉勾是中国领先的互联网招聘平台，专注于互联网、AI、金融科技等行业的招聘。需客户端在线。输出包含职位名称、公司、薪资、要求和链接，适用于互联网求职、人才市场研究和招聘趋势分析。',
+    description: '【功能】采集国内知名互联网招聘平台“拉勾网”的技术开发、产品设计、AI算法与运营管理等互联网岗位信息。【用法】配置 keyword 职位/技术栈关键词（如 "Golang"、"前端架构师"、"AI产品经理"）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线。输出包含岗位名称、所属公司、薪资范围、学历经验要求与职位详情链接，适用于互联网求职意向监控、薪酬调研与行业人才需求分析。',
     iconImage: lagouIcon,
     color: '#00B36A',
-    defaultData: { label: '拉勾', config: { keyword: '', maxCount: 10 } },
+    defaultData: { label: '拉勾招聘', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: 前端, 产品经理, Java' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
@@ -2945,12 +2946,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'zhipin_search',
-    name: 'BOSS 直聘',
+    name: 'BOSS直聘求职招聘 (BOSS Zhipin Jobs)',
     category: 'news_data',
-    description: '从 BOSS 直聘获取招聘信息，搜索中国知名的直聘招聘平台职位。BOSS 直聘是中国领先的招聘平台，以直聘模式著称，覆盖互联网、金融、制造等行业。需客户端在线。输出包含职位名称、公司、薪资、要求和链接，适用于求职招聘、人才市场研究和招聘趋势分析。',
+    description: '【功能】采集中国领先的直聘平台“BOSS直聘”的全行业最新热招职位、企业直聊岗位与薪资待遇信息。【用法】配置 keyword 职位或技能关键词（如 "Python"、"新媒体运营"、"销售总监"）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线。输出包含职位名称、公司全称、薪资区间、所在城市/商圈与职位详情链接，适用于全行业人才供需洞察、精准求职筛选与招聘市场动态分析。',
     iconImage: zhipinIcon,
     color: '#00BEBD',
-    defaultData: { label: 'BOSS 直聘', config: { keyword: '', maxCount: 10 } },
+    defaultData: { label: 'BOSS直聘', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: 前端, 产品经理, 运营' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
@@ -2966,12 +2967,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: '51job_search',
-    name: '前程无忧',
+    name: '前程无忧综合招聘 (51job Careers)',
     category: 'news_data',
-    description: '从前程无忧获取综合招聘信息，搜索中国知名的综合招聘平台职位。前程无忧是中国领先的综合招聘平台，覆盖互联网、金融、制造、教育等多个行业。需客户端在线。输出包含职位名称、公司、薪资、要求和链接，适用于综合求职、人才市场研究和招聘趋势分析。',
+    description: '【功能】采集老牌综合招聘门户“前程无忧 (51job)”覆盖制造、金融、外企、快消及科技等全产业的招聘职位。【用法】配置 keyword 岗位关键词（如 "外贸业务员"、"机械工程师"、"会计"）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线。输出包含岗位名称、雇主公司、薪资水平、工作地点与投递链接，适用于传统与实体行业职位聚合、劳动力市场趋势研究及就业信息看板建设。',
     iconImage: job51Icon,
     color: '#FF6600',
-    defaultData: { label: '前程无忧', config: { keyword: '', maxCount: 10 } },
+    defaultData: { label: '前程无忧招聘', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: 前端, 会计, 销售' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
@@ -2987,12 +2988,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'linkedin_jobs_search',
-    name: 'LinkedIn Jobs',
+    name: 'LinkedIn Jobs 领英海外职位 (LinkedIn Global Jobs)',
     category: 'news_data',
-    description: '从 LinkedIn Jobs 获取国际招聘信息，搜索全球最大的职业社交平台职位。LinkedIn Jobs 是全球最具影响力的招聘平台，覆盖全球200多个国家和地区的职位信息。需客户端在线且可访问外网。输出包含职位名称、公司、地点、要求和链接，适用于国际求职、海外招聘研究和跨国人才招聘。',
+    description: '【功能】采集全球最大职业社交平台 LinkedIn Jobs 的跨国公司岗位、远程工作 (Remote)、出海业务与海外高薪职位。【用法】配置 keyword 英文职位关键词（如 "Senior Software Engineer"、"Product Marketing"、"Remote"）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线且可访问外网。输出包含职位名称、企业名称、工作地点国家/城市、工作职责与投递链接，适用于海外求职、跨国人才猎聘与全球雇主品牌调研。',
     iconImage: linkedinJobsIcon,
     color: '#0A66C2',
-    defaultData: { label: 'LinkedIn Jobs', config: { keyword: '', maxCount: 10 } },
+    defaultData: { label: 'LinkedIn 海外职位', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: software engineer, product manager' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
@@ -3012,12 +3013,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   // ══════════════════════════════════════════════════════
   {
     type: 'yahoo_finance_search',
-    name: 'Yahoo Finance',
+    name: 'Yahoo Finance 雅虎全球金融行情 (Yahoo Finance Markets)',
     category: 'utility',
-    description: '从 Yahoo Finance 获取全球股票、指数、外汇和加密货币实时行情与市场概览。Yahoo Finance 是全球最大的金融数据平台之一，覆盖全球主要市场的股票、基金、期货和外汇行情。需客户端在线且可访问外网。输出包含股票代码、最新价、涨跌幅、成交量和市值，适用于全球行情监控、投资决策支持和金融数据分析。',
+    description: '【功能】采集全球最大金融资讯平台 Yahoo Finance 的美股/港股/A股实时报价、股指（S&P 500、纳指）、外汇与大宗商品行情。【用法】配置 keyword 资产代码或公司名（如 "AAPL"、"TSLA"、"NVDA"、"^GSPC"）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线且可访问外网。输出包含股票代码、最新成交价、日内涨跌额与涨跌幅、成交量、市值与图表链接，适用于美股盯盘、全球资产配置与量化策略输入。',
     iconImage: yahooFinanceIcon,
     color: '#6001D2',
-    defaultData: { label: 'Yahoo Finance', config: { keyword: '', maxCount: 10 } },
+    defaultData: { label: 'Yahoo Finance 雅虎行情', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
       { field: 'keyword', label: '股票代码/关键词', type: 'string', required: true, placeholder: '例如: AAPL / TSLA / BTC-USD' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
@@ -3034,12 +3035,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'sina_finance_search',
-    name: '新浪财经',
+    name: '新浪财经快讯与行情 (Sina Finance News & Stock)',
     category: 'utility',
-    description: '从新浪财经获取国内财经快讯、股票行情与要闻，搜索中国最大的财经门户网站实时资讯。新浪财经是国内领先的财经媒体，提供股票、基金、期货、外汇等全方位财经资讯和数据。需客户端在线。输出包含新闻标题、分类、发布时间和原文链接，适用于国内财经动态追踪、股市行情监控和投资决策参考。',
+    description: '【功能】采集中国知名财经门户“新浪财经”的国内财经要闻、A股板块异动、宏观经济解读与券商研报要点。【用法】配置 keyword 财经搜索词（如 "大盘"、"新能源"、"降准" 或股票简称）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线。输出包含财经新闻标题、发布时间、分类标签与原文链接，适用于国内宏观政策追踪、股市情绪面分析与日常财经早报生成。',
     iconImage: sinaFinanceIcon,
     color: '#E60012',
-    defaultData: { label: '新浪财经', config: { keyword: '', maxCount: 10 } },
+    defaultData: { label: '新浪财经快讯', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: 股票, 基金, 财经' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
@@ -3056,12 +3057,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'eastmoney_search',
-    name: '东方财富',
+    name: '东方财富 A股与基金行情 (Eastmoney Markets)',
     category: 'utility',
-    description: '从东方财富获取股票、基金、期货行情中心数据，搜索中国最大的金融数据平台实时行情。东方财富是中国领先的金融数据服务商，提供股票、基金、期货、债券等全方位行情数据。需客户端在线。输出包含股票代码、最新价、涨跌幅、振幅和成交量，适用于A股行情监控、基金净值查询和期货市场分析。',
+    description: '【功能】采集中国头部金融数据平台“东方财富网”的沪深A股实时行情、公募基金净值、行业板块资金流向与主力资金动向。【用法】配置 keyword 股票代码或名称（如 "600519"、"贵州茅台"、"半导体"）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线。输出包含证券代码、名称、现价、涨跌幅、换手率、市盈率及盘口指标，适用于A股主力资金监控、自选股看板构建与基金投资辅助分析。',
     iconImage: eastmoneyIcon,
     color: '#E60012',
-    defaultData: { label: '东方财富', config: { keyword: '', maxCount: 10 } },
+    defaultData: { label: '东方财富行情', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
       { field: 'keyword', label: '股票代码/名称', type: 'string', required: true, placeholder: '例如: 000001 / 平安银行' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
@@ -3078,12 +3079,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'cls_telegraph_search',
-    name: '财联社电报',
+    name: '财联社电报 7x24h 实时快讯 (CLS Telegraph)',
     category: 'utility',
-    description: '从财联社电报获取7x24小时实时财经快讯，搜索中国最快的财经资讯发布平台。财联社电报以秒级速度推送财经要闻、政策动态和市场快讯，覆盖股市、债市、外汇、商品等全品类金融资讯。需客户端在线。输出包含快讯标题、发布时间、分类和原文链接，适用于实时财经资讯追踪、市场突发事件监控和投资决策快速响应。',
+    description: '【功能】采集专业财经通讯社“财联社”的 7x24 小时秒级财经电报、政经突发消息、上市公司盘中异动与海外重磅事件。【用法】配置 keyword 关键词过滤（如 "央行"、"人工智能"、"重组"、"地缘"）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线。输出包含快讯正文、发布时间戳、重要度标识与原文链接，适用于金融机构盘中预警、舆情秒级响应与财经信息流推送。',
     iconImage: clsTelegraphIcon,
     color: '#D32F2F',
-    defaultData: { label: '财联社电报', config: { keyword: '', maxCount: 10 } },
+    defaultData: { label: '财联社 7x24h 快讯', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: 股市, 政策, 央行' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
@@ -3100,12 +3101,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'coinmarketcap_search',
-    name: 'CoinMarketCap',
+    name: 'CoinMarketCap 加密货币行情 (CoinMarketCap Crypto)',
     category: 'utility',
-    description: '从 CoinMarketCap 获取加密货币市值、价格和交易数据，搜索全球最大的加密货币数据聚合平台。CoinMarketCap 覆盖超过20000种加密资产，提供实时价格、市值、交易量、流通量等核心数据。需客户端在线且可访问外网。输出包含币种名称、价格、24h涨跌幅、市值和交易量，适用于加密货币行情监控、投资组合追踪和数字资产研究。',
+    description: '【功能】采集全球权威加密资产数据平台 CoinMarketCap 的 20000+ 种数字货币实时价格、24小时涨跌幅、全球市值排名与全网交易量。【用法】配置 keyword 币种名称或代号（如 "BTC"、"Bitcoin"、"ETH"、"Solana"）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线且可访问外网。输出包含代币名称、符号、美元单价、24h涨跌幅、7d走势、市值与成交量，适用于Web3资产看板、加密市场波动告警与数字货币研报编写。',
     iconImage: coinmarketcapIcon,
     color: '#3861FB',
-    defaultData: { label: 'CoinMarketCap', config: { keyword: '', maxCount: 10 } },
+    defaultData: { label: 'CoinMarketCap 币价', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
       { field: 'keyword', label: '币种名称/代码', type: 'string', required: true, placeholder: '例如: BTC / bitcoin / ETH' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
@@ -3125,12 +3126,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   // ══════════════════════════════════════════════════════
   {
     type: 'zhibo8_search',
-    name: '直播吧',
+    name: '直播吧 体育赛程与新闻 (Zhibo8 Sports)',
     category: 'news_data',
-    description: '从直播吧获取国内体育新闻、赛程比分与赛事资讯，搜索中国最大的体育资讯平台。直播吧覆盖足球、篮球、网球等主流体育赛事，提供实时比分、赛程安排和体育新闻。需客户端在线。输出包含赛事名称、比分、时间和原文链接，适用于体育赛事追踪、比分实时监控和体育资讯聚合。',
+    description: '【功能】采集中国知名体育平台“直播吧”的足球（五大联赛/中超/欧冠）、篮球（NBA/CBA）等热门赛事的即时赛况、赛程安排与战报新闻。【用法】配置 keyword 球队/联赛/球星关键词（如 "湖人"、"皇马"、"库里"、"欧冠"）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线。输出包含赛事标题、对阵双方、比赛时间、当前比分与战报链接，适用于体育赛事日程提醒、战报自动播报与体育资讯公众号排版。',
     iconImage: zhibo8Icon,
     color: '#00A651',
-    defaultData: { label: '直播吧', config: { keyword: '', maxCount: 10 } },
+    defaultData: { label: '直播吧 体育赛事', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
       { field: 'keyword', label: '球队/联赛/球员', type: 'string', required: true, placeholder: '例如: 湖人 / NBA / 梅西' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
@@ -3147,12 +3148,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'hupu_search',
-    name: '虎扑',
+    name: '虎扑 体育社区与话题 (Hupu Sports Community)',
     category: 'news_data',
-    description: '从虎扑获取体育社区热门话题、流言板和赛事讨论，搜索中国最大的体育社区。虎扑是中国知名的体育社区，用户群体以年轻体育爱好者为主，内容涵盖NBA、CBA、足球等热门赛事。需客户端在线。输出包含话题标题、回复数、浏览量和原文链接，适用于体育社区舆情分析、热门话题追踪和体育内容策划。',
+    description: '【功能】采集国内知名男性与体育社区“虎扑”的步行街热帖、NBA/足球专区讨论、转会流言板与赛事评分投票。【用法】配置 keyword 球队/球星/话题关键词（如 "勇士"、"阿森纳"、"交易"、"步行街"）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线。输出包含帖子标题、发帖作者、浏览量、亮评回复数与帖子链接，适用于球迷社区舆情监测、热梗话题挖掘与体育互动内容策划。',
     iconImage: hupuIcon,
     color: '#C01A20',
-    defaultData: { label: '虎扑', config: { keyword: '', maxCount: 10 } },
+    defaultData: { label: '虎扑 体育社区', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
       { field: 'keyword', label: '话题/球队/球员', type: 'string', required: true, placeholder: '例如: NBA / 湖人 / 詹姆斯' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
@@ -3169,12 +3170,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'bbc_sport_search',
-    name: 'BBC Sport',
+    name: 'BBC Sport 英国国际体育赛事 (BBC Sport International)',
     category: 'news_data',
-    description: '从 BBC Sport 获取国际体育赛程、新闻和比赛结果，搜索英国广播公司的体育频道。BBC Sport 是英国最大的体育媒体，覆盖足球、橄榄球、网球、板球等主流国际赛事。需客户端在线且可访问外网。输出包含赛事名称、时间、比分和新闻链接，适用于国际体育赛程追踪、赛事结果监控和英文体育资讯获取。',
+    description: '【功能】采集英国广播公司 BBC Sport 的英超足球、温网网球、F1赛车、奥运项目等国际顶级赛事的权威英文报道与赛果速递。【用法】配置 keyword 英文赛事或球队关键词（如 "Premier League"、"F1"、"Arsenal"、"Wimbledon"）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线且可访问外网。输出包含英文新闻标题、赛事摘要、更新时间与官方报道链接，适用于国际体育赛事跟踪、外网英文战报编译与多语言体育资讯推送。',
     iconImage: bbcSportIcon,
     color: '#FFD700',
-    defaultData: { label: 'BBC Sport', config: { keyword: '', maxCount: 10 } },
+    defaultData: { label: 'BBC Sport 国际体育', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
       { field: 'keyword', label: '赛事/球队/运动', type: 'string', required: true, placeholder: '例如: football / Premier League' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
@@ -3191,12 +3192,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'flashscore_search',
-    name: 'Flashscore',
+    name: 'Flashscore 全球体育实时比分 (Flashscore Live Scores)',
     category: 'news_data',
-    description: '从 Flashscore 获取多项目实时比分和赛程数据，搜索全球知名的体育比分平台。Flashscore 覆盖全球数百个体育赛事和联赛，提供实时比分、积分榜、射手榜等详细数据。需客户端在线且可访问外网。输出包含赛事名称、比分、时间和统计数据，适用于实时比分监控、赛事数据分析和体育博彩参考。',
+    description: '【功能】采集全球著名比分平台 Flashscore 覆盖 30+ 种体育运动、上千个联赛的全球赛事即时比分、半全场赛果与积分榜。【用法】配置 keyword 联赛或球队名称（如 "Premier League"、"Champions League"、"Lakers"）与采集数量 maxCount（1-100）。【场景与输出】需客户端在线且可访问外网。输出包含比赛名称、主客队伍、实时比分、比赛进行阶段（如完场/半场）与详细数据链接，适用于即时比分推演、赛事结果自动化通知与竞彩数据参考。',
     iconImage: flashscoreIcon,
     color: '#000000',
-    defaultData: { label: 'Flashscore', config: { keyword: '', maxCount: 10 } },
+    defaultData: { label: 'Flashscore 实时比分', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
       { field: 'keyword', label: '联赛/球队', type: 'string', required: true, placeholder: '例如: Premier League / Lakers' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-100)' },
@@ -3216,12 +3217,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   // ══════════════════════════════════════════════════════
   {
     type: 'weather_cn_search',
-    name: '中国天气网',
+    name: '中国天气网 城市气象预报 (China Weather CN)',
     category: 'utility',
-    description: '从中国天气网获取国内城市天气预报和气象资讯，搜索中国气象局官方天气信息平台。中国天气网提供全国各城市的实时天气、未来7天预报、空气质量指数和气象预警信息。需客户端在线。输出包含城市、温度、天气状况、湿度和风力，适用于国内天气预报查询、出行天气参考和气象资讯获取。',
+    description: '【功能】采集中国气象局“中国天气网”全国各省市县的实时天气实况、未来 7 天天气预报、空气质量指数 (AQI) 与极端灾害预警。【用法】配置 city 城市名称（如 "北京"、"上海"、"深圳"）与预报天数 maxCount（1-7）。【场景与输出】需客户端在线。输出包含目标城市、实时气温、天气现象（晴/雨/雪）、空气质量、风向风力与逐日预报数组，适用于生活助手、出行提醒、智能家居自动化与极端天气推送。',
     iconImage: weatherCnIcon,
     color: '#1E88E5',
-    defaultData: { label: '中国天气网', config: { city: '', maxCount: 3 } },
+    defaultData: { label: '中国天气网预报', config: { city: '', maxCount: 3 } },
     inputSchema: [
       { field: 'city', label: '城市', type: 'string', required: true, placeholder: '例如: 北京 / 上海 / 广州' },
       { field: 'maxCount', label: '预报天数', type: 'number', defaultValue: 3, description: '预报天数 (1-7)' },
@@ -3238,12 +3239,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'weather_com_search',
-    name: 'Weather.com',
+    name: 'Weather.com 全球城市天气 (The Weather Channel)',
     category: 'utility',
-    description: '从 Weather.com 获取国际城市天气预报和气象资讯，搜索全球最大的天气服务平台。Weather.com 提供全球各城市的实时天气、未来10天预报、雷达图和气象预警信息。需客户端在线且可访问外网。输出包含城市、温度、天气状况、湿度和风力，适用于国际天气预报查询、出境旅行天气参考和全球气象数据获取。',
+    description: '【功能】采集全球知名气象平台 Weather.com (The Weather Channel) 的全球各大城市多日气象预报、逐小时天气、紫外线指数与体感温度。【用法】配置 city 国际城市名称（如 "New York"、"Tokyo"、"London"）与预报天数 maxCount（1-10）。【场景与输出】需客户端在线且可访问外网。输出包含城市名、当前温度、湿度、降水概率、体感温度与未来多日天气趋势，适用于出境差旅提醒、跨国活动调度与全球化气象看板。',
     iconImage: weatherComIcon,
     color: '#0078D4',
-    defaultData: { label: 'Weather.com', config: { city: '', maxCount: 3 } },
+    defaultData: { label: 'Weather.com 全球天气', config: { city: '', maxCount: 3 } },
     inputSchema: [
       { field: 'city', label: '城市', type: 'string', required: true, placeholder: '例如: New York / Tokyo / London' },
       { field: 'maxCount', label: '预报天数', type: 'number', defaultValue: 3, description: '预报天数 (1-10)' },
