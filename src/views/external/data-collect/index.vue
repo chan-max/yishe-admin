@@ -50,6 +50,16 @@ import OpenMojiView from '../openmoji/index.vue'
 import GoogleIconsView from '../googleicons/index.vue'
 import EmojipediaView from '../emojipedia/index.vue'
 import SvgRepoView from '../svgrepo/index.vue'
+import BaiduView from '../baidu/index.vue'
+import BingView from '../bing/index.vue'
+import DuckDuckGoView from '../duckduckgo/index.vue'
+import SogouView from '../sogou/index.vue'
+import SoView from '../so/index.vue'
+import WallhavenView from '../wallhaven/index.vue'
+import UnsplashView from '../unsplash/index.vue'
+import FlickrView from '../flickr/index.vue'
+import GoogleImagesView from '../googleimages/index.vue'
+import YandexView from '../yandex/index.vue'
 
 defineOptions({
   name: 'ExternalDataCollect',
@@ -78,10 +88,70 @@ type TabKey =
   | 'googleicons'
   | 'emojipedia'
   | 'svgrepo'
+  | 'baidu'
+  | 'bing'
+  | 'duckduckgo'
+  | 'sogou'
+  | 'so'
+  | 'wallhaven'
+  | 'unsplash'
+  | 'flickr'
+  | 'googleimages'
+  | 'yandex'
 
 const activeTab = ref<TabKey>('google-art')
 
 const menuItems = [
+  {
+    key: 'baidu' as TabKey,
+    name: '百度图片搜索',
+    component: markRaw(BaiduView),
+  },
+  {
+    key: 'bing' as TabKey,
+    name: '必应图片搜索 (Bing)',
+    component: markRaw(BingView),
+  },
+  {
+    key: 'duckduckgo' as TabKey,
+    name: 'DuckDuckGo 图搜',
+    component: markRaw(DuckDuckGoView),
+  },
+  {
+    key: 'sogou' as TabKey,
+    name: '搜狗图片搜索',
+    component: markRaw(SogouView),
+  },
+  {
+    key: 'so' as TabKey,
+    name: '360 图片搜索',
+    component: markRaw(SoView),
+  },
+  {
+    key: 'wallhaven' as TabKey,
+    name: 'Wallhaven 4K壁纸',
+    component: markRaw(WallhavenView),
+  },
+  {
+    key: 'unsplash' as TabKey,
+    name: 'Unsplash 顶级摄影',
+    component: markRaw(UnsplashView),
+  },
+  {
+    key: 'flickr' as TabKey,
+    name: 'Flickr 摄影社区',
+    component: markRaw(FlickrView),
+  },
+  {
+    key: 'googleimages' as TabKey,
+    name: '谷歌图片搜索',
+    component: markRaw(GoogleImagesView),
+  },
+  {
+    key: 'yandex' as TabKey,
+    name: 'Yandex 艺术壁纸',
+    component: markRaw(YandexView),
+  },
   {
     key: 'google-art' as TabKey,
     name: 'Google Arts & Culture',

@@ -768,6 +768,56 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: { hidden: true },
       },
       {
+        path: "baidu",
+        redirect: "/external/data-collect?tab=baidu",
+        meta: { hidden: true },
+      },
+      {
+        path: "bing",
+        redirect: "/external/data-collect?tab=bing",
+        meta: { hidden: true },
+      },
+      {
+        path: "duckduckgo",
+        redirect: "/external/data-collect?tab=duckduckgo",
+        meta: { hidden: true },
+      },
+      {
+        path: "sogou",
+        redirect: "/external/data-collect?tab=sogou",
+        meta: { hidden: true },
+      },
+      {
+        path: "so",
+        redirect: "/external/data-collect?tab=so",
+        meta: { hidden: true },
+      },
+      {
+        path: "wallhaven",
+        redirect: "/external/data-collect?tab=wallhaven",
+        meta: { hidden: true },
+      },
+      {
+        path: "unsplash",
+        redirect: "/external/data-collect?tab=unsplash",
+        meta: { hidden: true },
+      },
+      {
+        path: "flickr",
+        redirect: "/external/data-collect?tab=flickr",
+        meta: { hidden: true },
+      },
+      {
+        path: "googleimages",
+        redirect: "/external/data-collect?tab=googleimages",
+        meta: { hidden: true },
+      },
+      {
+        path: "yandex",
+        redirect: "/external/data-collect?tab=yandex",
+        meta: { hidden: true },
+      },
+      {
         path: "news",
         component: () => import("@/views/external/news/index.vue"),
         name: "ExternalNewsCollect",
