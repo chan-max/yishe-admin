@@ -648,16 +648,34 @@ html.dark {
 
 .table-time-cell {
   font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.table-time-cell .vxe-cell,
+.table-time-cell .cell,
+.vxe-body--column.table-time-cell .vxe-cell {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  word-wrap: normal !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .common-table .table-time-text {
   display: inline-flex;
   align-items: center;
-  min-height: 24px;
+  min-height: 20px;
   font-size: 11px;
   line-height: 1.4;
   color: var(--el-text-color-secondary);
   font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  white-space: nowrap !important;
+  word-break: keep-all !important;
 }
 
 .common-table .table-operation-cell {

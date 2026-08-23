@@ -392,7 +392,7 @@ const handleAddNodeFromLibrary = (capability: NodeManifest) => {
       label: capability.name,
       capabilityType: capability.type,
       variableKey: createWorkflowVariableKey(capability.type, nodes.value as Node[]),
-      config: { ...(capability.defaultData || {}) },
+      config: { ...(capability.defaultData?.config || capability.defaultData || {}) },
       ...(isHotsearch ? { platform: platformKey } : {}),
     },
   };

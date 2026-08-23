@@ -1350,7 +1350,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: cat, nature, business, technology' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
-      { field: 'mediaType', label: '素材类型', type: 'select', defaultValue: 'photos', options: [{ label: '摄影图片 (Photos)', value: 'photos' }, { label: '透明 PNG (PNG)', value: 'png' }, { label: '矢量插画 (Vector)', value: 'vector' }] },
+      { field: 'mediaType', label: '素材类型', type: 'select', defaultValue: 'photos', options: [{ label: '摄影图片 (Photos)', value: 'photos' }, { label: '透明 PNG (PNG)', value: 'png' }, { label: '矢量插画 (Vector)', value: 'vector' }, { label: '矢量 SVG (Free SVG)', value: 'svg' }] },
     ],
     outputSchema: [
       { field: 'successCount', label: '成功数量', type: 'number' },
@@ -1387,16 +1387,34 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   },
   {
     type: 'googleicons_search',
-    name: 'Google Material Icons 采集',
+    name: 'Google Material Icons / Symbols 采集',
     category: 'material',
-    description: '从 Google 官方 Material Symbols/Icons 检索 2000+ 矢量图标并同步上传至素材库。Google Material Icons 是 Google 官方设计的图标系统，提供线性轮廓、实心填充、圆角和直角四种风格，适用于 Android 和 Web 项目。需客户端在线且可访问外网。输出包含图标URL、名称、风格和集合信息，适用于App开发、Web界面设计和Material Design项目。',
+    description: '从 Google 官方检索 2500+ 矢量图标并同步上传至素材库。支持 Material Symbols (新版 M3) 与 Material Icons (经典版 M2) 的全量风格。需客户端在线且可访问外网。',
     iconImage: googleIconsIcon,
     color: '#4285F4',
-    defaultData: { label: 'Google Icons 采集', config: { keyword: '', maxCount: 10, style: 'outlined' } },
+    defaultData: { label: 'Google Icons / Symbols 采集', config: { keyword: '', style: 'symbols_outlined', maxCount: 10 } },
     inputSchema: [
-      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: home, search, settings, person' },
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: home, search, settings, person, favorite' },
+      {
+        field: 'style',
+        label: '图标风格与体系',
+        type: 'select',
+        defaultValue: 'symbols_outlined',
+        options: [
+          { label: 'Symbols · 线性轮廓 (Outlined)', value: 'symbols_outlined' },
+          { label: 'Symbols · 实心填充 (Filled)', value: 'symbols_filled' },
+          { label: 'Symbols · 圆角平滑 (Rounded)', value: 'symbols_rounded' },
+          { label: 'Symbols · 圆角填充 (Rounded Filled)', value: 'symbols_rounded_fill' },
+          { label: 'Symbols · 直角尖锐 (Sharp)', value: 'symbols_sharp' },
+          { label: 'Symbols · 直角填充 (Sharp Filled)', value: 'symbols_sharp_fill' },
+          { label: 'Icons · 经典实心 (Classic Filled)', value: 'icons_filled' },
+          { label: 'Icons · 经典轮廓 (Classic Outlined)', value: 'icons_outlined' },
+          { label: 'Icons · 经典圆角 (Classic Round)', value: 'icons_rounded' },
+          { label: 'Icons · 经典直角 (Classic Sharp)', value: 'icons_sharp' },
+          { label: 'Icons · 经典双色 (Classic Two-Tone)', value: 'icons_two_tone' },
+        ],
+      },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
-      { field: 'style', label: '图标风格', type: 'select', defaultValue: 'outlined', options: [{ label: '线性轮廓 (Outlined)', value: 'outlined' }, { label: '实心填充 (Filled)', value: 'filled' }, { label: '圆角风格 (Rounded)', value: 'rounded' }, { label: '直角尖锐 (Sharp)', value: 'sharp' }] },
     ],
     outputSchema: [
       { field: 'successCount', label: '成功数量', type: 'number' },

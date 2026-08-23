@@ -162,7 +162,29 @@ const currentCapability = computed<NodeManifest | null>(() => {
   const type = props.node.data?.capabilityType || props.node.type;
   const local = NODE_MANIFEST_REGISTRY.find((item) => item.type === type);
   const remote = byType.value?.get?.(type);
-  return remote ? ({ ...local, ...remote, type } as NodeManifest) : local || null;
+  if (!remote) return local || null;
+
+  // 深度合并 inputSchema，确保本地定义的精细控件 (select options 等) 始终生效
+  const localFields = Array.isArray(local?.inputSchema) ? local.inputSchema : [];
+  const remoteFields = Array.isArray(remote.inputSchema) ? remote.inputSchema : [];
+  const localMap = new Map(localFields.map((f) => [f.field, f]));
+  const mergedInputSchema = localFields.map((lf) => {
+    const rf = remoteFields.find((f: any) => f.field === lf.field);
+    return rf ? { ...rf, ...lf, type: lf.type || rf.type, options: lf.options || rf.options } : lf;
+  });
+  // 补充仅服务端存在的字段
+  for (const rf of remoteFields) {
+    if (!localMap.has(rf.field)) {
+      mergedInputSchema.push(rf);
+    }
+  }
+
+  return {
+    ...local,
+    ...remote,
+    type,
+    inputSchema: mergedInputSchema.length ? mergedInputSchema : (remote.inputSchema || local?.inputSchema),
+  } as NodeManifest;
 });
 
 // 是否受保护的边界节点（start 不允许删除）
