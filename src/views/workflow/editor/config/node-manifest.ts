@@ -144,6 +144,16 @@ export type NodeType =
   | 'emojipedia_search'
   | 'svgrepo_search'
   | 'kaboompics_search'
+  | 'baidu_search'
+  | 'bing_search'
+  | 'duckduckgo_search'
+  | 'sogou_search'
+  | 'so_search'
+  | 'wallhaven_search'
+  | 'unsplash_search'
+  | 'flickr_search'
+  | 'googleimages_search'
+  | 'yandex_search'
   | 'custom'
   | 'openmeteo_search'
   | 'wttr_search'
@@ -2379,6 +2389,223 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     defaultData: { label: 'Kaboompics 摄影采集', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
       { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: coffee, interior, nature, lifestyle' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'images', label: '图片列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'baidu_search',
+    name: '百度图片搜索采集',
+    category: 'material',
+    description: '从百度图片搜索海量中文与全球素材配图、电商与国风壁纸并批量入库。需客户端在线。',
+    icon: 'Search',
+    color: '#2932E1',
+    defaultData: { label: '百度图片采集', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: 现代极简, 国风壁纸, 咖啡' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'images', label: '图片列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+    ],
+  },
+  {
+    type: 'bing_search',
+    name: '必应图片搜索采集',
+    category: 'material',
+    description: '从必应 (Bing) 搜索全球高清摄影、设计与透明底素材并批量入库。需客户端在线。',
+    icon: 'Picture',
+    color: '#008373',
+    defaultData: { label: '必应图片采集', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: landscape, architecture, cute cat' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'images', label: '图片列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'duckduckgo_search',
+    name: 'DuckDuckGo 图片采集',
+    category: 'material',
+    description: '通过 DuckDuckGo 隐私引擎检索全球多源高清图片并批量入库，免 API Key。需客户端在线。',
+    icon: 'Search',
+    color: '#DE5833',
+    defaultData: { label: 'DuckDuckGo 图搜', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: vintage art, poster, coffee' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'images', label: '图片列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'sogou_search',
+    name: '搜狗图片搜索采集',
+    category: 'material',
+    description: '从搜狗图片检索海量中文配图、表情包与高清素材并批量入库。需客户端在线。',
+    icon: 'Search',
+    color: '#FB6022',
+    defaultData: { label: '搜狗图片采集', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: 极简插画, 唯美风景, 表情包' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'images', label: '图片列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+    ],
+  },
+  {
+    type: 'so_search',
+    name: '360 图片搜索采集',
+    category: 'material',
+    description: '从 360 图片搜索海量国内设计配图、海报背景与摄影图并批量入库。需客户端在线。',
+    icon: 'Search',
+    color: '#1DA362',
+    defaultData: { label: '360图片采集', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: 海报背景, 唯美风景, 简约' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'images', label: '图片列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+    ],
+  },
+  {
+    type: 'wallhaven_search',
+    name: 'Wallhaven 4K 壁纸采集',
+    category: 'material',
+    description: '从 Wallhaven 检索 2K/4K/8K 顶级超高清壁纸、插画与场景渲染图并批量入库。需客户端在线。',
+    icon: 'Picture',
+    color: '#49A9C8',
+    defaultData: { label: 'Wallhaven 4K壁纸', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: cyberpunk, anime, landscape, abstract' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'images', label: '图片列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'unsplash_search',
+    name: 'Unsplash 顶级摄影采集',
+    category: 'material',
+    description: '从 Unsplash 检索全球顶尖生活美学与商业摄影大图并批量入库。需客户端在线。',
+    icon: 'Camera',
+    color: '#111111',
+    defaultData: { label: 'Unsplash 摄影采集', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: coffee, interior, architecture, portrait' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'images', label: '图片列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'flickr_search',
+    name: 'Flickr 摄影社区采集',
+    category: 'material',
+    description: '从 Flickr 检索全球摄影师作品与自由商用版权素材并批量入库。需客户端在线。',
+    icon: 'Camera',
+    color: '#FF0084',
+    defaultData: { label: 'Flickr 摄影采集', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: street photography, vintage, wildlife' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'images', label: '图片列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'googleimages_search',
+    name: '谷歌图片搜索采集',
+    category: 'material',
+    description: '从谷歌图片 (Google Images) 全球检索图片素材并批量入库。需客户端在线。',
+    icon: 'Search',
+    color: '#4285F4',
+    defaultData: { label: '谷歌图片采集', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: modern architecture, artwork' },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
+    ],
+    outputSchema: [
+      { field: 'successCount', label: '成功数量', type: 'number' },
+      { field: 'failCount', label: '失败数量', type: 'number' },
+      { field: 'images', label: '图片列表', type: 'array' },
+    ],
+    requirements: [
+      { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'yandex_search',
+    name: 'Yandex 艺术插画与壁纸采集',
+    category: 'material',
+    description: '从 Yandex 检索全球艺术插画、二次元与欧美无水印高清大图并批量入库。需客户端在线。',
+    icon: 'Picture',
+    color: '#FC3F1D',
+    defaultData: { label: 'Yandex 艺术壁纸', config: { keyword: '', maxCount: 10 } },
+    inputSchema: [
+      { field: 'keyword', label: '搜索关键词', type: 'string', required: true, placeholder: '例如: digital art, wallpaper 4k, illustration' },
       { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 10, description: '每次最多采集数量 (1-50)' },
     ],
     outputSchema: [
