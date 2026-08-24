@@ -276,6 +276,7 @@ watch(
 .service-panel {
   width: 100%;
   min-height: 300px;
+  padding: 16px;
 }
 
 .service-panel__toolbar {

@@ -1,37 +1,17 @@
 <template>
   <ContentWrap :plain="true">
     <div class="collect-page">
-      <div class="collect-toolbar">
-        <div class="collect-toolbar__left">
-          <div class="collect-toolbar__title">Google Icons 控制台</div>
-          <el-select v-model="selectedClientId" placeholder="选择客户端节点" size="default" style="width: 220px;">
-            <el-option v-for="item in clients" :key="item.clientId" :label="item.machine?.code || item.clientId" :value="item.clientId">
-              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-                <span>{{ item.machine?.code || item.clientId }}</span>
-                <el-tag :type="item.isOnline ? 'success' : 'info'" size="small">{{ item.isOnline ? '在线' : '离线' }}</el-tag>
-              </div>
-            </el-option>
-          </el-select>
-        </div>
-        <div class="collect-toolbar__actions">
-          <el-button @click="loadClients">刷新节点</el-button>
-          <el-button type="primary" :disabled="!selectedClientId || !selectedClient?.isOnline" :loading="actionLoading.refreshRuntime" @click="handleRefreshRuntime">刷新状态</el-button>
-        </div>
-      </div>
+      <!-- 客户端选择 -->
+      <ClientSelector
+        v-model="selectedClientId"
+        plugin-key="google-icons"
+        @change="handleSelectClient"
+        @refresh="loadClients"
+      />
       <div class="collect-layout" v-loading="loading">
         <section class="collect-main">
           <div v-if="selectedClient" class="collect-panel">
-            <div class="status-hero">
-              <div class="hero-main" :class="`is-${availabilityTone}`">
-                <div class="hero-eyebrow">Google Material Icons</div>
-                <div class="hero-value">{{ availabilityText }}</div>
-                <div class="hero-subtitle">{{ selectedClient.machine?.code || selectedClient.clientId }}</div>
-              </div>
-              <div class="status-pills">
-                <div class="status-pill" :class="`is-${clientTone}`"><span class="status-pill__dot" /><span>{{ clientStatusText }}</span></div>
-                <div class="status-pill" :class="`is-${siteTone}`"><span class="status-pill__dot" /><span>{{ siteStatusBadge }}</span></div>
-              </div>
-            </div>
+            
             <div class="collect-section">
               <div class="collect-search__header">
                 <div class="collect-section__title">图标采集 (SVG · 多种风格)</div>
@@ -120,6 +100,7 @@ import { usePluginClientNodes } from '@/services/clientNodeState';
 import { searchGoogleIconsAndWait, syncGoogleIconsToMaterialLibraryAndWait, refreshGoogleIconsStatus, type GoogleIcon, type GoogleIconsClientVO, type GoogleIconsServiceStatus } from '@/api/external/googleicons';
 import { uploadMaterialFile } from '@/api/material';
 import '@/styles/external-collect.css';
+import ClientSelector from '../components/ClientSelector.vue'
 defineOptions({ name: 'ExternalGoogleIcons' });
 const iconStyle = ref<'outlined' | 'rounded' | 'sharp' | 'two-tone'>('outlined');
 const actionLoading = reactive({ refreshRuntime: false });

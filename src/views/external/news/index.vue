@@ -108,64 +108,68 @@ watch(
 
 .collect-layout {
   display: flex;
-  gap: 16px;
-  min-height: calc(100vh - var(--top-tool-height) - var(--tags-view-height));
+  gap: 12px;
+  height: calc(100vh - var(--top-tool-height) - var(--tags-view-height));
 }
 
 .collect-menu {
-  width: 210px;
+  width: 180px;
   flex-shrink: 0;
-  background: var(--el-bg-color, #ffffff);
-  border: 1px solid var(--el-border-color-lighter, #e5e7eb);
-  border-radius: 8px;
-  padding: 14px 8px;
-  overflow: auto;
-  max-height: calc(100vh - var(--top-tool-height) - var(--tags-view-height) - 20px);
+  padding: 8px;
+  overflow-y: auto;
 }
 
 .menu-header {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  color: var(--el-text-color-secondary, #9ca3af);
-  padding: 0 10px 10px 10px;
+  color: var(--el-text-color-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0 8px 8px 8px;
   margin-bottom: 4px;
-  border-bottom: 1px solid var(--el-border-color-extra-light, #f3f4f6);
+  border-bottom: 1px solid var(--el-border-color-extra-light);
 }
 
 .menu-group {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   margin-top: 8px;
 }
 
 .menu-group__label {
   font-size: 11px;
-  color: var(--el-text-color-placeholder, #c0c4cc);
-  padding: 0 10px 4px 10px;
+  color: var(--el-text-color-placeholder);
+  padding: 0 8px 4px 8px;
 }
 
 .menu-item {
   display: flex;
   align-items: center;
-  height: 36px;
-  padding: 0 10px;
-  border-radius: 6px;
-  font-size: 13px;
-  color: var(--el-text-color-primary, #374151);
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--el-text-color-regular);
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: color 0.15s ease;
   user-select: none;
 }
 
 .menu-item:hover {
-  background: var(--el-fill-color-light, #f9fafb);
+  background: transparent;
+  color: var(--el-text-color-primary);
+}
+
+.menu-item:focus,
+.menu-item:focus-visible {
+  outline: none;
 }
 
 .menu-item.is-active {
-  background: var(--el-fill-color, #f3f4f6);
-  color: var(--el-color-primary, #4f46e5);
-  font-weight: 600;
+  background: transparent;
+  color: var(--el-color-primary);
+  font-weight: 500;
 }
 
 .menu-item-text {
@@ -178,10 +182,28 @@ watch(
 .collect-body {
   flex: 1;
   min-width: 0;
-  background: var(--el-bg-color, #ffffff);
-  border: 1px solid var(--el-border-color-lighter, #e5e7eb);
-  border-radius: 8px;
-  padding: 24px;
-  overflow: auto;
+  overflow-y: auto;
+}
+
+/* 窄滚动条 */
+.collect-menu::-webkit-scrollbar,
+.collect-body::-webkit-scrollbar {
+  width: 4px;
+}
+
+.collect-menu::-webkit-scrollbar-track,
+.collect-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.collect-menu::-webkit-scrollbar-thumb,
+.collect-body::-webkit-scrollbar-thumb {
+  background: var(--el-border-color);
+  border-radius: 2px;
+}
+
+.collect-menu::-webkit-scrollbar-thumb:hover,
+.collect-body::-webkit-scrollbar-thumb:hover {
+  background: var(--el-text-color-secondary);
 }
 </style>

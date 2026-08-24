@@ -921,6 +921,7 @@ function bindSocketEvents(currentSocket: Socket) {
   });
 
   currentSocket.on("service-command-result", (data: ServiceCommandResultEvent) => {
+    console.log(`[AdminWS] 收到 service-command-result: commandId=${data.commandId}, pluginKey=${data.pluginKey}, action=${data.action}, success=${data.success}, message=${data.message}, data类型=${typeof data.data}, data长度=${data.data ? JSON.stringify(data.data).length : 0}`);
     emitter.emit("serviceCommandResult", data);
   });
 

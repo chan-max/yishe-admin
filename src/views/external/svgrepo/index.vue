@@ -1,44 +1,13 @@
 <template>
   <ContentWrap :plain="true">
     <div class="collect-page">
-      <!-- 工具栏 -->
-      <div class="collect-toolbar">
-        <div class="collect-toolbar__left">
-          <div class="collect-toolbar__title">SVGRepo 50万+开源矢量图库</div>
-          <el-select
-            v-model="selectedClientId"
-            placeholder="选择客户端节点"
-            size="default"
-            style="width: 220px;"
-            @change="handleSelectClient"
-          >
-            <el-option
-              v-for="item in clients"
-              :key="item.clientId"
-              :label="item.machine?.code || item.clientId"
-              :value="item.clientId"
-            >
-              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-                <span>{{ item.machine?.code || item.clientId }}</span>
-                <el-tag :type="item.isOnline ? 'success' : 'info'" size="small">
-                  {{ item.isOnline ? '在线' : '离线' }}
-                </el-tag>
-              </div>
-            </el-option>
-          </el-select>
-        </div>
-        <div class="collect-toolbar__actions">
-          <el-button @click="loadClients">刷新节点</el-button>
-          <el-button
-            type="primary"
-            :disabled="!selectedClientId || !selectedClient?.isOnline"
-            :loading="actionLoading.refreshRuntime"
-            @click="handleRefreshRuntime"
-          >
-            刷新状态
-          </el-button>
-        </div>
-      </div>
+            <!-- 客户端选择 -->
+      <ClientSelector
+        v-model="selectedClientId"
+        plugin-key="svgrepo"
+        @change="handleSelectClient"
+        @refresh="loadClients"
+      />
 
       <!-- 客户端节点区域 -->
       <div class="collect-layout" v-loading="loading">
@@ -46,31 +15,7 @@
         <section class="collect-main">
           <div v-if="selectedClient" class="collect-panel">
             <!-- 状态卡片 -->
-            <div class="status-hero">
-              <div class="hero-main" :class="`is-${availabilityTone}`">
-                <div class="hero-eyebrow">SVGRepo (500,000+ Free SVG Vectors)</div>
-                <div class="hero-value">{{ availabilityText }}</div>
-                <div class="hero-subtitle">
-                  {{ selectedClient.machine?.code || selectedClient.clientId }}
-                </div>
-              </div>
-              <div class="status-pills">
-                <div class="status-pill" :class="`is-${clientTone}`">
-                  <span class="status-pill__dot" />
-                  <span>{{ clientStatusText }}</span>
-                </div>
-                <div class="status-pill" :class="`is-${siteTone}`">
-                  <span class="status-pill__dot" />
-                  <span>{{ siteStatusBadge }}</span>
-                </div>
-                <div class="status-pill is-neutral">
-                  <span>{{ platformText }}</span>
-                </div>
-                <div class="status-pill is-neutral">
-                  <span>{{ checkedAtText }}</span>
-                </div>
-              </div>
-            </div>
+            
 
             <!-- 矢量采集 -->
             <div class="collect-section">
@@ -276,7 +221,7 @@ import {
 } from '@/api/external/svgrepo';
 import { uploadMaterialFile } from '@/api/material';
 import '@/styles/external-collect.css';
-
+import ClientSelector from '../components/ClientSelector.vue'
 defineOptions({ name: 'ExternalSvgrepo' });
 
 const selectedStyle = ref<string>('all');

@@ -261,6 +261,7 @@ watch(
 <style scoped>
 .hotsearch-panel {
   width: 100%;
+  padding: 16px;
 }
 
 .panel-toolbar {

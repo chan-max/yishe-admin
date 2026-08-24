@@ -1,269 +1,149 @@
 <template>
-  <ContentWrap :plain="true">
-    <div class="collect-page">
-      <!-- 工具栏 -->
-      <div class="collect-toolbar">
-        <div class="collect-toolbar__left">
-          <div class="collect-toolbar__title">{{ title }}</div>
-          <el-select
-            v-model="selectedClientId"
-            placeholder="选择客户端节点"
-            size="default"
-            style="width: 220px;"
-            @change="handleSelectClient"
+  <div class="engine-view">
+    <!-- 客户端选择（单独一行） -->
+    <ClientSelector
+      v-model="selectedClientId"
+      :plugin-key="props.pluginKey"
+      @change="handleSelectClient"
+      @refresh="loadClients"
+    />
+
+    <!-- 业务工具栏 -->
+    <div class="engine-toolbar">
+      <el-input
+        v-model="searchKeyword"
+        :placeholder="placeholder || '搜索关键词...'"
+        clearable
+        size="small"
+        class="search-input"
+        @keyup.enter="handleSearch"
+      >
+        <template #prefix>
+          <el-icon><Search /></el-icon>
+        </template>
+      </el-input>
+      <el-button
+        type="primary"
+        size="small"
+        :loading="searchLoading"
+        :disabled="!selectedClientId || !selectedClient?.isOnline"
+        @click="handleSearch"
+      >
+        搜索
+      </el-button>
+    </div>
+
+    <!-- 批量操作栏 -->
+    <div v-if="searchResults.length > 0" class="batch-bar">
+      <div class="batch-info">
+        <el-checkbox
+          :model-value="allSelected"
+          :indeterminate="indeterminate"
+          @change="toggleSelectAll"
+        >
+          全选
+        </el-checkbox>
+        <span class="batch-count">已选 {{ selectedItems.length }} / {{ searchResults.length }}</span>
+      </div>
+      <el-button
+        type="primary"
+        size="small"
+        :loading="batchDownloadLoading"
+        :disabled="selectedItems.length === 0"
+        @click="handleBatchSync"
+      >
+        批量入库 ({{ selectedItems.length }})
+      </el-button>
+    </div>
+
+    <!-- 搜索结果列表 -->
+    <div v-if="searchResults.length > 0" class="result-list">
+      <div
+        v-for="(item, index) in searchResults"
+        :key="item.id || `${item.image}-${index}`"
+        class="result-item"
+        :class="{ 'is-selected': selectedItems.includes(item.id || `${item.image}-${index}`) }"
+      >
+        <el-checkbox
+          :model-value="selectedItems.includes(item.id || `${item.image}-${index}`)"
+          class="item-checkbox"
+          @change="toggleSelectItem(item.id || `${item.image}-${index}`)"
+        />
+        <div class="item-thumb" @click="openImagePreview(item)">
+          <el-image
+            :src="item.thumbnail || item.image"
+            fit="cover"
+            loading="lazy"
+            class="thumb-img"
           >
-            <el-option
-              v-for="item in clients"
-              :key="item.clientId"
-              :label="item.machine?.code || item.clientId"
-              :value="item.clientId"
-            >
-              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-                <span>{{ item.machine?.code || item.clientId }}</span>
-                <el-tag :type="item.isOnline ? 'success' : 'info'" size="small">
-                  {{ item.isOnline ? '在线' : '离线' }}
-                </el-tag>
+            <template #error>
+              <div class="thumb-placeholder">
+                <el-icon><Picture /></el-icon>
               </div>
-            </el-option>
-          </el-select>
+            </template>
+          </el-image>
         </div>
-        <div class="collect-toolbar__actions">
-          <el-button @click="loadClients">刷新节点</el-button>
+        <div class="item-info">
+          <div class="item-title" :title="item.title">{{ item.title || '未命名' }}</div>
+          <div class="item-meta">
+            <span v-if="item.width && item.height" class="meta-tag">{{ item.width }}x{{ item.height }}</span>
+            <span v-if="item.author" class="meta-author">{{ item.author }}</span>
+          </div>
+        </div>
+        <div class="item-actions">
           <el-button
-            type="primary"
+            size="small"
+            :loading="loadingItems.has(`sync-${index}`)"
             :disabled="!selectedClientId || !selectedClient?.isOnline"
-            :loading="actionLoading.refreshRuntime"
-            @click="handleRefreshRuntime"
+            @click.stop="handleSyncOne(index)"
           >
-            刷新状态
+            入库
           </el-button>
         </div>
       </div>
-
-      <!-- 客户端节点区域 -->
-      <div class="collect-layout" v-loading="loading">
-        <!-- 主区域 -->
-        <section class="collect-main">
-          <div v-if="selectedClient" class="collect-panel">
-            <!-- 状态卡片 -->
-            <div class="status-hero">
-              <div class="hero-main" :class="`is-${availabilityTone}`">
-                <div class="hero-eyebrow">{{ eyebrow || title }}</div>
-                <div class="hero-value">{{ availabilityText }}</div>
-                <div class="hero-subtitle">
-                  {{ selectedClient.machine?.code || selectedClient.clientId }}
-                </div>
-              </div>
-              <div class="status-pills">
-                <div class="status-pill" :class="`is-${clientTone}`">
-                  <span class="status-pill__dot" />
-                  <span>{{ clientStatusText }}</span>
-                </div>
-                <div class="status-pill" :class="`is-${siteTone}`">
-                  <span class="status-pill__dot" />
-                  <span>{{ siteStatusBadge }}</span>
-                </div>
-                <div class="status-pill is-neutral">
-                  <span>{{ platformText }}</span>
-                </div>
-                <div class="status-pill is-neutral">
-                  <span>{{ checkedAtText }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- 图片采集搜索区 -->
-            <div class="collect-section">
-              <div class="collect-search__header">
-                <div class="collect-section__title">图片采集 (原图直链与元数据提取)</div>
-                <div class="collect-search__opts">
-                  <div class="collect-search__field">
-                    <span class="collect-search__label">每页数量</span>
-                    <el-select v-model="pageSize" size="small" style="width: 100px" @change="handleSizeChange">
-                      <el-option :value="10" label="10 条" />
-                      <el-option :value="20" label="20 条" />
-                      <el-option :value="30" label="30 条" />
-                      <el-option :value="50" label="50 条" />
-                    </el-select>
-                  </div>
-                </div>
-              </div>
-
-              <div class="collect-inline">
-                <el-input
-                  v-model="searchKeyword"
-                  :placeholder="placeholder || '输入关键词搜索高清素材图片...'"
-                  clearable
-                  size="default"
-                  style="flex: 1"
-                  @keyup.enter="handleSearch"
-                >
-                  <template #prefix>
-                    <el-icon><Picture /></el-icon>
-                  </template>
-                </el-input>
-                <el-button
-                  type="primary"
-                  :loading="searchLoading"
-                  :disabled="!selectedClientId || !selectedClient?.isOnline"
-                  @click="handleSearch"
-                >
-                  搜索素材
-                </el-button>
-              </div>
-            </div>
-
-            <!-- 批量操作栏 -->
-            <div v-if="searchResults.length > 0" class="collect-batch-bar">
-              <div class="batch-left">
-                <span class="batch-count">已选 {{ selectedItems.length }} / {{ searchResults.length }} 项</span>
-                <el-button size="small" @click="selectAll">全选</el-button>
-                <el-button size="small" @click="invertSelection">反选</el-button>
-                <el-button size="small" @click="clearSelection">清空</el-button>
-              </div>
-              <div class="batch-right">
-                <el-button
-                  type="primary"
-                  size="small"
-                  :loading="batchDownloadLoading"
-                  :disabled="selectedItems.length === 0 || !selectedClientId || !selectedClient?.isOnline"
-                  @click="handleBatchSync"
-                >
-                  批量入库 ({{ selectedItems.length }})
-                </el-button>
-              </div>
-            </div>
-
-            <!-- 搜索结果列表 -->
-            <div v-if="searchResults.length > 0" class="collect-grid">
-              <div
-                v-for="item in searchResults"
-                :key="item.id"
-                class="collect-card"
-                :class="{ 'is-selected': selectedItems.includes(item.id) }"
-                @click="toggleSelectItem(item.id)"
-              >
-                <div class="card-checkbox" @click.stop="toggleSelectItem(item.id)">
-                  <el-checkbox :model-value="selectedItems.includes(item.id)" />
-                </div>
-                <div class="card-thumb" @click.stop="openPreview(item)">
-                  <el-image
-                    :src="item.thumbnail || item.image"
-                    fit="cover"
-                    loading="lazy"
-                    class="card-img"
-                  >
-                    <template #error>
-                      <div class="img-error">
-                        <el-icon><Picture /></el-icon>
-                        <span>加载失败</span>
-                      </div>
-                    </template>
-                  </el-image>
-                  <div class="card-overlay">
-                    <span class="card-preview-btn">查看详情</span>
-                  </div>
-                </div>
-                <div class="card-info">
-                  <div class="card-title" :title="item.title">{{ item.title || '未命名素材' }}</div>
-                  <div class="card-meta">
-                    <span v-if="item.width && item.height" class="meta-tag">{{ item.width }}x{{ item.height }}</span>
-                    <span v-if="item.author" class="meta-author" :title="item.author">{{ item.author }}</span>
-                  </div>
-                  <div class="card-actions">
-                    <el-button
-                      size="small"
-                      type="primary"
-                      plain
-                      :loading="loadingItems.has(item.id)"
-                      :disabled="!selectedClientId || !selectedClient?.isOnline"
-                      @click.stop="handleSyncOne(item)"
-                    >
-                      入库
-                    </el-button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 空状态 -->
-            <div v-else-if="!searchLoading && searchTotal === 0 && searchKeyword" class="collect-empty">
-              <el-empty description="未找到相关素材图片，请尝试更换关键词" />
-            </div>
-
-            <!-- 分页 -->
-            <div v-if="searchResults.length > 0" class="collect-pagination">
-              <el-pagination
-                v-model:current-page="currentPage"
-                v-model:page-size="pageSize"
-                :total="searchTotal || 100"
-                layout="prev, pager, next"
-                @current-change="handlePageChange"
-              />
-            </div>
-          </div>
-
-          <!-- 未选择节点 -->
-          <div v-else class="collect-empty">
-            <el-empty description="请选择可用的客户端节点" />
-          </div>
-        </section>
-      </div>
     </div>
 
-    <!-- 详情预览弹窗 -->
-    <el-dialog
-      v-model="previewVisible"
-      title="素材详情"
-      width="720px"
-      destroy-on-close
-      class="preview-dialog"
-    >
-      <div v-if="previewItem" class="preview-content">
-        <div class="preview-img-box">
-          <el-image :src="previewItem.image || previewItem.thumbnail" fit="contain" class="preview-img" />
-        </div>
-        <div class="preview-info">
-          <h3 class="preview-title">{{ previewItem.title }}</h3>
-          <p v-if="previewItem.description" class="preview-desc">{{ previewItem.description }}</p>
-          <div class="preview-tags">
-            <el-tag v-if="previewItem.width && previewItem.height" size="small" type="info">
-              {{ previewItem.width }} x {{ previewItem.height }}
-            </el-tag>
-            <el-tag v-if="previewItem.author" size="small" type="success">
-              来源: {{ previewItem.author }}
-            </el-tag>
-            <el-tag v-if="previewItem.tags" size="small">
-              {{ previewItem.tags }}
-            </el-tag>
-          </div>
-          <div v-if="previewItem.link || previewItem.url" class="preview-link">
-            <el-link :href="previewItem.link || previewItem.url" target="_blank" type="primary">
-              查看原网页 ↗
-            </el-link>
-          </div>
-        </div>
-      </div>
-      <template #footer>
-        <el-button @click="previewVisible = false">关闭</el-button>
-        <el-button
-          v-if="previewItem"
-          type="primary"
-          :loading="loadingItems.has(previewItem.id)"
-          :disabled="!selectedClientId || !selectedClient?.isOnline"
-          @click="handleSyncOne(previewItem)"
-        >
-          保存到贴纸素材库
-        </el-button>
-      </template>
-    </el-dialog>
-  </ContentWrap>
+    <!-- 空状态 -->
+    <div v-else-if="!searchLoading && searchResults.length === 0 && searchKeyword" class="empty-state">
+      <el-empty description="未找到相关素材" :image-size="80" />
+    </div>
+
+    <!-- 加载状态 -->
+    <div v-if="searchLoading" class="loading-state">
+      <el-icon class="is-loading"><Loading /></el-icon>
+      <span>搜索中...</span>
+    </div>
+
+    <!-- 分页 -->
+    <div v-if="searchResults.length > 0" class="pagination">
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :total="searchTotal || 100"
+        layout="prev, pager, next"
+        small
+        background
+        @current-change="handlePageChange"
+      />
+    </div>
+
+    <!-- 图片预览（轻量弹窗，仅展示图片） -->
+    <el-image-viewer
+      v-if="previewVisible"
+      :url-list="[previewImage]"
+      :initial-index="0"
+      :zoom-rate="1.2"
+      :max-scale="7"
+      :min-scale="0.2"
+      @close="previewVisible = false"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Picture } from '@element-plus/icons-vue'
+import { Picture, Search, Loading } from '@element-plus/icons-vue'
 import { usePluginClientNodes } from '@/services/clientNodeState'
 import {
   createImageEngineApi,
@@ -271,7 +151,7 @@ import {
   type ImageEngineClientVO,
   type ImageEngineServiceStatus,
 } from '@/api/external/imageEngineApi'
-import '@/styles/external-collect.css'
+import ClientSelector from './ClientSelector.vue'
 
 const props = defineProps<{
   pluginKey: string
@@ -311,7 +191,7 @@ const loadingItems = ref<Set<string>>(new Set())
 const batchDownloadLoading = ref(false)
 
 const previewVisible = ref(false)
-const previewItem = ref<ImageEnginePhoto | null>(null)
+const previewImage = ref('')
 
 const clients = computed<ImageEngineClientVO[]>(() => {
   return rawClients.value.map((client) => {
@@ -359,50 +239,13 @@ const isAvailable = computed(
   () => isOnline.value && (isServiceConnected.value || currentService.value?.available),
 )
 
-const availabilityTone = computed(() => (isAvailable.value ? 'success' : 'danger'))
-const availabilityText = computed(() => (isAvailable.value ? '服务就绪' : '不可用'))
-
-const clientTone = computed(() => (isOnline.value ? 'success' : 'danger'))
-const clientStatusText = computed(() => (isOnline.value ? '客户端在线' : '客户端离线'))
-
-const siteTone = computed(() => (isServiceConnected.value ? 'success' : 'warning'))
-const siteStatusBadge = computed(() =>
-  isServiceConnected.value ? `${props.title} 可用` : `${props.title} 离线`,
-)
-
-const platformText = computed(() => {
-  const p = selectedClient.value?.machine?.platform
-  if (!p) return '未知平台'
-  return p === 'darwin' ? 'macOS' : p === 'win32' ? 'Windows' : p
-})
-
-const checkedAtText = computed(() => {
-  const t = currentService.value?.lastCheckedAt
-  if (!t) return '未检查'
-  return new Date(t).toLocaleTimeString()
-})
-
 function handleSelectClient(val: string) {
   selectedClientId.value = val
 }
 
 async function loadClients() {
   await refreshClientNodes()
-  ElMessage.success('客户端列表已刷新')
-}
-
-async function handleRefreshRuntime() {
-  if (!selectedClientId.value) return
-  actionLoading.refreshRuntime = true
-  try {
-    await api.refreshStatus(selectedClientId.value)
-    await refreshClientNodes()
-    ElMessage.success('服务状态已刷新')
-  } catch (e: any) {
-    ElMessage.error(e?.message || '刷新状态失败')
-  } finally {
-    actionLoading.refreshRuntime = false
-  }
+  ElMessage.success('节点已刷新')
 }
 
 // ─── 搜索业务 ──────────────────────────────────────────────
@@ -436,7 +279,13 @@ async function handleSearch() {
   } catch (e: any) {
     searchResults.value = []
     searchTotal.value = 0
-    ElMessage.error(e?.message || '搜索执行异常')
+    console.error(`[ImageEngineCollectView] 搜索异常:`, e)
+    const errorMsg = e?.message || '搜索执行异常'
+    if (errorMsg.includes('超时')) {
+      ElMessage.error('搜索超时，请检查客户端网络')
+    } else {
+      ElMessage.error(errorMsg)
+    }
   } finally {
     searchLoading.value = false
   }
@@ -457,38 +306,48 @@ function handlePageChange(val: number) {
 
 // ─── 选择管理 ──────────────────────────────────────────────
 
-function toggleSelectItem(id: string) {
-  const idx = selectedItems.value.indexOf(id)
+// 获取唯一 key，优先用 id，否则用 image + index
+const getItemKey = (item: ImageEnginePhoto, index: number) => {
+  return item.id || `${item.image || item.thumbnail}-${index}`
+}
+
+const allSelected = computed(() => {
+  return searchResults.value.length > 0 && selectedItems.value.length === searchResults.value.length
+})
+
+const indeterminate = computed(() => {
+  const len = selectedItems.value.length
+  return len > 0 && len < searchResults.value.length
+})
+
+function toggleSelectItem(key: string) {
+  const idx = selectedItems.value.indexOf(key)
   if (idx === -1) {
-    selectedItems.value.push(id)
+    selectedItems.value.push(key)
   } else {
     selectedItems.value.splice(idx, 1)
   }
 }
 
-function selectAll() {
-  selectedItems.value = searchResults.value.map((i) => i.id)
+function toggleSelectAll(checked: boolean) {
+  if (checked) {
+    selectedItems.value = searchResults.value.map((i, idx) => getItemKey(i, idx))
+  } else {
+    selectedItems.value = []
+  }
 }
 
-function invertSelection() {
-  const cur = new Set(selectedItems.value)
-  selectedItems.value = searchResults.value.filter((i) => !cur.has(i.id)).map((i) => i.id)
-}
-
-function clearSelection() {
-  selectedItems.value = []
-}
-
-function openPreview(item: ImageEnginePhoto) {
-  previewItem.value = item
+function openImagePreview(item: ImageEnginePhoto) {
+  previewImage.value = item.image || item.thumbnail
   previewVisible.value = true
 }
 
 // ─── 单图入库 ──────────────────────────────────────────────
 
-async function handleSyncOne(item: ImageEnginePhoto) {
-  if (!selectedClientId.value) return
-  loadingItems.value.add(item.id)
+async function handleSyncOne(index: number) {
+  const item = searchResults.value[index]
+  if (!selectedClientId.value || !item) return
+  loadingItems.value.add(`sync-${index}`)
   try {
     const res = await api.syncAndWait(selectedClientId.value, {
       imageUrl: item.image,
@@ -510,7 +369,7 @@ async function handleSyncOne(item: ImageEnginePhoto) {
   } catch (e: any) {
     ElMessage.error(e?.message || '入库异常')
   } finally {
-    loadingItems.value.delete(item.id)
+    loadingItems.value.delete(`sync-${index}`)
   }
 }
 
@@ -518,13 +377,13 @@ async function handleSyncOne(item: ImageEnginePhoto) {
 
 async function handleBatchSync() {
   if (!selectedClientId.value || selectedItems.value.length === 0) return
-  const itemsToSync = searchResults.value.filter((i) => selectedItems.value.includes(i.id))
+  const itemsToSync = searchResults.value.filter((i, idx) => selectedItems.value.includes(getItemKey(i, idx)))
   batchDownloadLoading.value = true
   let successCount = 0
   let failCount = 0
 
   for (const item of itemsToSync) {
-    loadingItems.value.add(item.id)
+    loadingItems.value.add(item.id || item.image)
     try {
       const res = await api.syncAndWait(selectedClientId.value, {
         imageUrl: item.image,
@@ -546,7 +405,7 @@ async function handleBatchSync() {
     } catch {
       failCount++
     } finally {
-      loadingItems.value.delete(item.id)
+      loadingItems.value.delete(item.id || item.image)
     }
   }
 
@@ -560,196 +419,175 @@ async function handleBatchSync() {
 </script>
 
 <style scoped>
-.collect-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 16px;
-  margin-top: 16px;
-}
-
-.collect-card {
-  position: relative;
-  border-radius: 8px;
-  background: var(--el-bg-color);
-  border: 1px solid var(--el-border-color-lighter);
-  overflow: hidden;
+.engine-view {
   display: flex;
   flex-direction: column;
-  transition: all 0.25s ease;
-  cursor: pointer;
+  gap: 12px;
+  padding: 16px 0;
+  min-height: 100%;
 }
 
-.collect-card:hover {
-  border-color: var(--el-color-primary);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
-  transform: translateY(-2px);
+/* ─── 业务工具栏 ─────────────────────────────────────────── */
+
+.engine-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.collect-card.is-selected {
-  border-color: var(--el-color-primary);
-  background: var(--el-color-primary-light-9);
+.search-input {
+  flex: 1;
 }
 
-.card-checkbox {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  z-index: 3;
-  background: rgba(255, 255, 255, 0.85);
+:deep(.search-input .el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1px var(--el-border-color) inset;
+}
+
+/* ─── 批量操作栏 ─────────────────────────────────────────── */
+
+.batch-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.batch-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.batch-count {
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+}
+
+/* ─── 结果列表 ───────────────────────────────────────────── */
+
+.result-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.result-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--el-border-color-extra-light);
+  transition: background-color 0.15s ease;
+}
+
+.result-item:last-child {
+  border-bottom: none;
+}
+
+.result-item.is-selected {
+  background: transparent;
+}
+
+.item-checkbox {
+  flex-shrink: 0;
+}
+
+.item-thumb {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
   border-radius: 4px;
-  padding: 2px 4px;
-  backdrop-filter: blur(4px);
-}
-
-.card-thumb {
-  position: relative;
-  width: 100%;
-  padding-top: 66.6%;
-  background: var(--el-fill-color-light);
   overflow: hidden;
+  background: var(--el-fill-color-lighter);
+  cursor: pointer;
+  transition: opacity 0.15s ease;
 }
 
-.card-img {
-  position: absolute;
-  top: 0;
-  left: 0;
+.item-thumb:hover {
+  opacity: 0.85;
+}
+
+.thumb-img {
   width: 100%;
   height: 100%;
 }
 
-.card-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.35);
+.thumb-placeholder {
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
-  transition: opacity 0.2s ease;
+  color: var(--el-text-color-placeholder);
+  font-size: 18px;
 }
 
-.card-thumb:hover .card-overlay {
-  opacity: 1;
-}
-
-.card-preview-btn {
-  color: #fff;
-  font-size: 13px;
-  padding: 4px 12px;
-  border-radius: 20px;
-  background: rgba(0, 0, 0, 0.6);
-}
-
-.card-info {
-  padding: 10px 12px;
+.item-info {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  flex: 1;
+  gap: 4px;
 }
 
-.card-title {
+.item-title {
   font-size: 13px;
-  font-weight: 500;
   color: var(--el-text-color-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.card-meta {
+.item-meta {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-size: 12px;
   color: var(--el-text-color-secondary);
 }
 
 .meta-tag {
   background: var(--el-fill-color);
-  padding: 1px 5px;
+  padding: 1px 6px;
   border-radius: 3px;
   font-size: 11px;
 }
 
 .meta-author {
-  max-width: 120px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 120px;
 }
 
-.card-actions {
-  margin-top: auto;
-  display: flex;
-  justify-content: flex-end;
+.item-actions {
+  flex-shrink: 0;
 }
 
-.collect-batch-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 16px;
-  background: var(--el-fill-color-light);
-  border-radius: 8px;
-  margin-top: 16px;
-}
+/* ─── 空状态 ─────────────────────────────────────────────── */
 
-.batch-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.batch-count {
-  font-size: 13px;
-  font-weight: 500;
-  margin-right: 8px;
-}
-
-.preview-content {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.preview-img-box {
-  width: 100%;
-  max-height: 420px;
+.empty-state {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--el-fill-color-light);
-  border-radius: 8px;
-  overflow: hidden;
+  padding: 60px 0;
 }
 
-.preview-img {
-  max-width: 100%;
-  max-height: 420px;
-}
-
-.preview-info {
+.loading-state {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 8px;
-}
-
-.preview-title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.preview-desc {
-  margin: 0;
-  font-size: 13px;
+  padding: 40px 0;
   color: var(--el-text-color-secondary);
+  font-size: 14px;
 }
 
-.preview-tags {
+/* ─── 分页 ───────────────────────────────────────────────── */
+
+.pagination {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  justify-content: center;
+  padding: 16px 0;
 }
+
 </style>
