@@ -160,6 +160,7 @@
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
+import { storeToRefs } from "pinia";
 import { Echart } from "@/components/Echart";
 import type { EChartsOption } from "echarts";
 import { getDashboardStatsApi, type DashboardStats } from "@/api/dashboard";
@@ -169,11 +170,14 @@ import {
   getBrowserAutomationClients,
   type BrowserAutomationClientVO,
 } from "@/api/external/browserAutomation";
+import { useAppStore } from "@/store/modules/app";
 
 defineOptions({ name: "HomeIndex" });
 
 const { t } = useI18n();
 const router = useRouter();
+const appStore = useAppStore();
+const { isDark } = storeToRefs(appStore);
 const goTo = (route: string) => router.push(route);
 
 // ── 1. Quick Links (Real Routes) ────────────────────────────────
@@ -310,14 +314,20 @@ const galleryChartOptions = computed<EChartsOption>(() => {
   const dates = series.map((p) => String(p.date || "").slice(5));
   const createdData = series.map((p) => p.created || 0);
 
+  // 根据主题使用不同颜色
+  const textColor = isDark.value ? "#94a3b8" : "#64748b";
+  const tooltipBg = isDark.value ? "#1e293b" : "#ffffff";
+  const splitLineColor = isDark.value ? "#334155" : "#e2e8f0";
+  const itemBorderColor = isDark.value ? "#1e293b" : "#ffffff";
+
   return {
     tooltip: {
       trigger: "axis",
-      backgroundColor: "var(--el-bg-color-overlay)",
-      borderColor: "var(--el-border-color-lighter)",
+      backgroundColor: tooltipBg,
+      borderColor: splitLineColor,
       borderWidth: 1,
       padding: [8, 12],
-      textStyle: { color: "var(--el-text-color-primary)", fontSize: 12 },
+      textStyle: { color: textColor, fontSize: 12 },
       extraCssText: "box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.12); border-radius: 8px;",
       axisPointer: {
         type: "line",
@@ -337,15 +347,15 @@ const galleryChartOptions = computed<EChartsOption>(() => {
       data: dates,
       axisLine: { show: false },
       axisTick: { show: false },
-      axisLabel: { color: "var(--el-text-color-secondary)", fontSize: 11, margin: 12 },
+      axisLabel: { color: textColor, fontSize: 11, margin: 12 },
     },
     yAxis: {
       type: "value",
       minInterval: 1,
-      splitLine: { lineStyle: { color: "var(--el-border-color-extra-light)", type: "dashed" } },
+      splitLine: { lineStyle: { color: splitLineColor, type: "dashed" } },
       axisLine: { show: false },
       axisTick: { show: false },
-      axisLabel: { color: "var(--el-text-color-secondary)", fontSize: 11 },
+      axisLabel: { color: textColor, fontSize: 11 },
     },
     series: [
       {
@@ -357,7 +367,7 @@ const galleryChartOptions = computed<EChartsOption>(() => {
         symbolSize: 6,
         itemStyle: {
           color: "#6366F1",
-          borderColor: "#fff",
+          borderColor: itemBorderColor,
           borderWidth: 2,
         },
         lineStyle: {
@@ -749,9 +759,13 @@ onUnmounted(() => {
 
 .gallery-card {
   padding: 8px 4px 0;
-  background: var(--app-content-surface-color);
-  border: 1px solid var(--app-content-border-color);
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-lighter);
   border-radius: 12px;
-  box-shadow: 0 2px 10px -4px rgba(0, 0, 0, 0.03);
+}
+
+:global(.dark) .gallery-card {
+  background: var(--el-bg-color-overlay);
+  border-color: var(--el-border-color);
 }
 </style>
