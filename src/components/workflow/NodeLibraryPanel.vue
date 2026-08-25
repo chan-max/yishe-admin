@@ -35,7 +35,11 @@ const availableCapabilities = computed(() =>
       ? {
           ...item,
           name: remote.name || item.name,
-          description: remote.description || item.description,
+          // 优先使用本地描述，服务端描述仅作为补充（当更长时）
+          description:
+            remote.description && remote.description.length > item.description.length
+              ? remote.description
+              : item.description,
           inputSchema: remote.inputSchema || item.inputSchema,
           outputSchema: remote.outputSchema || item.outputSchema,
         }
