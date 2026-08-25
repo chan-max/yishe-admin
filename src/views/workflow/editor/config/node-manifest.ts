@@ -2406,7 +2406,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     name: '百度图片搜索采集',
     category: 'material',
     description: '从百度图片搜索海量中文与全球素材配图、电商与国风壁纸并批量入库。需客户端在线。',
-    icon: 'Search',
+    iconImage: '/workflow-icons/baidu.png',
     color: '#2932E1',
     defaultData: { label: '百度图片采集', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
@@ -2427,7 +2427,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     name: '必应图片搜索采集',
     category: 'material',
     description: '从必应 (Bing) 搜索全球高清摄影、设计与透明底素材并批量入库。需客户端在线。',
-    icon: 'Picture',
+    iconImage: '/workflow-icons/bing.png',
     color: '#008373',
     defaultData: { label: '必应图片采集', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
@@ -2449,7 +2449,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     name: 'DuckDuckGo 图片采集',
     category: 'material',
     description: '通过 DuckDuckGo 隐私引擎检索全球多源高清图片并批量入库，免 API Key。需客户端在线。',
-    icon: 'Search',
+    iconImage: '/workflow-icons/duckduckgo.png',
     color: '#DE5833',
     defaultData: { label: 'DuckDuckGo 图搜', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
@@ -2471,7 +2471,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     name: '搜狗图片搜索采集',
     category: 'material',
     description: '从搜狗图片检索海量中文配图、表情包与高清素材并批量入库。需客户端在线。',
-    icon: 'Search',
+    iconImage: '/workflow-icons/sogou.png',
     color: '#FB6022',
     defaultData: { label: '搜狗图片采集', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
@@ -2492,7 +2492,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     name: '360 图片搜索采集',
     category: 'material',
     description: '从 360 图片搜索海量国内设计配图、海报背景与摄影图并批量入库。需客户端在线。',
-    icon: 'Search',
+    iconImage: '/workflow-icons/360.png',
     color: '#1DA362',
     defaultData: { label: '360图片采集', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
@@ -2513,7 +2513,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     name: 'Wallhaven 4K 壁纸采集',
     category: 'material',
     description: '从 Wallhaven 检索 2K/4K/8K 顶级超高清壁纸、插画与场景渲染图并批量入库。需客户端在线。',
-    icon: 'Picture',
+    iconImage: '/workflow-icons/wallhaven.png',
     color: '#49A9C8',
     defaultData: { label: 'Wallhaven 4K壁纸', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
@@ -2535,7 +2535,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     name: 'Unsplash 顶级摄影采集',
     category: 'material',
     description: '从 Unsplash 检索全球顶尖生活美学与商业摄影大图并批量入库。需客户端在线。',
-    icon: 'Camera',
+    iconImage: '/workflow-icons/unsplash.png',
     color: '#111111',
     defaultData: { label: 'Unsplash 摄影采集', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
@@ -2557,7 +2557,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     name: 'Flickr 摄影社区采集',
     category: 'material',
     description: '从 Flickr 检索全球摄影师作品与自由商用版权素材并批量入库。需客户端在线。',
-    icon: 'Camera',
+    iconImage: '/workflow-icons/flickr.png',
     color: '#FF0084',
     defaultData: { label: 'Flickr 摄影采集', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
@@ -2579,7 +2579,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     name: '谷歌图片搜索采集',
     category: 'material',
     description: '从谷歌图片 (Google Images) 全球检索图片素材并批量入库。需客户端在线。',
-    icon: 'Search',
+    iconImage: '/workflow-icons/google.png',
     color: '#4285F4',
     defaultData: { label: '谷歌图片采集', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
@@ -2601,7 +2601,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     name: 'Yandex 艺术插画与壁纸采集',
     category: 'material',
     description: '从 Yandex 检索全球艺术插画、二次元与欧美无水印高清大图并批量入库。需客户端在线。',
-    icon: 'Picture',
+    iconImage: '/workflow-icons/yandex.png',
     color: '#FC3F1D',
     defaultData: { label: 'Yandex 艺术壁纸', config: { keyword: '', maxCount: 10 } },
     inputSchema: [
