@@ -23,8 +23,8 @@ onMounted(() => {
   loadServerManifest();
 });
 
-const availableCapabilities = computed(() =>
-  SYSTEM_NODE_REGISTRY.filter((item) => {
+const availableCapabilities = computed(() => {
+  const registry = SYSTEM_NODE_REGISTRY.filter((item) => {
     const remote = byType.value.get(item.type);
     return (
       !UNAVAILABLE_WORKFLOW_NODE_TYPES.has(item.type) && (!remote || remote.executable !== false)
@@ -41,8 +41,13 @@ const availableCapabilities = computed(() =>
           outputSchema: item.outputSchema || remote.outputSchema,
         }
       : item;
-  }),
-);
+  });
+  // 调试：检查节点描述
+  console.log('[NodeLibraryPanel] 总节点数:', registry.length);
+  const sample = registry.find(n => n.type === 'techcrunchrss_search');
+  console.log('[NodeLibraryPanel] techcrunchrss_search 示例:', sample);
+  return registry;
+});
 
 const filteredCapabilities = computed(() => {
   return availableCapabilities.value.filter((item) => {
