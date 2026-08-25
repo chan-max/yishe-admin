@@ -35,10 +35,10 @@ const availableCapabilities = computed(() =>
       ? {
           ...item,
           name: remote.name || item.name,
-          // 始终使用本地详细描述，服务端描述仅在没有本地描述时作为fallback
-          description: item.description || remote.description || '',
-          inputSchema: remote.inputSchema || item.inputSchema,
-          outputSchema: remote.outputSchema || item.outputSchema,
+          // 始终使用本地详细描述，忽略服务端描述（服务端数据不完整）
+          description: item.description || '',
+          inputSchema: item.inputSchema || remote.inputSchema,
+          outputSchema: item.outputSchema || remote.outputSchema,
         }
       : item;
   }),
