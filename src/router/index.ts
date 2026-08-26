@@ -17,15 +17,6 @@ const router = createRouter({
   history: createWebHashHistory(import.meta.env.VITE_BASE_PATH),
   strict: true,
   routes: [
-    // 独立页面 - 项目介绍（无需登录，无 Layout）
-    {
-      path: '/intro',
-      component: () => import('@/views/intro/Index.vue'),
-      name: 'Intro',
-      meta: {
-        title: '项目介绍 - 衣设 1s.design'
-      }
-    },
     ...remainingRouter as RouteRecordRaw[]
   ],
   scrollBehavior: () => ({ left: 0, top: 0 })

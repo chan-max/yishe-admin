@@ -59,7 +59,6 @@ const whiteList = [
   "/bind",
   "/register",
   "/oauthLogin/gitee",
-  "/intro",
 ];
 
 const resolveFirstAccessiblePath = () => {

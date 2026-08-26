@@ -1,6 +1,5 @@
 <script lang="ts" setup>
-import { computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed } from 'vue'
 import { isDark } from '@/utils/is'
 import { useAppStore } from '@/store/modules/app'
 import { useDesign } from '@/hooks/web/useDesign'
@@ -13,27 +12,12 @@ import AiAssistantFloating from '@/components/AiAssistantFloating.vue'
 
 defineOptions({ name: 'APP' })
 
-const route = useRoute()
 const { getPrefixCls } = useDesign()
 const prefixCls = getPrefixCls('app')
 const appStore = useAppStore()
 const currentSize = computed(() => appStore.getCurrentSize)
 const greyMode = computed(() => appStore.getGreyMode)
 const { wsCache } = useCache()
-
-// 是否是项目介绍页面
-const isIntroPage = computed(() => route.name === 'Intro')
-
-// 控制 intro 页面滚动
-watch(isIntroPage, (isIntro) => {
-  if (isIntro) {
-    document.documentElement.style.overflow = 'auto'
-    document.body.style.overflow = 'auto'
-  } else {
-    document.documentElement.style.overflow = 'hidden'
-    document.body.style.overflow = 'hidden'
-  }
-}, { immediate: true })
 
 // 根据浏览器当前主题设置系统主题色
 const setDefaultTheme = () => {
@@ -48,11 +32,11 @@ setDefaultTheme()
 <template>
   <ConfigGlobal :size="currentSize">
     <RouterView :class="greyMode ? `${prefixCls}-grey-mode` : ''" />
-    <routerSearch v-if="!isIntroPage" />
-    <ToolWindowHost v-if="!isIntroPage" />
-    <AiAssistantFloating v-if="!isIntroPage" />
-    <GlobalUploadTaskPanel v-if="!isIntroPage" />
-    <GlobalTemuBatchProgress v-if="!isIntroPage" />
+    <routerSearch />
+    <ToolWindowHost />
+    <AiAssistantFloating />
+    <GlobalUploadTaskPanel />
+    <GlobalTemuBatchProgress />
   </ConfigGlobal>
 </template>
 <style lang="scss">
