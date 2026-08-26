@@ -12,66 +12,97 @@
       :model="registerData.registerForm"
       :rules="registerRules"
       class="ds-form__form"
+      @submit.prevent
     >
       <!-- Username -->
-      <div class="ds-form__field">
+      <el-form-item prop="username">
         <label class="ds-form__label">账号 <span class="required">*</span></label>
         <el-input
           v-model="registerData.registerForm.username"
           placeholder="请输入账号（3-30位）"
           size="large"
           class="ds-form__input"
-        />
-      </div>
+          :class="{ 'is-valid': fieldStatus.username === 'valid', 'is-invalid': fieldStatus.username === 'invalid' }"
+        >
+          <template #suffix>
+            <el-icon v-if="fieldStatus.username === 'valid'" class="ds-form__status-icon ds-form__status-icon--valid"><CircleCheckFilled /></el-icon>
+            <el-icon v-else-if="fieldStatus.username === 'invalid'" class="ds-form__status-icon ds-form__status-icon--invalid"><CircleCloseFilled /></el-icon>
+          </template>
+        </el-input>
+      </el-form-item>
 
       <!-- Nickname -->
-      <div class="ds-form__field">
+      <el-form-item prop="nickname">
         <label class="ds-form__label">昵称</label>
         <el-input
           v-model="registerData.registerForm.nickname"
           placeholder="请输入昵称"
           size="large"
           class="ds-form__input"
-        />
-      </div>
+          :class="{ 'is-valid': fieldStatus.nickname === 'valid', 'is-invalid': fieldStatus.nickname === 'invalid' }"
+        >
+          <template #suffix>
+            <el-icon v-if="fieldStatus.nickname === 'valid'" class="ds-form__status-icon ds-form__status-icon--valid"><CircleCheckFilled /></el-icon>
+            <el-icon v-else-if="fieldStatus.nickname === 'invalid'" class="ds-form__status-icon ds-form__status-icon--invalid"><CircleCloseFilled /></el-icon>
+          </template>
+        </el-input>
+      </el-form-item>
 
       <!-- Email -->
-      <div class="ds-form__field">
+      <el-form-item prop="email">
         <label class="ds-form__label">邮箱 <span class="required">*</span></label>
         <el-input
           v-model="registerData.registerForm.email"
           placeholder="请输入邮箱"
           size="large"
           class="ds-form__input"
-        />
-      </div>
+          :class="{ 'is-valid': fieldStatus.email === 'valid', 'is-invalid': fieldStatus.email === 'invalid' }"
+        >
+          <template #suffix>
+            <el-icon v-if="fieldStatus.email === 'valid'" class="ds-form__status-icon ds-form__status-icon--valid"><CircleCheckFilled /></el-icon>
+            <el-icon v-else-if="fieldStatus.email === 'invalid'" class="ds-form__status-icon ds-form__status-icon--invalid"><CircleCloseFilled /></el-icon>
+          </template>
+        </el-input>
+      </el-form-item>
 
       <!-- Phone -->
-      <div class="ds-form__field">
+      <el-form-item prop="phone">
         <label class="ds-form__label">手机号 <span class="required">*</span></label>
         <el-input
           v-model="registerData.registerForm.phone"
           placeholder="请输入手机号"
           size="large"
           class="ds-form__input"
-        />
-      </div>
+          :class="{ 'is-valid': fieldStatus.phone === 'valid', 'is-invalid': fieldStatus.phone === 'invalid' }"
+        >
+          <template #suffix>
+            <el-icon v-if="fieldStatus.phone === 'valid'" class="ds-form__status-icon ds-form__status-icon--valid"><CircleCheckFilled /></el-icon>
+            <el-icon v-else-if="fieldStatus.phone === 'invalid'" class="ds-form__status-icon ds-form__status-icon--invalid"><CircleCloseFilled /></el-icon>
+          </template>
+        </el-input>
+      </el-form-item>
 
       <!-- Password -->
-      <div class="ds-form__field">
+      <el-form-item prop="password">
         <label class="ds-form__label">密码 <span class="required">*</span></label>
         <el-input
           v-model="registerData.registerForm.password"
           type="password"
-          placeholder="请输入密码（8-20位）"
+          placeholder="请输入密码（8-20位，含字母+数字）"
           size="large"
           class="ds-form__input"
           show-password
-        />
-      </div>
+          :class="{ 'is-valid': fieldStatus.password === 'valid', 'is-invalid': fieldStatus.password === 'invalid' }"
+        >
+          <template #suffix>
+            <el-icon v-if="fieldStatus.password === 'valid'" class="ds-form__status-icon ds-form__status-icon--valid"><CircleCheckFilled /></el-icon>
+            <el-icon v-else-if="fieldStatus.password === 'invalid'" class="ds-form__status-icon ds-form__status-icon--invalid"><CircleCloseFilled /></el-icon>
+          </template>
+        </el-input>
+      </el-form-item>
 
       <!-- Confirm Password -->
-      <div class="ds-form__field">
+      <el-form-item prop="confirmPassword">
         <label class="ds-form__label">确认密码 <span class="required">*</span></label>
         <el-input
           v-model="registerData.registerForm.confirmPassword"
@@ -80,9 +111,15 @@
           size="large"
           class="ds-form__input"
           show-password
+          :class="{ 'is-valid': fieldStatus.confirmPassword === 'valid', 'is-invalid': fieldStatus.confirmPassword === 'invalid' }"
           @keyup.enter="handleRegister()"
-        />
-      </div>
+        >
+          <template #suffix>
+            <el-icon v-if="fieldStatus.confirmPassword === 'valid'" class="ds-form__status-icon ds-form__status-icon--valid"><CircleCheckFilled /></el-icon>
+            <el-icon v-else-if="fieldStatus.confirmPassword === 'invalid'" class="ds-form__status-icon ds-form__status-icon--invalid"><CircleCloseFilled /></el-icon>
+          </template>
+        </el-input>
+      </el-form-item>
 
       <!-- Submit -->
       <el-button
@@ -115,6 +152,7 @@
 <script lang="ts" setup>
 import { ElLoading } from 'element-plus'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
+import { CircleCheckFilled, CircleCloseFilled } from '@element-plus/icons-vue'
 import * as authUtil from '@/utils/auth'
 import { usePermissionStoreWithOut } from '@/store/modules/permission'
 import { resolveFirstAccessibleMenuPath } from '@/router/menu-path'
@@ -138,8 +176,30 @@ const loading = ref()
 
 const getShow = computed(() => unref(getLoginState) === LoginStateEnum.REGISTER)
 
+// 每个字段的校验状态：'' | 'valid' | 'invalid'
+const fieldStatus = reactive<Record<string, 'valid' | 'invalid' | ''>>({
+  username: '',
+  nickname: '',
+  email: '',
+  phone: '',
+  password: '',
+  confirmPassword: ''
+})
+
+// 单个字段校验
+const validateField = async (prop: string) => {
+  try {
+    await formRegister.value?.validateField(prop)
+    fieldStatus[prop] = 'valid'
+  } catch {
+    fieldStatus[prop] = 'invalid'
+  }
+}
+
 const equalToPassword = (rule: any, value: string, callback: any) => {
-  if (registerData.registerForm.password !== value) {
+  if (!value) {
+    callback(new Error('请再次输入您的密码'))
+  } else if (registerData.registerForm.password !== value) {
     callback(new Error('两次输入的密码不一致'))
   } else {
     callback()
@@ -227,29 +287,51 @@ const doRegister = async () => {
 
 const registerRules = {
   username: [
-    { required: true, trigger: 'blur', message: '请输入您的账号' },
-    { min: 3, max: 30, message: '用户账号长度必须介于 3 和 30 之间', trigger: 'blur' }
+    { required: true, trigger: ['blur', 'change'], message: '请输入您的账号' },
+    { min: 3, max: 30, message: '用户账号长度必须介于 3 和 30 之间', trigger: ['blur', 'change'] },
+    {
+      validator: (rule: any, value: string, callback: any) => {
+        if (value && !/^[a-zA-Z0-9_]+$/.test(value)) {
+          callback(new Error('账号仅支持字母、数字和下划线'))
+        } else {
+          callback()
+        }
+      },
+      trigger: ['blur', 'change']
+    }
   ],
   nickname: [
-    { required: true, trigger: 'blur', message: '请输入您的昵称' },
-    { min: 1, max: 30, message: '昵称长度必须介于 1 和 30 之间', trigger: 'blur' }
+    { required: true, trigger: ['blur', 'change'], message: '请输入您的昵称' },
+    { min: 1, max: 30, message: '昵称长度必须介于 1 和 30 之间', trigger: ['blur', 'change'] }
   ],
   email: [
-    { required: true, trigger: 'blur', message: '请输入邮箱' },
-    { validator: emailValidator, trigger: 'blur' }
+    { required: true, trigger: ['blur', 'change'], message: '请输入邮箱' },
+    { validator: emailValidator, trigger: ['blur', 'change'] }
   ],
   phone: [
-    { required: true, trigger: 'blur', message: '请输入手机号' },
-    { validator: phoneValidator, trigger: 'blur' }
+    { required: true, trigger: ['blur', 'change'], message: '请输入手机号' },
+    { validator: phoneValidator, trigger: ['blur', 'change'] }
   ],
   password: [
-    { required: true, trigger: 'blur', message: '请输入您的密码' },
-    { min: 8, max: 20, message: '用户密码长度必须介于 8 和 20 之间', trigger: 'blur' },
-    { pattern: /^[^<>"'|\\]+$/, message: '不能包含非法字符：< > " \' \\\ |', trigger: 'blur' }
+    { required: true, trigger: ['blur', 'change'], message: '请输入您的密码' },
+    { min: 8, max: 20, message: '用户密码长度必须介于 8 和 20 之间', trigger: ['blur', 'change'] },
+    { pattern: /^[^<>"'|\\]+$/, message: '不能包含非法字符：< > " \' \\\ |', trigger: ['blur', 'change'] },
+    {
+      validator: (rule: any, value: string, callback: any) => {
+        if (value && !/[a-zA-Z]/.test(value)) {
+          callback(new Error('密码必须包含至少一个字母'))
+        } else if (value && !/\d/.test(value)) {
+          callback(new Error('密码必须包含至少一个数字'))
+        } else {
+          callback()
+        }
+      },
+      trigger: ['blur', 'change']
+    }
   ],
   confirmPassword: [
-    { required: true, trigger: 'blur', message: '请再次输入您的密码' },
-    { required: true, validator: equalToPassword, trigger: 'blur' }
+    { required: true, trigger: ['blur', 'change'], message: '请再次输入您的密码' },
+    { required: true, validator: equalToPassword, trigger: ['blur', 'change'] }
   ]
 }
 
@@ -278,6 +360,14 @@ watch(
     immediate: true
   }
 )
+
+// 实时校验：监听各字段变化，触发单字段校验更新状态图标
+watch(() => registerData.registerForm.username, () => validateField('username'))
+watch(() => registerData.registerForm.nickname, () => validateField('nickname'))
+watch(() => registerData.registerForm.email, () => validateField('email'))
+watch(() => registerData.registerForm.phone, () => validateField('phone'))
+watch(() => registerData.registerForm.password, () => validateField('password'))
+watch(() => registerData.registerForm.confirmPassword, () => validateField('confirmPassword'))
 </script>
 
 <style lang="scss" scoped>
@@ -311,13 +401,6 @@ watch(
     display: flex;
     flex-direction: column;
     gap: 0;
-  }
-
-  &__field {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    margin-bottom: 8px;
   }
 
   &__label {
@@ -356,34 +439,27 @@ watch(
       font-size: 12px;
       color: var(--el-text-color-primary);
     }
+
+    /* 实时校验状态样式 */
+    &.is-valid :deep(.el-input__wrapper) {
+      border-color: var(--el-color-success);
+    }
+    &.is-invalid :deep(.el-input__wrapper) {
+      border-color: var(--el-color-danger);
+    }
   }
 
-  // 手机号国际区号前缀
-  &__phone-code {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--el-text-color-regular);
-    letter-spacing: 0.02em;
-    white-space: nowrap;
-  }
+  // 状态图标
+  &__status-icon {
+    font-size: 14px;
+    margin-right: 2px;
 
-  // 错误提示
-  &__error-tip {
-    font-size: 11px;
-    color: var(--el-color-danger);
-    line-height: 1.2;
-    margin-top: 2px;
-  }
-
-  // 错误提示淡入淡出
-  &__error-fade-enter-active,
-  &__error-fade-leave-active {
-    transition: opacity 0.2s ease;
-  }
-
-  &__error-fade-enter-from,
-  &__error-fade-leave-to {
-    opacity: 0;
+    &--valid {
+      color: var(--el-color-success);
+    }
+    &--invalid {
+      color: var(--el-color-danger);
+    }
   }
 
   &__submit {
@@ -422,6 +498,15 @@ watch(
       color: var(--el-color-primary-light-3);
     }
   }
+}
+
+// el-form-item 重置，避免默认 margin 破坏紧凑布局
+:deep(.el-form-item) {
+  margin-bottom: 8px;
+}
+:deep(.el-form-item__error) {
+  font-size: 11px;
+  padding-top: 2px;
 }
 
 // Tablet
