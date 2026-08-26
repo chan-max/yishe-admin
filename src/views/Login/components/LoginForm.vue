@@ -54,14 +54,21 @@
         登 录
       </el-button>
 
-      <!-- Get Account Link -->
+      <!-- Register Link -->
       <div class="ds-form__get-account">
-        <button type="button" class="ds-form__link" @click="handleGetAccount">
-          获取账号
+        <button type="button" class="ds-form__link" @click="handleRegister">
+          注册账号
         </button>
       </div>
     </el-form>
   </div>
+
+  <!-- Human Verify Modal -->
+  <HumanVerify
+    :visible="verifyVisible"
+    @success="onVerifySuccess"
+    @close="verifyVisible = false"
+  />
 
   <!-- Contact Admin Dialog -->
   <el-dialog
@@ -96,13 +103,16 @@ import { LoginStateEnum, useFormValid, useLoginState } from "./useLogin"
 import { useUserStoreWithOut } from "@/store/modules/user"
 import { removeToken, setAccessToken } from "@/utils/auth"
 import { getDeviceInfo } from "@/utils/device"
+import HumanVerify from "@/components/HumanVerify/index.vue"
 
 defineOptions({ name: "DsLoginForm" })
 
 const message = useMessage()
 const formLogin = ref()
+const verifyToken = ref("")
+const verifyVisible = ref(false)
 const { validForm } = useFormValid(formLogin)
-const { getLoginState } = useLoginState()
+const { getLoginState, setLoginState } = useLoginState()
 const { currentRoute, push } = useRouter()
 const redirect = ref<string>("")
 const loginLoading = ref(false)
@@ -111,47 +121,33 @@ const showContactDialog = ref(false)
 
 const getShow = computed(() => unref(getLoginState) === LoginStateEnum.LOGIN)
 
-const LoginRules = {
-  account: [required],
-  password: [required],
-}
-
-const resolveFirstAccessiblePath = () => {
-  const permissionStore = usePermissionStoreWithOut()
-  return resolveFirstAccessibleMenuPath(permissionStore.getAddRouters) || "/403"
-}
-
-const loginData = reactive({
-  loginForm: {
-    account: import.meta.env.VITE_APP_DEFAULT_LOGIN_USERNAME || "",
-    password: import.meta.env.VITE_APP_DEFAULT_LOGIN_PASSWORD || "",
-    rememberMe: true,
-  },
-})
-
-const getLoginFormCache = () => {
-  const loginForm = authUtil.getLoginForm()
-  if (loginForm) {
-    loginData.loginForm = {
-      ...loginData.loginForm,
-      account: loginForm.username ? loginForm.username : loginData.loginForm.account,
-      password: loginForm.password ? loginForm.password : loginData.loginForm.password,
-      rememberMe: loginForm.rememberMe,
-    }
-  }
-}
-
+// 点击登录 -> 先弹出验证
 const handleLogin = async () => {
+  try {
+    await validForm()
+  } catch {
+    return
+  }
+  verifyVisible.value = true
+}
+
+// 验证成功 -> 执行登录
+function onVerifySuccess(token: string) {
+  verifyToken.value = token
+  verifyVisible.value = false
+  doLogin()
+}
+
+// 实际登录请求
+const doLogin = async () => {
   loginLoading.value = true
   try {
-    const data = await validForm()
-    if (!data) return
-
     const loginDataLoginForm = {
       username: loginData.loginForm.account,
       password: loginData.loginForm.password,
       terminalType: "admin" as const,
       deviceInfo: getDeviceInfo(),
+      verifyToken: verifyToken.value,
     }
     removeToken()
     const res = await LoginApi.login(loginDataLoginForm)
@@ -190,12 +186,42 @@ const handleLogin = async () => {
   }
 }
 
+const LoginRules = {
+  account: [required],
+  password: [required],
+}
+
+const resolveFirstAccessiblePath = () => {
+  const permissionStore = usePermissionStoreWithOut()
+  return resolveFirstAccessibleMenuPath(permissionStore.getAddRouters) || "/403"
+}
+
+const loginData = reactive({
+  loginForm: {
+    account: import.meta.env.VITE_APP_DEFAULT_LOGIN_USERNAME || "",
+    password: import.meta.env.VITE_APP_DEFAULT_LOGIN_PASSWORD || "",
+    rememberMe: true,
+  },
+})
+
+const getLoginFormCache = () => {
+  const loginForm = authUtil.getLoginForm()
+  if (loginForm) {
+    loginData.loginForm = {
+      ...loginData.loginForm,
+      account: loginForm.username ? loginForm.username : loginData.loginForm.account,
+      password: loginForm.password ? loginForm.password : loginData.loginForm.password,
+      rememberMe: loginForm.rememberMe,
+    }
+  }
+}
+
 const handleForgetPassword = () => {
   showContactDialog.value = true
 }
 
-const handleGetAccount = () => {
-  showContactDialog.value = true
+const handleRegister = () => {
+  setLoginState(LoginStateEnum.REGISTER)
 }
 
 watch(

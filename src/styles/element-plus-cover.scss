@@ -45,10 +45,10 @@ html.light {
   --ep-cover-feedback-success-border: #86efac;
   --ep-cover-feedback-success-accent: #22c55e;
   --ep-cover-feedback-success-text: #166534;
-  --ep-cover-feedback-info-bg: color-mix(in srgb, var(--el-color-primary) 12%, transparent);
-  --ep-cover-feedback-info-border: color-mix(in srgb, var(--el-color-primary) 38%, transparent);
-  --ep-cover-feedback-info-accent: var(--el-color-primary);
-  --ep-cover-feedback-info-text: var(--el-color-primary-dark-2);
+  --ep-cover-feedback-info-bg: #dbeafe;
+  --ep-cover-feedback-info-border: #93c5fd;
+  --ep-cover-feedback-info-accent: #3b82f6;
+  --ep-cover-feedback-info-text: #1e40af;
   --ep-cover-feedback-warning-bg: #fef3c7;
   --ep-cover-feedback-warning-border: #fcd34d;
   --ep-cover-feedback-warning-accent: #f59e0b;
@@ -60,20 +60,20 @@ html.light {
 }
 
 html.dark {
-  --ep-cover-feedback-success-bg: rgba(34, 197, 94, 0.22);
-  --ep-cover-feedback-success-border: rgba(74, 222, 128, 0.38);
+  --ep-cover-feedback-success-bg: #14532d;
+  --ep-cover-feedback-success-border: #22c55e;
   --ep-cover-feedback-success-accent: #4ade80;
   --ep-cover-feedback-success-text: #dcfce7;
-  --ep-cover-feedback-info-bg: color-mix(in srgb, var(--el-color-primary) 22%, transparent);
-  --ep-cover-feedback-info-border: color-mix(in srgb, var(--el-color-primary) 40%, transparent);
-  --ep-cover-feedback-info-accent: var(--el-color-primary-light-5);
-  --ep-cover-feedback-info-text: var(--el-color-primary-light-8);
-  --ep-cover-feedback-warning-bg: rgba(245, 158, 11, 0.22);
-  --ep-cover-feedback-warning-border: rgba(251, 191, 36, 0.4);
+  --ep-cover-feedback-info-bg: #1e3a5f;
+  --ep-cover-feedback-info-border: #3b82f6;
+  --ep-cover-feedback-info-accent: #60a5fa;
+  --ep-cover-feedback-info-text: #bfdbfe;
+  --ep-cover-feedback-warning-bg: #4a3308;
+  --ep-cover-feedback-warning-border: #f59e0b;
   --ep-cover-feedback-warning-accent: #fbbf24;
   --ep-cover-feedback-warning-text: #fef3c7;
-  --ep-cover-feedback-error-bg: rgba(239, 68, 68, 0.22);
-  --ep-cover-feedback-error-border: rgba(248, 113, 113, 0.4);
+  --ep-cover-feedback-error-bg: #4c1d1d;
+  --ep-cover-feedback-error-border: #ef4444;
   --ep-cover-feedback-error-accent: #f87171;
   --ep-cover-feedback-error-text: #ffe4e6;
 }
@@ -908,7 +908,6 @@ html.dark .el-alert {
   gap: 10px;
   background: var(--app-content-surface-color);
   color: var(--el-text-color-primary);
-  backdrop-filter: blur(10px);
   transition:
     opacity var(--ep-cover-motion-fast),
     transform var(--ep-cover-motion-base),

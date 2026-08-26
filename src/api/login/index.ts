@@ -19,7 +19,7 @@ export const login = (data: UserLoginVO) => {
 
 // 注册
 export const register = (data: RegisterVO) => {
-  return request.post({ url: '/api/auth/register', data })
+  return request.post({ url: '/user/register', data })
 }
 
 // 使用租户名，获得租户编号

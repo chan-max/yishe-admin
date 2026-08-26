@@ -13,6 +13,7 @@ export type UserLoginVO = {
   socialType?: string;
   socialCode?: string;
   socialState?: string;
+  verifyToken?: string;
   deviceInfo?: {
     id: string;
     userAgent: string;
@@ -42,6 +43,10 @@ export type UserVO = {
 };
 
 export type RegisterVO = {
-  username: string;
+  account: string;
+  name?: string;
+  email: string;
+  phone: string;
   password: string;
+  verifyToken?: string;
 };
