@@ -44,18 +44,20 @@
           <!-- 默认显示：底部标题条 -->
           <div class="res-wall__bar">
             <span class="res-wall__bar-title" :title="item.name">{{ item.name }}</span>
-            <el-button
-              type="primary"
-              link
-              size="small"
-              class="res-wall__detail-btn"
-              @click.stop="openDetailDialog(item)"
-            >
-              详情
-            </el-button>
           </div>
           <!-- Hover 遮罩 -->
           <div class="res-wall__overlay">
+            <div class="res-wall__overlay-top">
+              <el-button
+                type="primary"
+                circle
+                size="small"
+                class="res-wall__detail-icon"
+                @click.stop="openDetailDialog(item)"
+              >
+                <Icon icon="lucide:more-horizontal" :size="14" />
+              </el-button>
+            </div>
             <div class="res-wall__overlay-content">
               <span class="res-wall__title" :title="item.name">{{ item.name }}</span>
               <div v-if="item.tags?.length" class="res-wall__tags">
@@ -97,65 +99,62 @@
         </div>
       </div>
 
-      <!-- 文案类：紧凑列表 -->
-      <div v-else class="res-list">
+      <!-- 文案类：卡片网格 -->
+      <div v-else class="res-text-grid">
         <div
           v-for="item in libraryList"
           :key="item.id"
-          class="res-list__item"
+          class="res-text-card"
         >
-          <div class="res-list__icon">
-            <Icon :icon="getTypeIcon(currentResourceType)" :size="16" />
-          </div>
-          <div class="res-list__body">
-            <div class="res-list__title-row">
-              <span class="res-list__title" :title="item.name">{{ item.name }}</span>
-              <span v-if="item.description" class="res-list__preview">{{ item.description }}</span>
+          <div class="res-text-card__header">
+            <div class="res-text-card__icon">
+              <Icon :icon="getTypeIcon(currentResourceType)" :size="14" />
             </div>
-            <div v-if="item.tags?.length" class="res-list__tags">
-              <span
-                v-for="(tag, idx) in item.tags.slice(0, 3)"
-                :key="idx"
-                class="res-list__tag"
-              >
-                {{ tag }}
-              </span>
-            </div>
-          </div>
-          <div class="res-list__meta">
-            <span>{{ item.authorName || '官方' }}</span>
-            <span class="res-list__divider">·</span>
-            <span>{{ item.importCount || 0 }}次</span>
-          </div>
-          <div class="res-list__actions">
             <el-button
               type="primary"
-              link
+              circle
               size="small"
-              class="res-btn-mini"
-              @click="openDetailDialog(item)"
+              class="res-text-card__more"
+              @click.stop="openDetailDialog(item)"
             >
-              详情
+              <Icon icon="lucide:more-horizontal" :size="12" />
             </el-button>
+          </div>
+          <div class="res-text-card__body">
+            <span class="res-text-card__title" :title="item.name">{{ item.name }}</span>
+            <span v-if="item.description" class="res-text-card__preview">{{ item.description }}</span>
+          </div>
+          <div v-if="item.tags?.length" class="res-text-card__tags">
+            <span
+              v-for="(tag, idx) in item.tags.slice(0, 2)"
+              :key="idx"
+              class="res-text-card__tag"
+            >
+              {{ tag }}
+            </span>
+          </div>
+          <div class="res-text-card__footer">
+            <span class="res-text-card__meta">{{ item.authorName || '官方' }} · {{ item.importCount || 0 }}次</span>
             <el-button
-              v-if="isAdmin"
+              type="primary"
+              size="small"
+              class="res-text-card__save"
+              :loading="importingId === item.id"
+              @click.stop="handleImport(item)"
+            >
+              保存
+            </el-button>
+          </div>
+          <div v-if="isAdmin" class="res-text-card__admin">
+            <el-button
               type="danger"
               link
               size="small"
               class="res-btn-mini"
               :loading="deletingId === item.id"
-              @click="handleRemove(item)"
+              @click.stop="handleRemove(item)"
             >
               下架
-            </el-button>
-            <el-button
-              type="primary"
-              size="small"
-              class="res-btn-mini"
-              :loading="importingId === item.id"
-              @click="handleImport(item)"
-            >
-              保存
             </el-button>
           </div>
         </div>
@@ -167,7 +166,7 @@
           v-model:current-page="queryParams.currentPage"
           v-model:page-size="queryParams.pageSize"
           :total="total"
-          :page-sizes":[24, 48, 72]"
+          :page-sizes="[24, 48, 72]"
           small
           layout="total, sizes, prev, pager, next"
           @current-change="loadData"
@@ -580,6 +579,25 @@ onMounted(() => {
   opacity: 1;
 }
 
+.res-wall__overlay-top {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+}
+
+.res-wall__detail-icon {
+  width: 24px !important;
+  height: 24px !important;
+  padding: 0 !important;
+  background: rgb(0 0 0 / 40%) !important;
+  border: none !important;
+  backdrop-filter: blur(4px);
+}
+
+.res-wall__detail-icon:hover {
+  background: rgb(0 0 0 / 60%) !important;
+}
+
 .res-wall__overlay-content {
   padding: 8px;
 }
@@ -629,87 +647,93 @@ onMounted(() => {
 }
 
 /* ============================================================
-   文案类：紧凑列表
+   文案类：卡片网格
    ============================================================ */
-.res-list {
+.res-text-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.res-text-card {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 8px;
+  padding: 12px;
   background: var(--el-bg-color-overlay);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 6px;
-  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.res-list__item {
+.res-text-card:hover {
+  border-color: var(--el-border-color);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 4%);
+}
+
+.res-text-card__header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  transition: background-color 0.12s ease;
+  justify-content: space-between;
 }
 
-.res-list__item:hover {
-  background: var(--el-fill-color-light);
-}
-
-.res-list__item + .res-list__item {
-  border-top: 1px solid var(--el-border-color-extra-light);
-}
-
-.res-list__icon {
-  flex: none;
-  width: 32px;
-  height: 32px;
+.res-text-card__icon {
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: 4px;
   background: var(--el-fill-color);
   color: var(--el-text-color-secondary);
 }
 
-.res-list__body {
-  flex: 1;
-  min-width: 0;
+.res-text-card__more {
+  width: 20px !important;
+  height: 20px !important;
+  padding: 0 !important;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.res-text-card:hover .res-text-card__more {
+  opacity: 1;
+}
+
+.res-text-card__body {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
+  min-height: 0;
 }
 
-.res-list__title-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.res-list__title {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--el-text-color-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: none;
-  max-width: 30%;
-}
-
-.res-list__preview {
+.res-text-card__title {
   font-size: 12px;
-  color: var(--el-text-color-secondary);
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  flex: 1;
 }
 
-.res-list__tags {
+.res-text-card__preview {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.res-text-card__tags {
   display: flex;
   gap: 4px;
   flex-wrap: wrap;
 }
 
-.res-list__tag {
+.res-text-card__tag {
   font-size: 10px;
   color: var(--el-text-color-secondary);
   background: var(--el-fill-color);
@@ -718,23 +742,41 @@ onMounted(() => {
   line-height: 1.4;
 }
 
-.res-list__meta {
-  flex: none;
+.res-text-card__footer {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  color: var(--el-text-color-placeholder);
+  justify-content: space-between;
+  gap: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--el-border-color-extra-light);
 }
 
-.res-list__divider {
+.res-text-card__meta {
+  font-size: 10px;
   color: var(--el-text-color-placeholder);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.res-list__actions {
+.res-text-card__save {
+  padding: 2px 8px !important;
+  height: 22px !important;
+  font-size: 11px !important;
+  border-radius: 4px !important;
   flex: none;
-  display: flex;
-  gap: 4px;
+}
+
+.res-text-card__admin {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.res-text-card:hover .res-text-card__admin {
+  opacity: 1;
 }
 
 /* 通用按钮样式 */
