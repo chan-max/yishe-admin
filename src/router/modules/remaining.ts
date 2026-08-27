@@ -282,6 +282,16 @@ const remainingRouter: AppRouteRecordRaw[] = [
     },
   },
   {
+    path: "/oauth/authorize",
+    component: () => import("@/views/OAuth/Authorize.vue"),
+    name: "OAuthAuthorize",
+    meta: {
+      hidden: true,
+      title: "授权登录",
+      noTagsView: true,
+    },
+  },
+  {
     path: "/403",
     component: () => import("@/views/Error/403.vue"),
     name: "NoAccess",

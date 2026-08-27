@@ -59,6 +59,7 @@ const whiteList = [
   "/bind",
   "/register",
   "/oauthLogin/gitee",
+  "/oauth/authorize",
 ];
 
 const resolveFirstAccessiblePath = () => {
@@ -145,6 +146,9 @@ router.beforeEach(async (to, from, next) => {
   } else {
     if (whiteList.indexOf(to.path) !== -1) {
       next();
+    } else if (to.path === "/oauth/authorize") {
+      // OAuth 授权页面：未登录先跳转登录，登录后回到授权页
+      next(`/login?redirect=${encodeURIComponent(to.fullPath)}`);
     } else {
       next(`/login?redirect=${to.fullPath}`); // 否则全部重定向到登录页
     }
