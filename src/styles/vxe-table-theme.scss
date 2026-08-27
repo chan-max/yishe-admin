@@ -3,6 +3,43 @@
  * Ultra-compact small bold header, ZERO vertical lines, paper-thin dividers
  */
 
+@use "sass:math";
+
+// =============================================================
+// VxeTable Loading —— 与系统全局 loading 样式统一
+// =============================================================
+$vxe-loader-size: 26px;
+$vxe-loader-color: var(--loader-color, var(--el-color-primary));
+
+.vxe-loading {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent !important;
+
+  // 隐藏 VxeTable 默认的 spinner 内容
+  > *:not(.vxe-loading--custom-wrapper) {
+    display: none !important;
+  }
+
+  // 使用与系统一致的环形 loading
+  &::before {
+    content: "";
+    display: block;
+    width: $vxe-loader-size;
+    height: $vxe-loader-size;
+    margin: 0 auto;
+    border-radius: 50%;
+    background:
+      radial-gradient(farthest-side, #{$vxe-loader-color} 94%, transparent) top / math.div($vxe-loader-size, 5.2) math.div($vxe-loader-size, 5.2) no-repeat,
+      conic-gradient(transparent 30%, #{$vxe-loader-color});
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - #{math.div($vxe-loader-size, 5.2)}), #000 0);
+    mask: radial-gradient(farthest-side, transparent calc(100% - #{math.div($vxe-loader-size, 5.2)}), #000 0);
+    animation: yishe-loading-rotate 1s infinite linear;
+  }
+}
+
 /* 1. Global Container Outer Card, Zero Border & Zero Shadows */
 .vxe-table,
 .vxe-grid,
