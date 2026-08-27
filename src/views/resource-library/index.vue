@@ -1,12 +1,11 @@
 <template>
   <div class="res-lib-page">
-    <!-- 顶部操作栏：极简轻量，凸显内容 -->
+    <!-- 顶部操作栏 -->
     <div class="res-lib-toolbar">
       <div class="res-lib-toolbar__left">
         <span class="res-lib-title">{{ currentModuleTitle }}</span>
         <span v-if="total" class="res-lib-count">({{ total }})</span>
       </div>
-
       <div class="res-lib-toolbar__right">
         <el-input
           v-model="queryParams.keyword"
@@ -27,78 +26,117 @@
         <el-empty description="暂无公共资源" :image-size="70" />
       </div>
 
-      <div v-else class="res-lib-grid">
+      <!-- 图片类：瀑布流照片墙 -->
+      <div v-else-if="isImageType" class="res-wall">
         <div
           v-for="item in libraryList"
           :key="item.id"
-          class="res-card"
+          class="res-wall__item"
         >
-          <!-- 1. 视觉类封面展示（贴纸 / 模板 / 3D / 文件等） -->
-          <div
-            v-if="item.coverUrl"
-            class="res-card__cover"
-            @click="openImagePreview(item.coverUrl)"
-          >
+          <div class="res-wall__img-box" @click="openImagePreview(item.coverUrl)">
             <img
               :src="item.coverUrl"
               :alt="item.name"
-              class="res-card__img"
+              class="res-wall__img"
               loading="lazy"
             />
           </div>
-
-          <!-- 2. 卡片文本主体 -->
-          <div class="res-card__body">
-            <div class="res-card__header">
-              <span class="res-card__title" :title="item.name">{{ item.name }}</span>
+          <!-- Hover 遮罩：详情 -->
+          <div class="res-wall__overlay">
+            <div class="res-wall__overlay-content">
+              <span class="res-wall__title" :title="item.name">{{ item.name }}</span>
+              <div v-if="item.tags?.length" class="res-wall__tags">
+                <span
+                  v-for="(tag, idx) in item.tags.slice(0, 2)"
+                  :key="idx"
+                  class="res-wall__tag"
+                >
+                  {{ tag }}
+                </span>
+              </div>
+              <div class="res-wall__footer">
+                <span class="res-wall__meta">{{ item.authorName || '官方' }} · {{ item.importCount || 0 }}次</span>
+                <div class="res-wall__actions">
+                  <el-button
+                    v-if="isAdmin"
+                    type="danger"
+                    link
+                    size="small"
+                    class="res-btn-mini"
+                    :loading="deletingId === item.id"
+                    @click.stop="handleRemove(item)"
+                  >
+                    下架
+                  </el-button>
+                  <el-button
+                    type="primary"
+                    plain
+                    size="small"
+                    class="res-btn-mini"
+                    :loading="importingId === item.id"
+                    @click.stop="handleImport(item)"
+                  >
+                    保存
+                  </el-button>
+                </div>
+              </div>
             </div>
+          </div>
+        </div>
+      </div>
 
-            <div v-if="item.description" class="res-card__desc" :title="item.description">
-              {{ item.description }}
+      <!-- 文案类：紧凑列表 -->
+      <div v-else class="res-list">
+        <div
+          v-for="item in libraryList"
+          :key="item.id"
+          class="res-list__item"
+        >
+          <div class="res-list__icon">
+            <Icon :icon="getTypeIcon(currentResourceType)" :size="16" />
+          </div>
+          <div class="res-list__body">
+            <div class="res-list__title-row">
+              <span class="res-list__title" :title="item.name">{{ item.name }}</span>
+              <span v-if="item.description" class="res-list__preview">{{ item.description }}</span>
             </div>
-
-            <!-- 标签 -->
-            <div v-if="item.tags?.length" class="res-card__tags">
+            <div v-if="item.tags?.length" class="res-list__tags">
               <span
                 v-for="(tag, idx) in item.tags.slice(0, 3)"
                 :key="idx"
-                class="res-card__tag"
+                class="res-list__tag"
               >
                 {{ tag }}
               </span>
             </div>
           </div>
-
-          <!-- 3. 卡片底部极简操作与元信息 -->
-          <div class="res-card__footer">
-            <span class="res-card__meta">
-              {{ item.authorName || '官方' }} · {{ item.importCount || 0 }}次保存
-            </span>
-
-            <div class="res-card__actions">
-              <el-button
-                v-if="isAdmin"
-                type="danger"
-                link
-                size="small"
-                class="res-btn-mini"
-                :loading="deletingId === item.id"
-                @click="handleRemove(item)"
-              >
-                下架
-              </el-button>
-
-              <el-button
-                type="primary"
-                plain
-                size="small"
-                class="res-btn-mini"
-                :loading="importingId === item.id"
-                @click="handleImport(item)"
-              >
-                保存
-              </el-button>
-            </div>
+          <div class="res-list__meta">
+            <span>{{ item.authorName || '官方' }}</span>
+            <span class="res-list__divider">·</span>
+            <span>{{ item.importCount || 0 }}次</span>
+          </div>
+          <div class="res-list__actions">
+            <el-button
+              v-if="isAdmin"
+              type="danger"
+              link
+              size="small"
+              class="res-btn-mini"
+              :loading="deletingId === item.id"
+              @click="handleRemove(item)"
+            >
+              下架
+            </el-button>
+            <el-button
+              type="primary"
+              plain
+              size="small"
+              class="res-btn-mini"
+              :loading="importingId === item.id"
+              @click="handleImport(item)"
+            >
+              保存
+            </el-button>
           </div>
         </div>
       </div>
@@ -130,6 +168,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { Icon } from '@/components/Icon'
 import { ResourceLibraryApi, ResourceLibraryItem, ResourceLibraryType } from '@/api/resource-library'
 import { useUserStore } from '@/store/modules/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -160,10 +199,30 @@ const queryParams = reactive<{
   keyword: '',
 })
 
+// 图片类资源类型
+const IMAGE_TYPES: ResourceLibraryType[] = [
+  'sticker',
+  'psd_template',
+  'font_template',
+  'asset_3d',
+  'file_resource',
+]
+
+// 文案类资源类型
+const TEXT_TYPES: ResourceLibraryType[] = [
+  'sentence',
+  'ai_skill',
+  'prompt',
+  'design_prompt',
+]
+
 // 根据当前路由 meta 动态获取模块类型
 const currentResourceType = computed<ResourceLibraryType>(() => {
   return (route.meta?.resourceType as ResourceLibraryType) || 'sticker'
 })
+
+// 当前是否为图片类型
+const isImageType = computed(() => IMAGE_TYPES.includes(currentResourceType.value))
 
 const currentModuleTitle = computed(() => {
   const map: Record<string, string> = {
@@ -179,6 +238,17 @@ const currentModuleTitle = computed(() => {
   }
   return map[currentResourceType.value] || '公共资源'
 })
+
+// 获取类型图标
+function getTypeIcon(type: ResourceLibraryType): string {
+  const map: Record<string, string> = {
+    sentence: 'lucide:text',
+    ai_skill: 'lucide:zap',
+    prompt: 'lucide:sparkles',
+    design_prompt: 'lucide:palette',
+  }
+  return map[type] || 'lucide:file-text'
+}
 
 async function loadData() {
   loading.value = true
@@ -242,7 +312,7 @@ watch(
     queryParams.currentPage = 1
     queryParams.keyword = ''
     loadData()
-  }
+  },
 )
 
 onMounted(() => {
@@ -300,98 +370,210 @@ onMounted(() => {
   padding: 40px 0;
 }
 
-/* 网格排版 */
-.res-lib-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 12px;
+/* ============================================================
+   图片类：瀑布流照片墙
+   ============================================================ */
+.res-wall {
+  column-count: 4;
+  column-gap: 10px;
 }
 
-/* 卡片外观：极简边框与圆角，突出内容本身 */
-.res-card {
-  display: flex;
-  flex-direction: column;
-  background: var(--el-bg-color-overlay);
-  border: 1px solid var(--el-border-color-lighter);
+@media (width >= 1600px) {
+  .res-wall {
+    column-count: 5;
+  }
+}
+
+@media (width <= 1200px) {
+  .res-wall {
+    column-count: 3;
+  }
+}
+
+@media (width <= 800px) {
+  .res-wall {
+    column-count: 2;
+  }
+}
+
+.res-wall__item {
+  break-inside: avoid;
+  margin-bottom: 10px;
   border-radius: 6px;
   overflow: hidden;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.res-card:hover {
-  border-color: var(--el-border-color);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-}
-
-/* 封面区 */
-.res-card__cover {
-  width: 100%;
-  height: 130px;
+  position: relative;
   background: var(--el-fill-color-light);
-  overflow: hidden;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
-.res-card__img {
+.res-wall__img-box {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.2s ease;
+  cursor: pointer;
+  line-height: 0;
 }
 
-.res-card__img:hover {
-  transform: scale(1.02);
+.res-wall__img {
+  width: 100%;
+  display: block;
+  transition: transform 0.3s ease;
 }
 
-/* 卡片内容主体 */
-.res-card__body {
-  padding: 8px 10px 4px;
-  flex: 1;
+.res-wall__item:hover .res-wall__img {
+  transform: scale(1.03);
+}
+
+/* Hover 遮罩 */
+.res-wall__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgb(0 0 0 / 75%) 0%,
+    rgb(0 0 0 / 30%) 40%,
+    transparent 100%
+  );
+  opacity: 0;
+  transition: opacity 0.2s ease;
   display: flex;
   flex-direction: column;
+  justify-content: flex-end;
 }
 
-.res-card__header {
-  margin-bottom: 3px;
+.res-wall__item:hover .res-wall__overlay {
+  opacity: 1;
 }
 
-.res-card__title {
-  font-size: 13px;
+.res-wall__overlay-content {
+  padding: 10px;
+}
+
+.res-wall__title {
+  font-size: 12px;
   font-weight: 600;
-  color: var(--el-text-color-primary);
-  line-height: 1.35;
+  color: #fff;
+  line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   display: block;
+  margin-bottom: 6px;
 }
 
-.res-card__desc {
+.res-wall__tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.res-wall__tag {
+  font-size: 10px;
+  color: rgb(255 255 255 / 85%);
+  background: rgb(255 255 255 / 15%);
+  padding: 1px 6px;
+  border-radius: 3px;
+  line-height: 1.4;
+  backdrop-filter: blur(4px);
+}
+
+.res-wall__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.res-wall__meta {
+  font-size: 10px;
+  color: rgb(255 255 255 / 60%);
+}
+
+.res-wall__actions {
+  display: flex;
+  gap: 4px;
+}
+
+/* ============================================================
+   文案类：紧凑列表
+   ============================================================ */
+.res-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--el-bg-color-overlay);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.res-list__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  transition: background-color 0.12s ease;
+}
+
+.res-list__item:hover {
+  background: var(--el-fill-color-light);
+}
+
+.res-list__item + .res-list__item {
+  border-top: 1px solid var(--el-border-color-extra-light);
+}
+
+.res-list__icon {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: var(--el-fill-color);
+  color: var(--el-text-color-secondary);
+}
+
+.res-list__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.res-list__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.res-list__title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--el-text-color-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: none;
+  max-width: 30%;
+}
+
+.res-list__preview {
   font-size: 12px;
   color: var(--el-text-color-secondary);
-  line-height: 1.45;
-  margin-bottom: 4px;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   flex: 1;
 }
 
-/* 微标签 */
-.res-card__tags {
+.res-list__tags {
   display: flex;
-  align-items: center;
   gap: 4px;
   flex-wrap: wrap;
-  margin-top: 2px;
 }
 
-.res-card__tag {
-  font-size: 10.5px;
+.res-list__tag {
+  font-size: 10px;
   color: var(--el-text-color-secondary);
   background: var(--el-fill-color);
   padding: 1px 5px;
@@ -399,28 +581,26 @@ onMounted(() => {
   line-height: 1.4;
 }
 
-/* 卡片底部 */
-.res-card__footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 10px 8px;
-  border-top: 1px solid var(--el-border-color-extra-light);
-  font-size: 11px;
-}
-
-.res-card__meta {
-  color: var(--el-text-color-placeholder);
-  font-size: 11px;
-}
-
-.res-card__actions {
+.res-list__meta {
+  flex: none;
   display: flex;
   align-items: center;
   gap: 4px;
+  font-size: 11px;
+  color: var(--el-text-color-placeholder);
 }
 
-/* 小巧精致的按钮样式 */
+.res-list__divider {
+  color: var(--el-text-color-placeholder);
+}
+
+.res-list__actions {
+  flex: none;
+  display: flex;
+  gap: 4px;
+}
+
+/* 通用按钮样式 */
 .res-btn-mini {
   padding: 2px 8px !important;
   height: 22px !important;
