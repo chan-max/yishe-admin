@@ -1,6 +1,6 @@
 <template>
   <ContentWrap :plain="true">
-    <ListPageLayout>
+    <ListPageLayout class="role-page">
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
           <el-form :model="queryParams" label-position="top" class="list-page-search-form">
@@ -466,5 +466,23 @@ getList();
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+:deep(.role-page) {
+  gap: 10px;
+  padding: 8px 0 0;
+}
+
+:deep(.role-page .list-page-layout__main) {
+  gap: 10px;
+}
+
+:deep(.role-page .list-page-filter--flat) {
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+:deep(.role-page .list-page-table-panel__pagination--flat) {
+  padding-top: 10px;
 }
 </style>

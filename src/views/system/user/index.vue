@@ -1,6 +1,6 @@
 <template>
   <ContentWrap :plain="true">
-    <ListPageLayout>
+    <ListPageLayout class="user-page">
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
           <el-form :model="queryParams" label-position="top" class="list-page-search-form">
@@ -886,5 +886,23 @@ initRoleList();
 
 .user-dialog-form :deep(.user-form-item--sm .el-select__wrapper) {
   min-height: 32px;
+}
+
+:deep(.user-page) {
+  gap: 10px;
+  padding: 8px 0 0;
+}
+
+:deep(.user-page .list-page-layout__main) {
+  gap: 10px;
+}
+
+:deep(.user-page .list-page-filter--flat) {
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+:deep(.user-page .list-page-table-panel__pagination--flat) {
+  padding-top: 10px;
 }
 </style>
