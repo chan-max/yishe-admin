@@ -41,7 +41,20 @@
               loading="lazy"
             />
           </div>
-          <!-- Hover 遮罩：详情 -->
+          <!-- 默认显示：底部标题条 -->
+          <div class="res-wall__bar">
+            <span class="res-wall__bar-title" :title="item.name">{{ item.name }}</span>
+            <el-button
+              type="primary"
+              link
+              size="small"
+              class="res-wall__detail-btn"
+              @click.stop="openDetailDialog(item)"
+            >
+              详情
+            </el-button>
+          </div>
+          <!-- Hover 遮罩 -->
           <div class="res-wall__overlay">
             <div class="res-wall__overlay-content">
               <span class="res-wall__title" :title="item.name">{{ item.name }}</span>
@@ -58,6 +71,16 @@
                 <span class="res-wall__meta">{{ item.authorName || '官方' }} · {{ item.importCount || 0 }}次</span>
                 <div class="res-wall__actions">
                   <el-button
+                    type="primary"
+                    plain
+                    size="small"
+                    class="res-btn-mini"
+                    :loading="importingId === item.id"
+                    @click.stop="handleImport(item)"
+                  >
+                    保存
+                  </el-button>
+                  <el-button
                     v-if="isAdmin"
                     type="danger"
                     link
@@ -67,16 +90,6 @@
                     @click.stop="handleRemove(item)"
                   >
                     下架
-                  </el-button>
-                  <el-button
-                    type="primary"
-                    plain
-                    size="small"
-                    class="res-btn-mini"
-                    :loading="importingId === item.id"
-                    @click.stop="handleImport(item)"
-                  >
-                    保存
                   </el-button>
                 </div>
               </div>
@@ -117,6 +130,15 @@
           </div>
           <div class="res-list__actions">
             <el-button
+              type="primary"
+              link
+              size="small"
+              class="res-btn-mini"
+              @click="openDetailDialog(item)"
+            >
+              详情
+            </el-button>
+            <el-button
               v-if="isAdmin"
               type="danger"
               link
@@ -147,7 +169,7 @@
           v-model:current-page="queryParams.currentPage"
           v-model:page-size="queryParams.pageSize"
           :total="total"
-          :page-sizes="[24, 48, 72]"
+          :page-sizes":[24, 48, 72]"
           small
           layout="total, sizes, prev, pager, next"
           @current-change="loadData"
@@ -162,6 +184,60 @@
       :url-list="[previewImageUrl]"
       @close="previewViewerVisible = false"
     />
+
+    <!-- 详情弹窗 -->
+    <el-dialog
+      v-model="detailDialogVisible"
+      width="480px"
+      :show-close="true"
+      :close-on-click-modal="true"
+      class="res-detail-dialog"
+    >
+      <template v-if="detailItem">
+        <div class="res-detail">
+          <!-- 图片预览 -->
+          <div v-if="detailItem.coverUrl" class="res-detail__cover">
+            <img :src="detailItem.coverUrl" :alt="detailItem.name" />
+          </div>
+          <!-- 内容区 -->
+          <div class="res-detail__info">
+            <h3 class="res-detail__name">{{ detailItem.name }}</h3>
+            <p v-if="detailItem.description" class="res-detail__desc">{{ detailItem.description }}</p>
+            <div v-if="detailItem.tags?.length" class="res-detail__tags">
+              <span
+                v-for="(tag, idx) in detailItem.tags"
+                :key="idx"
+                class="res-detail__tag"
+              >
+                {{ tag }}
+              </span>
+            </div>
+            <div class="res-detail__meta">
+              <span>发布者：{{ detailItem.authorName || '官方' }}</span>
+              <span>保存次数：{{ detailItem.importCount || 0 }}</span>
+              <span>发布时间：{{ formatTime(detailItem.publishedAt) }}</span>
+            </div>
+          </div>
+        </div>
+      </template>
+      <template #footer>
+        <el-button
+          v-if="isAdmin"
+          type="danger"
+          :loading="deletingId === detailItem?.id"
+          @click="handleRemove(detailItem!)"
+        >
+          下架
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="importingId === detailItem?.id"
+          @click="handleImport(detailItem!)"
+        >
+          保存到我的空间
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -172,6 +248,7 @@ import { Icon } from '@/components/Icon'
 import { ResourceLibraryApi, ResourceLibraryItem, ResourceLibraryType } from '@/api/resource-library'
 import { useUserStore } from '@/store/modules/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import dayjs from 'dayjs'
 
 const route = useRoute()
 const userStore = useUserStore()
@@ -186,6 +263,10 @@ const deletingId = ref<string | null>(null)
 // 图片预览
 const previewViewerVisible = ref(false)
 const previewImageUrl = ref('')
+
+// 详情弹窗
+const detailDialogVisible = ref(false)
+const detailItem = ref<ResourceLibraryItem | null>(null)
 
 const queryParams = reactive<{
   currentPage: number
@@ -206,14 +287,6 @@ const IMAGE_TYPES: ResourceLibraryType[] = [
   'font_template',
   'asset_3d',
   'file_resource',
-]
-
-// 文案类资源类型
-const TEXT_TYPES: ResourceLibraryType[] = [
-  'sentence',
-  'ai_skill',
-  'prompt',
-  'design_prompt',
 ]
 
 // 根据当前路由 meta 动态获取模块类型
@@ -250,6 +323,12 @@ function getTypeIcon(type: ResourceLibraryType): string {
   return map[type] || 'lucide:file-text'
 }
 
+// 格式化时间
+function formatTime(time?: string): string {
+  if (!time) return '-'
+  return dayjs(time).format('YYYY-MM-DD HH:mm')
+}
+
 async function loadData() {
   loading.value = true
   queryParams.resourceType = currentResourceType.value
@@ -275,6 +354,12 @@ function openImagePreview(url?: string) {
   previewViewerVisible.value = true
 }
 
+// 打开详情弹窗
+function openDetailDialog(item: ResourceLibraryItem) {
+  detailItem.value = item
+  detailDialogVisible.value = true
+}
+
 async function handleImport(item: ResourceLibraryItem) {
   importingId.value = item.id
   try {
@@ -298,6 +383,7 @@ async function handleRemove(item: ResourceLibraryItem) {
     deletingId.value = item.id
     await ResourceLibraryApi.remove(item.id)
     ElMessage.success(`已下架「${item.name}」`)
+    detailDialogVisible.value = false
     loadData()
   } catch {
     // cancel
@@ -374,23 +460,29 @@ onMounted(() => {
    图片类：瀑布流照片墙
    ============================================================ */
 .res-wall {
-  column-count: 4;
-  column-gap: 10px;
+  column-count: 5;
+  column-gap: 8px;
 }
 
-@media (width >= 1600px) {
+@media (width >= 1800px) {
   .res-wall {
-    column-count: 5;
+    column-count: 6;
   }
 }
 
-@media (width <= 1200px) {
+@media (width <= 1400px) {
+  .res-wall {
+    column-count: 4;
+  }
+}
+
+@media (width <= 1000px) {
   .res-wall {
     column-count: 3;
   }
 }
 
-@media (width <= 800px) {
+@media (width <= 600px) {
   .res-wall {
     column-count: 2;
   }
@@ -398,11 +490,14 @@ onMounted(() => {
 
 .res-wall__item {
   break-inside: avoid;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   border-radius: 6px;
   overflow: hidden;
   position: relative;
   background: var(--el-fill-color-light);
+  /* 提升为合成层，避免 hover 卡顿 */
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 .res-wall__img-box {
@@ -414,11 +509,48 @@ onMounted(() => {
 .res-wall__img {
   width: 100%;
   display: block;
-  transition: transform 0.3s ease;
 }
 
-.res-wall__item:hover .res-wall__img {
-  transform: scale(1.03);
+/* 默认显示：底部标题条 */
+.res-wall__bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 6px 8px;
+  background: linear-gradient(to top, rgb(0 0 0 / 60%) 0%, transparent 100%);
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.res-wall__item:hover .res-wall__bar {
+  opacity: 0;
+}
+
+.res-wall__bar-title {
+  font-size: 11px;
+  font-weight: 500;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.res-wall__detail-btn {
+  font-size: 11px !important;
+  color: rgb(255 255 255 / 90%) !important;
+  padding: 0 4px !important;
+  height: 20px !important;
+  flex: none;
+}
+
+.res-wall__detail-btn:hover {
+  color: #fff !important;
 }
 
 /* Hover 遮罩 */
@@ -427,12 +559,12 @@ onMounted(() => {
   inset: 0;
   background: linear-gradient(
     to top,
-    rgb(0 0 0 / 75%) 0%,
-    rgb(0 0 0 / 30%) 40%,
+    rgb(0 0 0 / 80%) 0%,
+    rgb(0 0 0 / 20%) 50%,
     transparent 100%
   );
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.15s ease;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -443,7 +575,7 @@ onMounted(() => {
 }
 
 .res-wall__overlay-content {
-  padding: 10px;
+  padding: 8px;
 }
 
 .res-wall__title {
@@ -455,24 +587,23 @@ onMounted(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .res-wall__tags {
   display: flex;
   gap: 4px;
   flex-wrap: wrap;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .res-wall__tag {
   font-size: 10px;
-  color: rgb(255 255 255 / 85%);
-  background: rgb(255 255 255 / 15%);
-  padding: 1px 6px;
+  color: rgb(255 255 255 / 90%);
+  background: rgb(255 255 255 / 18%);
+  padding: 1px 5px;
   border-radius: 3px;
   line-height: 1.4;
-  backdrop-filter: blur(4px);
 }
 
 .res-wall__footer {
@@ -483,7 +614,7 @@ onMounted(() => {
 
 .res-wall__meta {
   font-size: 10px;
-  color: rgb(255 255 255 / 60%);
+  color: rgb(255 255 255 / 65%);
 }
 
 .res-wall__actions {
@@ -612,5 +743,74 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   margin-top: 14px;
+}
+
+/* ============================================================
+   详情弹窗
+   ============================================================ */
+.res-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.res-detail__cover {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--el-fill-color-light);
+}
+
+.res-detail__cover img {
+  width: 100%;
+  max-height: 280px;
+  object-fit: contain;
+  display: block;
+}
+
+.res-detail__name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  margin: 0 0 8px;
+}
+
+.res-detail__desc {
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.6;
+  margin: 0 0 10px;
+}
+
+.res-detail__tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.res-detail__tag {
+  font-size: 11px;
+  color: var(--el-color-primary);
+  background: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.res-detail__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--el-text-color-placeholder);
+  padding-top: 10px;
+  border-top: 1px solid var(--el-border-color-extra-light);
+}
+</style>
+
+<style>
+/* 弹窗全局样式（非 scoped 以覆盖 el-dialog） */
+.res-detail-dialog .el-dialog__body {
+  padding: 16px 20px;
 }
 </style>
