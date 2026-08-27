@@ -80,8 +80,8 @@ export function hasRouteMenuAccess(route: AppRouteRecordRaw, user: any) {
       return acceptedMenuKeys.some((key) => keys.includes(key));
     }
 
-    // 未配置权限时，默认允许工作台页面和个人设置
-    if (menuKey === "personal.settings" || menuKey.startsWith("home.")) {
+    // 未配置权限时，默认允许工作台页面、个人设置、我的组织
+    if (menuKey === "personal.settings" || menuKey.startsWith("home.") || menuKey === "personal.organization") {
       return true;
     }
 

@@ -1262,6 +1262,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
         },
       },
       {
+        path: "organization",
+        component: () => import("@/views/company/index.vue"),
+        name: "MyOrganization",
+        meta: {
+          title: "我的组织",
+          menuKey: "personal.organization",
+        },
+      },
+      {
         path: "notify-message",
         component: () => import("@/views/system/notify-message/index.vue"),
         name: "MyNotifyMessage",

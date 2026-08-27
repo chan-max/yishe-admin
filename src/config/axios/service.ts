@@ -346,7 +346,7 @@ service.interceptors.response.use(
         console.log(msg);
         return handleAuthorized(msg);
       } else {
-        ElNotification.error({ title: msg });
+        ElMessage.error(msg);
       }
       return Promise.reject("error");
     } else {

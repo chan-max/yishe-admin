@@ -108,6 +108,7 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   SystemOperateLog: "system.operatelog",
   SystemFileLog: "system.file-log",
   PersonalSettings: "personal.settings",
+  MyOrganization: "personal.organization",
 };
 
 export const ROUTE_MENU_LEGACY_KEY_MAP: Record<string, string[]> = {

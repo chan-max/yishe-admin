@@ -191,6 +191,25 @@ export const useUserStore = defineStore('admin-user', {
       userInfo.nickname = nickname
       wsCache.set(CACHE_KEY.USER, userInfo)
     },
+    /** 同步组织自服务操作后的头部展示与本地用户缓存。 */
+    setUserCompanyAction(company?: UserVO['company']) {
+      const normalizedCompany = company
+        ? {
+            id: company.id,
+            name: company.name,
+            inviteCode: company.inviteCode,
+            description: company.description,
+            expireTime: company.expireTime,
+          }
+        : undefined
+
+      this.user.company = normalizedCompany
+      const userInfo = wsCache.get(CACHE_KEY.USER)
+      if (userInfo?.id === this.user.id) {
+        userInfo.company = normalizedCompany
+        wsCache.set(CACHE_KEY.USER, userInfo)
+      }
+    },
     async loginOut() {
       try {
         // 断开 WebSocket 连接

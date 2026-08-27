@@ -9,7 +9,20 @@
         <h2 id="tools-downloads-heading" class="tools-section__title">{{ t('home.tools.download') }}</h2>
       </div>
 
-      <div class="tools-grid">
+      <div v-if="loading" class="tools-grid">
+        <el-skeleton :count="2" animated class="tools-skeleton">
+          <template #template>
+            <div class="tools-skeleton__card">
+              <el-skeleton-item variant="circle" class="tools-skeleton__icon" />
+              <el-skeleton-item variant="text" class="tools-skeleton__title" />
+              <el-skeleton-item variant="text" class="tools-skeleton__desc" />
+              <el-skeleton-item variant="button" class="tools-skeleton__btn" />
+            </div>
+          </template>
+        </el-skeleton>
+      </div>
+
+      <div v-else-if="downloadCards.length" class="tools-grid">
         <article
           v-for="item in downloadCards"
           :key="item.key"
@@ -51,74 +64,43 @@
           </div>
         </article>
       </div>
+
+      <el-empty v-else :description="t('home.tools.unconfigured')" />
     </section>
   </div>
 </template>
 
 <script setup lang="ts">
+import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { ElSkeleton } from 'element-plus'
 import { Icon } from "@/components/Icon";
+import { getDownloadConfig, type DownloadCard } from "@/config/downloads";
 
 defineOptions({ name: "ToolsIndex" });
 
 const { t } = useI18n()
 
-interface DownloadCard {
-  key: string;
-  title: string;
-  platform: string;
-  description: string;
-  icon: string;
-  actions: Array<{
-    key: string;
-    label: string;
-    downloadUrl: string;
-  }>;
-}
+const downloadCards = ref<DownloadCard[]>([])
+const loading = ref(true)
 
-const downloadCards: DownloadCard[] = [
-  {
-    key: "client-unified",
-    title: "home.tools.client.title",
-    platform: "home.tools.client.platform",
-    description: "home.tools.client.description",
-    icon: "ep:monitor",
-    actions: [
-      {
-        key: "windows",
-        label: "home.tools.client.windowsInstaller",
-        downloadUrl:
-          "https://github.com/1s-design/yishe-client/releases/latest/download/yishe-client.exe",
-      },
-      {
-        key: "macos",
-        label: "home.tools.client.macosInstaller",
-        downloadUrl:
-          "https://github.com/1s-design/yishe-client/releases/latest/download/yishe-client.dmg",
-      },
-    ],
-  },
-  {
-    key: "chrome-extension",
-    title: "home.tools.extension.title",
-    platform: "home.tools.extension.platform",
-    description: "home.tools.extension.description",
-    icon: "mdi:puzzle",
-    actions: [
-      {
-        key: "extension-zip",
-        label: "home.tools.extension.zip",
-        downloadUrl:
-          "https://github.com/1s-design/yishe-extensions/releases/latest/download/yishe-extensions.zip",
-      },
-    ],
-  },
-];
+async function loadDownloadConfig() {
+  try {
+    const res = await getDownloadConfig()
+    downloadCards.value = res.cards || []
+  } catch {
+    downloadCards.value = []
+  } finally {
+    loading.value = false
+  }
+}
 
 function handleDownload(downloadUrl: string) {
   if (!downloadUrl) return;
   window.open(downloadUrl, "_blank", "noopener");
 }
+
+onMounted(loadDownloadConfig)
 </script>
 
 <style scoped lang="scss">

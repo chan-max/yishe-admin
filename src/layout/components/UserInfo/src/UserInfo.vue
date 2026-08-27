@@ -131,11 +131,11 @@ function handleViewToken() {
 <template>
   <ElDropdown :class="prefixCls" trigger="click">
     <div class="user-trigger">
-      <ElAvatar :size="26" :src="avatar" class="user-avatar" />
+      <ElAvatar :size="26" :src="avatar" class="user-avatar" :class="{ 'is-admin': isAdmin }" />
       <div class="user-meta <lg:hidden">
         <span class="user-name">{{ userName }}</span>
-        <span class="user-role" :class="isAdmin ? 'is-admin' : 'is-member'">
-          {{ isAdmin ? t("layout.userInfo.administrator") : t("layout.userInfo.member") }}
+        <span class="user-company" :class="{ 'is-empty': !companyName }" :title="companyName || undefined">
+          {{ companyName || '未加入组织' }}
         </span>
       </div>
       <Icon icon="ep:caret-bottom" class="user-caret" />
@@ -198,6 +198,15 @@ function handleViewToken() {
 
 .user-avatar {
   flex-shrink: 0;
+
+  &.is-admin {
+    box-sizing: border-box;
+    border: 1.5px solid #d4a72c;
+  }
+}
+
+:global(html.dark) .user-avatar.is-admin {
+  border-color: #e5b84b;
 }
 
 .user-meta {
@@ -215,18 +224,19 @@ function handleViewToken() {
   white-space: nowrap;
 }
 
-.user-role {
+.user-company {
+  display: flex;
+  max-width: 148px;
+  align-items: center;
+  overflow: hidden;
+  color: var(--el-text-color-secondary);
   font-size: 10px;
   font-weight: 400;
-  line-height: 1;
-  letter-spacing: 0.01em;
+  line-height: 1.2;
+  text-overflow: ellipsis;
   white-space: nowrap;
 
-  &.is-admin {
-    color: #f59e0b;
-  }
-
-  &.is-member {
+  &.is-empty {
     color: var(--el-text-color-placeholder);
   }
 }

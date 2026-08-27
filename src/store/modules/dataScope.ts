@@ -13,7 +13,7 @@ export type AdminDataScopeState = {
 const { wsCache } = useCache()
 
 const DEFAULT_SCOPE: AdminDataScopeState = {
-  mode: 'self',
+  mode: 'all',
   userId: '',
   userLabel: ''
 }
