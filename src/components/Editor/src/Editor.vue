@@ -6,7 +6,7 @@ import { propTypes } from '@/utils/propTypes'
 import { isNumber } from '@/utils/is'
 import { ElMessage } from 'element-plus'
 import { useLocaleStore } from '@/store/modules/locale'
-import { getRefreshToken, getTenantId } from '@/utils/auth'
+import { getRefreshToken } from '@/utils/auth'
 import { getUploadUrl } from '@/components/UploadFile/src/useUpload'
 
 defineOptions({ name: 'Editor' })
@@ -101,7 +101,6 @@ const editorConfig = computed((): IEditorConfig => {
           headers: {
             Accept: '*',
             Authorization: 'Bearer ' + getRefreshToken(), // 使用 getRefreshToken() 方法，而不使用 getAccessToken() 方法的原因：Editor 无法方便的刷新访问令牌
-            'tenant-id': getTenantId()
           },
 
           // 超时时间，默认为 10 秒
@@ -149,7 +148,6 @@ const editorConfig = computed((): IEditorConfig => {
           headers: {
             Accept: '*',
             Authorization: 'Bearer ' + getRefreshToken(), // 使用 getRefreshToken() 方法，而不使用 getAccessToken() 方法的原因：Editor 无法方便的刷新访问令牌
-            'tenant-id': getTenantId()
           },
 
           // 超时时间，默认为 30 秒

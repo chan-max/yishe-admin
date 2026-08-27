@@ -20,7 +20,6 @@ export const CACHE_KEY = {
   LOADING_STYLE: 'loadingStyle',
   // 登录表单
   LoginForm: 'loginForm',
-  TenantId: 'tenantId'
 }
 
 export const useCache = (type: CacheType = 'localStorage') => {

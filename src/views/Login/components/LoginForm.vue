@@ -160,7 +160,6 @@ const doLogin = async () => {
     })
     if (loginData.loginForm.rememberMe) {
       authUtil.setLoginForm({
-        tenantName: "",
         username: loginData.loginForm.account,
         password: loginData.loginForm.password,
         rememberMe: true,

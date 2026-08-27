@@ -2918,7 +2918,6 @@ import { getPublishConfigListApi } from "@/api/product/publishConfig";
 import { productGenerationTemplateApi } from "@/api/product-generation-template";
 import genPicture from "./genPicture.vue";
 import { getAccessToken } from "@/utils/auth";
-import { getTenantId } from "@/utils/auth";
 import { buildImageProcessingRouteLocation } from "@/utils/imageProcessingRoute";
 import { getUserList } from "@/api/user";
 import { getDesignModelList } from "@/api/designModel";

@@ -3,14 +3,13 @@ import axios, { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestCo
 import { ElMessage, ElMessageBox, ElNotification } from "element-plus";
 import qs from "qs";
 import { config } from "@/config/axios/config";
-import { getAccessToken, getTenantId, removeToken } from "@/utils/auth";
+import { getAccessToken, removeToken } from "@/utils/auth";
 import errorCode from "./errorCode";
 import { useUserStoreWithOut } from "@/store/modules/user";
 import { useDataScopeStoreWithOut } from "@/store/modules/dataScope";
 
 import { deleteUserCache } from "@/hooks/web/useCache";
 
-const tenantEnable = import.meta.env.VITE_APP_TENANT_ENABLE;
 const { result_code, base_url, request_timeout } = config;
 
 export type OwnershipInjectionMode = "auto" | "force" | "skip";
@@ -222,11 +221,6 @@ service.interceptors.request.use(
       if (getAccessToken() && !isToken) {
         config.headers.Authorization = "Bearer " + getAccessToken(); // 让每个请求携带自定义token
       }
-    }
-    // 设置租户
-    if (tenantEnable && tenantEnable === "true") {
-      const tenantId = getTenantId();
-      if (tenantId) config.headers["tenant-id"] = tenantId;
     }
 
     const url = config.url || "";

@@ -164,7 +164,6 @@ export default {
   login: {
     welcome: '欢迎使用本系统',
     message: '一个非常好用的系统',
-    tenantname: '租户名称',
     username: '用户名',
     password: '密码',
     code: '验证码',
@@ -176,7 +175,6 @@ export default {
     remember: '记住我',
     hasUser: '已有账号？去登录',
     forgetPassword: '忘记密码?',
-    tenantNamePlaceholder: '请输入租户名称',
     usernamePlaceholder: '请输入用户名',
     passwordPlaceholder: '请输入密码',
     codePlaceholder: '请输入验证码',
@@ -192,7 +190,6 @@ export default {
     SmsSendMsg: '验证码已发送',
     resetPassword: "重置密码",
     resetPasswordSuccess: "重置密码成功",
-    invalidTenantName: "无效的租户名称",
     subtitle: "欢迎登录",
     copyright: "© 2026 All Rights Reserved",
     contactAdmin: "请联系管理员重置密码",

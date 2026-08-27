@@ -162,7 +162,6 @@ export default {
   login: {
     welcome: 'Welcome to the system',
     message: 'Backstage management system',
-    tenantname: 'TenantName',
     username: 'Username',
     password: 'Password',
     code: 'verification code',
@@ -174,7 +173,6 @@ export default {
     remember: 'Remember me',
     hasUser: 'Existing account? Go to login',
     forgetPassword: 'Forget password?',
-    tenantNamePlaceholder: 'Please Enter Tenant Name',
     usernamePlaceholder: 'Please Enter Username',
     passwordPlaceholder: 'Please Enter Password',
     codePlaceholder: 'Please Enter Verification Code',
@@ -190,7 +188,6 @@ export default {
     SmsSendMsg: 'code has been sent',
     resetPassword: "Reset Password",
     resetPasswordSuccess: "Reset Password Success",
-    invalidTenantName:"Invalid Tenant Name",
     subtitle: "Welcome Back",
     copyright: "© 2026 All Rights Reserved",
     contactAdmin: "Please contact admin to reset password",

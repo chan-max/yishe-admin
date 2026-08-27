@@ -345,7 +345,6 @@ export interface OpenDesignToolDTO {
   machineCode?: string;
   toolUrl?: string;
   prompt?: string;
-  tenantId?: string;
   workspaceId?: string;
 }
 
@@ -368,7 +367,6 @@ export const openDesignToolOnClient = (data: OpenDesignToolDTO) => {
   if (data.profileName) url.searchParams.set("launchProfileName", data.profileName);
   if (data.machineCode) url.searchParams.set("launchMachineCode", data.machineCode);
   if (data.prompt) url.searchParams.set("prompt", data.prompt);
-  if (data.tenantId) url.searchParams.set("tenantId", data.tenantId);
 
   return request.post<{ success: boolean; message: string; data?: { commandId?: string } }>({
     url: `/external/browser-automation/${encodeURIComponent(data.clientId)}/open-link`,

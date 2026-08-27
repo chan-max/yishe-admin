@@ -1,5 +1,5 @@
 import type { ToolWindowDefinition } from '@/types/toolWindow'
-import { getAccessToken, getTenantId } from '@/utils/auth'
+import { getAccessToken } from '@/utils/auth'
 
 const normalizeEmbeddedToken = (tokenValue: unknown) => {
   const normalizedValue = String(tokenValue || '').trim()
@@ -29,16 +29,12 @@ const buildEmbeddedToolUrl = (baseSrc: string) => {
   }
 
   const token = normalizeEmbeddedToken(getAccessToken())
-  const tenantId = String(getTenantId() || '').trim()
 
   try {
     const parsedUrl = new URL(baseSrc, window.location.origin)
     parsedUrl.searchParams.set('embed', 'admin')
     if (token) {
       parsedUrl.searchParams.set('token', token)
-    }
-    if (tenantId) {
-      parsedUrl.searchParams.set('tenantId', tenantId)
     }
     return parsedUrl.toString()
   } catch (error) {
