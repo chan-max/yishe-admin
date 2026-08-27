@@ -72,7 +72,6 @@
                 <div class="res-wall__actions">
                   <el-button
                     type="primary"
-                    plain
                     size="small"
                     class="res-btn-mini"
                     :loading="importingId === item.id"
@@ -151,7 +150,6 @@
             </el-button>
             <el-button
               type="primary"
-              plain
               size="small"
               class="res-btn-mini"
               :loading="importingId === item.id"
@@ -228,6 +226,14 @@
           @click="handleRemove(detailItem!)"
         >
           下架
+        </el-button>
+        <el-button
+          type="primary"
+          plain
+          :loading="importingId === detailItem?.id"
+          @click="handleImport(detailItem!)"
+        >
+          取消
         </el-button>
         <el-button
           type="primary"
