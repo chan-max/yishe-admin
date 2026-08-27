@@ -26,73 +26,56 @@
         <el-empty description="暂无公共资源" :image-size="70" />
       </div>
 
-      <!-- 图片类：瀑布流照片墙 -->
+      <!-- 图片类：缩略图网格（类似素材库） -->
       <div v-else-if="isImageType" class="res-wall">
         <div
           v-for="item in libraryList"
           :key="item.id"
           class="res-wall__item"
         >
-          <div class="res-wall__img-box" @click="openImagePreview(item.coverUrl)">
+          <div class="res-wall__thumb" @click="openImagePreview(item.coverUrl)">
             <img
               :src="item.coverUrl"
               :alt="item.name"
-              class="res-wall__img"
+              class="res-wall__thumb-img"
               loading="lazy"
             />
-          </div>
-          <!-- 默认显示：底部标题条 -->
-          <div class="res-wall__bar">
-            <span class="res-wall__bar-title" :title="item.name">{{ item.name }}</span>
-          </div>
-          <!-- Hover 遮罩 -->
-          <div class="res-wall__overlay">
-            <div class="res-wall__overlay-top">
+            <!-- Hover 遮罩 -->
+            <div class="res-wall__overlay">
               <el-button
-                type="primary"
-                circle
-                size="small"
                 class="res-wall__detail-icon"
                 @click.stop="openDetailDialog(item)"
               >
                 <Icon icon="lucide:more-horizontal" :size="14" />
               </el-button>
             </div>
-            <div class="res-wall__overlay-content">
-              <span class="res-wall__title" :title="item.name">{{ item.name }}</span>
-              <div v-if="item.tags?.length" class="res-wall__tags">
-                <span
-                  v-for="(tag, idx) in item.tags.slice(0, 2)"
-                  :key="idx"
-                  class="res-wall__tag"
+          </div>
+          <!-- 底部信息条 -->
+          <div class="res-wall__info">
+            <span class="res-wall__title" :title="item.name">{{ item.name }}</span>
+            <div class="res-wall__footer">
+              <span class="res-wall__meta">{{ item.authorName || '官方' }} · {{ item.importCount || 0 }}次</span>
+              <div class="res-wall__actions">
+                <el-button
+                  type="primary"
+                  size="small"
+                  class="res-btn-mini"
+                  :loading="importingId === item.id"
+                  @click.stop="handleImport(item)"
                 >
-                  {{ tag }}
-                </span>
-              </div>
-              <div class="res-wall__footer">
-                <span class="res-wall__meta">{{ item.authorName || '官方' }} · {{ item.importCount || 0 }}次</span>
-                <div class="res-wall__actions">
-                  <el-button
-                    type="primary"
-                    size="small"
-                    class="res-btn-mini"
-                    :loading="importingId === item.id"
-                    @click.stop="handleImport(item)"
-                  >
-                    保存
-                  </el-button>
-                  <el-button
-                    v-if="isAdmin"
-                    type="danger"
-                    link
-                    size="small"
-                    class="res-btn-mini"
-                    :loading="deletingId === item.id"
-                    @click.stop="handleRemove(item)"
-                  >
-                    下架
-                  </el-button>
-                </div>
+                  保存
+                </el-button>
+                <el-button
+                  v-if="isAdmin"
+                  type="danger"
+                  link
+                  size="small"
+                  class="res-btn-mini"
+                  :loading="deletingId === item.id"
+                  @click.stop="handleRemove(item)"
+                >
+                  下架
+                </el-button>
               </div>
             </div>
           </div>
@@ -111,9 +94,6 @@
               <Icon :icon="getTypeIcon(currentResourceType)" :size="14" />
             </div>
             <el-button
-              type="primary"
-              circle
-              size="small"
               class="res-text-card__more"
               @click.stop="openDetailDialog(item)"
             >
@@ -185,7 +165,8 @@
     <!-- 详情弹窗 -->
     <el-dialog
       v-model="detailDialogVisible"
-      width="480px"
+      width="420px"
+      align-center
       :show-close="true"
       :close-on-click-modal="true"
       class="res-detail-dialog"
@@ -210,9 +191,7 @@
               </span>
             </div>
             <div class="res-detail__meta">
-              <span>发布者：{{ detailItem.authorName || '官方' }}</span>
-              <span>保存次数：{{ detailItem.importCount || 0 }}</span>
-              <span>发布时间：{{ formatTime(detailItem.publishedAt) }}</span>
+              {{ detailItem.authorName || '官方' }} · {{ detailItem.importCount || 0 }}次保存 · {{ formatTime(detailItem.publishedAt) }}
             </div>
           </div>
         </div>
@@ -227,10 +206,8 @@
           下架
         </el-button>
         <el-button
-          type="primary"
           plain
-          :loading="importingId === detailItem?.id"
-          @click="handleImport(detailItem!)"
+          @click="detailDialogVisible = false"
         >
           取消
         </el-button>
@@ -462,172 +439,106 @@ onMounted(() => {
 }
 
 /* ============================================================
-   图片类：瀑布流照片墙
+   图片类：缩略图网格（类似素材库统一缩略图）
    ============================================================ */
 .res-wall {
-  column-count: 5;
-  column-gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
 }
 
 @media (width >= 1800px) {
   .res-wall {
-    column-count: 6;
-  }
-}
-
-@media (width <= 1400px) {
-  .res-wall {
-    column-count: 4;
-  }
-}
-
-@media (width <= 1000px) {
-  .res-wall {
-    column-count: 3;
-  }
-}
-
-@media (width <= 600px) {
-  .res-wall {
-    column-count: 2;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
   }
 }
 
 .res-wall__item {
-  break-inside: avoid;
-  margin-bottom: 8px;
   border-radius: 6px;
   overflow: hidden;
-  position: relative;
-  background: var(--el-fill-color-light);
+  background: var(--el-bg-color-overlay);
+  border: 1px solid var(--el-border-color-lighter);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
   /* 提升为合成层，避免 hover 卡顿 */
   will-change: transform;
   transform: translateZ(0);
 }
 
-.res-wall__img-box {
-  width: 100%;
-  cursor: pointer;
-  line-height: 0;
+.res-wall__item:hover {
+  border-color: var(--el-border-color);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 6%);
 }
 
-.res-wall__img {
+/* 缩略图容器：固定高度，居中 contain */
+.res-wall__thumb {
+  position: relative;
   width: 100%;
-  display: block;
-}
-
-/* 默认显示：底部标题条 */
-.res-wall__bar {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  height: 120px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  padding: 6px 8px;
-  background: linear-gradient(to top, rgb(0 0 0 / 60%) 0%, transparent 100%);
-  opacity: 1;
-  transition: opacity 0.2s ease;
-}
-
-.res-wall__item:hover .res-wall__bar {
-  opacity: 0;
-}
-
-.res-wall__bar-title {
-  font-size: 11px;
-  font-weight: 500;
-  color: #fff;
+  justify-content: center;
+  background: var(--el-fill-color-light);
+  cursor: pointer;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1;
 }
 
-.res-wall__detail-btn {
-  font-size: 11px !important;
-  color: rgb(255 255 255 / 90%) !important;
-  padding: 0 4px !important;
-  height: 20px !important;
-  flex: none;
+.res-wall__thumb-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: transform 0.2s ease;
 }
 
-.res-wall__detail-btn:hover {
-  color: #fff !important;
+.res-wall__item:hover .res-wall__thumb-img {
+  transform: scale(1.03);
 }
 
-/* Hover 遮罩 */
+/* Hover 遮罩 - 仅显示 ... 按钮 */
 .res-wall__overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to top,
-    rgb(0 0 0 / 80%) 0%,
-    rgb(0 0 0 / 20%) 50%,
-    transparent 100%
-  );
+  background: rgb(0 0 0 / 30%);
   opacity: 0;
   transition: opacity 0.15s ease;
   display: flex;
-  flex-direction: column;
+  align-items: flex-start;
   justify-content: flex-end;
+  padding: 6px;
 }
 
 .res-wall__item:hover .res-wall__overlay {
   opacity: 1;
 }
 
-.res-wall__overlay-top {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-}
-
 .res-wall__detail-icon {
-  width: 24px !important;
-  height: 24px !important;
+  width: 26px !important;
+  height: 26px !important;
   padding: 0 !important;
-  background: rgb(0 0 0 / 40%) !important;
+  color: #fff !important;
+  background: rgb(0 0 0 / 50%) !important;
   border: none !important;
-  backdrop-filter: blur(4px);
+  border-radius: 4px !important;
 }
 
 .res-wall__detail-icon:hover {
-  background: rgb(0 0 0 / 60%) !important;
+  background: rgb(0 0 0 / 70%) !important;
 }
 
-.res-wall__overlay-content {
+/* 底部信息区 */
+.res-wall__info {
   padding: 8px;
 }
 
 .res-wall__title {
   font-size: 12px;
-  font-weight: 600;
-  color: #fff;
+  font-weight: 500;
+  color: var(--el-text-color-primary);
   line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   display: block;
-  margin-bottom: 4px;
-}
-
-.res-wall__tags {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
   margin-bottom: 6px;
-}
-
-.res-wall__tag {
-  font-size: 10px;
-  color: rgb(255 255 255 / 90%);
-  background: rgb(255 255 255 / 18%);
-  padding: 1px 5px;
-  border-radius: 3px;
-  line-height: 1.4;
 }
 
 .res-wall__footer {
@@ -638,7 +549,7 @@ onMounted(() => {
 
 .res-wall__meta {
   font-size: 10px;
-  color: rgb(255 255 255 / 65%);
+  color: var(--el-text-color-secondary);
 }
 
 .res-wall__actions {
@@ -689,11 +600,19 @@ onMounted(() => {
 }
 
 .res-text-card__more {
-  width: 20px !important;
-  height: 20px !important;
+  width: 22px !important;
+  height: 22px !important;
   padding: 0 !important;
+  color: var(--el-text-color-secondary) !important;
+  background: var(--el-fill-color) !important;
+  border: none !important;
+  border-radius: 4px !important;
   opacity: 0;
   transition: opacity 0.15s ease;
+}
+
+.res-text-card__more:hover {
+  background: var(--el-fill-color-dark) !important;
 }
 
 .res-text-card:hover .res-text-card__more {

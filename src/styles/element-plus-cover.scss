@@ -183,7 +183,10 @@ html.dark .el-alert {
 }
 
 .el-button {
-  --el-button-border-radius: var(--ep-cover-radius-sm);
+  /* Element Plus 实际读取的是 border-radius，不读取 --el-button-border-radius。 */
+  border-radius: 10px !important;
+  /* 支持的浏览器使用超椭圆角；不支持时自动回退为 10px 圆角。 */
+  corner-shape: squircle;
   height: var(--ep-cover-control-height);
   padding: 0 var(--ep-cover-control-padding-x);
   font-size: var(--ep-cover-font-size-sm);
@@ -198,6 +201,21 @@ html.dark .el-alert {
     box-shadow var(--ep-cover-motion-fast),
     opacity var(--ep-cover-motion-fast),
     transform var(--ep-cover-motion-base);
+}
+
+/* Element Plus 会在尺寸修饰类中再次写入圆角，因此需要显式覆盖。 */
+.el-button--small,
+.el-button--large {
+  border-radius: 10px !important;
+  corner-shape: squircle;
+}
+
+.el-button.is-circle {
+  border-radius: 50% !important;
+}
+
+.el-button.is-round {
+  border-radius: var(--el-border-radius-round) !important;
 }
 
 .el-button--small {
