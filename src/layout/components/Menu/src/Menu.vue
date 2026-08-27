@@ -40,6 +40,7 @@ import {
   useClientNodeStore,
 } from "@/store/modules/clientNode";
 import { getWorkflowPageApi } from "@/api/workflow";
+import { useResourceLibraryMenuUpdate } from "@/hooks/web/useResourceLibraryMenuUpdate";
 
 const { getPrefixCls } = useDesign();
 const prefixCls = getPrefixCls("menu");
@@ -122,6 +123,28 @@ export default defineComponent({
     } = usePublishTaskRuntimeState();
     const clientNodeStore = useClientNodeStore();
     clientNodeStore.ensureInitialized({ summary: true });
+
+    // 资源广场"新"标签状态
+    const {
+      hasNewContentByRoute,
+      getNewContentIntensityByRoute,
+      markVisited: markResourceLibraryVisited,
+    } = useResourceLibraryMenuUpdate();
+
+    const renderResourceLibraryNewTag = (routePath: string) => {
+      if (!hasNewContentByRoute(routePath)) return undefined;
+      const intensity = getNewContentIntensityByRoute(routePath);
+      // 颜色深度：越近越深。intensity 1 → 深红 #dc2626, intensity 0 → 浅红 #fca5a5
+      const r = Math.round(220 + (252 - 220) * (1 - intensity));
+      const g = Math.round(38 + (165 - 38) * (1 - intensity));
+      const b = Math.round(38 + (165 - 38) * (1 - intensity));
+      const bg = `rgb(${r}, ${g}, ${b})`;
+      return (
+        <span class={`${prefixCls}__new-tag`} style={{ background: bg }}>
+          新
+        </span>
+      );
+    };
 
     const runningWorkflowCount = ref(0);
     const workflowRuntimeLoading = ref(false);
@@ -655,6 +678,8 @@ export default defineComponent({
         closeMobileMenu();
         return;
       }
+      // 标记资源广场页面为已访问（消除"新"标签）
+      markResourceLibraryVisited(path);
       await push(path);
       closeMobileMenu();
     };
@@ -865,7 +890,8 @@ export default defineComponent({
                             onClick={() => selectMenu(childPath)}
                           >
                             <span class={`${prefixCls}__link-text`}>{t(child.meta?.title as string)}</span>
-                            {renderWorkflowRuntimeBadge(childPath) ||
+                            {renderResourceLibraryNewTag(childPath) ||
+                              renderWorkflowRuntimeBadge(childPath) ||
                               renderDesignToolRuntimeBadge(childPath) ||
                               renderAiAssistantRuntimeBadge(childPath) ||
                               renderAiConfigBadge(childPath) ||
@@ -1669,6 +1695,29 @@ $prefix-cls: #{$namespace}-menu;
     --menu-running-rgb: 234 179 8;
     --menu-running-highlight-rgb: 250 204 21;
     --menu-running-text-color: rgb(234 179 8 / 98%);
+  }
+
+  &__new-tag {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    height: 14px;
+    min-width: 14px;
+    padding: 0 3px;
+    margin-left: var(--left-menu-status-dot-margin-left);
+    font-size: 9px;
+    font-weight: 600;
+    line-height: 1;
+    color: #fff;
+    white-space: nowrap;
+    background: #ef4444;
+    border-radius: 3px;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 18%),
+      0 2px 4px rgb(239 68 68 / 24%);
+    flex: none;
+    align-items: center;
+    justify-content: center;
   }
 
   &__status-dot {

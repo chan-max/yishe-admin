@@ -72,4 +72,11 @@ export const ResourceLibraryApi = {
   remove: async (id: string) => {
     return await request.delete({ url: `/resource-library/${id}` })
   },
+
+  // 获取资源广场各类型的最新发布时间（用于菜单"新"标签）
+  getMenuUpdates: async () => {
+    return await request.get<Record<string, string | null>>({
+      url: '/resource-library/menu-updates',
+    })
+  },
 }
