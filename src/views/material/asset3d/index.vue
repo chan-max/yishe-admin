@@ -75,7 +75,7 @@
                 :disabled="!ids.length"
                 @click="handleBatchPublishToLibrary"
               >
-                发布到库 ({{ ids.length }})
+                发布到素材中心 ({{ ids.length }})
               </el-button>
               <el-button v-if="isMobile" size="small" @click="filterDialogVisible = true">筛选</el-button>
             </div>
@@ -168,6 +168,10 @@
                           <el-dropdown-item v-if="isAdmin" command="move-to-user">
                             <el-icon><User /></el-icon>
                             <span>移交所有人</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item v-if="isAdmin" command="publish-to-library">
+                            <el-icon><UploadFilled /></el-icon>
+                            <span>发布到素材中心</span>
                           </el-dropdown-item>
                           <el-dropdown-item command="view-shared">
                             <el-icon><Connection /></el-icon>
@@ -466,7 +470,7 @@ import { computed, reactive, ref, onMounted, watchEffect } from "vue";
 import { useWindowSize } from "@vueuse/core";
 import { ElMessage, ElMessageBox } from "element-plus";
 import type { UploadFile } from "element-plus";
-import { Box, Connection, Delete, DocumentCopy, Download, Edit, MagicStick, Search, Share, ArrowDown, User, TopRight } from "@element-plus/icons-vue";
+import { Box, Connection, Delete, DocumentCopy, Download, Edit, MagicStick, Search, Share, ArrowDown, User, TopRight, UploadFilled } from "@element-plus/icons-vue";
 import {
   batchDeleteAsset3d,
   createAsset3d,
@@ -560,7 +564,7 @@ const submitLoading = ref(false);
 const modelFile = ref<File | null>(null);
 const thumbnailFile = ref<File | null>(null);
 
-const isAdmin = computed(() => !!userStore.userInfo?.isAdmin);
+const isAdmin = computed(() => userStore.user?.isAdmin ?? false);
 
 // 用户转移/共享对话框状态
 type Asset3dUserTransferAction = "share" | "copy" | "move";
@@ -654,6 +658,24 @@ async function handleBatchPublishToLibrary() {
     await ResourceLibraryApi.batchPublish({
       resourceType: "asset_3d",
       ids: targetIds,
+    });
+    ElMessage.success("已成功发布到公共 3D 资产库");
+  } catch {
+    // cancel
+  }
+}
+
+async function handlePublishSingleToLibrary(row: any) {
+  if (!row?.id) return;
+  try {
+    await ElMessageBox.confirm(`确认将 3D 资产「${row.name || row.id}」发布到公共资源广场吗？`, "发布提示", {
+      confirmButtonText: "确认发布",
+      cancelButtonText: "取消",
+      type: "info",
+    });
+    await ResourceLibraryApi.batchPublish({
+      resourceType: "asset_3d",
+      ids: [String(row.id)],
     });
     ElMessage.success("已成功发布到公共 3D 资产库");
   } catch {
@@ -1142,6 +1164,9 @@ function handleOperationCommand(command: string, row: any) {
       break;
     case "move-to-user":
       openAsset3dUserTransferDialog("move", row);
+      break;
+    case "publish-to-library":
+      handlePublishSingleToLibrary(row);
       break;
     case "view-shared":
       openShareRecordsDialog(row);

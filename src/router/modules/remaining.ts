@@ -379,7 +379,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: false,
           noTagsView: false,
           title: "router.customSticker",
-          requiresAdmin: true,
         },
       },
       {
