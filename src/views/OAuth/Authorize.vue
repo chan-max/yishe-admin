@@ -15,9 +15,7 @@
 
       <!-- 授权内容 -->
       <template v-else>
-        <div class="oauth__icon">
-          <el-icon><Connection /></el-icon>
-        </div>
+        <img src="/src/assets/imgs/logo.png" alt="衣设" class="oauth__logo" />
 
         <p class="oauth__desc">{{ authorizeText }}</p>
 
@@ -33,7 +31,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Loading, CircleClose, Connection } from '@element-plus/icons-vue'
+import { Loading, CircleClose } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { getAuthorizeInfo, confirmAuthorize } from '@/api/oauth'
 
@@ -162,20 +160,12 @@ onMounted(init)
     }
   }
 
-  &__icon {
-    width: 56px;
-    height: 56px;
+  &__logo {
+    width: 48px;
+    height: 48px;
     margin: 0 auto 20px;
     border-radius: 12px;
-    background: #f5f5f5;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    .el-icon {
-      font-size: 24px;
-      color: #666;
-    }
+    object-fit: cover;
   }
 
   &__desc {
