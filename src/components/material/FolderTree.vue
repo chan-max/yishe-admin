@@ -312,6 +312,10 @@ function getBindingLabel() {
       return "网址";
     case "sentence":
       return "文案";
+    case "customsticker":
+    case "custom-sticker":
+    case "custom_sticker":
+      return "自定义贴纸";
     default:
       return "素材";
   }

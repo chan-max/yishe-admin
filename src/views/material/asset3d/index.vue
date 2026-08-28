@@ -157,11 +157,11 @@
                             <el-icon><MagicStick /></el-icon>
                             <span>AI生成内容</span>
                           </el-dropdown-item>
-                          <el-dropdown-item v-if="isAdmin" command="share-to-user">
+                          <el-dropdown-item command="share-to-user">
                             <el-icon><Share /></el-icon>
                             <span>共享</span>
                           </el-dropdown-item>
-                          <el-dropdown-item v-if="isAdmin" command="copy-to-user">
+                          <el-dropdown-item command="copy-to-user">
                             <el-icon><DocumentCopy /></el-icon>
                             <span>转存副本</span>
                           </el-dropdown-item>
@@ -931,37 +931,59 @@ async function submitForm() {
   }
 }
 
-function handleDelete(row?: any) {
+async function handleDelete(row?: any) {
   const delIds = row ? [row.id] : [...ids.value];
   if (!delIds.length) {
     ElMessage.warning("请选择要删除的数据");
     return;
   }
 
-  ElMessageBox.confirm(
-    `确认删除选中的 ${delIds.length} 条3D资源吗？对应 COS 文件也会删除。`,
-    "删除提示",
-    {
+  const targetItems = delIds.map(
+    (id: any) =>
+      dataSource.value.find((item: any) => String(item.id) === String(id)) ||
+      (row && String(row.id) === String(id) ? row : null),
+  ).filter(Boolean);
+
+  const sharedItems = targetItems.filter(
+    (item: any) =>
+      item.isShared ||
+      item.resourceLibraryId ||
+      item.shareType ||
+      (item.sourceUserId && String(item.sourceUserId) !== String(item.userId)),
+  );
+
+  let confirmMsg = `确认删除选中的 ${delIds.length} 条3D资源吗？对应 COS 文件也会删除。`;
+  if (sharedItems.length > 0) {
+    const sampleNames = sharedItems
+      .slice(0, 3)
+      .map((i: any) => `「${i.name || i.title || i.id}」`)
+      .join("、");
+    const moreText = sharedItems.length > 3 ? ` 等共 ${sharedItems.length} 项` : "";
+    confirmMsg = `选中的3D资源中包含已发布到素材中心或已共享给其他用户的资源（如 ${sampleNames}${moreText}）。删除后相关记录将被移除，是否确认继续删除？`;
+  }
+
+  try {
+    await ElMessageBox.confirm(confirmMsg, "删除提示", {
       confirmButtonText: "确认",
       cancelButtonText: "取消",
-      type: "warning",
-    },
-  )
-    .then(async () => {
-      try {
-        if (delIds.length === 1) {
-          await deleteAsset3d(delIds[0]);
-        } else {
-          await batchDeleteAsset3d(delIds);
-        }
-        ElMessage.success("删除成功");
-        await getList();
-      } catch (error) {
-        console.error("删除失败:", error);
-        ElMessage.error("删除失败");
-      }
-    })
-    .catch(() => {});
+      type: sharedItems.length > 0 ? "warning" : "error",
+    });
+
+    if (delIds.length === 1) {
+      await deleteAsset3d(delIds[0]);
+    } else {
+      await batchDeleteAsset3d(delIds);
+    }
+    ElMessage.success("删除成功");
+    ids.value = ids.value.filter((id: any) => !delIds.includes(id));
+    await getList();
+  } catch (error: any) {
+    if (error === "cancel" || error === "close" || error?.action === "cancel" || error?.action === "close") {
+      return;
+    }
+    console.error("删除失败:", error);
+    ElMessage.error(error?.message || "删除失败");
+  }
 }
 
 function checkboxChange(e: any) {

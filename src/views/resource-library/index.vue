@@ -280,6 +280,7 @@ const queryParams = reactive<{
 // 图片类资源类型
 const IMAGE_TYPES: ResourceLibraryType[] = [
   'sticker',
+  'custom_sticker',
   'psd_template',
   'font_template',
   'asset_3d',
@@ -297,6 +298,7 @@ const isImageType = computed(() => IMAGE_TYPES.includes(currentResourceType.valu
 const currentModuleTitle = computed(() => {
   const map: Record<string, string> = {
     sticker: '贴纸素材',
+    custom_sticker: '自定义贴纸',
     psd_template: 'PSD 模板',
     font_template: '字体库',
     asset_3d: '3D 资产',
@@ -312,6 +314,7 @@ const currentModuleTitle = computed(() => {
 // 获取类型图标
 function getTypeIcon(type: ResourceLibraryType): string {
   const map: Record<string, string> = {
+    custom_sticker: 'lucide:stickers',
     sentence: 'lucide:text',
     ai_skill: 'lucide:zap',
     prompt: 'lucide:sparkles',

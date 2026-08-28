@@ -1561,7 +1561,7 @@ async function openPsdTemplateUserTransferDialog(
   action: PsdTemplateUserTransferAction,
   row?: any,
 ) {
-  if (!ensurePsdTemplateAdminOperation()) {
+  if (action === "move" && !ensurePsdTemplateAdminOperation()) {
     return;
   }
 
@@ -1582,7 +1582,7 @@ async function openPsdTemplateUserTransferDialog(
 }
 
 async function submitPsdTemplateUserTransfer() {
-  if (!ensurePsdTemplateAdminOperation()) {
+  if (psdTemplateUserTransferAction.value === "move" && !ensurePsdTemplateAdminOperation()) {
     return;
   }
 
@@ -1731,7 +1731,7 @@ function handleQueryCutoutModesChange() {
   getList();
 }
 
-function handleDelete(row?) {
+async function handleDelete(row?) {
   let delIds: any = null;
   if (row) {
     delIds = [row.id];
@@ -1741,18 +1741,48 @@ function handleDelete(row?) {
     delIds = [...ids.value];
   }
 
-  ElMessageBox.confirm(t('material.confirmDeleteData'), t('material.deleteTip'), {
-    confirmButtonText: t('operation.confirm'),
-    cancelButtonText: t('common.cancel'),
-    type: "error",
-  })
-    .then(async () => {
-      console.log("执行删除");
-      await psdTemplateApi.deleteShopTemplate({ ids: delIds });
-      ElMessage.success(t('common.deleteSuccess'));
-      getList();
-    })
-    .catch(() => {});
+  const targetItems = delIds.map(
+    (id: any) =>
+      dataSource.value.find((item: any) => String(item.id) === String(id)) ||
+      (row && String(row.id) === String(id) ? row : null),
+  ).filter(Boolean);
+
+  const sharedItems = targetItems.filter(
+    (item: any) =>
+      item.isShared ||
+      item.resourceLibraryId ||
+      item.shareType ||
+      (item.sourceUserId && String(item.sourceUserId) !== String(item.userId)),
+  );
+
+  let confirmMsg = t('material.confirmDeleteData');
+  if (sharedItems.length > 0) {
+    const sampleNames = sharedItems
+      .slice(0, 3)
+      .map((i: any) => `「${i.name || i.id}」`)
+      .join('、');
+    const moreText = sharedItems.length > 3 ? ` 等共 ${sharedItems.length} 项` : '';
+    confirmMsg = `选中的PSD模板中包含已发布到素材中心或已共享给其他用户的资源（如 ${sampleNames}${moreText}）。删除后相关记录将被移除，是否确认继续删除？`;
+  }
+
+  try {
+    await ElMessageBox.confirm(confirmMsg, t('material.deleteTip'), {
+      confirmButtonText: t('operation.confirm'),
+      cancelButtonText: t('common.cancel'),
+      type: sharedItems.length > 0 ? 'warning' : 'error',
+    });
+
+    await psdTemplateApi.deleteShopTemplate({ ids: delIds });
+    ElMessage.success(t('common.deleteSuccess'));
+    ids.value = ids.value.filter((id: any) => !delIds.includes(id));
+    getList();
+  } catch (error: any) {
+    if (error === 'cancel' || error === 'close' || error?.action === 'cancel' || error?.action === 'close') {
+      return;
+    }
+    console.error('删除失败:', error);
+    ElMessage.error(error?.message || t('material.deleteFailed'));
+  }
 }
 
 function handleAdd() {

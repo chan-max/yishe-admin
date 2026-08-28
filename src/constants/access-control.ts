@@ -33,6 +33,8 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   DesignPrompt: "home.design-prompt",
   CrawlerMaterial: "resource.crawler-material",
   Material: "resource.material",
+  CustomSticker: "resource.custom-sticker",
+  ResourceLibraryCustomSticker: "resource.resource-library.custom-sticker",
   FileResource: FILE_RESOURCE_MENU_KEY,
   Asset3d: "resource.asset-3d",
   Font: "resource.font",

@@ -443,11 +443,11 @@
                             /></el-icon>
                             <span>{{ t('fileResource.preview') }}</span>
                           </el-dropdown-item>
-                          <el-dropdown-item v-if="isAdmin" command="share-to-user">
+                          <el-dropdown-item command="share-to-user">
                             <el-icon><Share /></el-icon>
                             <span>{{ t('fileResource.share') }}</span>
                           </el-dropdown-item>
-                          <el-dropdown-item v-if="isAdmin" command="copy-to-user">
+                          <el-dropdown-item command="copy-to-user">
                             <el-icon><DocumentCopy /></el-icon>
                             <span>{{ t('fileResource.copy') }}</span>
                           </el-dropdown-item>
@@ -1012,7 +1012,7 @@ async function openFileResourceUserTransferDialog(
   action: FileResourceUserTransferAction,
   row?: any,
 ) {
-  if (!ensureFileResourceAdminOperation()) {
+  if (action === "move" && !ensureFileResourceAdminOperation()) {
     return;
   }
 
@@ -1033,7 +1033,7 @@ async function openFileResourceUserTransferDialog(
 }
 
 async function submitFileResourceUserTransfer() {
-  if (!ensureFileResourceAdminOperation()) {
+  if (fileResourceUserTransferAction.value === "move" && !ensureFileResourceAdminOperation()) {
     return;
   }
 
@@ -1164,7 +1164,7 @@ function handleMultiDownload() {
   }
 }
 
-function handleDelete(row?) {
+async function handleDelete(row?) {
   let delIds: any = null;
 
   if (row) {
@@ -1175,28 +1175,48 @@ function handleDelete(row?) {
     delIds = [...ids.value];
   }
 
-  console.log("准备删除的ID:", delIds);
-  console.log("ids.value:", ids.value);
+  const targetItems = delIds.map(
+    (id: any) =>
+      dataSource.value.find((item: any) => String(item.id) === String(id)) ||
+      (row && String(row.id) === String(id) ? row : null),
+  ).filter(Boolean);
 
-  ElMessageBox.confirm(t("fileResource.confirmDelete"), t("fileResource.deleteTip"), {
-    confirmButtonText: t("common.confirm"),
-    cancelButtonText: t("common.cancel"),
-    type: "error",
-  })
-    .then(async () => {
-      try {
-        console.log("发送删除请求，ID:", delIds);
-        const result = await deleteFileResource({ ids: delIds });
-        console.log("删除结果:", result);
-        ElNotification.success(t("common.deleteSuccess"));
-        resetCheckStatus();
-        getList();
-      } catch (error) {
-        console.error("删除失败:", error);
-        ElMessage.error(t("fileResource.deleteFailed", { message: error.message || t("fileResource.unknownError") }));
-      }
-    })
-    .catch(() => {});
+  const sharedItems = targetItems.filter(
+    (item: any) =>
+      item.isShared ||
+      item.resourceLibraryId ||
+      item.shareType ||
+      (item.sourceUserId && String(item.sourceUserId) !== String(item.userId)),
+  );
+
+  let confirmMsg = t("fileResource.confirmDelete");
+  if (sharedItems.length > 0) {
+    const sampleNames = sharedItems
+      .slice(0, 3)
+      .map((i: any) => `「${i.name || i.id}」`)
+      .join("、");
+    const moreText = sharedItems.length > 3 ? ` 等共 ${sharedItems.length} 项` : "";
+    confirmMsg = `选中的文件资源中包含已发布到素材中心或已共享给其他用户的资源（如 ${sampleNames}${moreText}）。删除后相关记录将被移除，是否确认继续删除？`;
+  }
+
+  try {
+    await ElMessageBox.confirm(confirmMsg, t("fileResource.deleteTip"), {
+      confirmButtonText: t("common.confirm"),
+      cancelButtonText: t("common.cancel"),
+      type: sharedItems.length > 0 ? "warning" : "error",
+    });
+
+    await deleteFileResource({ ids: delIds });
+    ElNotification.success(t("common.deleteSuccess"));
+    resetCheckStatus();
+    getList();
+  } catch (error: any) {
+    if (error === "cancel" || error === "close" || error?.action === "cancel" || error?.action === "close") {
+      return;
+    }
+    console.error("删除失败:", error);
+    ElMessage.error(t("fileResource.deleteFailed", { message: error?.message || t("fileResource.unknownError") }));
+  }
 }
 
 function checkboxChange(e) {

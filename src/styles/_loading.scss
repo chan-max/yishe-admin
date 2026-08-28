@@ -224,6 +224,12 @@ html:not([data-loader]) .el-loading-spinner {
 }
 
 // ---------- 按钮 loading（el-button 内的 el-icon.is-loading） ----------
+.el-button.is-loading {
+  &::before {
+    display: none !important;
+  }
+}
+
 .el-button.is-loading .el-icon.is-loading {
   --loader-color: var(--el-button-text-color, var(--el-color-primary));
   position: relative;

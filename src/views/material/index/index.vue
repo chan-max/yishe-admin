@@ -5038,13 +5038,38 @@ async function handleDelete(row?) {
     }
   }
 
+  const targetItems = delIds.map(
+    (id: any) =>
+      dataSource.value.find((item: any) => String(item.id) === String(id)) ||
+      selectedMaterialCache[String(id)] ||
+      (row && String(row.id) === String(id) ? row : null),
+  ).filter(Boolean);
+
+  const sharedItems = targetItems.filter(
+    (item: any) =>
+      item.isShared ||
+      item.resourceLibraryId ||
+      item.shareType ||
+      (item.sourceUserId && String(item.sourceUserId) !== String(item.userId)),
+  );
+
+  let confirmMsg = t("material.confirmDeleteData");
+  if (sharedItems.length > 0) {
+    const sampleNames = sharedItems
+      .slice(0, 3)
+      .map((i: any) => `「${i.name || i.code || i.id}」`)
+      .join("、");
+    const moreText = sharedItems.length > 3 ? ` 等共 ${sharedItems.length} 项` : "";
+    confirmMsg = `选中的素材中包含已发布到素材中心或已共享给其他用户的资源（如 ${sampleNames}${moreText}）。删除后相关记录将被移除，是否确认继续删除？`;
+  }
+
   try {
-    await ElMessageBox.confirm(t("material.confirmDeleteData"), t("material.deleteTip"), {
+    await ElMessageBox.confirm(confirmMsg, t("material.deleteTip"), {
       confirmButtonText: t("material.confirm"),
       cancelButtonText: t("material.cancel"),
-      type: "error",
+      type: sharedItems.length > 0 ? "warning" : "error",
     });
-    delIds = delIds.map((id) => String(id));
+    delIds = delIds.map((id: any) => String(id));
     deleteLoading.value = true;
     await deleteAssetLibrary({ ids: delIds });
     ElNotification.success(t("material.deleteSuccess"));
@@ -5192,7 +5217,7 @@ function resetStickerUserTransferDialog() {
 }
 
 async function openStickerUserTransferDialog(action: StickerUserTransferAction, row?: any) {
-  if (!ensureStickerAdminOperation()) {
+  if (action === "move" && !ensureStickerAdminOperation()) {
     return;
   }
 
@@ -5250,7 +5275,7 @@ async function openShareRecordsDialog(row: any) {
 }
 
 async function submitStickerUserTransfer() {
-  if (!ensureStickerAdminOperation()) {
+  if (stickerUserTransferAction.value === "move" && !ensureStickerAdminOperation()) {
     return;
   }
 

@@ -2,6 +2,7 @@ import request from '@/config/axios'
 
 export type ResourceLibraryType =
   | 'sticker'
+  | 'custom_sticker'
   | 'psd_template'
   | 'font_template'
   | 'asset_3d'

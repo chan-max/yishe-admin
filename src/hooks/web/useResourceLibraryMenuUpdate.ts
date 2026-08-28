@@ -15,6 +15,7 @@ const STORAGE_KEY = 'resource-library-last-visit'
 // 资源类型 → 路由路径映射
 const RESOURCE_TYPE_ROUTE_MAP: Record<string, string> = {
   sticker: '/resource-library/sticker',
+  custom_sticker: '/resource-library/custom-sticker',
   psd_template: '/resource-library/psd-template',
   font_template: '/resource-library/font-template',
   asset_3d: '/resource-library/asset-3d',

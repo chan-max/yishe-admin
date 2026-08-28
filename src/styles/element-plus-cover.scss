@@ -298,16 +298,17 @@ html.dark .el-alert {
 
 .el-button.is-loading {
   pointer-events: none;
-  opacity: 0.92;
+  opacity: 0.88;
+
+  /* 消除 Element Plus 自带 ::before 遮罩在自定义圆角边缘产生的 -1px 矩形溢出与毛边 */
+  &::before {
+    display: none !important;
+  }
 }
 
 .el-button .el-icon.is-loading,
 .el-button .is-loading {
   animation-duration: 0.72s;
-}
-
-.el-button.is-loading::before {
-  border-radius: inherit;
 }
 
 .el-button.is-plain {

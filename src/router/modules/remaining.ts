@@ -87,6 +87,16 @@ const remainingRouter: AppRouteRecordRaw[] = [
         },
       },
       {
+        path: 'custom-sticker',
+        component: () => import('@/views/resource-library/index.vue'),
+        name: 'ResourceLibraryCustomSticker',
+        meta: {
+          title: 'router.resourceLibraryCustomSticker',
+          noCache: true,
+          resourceType: 'custom_sticker',
+        },
+      },
+      {
         path: 'psd-template',
         component: () => import('@/views/resource-library/index.vue'),
         name: 'ResourceLibraryPsd',
@@ -358,6 +368,18 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: false,
           noTagsView: false,
           title: "router.imageMaterial",
+        },
+      },
+      {
+        path: "custom-sticker",
+        component: () => import("@/views/custom-sticker/index.vue"),
+        name: "CustomSticker",
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: "router.customSticker",
+          requiresAdmin: true,
         },
       },
       {
