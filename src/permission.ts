@@ -59,7 +59,6 @@ const whiteList = [
   "/bind",
   "/register",
   "/oauthLogin/gitee",
-  "/oauth/authorize",
 ];
 
 const resolveFirstAccessiblePath = () => {
@@ -98,7 +97,13 @@ router.beforeEach(async (to, from, next) => {
         isRelogin.show = false;
       }
       await permissionStore.generateRoutes();
-      next({ path: resolveFirstAccessiblePath(), replace: true });
+      // 如果有 redirect 参数，优先跳转到 redirect 地址
+      const redirect = to.query.redirect as string | undefined;
+      if (redirect) {
+        next(decodeURIComponent(redirect));
+      } else {
+        next({ path: resolveFirstAccessiblePath(), replace: true });
+      }
     } else {
       // 获取所有字典
       if (!dictStore.getIsSetDict) {
