@@ -15,14 +15,11 @@
 
       <!-- 授权内容 -->
       <template v-else>
-        <h1 class="oauth__title">使用一设登录</h1>
-        <p class="oauth__app">{{ clientName }}</p>
-
-        <div class="oauth__perms">
-          <span v-for="scope in scopeList" :key="scope" class="oauth__perm">
-            {{ formatScope(scope) }}
-          </span>
+        <div class="oauth__icon">
+          <el-icon><Connection /></el-icon>
         </div>
+
+        <p class="oauth__desc">{{ authorizeText }}</p>
 
         <button class="oauth__btn oauth__btn--primary" :loading="submitting" @click="handleConfirm">
           同意授权
@@ -36,7 +33,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Loading, CircleClose } from '@element-plus/icons-vue'
+import { Loading, CircleClose, Connection } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { getAuthorizeInfo, confirmAuthorize } from '@/api/oauth'
 
@@ -53,18 +50,14 @@ const scopeList = ref<string[]>([])
 const redirectUri = ref('')
 const stateVal = ref('')
 
-const userAccount = computed(() => {
-  try {
-    const user = JSON.parse(localStorage.getItem('userInfo') || '{}')
-    return user.account || user.name || '用户'
-  } catch {
-    return '用户'
+/** 根据 client_id 显示授权文案 */
+const authorizeText = computed(() => {
+  const map: Record<string, string> = {
+    'yishe-client': '正在授权设计工具',
+    'yishe-extension': '正在授权浏览器插件'
   }
+  return map[clientName.value] || `正在授权 ${clientName.value}`
 })
-
-const formatScope = (s: string) => {
-  return { 'user:read': '读取信息', 'user:write': '修改信息', 'user:profile': '个人资料' }[s] || s
-}
 
 const init = async () => {
   loading.value = true
@@ -139,7 +132,7 @@ onMounted(init)
   background: #fff;
 
   &__card {
-    width: 320px;
+    width: 280px;
     text-align: center;
   }
 
@@ -169,33 +162,26 @@ onMounted(init)
     }
   }
 
-  &__title {
-    font-size: 20px;
-    font-weight: 600;
-    color: #1a1a1a;
-    margin: 0 0 8px;
-  }
-
-  &__app {
-    font-size: 14px;
-    color: #888;
-    margin: 0 0 32px;
-  }
-
-  &__perms {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px;
-    margin-bottom: 32px;
-  }
-
-  &__perm {
-    font-size: 12px;
-    color: #666;
-    padding: 4px 12px;
-    background: #f5f5f5;
+  &__icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 20px;
     border-radius: 12px;
+    background: #f5f5f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .el-icon {
+      font-size: 24px;
+      color: #666;
+    }
+  }
+
+  &__desc {
+    font-size: 15px;
+    color: #333;
+    margin: 0 0 32px;
   }
 
   &__btn {
