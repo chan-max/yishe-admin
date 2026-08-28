@@ -124,6 +124,11 @@ router.beforeEach(async (to, from, next) => {
         next({ path: resolveFirstAccessiblePath(), replace: true });
         return;
       }
+      // OAuth 授权页面：跳过菜单权限检查，直接放行
+      if (to.path === "/oauth/authorize") {
+        next();
+        return;
+      }
       if (needsUserInit) {
         if (!hasPageAccess(to, userStore.getUser)) {
           handleDeniedRoute(to, next);
