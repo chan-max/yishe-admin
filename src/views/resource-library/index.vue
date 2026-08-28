@@ -5,6 +5,32 @@
       <div class="res-lib-toolbar__left">
         <span class="res-lib-title">{{ currentModuleTitle }}</span>
         <span v-if="total" class="res-lib-count">({{ total }})</span>
+        
+        <!-- 批量操作栏 -->
+        <template v-if="selectedIds.length">
+          <span class="res-lib-selected-badge">已选 {{ selectedIds.length }} 项</span>
+          <el-button size="small" @click="toggleSelectAll">
+            {{ isAllSelected ? '取消全选' : '全选本页' }}
+          </el-button>
+          <el-button
+            size="small"
+            type="primary"
+            :loading="batchImporting"
+            @click="handleBatchImport"
+          >
+            批量保存到我的空间 ({{ selectedIds.length }})
+          </el-button>
+          <el-button
+            v-if="isAdmin"
+            size="small"
+            type="danger"
+            :loading="batchRemoving"
+            @click="handleBatchRemove"
+          >
+            批量下架 ({{ selectedIds.length }})
+          </el-button>
+          <el-button size="small" link @click="clearSelection">清空</el-button>
+        </template>
       </div>
       <div class="res-lib-toolbar__right">
         <el-input
@@ -32,7 +58,21 @@
           v-for="item in libraryList"
           :key="item.id"
           class="res-wall__item"
+          :class="{ 'is-selected': selectedIds.includes(item.id) }"
         >
+          <!-- 多选勾选浮层 -->
+          <div
+            class="res-wall__checkbox"
+            :class="{ 'is-checked': selectedIds.includes(item.id) }"
+            title="选择"
+            @click.stop="toggleItemSelection(item.id)"
+          >
+            <Icon
+              :icon="selectedIds.includes(item.id) ? 'lucide:check-circle-2' : 'lucide:circle'"
+              :size="18"
+            />
+          </div>
+
           <div class="res-wall__img-box" @click="openImagePreview(item.coverUrl)">
             <img
               :src="getFastPreviewImageUrl(item.coverUrl, { width: 300, quality: 80, format: 'webp' })"
@@ -78,17 +118,18 @@
                   >
                     保存
                   </el-button>
-                  <el-button
-                    v-if="isAdmin"
-                    type="danger"
-                    link
-                    size="small"
-                    class="res-btn-mini"
-                    :loading="deletingId === item.id"
-                    @click.stop="handleRemove(item)"
-                  >
-                    下架
-                  </el-button>
+                  <el-tooltip v-if="isAdmin" content="下架/移出广场" placement="top" :show-after="300">
+                    <el-button
+                      type="danger"
+                      circle
+                      size="small"
+                      class="res-btn-icon-danger"
+                      :loading="deletingId === item.id"
+                      @click.stop="handleRemove(item)"
+                    >
+                      <Icon icon="lucide:trash-2" :size="13" />
+                    </el-button>
+                  </el-tooltip>
                 </div>
               </div>
             </div>
@@ -102,17 +143,46 @@
           v-for="item in libraryList"
           :key="item.id"
           class="res-text-card"
+          :class="{ 'is-selected': selectedIds.includes(item.id) }"
         >
           <div class="res-text-card__header">
-            <div class="res-text-card__icon">
-              <Icon :icon="getTypeIcon(currentResourceType)" :size="14" />
+            <div class="res-text-card__header-left">
+              <!-- 多选勾选浮层 -->
+              <div
+                class="res-text-card__checkbox"
+                :class="{ 'is-checked': selectedIds.includes(item.id) }"
+                title="选择"
+                @click.stop="toggleItemSelection(item.id)"
+              >
+                <Icon
+                  :icon="selectedIds.includes(item.id) ? 'lucide:check-circle-2' : 'lucide:circle'"
+                  :size="16"
+                />
+              </div>
+              <div class="res-text-card__icon">
+                <Icon :icon="getTypeIcon(currentResourceType)" :size="14" />
+              </div>
             </div>
-            <el-button
-              class="res-text-card__more"
-              @click.stop="openDetailDialog(item)"
-            >
-              <Icon icon="lucide:more-horizontal" :size="12" />
-            </el-button>
+            <div class="res-text-card__header-right">
+              <el-tooltip v-if="isAdmin" content="下架/移出广场" placement="top" :show-after="300">
+                <el-button
+                  type="danger"
+                  link
+                  size="small"
+                  class="res-text-card__remove-icon"
+                  :loading="deletingId === item.id"
+                  @click.stop="handleRemove(item)"
+                >
+                  <Icon icon="lucide:trash-2" :size="14" />
+                </el-button>
+              </el-tooltip>
+              <el-button
+                class="res-text-card__more"
+                @click.stop="openDetailDialog(item)"
+              >
+                <Icon icon="lucide:more-horizontal" :size="12" />
+              </el-button>
+            </div>
           </div>
           <div class="res-text-card__body">
             <span class="res-text-card__title" :title="item.name">{{ item.name }}</span>
@@ -137,18 +207,6 @@
               @click.stop="handleImport(item)"
             >
               保存
-            </el-button>
-          </div>
-          <div v-if="isAdmin" class="res-text-card__admin">
-            <el-button
-              type="danger"
-              link
-              size="small"
-              class="res-btn-mini"
-              :loading="deletingId === item.id"
-              @click.stop="handleRemove(item)"
-            >
-              下架
             </el-button>
           </div>
         </div>
@@ -256,6 +314,85 @@ const libraryList = ref<ResourceLibraryItem[]>([])
 const total = ref(0)
 const importingId = ref<string | null>(null)
 const deletingId = ref<string | null>(null)
+
+// 多选状态
+const selectedIds = ref<string[]>([])
+const batchImporting = ref(false)
+const batchRemoving = ref(false)
+
+const isAllSelected = computed(() => {
+  return (
+    libraryList.value.length > 0 &&
+    libraryList.value.every((item) => selectedIds.value.includes(item.id))
+  )
+})
+
+function toggleItemSelection(id: string) {
+  const idx = selectedIds.value.indexOf(id)
+  if (idx > -1) {
+    selectedIds.value.splice(idx, 1)
+  } else {
+    selectedIds.value.push(id)
+  }
+}
+
+function toggleSelectAll() {
+  if (isAllSelected.value) {
+    const pageIds = new Set(libraryList.value.map((i) => i.id))
+    selectedIds.value = selectedIds.value.filter((id) => !pageIds.has(id))
+  } else {
+    const nextSet = new Set(selectedIds.value)
+    libraryList.value.forEach((i) => nextSet.add(i.id))
+    selectedIds.value = Array.from(nextSet)
+  }
+}
+
+function clearSelection() {
+  selectedIds.value = []
+}
+
+// 批量保存
+async function handleBatchImport() {
+  if (!selectedIds.value.length) return
+  const ids = [...selectedIds.value]
+  batchImporting.value = true
+  try {
+    const res = await ResourceLibraryApi.batchImportToUser(ids)
+    ElMessage.success(`成功将 ${res?.successCount || ids.length} 项资源保存到我的空间`)
+    clearSelection()
+    loadData()
+  } catch (err: any) {
+    ElMessage.error(err?.message || '批量保存失败')
+  } finally {
+    batchImporting.value = false
+  }
+}
+
+// 批量下架
+async function handleBatchRemove() {
+  if (!selectedIds.value.length) return
+  const ids = [...selectedIds.value]
+  try {
+    await ElMessageBox.confirm(
+      `确定要将选中的 ${ids.length} 项资源从公共广场下架吗？已保存用户的私有数据不受影响。`,
+      '批量下架确认',
+      {
+        confirmButtonText: '确定下架',
+        cancelButtonText: '取消',
+        type: 'warning',
+      },
+    )
+    batchRemoving.value = true
+    await ResourceLibraryApi.batchRemove(ids)
+    ElMessage.success(`已成功下架 ${ids.length} 项资源`)
+    clearSelection()
+    loadData()
+  } catch {
+    // cancel
+  } finally {
+    batchRemoving.value = false
+  }
+}
 
 // 图片预览
 const previewViewerVisible = ref(false)
@@ -438,6 +575,15 @@ onMounted(() => {
   color: var(--el-text-color-secondary);
 }
 
+.res-lib-selected-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--el-color-primary);
+  background: color-mix(in srgb, var(--el-color-primary) 12%, transparent);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
 .res-lib-toolbar__right {
   display: flex;
   align-items: center;
@@ -498,6 +644,51 @@ onMounted(() => {
   /* 提升为合成层，避免 hover 卡顿 */
   will-change: transform;
   transform: translateZ(0);
+  transition: box-shadow 0.15s ease, outline 0.15s ease;
+}
+
+.res-wall__item.is-selected {
+  outline: 2.5px solid var(--el-color-primary);
+  outline-offset: -1px;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--el-color-primary) 25%, transparent);
+}
+
+/* 多选勾选浮层 */
+.res-wall__checkbox {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 10;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(0 0 0 / 45%);
+  color: rgb(255 255 255 / 85%);
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.15s ease;
+  backdrop-filter: blur(4px);
+}
+
+.res-wall__item:hover .res-wall__checkbox,
+.res-wall__checkbox.is-checked {
+  opacity: 1;
+}
+
+.res-wall__checkbox:hover {
+  background: rgb(0 0 0 / 70%);
+  color: #fff;
+  transform: scale(1.08);
+}
+
+.res-wall__checkbox.is-checked {
+  background: var(--el-color-primary) !important;
+  color: #fff !important;
+  opacity: 1 !important;
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--el-color-primary) 40%, transparent);
 }
 
 .res-wall__img-box {
@@ -627,7 +818,22 @@ onMounted(() => {
 
 .res-wall__actions {
   display: flex;
+  align-items: center;
   gap: 4px;
+}
+
+.res-btn-icon-danger {
+  width: 24px !important;
+  height: 24px !important;
+  padding: 0 !important;
+  background: rgb(245 108 108 / 85%) !important;
+  border: none !important;
+  color: #fff !important;
+}
+
+.res-btn-icon-danger:hover {
+  background: #f56c6c !important;
+  transform: scale(1.08);
 }
 
 /* ============================================================
@@ -647,7 +853,8 @@ onMounted(() => {
   background: var(--el-bg-color-overlay);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 6px;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, outline 0.15s ease;
+  position: relative;
 }
 
 .res-text-card:hover {
@@ -655,10 +862,64 @@ onMounted(() => {
   box-shadow: 0 2px 8px rgb(0 0 0 / 4%);
 }
 
+.res-text-card.is-selected {
+  border-color: var(--el-color-primary);
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: -1px;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--el-color-primary) 18%, transparent);
+}
+
 .res-text-card__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.res-text-card__header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.res-text-card__header-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.res-text-card__checkbox {
+  cursor: pointer;
+  color: var(--el-text-color-placeholder);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.res-text-card__checkbox:hover {
+  color: var(--el-color-primary);
+}
+
+.res-text-card__checkbox.is-checked {
+  color: var(--el-color-primary);
+}
+
+.res-text-card__remove-icon {
+  width: 22px !important;
+  height: 22px !important;
+  padding: 0 !important;
+  color: var(--el-color-danger) !important;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.res-text-card:hover .res-text-card__remove-icon {
+  opacity: 0.85;
+}
+
+.res-text-card__remove-icon:hover {
+  opacity: 1 !important;
+  transform: scale(1.1);
 }
 
 .res-text-card__icon {
@@ -757,18 +1018,6 @@ onMounted(() => {
   font-size: 11px !important;
   border-radius: 4px !important;
   flex: none;
-}
-
-.res-text-card__admin {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  opacity: 0;
-  transition: opacity 0.15s ease;
-}
-
-.res-text-card:hover .res-text-card__admin {
-  opacity: 1;
 }
 
 /* 通用按钮样式 */

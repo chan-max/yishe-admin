@@ -64,6 +64,21 @@ export const ResourceLibraryApi = {
     })
   },
 
+  // 批量导入到个人空间
+  batchImportToUser: async (ids: string[]) => {
+    return await request.post<{
+      success: boolean;
+      total: number;
+      successCount: number;
+      failedCount: number;
+      list: any[];
+      failed: any[];
+    }>({
+      url: '/resource-library/batch-import',
+      data: { ids },
+    })
+  },
+
   // 更新
   update: async (data: Partial<ResourceLibraryItem> & { id: string }) => {
     return await request.post({ url: '/resource-library/update', data })
@@ -72,6 +87,14 @@ export const ResourceLibraryApi = {
   // 管理员下架/删除
   remove: async (id: string) => {
     return await request.delete({ url: `/resource-library/${id}` })
+  },
+
+  // 管理员批量下架
+  batchRemove: async (ids: string[]) => {
+    return await request.post<{ success: boolean; count: number }>({
+      url: '/resource-library/batch-remove',
+      data: { ids },
+    })
   },
 
   // 获取资源广场各类型的最新发布时间（用于菜单"新"标签）
