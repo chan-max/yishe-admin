@@ -102,7 +102,7 @@ const handleConfirm = async () => {
     const res = await confirmAuthorize({
       client_id: route.query.client_id as string,
       redirect_uri: redirectUri.value,
-      scope: scopeList.value.join(' ),
+      scope: scopeList.value.join(' '),
       state: stateVal.value
     })
     const sep = redirectUri.value.includes('?') ? '&' : '?'
