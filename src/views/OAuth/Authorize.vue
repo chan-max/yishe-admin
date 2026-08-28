@@ -48,14 +48,8 @@ const scopeList = ref<string[]>([])
 const redirectUri = ref('')
 const stateVal = ref('')
 
-/** 根据 client_id 显示授权文案 */
-const authorizeText = computed(() => {
-  const map: Record<string, string> = {
-    'yishe-client': '正在授权客户端',
-    'yishe-extension': '正在授权插件'
-  }
-  return map[clientName.value] || `正在授权 ${clientName.value}`
-})
+/** 授权文案 */
+const authorizeText = computed(() => `正在授权${clientName.value}`)
 
 const init = async () => {
   loading.value = true
