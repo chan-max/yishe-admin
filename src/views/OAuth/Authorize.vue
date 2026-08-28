@@ -1,83 +1,71 @@
 <template>
-  <div class="oauth-authorize">
-    <div class="oauth-authorize__card">
-      <!-- Logo -->
-      <div class="oauth-authorize__logo">
-        <img src="/src/assets/imgs/logo.png" alt="一设设计" />
+  <div class="oauth">
+    <div class="oauth__box">
+      <!-- 顶部品牌 -->
+      <div class="oauth__brand">
+        <img src="/src/assets/imgs/logo.png" alt="1s" class="oauth__logo" />
+        <span class="oauth__brand-name">一设设计</span>
       </div>
 
-      <h2 class="oauth-authorize__title">授权登录</h2>
-
       <!-- 加载中 -->
-      <div v-if="loading" class="oauth-authorize__loading">
-        <el-icon class="is-loading"><Loading /></el-icon>
+      <div v-if="loading" class="oauth__state">
+        <el-icon class="oauth__spinner"><Loading /></el-icon>
         <span>加载中...</span>
       </div>
 
-      <!-- 错误提示 -->
-      <div v-else-if="error" class="oauth-authorize__error">
-        <el-alert :title="error" type="error" show-icon :closable="false" />
-        <el-button class="oauth-authorize__back" @click="handleGoBack">
-          返回
-        </el-button>
+      <!-- 错误 -->
+      <div v-else-if="error" class="oauth__state">
+        <el-icon class="oauth__error-icon"><CircleClose /></el-icon>
+        <span>{{ error }}</span>
+        <el-button class="oauth__btn oauth__btn--ghost" @click="handleGoBack">返回</el-button>
       </div>
 
       <!-- 授权内容 -->
-      <div v-else class="oauth-authorize__content">
-        <!-- 应用信息 -->
-        <div class="oauth-authorize__client">
-          <el-icon class="oauth-authorize__client-icon"><Connection /></el-icon>
-          <span class="oauth-authorize__client-name">{{ clientName }}</span>
-          <span class="oauth-authorize__client-tip">请求使用一设账号登录</span>
+      <div v-else class="oauth__body">
+        <!-- 标题 -->
+        <h1 class="oauth__title">使用一设账号登录</h1>
+        <p class="oauth__subtitle">{{ clientName }}</p>
+
+        <!-- 权限列表 -->
+        <div class="oauth__scopes">
+          <div v-for="scope in scopeList" :key="scope" class="oauth__scope">
+            <el-icon class="oauth__scope-check"><Check /></el-icon>
+            <span>{{ formatScope(scope) }}</span>
+          </div>
         </div>
 
-        <!-- 用户信息 -->
-        <div class="oauth-authorize__user">
-          <el-avatar :size="32" class="oauth-authorize__avatar">
-            {{ userAccount?.charAt(0)?.toUpperCase() || 'U' }}
-          </el-avatar>
-          <span class="oauth-authorize__user-name">{{ userAccount }}</span>
+        <!-- 用户 -->
+        <div class="oauth__user">
+          <div class="oauth__user-avatar">{{ userAccount?.charAt(0)?.toUpperCase() || 'U' }}</div>
+          <span class="oauth__user-name">{{ userAccount }}</span>
         </div>
 
-        <!-- 权限说明 -->
-        <div class="oauth-authorize__scopes">
-          <span class="oauth-authorize__scopes-title">该应用将获得以下权限：</span>
-          <ul class="oauth-authorize__scopes-list">
-            <li v-for="scope in scopeList" :key="scope" class="oauth-authorize__scope-item">
-              <el-icon class="oauth-authorize__scope-icon"><Check /></el-icon>
-              <span>{{ formatScope(scope) }}</span>
-            </li>
-          </ul>
-        </div>
-
-        <!-- 操作按钮 -->
-        <div class="oauth-authorize__actions">
+        <!-- 按钮 -->
+        <div class="oauth__actions">
           <el-button
             type="primary"
             :loading="submitting"
-            class="oauth-authorize__btn"
+            class="oauth__btn oauth__btn--primary"
             @click="handleConfirm"
           >
-            同意授权
+            同意并继续
           </el-button>
-          <el-button class="oauth-authorize__btn" @click="handleReject">
-            拒绝
+          <el-button class="oauth__btn oauth__btn--ghost" @click="handleReject">
+            取消
           </el-button>
-        </div>
-
-        <!-- 环境提示 -->
-        <div v-if="isDevEnvironment" class="oauth-authorize__env-tip">
-          <el-tag size="small" type="info">开发环境</el-tag>
         </div>
       </div>
     </div>
+
+    <!-- 底部 -->
+    <p class="oauth__footer">授权后将自动跳转回应用</p>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Loading, Connection, Check } from '@element-plus/icons-vue'
+import { Loading, Check, CircleClose } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { getAuthorizeInfo, confirmAuthorize } from '@/api/oauth'
 
@@ -95,7 +83,6 @@ const redirectUri = ref('')
 const stateVal = ref('')
 
 const userAccount = computed(() => {
-  // 从 store 获取当前登录用户
   const userStr = localStorage.getItem('userInfo')
   if (userStr) {
     try {
@@ -108,25 +95,17 @@ const userAccount = computed(() => {
   return '用户'
 })
 
-/** 判断是否为开发环境 */
-const isDevEnvironment = computed(() => {
-  const uri = redirectUri.value
-  return uri.includes('localhost') || uri.includes('127.0.0.1') || uri.includes('1521')
-})
-
-/** 格式化 scope 文本 */
 const formatScope = (scope: string): string => {
-  const scopeMap: Record<string, string> = {
+  const map: Record<string, string> = {
     'user:read': '读取你的基本信息',
     'user:write': '修改你的基本信息',
     'user:profile': '访问你的个人资料',
     'file:read': '读取你的文件',
     'file:write': '上传和修改你的文件'
   }
-  return scopeMap[scope] || scope
+  return map[scope] || scope
 }
 
-/** 初始化授权信息 */
 const init = async () => {
   loading.value = true
   error.value = ''
@@ -137,7 +116,7 @@ const init = async () => {
   const state = route.query.state as string | undefined
 
   if (!clientId || !redirect) {
-    error.value = '缺少必要参数（client_id 或 redirect_uri）'
+    error.value = '缺少必要参数'
     loading.value = false
     return
   }
@@ -152,7 +131,6 @@ const init = async () => {
       scope,
       state
     })
-
     clientName.value = res?.client?.name || clientId
     scopeList.value = res?.scope?.split(' ') || res?.client?.scopes || ['user:read']
     loading.value = false
@@ -162,7 +140,6 @@ const init = async () => {
   }
 }
 
-/** 确认授权 */
 const handleConfirm = async () => {
   submitting.value = true
   try {
@@ -173,15 +150,12 @@ const handleConfirm = async () => {
       state: stateVal.value
     })
 
-    // 拼接授权码到回调地址
     const code = res.code
     const separator = redirectUri.value.includes('?') ? '&' : '?'
     let callbackUrl = `${redirectUri.value}${separator}code=${encodeURIComponent(code)}`
     if (stateVal.value) {
       callbackUrl += `&state=${encodeURIComponent(stateVal.value)}`
     }
-
-    // 跳转到客户端回调地址
     window.location.href = callbackUrl
   } catch (err: any) {
     ElMessage.error(err?.message || '授权失败，请重试')
@@ -190,19 +164,15 @@ const handleConfirm = async () => {
   }
 }
 
-/** 拒绝授权 */
 const handleReject = () => {
-  // 如果 redirect_uri 有效，返回错误信息
   if (redirectUri.value) {
     const separator = redirectUri.value.includes('?') ? '&' : '?'
-    const callbackUrl = `${redirectUri.value}${separator}error=access_denied&error_description=用户拒绝授权`
-    window.location.href = callbackUrl
+    window.location.href = `${redirectUri.value}${separator}error=access_denied`
   } else {
     router.push('/login')
   }
 }
 
-/** 返回 */
 const handleGoBack = () => {
   if (redirectUri.value) {
     const separator = redirectUri.value.includes('?') ? '&' : '?'
@@ -218,154 +188,178 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.oauth-authorize {
+.oauth {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 20px;
+  background: #fafafa;
+  padding: 24px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-  &__card {
+  &__box {
     width: 100%;
-    max-width: 420px;
+    max-width: 380px;
     background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgb(0 0 0 / 10%);
-    padding: 32px;
+    border: 1px solid #eaeaea;
+    border-radius: 8px;
+    padding: 36px 32px;
   }
 
-  &__logo {
-    text-align: center;
-    margin-bottom: 16px;
-
-    img {
-      height: 40px;
-    }
-  }
-
-  &__title {
-    text-align: center;
-    font-size: 20px;
-    font-weight: 600;
-    color: #303133;
-    margin: 0 0 24px;
-  }
-
-  &__loading {
+  &__brand {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 40px 0;
-    color: #909399;
+    margin-bottom: 32px;
   }
 
-  &__error {
-    :deep(.el-alert) {
-      margin-bottom: 16px;
-    }
+  &__logo {
+    height: 24px;
   }
 
-  &__back {
-    width: 100%;
+  &__brand-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #333;
   }
 
-  &__content {
+  &__state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 32px 0;
+    color: #666;
+    font-size: 14px;
+  }
+
+  &__spinner {
+    font-size: 24px;
+    animation: spin 1s linear infinite;
+  }
+
+  &__error-icon {
+    font-size: 24px;
+    color: #f56c6c;
+  }
+
+  &__body {
     display: flex;
     flex-direction: column;
     gap: 20px;
   }
 
-  &__client {
+  &__title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a1a1a;
+    text-align: center;
+    margin: 0;
+  }
+
+  &__subtitle {
+    font-size: 13px;
+    color: #888;
+    text-align: center;
+    margin: 0;
+  }
+
+  &__scopes {
     display: flex;
     flex-direction: column;
-    align-items: center;
     gap: 8px;
     padding: 16px;
-    background: #f5f7fa;
-    border-radius: 8px;
+    background: #f8f8f8;
+    border-radius: 6px;
   }
 
-  &__client-icon {
-    font-size: 28px;
-    color: #409eff;
-  }
-
-  &__client-name {
-    font-size: 16px;
-    font-weight: 600;
-    color: #303133;
-  }
-
-  &__client-tip {
+  &__scope {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-size: 13px;
-    color: #909399;
+    color: #555;
+  }
+
+  &__scope-check {
+    color: #52c41a;
+    font-size: 14px;
   }
 
   &__user {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 12px;
-    border: 1px solid #ebeef5;
-    border-radius: 8px;
+    padding: 12px 16px;
+    background: #f0f7ff;
+    border-radius: 6px;
   }
 
-  &__avatar {
+  &__user-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
     background: #409eff;
     color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   &__user-name {
-    font-size: 14px;
-    color: #606266;
-  }
-
-  &__scopes {
-    padding: 12px 0;
-  }
-
-  &__scopes-title {
     font-size: 13px;
-    color: #606266;
-    margin-bottom: 8px;
-    display: block;
-  }
-
-  &__scopes-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  &__scope-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: #606266;
-  }
-
-  &__scope-icon {
-    color: #67c23a;
-    font-size: 14px;
+    color: #333;
+    font-weight: 500;
   }
 
   &__actions {
     display: flex;
-    gap: 12px;
+    flex-direction: column;
+    gap: 8px;
   }
 
   &__btn {
-    flex: 1;
+    width: 100%;
+    height: 40px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+
+    &--primary {
+      background: #1a1a1a;
+      border-color: #1a1a1a;
+    }
+
+    &--primary:hover {
+      background: #333;
+      border-color: #333;
+    }
+
+    &--ghost {
+      background: transparent;
+      border-color: #d9d9d9;
+      color: #666;
+    }
+
+    &--ghost:hover {
+      border-color: #999;
+      color: #333;
+    }
   }
 
-  &__env-tip {
+  &__footer {
+    margin-top: 20px;
+    font-size: 12px;
+    color: #bbb;
     text-align: center;
   }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>
