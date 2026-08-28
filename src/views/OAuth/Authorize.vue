@@ -51,10 +51,10 @@ const stateVal = ref('')
 /** 根据 client_id 显示授权文案 */
 const authorizeText = computed(() => {
   const map: Record<string, string> = {
-    'yishe-client': '衣设正在授权设计工具',
-    'yishe-extension': '衣设正在授权浏览器插件'
+    'yishe-client': '正在授权客户端',
+    'yishe-extension': '正在授权插件'
   }
-  return map[clientName.value] || `衣设正在授权 ${clientName.value}`
+  return map[clientName.value] || `正在授权 ${clientName.value}`
 })
 
 const init = async () => {
