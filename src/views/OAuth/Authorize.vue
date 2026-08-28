@@ -3,7 +3,7 @@
     <div class="oauth-authorize__card">
       <!-- Logo -->
       <div class="oauth-authorize__logo">
-        <img src="/logo.png" alt="一设设计" />
+        <img src="/src/assets/imgs/logo.png" alt="一设设计" />
       </div>
 
       <h2 class="oauth-authorize__title">授权登录</h2>
