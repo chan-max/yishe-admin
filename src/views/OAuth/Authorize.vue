@@ -51,10 +51,10 @@ const stateVal = ref('')
 /** 根据 client_id 显示授权文案 */
 const authorizeText = computed(() => {
   const map: Record<string, string> = {
-    'yishe-client': '正在授权设计工具',
-    'yishe-extension': '正在授权浏览器插件'
+    'yishe-client': '衣设正在授权设计工具',
+    'yishe-extension': '衣设正在授权浏览器插件'
   }
-  return map[clientName.value] || `正在授权 ${clientName.value}`
+  return map[clientName.value] || `衣设正在授权 ${clientName.value}`
 })
 
 const init = async () => {
@@ -161,25 +161,25 @@ onMounted(init)
   }
 
   &__logo {
-    width: 48px;
-    height: 48px;
-    margin: 0 auto 20px;
-    border-radius: 12px;
+    width: 32px;
+    height: 32px;
+    margin: 0 auto 16px;
+    border-radius: 8px;
     object-fit: cover;
   }
 
   &__desc {
-    font-size: 15px;
-    color: #333;
-    margin: 0 0 32px;
+    font-size: 13px;
+    color: #666;
+    margin: 0 0 24px;
   }
 
   &__btn {
     width: 100%;
-    height: 40px;
+    height: 32px;
     border: none;
-    border-radius: 6px;
-    font-size: 14px;
+    border-radius: 4px;
+    font-size: 13px;
     font-weight: 500;
     cursor: pointer;
     transition: opacity 0.15s;
@@ -197,6 +197,7 @@ onMounted(init)
     &--text {
       background: transparent;
       color: #999;
+      font-size: 12px;
     }
 
     &--text:hover {
