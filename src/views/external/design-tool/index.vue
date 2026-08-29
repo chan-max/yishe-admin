@@ -285,41 +285,35 @@
         <div class="cp-footer">
           <!-- 参数配置条 -->
           <div class="cp-specs">
-            <div class="cp-spec-item">
-              <el-radio-group v-model="adminTaskConfig.preset" size="small" @change="onPresetChange">
-                <el-radio-button label="single">单图</el-radio-button>
-                <el-radio-button label="group">组图</el-radio-button>
-                <el-radio-button label="batch">批量</el-radio-button>
-              </el-radio-group>
-            </div>
+            <el-radio-group v-model="adminTaskConfig.preset" size="small" @change="onPresetChange">
+              <el-radio-button label="single">单图</el-radio-button>
+              <el-radio-button label="group">组图</el-radio-button>
+              <el-radio-button label="batch">批量</el-radio-button>
+            </el-radio-group>
 
-            <div v-if="adminTaskConfig.preset === 'group'" class="cp-spec-item">
-              <span class="cp-spec-lbl">成员数:</span>
-              <el-select v-model="adminTaskConfig.memberCount" size="small" style="width: 110px">
-                <el-option :value="2" label="2张 (正反面)" />
+            <template v-if="adminTaskConfig.preset === 'group'">
+              <span class="cp-spec-lbl">张数</span>
+              <el-select v-model="adminTaskConfig.memberCount" size="small" style="width: 94px">
+                <el-option :value="2" label="2 (正反面)" />
                 <el-option :value="3" label="3张" />
-                <el-option :value="4" label="4张 (四页)" />
-                <el-option :value="5" label="5张 (套图)" />
+                <el-option :value="4" label="4张" />
+                <el-option :value="5" label="5张" />
               </el-select>
-            </div>
+            </template>
 
-            <div v-if="adminTaskConfig.preset === 'batch'" class="cp-spec-item">
-              <span class="cp-spec-lbl">张数:</span>
-              <el-input-number v-model="adminTaskConfig.jobCount" :min="1" :max="20" size="small" style="width: 80px" controls-position="right" />
-            </div>
+            <template v-if="adminTaskConfig.preset === 'batch'">
+              <span class="cp-spec-lbl">张数</span>
+              <el-input-number v-model="adminTaskConfig.jobCount" :min="1" :max="20" size="small" style="width: 76px" controls-position="right" />
+            </template>
 
-            <div class="cp-spec-item">
-              <span class="cp-spec-lbl">交付:</span>
-              <el-select v-model="adminTaskConfig.delivery" size="small" style="width: 100px">
-                <el-option value="save" label="存入贴纸" />
-                <el-option value="export" label="导出PNG" />
-                <el-option value="canvas" label="留画布" />
-              </el-select>
-            </div>
+            <span class="cp-spec-lbl">交付</span>
+            <el-select v-model="adminTaskConfig.delivery" size="small" style="width: 86px">
+              <el-option value="save" label="存贴纸" />
+              <el-option value="export" label="导出PNG" />
+              <el-option value="canvas" label="留画布" />
+            </el-select>
 
-            <div class="cp-spec-item cp-spec-item--check">
-              <el-checkbox v-model="adminTaskConfig.autoImportToLibrary" size="small">自动入素材库</el-checkbox>
-            </div>
+            <el-checkbox v-model="adminTaskConfig.autoImportToLibrary" size="small">入素材库</el-checkbox>
           </div>
 
           <!-- 输入框与发送 -->
