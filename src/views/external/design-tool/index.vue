@@ -196,42 +196,34 @@
           <section class="cp-main-pane">
             <div v-loading="conversationLoading" class="cp-timeline">
               <template v-if="conversationData?.conversation?.length">
-                <div
-                  v-for="(msg, idx) in conversationData.conversation"
-                  :key="msg.id || idx"
-                  class="cp-msg"
-                  :class="`cp-msg--${msg.role}`"
-                >
-                  <div class="cp-msg__header">
-                    <span class="cp-msg__role">{{ msg.role === 'user' ? '用户需求' : msg.role === 'tool' ? '工具调用' : 'AI 响应' }}</span>
-                    <span v-if="msg.meta?.iteration" class="cp-msg__iter">#{{ msg.meta.iteration }}</span>
-                    <span v-if="msg.meta?.duration" class="cp-msg__dur">{{ msg.meta.duration }}ms</span>
-                    <span class="cp-msg__time">{{ formatMs(msg.timestamp) }}</span>
+                <template v-for="(msg, idx) in conversationData.conversation" :key="msg.id || idx">
+                  <!-- 用户气泡 (右侧) -->
+                  <div v-if="msg.role === 'user'" class="cp-bubble-row cp-bubble-row--user">
+                    <div class="cp-bubble cp-bubble--user">
+                      <div class="cp-bubble__text">{{ msg.content }}</div>
+                    </div>
                   </div>
 
-                  <div v-if="msg.content" class="cp-msg__content">{{ msg.content }}</div>
-
-                  <div v-if="msg.tool_calls?.length" class="cp-msg__tools">
-                    <details v-for="tc in msg.tool_calls" :key="tc.id" class="cp-tool-details" open>
-                      <summary class="cp-tool-summary">
-                        <Icon icon="ep:tools" />
-                        <span>{{ tc.name }}</span>
-                      </summary>
-                      <pre class="cp-tool-json">{{ formatJson(tc.arguments) }}</pre>
-                    </details>
+                  <!-- AI 响应气泡 (左侧) -->
+                  <div v-else-if="msg.role === 'assistant'" class="cp-bubble-row cp-bubble-row--assistant">
+                    <div class="cp-bubble cp-bubble--assistant">
+                      <div v-if="msg.content" class="cp-bubble__text">{{ msg.content }}</div>
+                      <!-- 附带规划信息 -->
+                      <div v-if="msg.meta?.plan" class="cp-bubble__plan">
+                        🎯 目标：{{ msg.meta.plan.goal }} ({{ msg.meta.plan.currentStep || 0 }}/{{ msg.meta.plan.totalSteps }})
+                      </div>
+                    </div>
                   </div>
 
-                  <div v-if="msg.role === 'tool' && msg.meta?.toolResult" class="cp-msg__tool-result">
-                    <span class="cp-tool-tag" :class="msg.meta.toolResult.success ? 'is-ok' : 'is-err'">
-                      {{ msg.meta.toolResult.success ? '执行完成' : '执行失败' }}
-                    </span>
-                    <pre class="cp-tool-json">{{ formatJson(msg.meta.toolResult) }}</pre>
+                  <!-- 工具执行提示 (居中小标签) -->
+                  <div v-else-if="msg.role === 'tool'" class="cp-bubble-row cp-bubble-row--tool">
+                    <div class="cp-tool-pill" :class="msg.meta?.toolResult?.success !== false ? 'is-ok' : 'is-err'">
+                      <Icon icon="ep:tools" />
+                      <span>工具执行{{ msg.meta?.toolResult?.success !== false ? '完成' : '失败' }}</span>
+                      <span v-if="msg.meta?.duration" class="cp-tool-pill__dur">{{ msg.meta.duration }}ms</span>
+                    </div>
                   </div>
-
-                  <div v-if="msg.meta?.plan" class="cp-msg__plan">
-                    🎯 规划：{{ msg.meta.plan.goal }} ({{ msg.meta.plan.currentStep || 0 }}/{{ msg.meta.plan.totalSteps }} 步)
-                  </div>
-                </div>
+                </template>
               </template>
               <div v-else-if="!conversationLoading" class="cp-timeline-empty">
                 <Icon icon="ep:chat-dot-round" class="cp-timeline-empty__icon" />
@@ -1775,18 +1767,17 @@ onBeforeUnmount(() => {
   gap: 12px;
 }
 
-/* ── Modern Studio Console (Zero Overflow, Space-Efficient, Full Theme Compatibility) ── */
+/* ── Modern Studio Console (Pure Element-Plus Tokens, Strict Height Limit, Dual-Theme) ── */
 .cp-studio-dialog :deep(.el-dialog) {
   margin: 0 !important;
   padding: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
+  width: 100vw !important;
+  height: 100vh !important;
   max-width: 100vw !important;
   max-height: 100vh !important;
   overflow: hidden !important;
   display: flex !important;
   flex-direction: column !important;
-  border-radius: 0 !important;
   background: var(--el-bg-color-page) !important;
 }
 
@@ -1801,9 +1792,9 @@ onBeforeUnmount(() => {
   min-height: 0 !important;
   height: 100% !important;
   width: 100% !important;
+  overflow: hidden !important;
   display: flex !important;
   flex-direction: column !important;
-  overflow: hidden !important;
   background: var(--el-bg-color-page) !important;
 }
 
@@ -1813,6 +1804,7 @@ onBeforeUnmount(() => {
   flex: 1 1 0%;
   min-height: 0;
   height: 100%;
+  max-height: 100%;
   width: 100%;
   background: var(--el-bg-color-page);
   color: var(--el-text-color-primary);
@@ -1852,6 +1844,7 @@ onBeforeUnmount(() => {
 .cp-topbar__title {
   font-size: 13px;
   font-weight: 600;
+  color: var(--el-text-color-primary);
   white-space: nowrap;
 }
 
@@ -1859,7 +1852,7 @@ onBeforeUnmount(() => {
   font-family: "SF Mono", Consolas, monospace;
   font-size: 11px;
   color: var(--el-text-color-secondary);
-  background: var(--el-fill-color);
+  background: var(--el-fill-color-light);
   padding: 1px 6px;
   border-radius: 4px;
   white-space: nowrap;
@@ -1881,17 +1874,19 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
 }
 
-/* 工作区分栏 (左侧对话+指令，右侧监控+产物) */
+/* 工作区分栏 */
 .cp-workspace {
   display: flex;
   flex: 1 1 0%;
   min-height: 0;
+  height: calc(100% - 44px);
+  max-height: calc(100% - 44px);
   width: 100%;
   overflow: hidden;
   box-sizing: border-box;
 }
 
-/* 左侧主流面板 (高度严格受限) */
+/* 左侧主流面板 (严格受限高度，防止外溢) */
 .cp-main-pane {
   display: flex;
   flex-direction: column;
@@ -1899,22 +1894,25 @@ onBeforeUnmount(() => {
   min-width: 0;
   min-height: 0;
   height: 100%;
-  border-right: 1px solid var(--el-border-color-lighter);
+  max-height: 100%;
   background: var(--el-bg-color-page);
+  border-right: 1px solid var(--el-border-color-lighter);
   overflow: hidden;
   box-sizing: border-box;
 }
 
-/* 对话执行时间线 (独立滚动，决不超出) */
+/* 对话执行时间线 (最大高度锁定，独立滚动) */
 .cp-timeline {
   flex: 1 1 0%;
   min-height: 0;
+  height: 100%;
+  max-height: 100%;
   padding: 16px;
   overflow-y: auto;
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   box-sizing: border-box;
 }
 
@@ -1934,162 +1932,89 @@ onBeforeUnmount(() => {
   opacity: 0.4;
 }
 
-/* 消息气泡卡片 (黑白双主题完美兼容) */
-.cp-msg {
+/* 经典极简气泡对话流 */
+.cp-bubble-row {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 10px 14px;
-  border-radius: 8px;
-  background: var(--el-bg-color);
-  border: 1px solid var(--el-border-color-lighter);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cp-bubble-row--user {
+  justify-content: flex-end;
+}
+
+.cp-bubble-row--assistant {
+  justify-content: flex-start;
+}
+
+.cp-bubble-row--tool {
+  justify-content: center;
+}
+
+.cp-bubble {
+  max-width: 75%;
+  padding: 8px 12px;
+  border-radius: 12px;
   font-size: 13px;
+  line-height: 1.55;
   word-break: break-word;
   overflow-wrap: anywhere;
   box-sizing: border-box;
 }
 
-/* 用户消息高对比度自适应 */
-.cp-msg--user {
-  background: #f1f5f9;
-  border-color: #e2e8f0;
-  color: #0f172a;
-}
-:global(html.dark) .cp-msg--user {
-  background: #1e293b;
-  border-color: #334155;
-  color: #f8fafc;
+/* 用户气泡：主色背景，白字 */
+.cp-bubble--user {
+  background: var(--el-color-primary);
+  color: #ffffff;
+  border-bottom-right-radius: 2px;
 }
 
-.cp-msg--tool {
+/* AI 响应气泡：中性卡片底色，边框 */
+.cp-bubble--assistant {
   background: var(--el-bg-color);
-  border-left: 3px solid var(--el-color-primary);
-}
-
-.cp-msg--assistant {
-  background: var(--el-bg-color);
-  border-color: var(--el-border-color-lighter);
-}
-
-.cp-msg__header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: var(--el-text-color-secondary);
-}
-
-.cp-msg__role {
-  font-weight: 600;
   color: var(--el-text-color-primary);
+  border: 1px solid var(--el-border-color-lighter);
+  border-bottom-left-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
-.cp-msg__iter {
-  background: var(--el-fill-color);
-  padding: 0 4px;
-  border-radius: 3px;
-  font-size: 10px;
-}
-
-.cp-msg__dur {
-  font-family: monospace;
-  color: var(--el-color-success);
-}
-
-.cp-msg__time {
-  margin-left: auto;
-  font-size: 10px;
-  color: var(--el-text-color-placeholder);
-}
-
-.cp-msg__content {
-  line-height: 1.55;
+.cp-bubble__text {
   white-space: pre-wrap;
-  color: var(--el-text-color-primary);
 }
 
-.cp-tool-details {
-  margin-top: 4px;
-  font-size: 12px;
-}
-
-.cp-tool-summary {
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--el-text-color-secondary);
-  font-weight: 500;
-  user-select: none;
-}
-
-.cp-tool-summary:hover {
+.cp-bubble__plan {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--el-border-color-lighter);
+  font-size: 11px;
   color: var(--el-color-primary);
 }
 
-.cp-tool-json {
-  margin: 4px 0 0;
-  padding: 6px 8px;
-  font-family: "SF Mono", Consolas, monospace;
+/* 工具调用极简中性胶囊 */
+.cp-tool-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
   font-size: 11px;
-  line-height: 1.4;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  color: #334155;
-  border-radius: 4px;
-  max-height: 120px;
-  overflow-y: auto;
-  overflow-x: auto;
-  box-sizing: border-box;
-}
-:global(html.dark) .cp-tool-json {
-  background: #0f172a;
-  border-color: #1e293b;
-  color: #94a3b8;
+  background: var(--el-fill-color-light);
+  color: var(--el-text-color-secondary);
+  border: 1px solid var(--el-border-color-lighter);
 }
 
-.cp-tool-tag {
-  display: inline-block;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 3px;
+.cp-tool-pill.is-ok {
+  color: var(--el-color-success);
 }
 
-.cp-tool-tag.is-ok {
-  color: #059669;
-  background: #ecfdf5;
-  border: 1px solid #a7f3d0;
-}
-:global(html.dark) .cp-tool-tag.is-ok {
-  color: #34d399;
-  background: rgba(5, 150, 105, 0.2);
-  border-color: rgba(5, 150, 105, 0.4);
+.cp-tool-pill.is-err {
+  color: var(--el-color-danger);
 }
 
-.cp-tool-tag.is-err {
-  color: #dc2626;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-}
-:global(html.dark) .cp-tool-tag.is-err {
-  color: #f87171;
-  background: rgba(220, 38, 38, 0.2);
-  border-color: rgba(220, 38, 38, 0.4);
-}
-
-.cp-msg__plan {
-  font-size: 12px;
-  color: #2563eb;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  padding: 4px 8px;
-  border-radius: 4px;
-}
-:global(html.dark) .cp-msg__plan {
-  color: #60a5fa;
-  background: rgba(37, 99, 235, 0.15);
-  border-color: rgba(37, 99, 235, 0.3);
+.cp-tool-pill__dur {
+  font-family: monospace;
+  font-size: 10px;
+  opacity: 0.7;
 }
 
 /* 底部极简指令舱 (固定底部) */
@@ -2163,7 +2088,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 4px;
   padding: 4px 8px;
-  background: var(--el-fill-color);
+  background: var(--el-fill-color-light);
   border-radius: 4px;
 }
 
@@ -2196,7 +2121,7 @@ onBeforeUnmount(() => {
 .cp-dock__ticker-msg { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cp-dock__ticker-time { color: var(--el-text-color-placeholder); }
 
-/* 右侧侧边栏 (固定 360px，自成体系) */
+/* 右侧侧边栏 (固定 360px) */
 .cp-side-pane {
   width: 360px;
   flex-shrink: 0;
@@ -2204,8 +2129,8 @@ onBeforeUnmount(() => {
   flex-direction: column;
   min-height: 0;
   height: 100%;
+  max-height: 100%;
   background: var(--el-bg-color);
-  border-left: 1px solid var(--el-border-color-lighter);
   overflow: hidden;
   box-sizing: border-box;
 }
