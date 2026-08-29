@@ -18,12 +18,6 @@
         </div>
       </div>
       <div class="dt-toolbar__right">
-        <ParallelDesignControl
-          :workers="toolConnections"
-          :selected-workers="selectedToolConnections"
-          @control="(worker) => worker && openControlPanel(worker)"
-          @started="clearWorkerSelection"
-        />
         <el-button size="small" @click="openLaunchDialog">
           <Icon icon="ep:plus" />
           打开实例
@@ -38,7 +32,6 @@
 
     <!-- 表格 -->
     <el-table
-      ref="toolTableRef"
       v-if="toolConnections.length > 0 || initialLoading"
       :data="toolConnections"
       v-loading="initialLoading"
@@ -46,9 +39,7 @@
       size="small"
       row-key="id"
       :row-class-name="tableRowClass"
-      @selection-change="handleWorkerSelectionChange"
     >
-      <el-table-column type="selection" width="42" :selectable="isSelectableWorker" reserve-selection />
       <el-table-column label="实例" min-width="220" show-overflow-tooltip>
         <template #default="{ row }">
           <div class="cell-instance">
@@ -542,8 +533,6 @@ import { useClientNodeStore } from "@/store/modules/clientNode";
 import { normalizeBrowserAutomationProfilesPayload } from "@/services/browserAutomationExecutionContext";
 import { resolveDesignToolUrl } from "@/config/toolRegistry";
 import { isDesignToolConnectionRunning } from "@/services/designToolRuntimeState";
-import ParallelDesignControl from "./components/ParallelDesignControl.vue";
-
 defineOptions({ name: "DesignToolConnection" });
 
 const DESIGN_TOOL_SOURCES = new Set(["设计工具", "设计端"]);
@@ -554,12 +543,6 @@ type TagType = "success" | "warning" | "danger" | "info" | "primary";
 const initialLoading = ref(true);
 const refreshing = ref(false);
 const toolConnections = ref<WebsocketConnectionVO[]>([]);
-const toolTableRef = ref<any>(null);
-const selectedWorkerIds = ref<string[]>([]);
-const selectedToolConnections = computed(() => {
-  const selected = new Set(selectedWorkerIds.value);
-  return toolConnections.value.filter((worker) => selected.has(worker.id));
-});
 const refreshTimer = ref<number | null>(null);
 const lastRefreshAt = ref<string | null>(null);
 const launchDialogVisible = ref(false);
@@ -649,12 +632,6 @@ const hasBusyLaunchProfiles = computed(() => launchProfileOptions.value.some((it
 
 // 工具端视频流状态（从 clientInfo.screenSharing 读取）
 const isStreaming = (row: WebsocketConnectionVO) => !!(row.clientInfo as any)?.screenSharing;
-
-// 工具端视频流状态（当前操控面板目标）
-const streamStatus = computed(() => {
-  if (!controlTarget.value) return "idle";
-  return isStreaming(controlTarget.value) ? "streaming" : "idle";
-});
 
 const adminWsStatusTag = computed<{ text: string; type: TagType }>(() => {
   const s = websocketClient.state.status;
@@ -1002,19 +979,6 @@ const runningToolCount = computed(
   () => toolConnections.value.filter(isDesigning).length,
 );
 
-const isSelectableWorker = (worker: WebsocketConnectionVO) => {
-  if (worker.isOnline === false) return false;
-  return !isDesigning(worker);
-};
-
-const handleWorkerSelectionChange = (workers: WebsocketConnectionVO[]) => {
-  selectedWorkerIds.value = workers.map((worker) => worker.id);
-};
-
-const clearWorkerSelection = () => {
-  selectedWorkerIds.value = [];
-  toolTableRef.value?.clearSelection?.();
-};
 
 const agentLabel = (s: string) =>
   ({ idle: "空闲", thinking: "思考中", executing: "执行中", waiting_user: "等待用户", error: "异常" }[s] || s);
@@ -1076,12 +1040,6 @@ const remoteResultLabel = (result: { success: boolean; phase?: string }) => {
   if (result.phase === "rejected") return "未接收";
   if (result.phase === "cancelled") return "已停止";
   return result.success ? "完成" : "失败";
-};
-
-const remoteResultTagType = (result: { success: boolean; phase?: string }): TagType => {
-  if (result.phase === "accepted" || result.phase === "dispatching") return "primary";
-  if (result.phase === "cancelled") return "info";
-  return result.success ? "success" : "danger";
 };
 
 const openControlPanel = async (row: WebsocketConnectionVO) => {
