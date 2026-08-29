@@ -146,57 +146,39 @@
 
     <el-empty v-else description="当前没有已连接的设计工具" :image-size="60" />
 
-    <!-- 全屏极简设计端控制台 -->
+    <!-- 全屏极简设计工作台 -->
     <el-dialog
       v-model="controlPanelVisible"
-      class="cp-fullscreen-dialog"
+      class="cp-studio-dialog"
       fullscreen
       :show-close="false"
       :close-on-click-modal="false"
       destroy-on-close
       @close="onControlPanelClose"
     >
-      <div v-if="controlTarget" class="cp-card">
-        <!-- 顶部精简导航 -->
-        <header class="cp-header">
-          <div class="cp-header__meta">
-            <div class="cp-header__title">
-              <Icon icon="ep:cpu" class="cp-header__icon" />
-              <span class="cp-header__name">设计端控制台</span>
-              <span class="cp-header__cid">{{ controlTarget.id }}</span>
-            </div>
-            <div class="cp-header__status">
-              <el-tag v-if="getAgent(controlTarget)" :type="agentTagType(getAgent(controlTarget).agentState)" size="small" effect="light">
-                {{ agentLabel(getAgent(controlTarget).agentState) }}
-              </el-tag>
-              <el-tooltip v-if="getAgent(controlTarget)?.step" :content="getAgent(controlTarget)?.step" placement="bottom">
-                <span class="cp-header__step">
-                  {{ getAgent(controlTarget)?.step }}
-                </span>
-              </el-tooltip>
-            </div>
+      <div v-if="controlTarget" class="cp-studio">
+        <!-- 顶部极简工具栏 -->
+        <header class="cp-topbar">
+          <div class="cp-topbar__left">
+            <Icon icon="ep:cpu" class="cp-topbar__icon" />
+            <span class="cp-topbar__title">设计端工作台</span>
+            <span class="cp-topbar__badge">{{ controlTarget.id }}</span>
+            <el-tag v-if="getAgent(controlTarget)" :type="agentTagType(getAgent(controlTarget).agentState)" size="small" effect="plain" class="cp-topbar__tag">
+              {{ agentLabel(getAgent(controlTarget).agentState) }}
+            </el-tag>
+            <el-tooltip v-if="getAgent(controlTarget)?.step" :content="getAgent(controlTarget)?.step" placement="bottom">
+              <span class="cp-topbar__step">{{ getAgent(controlTarget)?.step }}</span>
+            </el-tooltip>
           </div>
 
-          <div class="cp-header__actions">
-            <!-- 屏幕监控弹窗触发按钮 -->
-            <el-button
-              size="small"
-              :type="monitorStatus.connected ? 'success' : 'default'"
-              :plain="!monitorStatus.connected"
-              @click="openMonitorDialog"
-            >
-              <Icon icon="ep:video-camera" />
-              <span>{{ monitorStatus.connected ? '实时监控(连)' : '屏幕监控' }}</span>
-            </el-button>
-
-            <!-- 快捷工具按钮组 -->
-            <el-button size="small" :loading="snapshotLoading" plain @click="captureRemoteSnapshot">
+          <div class="cp-topbar__right">
+            <el-button size="small" :loading="snapshotLoading" text bg @click="captureRemoteSnapshot">
               <Icon icon="ep:camera" /> 快照
             </el-button>
-            <el-button size="small" type="warning" plain @click="sendRemoteClear(controlTarget!)">
+            <el-button size="small" text bg type="warning" @click="sendRemoteClear(controlTarget!)">
               <Icon icon="ep:delete" /> 清空
             </el-button>
-            <el-button size="small" type="danger" plain @click="sendRemoteStop(controlTarget!)">
+            <el-button size="small" text bg type="danger" @click="sendRemoteStop(controlTarget!)">
               <Icon icon="ep:video-pause" /> 停止
             </el-button>
             <el-button size="small" text circle :loading="conversationLoading" @click="fetchConversation(controlTarget!)">
@@ -208,148 +190,123 @@
           </div>
         </header>
 
-        <!-- 中间：对话与思考日志流 -->
-        <main v-loading="conversationLoading" class="cp-body">
-          <div class="cp-body-inner">
-            <template v-if="conversationData?.conversation?.length">
-              <div
-                v-for="(msg, idx) in conversationData.conversation"
-                :key="msg.id || idx"
-                class="conv-bubble"
-                :class="`conv-bubble--${msg.role}`"
-              >
-                <div class="conv-bubble__header">
-                  <span class="conv-bubble__role">{{ msg.role === 'user' ? '用户需求' : msg.role === 'tool' ? '工具执行' : 'Agent 响应' }}</span>
-                  <span v-if="msg.meta?.iteration" class="conv-bubble__badge">第 {{ msg.meta.iteration }} 轮</span>
-                  <span v-if="msg.meta?.duration" class="conv-bubble__dur">{{ msg.meta.duration }}ms</span>
-                  <span class="conv-bubble__time">{{ formatMs(msg.timestamp) }}</span>
-                </div>
+        <!-- 中部工作区：左侧对话流与指令舱 + 右侧实时画布与产物库 -->
+        <div class="cp-workspace">
+          <!-- 左侧：对话执行流 & 底部指令舱 -->
+          <section class="cp-main-pane">
+            <div v-loading="conversationLoading" class="cp-timeline">
+              <template v-if="conversationData?.conversation?.length">
+                <div
+                  v-for="(msg, idx) in conversationData.conversation"
+                  :key="msg.id || idx"
+                  class="cp-msg"
+                  :class="`cp-msg--${msg.role}`"
+                >
+                  <div class="cp-msg__header">
+                    <span class="cp-msg__role">{{ msg.role === 'user' ? '用户需求' : msg.role === 'tool' ? '工具调用' : 'AI 响应' }}</span>
+                    <span v-if="msg.meta?.iteration" class="cp-msg__iter">#{{ msg.meta.iteration }}</span>
+                    <span v-if="msg.meta?.duration" class="cp-msg__dur">{{ msg.meta.duration }}ms</span>
+                    <span class="cp-msg__time">{{ formatMs(msg.timestamp) }}</span>
+                  </div>
 
-                <div v-if="msg.content" class="conv-bubble__content">{{ msg.content }}</div>
+                  <div v-if="msg.content" class="cp-msg__content">{{ msg.content }}</div>
 
-                <div v-if="msg.tool_calls?.length" class="conv-bubble__tools">
-                  <div v-for="tc in msg.tool_calls" :key="tc.id" class="conv-tool-item">
-                    <div class="conv-tool-item__title">
-                      <Icon icon="ep:tools" />
-                      <span>{{ tc.name }}</span>
-                    </div>
-                    <pre class="conv-tool-item__json">{{ formatJson(tc.arguments) }}</pre>
+                  <div v-if="msg.tool_calls?.length" class="cp-msg__tools">
+                    <details v-for="tc in msg.tool_calls" :key="tc.id" class="cp-tool-details" open>
+                      <summary class="cp-tool-summary">
+                        <Icon icon="ep:tools" />
+                        <span>{{ tc.name }}</span>
+                      </summary>
+                      <pre class="cp-tool-json">{{ formatJson(tc.arguments) }}</pre>
+                    </details>
+                  </div>
+
+                  <div v-if="msg.role === 'tool' && msg.meta?.toolResult" class="cp-msg__tool-result">
+                    <span class="cp-tool-tag" :class="msg.meta.toolResult.success ? 'is-ok' : 'is-err'">
+                      {{ msg.meta.toolResult.success ? '执行完成' : '执行失败' }}
+                    </span>
+                    <pre class="cp-tool-json">{{ formatJson(msg.meta.toolResult) }}</pre>
+                  </div>
+
+                  <div v-if="msg.meta?.plan" class="cp-msg__plan">
+                    🎯 规划：{{ msg.meta.plan.goal }} ({{ msg.meta.plan.currentStep || 0 }}/{{ msg.meta.plan.totalSteps }} 步)
                   </div>
                 </div>
-
-                <div v-if="msg.role === 'tool' && msg.meta?.toolResult" class="conv-bubble__tool-result">
-                  <span class="conv-tool-status" :class="msg.meta.toolResult.success ? 'is-ok' : 'is-err'">
-                    {{ msg.meta.toolResult.success ? '执行成功' : '执行失败' }}
-                  </span>
-                  <pre class="conv-tool-item__json">{{ formatJson(msg.meta.toolResult) }}</pre>
-                </div>
-
-                <div v-if="msg.meta?.plan" class="conv-bubble__plan">
-                  🎯 规划：{{ msg.meta.plan.goal }} ({{ msg.meta.plan.currentStep || 0 }}/{{ msg.meta.plan.totalSteps }} 步)
-                </div>
-              </div>
-            </template>
-            <div v-else-if="!conversationLoading" class="cp-empty-hint">
-              <Icon icon="ep:chat-dot-round" class="cp-empty-icon" />
-              <span>暂无对话记录，可在下方输入指令指派设计任务</span>
-            </div>
-          </div>
-        </main>
-
-        <!-- 产物流水展示带（若有） -->
-        <div v-if="liveArtifacts.length" class="cp-artifact-shelf">
-          <div class="cp-artifact-shelf__inner">
-            <span class="cp-artifact-shelf__label">🎨 设计产物:</span>
-            <div class="cp-artifact-shelf__items">
-              <div v-for="(art, aIdx) in liveArtifacts" :key="aIdx" class="cp-artifact-chip">
-                <el-image
-                  v-if="art.url"
-                  :src="art.url"
-                  fit="cover"
-                  class="cp-artifact-chip__thumb"
-                  :preview-src-list="[art.url]"
-                />
-                <span class="cp-artifact-chip__name">{{ art.name || (art.type === 'image-group' ? '组图包' : '贴纸') }}</span>
-                <el-tag size="small" :type="art.type === 'image-group' ? 'warning' : 'success'" effect="plain">
-                  {{ art.type === 'image-group' ? `组图(${art.stickersCount || 2})` : '单张' }}
-                </el-tag>
+              </template>
+              <div v-else-if="!conversationLoading" class="cp-timeline-empty">
+                <Icon icon="ep:chat-dot-round" class="cp-timeline-empty__icon" />
+                <span>暂无对话记录，可在下方输入需求指派任务</span>
               </div>
             </div>
-          </div>
-        </div>
 
-        <!-- 底部极简统一指令舱 -->
-        <footer class="cp-footer">
-          <div class="cp-footer-inner">
-            <!-- 规格配置条 -->
-            <div class="cp-specs">
-              <div class="cp-specs__left">
-                <el-radio-group v-model="adminTaskConfig.preset" size="small" @change="onPresetChange">
-                  <el-radio-button label="single">单张</el-radio-button>
-                  <el-radio-button label="group">组图</el-radio-button>
-                  <el-radio-button label="batch">批量</el-radio-button>
-                </el-radio-group>
+            <!-- 底部一体化输入控制舱 -->
+            <div class="cp-dock">
+              <!-- 配置项条目 -->
+              <div class="cp-dock__config">
+                <div class="cp-dock__options">
+                  <el-radio-group v-model="adminTaskConfig.preset" size="small" @change="onPresetChange">
+                    <el-radio-button label="single">单张</el-radio-button>
+                    <el-radio-button label="group">组图</el-radio-button>
+                    <el-radio-button label="batch">批量</el-radio-button>
+                  </el-radio-group>
 
-                <template v-if="adminTaskConfig.preset === 'group'">
-                  <span class="cp-spec-lbl">张数</span>
-                  <el-select v-model="adminTaskConfig.memberCount" size="small" style="width: 104px">
-                    <el-option :value="2" label="2 (正反面)" />
-                    <el-option :value="3" label="3张" />
-                    <el-option :value="4" label="4张" />
-                    <el-option :value="5" label="5张" />
+                  <template v-if="adminTaskConfig.preset === 'group'">
+                    <span class="cp-dock__lbl">张数</span>
+                    <el-select v-model="adminTaskConfig.memberCount" size="small" style="width: 104px">
+                      <el-option :value="2" label="2张(正反面)" />
+                      <el-option :value="3" label="3张" />
+                      <el-option :value="4" label="4张" />
+                      <el-option :value="5" label="5张" />
+                    </el-select>
+                  </template>
+
+                  <template v-if="adminTaskConfig.preset === 'batch'">
+                    <span class="cp-dock__lbl">张数</span>
+                    <el-input-number v-model="adminTaskConfig.jobCount" :min="1" :max="50" size="small" style="width: 80px" controls-position="right" />
+                  </template>
+
+                  <span class="cp-dock__lbl">交付</span>
+                  <el-select v-model="adminTaskConfig.delivery" size="small" style="width: 86px">
+                    <el-option value="save" label="存贴纸" />
+                    <el-option value="export" label="导出PNG" />
+                    <el-option value="canvas" label="留画布" />
                   </el-select>
-                </template>
 
-                <template v-if="adminTaskConfig.preset === 'batch'">
-                  <span class="cp-spec-lbl">张数</span>
-                  <el-input-number v-model="adminTaskConfig.jobCount" :min="1" :max="50" size="small" style="width: 82px" controls-position="right" />
-                </template>
-
-                <span class="cp-spec-lbl">交付</span>
-                <el-select v-model="adminTaskConfig.delivery" size="small" style="width: 86px">
-                  <el-option value="save" label="存贴纸" />
-                  <el-option value="export" label="导出PNG" />
-                  <el-option value="canvas" label="留画布" />
-                </el-select>
+                  <el-checkbox v-model="adminTaskConfig.autoImportToLibrary" size="small">入素材库</el-checkbox>
+                  <el-checkbox v-if="adminTaskConfig.preset === 'batch'" v-model="adminTaskConfig.autoOptimize" size="small">分析优化</el-checkbox>
+                </div>
               </div>
 
-              <div class="cp-specs__right">
-                <el-checkbox v-model="adminTaskConfig.autoImportToLibrary" size="small">入素材库</el-checkbox>
-                <el-checkbox v-if="adminTaskConfig.preset === 'batch'" v-model="adminTaskConfig.autoOptimize" size="small">智能优化</el-checkbox>
+              <!-- 输入框与动作按钮 -->
+              <div class="cp-dock__input-box">
+                <el-input
+                  v-model="remoteMessage"
+                  type="textarea"
+                  :rows="2"
+                  resize="none"
+                  :placeholder="inputPlaceholder"
+                  :disabled="remoteSending"
+                  @keydown.enter.ctrl="sendRemoteCommand"
+                />
+                <el-button
+                  class="cp-dock__submit-btn"
+                  :type="adminTaskConfig.preset === 'batch' ? 'warning' : 'primary'"
+                  :loading="remoteSending"
+                  :disabled="!remoteMessage.trim()"
+                  @click="sendRemoteCommand"
+                >
+                  <Icon :icon="adminTaskConfig.preset === 'batch' ? 'ep:video-play' : 'ep:promotion'" />
+                  <span>{{ adminTaskConfig.preset === 'batch' ? '启动制作' : '发送指令' }}</span>
+                </el-button>
               </div>
-            </div>
 
-            <!-- 输入与发送行 -->
-            <div class="cp-prompt-row">
-              <el-input
-                v-model="remoteMessage"
-                type="textarea"
-                :rows="2"
-                resize="none"
-                :placeholder="inputPlaceholder"
-                :disabled="remoteSending"
-                @keydown.enter.ctrl="sendRemoteCommand"
-              />
-              <el-button
-                class="cp-submit-btn"
-                :type="adminTaskConfig.preset === 'batch' ? 'warning' : 'primary'"
-                :loading="remoteSending"
-                :disabled="!remoteMessage.trim()"
-                @click="sendRemoteCommand"
-              >
-                <Icon :icon="adminTaskConfig.preset === 'batch' ? 'ep:video-play' : 'ep:promotion'" />
-                <span>{{ adminTaskConfig.preset === 'batch' ? '启动制作' : '发送指令' }}</span>
-              </el-button>
-            </div>
-
-            <!-- 批量制作进度条（若有活跃任务） -->
-            <div v-if="activeBatchRuns.length" class="cp-batch-live">
-              <div class="cp-batch-live__header">
-                <el-tag size="small" effect="plain" :type="getCpRunTagType(activeBatchRuns[0].phase)">
-                  {{ getCpRunLabel(activeBatchRuns[0].phase) }}
-                </el-tag>
-                <span class="cp-batch-live__msg">{{ getCpRunMessage(activeBatchRuns[0]) }}</span>
-                <div class="cp-batch-live__actions">
+              <!-- 批次执行进度条（若有） -->
+              <div v-if="activeBatchRuns.length" class="cp-dock__progress-bar">
+                <div class="cp-dock__progress-info">
+                  <el-tag size="small" effect="plain" :type="getCpRunTagType(activeBatchRuns[0].phase)">
+                    {{ getCpRunLabel(activeBatchRuns[0].phase) }}
+                  </el-tag>
+                  <span class="cp-dock__progress-text">{{ getCpRunMessage(activeBatchRuns[0]) }}</span>
                   <el-button
                     v-if="activeBatchRuns[0].phase === 'accepted' && activeBatchRuns[0].batch?.status === 'paused'"
                     size="small"
@@ -377,53 +334,95 @@
                     停止
                   </el-button>
                 </div>
+                <el-progress :percentage="cpAutoProgress" :stroke-width="3" :show-text="false" />
               </div>
-              <el-progress :percentage="cpAutoProgress" :stroke-width="4" :show-text="false" />
+
+              <!-- 状态通知条 -->
+              <div v-else-if="targetResults.length" class="cp-dock__ticker">
+                <span class="cp-dock__ticker-dot" :class="targetResults[0].success ? 'is-ok' : 'is-err'">●</span>
+                <span class="cp-dock__ticker-msg">{{ targetResults[0].message || targetResults[0].error }}</span>
+                <span class="cp-dock__ticker-time">{{ formatAgentTime(targetResults[0].reportedAt) }}</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- 右侧：实时监控 & 产物库 -->
+          <aside class="cp-side-pane">
+            <!-- 实时屏幕 / 画布区 -->
+            <div class="cp-side-section cp-side-monitor">
+              <div class="cp-side-section__header">
+                <span class="cp-side-section__title">
+                  <Icon icon="ep:video-camera" />
+                  实时监控
+                </span>
+                <div class="cp-side-section__meta">
+                  <el-tag v-if="monitorStatus.connecting" type="warning" size="small">连接中</el-tag>
+                  <el-tag v-else-if="monitorStatus.connected" type="success" size="small" effect="plain">已连接</el-tag>
+                  <el-button
+                    v-if="monitorStatus.connected || monitorStatus.connecting"
+                    size="small"
+                    text
+                    type="danger"
+                    @click="stopMonitoring"
+                  >
+                    断开
+                  </el-button>
+                  <el-button
+                    v-else
+                    size="small"
+                    text
+                    type="primary"
+                    @click="startMonitoringFromPanel"
+                  >
+                    连接画面
+                  </el-button>
+                </div>
+              </div>
+
+              <div class="cp-video-stage">
+                <video ref="monitorVideoRef" class="cp-video-player" autoplay playsinline muted />
+                <div v-if="monitorStatus.connecting" class="cp-video-overlay">
+                  <el-icon class="is-loading"><Loading /></el-icon>
+                  <span>建立画面连接中...</span>
+                </div>
+                <div v-else-if="!monitorStatus.connected" class="cp-video-overlay">
+                  <span class="cp-video-hint">点击右上角"连接画面"查看设计工具实时操作</span>
+                </div>
+              </div>
             </div>
 
-            <!-- 状态通知条 -->
-            <div v-else-if="targetResults.length" class="cp-status-ticker">
-              <span class="cp-status-ticker__badge" :class="targetResults[0].success ? 'is-ok' : 'is-err'">
-                {{ targetResults[0].success ? '●' : '▲' }} {{ remoteResultLabel(targetResults[0]) }}
-              </span>
-              <span class="cp-status-ticker__msg">{{ targetResults[0].message || targetResults[0].error }}</span>
-              <span class="cp-status-ticker__time">{{ formatAgentTime(targetResults[0].reportedAt) }}</span>
-            </div>
-          </div>
-        </footer>
-      </div>
-    </el-dialog>
+            <!-- 设计产物库区 -->
+            <div class="cp-side-section cp-side-gallery">
+              <div class="cp-side-section__header">
+                <span class="cp-side-section__title">
+                  <Icon icon="ep:picture" />
+                  设计产物 ({{ liveArtifacts.length }})
+                </span>
+                <el-button v-if="liveArtifacts.length" size="small" text type="info" @click="liveArtifacts = []">清空</el-button>
+              </div>
 
-    <!-- 独立屏幕监控画中画小弹窗 -->
-    <el-dialog
-      v-model="monitorDialogVisible"
-      title="实时屏幕监控"
-      width="640px"
-      append-to-body
-      class="cp-monitor-dialog"
-      :close-on-click-modal="false"
-      @close="stopMonitoring"
-    >
-      <div class="cp-pip-container">
-        <div class="cp-pip-topbar">
-          <span class="cp-pip-target">{{ controlTarget?.id }}</span>
-          <el-tag v-if="monitorStatus.connecting" type="warning" size="small">连接中...</el-tag>
-          <el-tag v-else-if="monitorStatus.connected" type="success" size="small" effect="plain">已连接</el-tag>
-          <el-tag v-else type="info" size="small">等待工具端共享</el-tag>
-          <span v-if="monitorStatus.error" class="cp-pip-err">{{ monitorStatus.error }}</span>
-          <span class="cp-spacer" />
-          <el-button v-if="monitorStatus.connected || monitorStatus.connecting" size="small" text type="danger" @click="stopMonitoring">断开画面</el-button>
-          <el-button v-else size="small" text type="primary" @click="startMonitoringFromPanel">重新连接</el-button>
-        </div>
-        <div class="cp-pip-video-box">
-          <video ref="monitorVideoRef" class="cp-pip-video" autoplay playsinline muted />
-          <div v-if="monitorStatus.connecting" class="cp-pip-overlay">
-            <el-icon class="is-loading"><Loading /></el-icon>
-            <span>正在建立 WebRTC 连接...</span>
-          </div>
-          <div v-else-if="!monitorStatus.connected" class="cp-pip-overlay">
-            <span class="cp-pip-hint">设计端开启屏幕共享后，点击"重新连接"即可实时监控</span>
-          </div>
+              <div v-if="liveArtifacts.length" class="cp-gallery-grid">
+                <div v-for="(art, aIdx) in liveArtifacts" :key="aIdx" class="cp-gallery-card">
+                  <el-image
+                    v-if="art.url"
+                    :src="art.url"
+                    fit="contain"
+                    class="cp-gallery-card__img"
+                    :preview-src-list="[art.url]"
+                  />
+                  <div class="cp-gallery-card__info">
+                    <span class="cp-gallery-card__name" :title="art.name">{{ art.name || (art.type === 'image-group' ? '组图包' : '贴纸') }}</span>
+                    <el-tag size="small" :type="art.type === 'image-group' ? 'warning' : 'info'" effect="plain" class="cp-gallery-card__tag">
+                      {{ art.type === 'image-group' ? `组图(${art.stickersCount || 2})` : '贴纸' }}
+                    </el-tag>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="cp-gallery-empty">
+                <span>生成的设计贴纸与组图将展示在此处</span>
+              </div>
+            </div>
+          </aside>
         </div>
       </div>
     </el-dialog>
@@ -1237,14 +1236,6 @@ const handleAction = (cmd: string, row: WebsocketConnectionVO) => {
   }
 };
 
-// ── 独立屏幕监控弹窗 ──
-const monitorDialogVisible = ref(false);
-const openMonitorDialog = () => {
-  monitorDialogVisible.value = true;
-  if (!monitorStatus.value.connected && !monitorStatus.value.connecting) {
-    startMonitoringFromPanel();
-  }
-};
 
 // ── 创作形式与参数配置 ──
 const adminTaskConfig = reactive({
@@ -1784,155 +1775,150 @@ onBeforeUnmount(() => {
   gap: 12px;
 }
 
-/* ── Fullscreen Ultra-Clean Control Console ── */
-.cp-fullscreen-dialog :deep(.el-dialog) {
+/* ── Modern Studio Console (Zero Overflow, Space-Efficient) ── */
+.cp-studio-dialog :deep(.el-dialog) {
   margin: 0 !important;
   padding: 0 !important;
-  max-width: 100% !important;
-  width: 100% !important;
-  height: 100% !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
   overflow: hidden !important;
 }
 
-.cp-fullscreen-dialog :deep(.el-dialog__header) {
+.cp-studio-dialog :deep(.el-dialog__header) {
   display: none;
 }
 
-.cp-fullscreen-dialog :deep(.el-dialog__body) {
-  padding: 0;
+.cp-studio-dialog :deep(.el-dialog__body) {
+  padding: 0 !important;
+  margin: 0 !important;
   height: 100%;
   width: 100%;
   overflow: hidden;
   background: var(--el-bg-color-page);
 }
 
-.cp-card {
+.cp-studio {
   display: flex;
   flex-direction: column;
   height: 100%;
   width: 100%;
-  max-width: 100%;
-  background: var(--el-bg-color-page);
+  background: var(--el-bg-color);
+  color: var(--el-text-color-primary);
   overflow: hidden;
-  box-sizing: border-box;
 }
 
-/* 顶部精简导航栏 */
-.cp-header {
+/* 顶部导航栏 (44px) */
+.cp-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  height: 44px;
   padding: 0 16px;
-  height: 48px;
   background: var(--el-bg-color);
   border-bottom: 1px solid var(--el-border-color-lighter);
+  flex-shrink: 0;
   gap: 12px;
-  flex-shrink: 0;
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  overflow: hidden;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
-.cp-header__meta {
+.cp-topbar__left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
-  flex: 1;
   overflow: hidden;
 }
 
-.cp-header__title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.cp-header__icon {
+.cp-topbar__icon {
   font-size: 16px;
   color: var(--el-color-primary);
+  flex-shrink: 0;
 }
 
-.cp-header__cid {
+.cp-topbar__title {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cp-topbar__badge {
   font-family: "SF Mono", Consolas, monospace;
   font-size: 11px;
   color: var(--el-text-color-secondary);
   background: var(--el-fill-color-light);
   padding: 1px 6px;
   border-radius: 4px;
+  white-space: nowrap;
 }
 
-.cp-header__status {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  overflow: hidden;
-}
-
-.cp-header__step {
+.cp-topbar__step {
   font-size: 12px;
   color: var(--el-text-color-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 220px;
+  max-width: 240px;
 }
 
-.cp-header__actions {
+.cp-topbar__right {
   display: flex;
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
 }
 
-/* 居中对话流 */
-.cp-body {
+/* 工作区分栏 (左侧对话+指令，右侧监控+产物) */
+.cp-workspace {
+  display: flex;
   flex: 1;
   min-height: 0;
   width: 100%;
-  max-width: 100%;
+  overflow: hidden;
+}
+
+/* 左侧主流面板 */
+.cp-main-pane {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border-right: 1px solid var(--el-border-color-lighter);
+  background: var(--el-bg-color-page);
+  overflow: hidden;
+}
+
+/* 对话执行时间线 */
+.cp-timeline {
+  flex: 1;
+  min-height: 0;
   padding: 16px;
   overflow-y: auto;
   overflow-x: hidden;
-  background: var(--el-bg-color-page);
-  box-sizing: border-box;
-}
-
-.cp-body-inner {
-  max-width: 820px;
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  box-sizing: border-box;
+  gap: 10px;
 }
 
-.cp-empty-hint {
+.cp-timeline-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 55vh;
+  height: 60%;
   color: var(--el-text-color-placeholder);
-  gap: 10px;
+  gap: 8px;
   font-size: 13px;
 }
 
-.cp-empty-icon {
-  font-size: 40px;
-  opacity: 0.35;
+.cp-timeline-empty__icon {
+  font-size: 36px;
+  opacity: 0.4;
 }
 
-/* 对话气泡 */
-.conv-bubble {
+/* 消息气泡卡片 (极简素雅设计) */
+.cp-msg {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -1940,259 +1926,170 @@ onBeforeUnmount(() => {
   border-radius: 8px;
   background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-  width: 100%;
-  box-sizing: border-box;
-  overflow: hidden;
-}
-
-.conv-bubble--user {
-  background: var(--el-color-primary-light-9);
-  border-color: var(--el-color-primary-light-7);
-}
-
-.conv-bubble--tool {
-  background: var(--el-fill-color-extra-light);
-  border-left: 3px solid var(--el-color-warning);
-}
-
-.conv-bubble--assistant {
-  background: var(--el-bg-color);
-  border-color: var(--el-border-color-light);
-}
-
-.conv-bubble__header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-}
-
-.conv-bubble__role {
-  font-weight: 600;
-  color: var(--el-text-color-regular);
-}
-
-.conv-bubble__badge {
-  background: var(--el-fill-color);
-  padding: 1px 5px;
-  border-radius: 3px;
-  color: var(--el-color-primary);
-  font-size: 11px;
-}
-
-.conv-bubble__dur {
-  font-family: monospace;
-  font-size: 11px;
-  color: var(--el-color-success);
-}
-
-.conv-bubble__time {
-  margin-left: auto;
-  font-size: 11px;
-  color: var(--el-text-color-placeholder);
-}
-
-.conv-bubble__content {
   font-size: 13px;
-  line-height: 1.6;
-  color: var(--el-text-color-primary);
-  white-space: pre-wrap;
   word-break: break-word;
   overflow-wrap: anywhere;
 }
 
-.conv-bubble__plan {
-  font-size: 12px;
-  color: var(--el-color-primary);
-  font-weight: 500;
+.cp-msg--user {
   background: var(--el-color-primary-light-9);
-  padding: 5px 8px;
-  border-radius: 4px;
+  border-color: var(--el-color-primary-light-8);
 }
 
-.conv-tool-item {
-  margin-top: 3px;
+.cp-msg--tool {
+  background: var(--el-bg-color);
+  border-left: 3px solid var(--el-color-info-light-3);
 }
 
-.conv-tool-item__title {
+.cp-msg--assistant {
+  background: var(--el-bg-color);
+}
+
+.cp-msg__header {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   font-size: 11px;
-  font-weight: 600;
-  color: var(--el-color-warning);
-  margin-bottom: 2px;
+  color: var(--el-text-color-secondary);
 }
 
-.conv-tool-item__json {
-  margin: 0;
+.cp-msg__role {
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.cp-msg__iter {
+  background: var(--el-fill-color);
+  padding: 0 4px;
+  border-radius: 3px;
+  font-size: 10px;
+}
+
+.cp-msg__dur {
+  font-family: monospace;
+  color: var(--el-color-success);
+}
+
+.cp-msg__time {
+  margin-left: auto;
+  font-size: 10px;
+}
+
+.cp-msg__content {
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.cp-tool-details {
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.cp-tool-summary {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--el-text-color-secondary);
+  font-weight: 500;
+  user-select: none;
+}
+
+.cp-tool-summary:hover {
+  color: var(--el-color-primary);
+}
+
+.cp-tool-json {
+  margin: 4px 0 0;
   padding: 6px 8px;
   font-family: "SF Mono", Consolas, monospace;
   font-size: 11px;
   line-height: 1.4;
-  background: var(--el-fill-color-dark);
+  background: var(--el-fill-color-light);
   color: var(--el-text-color-regular);
   border-radius: 4px;
-  max-height: 140px;
+  max-height: 120px;
   overflow-y: auto;
   overflow-x: auto;
-  word-break: break-all;
 }
 
-.conv-tool-status {
+.cp-tool-tag {
+  display: inline-block;
   font-size: 11px;
   font-weight: 600;
-  padding: 2px 6px;
+  padding: 1px 6px;
   border-radius: 3px;
 }
 
-.conv-tool-status.is-ok {
+.cp-tool-tag.is-ok {
   color: var(--el-color-success);
   background: var(--el-color-success-light-9);
 }
 
-.conv-tool-status.is-err {
+.cp-tool-tag.is-err {
   color: var(--el-color-danger);
   background: var(--el-color-danger-light-9);
 }
 
-/* 产物流水架 */
-.cp-artifact-shelf {
-  background: var(--el-bg-color);
-  border-top: 1px solid var(--el-border-color-lighter);
-  padding: 8px 16px;
-  flex-shrink: 0;
-  width: 100%;
-  box-sizing: border-box;
-  overflow: hidden;
-}
-
-.cp-artifact-shelf__inner {
-  max-width: 820px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  overflow: hidden;
-}
-
-.cp-artifact-shelf__label {
+.cp-msg__plan {
   font-size: 12px;
-  font-weight: 600;
-  color: var(--el-text-color-regular);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.cp-artifact-shelf__items {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  overflow-x: auto;
-  flex: 1;
-}
-
-.cp-artifact-chip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 8px;
-  background: var(--el-fill-color-light);
-  border: 1px solid var(--el-border-color-light);
+  color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+  padding: 4px 8px;
   border-radius: 4px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.cp-artifact-chip__thumb {
-  width: 26px;
-  height: 26px;
-  border-radius: 3px;
-  flex-shrink: 0;
-}
-
-.cp-artifact-chip__name {
-  font-size: 11px;
-  max-width: 100px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--el-text-color-primary);
 }
 
 /* 底部极简指令舱 */
-.cp-footer {
-  width: 100%;
-  max-width: 100%;
-  background: var(--el-bg-color);
-  border-top: 1px solid var(--el-border-color-lighter);
-  padding: 10px 16px 14px;
-  flex-shrink: 0;
-  box-sizing: border-box;
-  overflow: hidden;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.02);
-}
-
-.cp-footer-inner {
-  max-width: 820px;
-  margin: 0 auto;
+.cp-dock {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  width: 100%;
-  box-sizing: border-box;
+  padding: 10px 14px 12px;
+  background: var(--el-bg-color);
+  border-top: 1px solid var(--el-border-color-lighter);
+  flex-shrink: 0;
 }
 
-.cp-specs {
+.cp-dock__config {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 8px;
-  width: 100%;
-  box-sizing: border-box;
 }
 
-.cp-specs__left {
+.cp-dock__options {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.cp-specs__right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.cp-spec-lbl {
+.cp-dock__lbl {
   font-size: 12px;
   color: var(--el-text-color-secondary);
 }
 
-.cp-prompt-row {
+.cp-dock__input-box {
   display: flex;
   align-items: stretch;
   gap: 8px;
-  width: 100%;
-  box-sizing: border-box;
 }
 
-.cp-prompt-row .el-textarea {
+.cp-dock__input-box .el-textarea {
   flex: 1;
 }
 
-.cp-prompt-row :deep(.el-textarea__inner) {
+.cp-dock__input-box :deep(.el-textarea__inner) {
   border-radius: 6px;
   padding: 8px 10px;
   font-size: 13px;
   line-height: 1.45;
 }
 
-.cp-submit-btn {
+.cp-dock__submit-btn {
   align-self: stretch;
-  min-width: 88px;
+  min-width: 90px;
   border-radius: 6px;
   font-size: 13px;
   font-weight: 600;
@@ -2202,82 +2099,90 @@ onBeforeUnmount(() => {
   gap: 4px;
 }
 
-.cp-batch-live {
+.cp-dock__progress-bar {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: 6px 8px;
+  gap: 4px;
+  padding: 4px 8px;
   background: var(--el-fill-color-light);
   border-radius: 4px;
 }
 
-.cp-batch-live__header {
+.cp-dock__progress-info {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 12px;
 }
 
-.cp-batch-live__msg {
+.cp-dock__progress-text {
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--el-text-color-secondary);
-  font-size: 12px;
 }
 
-.cp-batch-live__actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.cp-status-ticker {
+.cp-dock__ticker {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--el-text-color-secondary);
-  padding: 2px 0;
-  width: 100%;
-  overflow: hidden;
-  box-sizing: border-box;
+  padding: 1px 0;
 }
 
-.cp-status-ticker__badge.is-ok { color: var(--el-color-success); font-weight: 600; }
-.cp-status-ticker__badge.is-err { color: var(--el-color-danger); font-weight: 600; }
-.cp-status-ticker__msg { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cp-status-ticker__time { font-size: 11px; color: var(--el-text-color-placeholder); }
+.cp-dock__ticker-dot.is-ok { color: var(--el-color-success); font-weight: 700; }
+.cp-dock__ticker-dot.is-err { color: var(--el-color-danger); font-weight: 700; }
+.cp-dock__ticker-msg { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cp-dock__ticker-time { color: var(--el-text-color-placeholder); }
 
-/* 独立画中画弹窗 (PiP Monitor) */
-.cp-monitor-dialog :deep(.el-dialog__body) {
-  padding: 10px;
-}
-
-.cp-pip-container {
+/* 右侧侧边栏 (监控与产物库) */
+.cp-side-pane {
+  width: 360px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  background: var(--el-bg-color);
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
-.cp-pip-topbar {
+.cp-side-section {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.cp-side-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.cp-side-section__title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.cp-side-section__meta {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
 }
 
-.cp-pip-target {
-  font-family: monospace;
-  font-weight: 600;
-}
-
-.cp-pip-video-box {
+/* 视频监控舞台 */
+.cp-video-stage {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  background: #000;
+  background: #111;
   border-radius: 6px;
   overflow: hidden;
   display: flex;
@@ -2285,13 +2190,13 @@ onBeforeUnmount(() => {
   justify-content: center;
 }
 
-.cp-pip-video {
+.cp-video-player {
   width: 100%;
   height: 100%;
   object-fit: contain;
 }
 
-.cp-pip-overlay {
+.cp-video-overlay {
   position: absolute;
   inset: 0;
   display: flex;
@@ -2299,15 +2204,84 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  color: #fff;
+  color: rgba(255, 255, 255, 0.85);
   font-size: 12px;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(0, 0, 0, 0.65);
 }
 
-.cp-pip-hint {
-  color: rgba(255, 255, 255, 0.7);
+.cp-video-hint {
   font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
   text-align: center;
   padding: 0 16px;
+}
+
+/* 产物库网格 */
+.cp-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.cp-gallery-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  overflow: hidden;
+  padding: 4px;
+}
+
+.cp-gallery-card__img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 4px;
+  background: var(--el-bg-color);
+}
+
+.cp-gallery-card__info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  gap: 4px;
+}
+
+.cp-gallery-card__name {
+  font-size: 11px;
+  color: var(--el-text-color-regular);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cp-gallery-card__tag {
+  font-size: 10px;
+  padding: 0 4px;
+  height: 18px;
+  line-height: 16px;
+}
+
+.cp-gallery-empty {
+  padding: 24px 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--el-text-color-placeholder);
+}
+
+/* 窄屏幕自适应 */
+@media (max-width: 860px) {
+  .cp-workspace {
+    flex-direction: column;
+  }
+  .cp-side-pane {
+    width: 100%;
+    border-right: none;
+    border-top: 1px solid var(--el-border-color-lighter);
+  }
 }
 </style>
