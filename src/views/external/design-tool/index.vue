@@ -11,9 +11,8 @@
             </span>
           </div>
           <div class="dt-toolbar__summary">
-            <span><b>{{ toolConnections.length }}</b> 在线</span>
-            <span v-if="runningToolCount"><b>{{ runningToolCount }}</b> 制作中</span>
-            <span v-if="browserDistributionText !== '-'">{{ browserDistributionText }}</span>
+            <span><b>{{ toolConnections.length }}</b> 个实例在线</span>
+            <span v-if="runningToolCount" class="dt-toolbar__running"><b>{{ runningToolCount }}</b> 个制作中</span>
           </div>
         </div>
       </div>
@@ -635,15 +634,6 @@ const adminWsStatusTag = computed<{ text: string; type: TagType }>(() => {
   return m[s] || { text: "未连接", type: "info" };
 });
 
-const browserDistributionText = computed(() => {
-  if (!toolConnections.value.length) return "-";
-  const c = new Map<string, number>();
-  toolConnections.value.forEach((r) => {
-    const n = r.clientInfo?.browser?.name?.trim() || "未知";
-    c.set(n, (c.get(n) || 0) + 1);
-  });
-  return Array.from(c.entries()).sort((a, b) => b[1] - a[1]).map(([n, v]) => `${n} ${v}`).join(" / ");
-});
 
 const lastRefreshText = computed(() => {
   if (!lastRefreshAt.value) return initialLoading.value ? "读取中" : "-";
@@ -1739,10 +1729,6 @@ onBeforeUnmount(() => {
     padding: 7px 4px 9px;
   }
 
-  .dt-toolbar__summary span:last-child {
-    display: none;
-  }
-
   .dt-toolbar__right {
     flex-wrap: wrap;
     justify-content: flex-end;
@@ -1765,6 +1751,19 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.dt-toolbar__summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.dt-toolbar__running {
+  color: var(--el-color-warning);
+  font-weight: 500;
 }
 
 /* ── Modern Studio Console (Pure Element-Plus Tokens, Strict Height Limit, Dual-Theme) ── */
