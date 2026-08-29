@@ -281,66 +281,125 @@
           </div>
         </div>
 
-        <!-- 底部极简指令底座 -->
+        <!-- 底部：Tab 切换指令底座 -->
         <div class="cp-footer">
-          <!-- 参数配置条 -->
-          <div class="cp-specs">
-            <el-radio-group v-model="adminTaskConfig.preset" size="small" @change="onPresetChange">
-              <el-radio-button label="single">单图</el-radio-button>
-              <el-radio-button label="group">组图</el-radio-button>
-              <el-radio-button label="batch">批量</el-radio-button>
-            </el-radio-group>
+          <el-tabs v-model="cpActiveTab" class="cp-tabs" size="small">
+            <!-- Tab 1: AI 指令 -->
+            <el-tab-pane label="AI 指令" name="chat">
+              <div class="cp-specs">
+                <el-radio-group v-model="adminTaskConfig.preset" size="small" @change="onPresetChange">
+                  <el-radio-button label="single">单图</el-radio-button>
+                  <el-radio-button label="group">组图</el-radio-button>
+                  <el-radio-button label="batch">批量</el-radio-button>
+                </el-radio-group>
 
-            <template v-if="adminTaskConfig.preset === 'group'">
-              <span class="cp-spec-lbl">张数</span>
-              <el-select v-model="adminTaskConfig.memberCount" size="small" style="width: 94px">
-                <el-option :value="2" label="2 (正反面)" />
-                <el-option :value="3" label="3张" />
-                <el-option :value="4" label="4张" />
-                <el-option :value="5" label="5张" />
-              </el-select>
-            </template>
+                <template v-if="adminTaskConfig.preset === 'group'">
+                  <span class="cp-spec-lbl">张数</span>
+                  <el-select v-model="adminTaskConfig.memberCount" size="small" style="width: 94px">
+                    <el-option :value="2" label="2 (正反面)" />
+                    <el-option :value="3" label="3张" />
+                    <el-option :value="4" label="4张" />
+                    <el-option :value="5" label="5张" />
+                  </el-select>
+                </template>
 
-            <template v-if="adminTaskConfig.preset === 'batch'">
-              <span class="cp-spec-lbl">张数</span>
-              <el-input-number v-model="adminTaskConfig.jobCount" :min="1" :max="20" size="small" style="width: 76px" controls-position="right" />
-            </template>
+                <template v-if="adminTaskConfig.preset === 'batch'">
+                  <span class="cp-spec-lbl">张数</span>
+                  <el-input-number v-model="adminTaskConfig.jobCount" :min="1" :max="20" size="small" style="width: 76px" controls-position="right" />
+                </template>
 
-            <span class="cp-spec-lbl">交付</span>
-            <el-select v-model="adminTaskConfig.delivery" size="small" style="width: 86px">
-              <el-option value="save" label="存贴纸" />
-              <el-option value="export" label="导出PNG" />
-              <el-option value="canvas" label="留画布" />
-            </el-select>
+                <span class="cp-spec-lbl">交付</span>
+                <el-select v-model="adminTaskConfig.delivery" size="small" style="width: 86px">
+                  <el-option value="save" label="存贴纸" />
+                  <el-option value="export" label="导出PNG" />
+                  <el-option value="canvas" label="留画布" />
+                </el-select>
 
-            <el-checkbox v-model="adminTaskConfig.autoImportToLibrary" size="small">入素材库</el-checkbox>
-          </div>
+                <el-checkbox v-model="adminTaskConfig.autoImportToLibrary" size="small">入素材库</el-checkbox>
+              </div>
 
-          <!-- 输入框与发送 -->
-          <div class="cp-prompt-row">
-            <el-input
-              v-model="remoteMessage"
-              type="textarea"
-              :rows="2"
-              resize="none"
-              placeholder="输入设计需求（例如：黑金奢华商务名片正反面，Ctrl+Enter 发送）"
-              :disabled="remoteSending"
-              @keydown.enter.ctrl="sendRemoteCommand"
-            />
-            <el-button class="cp-submit-btn" type="primary" :loading="remoteSending" :disabled="!remoteMessage.trim()" @click="sendRemoteCommand">
-              <Icon icon="ep:promotion" />
-              <span>发送</span>
-            </el-button>
-          </div>
+              <div class="cp-prompt-row">
+                <el-input
+                  v-model="remoteMessage"
+                  type="textarea"
+                  :rows="3"
+                  resize="none"
+                  placeholder="输入设计需求，例如：黑金商务名片正反面组图（Ctrl+Enter 发送）"
+                  :disabled="remoteSending"
+                  @keydown.enter.ctrl="sendRemoteCommand"
+                />
+                <el-button class="cp-submit-btn" type="primary" :loading="remoteSending" :disabled="!remoteMessage.trim()" @click="sendRemoteCommand">
+                  <Icon icon="ep:promotion" />
+                  发送
+                </el-button>
+              </div>
 
-          <!-- 状态通知条 -->
-          <div v-if="targetResults.length" class="cp-status-ticker">
-            <span class="cp-status-ticker__badge" :class="targetResults[0].success ? 'is-ok' : 'is-err'">
-              {{ targetResults[0].success ? '●' : '▲' }} {{ remoteResultLabel(targetResults[0]) }}
-            </span>
-            <span class="cp-status-ticker__msg">{{ targetResults[0].message || targetResults[0].error }}</span>
-            <span class="cp-status-ticker__time">{{ formatAgentTime(targetResults[0].reportedAt) }}</span>
-          </div>
+              <div v-if="targetResults.length" class="cp-status-ticker">
+                <span class="cp-status-ticker__badge" :class="targetResults[0].success ? 'is-ok' : 'is-err'">
+                  {{ targetResults[0].success ? '●' : '▲' }} {{ remoteResultLabel(targetResults[0]) }}
+                </span>
+                <span class="cp-status-ticker__msg">{{ targetResults[0].message || targetResults[0].error }}</span>
+                <span class="cp-status-ticker__time">{{ formatAgentTime(targetResults[0].reportedAt) }}</span>
+              </div>
+            </el-tab-pane>
+
+            <!-- Tab 2: 自动制作 -->
+            <el-tab-pane name="auto">
+              <template #label>
+                <span class="cp-tab-auto-label">
+                  <Icon :icon="cpAutoRuns.some(r => !['completed','failed','cancelled'].includes(r.phase)) ? 'ep:loading' : 'ep:magic-stick'" />
+                  自动制作
+                  <span v-if="cpAutoRuns.some(r => !['completed','failed','cancelled'].includes(r.phase))" class="cp-tab-auto-badge">
+                    {{ cpAutoCompletedCount }}/{{ cpAutoTotalCount }}
+                  </span>
+                </span>
+              </template>
+
+              <div class="cp-auto-row">
+                <div class="cp-auto-qty">
+                  <span class="cp-spec-lbl">数量</span>
+                  <el-input-number v-model="cpAutoQuantity" :min="1" :max="50" size="small" style="width: 84px" controls-position="right" />
+                  <el-checkbox v-model="cpAutoOptimize" size="small">分析优化</el-checkbox>
+                </div>
+              </div>
+
+              <div class="cp-prompt-row">
+                <el-input
+                  v-model="cpAutoPrompt"
+                  type="textarea"
+                  :rows="3"
+                  resize="none"
+                  placeholder="描述主题、商品类型、尺寸、文案、风格和保存要求（Ctrl+Enter 启动）"
+                  :disabled="cpAutoDispatching"
+                  @keydown.enter.ctrl="startCpAutoBatch"
+                />
+                <el-button
+                  class="cp-submit-btn"
+                  type="primary"
+                  :loading="cpAutoDispatching"
+                  :disabled="!cpAutoPrompt.trim() || cpAutoRuns.some(r => !['completed','failed','cancelled'].includes(r.phase))"
+                  @click="startCpAutoBatch"
+                >
+                  <Icon icon="ep:video-play" />
+                  开始
+                </el-button>
+              </div>
+
+              <!-- 制作进度 -->
+              <div v-if="cpAutoRuns.length" class="cp-auto-progress">
+                <el-progress :percentage="cpAutoProgress" :stroke-width="5" />
+                <div class="cp-auto-runs">
+                  <div v-for="run in cpAutoRuns" :key="run.requestId" class="cp-auto-run">
+                    <el-tag size="small" effect="plain" :type="getCpRunTagType(run.phase)">{{ getCpRunLabel(run.phase) }}</el-tag>
+                    <span class="cp-auto-run__msg">{{ getCpRunMessage(run) }}</span>
+                    <el-button v-if="run.phase === 'accepted' && run.batch?.status === 'paused'" size="small" text type="primary" @click="controlCpBatch(run, 'resume')">继续</el-button>
+                    <el-button v-else-if="run.phase === 'accepted' && run.batch?.status === 'running'" size="small" text @click="controlCpBatch(run, 'pause')">暂停</el-button>
+                    <el-button v-if="run.phase === 'accepted'" size="small" text type="danger" @click="controlCpBatch(run, 'stop')">停止</el-button>
+                  </div>
+                </div>
+              </div>
+            </el-tab-pane>
+          </el-tabs>
         </div>
       </div>
     </el-dialog>
@@ -1253,6 +1312,128 @@ const onPresetChange = (val: string) => {
   }
 };
 
+// ── 操控面板 tab 状态 ──
+const cpActiveTab = ref("chat");
+
+// ── 操控面板内嵌自动制作 ──
+type CpRunPhase = "dispatching" | "accepted" | "completed" | "failed" | "rejected" | "cancelled";
+interface CpBatchRun {
+  requestId: string;
+  phase: CpRunPhase;
+  message?: string;
+  error?: string;
+  assignedCount: number;
+  batch?: {
+    status: string;
+    completed: number;
+    succeeded: number;
+    failed: number;
+    total: number;
+    items?: Array<{ index: number; title: string; status: string; error?: string }>;
+  };
+}
+
+const cpAutoPrompt = ref("");
+const cpAutoQuantity = ref(1);
+const cpAutoOptimize = ref(false);
+const cpAutoDispatching = ref(false);
+const cpAutoRuns = ref<CpBatchRun[]>([]);
+const cpTerminalPhases = new Set<CpRunPhase>(["completed", "failed", "rejected", "cancelled"]);
+
+const cpAutoTotalCount = computed(() => cpAutoRuns.value.reduce((s, r) => s + r.assignedCount, 0));
+const cpAutoCompletedCount = computed(() =>
+  cpAutoRuns.value.reduce((s, r) => {
+    if (r.batch) return s + Math.min(r.batch.completed, r.assignedCount);
+    return s + (cpTerminalPhases.has(r.phase) ? r.assignedCount : 0);
+  }, 0),
+);
+const cpAutoProgress = computed(() =>
+  cpAutoTotalCount.value ? Math.round((cpAutoCompletedCount.value / cpAutoTotalCount.value) * 100) : 0,
+);
+
+const getCpRunLabel = (phase: CpRunPhase) =>
+  ({ dispatching: "发送中", accepted: "制作中", completed: "已完成", failed: "失败", rejected: "未接收", cancelled: "已停止" })[phase];
+
+const getCpRunTagType = (phase: CpRunPhase): "success" | "danger" | "primary" | "info" => {
+  if (phase === "completed") return "success";
+  if (["failed", "rejected", "cancelled"].includes(phase)) return "danger";
+  if (phase === "accepted") return "primary";
+  return "info";
+};
+
+const getCpRunMessage = (run: CpBatchRun) => {
+  if (run.error) return run.error;
+  const b = run.batch;
+  if (!b) return run.message || "等待设计端接收";
+  if (b.status === "preparing") return `拆解 brief · 0/${run.assignedCount}`;
+  if (b.status === "paused") return `已暂停 · ${b.completed}/${run.assignedCount}`;
+  if (b.status === "done") return `${b.succeeded}/${run.assignedCount} 已上传图库`;
+  if (b.status === "stopped") return `${b.completed}/${run.assignedCount} · 已停止`;
+  const current = b.items?.[b.completed];
+  const detail = current ? `${current.title} · ${current.error || current.status}` : "自动制作中";
+  return `${b.completed}/${run.assignedCount} · ${detail}`;
+};
+
+const startCpAutoBatch = async () => {
+  if (!controlTarget.value || !cpAutoPrompt.value.trim() || cpAutoDispatching.value) return;
+  if (cpAutoRuns.value.some((r) => !cpTerminalPhases.has(r.phase))) return;
+  cpAutoDispatching.value = true;
+  const requestId = `cp-batch-${Date.now()}`;
+  const run: CpBatchRun = {
+    requestId,
+    phase: "dispatching",
+    assignedCount: cpAutoQuantity.value,
+    message: "正在启动自动制作",
+  };
+  cpAutoRuns.value = [run];
+  try {
+    const res: any = await request.postOriginal({
+      url: "/websocket/remote-command",
+      data: {
+        connectionId: controlTarget.value.id,
+        command: {
+          type: "batch-start",
+          payload: {
+            description: cpAutoPrompt.value.trim(),
+            count: cpAutoQuantity.value,
+            enableAnalysisOptimization: cpAutoOptimize.value,
+            failureStrategy: "save_anyway",
+          },
+          requestId,
+        },
+      },
+    });
+    if (res?.success === false) throw new Error(res?.message || "指令发送失败");
+    run.message = "等待设计端启动自动制作";
+  } catch (error: any) {
+    run.phase = "failed";
+    run.error = error?.message || "批次启动失败";
+  } finally {
+    cpAutoDispatching.value = false;
+  }
+  ElMessage.success(`已启动 ${cpAutoQuantity.value} 张自动制作`);
+};
+
+const controlCpBatch = async (run: CpBatchRun, action: "pause" | "resume" | "stop") => {
+  if (!controlTarget.value) return;
+  try {
+    await request.postOriginal({
+      url: "/websocket/remote-command",
+      data: {
+        connectionId: controlTarget.value.id,
+        command: {
+          type: "batch-control",
+          payload: { action },
+          requestId: `${action}-${run.requestId}-${Date.now()}`,
+        },
+      },
+    });
+    run.message = action === "pause" ? "正在暂停" : action === "resume" ? "正在继续" : "正在停止";
+  } catch (error: any) {
+    ElMessage.error(error?.message || "批次控制失败");
+  }
+};
+
 const liveArtifacts = ref<Array<{
   type: "sticker" | "image-group";
   name?: string;
@@ -2085,4 +2266,144 @@ onBeforeUnmount(() => {
   text-align: center;
   padding: 0 20px;
 }
+
+/* ── cp-footer Tabs ── */
+.cp-tabs {
+  width: 100%;
+}
+
+.cp-tabs :deep(.el-tabs__header) {
+  margin-bottom: 10px;
+}
+
+.cp-tabs :deep(.el-tabs__item) {
+  font-size: 13px;
+  height: 36px;
+  padding: 0 14px;
+}
+
+/* 对齐：输入框 + 发送按钮 */
+.cp-prompt-row {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.cp-prompt-row .el-textarea {
+  flex: 1;
+}
+
+.cp-prompt-row :deep(.el-textarea__inner) {
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.cp-submit-btn {
+  align-self: stretch;
+  min-width: 64px;
+  border-radius: 8px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* 参数条 */
+.cp-specs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  width: 100%;
+  max-width: 820px;
+  box-sizing: border-box;
+}
+
+.cp-spec-lbl {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+/* 状态 ticker */
+.cp-status-ticker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  margin-top: 6px;
+  width: 100%;
+  max-width: 820px;
+}
+
+.cp-status-ticker__badge.is-ok { color: var(--el-color-success); font-weight: 600; }
+.cp-status-ticker__badge.is-err { color: var(--el-color-danger); font-weight: 600; }
+.cp-status-ticker__msg { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cp-status-ticker__time { font-size: 11px; color: var(--el-text-color-placeholder); }
+
+/* 自动制作 tab label */
+.cp-tab-auto-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.cp-tab-auto-badge {
+  display: inline-flex;
+  height: 15px;
+  min-width: 15px;
+  padding: 0 4px;
+  font-size: 10px;
+  line-height: 1;
+  background: var(--el-color-primary);
+  color: #fff;
+  border-radius: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 自动制作顶部配置行 */
+.cp-auto-row {
+  margin-bottom: 10px;
+}
+
+.cp-auto-qty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* 制作进度 */
+.cp-auto-progress {
+  margin-top: 10px;
+}
+
+.cp-auto-runs {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cp-auto-run {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  background: var(--el-fill-color-light);
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.cp-auto-run__msg {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--el-text-color-secondary);
+}
 </style>
+
