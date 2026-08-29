@@ -442,7 +442,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     category: 'hotsearch',
     iconImage: weiboIcon,
     color: '#e6162d',
-    badge: '热搜',
+    badge: '多端运行',
     description: '采集微博实时热搜榜。支持服务端执行（默认，稳定可靠）或客户端执行（使用本地网络）。核心逻辑由服务端统一维护，客户端动态拉取。',
     defaultData: { name: '微博热搜采集', config: { maxCount: 20, executionMode: 'server' } },
     inputSchema: [
@@ -472,7 +472,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
       { field: 'fetchedAt', label: '采集时间', type: 'string' },
       { field: 'duration', label: '耗时(ms)', type: 'number' },
     ],
-    requirements: [],
+    requirements: [{ type: 'multi-end', label: '多端运行' }],
   },
   {
     type: 'hotsearch_douyin',
@@ -480,7 +480,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     category: 'hotsearch',
     iconImage: douyinIcon,
     color: '#000000',
-    badge: '热搜',
+    badge: '多端运行',
     description: '采集抖音实时热搜榜。支持服务端执行（默认，稳定可靠）或客户端执行（使用本地网络）。核心逻辑由服务端统一维护，客户端动态拉取。',
     defaultData: { name: '抖音热搜采集', config: { maxCount: 20, executionMode: 'server' } },
     inputSchema: [
@@ -510,7 +510,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
       { field: 'fetchedAt', label: '采集时间', type: 'string' },
       { field: 'duration', label: '耗时(ms)', type: 'number' },
     ],
-    requirements: [],
+    requirements: [{ type: 'multi-end', label: '多端运行' }],
   },
   {
     type: 'hotsearch_bilibili',
@@ -518,7 +518,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     category: 'hotsearch',
     iconImage: bilibiliIcon,
     color: '#00a1d6',
-    badge: '热搜',
+    badge: '多端运行',
     description: '采集B站实时热搜榜。支持服务端执行（默认，稳定可靠）或客户端执行（使用本地网络）。核心逻辑由服务端统一维护，客户端动态拉取。',
     defaultData: { name: 'B站热搜采集', config: { maxCount: 20, executionMode: 'server' } },
     inputSchema: [
@@ -548,7 +548,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
       { field: 'fetchedAt', label: '采集时间', type: 'string' },
       { field: 'duration', label: '耗时(ms)', type: 'number' },
     ],
-    requirements: [],
+    requirements: [{ type: 'multi-end', label: '多端运行' }],
   },
   {
     type: 'hotsearch_zhihu',
@@ -556,7 +556,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     category: 'hotsearch',
     iconImage: zhihuIcon,
     color: '#0084ff',
-    badge: '热搜',
+    badge: '多端运行',
     description: '采集知乎实时热榜。支持服务端执行（默认，稳定可靠）或客户端执行（使用本地网络）。核心逻辑由服务端统一维护，客户端动态拉取。',
     defaultData: { name: '知乎热榜采集', config: { maxCount: 20, executionMode: 'server' } },
     inputSchema: [
@@ -586,7 +586,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
       { field: 'fetchedAt', label: '采集时间', type: 'string' },
       { field: 'duration', label: '耗时(ms)', type: 'number' },
     ],
-    requirements: [],
+    requirements: [{ type: 'multi-end', label: '多端运行' }],
   },
   {
     type: 'hotsearch_toutiao',
@@ -594,7 +594,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     category: 'hotsearch',
     iconImage: toutiaoIcon,
     color: '#f5222d',
-    badge: '热搜',
+    badge: '多端运行',
     description: '采集今日头条实时热搜榜。支持服务端执行（默认，稳定可靠）或客户端执行（使用本地网络）。核心逻辑由服务端统一维护，客户端动态拉取。',
     defaultData: { name: '今日头条热搜采集', config: { maxCount: 20, executionMode: 'server' } },
     inputSchema: [
@@ -624,7 +624,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
       { field: 'fetchedAt', label: '采集时间', type: 'string' },
       { field: 'duration', label: '耗时(ms)', type: 'number' },
     ],
-    requirements: [],
+    requirements: [{ type: 'multi-end', label: '多端运行' }],
   },
   {
     type: 'hotsearch_douban',
@@ -632,7 +632,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     category: 'hotsearch',
     iconImage: doubanIcon,
     color: '#007722',
-    badge: '热搜',
+    badge: '多端运行',
     description: '采集豆瓣热门内容榜单。支持服务端执行（默认，稳定可靠）或客户端执行（使用本地网络）。核心逻辑由服务端统一维护，客户端动态拉取。',
     defaultData: { name: '豆瓣热门采集', config: { maxCount: 20, executionMode: 'server' } },
     inputSchema: [
@@ -662,7 +662,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
       { field: 'fetchedAt', label: '采集时间', type: 'string' },
       { field: 'duration', label: '耗时(ms)', type: 'number' },
     ],
-    requirements: [],
+    requirements: [{ type: 'multi-end', label: '多端运行' }],
   },
   {
     type: 'hotsearch_kuaishou',
@@ -753,7 +753,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     category: 'hotsearch',
     iconImage: v2exIcon,
     color: '#2b2b2b',
-    badge: '热搜',
+    badge: '多端运行',
     description: '采集V2EX热门话题。支持服务端执行（默认，稳定可靠）或客户端执行（使用本地网络）。核心逻辑由服务端统一维护，客户端动态拉取。',
     defaultData: { name: 'V2EX热门采集', config: { maxCount: 20, executionMode: 'server' } },
     inputSchema: [
@@ -783,7 +783,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
       { field: 'fetchedAt', label: '采集时间', type: 'string' },
       { field: 'duration', label: '耗时(ms)', type: 'number' },
     ],
-    requirements: [],
+    requirements: [{ type: 'multi-end', label: '多端运行' }],
   },
   {
     type: 'hotsearch_36kr',
