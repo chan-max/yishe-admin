@@ -146,7 +146,7 @@
 
     <el-empty v-else description="当前没有已连接的设计工具" :image-size="60" />
 
-    <!-- 全屏极简设计端操控台 -->
+    <!-- 全屏极简设计端控制台 -->
     <el-dialog
       v-model="controlPanelVisible"
       class="cp-fullscreen-dialog"
@@ -157,21 +157,23 @@
       @close="onControlPanelClose"
     >
       <div v-if="controlTarget" class="cp-card">
-        <!-- 顶部精简导航与状态栏 -->
-        <div class="cp-header">
+        <!-- 顶部精简导航 -->
+        <header class="cp-header">
           <div class="cp-header__meta">
             <div class="cp-header__title">
               <Icon icon="ep:cpu" class="cp-header__icon" />
-              <span>设计端控制台</span>
+              <span class="cp-header__name">设计端控制台</span>
               <span class="cp-header__cid">{{ controlTarget.id }}</span>
             </div>
             <div class="cp-header__status">
               <el-tag v-if="getAgent(controlTarget)" :type="agentTagType(getAgent(controlTarget).agentState)" size="small" effect="light">
                 {{ agentLabel(getAgent(controlTarget).agentState) }}
               </el-tag>
-              <span v-if="getAgent(controlTarget)?.step" class="cp-header__step">
-                {{ getAgent(controlTarget)?.step }}
-              </span>
+              <el-tooltip v-if="getAgent(controlTarget)?.step" :content="getAgent(controlTarget)?.step" placement="bottom">
+                <span class="cp-header__step">
+                  {{ getAgent(controlTarget)?.step }}
+                </span>
+              </el-tooltip>
             </div>
           </div>
 
@@ -184,7 +186,7 @@
               @click="openMonitorDialog"
             >
               <Icon icon="ep:video-camera" />
-              <span>{{ monitorStatus.connected ? '实时画面 (已连)' : '屏幕监控' }}</span>
+              <span>{{ monitorStatus.connected ? '实时监控(连)' : '屏幕监控' }}</span>
             </el-button>
 
             <!-- 快捷工具按钮组 -->
@@ -204,89 +206,93 @@
               <Icon icon="ep:close" />
             </el-button>
           </div>
-        </div>
+        </header>
 
         <!-- 中间：对话与思考日志流 -->
-        <div v-loading="conversationLoading" class="cp-body">
-          <template v-if="conversationData?.conversation?.length">
-            <div
-              v-for="(msg, idx) in conversationData.conversation"
-              :key="msg.id || idx"
-              class="conv-bubble"
-              :class="`conv-bubble--${msg.role}`"
-            >
-              <div class="conv-bubble__header">
-                <span class="conv-bubble__role">{{ msg.role === 'user' ? '用户需求' : msg.role === 'tool' ? '工具执行' : 'Agent 响应' }}</span>
-                <span v-if="msg.meta?.iteration" class="conv-bubble__badge">第 {{ msg.meta.iteration }} 轮</span>
-                <span v-if="msg.meta?.duration" class="conv-bubble__dur">{{ msg.meta.duration }}ms</span>
-                <span class="conv-bubble__time">{{ formatMs(msg.timestamp) }}</span>
-              </div>
+        <main v-loading="conversationLoading" class="cp-body">
+          <div class="cp-body-inner">
+            <template v-if="conversationData?.conversation?.length">
+              <div
+                v-for="(msg, idx) in conversationData.conversation"
+                :key="msg.id || idx"
+                class="conv-bubble"
+                :class="`conv-bubble--${msg.role}`"
+              >
+                <div class="conv-bubble__header">
+                  <span class="conv-bubble__role">{{ msg.role === 'user' ? '用户需求' : msg.role === 'tool' ? '工具执行' : 'Agent 响应' }}</span>
+                  <span v-if="msg.meta?.iteration" class="conv-bubble__badge">第 {{ msg.meta.iteration }} 轮</span>
+                  <span v-if="msg.meta?.duration" class="conv-bubble__dur">{{ msg.meta.duration }}ms</span>
+                  <span class="conv-bubble__time">{{ formatMs(msg.timestamp) }}</span>
+                </div>
 
-              <div v-if="msg.content" class="conv-bubble__content">{{ msg.content }}</div>
+                <div v-if="msg.content" class="conv-bubble__content">{{ msg.content }}</div>
 
-              <div v-if="msg.tool_calls?.length" class="conv-bubble__tools">
-                <div v-for="tc in msg.tool_calls" :key="tc.id" class="conv-tool-item">
-                  <div class="conv-tool-item__title">
-                    <Icon icon="ep:tools" />
-                    <span>{{ tc.name }}</span>
+                <div v-if="msg.tool_calls?.length" class="conv-bubble__tools">
+                  <div v-for="tc in msg.tool_calls" :key="tc.id" class="conv-tool-item">
+                    <div class="conv-tool-item__title">
+                      <Icon icon="ep:tools" />
+                      <span>{{ tc.name }}</span>
+                    </div>
+                    <pre class="conv-tool-item__json">{{ formatJson(tc.arguments) }}</pre>
                   </div>
-                  <pre class="conv-tool-item__json">{{ formatJson(tc.arguments) }}</pre>
+                </div>
+
+                <div v-if="msg.role === 'tool' && msg.meta?.toolResult" class="conv-bubble__tool-result">
+                  <span class="conv-tool-status" :class="msg.meta.toolResult.success ? 'is-ok' : 'is-err'">
+                    {{ msg.meta.toolResult.success ? '执行成功' : '执行失败' }}
+                  </span>
+                  <pre class="conv-tool-item__json">{{ formatJson(msg.meta.toolResult) }}</pre>
+                </div>
+
+                <div v-if="msg.meta?.plan" class="conv-bubble__plan">
+                  🎯 规划：{{ msg.meta.plan.goal }} ({{ msg.meta.plan.currentStep || 0 }}/{{ msg.meta.plan.totalSteps }} 步)
                 </div>
               </div>
-
-              <div v-if="msg.role === 'tool' && msg.meta?.toolResult" class="conv-bubble__tool-result">
-                <span class="conv-tool-status" :class="msg.meta.toolResult.success ? 'is-ok' : 'is-err'">
-                  {{ msg.meta.toolResult.success ? '执行成功' : '执行失败' }}
-                </span>
-                <pre class="conv-tool-item__json">{{ formatJson(msg.meta.toolResult) }}</pre>
-              </div>
-
-              <div v-if="msg.meta?.plan" class="conv-bubble__plan">
-                🎯 规划：{{ msg.meta.plan.goal }} ({{ msg.meta.plan.currentStep || 0 }}/{{ msg.meta.plan.totalSteps }} 步)
-              </div>
+            </template>
+            <div v-else-if="!conversationLoading" class="cp-empty-hint">
+              <Icon icon="ep:chat-dot-round" class="cp-empty-icon" />
+              <span>暂无对话记录，可在下方输入指令指派设计任务</span>
             </div>
-          </template>
-          <div v-else-if="!conversationLoading" class="cp-empty-hint">
-            <Icon icon="ep:chat-dot-round" class="cp-empty-icon" />
-            <span>暂无对话记录，可在下方输入指令指派设计任务</span>
           </div>
-        </div>
+        </main>
 
         <!-- 产物流水展示带（若有） -->
         <div v-if="liveArtifacts.length" class="cp-artifact-shelf">
-          <div class="cp-artifact-shelf__label">🎨 设计产物:</div>
-          <div class="cp-artifact-shelf__items">
-            <div v-for="(art, aIdx) in liveArtifacts" :key="aIdx" class="cp-artifact-chip">
-              <el-image
-                v-if="art.url"
-                :src="art.url"
-                fit="cover"
-                class="cp-artifact-chip__thumb"
-                :preview-src-list="[art.url]"
-              />
-              <span class="cp-artifact-chip__name">{{ art.name || (art.type === 'image-group' ? '组图包' : '贴纸') }}</span>
-              <el-tag size="small" :type="art.type === 'image-group' ? 'warning' : 'success'" effect="plain">
-                {{ art.type === 'image-group' ? `组图(${art.stickersCount || 2})` : '单张' }}
-              </el-tag>
+          <div class="cp-artifact-shelf__inner">
+            <span class="cp-artifact-shelf__label">🎨 设计产物:</span>
+            <div class="cp-artifact-shelf__items">
+              <div v-for="(art, aIdx) in liveArtifacts" :key="aIdx" class="cp-artifact-chip">
+                <el-image
+                  v-if="art.url"
+                  :src="art.url"
+                  fit="cover"
+                  class="cp-artifact-chip__thumb"
+                  :preview-src-list="[art.url]"
+                />
+                <span class="cp-artifact-chip__name">{{ art.name || (art.type === 'image-group' ? '组图包' : '贴纸') }}</span>
+                <el-tag size="small" :type="art.type === 'image-group' ? 'warning' : 'success'" effect="plain">
+                  {{ art.type === 'image-group' ? `组图(${art.stickersCount || 2})` : '单张' }}
+                </el-tag>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- 底部：Tab 切换指令底座 -->
-        <div class="cp-footer">
-          <el-tabs v-model="cpActiveTab" class="cp-tabs" size="small">
-            <!-- Tab 1: AI 指令 -->
-            <el-tab-pane label="AI 指令" name="chat">
-              <div class="cp-specs">
+        <!-- 底部极简统一指令舱 -->
+        <footer class="cp-footer">
+          <div class="cp-footer-inner">
+            <!-- 规格配置条 -->
+            <div class="cp-specs">
+              <div class="cp-specs__left">
                 <el-radio-group v-model="adminTaskConfig.preset" size="small" @change="onPresetChange">
-                  <el-radio-button label="single">单图</el-radio-button>
+                  <el-radio-button label="single">单张</el-radio-button>
                   <el-radio-button label="group">组图</el-radio-button>
                   <el-radio-button label="batch">批量</el-radio-button>
                 </el-radio-group>
 
                 <template v-if="adminTaskConfig.preset === 'group'">
                   <span class="cp-spec-lbl">张数</span>
-                  <el-select v-model="adminTaskConfig.memberCount" size="small" style="width: 94px">
+                  <el-select v-model="adminTaskConfig.memberCount" size="small" style="width: 104px">
                     <el-option :value="2" label="2 (正反面)" />
                     <el-option :value="3" label="3张" />
                     <el-option :value="4" label="4张" />
@@ -296,7 +302,7 @@
 
                 <template v-if="adminTaskConfig.preset === 'batch'">
                   <span class="cp-spec-lbl">张数</span>
-                  <el-input-number v-model="adminTaskConfig.jobCount" :min="1" :max="20" size="small" style="width: 76px" controls-position="right" />
+                  <el-input-number v-model="adminTaskConfig.jobCount" :min="1" :max="50" size="small" style="width: 82px" controls-position="right" />
                 </template>
 
                 <span class="cp-spec-lbl">交付</span>
@@ -305,93 +311,86 @@
                   <el-option value="export" label="导出PNG" />
                   <el-option value="canvas" label="留画布" />
                 </el-select>
+              </div>
 
+              <div class="cp-specs__right">
                 <el-checkbox v-model="adminTaskConfig.autoImportToLibrary" size="small">入素材库</el-checkbox>
+                <el-checkbox v-if="adminTaskConfig.preset === 'batch'" v-model="adminTaskConfig.autoOptimize" size="small">智能优化</el-checkbox>
               </div>
+            </div>
 
-              <div class="cp-prompt-row">
-                <el-input
-                  v-model="remoteMessage"
-                  type="textarea"
-                  :rows="3"
-                  resize="none"
-                  placeholder="输入设计需求，例如：黑金商务名片正反面组图（Ctrl+Enter 发送）"
-                  :disabled="remoteSending"
-                  @keydown.enter.ctrl="sendRemoteCommand"
-                />
-                <el-button class="cp-submit-btn" type="primary" :loading="remoteSending" :disabled="!remoteMessage.trim()" @click="sendRemoteCommand">
-                  <Icon icon="ep:promotion" />
-                  发送
-                </el-button>
-              </div>
+            <!-- 输入与发送行 -->
+            <div class="cp-prompt-row">
+              <el-input
+                v-model="remoteMessage"
+                type="textarea"
+                :rows="2"
+                resize="none"
+                :placeholder="inputPlaceholder"
+                :disabled="remoteSending"
+                @keydown.enter.ctrl="sendRemoteCommand"
+              />
+              <el-button
+                class="cp-submit-btn"
+                :type="adminTaskConfig.preset === 'batch' ? 'warning' : 'primary'"
+                :loading="remoteSending"
+                :disabled="!remoteMessage.trim()"
+                @click="sendRemoteCommand"
+              >
+                <Icon :icon="adminTaskConfig.preset === 'batch' ? 'ep:video-play' : 'ep:promotion'" />
+                <span>{{ adminTaskConfig.preset === 'batch' ? '启动制作' : '发送指令' }}</span>
+              </el-button>
+            </div>
 
-              <div v-if="targetResults.length" class="cp-status-ticker">
-                <span class="cp-status-ticker__badge" :class="targetResults[0].success ? 'is-ok' : 'is-err'">
-                  {{ targetResults[0].success ? '●' : '▲' }} {{ remoteResultLabel(targetResults[0]) }}
-                </span>
-                <span class="cp-status-ticker__msg">{{ targetResults[0].message || targetResults[0].error }}</span>
-                <span class="cp-status-ticker__time">{{ formatAgentTime(targetResults[0].reportedAt) }}</span>
-              </div>
-            </el-tab-pane>
-
-            <!-- Tab 2: 自动制作 -->
-            <el-tab-pane name="auto">
-              <template #label>
-                <span class="cp-tab-auto-label">
-                  <Icon :icon="cpAutoRuns.some(r => !['completed','failed','cancelled'].includes(r.phase)) ? 'ep:loading' : 'ep:magic-stick'" />
-                  自动制作
-                  <span v-if="cpAutoRuns.some(r => !['completed','failed','cancelled'].includes(r.phase))" class="cp-tab-auto-badge">
-                    {{ cpAutoCompletedCount }}/{{ cpAutoTotalCount }}
-                  </span>
-                </span>
-              </template>
-
-              <div class="cp-auto-row">
-                <div class="cp-auto-qty">
-                  <span class="cp-spec-lbl">数量</span>
-                  <el-input-number v-model="cpAutoQuantity" :min="1" :max="50" size="small" style="width: 84px" controls-position="right" />
-                  <el-checkbox v-model="cpAutoOptimize" size="small">分析优化</el-checkbox>
+            <!-- 批量制作进度条（若有活跃任务） -->
+            <div v-if="activeBatchRuns.length" class="cp-batch-live">
+              <div class="cp-batch-live__header">
+                <el-tag size="small" effect="plain" :type="getCpRunTagType(activeBatchRuns[0].phase)">
+                  {{ getCpRunLabel(activeBatchRuns[0].phase) }}
+                </el-tag>
+                <span class="cp-batch-live__msg">{{ getCpRunMessage(activeBatchRuns[0]) }}</span>
+                <div class="cp-batch-live__actions">
+                  <el-button
+                    v-if="activeBatchRuns[0].phase === 'accepted' && activeBatchRuns[0].batch?.status === 'paused'"
+                    size="small"
+                    text
+                    type="primary"
+                    @click="controlCpBatch(activeBatchRuns[0], 'resume')"
+                  >
+                    继续
+                  </el-button>
+                  <el-button
+                    v-else-if="activeBatchRuns[0].phase === 'accepted' && activeBatchRuns[0].batch?.status === 'running'"
+                    size="small"
+                    text
+                    @click="controlCpBatch(activeBatchRuns[0], 'pause')"
+                  >
+                    暂停
+                  </el-button>
+                  <el-button
+                    v-if="activeBatchRuns[0].phase === 'accepted'"
+                    size="small"
+                    text
+                    type="danger"
+                    @click="controlCpBatch(activeBatchRuns[0], 'stop')"
+                  >
+                    停止
+                  </el-button>
                 </div>
               </div>
+              <el-progress :percentage="cpAutoProgress" :stroke-width="4" :show-text="false" />
+            </div>
 
-              <div class="cp-prompt-row">
-                <el-input
-                  v-model="cpAutoPrompt"
-                  type="textarea"
-                  :rows="3"
-                  resize="none"
-                  placeholder="描述主题、商品类型、尺寸、文案、风格和保存要求（Ctrl+Enter 启动）"
-                  :disabled="cpAutoDispatching"
-                  @keydown.enter.ctrl="startCpAutoBatch"
-                />
-                <el-button
-                  class="cp-submit-btn"
-                  type="primary"
-                  :loading="cpAutoDispatching"
-                  :disabled="!cpAutoPrompt.trim() || cpAutoRuns.some(r => !['completed','failed','cancelled'].includes(r.phase))"
-                  @click="startCpAutoBatch"
-                >
-                  <Icon icon="ep:video-play" />
-                  开始
-                </el-button>
-              </div>
-
-              <!-- 制作进度 -->
-              <div v-if="cpAutoRuns.length" class="cp-auto-progress">
-                <el-progress :percentage="cpAutoProgress" :stroke-width="5" />
-                <div class="cp-auto-runs">
-                  <div v-for="run in cpAutoRuns" :key="run.requestId" class="cp-auto-run">
-                    <el-tag size="small" effect="plain" :type="getCpRunTagType(run.phase)">{{ getCpRunLabel(run.phase) }}</el-tag>
-                    <span class="cp-auto-run__msg">{{ getCpRunMessage(run) }}</span>
-                    <el-button v-if="run.phase === 'accepted' && run.batch?.status === 'paused'" size="small" text type="primary" @click="controlCpBatch(run, 'resume')">继续</el-button>
-                    <el-button v-else-if="run.phase === 'accepted' && run.batch?.status === 'running'" size="small" text @click="controlCpBatch(run, 'pause')">暂停</el-button>
-                    <el-button v-if="run.phase === 'accepted'" size="small" text type="danger" @click="controlCpBatch(run, 'stop')">停止</el-button>
-                  </div>
-                </div>
-              </div>
-            </el-tab-pane>
-          </el-tabs>
-        </div>
+            <!-- 状态通知条 -->
+            <div v-else-if="targetResults.length" class="cp-status-ticker">
+              <span class="cp-status-ticker__badge" :class="targetResults[0].success ? 'is-ok' : 'is-err'">
+                {{ targetResults[0].success ? '●' : '▲' }} {{ remoteResultLabel(targetResults[0]) }}
+              </span>
+              <span class="cp-status-ticker__msg">{{ targetResults[0].message || targetResults[0].error }}</span>
+              <span class="cp-status-ticker__time">{{ formatAgentTime(targetResults[0].reportedAt) }}</span>
+            </div>
+          </div>
+        </footer>
       </div>
     </el-dialog>
 
@@ -1252,9 +1251,10 @@ const adminTaskConfig = reactive({
   preset: "single" as "single" | "group" | "batch",
   outputKind: "single" as "single" | "group" | "independent-batch",
   memberCount: 2,
-  jobCount: 1,
+  jobCount: 3,
   delivery: "save" as "save" | "export" | "canvas",
   autoImportToLibrary: true,
+  autoOptimize: false,
 });
 
 const onPresetChange = (val: string) => {
@@ -1270,10 +1270,17 @@ const onPresetChange = (val: string) => {
   }
 };
 
-// ── 操控面板 tab 状态 ──
-const cpActiveTab = ref("chat");
+const inputPlaceholder = computed(() => {
+  if (adminTaskConfig.preset === "single") {
+    return "输入设计需求，例如：科技感极简 Logo 贴纸（Ctrl+Enter 发送）";
+  }
+  if (adminTaskConfig.preset === "group") {
+    return `输入组图需求（共 ${adminTaskConfig.memberCount} 张），例如：黑金商务名片正反面，第1张正面为姓名职务，第2张背面为企业Slogan（Ctrl+Enter 发送）`;
+  }
+  return `输入批量制作需求（共 ${adminTaskConfig.jobCount} 张），例如：国潮复古风咖啡包装贴纸系列，自动批量生成（Ctrl+Enter 启动）`;
+});
 
-// ── 操控面板内嵌自动制作 ──
+// ── 操控面板自动制作进度跟踪 ──
 type CpRunPhase = "dispatching" | "accepted" | "completed" | "failed" | "rejected" | "cancelled";
 interface CpBatchRun {
   requestId: string;
@@ -1291,12 +1298,12 @@ interface CpBatchRun {
   };
 }
 
-const cpAutoPrompt = ref("");
-const cpAutoQuantity = ref(1);
-const cpAutoOptimize = ref(false);
-const cpAutoDispatching = ref(false);
 const cpAutoRuns = ref<CpBatchRun[]>([]);
 const cpTerminalPhases = new Set<CpRunPhase>(["completed", "failed", "rejected", "cancelled"]);
+
+const activeBatchRuns = computed(() =>
+  cpAutoRuns.value.filter((r) => !cpTerminalPhases.has(r.phase)),
+);
 
 const cpAutoTotalCount = computed(() => cpAutoRuns.value.reduce((s, r) => s + r.assignedCount, 0));
 const cpAutoCompletedCount = computed(() =>
@@ -1310,7 +1317,7 @@ const cpAutoProgress = computed(() =>
 );
 
 const getCpRunLabel = (phase: CpRunPhase) =>
-  ({ dispatching: "发送中", accepted: "制作中", completed: "已完成", failed: "失败", rejected: "未接收", cancelled: "已停止" })[phase];
+  ({ dispatching: "发送中", accepted: "制作中", completed: "已完成", failed: "失败", rejected: "未接收", cancelled: "已停止" })[phase] || phase;
 
 const getCpRunTagType = (phase: CpRunPhase): "success" | "danger" | "primary" | "info" => {
   if (phase === "completed") return "success";
@@ -1323,53 +1330,13 @@ const getCpRunMessage = (run: CpBatchRun) => {
   if (run.error) return run.error;
   const b = run.batch;
   if (!b) return run.message || "等待设计端接收";
-  if (b.status === "preparing") return `拆解 brief · 0/${run.assignedCount}`;
+  if (b.status === "preparing") return `正在拆解需求 · 0/${run.assignedCount}`;
   if (b.status === "paused") return `已暂停 · ${b.completed}/${run.assignedCount}`;
-  if (b.status === "done") return `${b.succeeded}/${run.assignedCount} 已上传图库`;
-  if (b.status === "stopped") return `${b.completed}/${run.assignedCount} · 已停止`;
+  if (b.status === "done") return `${b.succeeded}/${run.assignedCount} 张制作完成`;
+  if (b.status === "stopped") return `已停止 · ${b.completed}/${run.assignedCount}`;
   const current = b.items?.[b.completed];
   const detail = current ? `${current.title} · ${current.error || current.status}` : "自动制作中";
   return `${b.completed}/${run.assignedCount} · ${detail}`;
-};
-
-const startCpAutoBatch = async () => {
-  if (!controlTarget.value || !cpAutoPrompt.value.trim() || cpAutoDispatching.value) return;
-  if (cpAutoRuns.value.some((r) => !cpTerminalPhases.has(r.phase))) return;
-  cpAutoDispatching.value = true;
-  const requestId = `cp-batch-${Date.now()}`;
-  const run: CpBatchRun = {
-    requestId,
-    phase: "dispatching",
-    assignedCount: cpAutoQuantity.value,
-    message: "正在启动自动制作",
-  };
-  cpAutoRuns.value = [run];
-  try {
-    const res: any = await request.postOriginal({
-      url: "/websocket/remote-command",
-      data: {
-        connectionId: controlTarget.value.id,
-        command: {
-          type: "batch-start",
-          payload: {
-            description: cpAutoPrompt.value.trim(),
-            count: cpAutoQuantity.value,
-            enableAnalysisOptimization: cpAutoOptimize.value,
-            failureStrategy: "save_anyway",
-          },
-          requestId,
-        },
-      },
-    });
-    if (res?.success === false) throw new Error(res?.message || "指令发送失败");
-    run.message = "等待设计端启动自动制作";
-  } catch (error: any) {
-    run.phase = "failed";
-    run.error = error?.message || "批次启动失败";
-  } finally {
-    cpAutoDispatching.value = false;
-  }
-  ElMessage.success(`已启动 ${cpAutoQuantity.value} 张自动制作`);
 };
 
 const controlCpBatch = async (run: CpBatchRun, action: "pause" | "resume" | "stop") => {
@@ -1450,41 +1417,71 @@ const sendRemoteStop = async (row: WebsocketConnectionVO) => {
 const sendRemoteCommand = async () => {
   if (!controlTarget.value || !remoteMessage.value.trim() || remoteSending.value) return;
   remoteSending.value = true;
-  const requestId = `cmd-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  const requestId = adminTaskConfig.preset === "batch"
+    ? `cp-batch-${Date.now()}`
+    : `cmd-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  
   try {
-    const taskOptions = {
-      preset: adminTaskConfig.preset,
-      outputKind: adminTaskConfig.outputKind,
-      memberCount: adminTaskConfig.preset === "group" ? adminTaskConfig.memberCount : 1,
-      jobCount: adminTaskConfig.preset === "batch" ? adminTaskConfig.jobCount : 1,
-      delivery: adminTaskConfig.delivery,
-      autoImportToLibrary: adminTaskConfig.autoImportToLibrary,
-    };
-    const res: any = await request.postOriginal({
-      url: "/websocket/remote-command",
-      data: {
-        connectionId: controlTarget.value.id,
-        command: {
-          type: "chat",
-          payload: {
-            message: remoteMessage.value.trim(),
-            taskOptions,
+    if (adminTaskConfig.preset === "batch") {
+      const run: CpBatchRun = {
+        requestId,
+        phase: "dispatching",
+        assignedCount: adminTaskConfig.jobCount,
+        message: "正在启动批量自动制作",
+      };
+      cpAutoRuns.value.unshift(run);
+      const res: any = await request.postOriginal({
+        url: "/websocket/remote-command",
+        data: {
+          connectionId: controlTarget.value.id,
+          command: {
+            type: "batch-start",
+            payload: {
+              description: remoteMessage.value.trim(),
+              count: adminTaskConfig.jobCount,
+              enableAnalysisOptimization: adminTaskConfig.autoOptimize,
+              failureStrategy: "save_anyway",
+            },
+            requestId,
           },
-          requestId,
         },
-      },
-    });
-    if (res?.success === false) {
-      throw new Error(res?.message || "发送失败");
+      });
+      if (res?.success === false) throw new Error(res?.message || "启动批量制作失败");
+      run.message = "等待设计端接收批次";
+      ElMessage.success(`已启动 ${adminTaskConfig.jobCount} 张批量制作`);
+    } else {
+      const taskOptions = {
+        preset: adminTaskConfig.preset,
+        outputKind: adminTaskConfig.outputKind,
+        memberCount: adminTaskConfig.preset === "group" ? adminTaskConfig.memberCount : 1,
+        jobCount: 1,
+        delivery: adminTaskConfig.delivery,
+        autoImportToLibrary: adminTaskConfig.autoImportToLibrary,
+      };
+      const res: any = await request.postOriginal({
+        url: "/websocket/remote-command",
+        data: {
+          connectionId: controlTarget.value.id,
+          command: {
+            type: "chat",
+            payload: {
+              message: remoteMessage.value.trim(),
+              taskOptions,
+            },
+            requestId,
+          },
+        },
+      });
+      if (res?.success === false) throw new Error(res?.message || "发送失败");
+      remoteResults.value.unshift({
+        requestId,
+        success: true,
+        phase: "dispatching",
+        message: "命令已发送，Agent 正在处理...",
+        connectionId: controlTarget.value.id,
+        reportedAt: new Date().toISOString(),
+      });
     }
-    remoteResults.value.unshift({
-      requestId,
-      success: true,
-      phase: "dispatching",
-      message: "命令已发送，Agent 正在处理...",
-      connectionId: controlTarget.value.id,
-      reportedAt: new Date().toISOString(),
-    });
     remoteMessage.value = "";
   } catch (error: any) {
     remoteResults.value.unshift({
@@ -1788,14 +1785,23 @@ onBeforeUnmount(() => {
 }
 
 /* ── Fullscreen Ultra-Clean Control Console ── */
+.cp-fullscreen-dialog :deep(.el-dialog) {
+  margin: 0 !important;
+  padding: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
 .cp-fullscreen-dialog :deep(.el-dialog__header) {
   display: none;
 }
 
 .cp-fullscreen-dialog :deep(.el-dialog__body) {
   padding: 0;
-  height: 100vh;
-  width: 100vw;
+  height: 100%;
+  width: 100%;
   overflow: hidden;
   background: var(--el-bg-color-page);
 }
@@ -1803,61 +1809,72 @@ onBeforeUnmount(() => {
 .cp-card {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  width: 100vw;
+  height: 100%;
+  width: 100%;
+  max-width: 100%;
   background: var(--el-bg-color-page);
   overflow: hidden;
+  box-sizing: border-box;
 }
 
-/* 顶部极简导航 */
+/* 顶部精简导航栏 */
 .cp-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
-  height: 54px;
+  padding: 0 16px;
+  height: 48px;
   background: var(--el-bg-color);
   border-bottom: 1px solid var(--el-border-color-lighter);
-  gap: 16px;
+  gap: 12px;
   flex-shrink: 0;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 .cp-header__meta {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
+  flex: 1;
+  overflow: hidden;
 }
 
 .cp-header__title {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 15px;
+  gap: 6px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--el-text-color-primary);
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .cp-header__icon {
-  font-size: 18px;
+  font-size: 16px;
   color: var(--el-color-primary);
 }
 
 .cp-header__cid {
   font-family: "SF Mono", Consolas, monospace;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--el-text-color-secondary);
   background: var(--el-fill-color-light);
-  padding: 2px 8px;
+  padding: 1px 6px;
   border-radius: 4px;
 }
 
 .cp-header__status {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .cp-header__step {
@@ -1866,32 +1883,36 @@ onBeforeUnmount(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 320px;
+  max-width: 220px;
 }
 
 .cp-header__actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
 }
 
 /* 居中对话流 */
 .cp-body {
   flex: 1;
-  padding: 24px 20px;
+  min-height: 0;
+  width: 100%;
+  max-width: 100%;
+  padding: 16px;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
+  overflow-x: hidden;
   background: var(--el-bg-color-page);
+  box-sizing: border-box;
 }
 
-.conv-bubble,
-.cp-empty-hint {
-  width: 100%;
-  max-width: 900px;
+.cp-body-inner {
+  max-width: 820px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
 }
 
 .cp-empty-hint {
@@ -1899,27 +1920,30 @@ onBeforeUnmount(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 60vh;
+  height: 55vh;
   color: var(--el-text-color-placeholder);
-  gap: 12px;
-  font-size: 14px;
+  gap: 10px;
+  font-size: 13px;
 }
 
 .cp-empty-icon {
-  font-size: 48px;
-  opacity: 0.4;
+  font-size: 40px;
+  opacity: 0.35;
 }
 
-/* 气泡 */
+/* 对话气泡 */
 .conv-bubble {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px 16px;
-  border-radius: 10px;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 8px;
   background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .conv-bubble--user {
@@ -1929,19 +1953,18 @@ onBeforeUnmount(() => {
 
 .conv-bubble--tool {
   background: var(--el-fill-color-extra-light);
-  border-left: 4px solid var(--el-color-warning);
+  border-left: 3px solid var(--el-color-warning);
 }
 
 .conv-bubble--assistant {
   background: var(--el-bg-color);
   border-color: var(--el-border-color-light);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
 }
 
 .conv-bubble__header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   font-size: 12px;
 }
 
@@ -1952,8 +1975,8 @@ onBeforeUnmount(() => {
 
 .conv-bubble__badge {
   background: var(--el-fill-color);
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 1px 5px;
+  border-radius: 3px;
   color: var(--el-color-primary);
   font-size: 11px;
 }
@@ -1971,54 +1994,57 @@ onBeforeUnmount(() => {
 }
 
 .conv-bubble__content {
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.6;
   color: var(--el-text-color-primary);
   white-space: pre-wrap;
   word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .conv-bubble__plan {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--el-color-primary);
   font-weight: 500;
   background: var(--el-color-primary-light-9);
-  padding: 6px 10px;
-  border-radius: 6px;
+  padding: 5px 8px;
+  border-radius: 4px;
 }
 
 .conv-tool-item {
-  margin-top: 4px;
+  margin-top: 3px;
 }
 
 .conv-tool-item__title {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
+  gap: 5px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--el-color-warning);
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 
 .conv-tool-item__json {
   margin: 0;
-  padding: 8px 10px;
+  padding: 6px 8px;
   font-family: "SF Mono", Consolas, monospace;
-  font-size: 12px;
-  line-height: 1.45;
+  font-size: 11px;
+  line-height: 1.4;
   background: var(--el-fill-color-dark);
   color: var(--el-text-color-regular);
-  border-radius: 6px;
-  max-height: 160px;
+  border-radius: 4px;
+  max-height: 140px;
   overflow-y: auto;
+  overflow-x: auto;
+  word-break: break-all;
 }
 
 .conv-tool-status {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 4px;
+  padding: 2px 6px;
+  border-radius: 3px;
 }
 
 .conv-tool-status.is-ok {
@@ -2033,100 +2059,124 @@ onBeforeUnmount(() => {
 
 /* 产物流水架 */
 .cp-artifact-shelf {
-  display: flex;
-  align-items: center;
-  justify-content: center;
   background: var(--el-bg-color);
   border-top: 1px solid var(--el-border-color-lighter);
-  padding: 10px 24px;
+  padding: 8px 16px;
   flex-shrink: 0;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.cp-artifact-shelf__inner {
+  max-width: 820px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
 }
 
 .cp-artifact-shelf__label {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--el-text-color-regular);
-  margin-right: 12px;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .cp-artifact-shelf__items {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   overflow-x: auto;
-  max-width: 820px;
+  flex: 1;
 }
 
 .cp-artifact-chip {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 10px;
+  gap: 6px;
+  padding: 3px 8px;
   background: var(--el-fill-color-light);
   border: 1px solid var(--el-border-color-light);
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  border-radius: 4px;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .cp-artifact-chip__thumb {
-  width: 32px;
-  height: 32px;
-  border-radius: 4px;
+  width: 26px;
+  height: 26px;
+  border-radius: 3px;
   flex-shrink: 0;
 }
 
 .cp-artifact-chip__name {
-  font-size: 12px;
-  max-width: 120px;
+  font-size: 11px;
+  max-width: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--el-text-color-primary);
 }
 
-/* 底部极简指令底座 (居中控制舱) */
+/* 底部极简指令舱 */
 .cp-footer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 14px 24px 20px;
+  width: 100%;
+  max-width: 100%;
   background: var(--el-bg-color);
   border-top: 1px solid var(--el-border-color-lighter);
+  padding: 10px 16px 14px;
   flex-shrink: 0;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.02);
+  box-sizing: border-box;
+  overflow: hidden;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.02);
 }
 
-.cp-specs,
-.cp-prompt-row,
-.cp-status-ticker {
+.cp-footer-inner {
+  max-width: 820px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   width: 100%;
-  max-width: 900px;
+  box-sizing: border-box;
 }
 
 .cp-specs {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 14px;
-  margin-bottom: 10px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.cp-spec-item {
+.cp-specs__left {
   display: flex;
   align-items: center;
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cp-specs__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .cp-spec-lbl {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--el-text-color-secondary);
 }
 
 .cp-prompt-row {
   display: flex;
-  align-items: flex-end;
-  gap: 12px;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .cp-prompt-row .el-textarea {
@@ -2134,29 +2184,65 @@ onBeforeUnmount(() => {
 }
 
 .cp-prompt-row :deep(.el-textarea__inner) {
-  border-radius: 8px;
-  padding: 10px 14px;
-  font-size: 14px;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .cp-submit-btn {
-  height: 52px;
-  padding: 0 24px;
-  border-radius: 8px;
-  font-size: 14px;
+  align-self: stretch;
+  min-width: 88px;
+  border-radius: 6px;
+  font-size: 13px;
   font-weight: 600;
   display: flex;
   align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.cp-batch-live {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 6px 8px;
+  background: var(--el-fill-color-light);
+  border-radius: 4px;
+}
+
+.cp-batch-live__header {
+  display: flex;
+  align-items: center;
   gap: 6px;
+  font-size: 12px;
+}
+
+.cp-batch-live__msg {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.cp-batch-live__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .cp-status-ticker {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   font-size: 12px;
   color: var(--el-text-color-secondary);
-  padding-top: 6px;
+  padding: 2px 0;
+  width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .cp-status-ticker__badge.is-ok { color: var(--el-color-success); font-weight: 600; }
@@ -2166,19 +2252,19 @@ onBeforeUnmount(() => {
 
 /* 独立画中画弹窗 (PiP Monitor) */
 .cp-monitor-dialog :deep(.el-dialog__body) {
-  padding: 12px;
+  padding: 10px;
 }
 
 .cp-pip-container {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .cp-pip-topbar {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   font-size: 12px;
 }
 
@@ -2192,7 +2278,7 @@ onBeforeUnmount(() => {
   width: 100%;
   aspect-ratio: 16 / 9;
   background: #000;
-  border-radius: 8px;
+  border-radius: 6px;
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -2212,156 +2298,16 @@ onBeforeUnmount(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   color: #fff;
-  font-size: 13px;
-  background: rgba(0, 0, 0, 0.7);
+  font-size: 12px;
+  background: rgba(0, 0, 0, 0.75);
 }
 
 .cp-pip-hint {
   color: rgba(255, 255, 255, 0.7);
-  font-size: 12px;
+  font-size: 11px;
   text-align: center;
-  padding: 0 20px;
-}
-
-/* ── cp-footer Tabs ── */
-.cp-tabs {
-  width: 100%;
-}
-
-.cp-tabs :deep(.el-tabs__header) {
-  margin-bottom: 10px;
-}
-
-.cp-tabs :deep(.el-tabs__item) {
-  font-size: 13px;
-  height: 36px;
-  padding: 0 14px;
-}
-
-/* 对齐：输入框 + 发送按钮 */
-.cp-prompt-row {
-  display: flex;
-  gap: 10px;
-  align-items: stretch;
-}
-
-.cp-prompt-row .el-textarea {
-  flex: 1;
-}
-
-.cp-prompt-row :deep(.el-textarea__inner) {
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.cp-submit-btn {
-  align-self: stretch;
-  min-width: 64px;
-  border-radius: 8px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-/* 参数条 */
-.cp-specs {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-  width: 100%;
-  max-width: 820px;
-  box-sizing: border-box;
-}
-
-.cp-spec-lbl {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
-/* 状态 ticker */
-.cp-status-ticker {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  margin-top: 6px;
-  width: 100%;
-  max-width: 820px;
-}
-
-.cp-status-ticker__badge.is-ok { color: var(--el-color-success); font-weight: 600; }
-.cp-status-ticker__badge.is-err { color: var(--el-color-danger); font-weight: 600; }
-.cp-status-ticker__msg { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cp-status-ticker__time { font-size: 11px; color: var(--el-text-color-placeholder); }
-
-/* 自动制作 tab label */
-.cp-tab-auto-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.cp-tab-auto-badge {
-  display: inline-flex;
-  height: 15px;
-  min-width: 15px;
-  padding: 0 4px;
-  font-size: 10px;
-  line-height: 1;
-  background: var(--el-color-primary);
-  color: #fff;
-  border-radius: 8px;
-  align-items: center;
-  justify-content: center;
-}
-
-/* 自动制作顶部配置行 */
-.cp-auto-row {
-  margin-bottom: 10px;
-}
-
-.cp-auto-qty {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-/* 制作进度 */
-.cp-auto-progress {
-  margin-top: 10px;
-}
-
-.cp-auto-runs {
-  margin-top: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.cp-auto-run {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 8px;
-  background: var(--el-fill-color-light);
-  border-radius: 6px;
-  font-size: 12px;
-}
-
-.cp-auto-run__msg {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--el-text-color-secondary);
+  padding: 0 16px;
 }
 </style>
-
