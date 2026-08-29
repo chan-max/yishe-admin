@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from "vue";
-import { Pointer, Plus, FullScreen } from "@element-plus/icons-vue";
+import { Pointer, Plus, FullScreen, QuestionFilled } from "@element-plus/icons-vue";
 import type { Node } from "@vue-flow/core";
 import AdvancedCronDialog from "./AdvancedCronDialog.vue";
 import VariableSelector from "./VariableSelector.vue";
@@ -629,6 +629,19 @@ const removeInputParam = (index: number) => {
               class="config-panel__schema-field"
             >
               <el-form-item :label="field.label">
+                <template #label>
+                  <span style="display: flex; align-items: center; gap: 4px">
+                    {{ field.label }}
+                    <el-tooltip
+                      v-if="field.help"
+                      placement="top"
+                      :content="field.help"
+                      raw-content
+                    >
+                      <el-icon class="config-panel__help-icon"><QuestionFilled /></el-icon>
+                    </el-tooltip>
+                  </span>
+                </template>
                 <template v-if="field.type === 'select'">
                   <el-select
                     v-model="form.config[field.field]"
@@ -1054,6 +1067,17 @@ const removeInputParam = (index: number) => {
   font-size: 10px;
   line-height: 1.5;
   color: var(--el-text-color-placeholder);
+}
+
+.config-panel__help-icon {
+  font-size: 14px;
+  color: var(--el-text-color-secondary);
+  cursor: help;
+  transition: color 0.2s;
+
+  &:hover {
+    color: var(--el-color-primary);
+  }
 }
 
 .config-panel__delete-icon {
