@@ -376,7 +376,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
         type: 'code',
         required: true,
         placeholder: '// 示例：获取上游热搜节点数据并格式化\nconst hotsearch = $params.hotsearch_weibo || {};\nconst items = hotsearch.items || [];\n\nconst text = items.slice(0, 5).map((item, i) =>\n  `${i+1}. ${item.title} 🔥${item.hot}`\n).join("\\n");\n\nreturn { message: text };',
-        description: '使用 $params.nodeId 引用上游节点输出，return 返回结果给下游节点',
+        description: '💡 可用变量：$params.nodeId(上游输出)、$tools(HTTP/文件/COS)、$log(打印日志)；用 return {key:value} 返回结果给下游',
       },
       { field: 'timeoutMs', label: '超时时间(ms)', type: 'number', defaultValue: 30000 },
     ],
