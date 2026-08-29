@@ -9,11 +9,35 @@
           <span class="platform-name">{{ title }}</span>
         </div>
 
+        <!-- 执行位置选择（仅支持服务端执行的节点显示） -->
+        <el-select
+          v-if="supportsServer"
+          v-model="executionMode"
+          placeholder="执行位置"
+          size="default"
+          style="width: 140px"
+        >
+          <el-option label="服务端执行" value="server">
+            <div class="mode-option">
+              <span>服务端执行</span>
+              <el-tag size="small" type="success">默认</el-tag>
+            </div>
+          </el-option>
+          <el-option label="客户端执行" value="client">
+            <div class="mode-option">
+              <span>客户端执行</span>
+              <el-tag size="small" type="warning">需在线</el-tag>
+            </div>
+          </el-option>
+        </el-select>
+
+        <!-- 客户端节点选择（始终显示，服务端模式下仅作参考） -->
         <el-select
           v-model="selectedClientId"
           placeholder="选择客户端节点"
           size="default"
           style="width: 200px"
+          :disabled="executionMode === 'server'"
         >
           <el-option
             v-for="item in clientOptions"
@@ -103,6 +127,7 @@ import { computed, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { usePluginClientNodes } from '@/services/clientNodeState'
 import { genericSearchAndWait } from '@/api/external/genericCommand'
+import { executeNodeCapability, supportsServerExecution } from '@/api/external/hotsearch'
 import * as appIcons from '@/assets/icons/apps'
 
 defineOptions({ name: 'HotsearchPlatformPanel' })
@@ -131,6 +156,12 @@ const platformIcon = computed(() => {
   return map[props.pluginKey] || ''
 })
 
+// 执行模式：server（服务端，默认）或 client（客户端）
+const executionMode = ref<'server' | 'client'>('server')
+
+// 当前节点是否支持服务端执行
+const supportsServer = computed(() => supportsServerExecution(props.pluginKey))
+
 const { clients: rawClients, loading, refresh } = usePluginClientNodes(props.pluginKey as any, {
   includeOffline: true,
 })
@@ -152,7 +183,13 @@ const items = ref<any[]>([])
 const resultMessage = ref('')
 const rawData = ref<any>(null)
 
-const isReady = computed(() => !!selectedClientId.value && !!selectedClient.value?.isOnline)
+// 判断是否可执行：
+// - 支持服务端执行的节点：server 模式始终可执行，client 模式需要选中在线客户端
+// - 仅支持客户端执行的节点：需要选中在线客户端
+const isReady = computed(() => {
+  if (supportsServer.value && executionMode.value === 'server') return true
+  return !!selectedClientId.value && !!selectedClient.value?.isOnline
+})
 
 const loadClients = async () => {
   await refresh()
@@ -163,24 +200,42 @@ const loadClients = async () => {
 }
 
 const handleSearch = async () => {
-  if (!selectedClientId.value) {
-    ElMessage.warning('请先选择客户端节点')
-    return
-  }
-  if (!selectedClient.value?.isOnline) {
-    ElMessage.warning('该客户端节点当前离线')
-    return
-  }
   searching.value = true
   try {
-    const res = await genericSearchAndWait(selectedClientId.value, props.pluginKey, {})
-    rawData.value = res
-    const arr = res?.items || (Array.isArray(res?.raw) ? res.raw : [])
-    items.value = arr.map((it: any, idx: number) => ({
-      ...it,
-      rank: it.rank ?? idx + 1,
-    }))
-    resultMessage.value = res?.message || `${items.value.length} 条数据`
+    let res: any
+
+    // 服务端执行模式（仅支持服务端执行的节点）
+    if (supportsServer.value && executionMode.value === 'server') {
+      const response = await executeNodeCapability(props.pluginKey, { maxCount: 20 })
+      const resData = response?.data || response
+      rawData.value = resData
+      const arr = resData?.items || []
+      items.value = arr.map((it: any, idx: number) => ({
+        ...it,
+        rank: it.rank ?? idx + 1,
+      }))
+      resultMessage.value = `${items.value.length} 条数据（服务端执行）`
+    } else {
+      // 客户端执行模式：通过 WebSocket 派发到客户端
+      if (!selectedClientId.value) {
+        ElMessage.warning('请先选择客户端节点')
+        searching.value = false
+        return
+      }
+      if (!selectedClient.value?.isOnline) {
+        ElMessage.warning('该客户端节点当前离线')
+        searching.value = false
+        return
+      }
+      res = await genericSearchAndWait(selectedClientId.value, props.pluginKey, {})
+      rawData.value = res
+      const arr = res?.items || (Array.isArray(res?.raw) ? res.raw : [])
+      items.value = arr.map((it: any, idx: number) => ({
+        ...it,
+        rank: it.rank ?? idx + 1,
+      }))
+      resultMessage.value = `${items.value.length} 条数据（客户端执行）`
+    }
   } catch (e: any) {
     ElMessage.error(e?.message || '采集失败')
   } finally {
@@ -254,6 +309,8 @@ watch(
     rawData.value = null
     resultMessage.value = ''
     items.value = []
+    // 切换平台时重置为默认执行模式
+    executionMode.value = 'server'
   },
 )
 </script>
@@ -314,6 +371,14 @@ watch(
 }
 
 .client-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+}
+
+.mode-option {
   display: flex;
   align-items: center;
   justify-content: space-between;

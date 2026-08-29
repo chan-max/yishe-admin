@@ -299,6 +299,7 @@ export const NODE_CATEGORIES = [
   { key: 'all', label: '全部节点', icon: 'ep:grid' },
   { key: 'base', label: '基础流程', icon: 'ep:location' },
   { key: 'ai', label: 'AI & LLM 智能', icon: 'ep:magic-stick' },
+  { key: 'hotsearch', label: '热搜与社交媒体', icon: 'ep:trend-charts' },
   { key: 'design', label: 'PSD & 设计渲染', icon: 'ep:picture-filled' },
   { key: 'material', label: '素材与文件管理', icon: 'ep:folder-opened' },
   { key: 'product', label: '商品与电商处理', icon: 'ep:goods' },
@@ -438,7 +439,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   {
     type: 'hotsearch_weibo',
     name: '微博热搜采集',
-    category: 'integration',
+    category: 'hotsearch',
     iconImage: weiboIcon,
     color: '#e6162d',
     badge: '热搜',
@@ -458,13 +459,31 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   {
     type: 'hotsearch_douyin',
     name: '抖音热搜采集',
-    category: 'integration',
+    category: 'hotsearch',
     iconImage: douyinIcon,
     color: '#000000',
     badge: '热搜',
-    description: '通过已登录客户端采集抖音实时热搜榜，获取当前短视频平台最热门的话题、挑战和搜索关键词。抖音热搜反映年轻用户的兴趣趋势和内容消费方向。需客户端在线且已登录抖音账号，自动查找在线设备逐个尝试执行。输出包含热搜标题、热度值、相关视频量和跳转链接，适用于短视频选题策划、热点内容创作和竞品分析。',
-    defaultData: { name: '抖音热搜采集', platform: 'douyin' },
-    inputSchema: [],
+    description: '采集抖音实时热搜榜。支持服务端执行（默认，稳定可靠）或客户端执行（使用本地网络）。核心逻辑由服务端统一维护，客户端动态拉取。',
+    defaultData: { name: '抖音热搜采集', config: { maxCount: 20, executionMode: 'server' } },
+    inputSchema: [
+      {
+        field: 'maxCount',
+        label: '获取数量',
+        type: 'number',
+        defaultValue: 20,
+      },
+      {
+        field: 'executionMode',
+        label: '执行位置',
+        type: 'select',
+        defaultValue: 'server',
+        description: '服务端执行（默认）：由服务端直接采集，无需客户端在线；客户端执行：由客户端本地网络采集，适合需要客户端IP的场景。',
+        options: [
+          { label: '服务端执行', value: 'server' },
+          { label: '客户端执行', value: 'client' },
+        ],
+      },
+    ],
     outputSchema: [
       { field: 'platform', label: '平台标识', type: 'string' },
       { field: 'name', label: '平台名称', type: 'string' },
@@ -473,12 +492,12 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
       { field: 'fetchedAt', label: '采集时间', type: 'string' },
       { field: 'duration', label: '耗时(ms)', type: 'number' },
     ],
-    requirements: [{ type: 'client', label: '需客户端在线' }],
+    requirements: [],
   },
   {
     type: 'hotsearch_bilibili',
     name: 'B站热搜采集',
-    category: 'integration',
+    category: 'hotsearch',
     iconImage: bilibiliIcon,
     color: '#00a1d6',
     badge: '热搜',
@@ -498,7 +517,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   {
     type: 'hotsearch_zhihu',
     name: '知乎热榜采集',
-    category: 'integration',
+    category: 'hotsearch',
     iconImage: zhihuIcon,
     color: '#0084ff',
     badge: '热搜',
@@ -518,7 +537,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   {
     type: 'hotsearch_toutiao',
     name: '今日头条热搜采集',
-    category: 'integration',
+    category: 'hotsearch',
     iconImage: toutiaoIcon,
     color: '#f5222d',
     badge: '热搜',
@@ -538,7 +557,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   {
     type: 'hotsearch_douban',
     name: '豆瓣热门采集',
-    category: 'integration',
+    category: 'hotsearch',
     iconImage: doubanIcon,
     color: '#007722',
     badge: '热搜',
@@ -558,7 +577,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   {
     type: 'hotsearch_kuaishou',
     name: '快手热搜采集',
-    category: 'integration',
+    category: 'hotsearch',
     iconImage: kuaishouIcon,
     color: '#ff6600',
     badge: '热搜',
@@ -578,7 +597,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   {
     type: 'hotsearch_xiaohongshu',
     name: '小红书热门/探索采集',
-    category: 'integration',
+    category: 'hotsearch',
     iconImage: xiaohongshuIcon,
     color: '#ff2442',
     badge: '探索',
@@ -603,7 +622,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   {
     type: 'xiaohongshu_note_detail',
     name: '小红书笔记详情提取',
-    category: 'integration',
+    category: 'hotsearch',
     iconImage: xiaohongshuIcon,
     color: '#ff2442',
     badge: '详情',
@@ -641,7 +660,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   {
     type: 'hotsearch_v2ex',
     name: 'V2EX热门采集',
-    category: 'integration',
+    category: 'hotsearch',
     iconImage: v2exIcon,
     color: '#2b2b2b',
     badge: '热搜',
@@ -661,7 +680,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   {
     type: 'hotsearch_36kr',
     name: '36氪热门采集',
-    category: 'integration',
+    category: 'hotsearch',
     iconImage: thirtySixKrIcon,
     color: '#0052d9',
     badge: '热搜',
@@ -681,7 +700,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
   {
     type: 'hotsearch_ithome',
     name: 'IT之家热门采集',
-    category: 'integration',
+    category: 'hotsearch',
     iconImage: ithomeIcon,
     color: '#c8102e',
     badge: '热搜',
