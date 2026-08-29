@@ -443,9 +443,27 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     iconImage: weiboIcon,
     color: '#e6162d',
     badge: '热搜',
-    description: '通过已登录客户端采集微博实时热搜榜单，获取当前最热话题、标题、热度值及跳转链接。微博是中国最大的社交媒体平台，热搜反映当下社会热点与舆论趋势。需客户端在线且已登录微博账号，自动查找在线设备逐个尝试执行。输出包含热搜标题、热度指数、标签分类和详情链接，适用于舆情监控、热点追踪和选题策划。',
-    defaultData: { name: '微博热搜采集' },
-    inputSchema: [],
+    description: '采集微博实时热搜榜。支持服务端执行（默认，稳定可靠）或客户端执行（使用本地网络）。核心逻辑由服务端统一维护，客户端动态拉取。',
+    defaultData: { name: '微博热搜采集', config: { maxCount: 20, executionMode: 'server' } },
+    inputSchema: [
+      {
+        field: 'maxCount',
+        label: '获取数量',
+        type: 'number',
+        defaultValue: 20,
+      },
+      {
+        field: 'executionMode',
+        label: '执行位置',
+        type: 'select',
+        defaultValue: 'server',
+        description: '服务端执行（默认）：由服务端直接采集，无需客户端在线；客户端执行：由客户端本地网络采集，适合需要客户端IP的场景。',
+        options: [
+          { label: '服务端执行', value: 'server' },
+          { label: '客户端执行', value: 'client' },
+        ],
+      },
+    ],
     outputSchema: [
       { field: 'platform', label: '平台标识', type: 'string' },
       { field: 'name', label: '平台名称', type: 'string' },
@@ -454,7 +472,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
       { field: 'fetchedAt', label: '采集时间', type: 'string' },
       { field: 'duration', label: '耗时(ms)', type: 'number' },
     ],
-    requirements: [{ type: 'client', label: '需客户端在线' }],
+    requirements: [],
   },
   {
     type: 'hotsearch_douyin',
@@ -501,9 +519,27 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     iconImage: bilibiliIcon,
     color: '#00a1d6',
     badge: '热搜',
-    description: '通过已登录客户端采集B站（哔哩哔哩）实时热搜榜单，获取当前视频平台最热门的话题、关键词和流行内容。B站热搜反映年轻创作者社区的兴趣方向和内容趋势。需客户端在线且已登录B站账号，自动查找在线设备逐个尝试执行。输出包含热搜标题、搜索指数、相关视频和跳转链接，适用于UP主选题策划、社区热点追踪和内容运营分析。',
-    defaultData: { name: 'B站热搜采集', platform: 'bilibili' },
-    inputSchema: [],
+    description: '采集B站实时热搜榜。支持服务端执行（默认，稳定可靠）或客户端执行（使用本地网络）。核心逻辑由服务端统一维护，客户端动态拉取。',
+    defaultData: { name: 'B站热搜采集', config: { maxCount: 20, executionMode: 'server' } },
+    inputSchema: [
+      {
+        field: 'maxCount',
+        label: '获取数量',
+        type: 'number',
+        defaultValue: 20,
+      },
+      {
+        field: 'executionMode',
+        label: '执行位置',
+        type: 'select',
+        defaultValue: 'server',
+        description: '服务端执行（默认）：由服务端直接采集，无需客户端在线；客户端执行：由客户端本地网络采集，适合需要客户端IP的场景。',
+        options: [
+          { label: '服务端执行', value: 'server' },
+          { label: '客户端执行', value: 'client' },
+        ],
+      },
+    ],
     outputSchema: [
       { field: 'platform', label: '平台标识', type: 'string' },
       { field: 'name', label: '平台名称', type: 'string' },
@@ -512,7 +548,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
       { field: 'fetchedAt', label: '采集时间', type: 'string' },
       { field: 'duration', label: '耗时(ms)', type: 'number' },
     ],
-    requirements: [{ type: 'client', label: '需客户端在线' }],
+    requirements: [],
   },
   {
     type: 'hotsearch_zhihu',
@@ -521,9 +557,27 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     iconImage: zhihuIcon,
     color: '#0084ff',
     badge: '热搜',
-    description: '通过已登录客户端采集知乎实时热榜数据，获取当前问答社区最受关注的议题、话题热度和精彩回答摘要。知乎热榜覆盖科技、社会、文化等多领域的高质量讨论。需客户端在线且已登录知乎账号，自动查找在线设备逐个尝试执行。输出包含热榜标题、热度值、回答数量和话题链接，适用于行业趋势洞察、专业选题挖掘和知识内容聚合。',
-    defaultData: { name: '知乎热榜采集', platform: 'zhihu' },
-    inputSchema: [],
+    description: '采集知乎实时热榜。支持服务端执行（默认，稳定可靠）或客户端执行（使用本地网络）。核心逻辑由服务端统一维护，客户端动态拉取。',
+    defaultData: { name: '知乎热榜采集', config: { maxCount: 20, executionMode: 'server' } },
+    inputSchema: [
+      {
+        field: 'maxCount',
+        label: '获取数量',
+        type: 'number',
+        defaultValue: 20,
+      },
+      {
+        field: 'executionMode',
+        label: '执行位置',
+        type: 'select',
+        defaultValue: 'server',
+        description: '服务端执行（默认）：由服务端直接采集，无需客户端在线；客户端执行：由客户端本地网络采集，适合需要客户端IP的场景。',
+        options: [
+          { label: '服务端执行', value: 'server' },
+          { label: '客户端执行', value: 'client' },
+        ],
+      },
+    ],
     outputSchema: [
       { field: 'platform', label: '平台标识', type: 'string' },
       { field: 'name', label: '平台名称', type: 'string' },
@@ -532,7 +586,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
       { field: 'fetchedAt', label: '采集时间', type: 'string' },
       { field: 'duration', label: '耗时(ms)', type: 'number' },
     ],
-    requirements: [{ type: 'client', label: '需客户端在线' }],
+    requirements: [],
   },
   {
     type: 'hotsearch_toutiao',
@@ -541,9 +595,27 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     iconImage: toutiaoIcon,
     color: '#f5222d',
     badge: '热搜',
-    description: '通过已登录客户端采集今日头条实时热搜榜单，获取当前综合资讯平台最热门的新闻事件、社会话题和搜索关键词。头条热搜基于用户阅读和搜索行为实时更新，覆盖时政、社会、娱乐等多领域。需客户端在线且已登录头条账号，自动查找在线设备逐个尝试执行。输出包含热搜标题、热度指数、相关新闻量和跳转链接，适用于资讯热点追踪、内容分发策略和舆情监控。',
-    defaultData: { name: '今日头条热搜采集', platform: 'toutiao' },
-    inputSchema: [],
+    description: '采集今日头条实时热搜榜。支持服务端执行（默认，稳定可靠）或客户端执行（使用本地网络）。核心逻辑由服务端统一维护，客户端动态拉取。',
+    defaultData: { name: '今日头条热搜采集', config: { maxCount: 20, executionMode: 'server' } },
+    inputSchema: [
+      {
+        field: 'maxCount',
+        label: '获取数量',
+        type: 'number',
+        defaultValue: 20,
+      },
+      {
+        field: 'executionMode',
+        label: '执行位置',
+        type: 'select',
+        defaultValue: 'server',
+        description: '服务端执行（默认）：由服务端直接采集，无需客户端在线；客户端执行：由客户端本地网络采集，适合需要客户端IP的场景。',
+        options: [
+          { label: '服务端执行', value: 'server' },
+          { label: '客户端执行', value: 'client' },
+        ],
+      },
+    ],
     outputSchema: [
       { field: 'platform', label: '平台标识', type: 'string' },
       { field: 'name', label: '平台名称', type: 'string' },
@@ -552,7 +624,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
       { field: 'fetchedAt', label: '采集时间', type: 'string' },
       { field: 'duration', label: '耗时(ms)', type: 'number' },
     ],
-    requirements: [{ type: 'client', label: '需客户端在线' }],
+    requirements: [],
   },
   {
     type: 'hotsearch_douban',
@@ -561,9 +633,27 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     iconImage: doubanIcon,
     color: '#007722',
     badge: '热搜',
-    description: '通过已登录客户端采集豆瓣热门内容榜单，获取当前文艺社区最受关注的电影、图书、音乐和话题讨论。豆瓣热门反映文化爱好者的口碑评价和兴趣趋势。需客户端在线且已登录豆瓣账号，自动查找在线设备逐个尝试执行。输出包含内容标题、评分、评论数量和详情链接，适用于文化内容推荐、影视选题参考和兴趣社区分析。',
-    defaultData: { name: '豆瓣热门采集', platform: 'douban' },
-    inputSchema: [],
+    description: '采集豆瓣热门内容榜单。支持服务端执行（默认，稳定可靠）或客户端执行（使用本地网络）。核心逻辑由服务端统一维护，客户端动态拉取。',
+    defaultData: { name: '豆瓣热门采集', config: { maxCount: 20, executionMode: 'server' } },
+    inputSchema: [
+      {
+        field: 'maxCount',
+        label: '获取数量',
+        type: 'number',
+        defaultValue: 20,
+      },
+      {
+        field: 'executionMode',
+        label: '执行位置',
+        type: 'select',
+        defaultValue: 'server',
+        description: '服务端执行（默认）：由服务端直接采集，无需客户端在线；客户端执行：由客户端本地网络采集，适合需要客户端IP的场景。',
+        options: [
+          { label: '服务端执行', value: 'server' },
+          { label: '客户端执行', value: 'client' },
+        ],
+      },
+    ],
     outputSchema: [
       { field: 'platform', label: '平台标识', type: 'string' },
       { field: 'name', label: '平台名称', type: 'string' },
@@ -572,7 +662,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
       { field: 'fetchedAt', label: '采集时间', type: 'string' },
       { field: 'duration', label: '耗时(ms)', type: 'number' },
     ],
-    requirements: [{ type: 'client', label: '需客户端在线' }],
+    requirements: [],
   },
   {
     type: 'hotsearch_kuaishou',
@@ -664,9 +754,27 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     iconImage: v2exIcon,
     color: '#2b2b2b',
     badge: '热搜',
-    description: '通过已登录客户端采集V2EX热门话题，获取当前科技创客社区最活跃的技术讨论、创业话题和创意分享。V2EX是中文互联网知名的极客社区，内容涵盖编程、硬件、创业和生活方式。需客户端在线，自动查找在线设备逐个尝试执行。输出包含话题标题、回复数、节点分类和详情链接，适用于技术趋势追踪、开发者社区洞察和创意项目发现。',
-    defaultData: { name: 'V2EX热门采集', platform: 'v2ex' },
-    inputSchema: [],
+    description: '采集V2EX热门话题。支持服务端执行（默认，稳定可靠）或客户端执行（使用本地网络）。核心逻辑由服务端统一维护，客户端动态拉取。',
+    defaultData: { name: 'V2EX热门采集', config: { maxCount: 20, executionMode: 'server' } },
+    inputSchema: [
+      {
+        field: 'maxCount',
+        label: '获取数量',
+        type: 'number',
+        defaultValue: 20,
+      },
+      {
+        field: 'executionMode',
+        label: '执行位置',
+        type: 'select',
+        defaultValue: 'server',
+        description: '服务端执行（默认）：由服务端直接采集，无需客户端在线；客户端执行：由客户端本地网络采集，适合需要客户端IP的场景。',
+        options: [
+          { label: '服务端执行', value: 'server' },
+          { label: '客户端执行', value: 'client' },
+        ],
+      },
+    ],
     outputSchema: [
       { field: 'platform', label: '平台标识', type: 'string' },
       { field: 'name', label: '平台名称', type: 'string' },
@@ -675,7 +783,7 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
       { field: 'fetchedAt', label: '采集时间', type: 'string' },
       { field: 'duration', label: '耗时(ms)', type: 'number' },
     ],
-    requirements: [{ type: 'client', label: '需客户端在线' }],
+    requirements: [],
   },
   {
     type: 'hotsearch_36kr',

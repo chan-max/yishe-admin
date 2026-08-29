@@ -10,9 +10,12 @@ import request from '@/config/axios'
  */
 const PLUGIN_KEY_TO_CAPABILITY_TYPE: Record<string, string> = {
   douyin: 'hotsearch_douyin',
-  // 未来可扩展其他平台，如：
-  // weibo: 'hotsearch_weibo',
-  // bilibili: 'hotsearch_bilibili',
+  weibo: 'hotsearch_weibo',
+  bilibili: 'hotsearch_bilibili',
+  zhihu: 'hotsearch_zhihu',
+  toutiao: 'hotsearch_toutiao',
+  douban: 'hotsearch_douban',
+  v2ex: 'hotsearch_v2ex',
 }
 
 /**
