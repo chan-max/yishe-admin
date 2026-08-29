@@ -155,11 +155,11 @@
 
     <el-empty v-else description="当前没有已连接的设计工具" :image-size="60" />
 
-    <!-- 极简设计端操控面板 -->
+    <!-- 全屏极简设计端操控台 -->
     <el-dialog
       v-model="controlPanelVisible"
-      class="cp-modern-dialog"
-      width="min(880px, 95vw)"
+      class="cp-fullscreen-dialog"
+      fullscreen
       :show-close="false"
       :close-on-click-modal="false"
       destroy-on-close
@@ -1654,37 +1654,40 @@ onBeforeUnmount(() => {
   gap: 12px;
 }
 
-/* ── Modern Control Panel Modal ── */
-.cp-modern-dialog :deep(.el-dialog__header) {
+/* ── Fullscreen Ultra-Clean Control Console ── */
+.cp-fullscreen-dialog :deep(.el-dialog__header) {
   display: none;
 }
 
-.cp-modern-dialog :deep(.el-dialog__body) {
+.cp-fullscreen-dialog :deep(.el-dialog__body) {
   padding: 0;
-  border-radius: 12px;
+  height: 100vh;
+  width: 100vw;
   overflow: hidden;
-  background: var(--el-bg-color);
+  background: var(--el-bg-color-page);
 }
 
 .cp-card {
   display: flex;
   flex-direction: column;
-  height: 80vh;
-  max-height: 820px;
-  min-height: 520px;
-  background: var(--el-bg-color);
+  height: 100vh;
+  width: 100vw;
+  background: var(--el-bg-color-page);
+  overflow: hidden;
 }
 
-/* 顶部精简 Header */
+/* 顶部极简导航 */
 .cp-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  background: var(--el-bg-color-overlay);
+  padding: 0 24px;
+  height: 54px;
+  background: var(--el-bg-color);
   border-bottom: 1px solid var(--el-border-color-lighter);
-  gap: 12px;
+  gap: 16px;
   flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .cp-header__meta {
@@ -1697,32 +1700,31 @@ onBeforeUnmount(() => {
 .cp-header__title {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 14px;
+  gap: 8px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--el-text-color-primary);
   white-space: nowrap;
 }
 
 .cp-header__icon {
-  font-size: 16px;
+  font-size: 18px;
   color: var(--el-color-primary);
 }
 
 .cp-header__cid {
-  font-family: monospace;
+  font-family: "SF Mono", Consolas, monospace;
   font-size: 12px;
   color: var(--el-text-color-secondary);
   background: var(--el-fill-color-light);
-  padding: 2px 6px;
+  padding: 2px 8px;
   border-radius: 4px;
 }
 
 .cp-header__status {
   display: flex;
   align-items: center;
-  gap: 6px;
-  min-width: 0;
+  gap: 8px;
 }
 
 .cp-header__step {
@@ -1731,25 +1733,32 @@ onBeforeUnmount(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 220px;
+  max-width: 320px;
 }
 
 .cp-header__actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex-shrink: 0;
 }
 
-/* 对话与规划流动 Body */
+/* 居中对话流 */
 .cp-body {
   flex: 1;
-  padding: 16px 20px;
+  padding: 24px 20px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  background: var(--el-fill-color-blank);
+  align-items: center;
+  gap: 14px;
+  background: var(--el-bg-color-page);
+}
+
+.conv-bubble,
+.cp-empty-hint {
+  width: 100%;
+  max-width: 900px;
 }
 
 .cp-empty-hint {
@@ -1757,27 +1766,27 @@ onBeforeUnmount(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  height: 60vh;
   color: var(--el-text-color-placeholder);
-  gap: 8px;
-  font-size: 13px;
+  gap: 12px;
+  font-size: 14px;
 }
 
 .cp-empty-icon {
-  font-size: 36px;
-  opacity: 0.5;
+  font-size: 48px;
+  opacity: 0.4;
 }
 
-/* 气泡消息 */
+/* 气泡 */
 .conv-bubble {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 10px 14px;
-  border-radius: 8px;
-  background: var(--el-fill-color-light);
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
-  max-width: 100%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
 .conv-bubble--user {
@@ -1787,20 +1796,20 @@ onBeforeUnmount(() => {
 
 .conv-bubble--tool {
   background: var(--el-fill-color-extra-light);
-  border-left: 3px solid var(--el-color-warning);
+  border-left: 4px solid var(--el-color-warning);
 }
 
 .conv-bubble--assistant {
   background: var(--el-bg-color);
-  border-color: var(--el-border-color);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  border-color: var(--el-border-color-light);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
 }
 
 .conv-bubble__header {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .conv-bubble__role {
@@ -1810,15 +1819,15 @@ onBeforeUnmount(() => {
 
 .conv-bubble__badge {
   background: var(--el-fill-color);
-  padding: 1px 5px;
-  border-radius: 3px;
+  padding: 2px 6px;
+  border-radius: 4px;
   color: var(--el-color-primary);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .conv-bubble__dur {
   font-family: monospace;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--el-color-success);
 }
 
@@ -1829,7 +1838,7 @@ onBeforeUnmount(() => {
 }
 
 .conv-bubble__content {
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
   color: var(--el-text-color-primary);
   white-space: pre-wrap;
@@ -1837,12 +1846,12 @@ onBeforeUnmount(() => {
 }
 
 .conv-bubble__plan {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--el-color-primary);
   font-weight: 500;
   background: var(--el-color-primary-light-9);
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 6px 10px;
+  border-radius: 6px;
 }
 
 .conv-tool-item {
@@ -1852,31 +1861,31 @@ onBeforeUnmount(() => {
 .conv-tool-item__title {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 11px;
+  gap: 6px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--el-color-warning);
-  margin-bottom: 2px;
+  margin-bottom: 3px;
 }
 
 .conv-tool-item__json {
   margin: 0;
-  padding: 6px 8px;
+  padding: 8px 10px;
   font-family: "SF Mono", Consolas, monospace;
-  font-size: 11px;
-  line-height: 1.4;
+  font-size: 12px;
+  line-height: 1.45;
   background: var(--el-fill-color-dark);
   color: var(--el-text-color-regular);
-  border-radius: 4px;
-  max-height: 120px;
+  border-radius: 6px;
+  max-height: 160px;
   overflow-y: auto;
 }
 
 .conv-tool-status {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 3px;
+  padding: 3px 8px;
+  border-radius: 4px;
 }
 
 .conv-tool-status.is-ok {
@@ -1889,74 +1898,85 @@ onBeforeUnmount(() => {
   background: var(--el-color-danger-light-9);
 }
 
-/* 产物流水架 (Shelf) */
+/* 产物流水架 */
 .cp-artifact-shelf {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 16px;
-  background: var(--el-fill-color-light);
+  justify-content: center;
+  background: var(--el-bg-color);
   border-top: 1px solid var(--el-border-color-lighter);
-  overflow-x: auto;
+  padding: 10px 24px;
   flex-shrink: 0;
 }
 
 .cp-artifact-shelf__label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--el-text-color-regular);
+  margin-right: 12px;
   white-space: nowrap;
 }
 
 .cp-artifact-shelf__items {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  overflow-x: auto;
+  max-width: 820px;
 }
 
 .cp-artifact-chip {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
-  background: var(--el-bg-color);
+  gap: 8px;
+  padding: 4px 10px;
+  background: var(--el-fill-color-light);
   border: 1px solid var(--el-border-color-light);
   border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
   white-space: nowrap;
 }
 
 .cp-artifact-chip__thumb {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 4px;
   flex-shrink: 0;
 }
 
 .cp-artifact-chip__name {
   font-size: 12px;
-  max-width: 100px;
+  max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--el-text-color-primary);
 }
 
-/* 底部极简指令底座 */
+/* 底部极简指令底座 (居中控制舱) */
 .cp-footer {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px 16px 14px;
-  background: var(--el-bg-color-overlay);
+  align-items: center;
+  padding: 14px 24px 20px;
+  background: var(--el-bg-color);
   border-top: 1px solid var(--el-border-color-lighter);
   flex-shrink: 0;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.02);
+}
+
+.cp-specs,
+.cp-prompt-row,
+.cp-status-ticker {
+  width: 100%;
+  max-width: 900px;
 }
 
 .cp-specs {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
+  margin-bottom: 10px;
 }
 
 .cp-spec-item {
@@ -1966,14 +1986,14 @@ onBeforeUnmount(() => {
 }
 
 .cp-spec-lbl {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--el-text-color-secondary);
 }
 
 .cp-prompt-row {
   display: flex;
   align-items: flex-end;
-  gap: 10px;
+  gap: 12px;
 }
 
 .cp-prompt-row .el-textarea {
@@ -1982,14 +2002,15 @@ onBeforeUnmount(() => {
 
 .cp-prompt-row :deep(.el-textarea__inner) {
   border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 13px;
+  padding: 10px 14px;
+  font-size: 14px;
 }
 
 .cp-submit-btn {
-  height: 48px;
-  padding: 0 20px;
+  height: 52px;
+  padding: 0 24px;
   border-radius: 8px;
+  font-size: 14px;
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -1999,16 +2020,16 @@ onBeforeUnmount(() => {
 .cp-status-ticker {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-size: 12px;
   color: var(--el-text-color-secondary);
-  padding-top: 2px;
+  padding-top: 6px;
 }
 
 .cp-status-ticker__badge.is-ok { color: var(--el-color-success); font-weight: 600; }
 .cp-status-ticker__badge.is-err { color: var(--el-color-danger); font-weight: 600; }
 .cp-status-ticker__msg { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cp-status-ticker__time { font-size: 10px; color: var(--el-text-color-placeholder); }
+.cp-status-ticker__time { font-size: 11px; color: var(--el-text-color-placeholder); }
 
 /* 独立画中画弹窗 (PiP Monitor) */
 .cp-monitor-dialog :deep(.el-dialog__body) {
