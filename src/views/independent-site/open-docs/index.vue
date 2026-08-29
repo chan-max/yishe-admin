@@ -434,7 +434,7 @@ const statusCodeRows = [
 ]
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .open-docs-container {
   padding: 0;
 }
@@ -442,14 +442,14 @@ const statusCodeRows = [
 .docs-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .docs-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 10px;
+  padding-bottom: 12px;
   border-bottom: 1px solid var(--el-border-color-lighter);
   flex-wrap: wrap;
   gap: 8px;
@@ -458,13 +458,13 @@ const statusCodeRows = [
 .header-left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .docs-title {
   margin: 0;
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--el-text-color-primary);
 }
 
@@ -477,55 +477,77 @@ const statusCodeRows = [
 }
 
 .endpoint-text {
-  font-family: monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--el-color-primary);
 }
 
 .docs-main-layout {
   display: flex;
-  gap: 16px;
+  gap: 24px;
   align-items: flex-start;
 }
 
+/* 极简左侧垂直菜单：完全无多余背景色与外边框 */
 .docs-v-menu {
-  width: 210px;
-  overflow: hidden;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 6px;
+  width: 200px;
   flex-shrink: 0;
+  background: transparent;
+  border-right: 1px solid var(--el-border-color-lighter);
+  padding-right: 12px;
 }
 
 .v-menu-instance {
-  border-right: none;
+  border: none;
+  background: transparent !important;
+  --el-menu-bg-color: transparent;
+  --el-menu-hover-bg-color: transparent;
+  --el-menu-active-color: var(--el-color-primary);
 }
 
 :deep(.v-menu-instance .el-menu-item-group__title) {
-  padding: 10px 14px 4px;
+  padding: 8px 0 4px;
   font-size: 11px;
-  font-weight: 700;
-  color: var(--el-text-color-secondary);
+  font-weight: 600;
+  color: var(--el-text-color-placeholder);
 }
 
 :deep(.v-menu-instance .el-menu-item) {
-  height: 38px;
+  height: 34px;
+  line-height: 34px;
+  padding: 0 10px !important;
+  margin: 1px 0;
   font-size: 13px;
-  line-height: 38px;
+  color: var(--el-text-color-regular);
+  background: transparent !important;
+  border-radius: 4px;
+  transition: color 0.15s ease, padding-left 0.15s ease;
+
+  &:hover {
+    background: transparent !important;
+    color: var(--el-color-primary);
+    padding-left: 14px !important;
+  }
+
+  &.is-active {
+    font-weight: 600;
+    color: var(--el-color-primary);
+    background: transparent !important;
+  }
 }
 
+/* 极简右侧详情面板：无多余大色块卡片 */
 .docs-detail-panel {
   min-width: 0;
-  padding: 16px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 6px;
   flex: 1;
+  background: transparent;
 }
 
 .api-detail-block {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .detail-header-row {
@@ -539,14 +561,14 @@ const statusCodeRows = [
 .detail-title {
   margin: 0;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--el-text-color-primary);
 }
 
 .section-desc {
   margin: 0;
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.6;
   color: var(--el-text-color-regular);
 }
 
@@ -561,6 +583,7 @@ const statusCodeRows = [
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+  background: transparent;
 }
 
 .label-text {
@@ -575,8 +598,7 @@ const statusCodeRows = [
 .table-block {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-top: 4px;
+  gap: 8px;
 }
 
 .table-title-row {
@@ -592,15 +614,17 @@ const statusCodeRows = [
 }
 
 .param-code {
-  font-family: monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 12px;
+  font-weight: 500;
   color: var(--el-color-primary);
 }
 
 .code-clean-box {
   padding: 10px 12px;
   border: 1px solid var(--el-border-color-lighter);
-  border-radius: 6px;
+  border-radius: 4px;
+  background: transparent;
 }
 
 .code-text {
@@ -611,13 +635,35 @@ const statusCodeRows = [
   color: var(--el-text-color-primary);
 }
 
-@media (width <= 800px) {
+.code-example-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.example-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.example-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+@media (max-width: 800px) {
   .docs-main-layout {
     flex-direction: column;
   }
 
   .docs-v-menu {
     width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+    padding-right: 0;
+    padding-bottom: 12px;
   }
 }
 </style>

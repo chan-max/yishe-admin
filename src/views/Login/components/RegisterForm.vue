@@ -374,12 +374,12 @@ watch(() => registerData.registerForm.confirmPassword, () => validateField('conf
 .ds-form {
   display: flex;
   flex-direction: column;
-  padding: 16px;
+  padding: 0;
   width: 100%;
   gap: 0;
 
   &__header {
-    margin-bottom: 12px;
+    margin-bottom: 16px;
   }
 
   &__welcome {
@@ -391,7 +391,7 @@ watch(() => registerData.registerForm.confirmPassword, () => validateField('conf
 
   &__title {
     margin: 4px 0 0;
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 700;
     color: var(--el-color-primary);
     letter-spacing: -0.02em;
@@ -400,15 +400,16 @@ watch(() => registerData.registerForm.confirmPassword, () => validateField('conf
   &__form {
     display: flex;
     flex-direction: column;
-    gap: 0;
+    width: 100%;
   }
 
   &__label {
-    font-size: 11px;
+    display: block;
+    margin-bottom: 5px;
+    font-size: 12px;
     font-weight: 600;
-    color: var(--el-text-color-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
+    color: var(--el-text-color-regular);
+    letter-spacing: 0.02em;
 
     .required {
       color: var(--el-color-danger);
@@ -417,8 +418,11 @@ watch(() => registerData.registerForm.confirmPassword, () => validateField('conf
   }
 
   &__input {
+    width: 100%;
+
     :deep(.el-input__wrapper) {
       padding: 0 12px;
+      height: 36px;
       background: var(--el-fill-color-light);
       border: 1px solid var(--el-border-color-lighter);
       border-radius: 6px;
@@ -435,8 +439,8 @@ watch(() => registerData.registerForm.confirmPassword, () => validateField('conf
     }
 
     :deep(.el-input__inner) {
-      height: 32px;
-      font-size: 12px;
+      height: 34px;
+      font-size: 13px;
       color: var(--el-text-color-primary);
     }
 
@@ -464,11 +468,11 @@ watch(() => registerData.registerForm.confirmPassword, () => validateField('conf
 
   &__submit {
     width: 100%;
-    height: 32px;
-    margin-top: 0;
-    font-size: 12px;
+    height: 38px;
+    margin-top: 4px;
+    font-size: 13px;
     font-weight: 600;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.04em;
     background: var(--el-color-primary);
     border: none;
     border-radius: 6px;
@@ -481,7 +485,7 @@ watch(() => registerData.registerForm.confirmPassword, () => validateField('conf
   &__get-account {
     display: flex;
     justify-content: center;
-    margin-top: 8px;
+    margin-top: 12px;
   }
 
   &__link {
@@ -500,26 +504,50 @@ watch(() => registerData.registerForm.confirmPassword, () => validateField('conf
   }
 }
 
-// el-form-item 重置，避免默认 margin 破坏紧凑布局
+// 稳定间距与防抖动校验报错
 :deep(.el-form-item) {
-  margin-bottom: 8px;
+  position: relative;
+  margin-bottom: 18px;
+
+  &:last-of-type {
+    margin-bottom: 22px;
+  }
 }
+
+:deep(.el-form-item__content) {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-height: auto;
+}
+
 :deep(.el-form-item__error) {
-  font-size: 11px;
+  position: absolute;
+  top: 100%;
+  left: 0;
   padding-top: 2px;
+  font-size: 11px;
+  line-height: 14px;
+  color: var(--el-color-danger);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  pointer-events: none;
 }
 
 // Tablet
 @media (width <= 1200px) {
   .ds-form {
-    padding: 16px;
+    padding: 0;
   }
 }
 
 // Mobile
 @media (width <= 768px) {
   .ds-form {
-    padding: 18px;
+    padding: 0;
 
     &__welcome {
       font-size: 12px;
@@ -530,12 +558,15 @@ watch(() => registerData.registerForm.confirmPassword, () => validateField('conf
     }
 
     &__header {
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
 
     &__input {
-      :deep(.el-input__inner) {
+      :deep(.el-input__wrapper) {
         height: 38px;
+      }
+      :deep(.el-input__inner) {
+        height: 36px;
       }
     }
 

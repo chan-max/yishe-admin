@@ -24,15 +24,32 @@ import mondrian from '@/assets/imgs/login/mondrian-composition.jpg'
 import mondrianNoII from '@/assets/imgs/login/mondrian-composition-no-ii.jpg'
 import pearlEarring from '@/assets/imgs/login/girl-with-a-pearl-earring.jpg'
 import solitaryTree from '@/assets/imgs/login/solitary-tree.jpg'
+import lamuTown from '@/assets/imgs/login/lamu-town.jpg'
+import peacockAndPeonies from '@/assets/imgs/login/peacock-and-peonies.jpg'
+import chineseLandscape1 from '@/assets/imgs/login/chinese-landscape-art-1.jpg'
+import chineseLandscape2 from '@/assets/imgs/login/chinese-landscape-art-2.jpg'
 
-const illustrations = [mondrian, mondrianNoII, pearlEarring, solitaryTree]
+const illustrations = [
+  mondrian,
+  mondrianNoII,
+  pearlEarring,
+  solitaryTree,
+  lamuTown,
+  peacockAndPeonies,
+  chineseLandscape1,
+  chineseLandscape2,
+]
 
-const activeIndex = ref(0)
+const activeIndex = ref(Math.floor(Math.random() * illustrations.length))
 let timer: number | null = null
 
 onMounted(() => {
   timer = window.setInterval(() => {
-    activeIndex.value = (activeIndex.value + 1) % illustrations.length
+    let next = Math.floor(Math.random() * illustrations.length)
+    if (next === activeIndex.value && illustrations.length > 1) {
+      next = (next + 1) % illustrations.length
+    }
+    activeIndex.value = next
   }, 8000)
 })
 
@@ -51,6 +68,9 @@ onBeforeUnmount(() => {
   height: 100%;
   min-height: 400px;
   overflow: hidden;
+  border-top-right-radius: clamp(6px, 0.8vw, 10px);
+  border-bottom-right-radius: clamp(6px, 0.8vw, 10px);
+  corner-shape: squircle;
   background: linear-gradient(135deg, #faf9ff 0%, #f0edff 100%);
 }
 

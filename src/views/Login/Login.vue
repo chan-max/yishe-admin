@@ -78,8 +78,9 @@ const { t } = useI18n()
   min-width: 0;
   z-index: 1;
   overflow: hidden;
-  border-top-right-radius: clamp(10px, 1.2vw, 16px);
-  border-bottom-right-radius: clamp(10px, 1.2vw, 16px);
+  border-top-right-radius: clamp(6px, 0.8vw, 10px);
+  border-bottom-right-radius: clamp(6px, 0.8vw, 10px);
+  corner-shape: squircle;
   background: linear-gradient(150deg, #faf8ff 0%, #f1edff 55%, #e7e0ff 100%);
   color: var(--el-color-primary);
 }
