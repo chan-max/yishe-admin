@@ -367,10 +367,17 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     category: 'logic',
     iconImage: javaScriptIcon,
     color: '#10b981',
-    description: '在安全沙箱中执行 JavaScript 代码。支持 $params、$tools(HTTP/文件/COS)、$result、$log。预装 axios、dayjs、cheerio、lodash、sharp 等库。',
+    description: '在安全沙箱中执行 JavaScript 代码，用于数据处理、格式转换、逻辑编排。\n\n**可用变量：**\n- `$params` - 上游节点输出，如 `$params.nodeId` 或 `$params["node-id"]`\n- `$tools` - 内置工具（HTTP 请求、文件操作、COS 上传）\n- `$log(...args)` - 打印日志到执行记录\n- `return { key: value }` - 返回结果供下游节点使用\n\n**预装库：** axios、dayjs、cheerio、lodash、sharp',
     defaultData: { name: '执行 JS 代码', config: { code: '', timeoutMs: 30000 } },
     inputSchema: [
-      { field: 'code', label: 'JavaScript 代码', type: 'code', required: true, placeholder: '// $params 包含上游节点输出\n// $result = { ok: true }' },
+      {
+        field: 'code',
+        label: 'JavaScript 代码',
+        type: 'code',
+        required: true,
+        placeholder: '// 示例：获取上游热搜节点数据并格式化\nconst hotsearch = $params.hotsearch_weibo || {};\nconst items = hotsearch.items || [];\n\nconst text = items.slice(0, 5).map((item, i) =>\n  `${i+1}. ${item.title} 🔥${item.hot}`\n).join("\\n");\n\nreturn { message: text };',
+        description: '使用 $params.nodeId 引用上游节点输出，return 返回结果给下游节点',
+      },
       { field: 'timeoutMs', label: '超时时间(ms)', type: 'number', defaultValue: 30000 },
     ],
     outputSchema: [
