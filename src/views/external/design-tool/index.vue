@@ -226,21 +226,102 @@
               <el-empty v-else-if="!conversationLoading" description="暂无对话数据" :image-size="36" />
             </div>
 
-            <!-- 指令输入 -->
+            <!-- 创作形式与参数配置栏 -->
+            <div class="cp-config-bar">
+              <div class="cp-config-group">
+                <span class="cp-config-label">创作形式:</span>
+                <el-radio-group v-model="adminTaskConfig.preset" size="small" @change="onPresetChange">
+                  <el-radio-button label="single">单图创作</el-radio-button>
+                  <el-radio-button label="group">系列组图</el-radio-button>
+                  <el-radio-button label="batch">批量独立</el-radio-button>
+                </el-radio-group>
+              </div>
+
+              <div v-if="adminTaskConfig.preset === 'group'" class="cp-config-group">
+                <span class="cp-config-label">组图成员:</span>
+                <el-select v-model="adminTaskConfig.memberCount" size="small" style="width: 100px">
+                  <el-option :value="2" label="2张 (正反面)" />
+                  <el-option :value="3" label="3张" />
+                  <el-option :value="4" label="4张 (四页)" />
+                  <el-option :value="5" label="5张 (套图)" />
+                  <el-option :value="6" label="6张" />
+                </el-select>
+              </div>
+
+              <div v-if="adminTaskConfig.preset === 'batch'" class="cp-config-group">
+                <span class="cp-config-label">生成数量:</span>
+                <el-input-number v-model="adminTaskConfig.jobCount" :min="1" :max="20" size="small" style="width: 90px" controls-position="right" />
+              </div>
+
+              <div class="cp-config-group">
+                <span class="cp-config-label">交付:</span>
+                <el-select v-model="adminTaskConfig.delivery" size="small" style="width: 110px">
+                  <el-option value="save" label="保存贴纸库" />
+                  <el-option value="export" label="导出图片" />
+                  <el-option value="canvas" label="仅留画布" />
+                </el-select>
+              </div>
+
+              <div class="cp-config-group">
+                <el-checkbox v-model="adminTaskConfig.autoImportToLibrary" size="small">自动入素材库</el-checkbox>
+              </div>
+            </div>
+
+            <!-- 指令输入与快捷控制 -->
             <div class="cp-input">
               <div class="cp-input-row">
                 <el-input
                   v-model="remoteMessage"
                   type="textarea"
                   :rows="2"
-                  placeholder="输入设计需求（Ctrl+Enter 发送）"
+                  placeholder="输入设计需求（例如：黑金商务名片 / 节日促销海报，Ctrl+Enter 发送）"
                   :disabled="remoteSending"
                   @keydown.enter.ctrl="sendRemoteCommand"
                 />
-                <el-button class="cp-send-btn" type="primary" :loading="remoteSending" :disabled="!remoteMessage.trim()" @click="sendRemoteCommand">
-                  发送
-                </el-button>
+                <div class="cp-btn-col">
+                  <el-button class="cp-send-btn" type="primary" :loading="remoteSending" :disabled="!remoteMessage.trim()" @click="sendRemoteCommand">
+                    发送指令
+                  </el-button>
+                  <div class="cp-quick-actions">
+                    <el-button size="small" type="danger" plain :disabled="!controlTarget" @click="sendRemoteStop(controlTarget!)">
+                      <Icon icon="ep:video-pause" /> 停止
+                    </el-button>
+                    <el-button size="small" type="warning" plain :disabled="!controlTarget" @click="sendRemoteClear(controlTarget!)">
+                      <Icon icon="ep:delete" /> 清空
+                    </el-button>
+                    <el-button size="small" type="info" plain :loading="snapshotLoading" :disabled="!controlTarget" @click="captureRemoteSnapshot">
+                      <Icon icon="ep:camera" /> 快照
+                    </el-button>
+                  </div>
+                </div>
               </div>
+
+              <!-- 产物流水反馈卡片 -->
+              <div v-if="liveArtifacts.length" class="cp-artifacts">
+                <div class="cp-artifacts__header">
+                  <span class="cp-artifacts__title">🎨 实时设计产物 ({{ liveArtifacts.length }})</span>
+                </div>
+                <div class="cp-artifacts__list">
+                  <div v-for="(art, aIdx) in liveArtifacts" :key="aIdx" class="cp-art-card">
+                    <el-image
+                      v-if="art.url"
+                      :src="art.url"
+                      fit="cover"
+                      class="cp-art-img"
+                      :preview-src-list="[art.url]"
+                    />
+                    <div class="cp-art-info">
+                      <div class="cp-art-name" :title="art.name">{{ art.name || (art.type === 'image-group' ? '组图包' : '贴纸产物') }}</div>
+                      <div class="cp-art-tags">
+                        <el-tag size="small" :type="art.type === 'image-group' ? 'warning' : 'success'">
+                          {{ art.type === 'image-group' ? `组图(${art.stickersCount || 2}张)` : '贴纸' }}
+                        </el-tag>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div v-if="targetResults.length" class="cp-results">
                 <div v-for="r in targetResults" :key="r.requestId" class="cp-result" :class="r.success ? 'cp-result--ok' : 'cp-result--err'">
                   <el-tag :type="remoteResultTagType(r)" size="small" effect="plain">{{ remoteResultLabel(r) }}</el-tag>
@@ -1120,18 +1201,107 @@ const handleAction = (cmd: string, row: WebsocketConnectionVO) => {
   }
 };
 
+// ── 创作形式与参数配置 ──
+const adminTaskConfig = reactive({
+  preset: "single" as "single" | "group" | "batch",
+  outputKind: "single" as "single" | "group" | "independent-batch",
+  memberCount: 2,
+  jobCount: 1,
+  delivery: "save" as "save" | "export" | "canvas",
+  autoImportToLibrary: true,
+});
+
+const onPresetChange = (val: string) => {
+  if (val === "single") {
+    adminTaskConfig.outputKind = "single";
+    adminTaskConfig.memberCount = 1;
+  } else if (val === "group") {
+    adminTaskConfig.outputKind = "group";
+    if (adminTaskConfig.memberCount < 2) adminTaskConfig.memberCount = 2;
+  } else if (val === "batch") {
+    adminTaskConfig.outputKind = "independent-batch";
+    if (adminTaskConfig.jobCount < 1) adminTaskConfig.jobCount = 3;
+  }
+};
+
+const liveArtifacts = ref<Array<{
+  type: "sticker" | "image-group";
+  name?: string;
+  url?: string;
+  customStickerId?: string;
+  stickerId?: string;
+  groupId?: string;
+  stickersCount?: number;
+}>>([]);
+
+const snapshotLoading = ref(false);
+const captureRemoteSnapshot = async () => {
+  if (!controlTarget.value || snapshotLoading.value) return;
+  snapshotLoading.value = true;
+  try {
+    const res: any = await request.postOriginal({
+      url: "/websocket/remote-command",
+      data: {
+        connectionId: controlTarget.value.id,
+        command: { type: "snapshot", requestId: `snap-${Date.now()}` },
+      },
+    });
+    if (res?.data?.snapshot || res?.snapshot) {
+      const snapUrl = res?.data?.snapshot || res?.snapshot;
+      liveArtifacts.value.unshift({
+        type: "sticker",
+        name: "画布即时快照",
+        url: snapUrl,
+      });
+      ElMessage.success("已获取画布最新快照");
+    }
+  } catch (err: any) {
+    console.error("捕获画布快照失败:", err);
+    ElMessage.error(err?.message || "获取快照失败");
+  } finally {
+    snapshotLoading.value = false;
+  }
+};
+
+const sendRemoteStop = async (row: WebsocketConnectionVO) => {
+  try {
+    await request.postOriginal({
+      url: "/websocket/remote-command",
+      data: {
+        connectionId: row.id,
+        command: { type: "stop", requestId: `stop-${Date.now()}` },
+      },
+    });
+    ElMessage.success("已向设计端发送停止指令");
+  } catch (error: any) {
+    console.error("远程停止失败:", error);
+    ElMessage.error("发送停止指令失败");
+  }
+};
+
 const sendRemoteCommand = async () => {
   if (!controlTarget.value || !remoteMessage.value.trim() || remoteSending.value) return;
   remoteSending.value = true;
   const requestId = `cmd-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
   try {
+    const taskOptions = {
+      preset: adminTaskConfig.preset,
+      outputKind: adminTaskConfig.outputKind,
+      memberCount: adminTaskConfig.preset === "group" ? adminTaskConfig.memberCount : 1,
+      jobCount: adminTaskConfig.preset === "batch" ? adminTaskConfig.jobCount : 1,
+      delivery: adminTaskConfig.delivery,
+      autoImportToLibrary: adminTaskConfig.autoImportToLibrary,
+    };
     const res: any = await request.postOriginal({
       url: "/websocket/remote-command",
       data: {
         connectionId: controlTarget.value.id,
         command: {
           type: "chat",
-          payload: { message: remoteMessage.value.trim() },
+          payload: {
+            message: remoteMessage.value.trim(),
+            taskOptions,
+          },
           requestId,
         },
       },
@@ -1173,8 +1343,10 @@ const sendRemoteClear = async (row: WebsocketConnectionVO) => {
     if (res?.success === false) {
       throw new Error(res?.message || "远程清空失败");
     }
+    ElMessage.success("已清空设计端画布与对话");
   } catch (error: any) {
     console.error("远程清空失败:", error);
+    ElMessage.error("远程清空失败");
   }
 };
 
@@ -1298,6 +1470,22 @@ const copyConversation = () => {
 let wsUnsubscribe: (() => void) | null = null;
 
 const resultHandler = (data: any) => {
+  // 提取设计产物
+  if (data?.outputs && Array.isArray(data.outputs)) {
+    for (const out of data.outputs) {
+      if (
+        !liveArtifacts.value.some(
+          (a) =>
+            (a.customStickerId && a.customStickerId === out.customStickerId) ||
+            (a.groupId && a.groupId === out.groupId) ||
+            (a.url && a.url === out.url),
+        )
+      ) {
+        liveArtifacts.value.unshift(out);
+      }
+    }
+  }
+
   // 对话日志响应（按 requestId 前缀匹配，不依赖 conversation 字段）
   if (data?.requestId?.startsWith("conv-")) {
     conversationData.value = {
@@ -2072,5 +2260,108 @@ onBeforeUnmount(() => {
 
 .remote-results__error {
   color: var(--el-color-danger);
+}
+
+/* ── 创作形式与参数配置栏 ── */
+.cp-config-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  background: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+}
+
+.cp-config-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cp-config-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--el-text-color-regular);
+  white-space: nowrap;
+}
+
+.cp-btn-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cp-quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── 实时设计产物流水 ── */
+.cp-artifacts {
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: var(--el-fill-color-extra-light);
+  border: 1px dashed var(--el-border-color);
+  border-radius: 6px;
+}
+
+.cp-artifacts__header {
+  margin-bottom: 6px;
+}
+
+.cp-artifacts__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.cp-artifacts__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cp-art-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.cp-art-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 4px;
+  background: var(--el-fill-color-dark);
+  flex-shrink: 0;
+}
+
+.cp-art-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 140px;
+}
+
+.cp-art-name {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--el-text-color-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cp-art-tags {
+  display: flex;
+  align-items: center;
 }
 </style>
