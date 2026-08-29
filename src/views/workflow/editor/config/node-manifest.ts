@@ -242,7 +242,7 @@ export type NodeType =
   | 'weather_cn_search'
   | 'weather_com_search'
 
-export type NodeRequirementType = 'client' | 'client_browser' | 'internet' | 'config'
+export type NodeRequirementType = 'client' | 'client_browser' | 'internet' | 'config' | 'multi-end'
 
 export interface NodeRequirement {
   type: NodeRequirementType
@@ -293,6 +293,7 @@ export const NODE_REQUIREMENTS: Record<NodeRequirementType, { label: string; col
   client_browser: { label: '需客户端浏览器', color: '#7c3aed', icon: 'ep:chrome-filled' },
   internet: { label: '需外网', color: '#06b6d4', icon: 'ep:link' },
   config: { label: '需配置', color: '#64748b', icon: 'ep:setting' },
+  'multi-end': { label: '多端运行', color: '#10b981', icon: 'ep:connection' },
 }
 
 export const NODE_CATEGORIES = [
