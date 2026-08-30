@@ -24,7 +24,7 @@ export const HOTSEARCH_PLATFORMS: HotsearchPlatform[] = [
   { key: '36kr', label: '36氪', group: '国内热搜' },
   { key: 'ithome', label: 'IT之家', group: '国内热搜' },
   { key: 'xiaohongshu', label: '小红书', group: '国内热搜' },
-  { key: 'douyin_jingxuan', label: '抖音精选', group: '国内热搜' },
+  { key: 'douyin_jingxuan', label: '抖音精选获取首页推荐内容', group: '国内热搜' },
   // 国际趋势 (proxy)
   { key: 'google_trends', label: 'Google Trends', group: '国际趋势' },
   { key: 'hackernews', label: 'Hacker News', group: '国际趋势' },
