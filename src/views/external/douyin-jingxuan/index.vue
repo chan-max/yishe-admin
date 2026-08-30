@@ -104,7 +104,7 @@
 
               <!-- 空状态 -->
               <div v-else-if="!searchLoading" class="collect-empty">
-                <el-empty description="点击"采集"按钮获取抖音精选视频" />
+                <el-empty description="点击「采集」按钮获取抖音精选视频" />
               </div>
             </div>
           </div>
