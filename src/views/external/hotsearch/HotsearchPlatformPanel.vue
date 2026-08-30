@@ -155,6 +155,7 @@ const platformIcon = computed(() => {
     baidu: appIcons.baiduIcon,
     github: appIcons.githubIcon,
     devto: appIcons.devtoIcon,
+    douyin_jingxuan: appIcons.douyinIcon,
   }
   return map[props.pluginKey] || ''
 })
