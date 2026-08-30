@@ -16,6 +16,13 @@ const PLUGIN_KEY_TO_CAPABILITY_TYPE: Record<string, string> = {
   toutiao: 'hotsearch_toutiao',
   douban: 'hotsearch_douban',
   v2ex: 'hotsearch_v2ex',
+  baidu: 'hotsearch_baidu',
+  kuaishou: 'hotsearch_kuaishou',
+  github: 'hotsearch_github',
+  xiaohongshu: 'hotsearch_xiaohongshu',
+  ithome: 'hotsearch_ithome',
+  jd_hot: 'hotsearch_jd_hot',
+  devto: 'hotsearch_devto',
 }
 
 /**
