@@ -3,6 +3,7 @@ import {
   feishuIcon,
   wecomIcon,
   douyinIcon,
+  douyinJingxuanIcon,
   bilibiliIcon,
   zhihuIcon,
   toutiaoIcon,
@@ -135,6 +136,7 @@ export type NodeType =
   | 'pexels_search'
   | 'pixabay_search'
   | 'rawpixel_search'
+  | 'douyin_jingxuan_search'
   | 'stocksnap_search'
   | 'openverse_search'
   | 'openclipart_search'
@@ -1496,6 +1498,60 @@ export const NODE_MANIFEST_REGISTRY: NodeManifest[] = [
     ],
     requirements: [
       { type: 'client', label: '需客户端在线' },
+      { type: 'internet', label: '需外网' },
+    ],
+  },
+  {
+    type: 'douyin_jingxuan_search',
+    name: '抖音精选采集',
+    category: 'hotsearch',
+    description: '通过客户端浏览器自动化采集抖音精选首页推荐视频内容。支持分类筛选（全部、游戏、二次元、音乐、影视、美食等 18 个分类），提取视频标题、封面、时长、播放量、作者、标签等信息。需客户端在线且可访问抖音。',
+    iconImage: douyinJingxuanIcon,
+    color: '#fe2c55',
+    badge: '浏览器',
+    defaultData: {
+      label: '抖音精选采集',
+      config: { category: '全部', maxCount: 20 },
+    },
+    inputSchema: [
+      {
+        field: 'category',
+        label: '视频分类',
+        type: 'select',
+        defaultValue: '全部',
+        description: '选择要采集的抖音精选分类',
+        options: [
+          { label: '全部', value: '全部' },
+          { label: '公开课', value: '公开课' },
+          { label: '游戏', value: '游戏' },
+          { label: '二次元', value: '二次元' },
+          { label: '音乐', value: '音乐' },
+          { label: '影视', value: '影视' },
+          { label: '美食', value: '美食' },
+          { label: '知识', value: '知识' },
+          { label: '小剧场', value: '小剧场' },
+          { label: '生活vlog', value: '生活vlog' },
+          { label: '体育', value: '体育' },
+          { label: '旅行', value: '旅行' },
+          { label: '亲子', value: '亲子' },
+          { label: '动物', value: '动物' },
+          { label: '三农', value: '三农' },
+          { label: '汽车', value: '汽车' },
+          { label: '美妆', value: '美妆' },
+          { label: '穿搭', value: '穿搭' },
+        ],
+      },
+      { field: 'maxCount', label: '采集数量', type: 'number', defaultValue: 20, description: '每次最多采集数量 (1-100)' },
+    ],
+    outputSchema: [
+      { field: 'success', label: '是否成功', type: 'boolean' },
+      { field: 'count', label: '采集数量', type: 'number' },
+      { field: 'total', label: '总数', type: 'number' },
+      { field: 'items', label: '视频列表', type: 'array' },
+      { field: 'category', label: '分类', type: 'string' },
+    ],
+    requirements: [
+      { type: 'client_browser', label: '需客户端浏览器' },
       { type: 'internet', label: '需外网' },
     ],
   },

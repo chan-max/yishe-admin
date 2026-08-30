@@ -44,6 +44,7 @@ import WikimediaNode from "@/components/workflow/nodes/WikimediaNode.vue";
 import PexelsNode from "@/components/workflow/nodes/PexelsNode.vue";
 import PixabayNode from "@/components/workflow/nodes/PixabayNode.vue";
 import RawpixelNode from "@/components/workflow/nodes/RawpixelNode.vue";
+import DouyinJingxuanNode from "@/components/workflow/nodes/DouyinJingxuanNode.vue";
 import StockSnapNode from "@/components/workflow/nodes/StockSnapNode.vue";
 import OpenverseNode from "@/components/workflow/nodes/OpenverseNode.vue";
 import OpenClipartNode from "@/components/workflow/nodes/OpenClipartNode.vue";
@@ -286,6 +287,7 @@ const nodeTypes = {
   pexels_search: markRaw(PexelsNode),
   pixabay_search: markRaw(PixabayNode),
   rawpixel_search: markRaw(RawpixelNode),
+  douyin_jingxuan_search: markRaw(DouyinJingxuanNode),
   stocksnap_search: markRaw(StockSnapNode),
   openverse_search: markRaw(OpenverseNode),
   openclipart_search: markRaw(OpenClipartNode),

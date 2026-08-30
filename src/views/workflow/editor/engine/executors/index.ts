@@ -15,6 +15,7 @@ const hotsearchPlatforms = [
   'hotsearch_aljazeera', 'hotsearch_devto', 'hotsearch_ebay_trending',
   'hotsearch_shopify_trending',
   'hotsearch_xiaohongshu', 'xiaohongshu_note_detail',
+  'douyin_jingxuan_search',
 ]
 
 const executorMap: Record<string, (

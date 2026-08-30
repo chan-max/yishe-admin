@@ -94,7 +94,8 @@ export type ClientPluginKey =
   | "aljazeera"
   | "devto"
   | "ebay_trending"
-  | "shopify_trending";
+  | "shopify_trending"
+  | "douyin_jingxuan";
 export type ClientPluginSummary = "available" | "offline";
 type ClientNodeRefreshOptions = { summary?: boolean };
 
@@ -425,6 +426,7 @@ export const getClientServiceRuntime = (
     "devto",
     "ebay_trending",
     "shopify_trending",
+    "douyin_jingxuan",
   ];
   if (directServiceKeys.includes(pluginKey)) {
     return services[pluginKey] || null;
@@ -548,6 +550,7 @@ export const useClientNodeStore = defineStore("client-node", () => {
       "devto": "offline",
       "ebay_trending": "offline",
       "shopify_trending": "offline",
+      "douyin_jingxuan": "offline",
     };
 
     (
@@ -628,6 +631,7 @@ export const useClientNodeStore = defineStore("client-node", () => {
         "devto",
         "ebay_trending",
         "shopify_trending",
+        "douyin_jingxuan",
       ] as ClientPluginKey[]
     ).forEach(
       (pluginKey) => {
