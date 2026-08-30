@@ -4,8 +4,6 @@
     <div class="panel-toolbar">
       <div class="toolbar-left">
         <div class="platform-header">
-          <img v-if="platformIcon" :src="platformIcon" class="platform-icon" :alt="title" />
-          <span v-else class="platform-icon-fallback">{{ title.slice(0, 1) }}</span>
           <span class="platform-name">{{ title }}</span>
         </div>
 
