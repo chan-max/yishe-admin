@@ -480,7 +480,7 @@
 </template>
 <script setup lang="ts">
 import { ref, reactive, onMounted, watchEffect, computed } from 'vue'
-import { ContentWrap } from '@/components/ContentWrap'
+import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useI18n } from '@/hooks/web/useI18n'
 import Pagination from '@/components/Pagination/index.vue'

@@ -355,7 +355,7 @@ import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from "vue";
 import { ElMessage, ElMessageBox, type FormInstance } from "element-plus";
 import { DArrowLeft, DArrowRight, Delete, Document, Plus, Refresh, Search, StarFilled } from "@element-plus/icons-vue";
 import { useLocalStorage } from "@vueuse/core";
-import { ContentWrap } from "@/components/ContentWrap";
+import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import FolderTree from "@/components/material/FolderTree.vue";
 import TableRowDragHandle from "@/components/TableRowDragHandle/index.vue";

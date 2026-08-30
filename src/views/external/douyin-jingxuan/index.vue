@@ -122,8 +122,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import ContentWrap from '@/components/ContentWrap/index.vue'
-import ClientSelector from '@/components/ClientSelector/index.vue'
+import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
+import ClientSelector from '../components/ClientSelector.vue'
 import { searchDouyinJingxuanAndWait, DouyinVideo } from '@/api/external/douyin-jingxuan'
 
 const selectedClientId = ref('')

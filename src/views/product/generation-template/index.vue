@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref, watchEffect } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { useWindowSize } from "@vueuse/core";
-import { ContentWrap } from "@/components/ContentWrap";
+import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";

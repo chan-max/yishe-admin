@@ -3,7 +3,7 @@
 import { ref, reactive, onMounted, computed, watchEffect } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { productCategoryApi } from '@/api/product-category'
-import { ContentWrap } from '@/components/ContentWrap'
+import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
 import ListPageLayout from '@/components/ListPageLayout/index.vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import { formatTime } from '@/utils'

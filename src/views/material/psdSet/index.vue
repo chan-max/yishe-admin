@@ -1058,7 +1058,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted, watch, watchEffect } from "vue";
-import { ContentWrap } from "@/components/ContentWrap";
+import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import { useWindowSize } from "@vueuse/core";
 import { Search, DocumentCopy, WarningFilled, CircleCheck } from "@element-plus/icons-vue";
