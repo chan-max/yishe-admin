@@ -3,11 +3,11 @@ import request from '@/config/axios'
 /**
  * OAuth 2.0 API
  *
- * 流程：
+ * 简化流程（直接返回 token）：
  * 1. 客户端跳转 /oauth/authorize?client_id=xxx&redirect_uri=xxx
  * 2. 前端调用 getAuthorizeInfo 获取客户端信息
- * 3. 用户确认后调用 confirmAuthorize 获取授权码
- * 4. 客户端用授权码调用 exchangeToken 换取 token
+ * 3. 用户确认后调用 confirmAuthorizeWithToken 直接获取 token
+ * 4. 前端将 token 通过 URL 带回客户端
  */
 
 /** 获取授权页面信息 */
@@ -23,7 +23,7 @@ export const getAuthorizeInfo = (params: {
   })
 }
 
-/** 确认授权，获取授权码 */
+/** 确认授权，获取授权码（传统 OAuth 流程） */
 export const confirmAuthorize = (data: {
   client_id: string
   redirect_uri: string
@@ -36,7 +36,20 @@ export const confirmAuthorize = (data: {
   })
 }
 
-/** 授权码换 token（客户端调用） */
+/** 确认授权并直接返回 token（简化流程） */
+export const confirmAuthorizeWithToken = (data: {
+  client_id: string
+  redirect_uri: string
+  scope?: string
+  state?: string
+}) => {
+  return request.post({
+    url: '/oauth/authorize/direct-token',
+    data
+  })
+}
+
+/** 授权码换 token（传统 OAuth 流程） */
 export const exchangeToken = (data: {
   code: string
   client_id: string

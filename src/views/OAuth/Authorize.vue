@@ -33,7 +33,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Loading, CircleClose } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { getAuthorizeInfo, confirmAuthorize } from '@/api/oauth'
+import { getAuthorizeInfo, confirmAuthorizeWithToken } from '@/api/oauth'
 
 defineOptions({ name: 'OAuthAuthorize' })
 
@@ -84,14 +84,15 @@ const init = async () => {
 const handleConfirm = async () => {
   submitting.value = true
   try {
-    const res = await confirmAuthorize({
+    const res = await confirmAuthorizeWithToken({
       client_id: route.query.client_id as string,
       redirect_uri: redirectUri.value,
       scope: scopeList.value.join(' '),
       state: stateVal.value
     })
+    // 直接带 token 跳回客户端
     const sep = redirectUri.value.includes('?') ? '&' : '?'
-    let url = `${redirectUri.value}${sep}code=${encodeURIComponent(res.code)}`
+    let url = `${redirectUri.value}${sep}token=${encodeURIComponent(res.accessToken)}`
     if (stateVal.value) url += `&state=${encodeURIComponent(stateVal.value)}`
     window.location.href = url
   } catch (err: any) {
