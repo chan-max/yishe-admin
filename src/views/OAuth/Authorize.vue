@@ -1,29 +1,26 @@
 <template>
   <div class="oauth">
-    <div class="oauth__card">
-      <!-- 加载中 -->
-      <div v-if="loading" class="oauth__loading">
-        <el-icon class="oauth__spinner"><Loading /></el-icon>
-      </div>
+    <!-- 加载中 -->
+    <div v-if="loading" class="oauth__inner">
+      <span class="oauth__dots"><span /><span /><span /></span>
+    </div>
 
-      <!-- 错误 -->
-      <div v-else-if="error" class="oauth__error">
-        <el-icon><CircleClose /></el-icon>
-        <p>{{ error }}</p>
-        <button class="oauth__link" @click="handleGoBack">返回</button>
-      </div>
+    <!-- 错误 -->
+    <div v-else-if="error" class="oauth__inner">
+      <div class="oauth__error-icon">✕</div>
+      <p class="oauth__error-text">{{ error }}</p>
+      <button class="oauth__link" @click="handleGoBack">返回</button>
+    </div>
 
-      <!-- 授权内容 -->
-      <template v-else>
-        <img src="/src/assets/imgs/logo.png" alt="衣设" class="oauth__logo" />
-
-        <p class="oauth__desc">{{ authorizeText }}</p>
-
-        <button class="oauth__btn oauth__btn--primary" :loading="submitting" @click="handleConfirm">
-          同意授权
-        </button>
-        <button class="oauth__btn oauth__btn--text" @click="handleReject">拒绝</button>
-      </template>
+    <!-- 授权内容 -->
+    <div v-else class="oauth__inner">
+      <img src="/src/assets/imgs/logo.png" alt="衣设" class="oauth__logo" />
+      <p class="oauth__desc">{{ authorizeText }}</p>
+      <button class="oauth__btn" :disabled="submitting" @click="handleConfirm">
+        <span v-if="submitting" class="oauth__btn-dots"><span /><span /><span /></span>
+        <span v-else>同意授权</span>
+      </button>
+      <button class="oauth__cancel" @click="handleReject">拒绝</button>
     </div>
   </div>
 </template>
@@ -31,7 +28,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Loading, CircleClose } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { getAuthorizeInfo, confirmAuthorizeWithToken } from '@/api/oauth'
 
@@ -90,7 +86,6 @@ const handleConfirm = async () => {
       scope: scopeList.value.join(' '),
       state: stateVal.value
     })
-    // 直接带 token 跳回客户端
     const sep = redirectUri.value.includes('?') ? '&' : '?'
     let url = `${redirectUri.value}${sep}token=${encodeURIComponent(res.accessToken)}`
     if (stateVal.value) url += `&state=${encodeURIComponent(stateVal.value)}`
@@ -122,80 +117,81 @@ onMounted(init)
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: #fff;
+  background: #f5f5f5;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-  &__card {
-    width: 280px;
+  &__inner {
     text-align: center;
   }
 
-  &__loading {
-    padding: 60px 0;
-  }
-
-  &__spinner {
-    font-size: 24px;
-    color: #ccc;
-    animation: spin 1s linear infinite;
-  }
-
-  &__error {
-    padding: 40px 0;
-
-    .el-icon {
-      font-size: 32px;
-      color: #ff4d4f;
-      margin-bottom: 12px;
-    }
-
-    p {
-      color: #666;
-      font-size: 14px;
-      margin: 0 0 16px;
-    }
-  }
-
   &__logo {
-    width: 32px;
-    height: 32px;
-    margin: 0 auto 16px;
-    border-radius: 8px;
+    width: 28px;
+    height: 28px;
+    margin: 0 auto 14px;
+    border-radius: 6px;
     object-fit: cover;
+    display: block;
   }
 
   &__desc {
     font-size: 13px;
-    color: #666;
-    margin: 0 0 24px;
+    color: #555;
+    margin: 0 0 18px;
+    font-weight: 500;
   }
 
   &__btn {
-    width: 100%;
-    height: 32px;
+    width: 200px;
+    height: 34px;
     border: none;
-    border-radius: 4px;
-    font-size: 13px;
+    border-radius: 6px;
+    background: #1a1a1a;
+    color: #fff;
+    font-size: 12px;
     font-weight: 500;
     cursor: pointer;
     transition: opacity 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 
-    &--primary {
-      background: #1a1a1a;
-      color: #fff;
-      margin-bottom: 8px;
-    }
-
-    &--primary:hover {
+    &:hover:not(:disabled) {
       opacity: 0.85;
     }
 
-    &--text {
-      background: transparent;
-      color: #999;
-      font-size: 12px;
+    &:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+  }
+
+  &__btn-dots {
+    display: inline-flex;
+    gap: 3px;
+
+    span {
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: #fff;
+      animation: dot-fade 1.2s ease-in-out infinite;
     }
 
-    &--text:hover {
+    span:nth-child(2) { animation-delay: 0.15s; }
+    span:nth-child(3) { animation-delay: 0.3s; }
+  }
+
+  &__cancel {
+    display: block;
+    margin: 12px auto 0;
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 4px 8px;
+
+    &:hover {
       color: #333;
     }
   }
@@ -203,8 +199,8 @@ onMounted(init)
   &__link {
     background: none;
     border: none;
-    color: #666;
-    font-size: 14px;
+    color: #999;
+    font-size: 12px;
     cursor: pointer;
     padding: 0;
 
@@ -212,9 +208,44 @@ onMounted(init)
       color: #333;
     }
   }
+
+  &__error-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #fff;
+    color: #ff4d4f;
+    font-size: 14px;
+    line-height: 32px;
+    text-align: center;
+    margin: 0 auto 10px;
+  }
+
+  &__error-text {
+    font-size: 12px;
+    color: #888;
+    margin: 0 0 12px;
+  }
+
+  &__dots {
+    display: inline-flex;
+    gap: 4px;
+
+    span {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #bbb;
+      animation: dot-fade 1.2s ease-in-out infinite;
+    }
+
+    span:nth-child(2) { animation-delay: 0.15s; }
+    span:nth-child(3) { animation-delay: 0.3s; }
+  }
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+@keyframes dot-fade {
+  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1); }
 }
 </style>
