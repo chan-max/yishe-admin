@@ -1,5 +1,6 @@
 <script lang="tsx">
 import type { VNode } from "vue";
+import { watch } from "vue";
 import { Icon } from "@/components/Icon";
 import { ElInput, ElTooltip } from "element-plus";
 import { Search } from "@element-plus/icons-vue";
@@ -162,12 +163,32 @@ export default defineComponent({
         workflowRuntimeLoading.value = false;
       }
     };
-    onMounted(() => {
+    // 只在工作流相关页面时才轮询
+    const startWorkflowRuntimePolling = () => {
+      if (workflowRuntimeTimer) return;
       void refreshWorkflowRuntime();
-      workflowRuntimeTimer = setInterval(() => void refreshWorkflowRuntime(), 5_000);
-    });
+      workflowRuntimeTimer = setInterval(() => void refreshWorkflowRuntime(), 30_000);
+    };
+    const stopWorkflowRuntimePolling = () => {
+      if (workflowRuntimeTimer) {
+        clearInterval(workflowRuntimeTimer);
+        workflowRuntimeTimer = null;
+      }
+    };
+    // 监听路由变化，只在工作流相关页面时轮询
+    watch(
+      () => currentRoute.value.path,
+      (path) => {
+        if (path.startsWith('/workflow')) {
+          startWorkflowRuntimePolling();
+        } else {
+          stopWorkflowRuntimePolling();
+        }
+      },
+      { immediate: true }
+    );
     onBeforeUnmount(() => {
-      if (workflowRuntimeTimer) clearInterval(workflowRuntimeTimer);
+      stopWorkflowRuntimePolling();
     });
 
     const menuStatusRouteMap: Record<string, string> = {

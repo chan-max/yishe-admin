@@ -186,68 +186,46 @@
               </template>
               <!-- 关联信息插槽：合并显示贴纸详情和PSD模板详情 -->
               <template #operationSlot="{ row }">
-                <div class="psd-set-row-actions">
-                  <el-button
-                    type="success"
-                    link
-                    size="small"
-                    class="psd-set-action-btn psd-set-action-btn--product"
-                    :loading="generatingProductId === row.id"
-                    :disabled="generatingProductId === row.id"
-                    @click="() => handleToProduct(row)"
-                  >
-                    {{ t('psdSet.generateProduct') }}
+                <el-dropdown class="operation-dropdown" placement="bottom-end">
+                  <el-button type="primary" link size="small" class="operation-trigger-button">
+                    {{ t('common.operation') }}
                   </el-button>
-                  <el-button
-                    type="primary"
-                    link
-                    size="small"
-                    class="psd-set-action-btn psd-set-action-btn--publish"
-                    @click="() => handleCreatePublishTask(row)"
-                  >
-                    {{ t('psdSet.generatePublishTask') }}
-                  </el-button>
-                  <el-dropdown class="operation-dropdown" placement="bottom-end">
-                    <el-button type="info" link size="small" class="operation-trigger-button">
-                      {{ t('common.more') || '更多' }}
-                    </el-button>
-                    <template #dropdown>
-                      <el-dropdown-menu class="operation-menu-compact">
-                        <el-dropdown-item @click="() => handleViewDetail(row)">{{ t('psdSet.viewDetail') }}</el-dropdown-item>
-                        <el-dropdown-item @click="() => handleEditConfigDirectly(row)">{{ t('psdSet.editConfig') }}</el-dropdown-item>
-                        <el-dropdown-item
-                          divided
-                          :disabled="!isClientConnected || startingProductionId === row.id"
-                          @click="() => handleStartProduction(row)"
-                        >
-                          {{ t('psdSet.startProduction') }}
-                        </el-dropdown-item>
-                        <el-dropdown-item divided @click="() => updateRowStatus(row, 'pending')">{{ t('psdSet.markPending') }}</el-dropdown-item>
-                        <el-dropdown-item @click="() => updateRowStatus(row, 'processing')">{{ t('psdSet.markProcessing') }}</el-dropdown-item>
-                        <el-dropdown-item @click="() => updateRowStatus(row, 'completed')">{{ t('psdSet.markCompleted') }}</el-dropdown-item>
-                        <el-dropdown-item @click="() => updateRowStatus(row, 'failed')">{{ t('psdSet.markFailed') }}</el-dropdown-item>
-                        <el-dropdown-item
-                          divided
-                          :disabled="generatingProductId === row.id"
-                          @click="() => handleToProduct(row)"
-                        >
-                          {{ t('psdSet.generateProduct') }}
-                        </el-dropdown-item>
-                        <el-dropdown-item @click="() => handleCreatePublishTask(row)">{{ t('psdSet.generatePublishTask') }}</el-dropdown-item>
-                        <el-dropdown-item divided @click="() => handleViewProducts(row)">{{ t('psdSet.viewProducts') }}</el-dropdown-item>
-                        <el-dropdown-item @click="() => handleViewPublishTasks(row)">{{ t('psdSet.viewPublishTasks') }}</el-dropdown-item>
-                        <el-dropdown-item @click="() => handleViewPublishUsageRecords(row)">{{ t('psdSet.viewPublishUsageRecords') }}</el-dropdown-item>
-                        <el-dropdown-item
-                          divided
-                          class="operation-menu-item--danger"
-                          @click="() => handleDelete(row)"
-                        >
-                          {{ t('common.delete') }}
-                        </el-dropdown-item>
-                      </el-dropdown-menu>
-                    </template>
-                  </el-dropdown>
-                </div>
+                  <template #dropdown>
+                    <el-dropdown-menu class="operation-menu-compact">
+                      <el-dropdown-item @click="() => handleViewDetail(row)">{{ t('psdSet.viewDetail') }}</el-dropdown-item>
+                      <el-dropdown-item @click="() => handleEditConfigDirectly(row)">{{ t('psdSet.editConfig') }}</el-dropdown-item>
+                      <el-dropdown-item
+                        divided
+                        :disabled="!isClientConnected || startingProductionId === row.id"
+                        @click="() => handleStartProduction(row)"
+                      >
+                        {{ t('psdSet.startProduction') }}
+                      </el-dropdown-item>
+                      <el-dropdown-item divided @click="() => updateRowStatus(row, 'pending')">{{ t('psdSet.markPending') }}</el-dropdown-item>
+                      <el-dropdown-item @click="() => updateRowStatus(row, 'processing')">{{ t('psdSet.markProcessing') }}</el-dropdown-item>
+                      <el-dropdown-item @click="() => updateRowStatus(row, 'completed')">{{ t('psdSet.markCompleted') }}</el-dropdown-item>
+                      <el-dropdown-item @click="() => updateRowStatus(row, 'failed')">{{ t('psdSet.markFailed') }}</el-dropdown-item>
+                      <el-dropdown-item
+                        divided
+                        :disabled="generatingProductId === row.id"
+                        @click="() => handleToProduct(row)"
+                      >
+                        {{ t('psdSet.generateProduct') }}
+                      </el-dropdown-item>
+                      <el-dropdown-item @click="() => handleCreatePublishTask(row)">{{ t('psdSet.generatePublishTask') }}</el-dropdown-item>
+                      <el-dropdown-item divided @click="() => handleViewProducts(row)">{{ t('psdSet.viewProducts') }}</el-dropdown-item>
+                      <el-dropdown-item @click="() => handleViewPublishTasks(row)">{{ t('psdSet.viewPublishTasks') }}</el-dropdown-item>
+                      <el-dropdown-item @click="() => handleViewPublishUsageRecords(row)">{{ t('psdSet.viewPublishUsageRecords') }}</el-dropdown-item>
+                      <el-dropdown-item
+                        divided
+                        class="operation-menu-item--danger"
+                        @click="() => handleDelete(row)"
+                      >
+                        {{ t('common.delete') }}
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
               </template>
             </vxe-grid>
           </div>
@@ -2056,7 +2034,7 @@ function getColumns() {
     },
   ];
 
-  const operationColumn = [buildOperationColumn("operationSlot", 200)];
+  const operationColumn = [buildOperationColumn("operationSlot")];
 
   return [...baseColumns, ...operationColumn];
 }
@@ -4437,7 +4415,7 @@ onMounted(() => {
   restoreGenerateProductBatchProgress();
   psdSetSchedulerRuntimeTimer = setInterval(() => {
     void loadPsdSetSchedulerRuntime();
-  }, 10000);
+  }, 30000);
 });
 
 onUnmounted(() => {
